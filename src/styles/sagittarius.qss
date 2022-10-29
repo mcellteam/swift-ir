@@ -1,4 +1,37 @@
 
+QLabel#browser_overlay_label {
+    color: #FF0000;
+    font-size: 28px;
+}
+
+QTextEdit#main_details_subwidgetA {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetB {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetC {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetD {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTreeView#projectdata_treeview {
+    background-color: #4b4b4b;
+    color: #333;
+    border: 2px solid #555;
+    border-radius: 3px;
+    padding: 3px;
+    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+    min-width: 10px;
+}
+
+
 QWidget {
 	background-color:rgb(0, 0, 0);
 	color: rgb(240, 240, 240);
@@ -11,6 +44,7 @@ QLabel
     background-color: transparent;
 	font-weight: bold;
 }
+
 
 
 /*----Status Bar----*/

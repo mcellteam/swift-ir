@@ -50,8 +50,10 @@ class NgHost(QRunnable):
         self.base_img_siz = ImageSize(cfg.data.path_base(s=scale))
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
         self.http_server = None
-        if is_arg_scale_aligned(scale):
-            self.al_img_siz = ImageSize(cfg.data.path_aligned(s=scale))
+        if is_arg_scale_aligned(self.scale):
+            # path = os.path.join(cfg.data.path_aligned(s=self.scale), cfg.data.name_base())
+            br = cfg.data.bounding_rect()
+            self.al_img_siz = [br[2], br[3]]
         else:
             self.al_img_siz = None
         self.viewport = ng.Viewer()
@@ -149,6 +151,9 @@ class NgHost(QRunnable):
             logger.warning('Nothing To View in Neuroglancer - Returning')
             return
 
+        app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        os.chdir(app_dir) # This sucks but is necessary to reverse simple HTTP server shortcomings
+
         # self.viewport = ng.Viewer()
 
         is_aligned = is_arg_scale_aligned(self.scale)
@@ -223,7 +228,7 @@ class NgHost(QRunnable):
                 s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['l'], layout=self.layout)])
 
 
-            if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
+            if cfg.main_window.main_stylesheet == os.path.abspath('styles/daylight.qss'):
                 s.cross_section_background_color = "#ffffff"
             else:
                 s.cross_section_background_color = "#004060"
@@ -275,19 +280,19 @@ class NgHost(QRunnable):
         # cfg.main_window.ng_workers[cfg.data.s()].baseLV.info()
 
         def layer_left(s):
-            # print('Layering left...')
+            print('Layering left...')
             # print('s.position = %s' % str(s.position))
             # print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
             # print('  Layer selected values: %s' % (s.selected_values,))
-            # s.position[0] -= 1
+            s.position[0] -= 1
             pass
 
         def layer_right(s):
-            # print('Layering right...')
+            print('Layering right...')
             # print('Layering right...%s' % str(s.position))
             # print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
             # print('  Layer selected values: %s' % (s.selected_values,))
-            # s.position[0] += 1
+            s.position[0] += 1
             pass
 
         # self.viewport.actions.add('screenshot', self.take_screenshot)
@@ -307,7 +312,7 @@ class NgHost(QRunnable):
             #                              (cfg.data.scale_val(), self.viewport.get_viewer_url(),
             #                              self.http_server.protocol_version)
             # s.status_messages['hello'] = 'AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)'
-            s.status_messages['hello'] = ''
+            # s.status_messages['hello'] = ''
 
         if self.viewport is not None:
             logger.info('Viewer URL: %s' % self.viewport.get_viewer_url())
@@ -327,8 +332,25 @@ class NgHost(QRunnable):
         return (x_offset, y_offset)
 
     def set_msg(self, msg:str) -> None:
-        with self.viewport.config_state.txn() as s:
-            s.status_messages['hello'] = msg
+        # with self.viewport.config_state.txn() as s:
+        #     s.status_messages['hello'] = msg
+        pass
+
+    def write_some_annotations(output_dir: str, coordinate_space: ng.CoordinateSpace):
+
+        writer = ng.write_annotations.AnnotationWriter(
+            coordinate_space=coordinate_space,
+            annotation_type='point',
+            properties=[
+                ng.AnnotationPropertySpec(id='size', type='float32'),
+                ng.AnnotationPropertySpec(id='cell_type', type='uint16'),
+                ng.AnnotationPropertySpec(id='point_color', type='rgba'),
+            ],
+        )
+
+        writer.add_point([20, 30, 40], size=10, cell_type=16, point_color=(0, 255, 0, 255))
+        writer.add_point([50, 51, 52], size=30, cell_type=16, point_color=(255, 0, 0, 255))
+        writer.write(output_dir)
 
     # # layouts: 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'
     def set_layout_yz(self):

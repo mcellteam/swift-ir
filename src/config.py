@@ -11,7 +11,7 @@ main_window = None
 opengllogger = None
 
 '''Default Window Size'''
-WIDTH, HEIGHT = 1250, 800
+WIDTH, HEIGHT = 1180, 800
 # WIDTH, HEIGHT = 1500, 1200
 
 '''Default Alignment Params'''
@@ -39,6 +39,7 @@ USE_TENSORSTORE = True
 NO_EMBED_NG = False
 # TACC_MAX_CPUS = 128  # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
+REFRESH_RATE = 300 # GUI refresh/synchronization rate (ms)
 
 SUPPORT_NONSQUARE = False
 MULTIVIEW = True

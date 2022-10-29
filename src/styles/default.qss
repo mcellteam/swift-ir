@@ -1,4 +1,18 @@
 
+QCheckBox#toggle_skip {
+	spacing: 5px;
+	outline: none;
+	/*color: #f3f6fb;*/
+	color: #000000;
+	/*margin-bottom: 2px;*/
+	font-size: 10px;
+}
+
+QTableView{
+    background-color: transparent;
+
+}
+
 QCheckBox {
 	spacing: 5px;
 	outline: none;
@@ -11,7 +25,40 @@ QCheckBox {
 }
 
 
-#treeview_widget {
+
+QLabel#browser_overlay_label {
+    color: #FF0000;
+    font-size: 28px;
+}
+
+QTextEdit#main_details_subwidgetA {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetB {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetC {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetD {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTextEdit#afm_widget {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTextEdit#cafm_widget {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTreeView#projectdata_treeview {
     background-color: #ffffff;
     color: #333;
     border: 2px solid #555;
@@ -21,6 +68,53 @@ QCheckBox {
     min-width: 10px;
 }
 
+
+##############################################
+
+
+ /* --------------------------------------- QScrollBar  -----------------------------------*/
+QScrollArea {
+	color: #FFFFFF;
+	background-color:#000000;
+}
+QSlider::groove:horizontal {
+	height: 5px;
+	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
+}
+QSlider::groove:vertical {
+	width: 5px;
+	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
+}
+QSlider::handle:horizontal {
+	background: rgb(253,253,253);
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgb(207,207,207);
+	width: 6px;
+	margin: -5px 0;
+	border-radius: 7px;
+}
+QSlider::handle:vertical {
+	background: rgb(253,253,253);
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgb(207,207,207);
+	height: 6px;
+	margin: 0 -5px;
+	border-radius: 7px;
+}
+QSlider::add-page:horizontal {
+    background: rgb(181,181,181);
+}
+QSlider::add-page:vertical {
+    background: rgb(181,181,181);
+}
+QSlider::sub-page:horizontal {
+    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
+}
+QSlider::sub-page:vertical {
+    background-color: qlineargradient(spread:pad, y1:0.5, x1:1, y2:0.5, x2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
+}
 
 
 
@@ -345,21 +439,6 @@ QTabBar::tab:selected, QTabBar::tab:first:selected, QTabBar::tab:hover {
 	background-color: #1e282c;
 }
 
-QCheckBox {
-	/*color: #808086;*/
-	color: #151a1e;
-	padding: 1px;
-}
-QCheckBox:disabled {
-    /*color: #d3dae3;*/
-	/*color: #808086;*/
-	/*color: grey;*/
-	color: #000000;
-	/*color: #404040;*/
-	padding: 1px;
-}
-
-
 
 QRadioButton {
 	color: #d3dae3;
@@ -515,68 +594,6 @@ QSlider::sub-page:horizontal {
 QSlider::sub-page:vertical {
     background-color: #15433a;
 }
- /* --------------------------------------- QScrollBar  -----------------------------------*/
-QScrollArea {
-	color: #FFFFFF;
-	background-color:#000000;
-}
-QSlider::groove:horizontal {
-	height: 5px;
-	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
-}
-QSlider::groove:vertical {
-	width: 5px;
-	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
-}
-QSlider::handle:horizontal {
-	background: rgb(253,253,253);
-	border-style: solid;
-	border-width: 1px;
-	border-color: rgb(207,207,207);
-	width: 12px;
-	margin: -5px 0;
-	border-radius: 7px;
-}
-QSlider::handle:vertical {
-	background: rgb(253,253,253);
-	border-style: solid;
-	border-width: 1px;
-	border-color: rgb(207,207,207);
-	height: 12px;
-	margin: 0 -5px;
-	border-radius: 7px;
-}
-QSlider::add-page:horizontal {
-    background: rgb(181,181,181);
-}
-QSlider::add-page:vertical {
-    background: rgb(181,181,181);
-}
-QSlider::sub-page:horizontal {
-    background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
-}
-QSlider::sub-page:vertical {
-    background-color: qlineargradient(spread:pad, y1:0.5, x1:1, y2:0.5, x2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -643,8 +660,6 @@ QPushButton:disabled{
 	padding: 2px;
 	background-color: rgb(142,142,142);
 }
-
-
 
 
 

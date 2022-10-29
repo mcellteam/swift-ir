@@ -5,7 +5,7 @@
 import os, logging, textwrap
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
-    QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog
+    QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
@@ -13,6 +13,7 @@ from src.image_funcs import ImageSize
 from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
+
 
 # class RenameProject(QWidget):
 #
@@ -95,12 +96,12 @@ class ConfigDialog(QDialog):
         # button_layout.addWidget(self.button_cancel)
         # button_layout.addWidget(self.button_apply_settings)
 
-        main_layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         # main_layout.addWidget(self.formGroupBox)
-        main_layout.addWidget(self.tab_widget)
+        self.main_layout.addWidget(self.tab_widget)
         # main_layout.addLayout(button_layout)
-        main_layout.addWidget(self.buttonBox)
-        self.setLayout(main_layout)
+        self.main_layout.addWidget(self.buttonBox)
+        self.setLayout(self.main_layout)
 
         self.setWindowTitle("Project Configuration")
 

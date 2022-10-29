@@ -138,10 +138,10 @@ def preallocate_zarr_aligned(scales=None):
         chunkshape = cfg.data.chunkshape()
 
         for scale in scales:
-            out_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
+            out_path = os.path.join(zarr_path, 's' + str(get_scale_val(scale)))
             if os.path.exists(out_path):
                 remove_zarr(out_path)
-            group = zarr.group(store=zarr_path, overwrite=True)
+            group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
             rect = cfg.data.bounding_rect(s=scale)
             shape = (cfg.data.n_imgs(), rect[2], rect[3])
             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
@@ -153,8 +153,8 @@ def preallocate_zarr_aligned(scales=None):
 
         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
 
-        if cfg.data.scale() == 'scale_1':
-            write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+        # if cfg.data.scale() == 'scale_1':
+        #     write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
     except:
         print_exception()
     finally:
@@ -293,7 +293,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
         of = 'out.zarr'
         shutil.rmtree(of)
 
-        chunk_shape_tuple = tuple([64, 64, 64])
+        chunk_shape_tuple = tuple([1,512,512])
         files_1024 = sorted(list(Path('test_data').glob(r'*1024.tif')))
         files_2048 = sorted(list(Path('test_data').glob(r'*2048.tif')))
         files_4096 = sorted(list(Path('test_data').glob(r'*4096.tif')))

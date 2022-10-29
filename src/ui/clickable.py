@@ -32,5 +32,5 @@ class ClickableLabel(QLabel):
     def paintEvent(self, e):
         super().paintEvent(e)
         qp = QPainter(self)
-        qp.drawPixmap(100, 100, QPixmap("src/resources/button_ng.png"))
+        qp.drawPixmap(100, 100, QPixmap("resources/button_ng.png"))
 

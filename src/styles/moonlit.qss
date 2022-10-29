@@ -17,6 +17,37 @@ Useful reference on QSS:
 Be sure to change all image urls to the appropriate folder on your system.
 */
 
+QLabel#browser_overlay_label {
+    color: #FF0000;
+    font-size: 28px;
+}
+
+QTextEdit#main_details_subwidgetA {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetB {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetC {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetD {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTreeView#treeview_widget {
+    background-color: #ffffff;
+    color: #333;
+    border: 2px solid #555;
+    border-radius: 3px;
+    padding: 3px;
+    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+    min-width: 10px;
+}
 
 QGroupBox {
 	font-weight: bold;
@@ -56,7 +87,6 @@ QCheckBox:disabled {
 	color: #76797C;
 }
 
-QCheckBox::indicator,
 QGroupBox::indicator {
 	width: 18px;
 	height: 18px;
@@ -65,18 +95,7 @@ QGroupBox::indicator {
 QGroupBox::indicator {
 	margin-left: 2px;
 }
-QCheckBox::indicator:unchecked:hover,
-QCheckBox::indicator:unchecked:focus,
-QCheckBox::indicator:unchecked:pressed,
-QGroupBox::indicator:unchecked:hover,
-QGroupBox::indicator:unchecked:focus,
 
-
-QCheckBox::indicator:checked:hover,
-QCheckBox::indicator:checked:focus,
-QCheckBox::indicator:checked:pressed,
-QGroupBox::indicator:checked:hover,
-QGroupBox::indicator:checked:focus,
 
 /*================================================================
 QMenuBar - e.g. Main toolbar (file/edit/idefix etc.)

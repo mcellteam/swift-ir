@@ -36,7 +36,6 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d' % get_scale_val(scale))
         remove_aligned(use_scale=scale, start_layer=start_layer)
     scale_dict = cfg.data['data']['scales'][scale]
-
     print_example_cafms(scale_dict)
     SetStackCafm(scale_dict, null_biases=cfg.data.null_cafm()) #***
     print_example_cafms(scale_dict)

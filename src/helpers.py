@@ -42,6 +42,14 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
 
 logger = logging.getLogger(__name__)
 
+
+def load(self):
+    try:
+        with open('data.json', 'r') as f:
+            self.model.todos = json.load(f)
+    except Exception:
+        pass
+
 def obj_to_string(obj, extra='    '):
     return str(obj.__class__) + '\n' + '\n'.join(
         (extra + (str(item) + ' = ' +
@@ -488,7 +496,7 @@ def print_sanity_check():
     print("Data Selection & Scaling___________________________")
     print("  Are images imported?                             :", are_images_imported())
     print("  How many images?                                 :", cfg.data.n_imgs())
-    skips = cfg.data.skip_list()
+    skips = cfg.data.skips_list()
     if skips != []:
         print("  Skip list                                        :", skips)
     else:
