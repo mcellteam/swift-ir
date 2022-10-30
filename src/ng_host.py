@@ -6,11 +6,19 @@ can connect to the web server"""
 
 import os
 import copy
+import atexit
 import inspect
-import http.server
 import logging
 import argparse
+import tempfile
+import http.server
+import tornado.web
+import tornado.netutil
+import tornado.httpserver
 import neuroglancer as ng
+import neuroglancer.write_annotations
+import neuroglancer.random_token
+import neuroglancer.server
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, is_arg_scale_aligned, are_images_imported
@@ -338,7 +346,7 @@ class NgHost(QRunnable):
 
     def write_some_annotations(output_dir: str, coordinate_space: ng.CoordinateSpace):
 
-        writer = ng.write_annotations.AnnotationWriter(
+        writer = neuroglancer.write_annotations.AnnotationWriter(
             coordinate_space=coordinate_space,
             annotation_type='point',
             properties=[
@@ -426,6 +434,53 @@ but it is not yet ready.
 https://github.com/google/neuroglancer/issues/333
 '''
 
+class CorsStaticFileHandler(tornado.web.StaticFileHandler):
+
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def options(self, *args):
+        self.set_status(204)
+        self.finish()
+
+
+def _start_server(bind_address: str, output_dir: str) -> int:
+
+    token = neuroglancer.random_token.make_random_token()
+    handlers = [
+        (fr'/{token}/(.*)', CorsStaticFileHandler, {
+            'path': output_dir
+        }),
+    ]
+    settings = {}
+    app = tornado.web.Application(handlers, settings=settings)
+
+    http_server = tornado.httpserver.HTTPServer(app)
+    sockets = tornado.netutil.bind_sockets(port=0, address=bind_address)
+    http_server.add_sockets(sockets)
+    actual_port = sockets[0].getsockname()[1]
+    url = neuroglancer.server._get_server_url(bind_address, actual_port)
+    return f'{url}/{token}'
+
+def write_some_annotations(output_dir: str, coordinate_space: neuroglancer.CoordinateSpace):
+
+    writer = neuroglancer.write_annotations.AnnotationWriter(
+        coordinate_space=coordinate_space,
+        annotation_type='point',
+        properties=[
+            neuroglancer.AnnotationPropertySpec(id='size', type='float32'),
+            neuroglancer.AnnotationPropertySpec(id='cell_type', type='uint16'),
+            neuroglancer.AnnotationPropertySpec(id='point_color', type='rgba'),
+        ],
+    )
+
+    writer.add_point([20, 30, 40], size=10, cell_type=16, point_color=(0, 255, 0, 255))
+    writer.add_point([20, 30, 40], size=10, cell_type=16, point_color=(0, 255, 0, 255))
+    writer.add_point([0, 30, 40], size=10, cell_type=16, point_color=(0, 255, 0, 255))
+    writer.add_point([50, 51, 52], size=30, cell_type=16, point_color=(255, 0, 0, 255))
+    writer.write(output_dir)
 
 
 if __name__ == '__main__':

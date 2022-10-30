@@ -639,7 +639,7 @@ class MainWindow(QMainWindow):
             self.align_one_button.setEnabled(True)
             self.align_forward_button.setEnabled(True)
             self.regenerate_button.setEnabled(True)
-            return
+            # return
         else:
             self.align_one_button.setEnabled(False)
             self.align_forward_button.setEnabled(False)
@@ -1133,7 +1133,8 @@ class MainWindow(QMainWindow):
         name = self.historyListWidget.currentItem().text()
         if name is None: return
         scale_val = cfg.data.scale_val()
-        msg = "Are you sure you want to swap your alignment data for Scale %d with '%s'?" % (scale_val, name)
+        msg = "Are you sure you want to swap your alignment data for Scale %d with '%s'?\n" \
+              "Note: You must 'regenerate' after swapping it in." % (scale_val, name)
         reply = QMessageBox.question(self, 'Message', msg, QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.Yes:
             pass
@@ -2127,7 +2128,7 @@ class MainWindow(QMainWindow):
         # self.bottom_display_area_controls.setMaximumHeight(200)
 
         # self.resize(100,50)
-        self.setFixedSize(QSize(380,140))
+        self.setFixedSize(QSize(500,140))
         # self.bottom_widget.setMaximumHeight(200)
         # self.control_panel.setMaximumHeight(140)
         # self.control_panel.setMaximumHeight(140)
@@ -2625,8 +2626,11 @@ class MainWindow(QMainWindow):
 
 
     def show_splash(self):
+        logger.critical('Showing Splash...')
 
-        splash = SplashScreen(path='resources/alignem_animation.gif')
+        print('Current Directory: %s' % os.getcwd())
+
+        splash = SplashScreen(path='src/resources/alignem_animation.gif')
         splash.show()
 
         def showWindow():
@@ -2806,12 +2810,12 @@ class MainWindow(QMainWindow):
         if self.python_console.isVisible():
             self.python_console.hide()
             self.expand_console_button.setIcon(qta.icon("fa.caret-down"))
-            self.setFixedSize(QSize(380,140))
+            self.setFixedSize(QSize(500,140))
 
         else:
             self.python_console.show()
             self.expand_console_button.setIcon(qta.icon("fa.caret-up"))
-            self.setFixedSize(QSize(380,400))
+            self.setFixedSize(QSize(500,400))
 
 
     def eventFilter(self, source, event):
@@ -4252,7 +4256,7 @@ class MainWindow(QMainWindow):
 
 
     def show_snr(self, scale=None):
-        logger.info('called by %s' % inspect.stack()[1].function)
+        # logger.info('called by %s' % inspect.stack()[1].function)
         if scale == None: scale = cfg.data.scale()
         # logger.info('show_snr (s: %s):' % str(s))
         snr_list = cfg.data.snr_list(scale=scale)
