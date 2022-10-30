@@ -139,8 +139,8 @@ def main():
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
-    logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
     logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
+    logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
 
     if qtpy.QT6:
         logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
