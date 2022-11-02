@@ -179,7 +179,6 @@ class TaskQueue(QObject):
 
     def collect_results(self) -> None:
         '''Run All Tasks and Collect Results'''
-        print('\n')
         logger.info('>>>> Task Queue (collect_results) >>>>')
         logger.info('self.ctx.get_start_method() = %s' % str(self.ctx.get_start_method()))
         # logger.info('mp.log_to_stderr() = %s' % str(mp.log_to_stderr())) #?
