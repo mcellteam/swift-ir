@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 '''This file is for initializing global config and 'data' the dictionary data state in memory.'''
 
-__all__ = ['data', 'main_window']
+# __all__ = ['data', 'main_window']
+__all__ = []
 
 LOG_LEVEL = 1
 
@@ -39,11 +42,17 @@ USE_TENSORSTORE = True
 NO_EMBED_NG = False
 # TACC_MAX_CPUS = 128  # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
-REFRESH_RATE = 300 # GUI refresh/synchronization rate (ms)
+# REFRESH_RATE = 300 # GUI refresh/synchronization rate (ms). None = OFF.
+# REFRESH_RATE = None
+
+MULTIVIEW = True
 
 SUPPORT_NONSQUARE = False
-MULTIVIEW = True
 DEBUG_MP = False
+# NO_SPLASH = False
+NO_SPLASH = True
+USE_OPENCV = False
+# USE_OPENCV = True
 
 USE_FILE_IO = 0
 CODE_MODE = 'c'

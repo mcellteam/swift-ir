@@ -32,8 +32,8 @@ except:  import config as cfg
 try:     import src.swiftir as swiftir
 except:  import swiftir
 
-try:     from src.image_funcs import ImageSize
-except:  from image_funcs import ImageSize
+try:     from src.funcs_image import ImageSize
+except:  from funcs_image import ImageSize
 
 __all__ = ['run_json_project', 'alignment_process']
 

@@ -16,9 +16,9 @@ QTableView{
 QCheckBox {
 	spacing: 5px;
 	outline: none;
-	color: #f3f6fb;
+	/*color: #f3f6fb;*/
 	/*margin-bottom: 2px;*/
-	border: 1px solid #f3f6fb;
+	/*border: 1px solid #f3f6fb;*/
 	border-radius: 2px;
 	border-style: outset;
 	font-size: 10px;
@@ -61,9 +61,9 @@ QTextEdit#cafm_widget {
 QTreeView#projectdata_treeview {
     background-color: #ffffff;
     color: #333;
-    border: 2px solid #555;
-    border-radius: 3px;
-    padding: 3px;
+    /*border: 2px solid #555;*/
+    /*border-radius: 3px;*/
+    padding: 2px;
     background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
     min-width: 10px;
 }

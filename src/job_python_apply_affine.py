@@ -9,10 +9,20 @@ import logging
 import argparse
 import numpy as np
 import traceback
+from PIL import Image
+import zarr
+import numpy as np
+
 try:
     from swiftir import affineImage, saveImage, loadImage
 except ImportError:
     from src.swiftir import affineImage, saveImage, loadImage
+
+try:
+    import config as cfg
+except ImportError:
+    import src.config as cfg
+
 
 
 logger = logging.getLogger(__name__)
@@ -69,21 +79,22 @@ def print_command_line_syntax(args):
 '''
 
 
-
-
 if (__name__ == '__main__'):
     # len(sys.argv) = 16
     if (len(sys.argv) < 4):
         print_command_line_syntax(sys.argv)
         exit(1)
-    in_fn = sys.argv[-2] # Input File Name
-    out_fn = sys.argv[-1] # Output File Name
+    in_fn = sys.argv[-4]  # Input File Name
+    out_fn = sys.argv[-3]  # Output File Name
+    zarr_grp = sys.argv[-2]  # Zarr Group
+    ID = int(sys.argv[-1])
     rect = None
     grayBorder = False
 
     # Scan arguments (excluding program name and last 2 file names)
     i = 1
-    while (i < len(sys.argv) - 2):
+    # while (i < len(sys.argv) - 2):
+    while (i < len(sys.argv) - 4):
         logger.info("Processing option " + sys.argv[i])
         if sys.argv[i] == '-afm':
             afm_list = []
@@ -117,5 +128,12 @@ if (__name__ == '__main__'):
         logger.warning("An Exception Occurred Running 'image_apply_affine'")
         logger.warning(traceback.format_exc())
 
+    dimx, dimy = rect[2], rect[3]
+    # im = tifffile.imread(out_fn)
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+    store = zarr.open(zarr_grp)
+    # print(store.info)
+    store[ID, :, :] = np.flip(Image.open(out_fn), axis=1)
+    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     sys.stdout.close()
     sys.stderr.close()
