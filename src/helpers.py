@@ -225,7 +225,7 @@ def is_cur_scale_exported() -> bool:
 
 
 def check_for_binaries():
-    print("Checking platform-specific path to SWiFT-IR executables...")
+    # print("Checking platform-specific path to SWiFT-IR executables...")
     path = os.path.split(os.path.realpath(__file__))[0]
     if platform.system() == 'Darwin':
         bindir = os.path.join(path, 'lib', 'bin_darwin')
@@ -241,8 +241,8 @@ def check_for_binaries():
                os.path.join(bindir, 'swim')
                ]
     for f in bin_lst:
-        if os.path.isfile(f):  print('%s FOUND' % f)
-        else:  logger.warning('%s NOT FOUND' % f)
+        if os.path.isfile(f):  print(u'[\u2713] FOUND: ' + f)
+        else:  logger.warning('BINARY FILE NOT FOUND, PLEASE COMPILE: ' + f)
 
 
 def reorder_tasks(task_list, z_stride) -> list:
@@ -362,6 +362,10 @@ def get_best_path(file_path):
 
 
 def make_relative(file_path, proj_path):
+    # logger.info('Called by %s' % inspect.stack()[1].function)
+    # logger.info('make_relative:')
+    # logger.info('arg1, file_path=%s' % str(file_path))
+    # logger.info('arg1, proj_path=%s' % str(proj_path))
     rel_path = os.path.relpath(file_path, start=os.path.split(proj_path)[0])
     return rel_path
 

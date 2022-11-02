@@ -7,7 +7,6 @@ import os
 import sys
 import logging
 import subprocess as sp
-import numpy as np
 from PIL import Image
 import zarr
 import numpy as np
@@ -16,8 +15,14 @@ try:
     from helpers import is_tacc, is_linux, is_mac
 except ImportError:
     from src.helpers import is_tacc, is_linux, is_mac
-
-
+try:
+    import config as cfg
+except ImportError:
+    import src.config as cfg
+try:
+    import swiftir
+except ImportError:
+    import src.swiftir
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +41,9 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     # logger.error("Command error: \n\n" + cmd_stderr + "==========================\n")
     # logger.info("=================================================\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr})
+
+
+
 
 def print_command_line_syntax(args):
     logger.debug('Usage: %s [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' % (args[0]))
@@ -95,36 +103,38 @@ if (__name__ == '__main__'):
             exit(1)
         i += 1  # Increment to get the next option
 
-    bb_x, bb_y = rect[2], rect[3]
-    offset_x, offset_y = rect[0], rect[1]
 
-    a = afm_list[0]
-    c = afm_list[1]
-    e = afm_list[2] + offset_x
-    b = afm_list[3]
-    d = afm_list[4]
-    f = afm_list[5] + offset_y
 
-    my_path = os.path.split(os.path.realpath(__file__))[0]
+    if not cfg.USE_OPENCV:
+        bb_x, bb_y = rect[2], rect[3]
+        offset_x, offset_y = rect[0], rect[1]
 
-    if is_tacc():   mir_c = my_path + '/lib/bin_tacc/mir'
-    elif is_mac():  mir_c = my_path + '/lib/bin_darwin/mir'
-    else:           mir_c = my_path + '/lib/bin_linux/mir'
+        a = afm_list[0]
+        c = afm_list[1]
+        e = afm_list[2] + offset_x
+        b = afm_list[3]
+        d = afm_list[4]
+        f = afm_list[5] + offset_y
 
-    # TODO Use pillow to store median greyscale value for each image in list, for now just use 128
-    mir_script = \
-        'B %d %d 1\n' \
-        'Z 128\n' \
-        'F %s\n' \
-        'A %g %g %g %g %g %g\n' \
-        'RW %s\n' \
-        'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
-    o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+        my_path = os.path.split(os.path.realpath(__file__))[0]
 
-    import os
-    path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
-    with open(path, 'a+') as f:
-        f.write('\n---------------------------\n' + mir_script + '\n')
+        if is_tacc():   mir_c = my_path + '/lib/bin_tacc/mir'
+        elif is_mac():  mir_c = my_path + '/lib/bin_darwin/mir'
+        else:           mir_c = my_path + '/lib/bin_linux/mir'
+
+        # TODO Use pillow to store median greyscale value for each image in list, for now just use 128
+        mir_script = \
+            'B %d %d 1\n' \
+            'Z 128\n' \
+            'F %s\n' \
+            'A %g %g %g %g %g %g\n' \
+            'RW %s\n' \
+            'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
+        o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+
+        path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
+        with open(path, 'a+') as f:
+            f.write('\n---------------------------\n' + mir_script + '\n')
 
     # Python Implementation
     # try:
@@ -133,7 +143,7 @@ if (__name__ == '__main__'):
     #     logger.warning("An Exception Occurred Running 'image_apply_affine'")
     #     logger.warning(traceback.format_exc())
 
-    # dimx, dimy = rect[2], rect[3]
+    dimx, dimy = rect[2], rect[3]
     # im = tifffile.imread(out_fn)
     Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
     store = zarr.open(zarr_grp)

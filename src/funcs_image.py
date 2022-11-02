@@ -363,8 +363,7 @@ def ApplyBiasFuncs(align_list):
             align_item = item['proc']
             bias_mat = BiasMat(align_idx, bias_funcs)
             c_afm = align_item.setCafm(c_afm, bias_mat=bias_mat)
-            logger.critical('\ncafm = %s' % format_cafm(c_afm))
-            logger.critical('\ncafm = %s' % format_cafm(c_afm))
+            logger.info('\ncafm = %s' % format_cafm(c_afm))
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(align_list, bias_funcs=bias_funcs)
     return c_afm_init
@@ -393,7 +392,7 @@ def InitCafm(bias_funcs):
     c_afm_init = composeAffine(init_rot_mat, c_afm_init)
     c_afm_init = composeAffine(init_trans_mat, c_afm_init)
 
-    logger.critical('Returning: %s' % format_cafm(c_afm_init))
+    logger.info('Returning: %s' % format_cafm(c_afm_init))
 
     return c_afm_init
 
@@ -422,7 +421,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 
 def SetStackCafm(scale_dict, null_biases=False):
     '''Calculate cafm across the whole stack with optional bias correction'''
-    logger.critical('>>>> Setting Stack CAFM (null_biases=%s) >>>>' % str(null_biases))
+    logger.info('>>>> Setting Stack CAFM (null_biases=%s) >>>>' % str(null_biases))
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
         SetStackCafm(scale_dict, null_biases=False)
@@ -449,8 +448,8 @@ def SetStackCafm(scale_dict, null_biases=False):
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(al_stack, bias_funcs=bias_funcs)
 
-    logger.critical('Returning: %s' % format_cafm(c_afm_init))
-    logger.critical('<<<< Setting Stack CAFM <<<<\n')
+    logger.info('Returning: %s' % format_cafm(c_afm_init))
+    logger.info('<<<< Setting Stack CAFM <<<<\n')
     return c_afm_init
 
 
@@ -590,7 +589,7 @@ array([[   0,    0],
                 int(-border_width_y),
                 int(siz[0] + 2 * border_width_x),
                 int(siz[1] + 2 * border_width_y)]
-        logger.critical('Returning: %s' % str(rect))
+        logger.info('Returning: %s' % str(rect))
     else:
         model_bounds = None
         siz = ImageSize(al_stack[0]['images']['base']['filename'])
@@ -605,7 +604,7 @@ array([[   0,    0],
                            model_bounds[:, 0].max() - siz[0],
                            model_bounds[:, 1].max() - siz[0])
         rect = [int(-border_width), int(-border_width), int(siz[0] + 2 * border_width), int(siz[0] + 2 * border_width)]
-        logger.critical('ComputeBoundingRectangle Return: %s' % str(rect))
+        logger.info('ComputeBoundingRectangle Return: %s' % str(rect))
 
     # logger.critical('<<<< ComputeBoundingRect <<<<')
     return rect

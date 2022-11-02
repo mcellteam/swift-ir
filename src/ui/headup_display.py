@@ -15,10 +15,11 @@ from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 import src.config as cfg
 
-__all__ = ['HeadupDisplay']
+# __all__ = ['HeadupDisplay', 'HudWorker']
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger("hud")
+logger.propagate = False # Prevents Message Propagation To The Root Handler
 
 
 class Signaller(QObject):
@@ -163,7 +164,7 @@ class HeadupDisplay(QWidget):
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
-        # QApplication.processEvents()
+        QApplication.processEvents()
 
     @Slot()
     def clear_display(self):

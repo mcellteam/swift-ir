@@ -13,8 +13,8 @@ from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
 from src.mp_queue import TaskQueue
-from src.image_funcs import SetStackCafm, ComputeBoundingRect, ImageSize
-from src.zarr_funcs import preallocate_zarr_aligned
+from src.funcs_image import SetStackCafm, ComputeBoundingRect, ImageSize
+from src.funcs_zarr import preallocate_zarr_aligned
 
 
 
@@ -24,11 +24,15 @@ logger = logging.getLogger(__name__)
 
 
 def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
-    logger.critical('>>>> Generate Aligned >>>>')
+    logger.info('>>>> Generate Aligned >>>>')
     tryRemoveDatFiles(scale)
     Z_STRIDE = 0
-    job_script = 'job_apply_affine.py'
-    # job_script = 'job_python_apply_affine.py'
+
+    if cfg.USE_OPENCV:
+        job_script = 'job_python_apply_affine.py'
+    else:
+        '''Default'''
+        job_script = 'job_apply_affine.py'
     path = os.path.split(os.path.realpath(__file__))[0]
     job_script = os.path.join(path, job_script)
     zarr_group = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
@@ -39,7 +43,6 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     print_example_cafms(scale_dict)
     SetStackCafm(scale_dict, null_biases=cfg.data.null_cafm()) #***
     print_example_cafms(scale_dict)
-
     alstack = scale_dict['alignment_stack']
     save_bias_analysis(alstack, os.path.join(cfg.data.dest(), scale, 'bias_data'))
     rect = getSetBoundingRect(scale, alstack)
@@ -69,7 +72,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     except: print_exception()
     task_queue.stop()
     del task_queue
-    logger.critical('<<<< Generate Aligned End <<<<')
+    logger.info('<<<< Generate Aligned End <<<<')
 
 def getSetBoundingRect(scale, alstack):
     if cfg.data.has_bb():
@@ -101,8 +104,6 @@ def makeTasksList(al_substack, job_script, rect, zarr_group):
         args_list.append(args)
     return args_list
 
-
-
 def tryRemoveFile(directory):
     try:
         os.remove(directory)
@@ -110,9 +111,14 @@ def tryRemoveFile(directory):
         pass
 
 def tryRemoveDatFiles(scale):
+    bb_str = str(cfg.data.has_bb())
+    poly_order_str = str(cfg.data.poly_order())
+    null_cafm_str = str(cfg.data.null_cafm())
     bias_data_path = os.path.join(cfg.data.dest(), scale, 'bias_data')
-    tryRemoveFile(os.path.join(cfg.data.dest(), 'swim_log.dat'))
-    tryRemoveFile(os.path.join(cfg.data.dest(), 'mir_commands.dat'))
+    tryRemoveFile(os.path.join(cfg.data.dest(), scale, 'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
+    tryRemoveFile(os.path.join(cfg.data.dest(), scale, 'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
+    tryRemoveFile(os.path.join(cfg.data.dest(), scale, 'swim_log.dat'))
+    tryRemoveFile(os.path.join(cfg.data.dest(), scale, 'mir_commands.dat'))
     tryRemoveFile(os.path.join(cfg.data.dest(), 'fdm_new.txt'))
     tryRemoveFile(os.path.join(bias_data_path, 'snr_1.dat'))
     tryRemoveFile(os.path.join(bias_data_path, 'bias_x_1.dat'))

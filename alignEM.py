@@ -56,22 +56,15 @@ import time
 # os.environ['QT_API'] = 'pyside2'
 # os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
-
 import os, sys, signal, logging, argparse
 import src.config as cfg
-from src.helpers import print_exception
+from src.helpers import check_for_binaries, print_exception
 from qtpy import QtCore
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication, QTimer
 from src.ui.main_window import MainWindow
-
-from qtpy.QtGui import QOpenGLContext, QOpenGLDebugLogger, QOpenGLDebugMessage
+from src.utils.add_logging_level import addLoggingLevel
 from qtpy import QtWebEngineCore
-
-# import cProfile, pstats, io
-# from pstats import SortKey
-# cfg.pr = cProfile.Profile()
-# cfg.pr.enable()
 
 class CustomFormatter(logging.Formatter):
 
@@ -87,26 +80,45 @@ class CustomFormatter(logging.Formatter):
         logging.INFO: grey + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.CRITICAL: bold_red + format + reset,
     }
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
         return formatter.format(record)
 
-logger = logging.getLogger()
-if logger.hasHandlers():  logger.handlers.clear()
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-ch.setFormatter(CustomFormatter())
-logger.addHandler(ch)
-
-fh = logging.FileHandler('messages.log')
-logger.addHandler(fh)
-
 
 
 def main():
+    logger = logging.getLogger()
+    # logger = logging.getLogger(__name__)
+    # logging.propagate = False  # Prevents Message Propagation To The Root Handler
+
+    addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
+    logging.getLogger('init').setLevel("VERSIONCHECK")
+    logging.getLogger('init').versioncheck('QtCore.__version__ = %s' % QtCore.__version__)
+    logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
+    logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
+
+    # logging.IMPORTANT
+    # >>> logging.getLogger(__name__).setLevel("TRACE")
+    # >>> logging.getLogger(__name__).trace('that worked')
+    # >>> logging.trace('so did this')
+    # >>> logging.TRACE
+    # logging.IM
+
+    # logger.propagate = False # TESTING
+
+    # logger = logging.getLogger(__name__)
+
+
+
+    check_for_binaries()
+
+    '''Save Logs to 'messages.log' '''
+    # fh = logging.FileHandler('messages.log')
+    # logger.addHandler(fh)
+
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
     # parser.add_argument('--api', default='pyside6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
@@ -116,46 +128,49 @@ def main():
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--no_embed_ng', action='store_true', help='Do not embed the neuroglancer browser if True')
+    parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
+    parser.add_argument('--no_multiview', action='store_true', help='Use single view rather than three-panel view')
+    parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
-    LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
+    if logger.hasHandlers():  logger.handlers.clear() #orig
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(CustomFormatter())
+    logger.addHandler(ch)
+
+    LOGLEVELS = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     if args.debug:  logger.setLevel(logging.DEBUG)
     if args.debug_mp: cfg.DEBUG_MP = True
     else:  logger.setLevel(LOGLEVELS[args.loglevel])
     if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
+    if args.no_splash: cfg.NO_SPLASH = True
+    if args.no_multiview: cfg.MULTIVIEW = False
+    if args.opencv: cfg.USE_OPENCV = True
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-
-    logger.info('Turning On Fork Safety...')
+    logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    logger.info('Disabling Web Security...')
+    logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=3' # suppress JS warnings
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=2'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
-    logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
-    logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
-    logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
+
 
     if qtpy.QT6:
         logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
         logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
 
-    # cfg.opengllogger = QOpenGLDebugLogger()
-    # cfg.opengllogger.initialize()
-    # cfg.opengllogger.loggedMessages()
-    # cfg.opengllogger.messageLogged.connect(cfg.opengllogger.handleLoggedMassage)
-    # cfg.opengllogger.startLogging()
-
-
     # Ref: https://github.com/numpy/numpy/issues/14474
 
-    # Qt5 Only
     if qtpy.QT5:
         logger.info('Setting Qt.AA_EnableHighDpiScaling')
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -170,7 +185,6 @@ def main():
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
-
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
@@ -178,23 +192,19 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
 
-    cfg.main_window = cfg.w = MainWindow(title="AlignEM-SWiFT")
-    # cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-    # cfg.main_window.setGeometry(100,100, 20, 20)
+    cfg.main_window = MainWindow()
     # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+ #Todo use app.aboutToQuit
     # app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
-    cfg.main_window.show()
+    logger.info('Working Directory: %s' % os.getcwd())
     logger.info('Showing AlignEM-SWiFT')
+    cfg.main_window.show()
 
-    logger.info('Running sys.exit(app.exec())...')
-    # sys.exit(app.exec())
-
+    logger.info('Calling sys.exit(app.exec())')
     try:
         sys.exit(app.exec())
     except:
         pass
         # print_exception()
-        # logger.info('Trying sys.exit(app.exec_())...')
         # sys.exit(app.exec_())
     finally:
         sys.exit()

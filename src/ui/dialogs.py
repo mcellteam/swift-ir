@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#!/usr/bin/env python3
-
 import os, logging, textwrap
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
@@ -9,7 +7,7 @@ from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridL
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
-from src.image_funcs import ImageSize
+from src.funcs_image import ImageSize
 from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
@@ -50,7 +48,7 @@ class ConfigDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
         super(ConfigDialog, self).__init__()
-        logger.critical('>>>> Config Dialog Start >>>>')
+        logger.info('>>>> Config Dialog Start >>>>')
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()
         # g.moveCenter(self.parent.geometry().center())

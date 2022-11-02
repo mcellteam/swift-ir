@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 Z_STRIDE = 1
 
 def generate_zarr_scales():
-    logger.critical('>>>> Generate Zarr >>>>')
+    logger.info('>>>> Generate Zarr >>>>')
     # Todo conditional handling of skips
 
     src = os.path.abspath(cfg.data['data']['destination_path'])
@@ -45,7 +45,7 @@ def generate_zarr_scales():
     except: print_exception()
     task_queue.stop()
     del task_queue
-    logger.critical('<<<< Generate Zarr End <<<<')
+    logger.info('<<<< Generate Zarr End <<<<')
 
 
 if __name__ == '__main__':

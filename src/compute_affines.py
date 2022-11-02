@@ -224,7 +224,7 @@ def write_run_to_file(scale=None):
     results = 'results'
     swim_input = 'swim=%.3f' % cfg.main_window.get_swim_input()
     whitening_input = 'whitening=%.3f' % cfg.main_window.get_whitening_input()
-    # details = [date, time, scale, swim_input, whitening_input, snr_avg]
+    # details = [date, time, s, swim_input, whitening_input, snr_avg]
     scale_str = 's' + str(get_scale_val(scale))
     details = [scale, timestamp]
     fn = '_'.join(details) + '.json'
