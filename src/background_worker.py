@@ -91,8 +91,10 @@ class BackgroundWorker(QRunnable):
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
-            logger.info('BackgroundWorker.run traceback:')
-            traceback.print_exc()
+            #Todo look into why this exception gets triggered
+
+            # logger.info('BackgroundWorker.run traceback:')
+            # traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
