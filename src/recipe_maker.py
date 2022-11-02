@@ -724,8 +724,10 @@ class align_ingredient:
         self.flags = None
         if len(toks) > 11:
             self.flags = toks[11:]  # Note flags: will be a str or list of strs
-        logger.debug(
-            '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
+        #    warp_matrix[0,2]=dx
+        #    warp_matrix[1,2]=dy
+        # logger.debug(
+        #     '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
 
     # offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None):
     def run_swim_c(self):

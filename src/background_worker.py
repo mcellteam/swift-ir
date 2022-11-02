@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import sys
 import logging
+import sys
 import traceback
+
 from qtpy.QtCore import Slot, Signal, QObject, QRunnable
-from src.helpers import print_exception
 
 __all__ = ['BackgroundWorker']
 

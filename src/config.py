@@ -13,6 +13,16 @@ main_window = None
 # viewports = None
 opengllogger = None
 
+selected = None # type = neuroglancer.json_wrappers.typed_string_map.<locals>.Map (s.selected_values)
+'''
+cfg.selected
+AlignEM [2]: Map({"ref_4": {"value": 145}, "base_4": {"value": 56}, "matchpoint_ref": {}, "matchpoint_base": {}, "aligned_4": {"value": 149}})
+'''
+
+mouse_coords = None # type = numpy.nd array (s.mouse_voxel_coords)
+matchpoint_layer = None
+viewport_temp_state = None
+
 '''Default Window Size'''
 WIDTH, HEIGHT = 1180, 800
 # WIDTH, HEIGHT = 1500, 1200

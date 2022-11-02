@@ -4,36 +4,28 @@
 data in the directory that is served to any web page running on a machine that
 can connect to the web server"""
 
-import os
-import copy
-import shutil
-import atexit
-import inspect
-import logging
-import asyncio
-import datetime
 import argparse
+import atexit
+import copy
+import logging
+import os
+import shutil
 import tempfile
-import threading
-import concurrent
-import http.server
 from math import floor
-import tornado.web
-import tornado.netutil
-import tornado.httpserver
+import numpy as np
+
 import neuroglancer as ng
-import neuroglancer.server
-import neuroglancer.random_token
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
-from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, are_images_imported, obj_to_string
-from src.funcs_image import ImageSize, ComputeBoundingRect
-from src.funcs_zarr import get_zarr_tensor_from_path
+
+import src.config as cfg
+from src.funcs_image import ImageSize
 # from src.funcs_ng import SimpleHTTPServer, launch_server, write_some_annotations
 from src.funcs_ng import SimpleHTTPServer, launch_server
-import src.config as cfg
-from neuroglancer.json_utils import decode_json, encode_json
-if cfg.USE_TENSORSTORE: import tensorstore as ts
+from src.funcs_zarr import get_zarr_tensor_from_path
+from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string
+
+if cfg.USE_TENSORSTORE: pass
 
 # USE_TORNADO = False
 USE_TORNADO = True
@@ -44,12 +36,15 @@ logger = logging.getLogger(__name__)
 
 KEEP_RUNNING = True
 
+
 def keep_running():
     return KEEP_RUNNING
+
 
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal(int)
+
 
 class NgHost(QRunnable):
     # stateChanged = Signal(str)
@@ -67,7 +62,7 @@ class NgHost(QRunnable):
         self.states = []
         self.filename = 'ng_state.json'
         self.annotation_layer_name = 'annotations'
-        self.viewport = ng.Viewer() #(SimpleHTTP)
+        self.viewport = ng.Viewer()  # (SimpleHTTP)
 
         # self.cur_index = None
         # self.cur_index = cfg.data.layer()
@@ -100,8 +95,7 @@ class NgHost(QRunnable):
         else:
             self.al_img_siz = None
 
-        self.num_actions = 0 # for 'nglogger' method
-
+        self.num_actions = 0  # for 'add_matchpoint' method
 
     def __del__(self):
         logger.warning('__del__ was called on ng_host worker')
@@ -174,13 +168,13 @@ class NgHost(QRunnable):
                         f"Port={self.http_server.server_port}, Socket={self.http_server.socket}, "
                         f"Type={self.http_server.socket_type}, Address={self.http_server.server_address}")
 
-
-    def initViewer(self, l=None):
+    def initViewer(self):
         # logger.info('Initializing NG Viewer (called by %s)' % inspect.stack()[1].function)
         logger.info('Initializing Thread For NG Client (Scale %d)...' % self.sf)
+        cfg.main_window.hud.post('Initializing Thread For NG Client (Scale %d)...' % self.sf)
 
         app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        os.chdir(app_dir) # This sucks but is necessary to reverse simple HTTP server shortcomings
+        os.chdir(app_dir)  # This sucks but is necessary to reverse simple HTTP server shortcomings
 
         # self.viewport = ng.Viewer()
         # self.viewport = ng.UnsynchronizedViewer()
@@ -191,7 +185,7 @@ class NgHost(QRunnable):
         is_aligned = is_arg_scale_aligned(self.scale)
 
         if is_aligned:
-            if self.al_img_siz == None:
+            if self.al_img_siz is None:
                 self.al_img_siz = ImageSize(cfg.data.path_aligned(s=self.scale))
             x_offset = (self.al_img_siz[0] - self.base_img_siz[0]) / 2
             y_offset = (self.al_img_siz[1] - self.base_img_siz[1]) / 2
@@ -217,7 +211,7 @@ class NgHost(QRunnable):
                     self.refLV = ng.LocalVolume(
                         data=unal_dataset,
                         dimensions=self.coordinate_space,
-                        voxel_offset=[1, x_offset, y_offset], # voxel offset of 1
+                        voxel_offset=[1, x_offset, y_offset],  # voxel offset of 1
                     )
                     self.baseLV = ng.LocalVolume(
                         data=unal_dataset,
@@ -252,20 +246,21 @@ class NgHost(QRunnable):
             if cfg.MULTIVIEW:
                 s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV)
                 s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV)
-                s.layers['points'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space)
+                s.layers['matchpoint_ref'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space)
+                s.layers['matchpoint_base'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space)
                 if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV)
 
                 if is_aligned:
                     rect = cfg.data.bounding_rect()
                     s.position = [cfg.data.layer(), rect[3] / 2, rect[2] / 2]
-                    s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.ref_l], layout=self.layout),
-                                              ng.LayerGroupViewer(layers=[self.base_l, 'points'], layout=self.layout),
+                    s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.ref_l, 'matchpoint_ref'], layout=self.layout),
+                                              ng.LayerGroupViewer(layers=[self.base_l, 'matchpoint_base'], layout=self.layout),
                                               ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout)])
                 else:
                     # s.position = [cfg.data.layer(), img_dim[0] / 2, img_dim[1] / 2]
                     s.position = [cfg.data.layer(), self.base_img_siz[1] / 2, self.base_img_siz[0] / 2]
-                    s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.ref_l], layout=self.layout),
-                                              ng.LayerGroupViewer(layers=[self.base_l, 'points'], layout=self.layout)])
+                    s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.ref_l, 'matchpoint_ref'], layout=self.layout),
+                                              ng.LayerGroupViewer(layers=[self.base_l, 'matchpoint_base'], layout=self.layout)])
             else:
                 s.layers['l'] = ng.ImageLayer(source=layer)
                 s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['l'], layout=self.layout)])
@@ -276,7 +271,7 @@ class NgHost(QRunnable):
                 s.cross_section_background_color = "#004060"
 
             if cfg.USE_TENSORSTORE:
-                s.cross_section_scale = (1e-8)*2
+                s.cross_section_scale = 1e-8 * 2
 
             # s.layers['annotation'] = neuroglancer.AnnotationLayer()
             # annotations = s.layers['annotation'].annotations
@@ -306,7 +301,7 @@ class NgHost(QRunnable):
         # self.viewport.actions.add('screenshot', self.take_screenshot)
         self.viewport.actions.add('l-right', layer_right)
         self.viewport.actions.add('l-left', layer_left)
-        self.viewport.actions.add('nglogger', self.nglogger)
+        self.viewport.actions.add('add_matchpoint', self.add_matchpoint)
         with self.viewport.config_state.txn() as s:
             # s.status_messages['hello'] = 'Add a prompt for neuroglancer'
             # s.input_event_bindings.viewer['control+keys'] = 'anno-save'
@@ -314,14 +309,13 @@ class NgHost(QRunnable):
             # s.input_event_bindings.viewer['keyb'] = 'screenshot'
             s.input_event_bindings.viewer['keyl'] = 'l-left'
             s.input_event_bindings.viewer['keyr'] = 'l-right'
-            s.input_event_bindings.viewer['keyl'] = 'nglogger'
+            s.input_event_bindings.viewer['keym'] = 'add_matchpoint'
             s.show_ui_controls = True
             s.show_panel_borders = False
             # s.viewer_size = None
             # s.status_messages['hello'] = "AlignEM-SWiFT: Scale: %d Viewer URL: %s  Protocol: %s" % \
             #                              (cfg.data.scale_val(), self.viewport.get_viewer_url(),
             #                              self.http_server.protocol_version)
-
 
         # if USE_TORNADO:
         #     logger.info('Stored Viewer URL ( self.server_url ): %s' % self.server_url)
@@ -350,14 +344,30 @@ class NgHost(QRunnable):
             print_exception()
 
     '''Note: weird mapping of axes'''
-    def set_layout_yz(self):      self.layout = 'xy'; self.initViewer()
-    def set_layout_xy(self):      self.layout = 'yz'; self.initViewer()
-    def set_layout_xz(self):      self.layout = 'xz'; self.initViewer()
-    def set_layout_xy_3d(self):   self.layout = 'yz-3d'; self.initViewer()
-    def set_layout_yz_3d(self):   self.layout = 'xy-3d'; self.initViewer()
-    def set_layout_xz_3d(self):   self.layout = 'xz-3d'; self.initViewer()
-    def set_layout_3d(self):      self.layout = '3d'; self.initViewer()
-    def set_layout_4panel(self):  self.layout = '4panel'; self.initViewer()
+
+    def set_layout_yz(self):
+        self.layout = 'xy'; self.initViewer()
+
+    def set_layout_xy(self):
+        self.layout = 'yz'; self.initViewer()
+
+    def set_layout_xz(self):
+        self.layout = 'xz'; self.initViewer()
+
+    def set_layout_xy_3d(self):
+        self.layout = 'yz-3d'; self.initViewer()
+
+    def set_layout_yz_3d(self):
+        self.layout = 'xy-3d'; self.initViewer()
+
+    def set_layout_xz_3d(self):
+        self.layout = 'xz-3d'; self.initViewer()
+
+    def set_layout_3d(self):
+        self.layout = '3d'; self.initViewer()
+
+    def set_layout_4panel(self):
+        self.layout = '4panel'; self.initViewer()
 
     def url(self):
         while True:
@@ -379,23 +389,27 @@ class NgHost(QRunnable):
         state.layers[self.annotation_layer_name] = ng.PointAnnotationLayer()
         return state
 
-    def remove_zero_segments(self):
-        for state in self.states:
-            segment_ids = self.get_state_segment_ids(state)
-            if 0 in segment_ids:
-                segment_ids.remove(0)
+    def add_matchpoint(self, s):
 
-    def nglogger(self, s):
-        import numpy as np
         # global num_actions
         self.num_actions += 1
-        # with self.viewport.config_state.txn() as st:
-        #     st.status_messages['hello'] = ('Got action %d: mouse position = %r' %
-        #                                    (self.num_actions, s.mouse_voxel_coordinates))
+        with self.viewport.config_state.txn() as st:
+            st.status_messages['hello'] = ('Got action %d: mouse position = %r' %
+                                           (self.num_actions, s.mouse_voxel_coordinates))
         coords = np.array(s.mouse_voxel_coordinates)
         cfg.main_window.hud.post('Matchpoint Added: %s' % str(coords))
 
-        logger.info('Matchpoint At: ', coords)
+
+        cfg.selected = s.selected_values
+        cfg.mouse_coords = coords
+        cfg.matchpoint_layer = self.viewport.state.position[0]
+        cfg.viewport_temp_state = copy.deepcopy(self.viewport.state)
+
+        print('cfg.selected             : %s' % str(cfg.selected))
+        print('cfg.mouse_coords         : %s' % str(cfg.mouse_coords))
+        print('cfg.matchpoint_layer     : %s' % str(cfg.matchpoint_layer))
+        print('cfg.viewport_temp_state  : %s' % str(cfg.viewport_temp_state))
+
 
         # print('Layer selected values:', (np.array(list(self.viewport.state.layers['segmentation'].segments))))
 
@@ -406,15 +420,16 @@ class NgHost(QRunnable):
                     id=repr(point),
                     point=point)
                 # logger.critical(type(s.layers['points'])) <class 'neuroglancer.viewer_state.ManagedLayer'>
-                s.layers['points'].annotations = [point_anno]
+                s.layers['matchpoint_ref'].annotations = [point_anno]
+                s.layers['matchpoint_base'].annotations = [point_anno]
+                # s.layers['points'].annotations = [point_anno]
         except:
             print_exception()
-        finally:
-            self.baseLV.invalidate()
+        # finally:
+        #     self.baseLV.invalidate()
 
-
-    def take_screenshot(self, dir=None):
-        if dir == None: dir = cfg.data.dest()
+    def take_screenshot(self, directory=None):
+        if directory is None: directory = cfg.data.dest()
         ss = ScreenshotSaver(viewer=self.viewport, directory=dir)
         ss.capture()
 
@@ -427,8 +442,6 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     NgHost(args.source, args.bind, args.port)
-
-
 
 '''
 NOTES: 

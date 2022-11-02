@@ -6,13 +6,15 @@ Adapted from:
 https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 '''
 
-import time
-import random
 import logging
-from qtpy.QtCore import QObject, QThread, Qt, QSize
+import random
+import time
+
+from qtpy.QtCore import QObject, QThread, Qt
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
+
 import src.config as cfg
 
 # __all__ = ['HeadupDisplay', 'HudWorker']
@@ -25,6 +27,7 @@ logger.propagate = False # Prevents Message Propagation To The Root Handler
 class Signaller(QObject):
     signal = Signal(str, logging.LogRecord)
 
+
 class QtHandler(logging.Handler):
     def __init__(self, slotfunc, *args, **kwargs):
         super(QtHandler, self).__init__(*args, **kwargs)
@@ -34,6 +37,7 @@ class QtHandler(logging.Handler):
     def emit(self, record):
         s = self.format(record)
         self.signaller.signal.emit(s, record)
+
 
 class HudWorker(QObject):
     @Slot()
@@ -86,7 +90,8 @@ class HeadupDisplay(QWidget):
         # fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
         # fs = '%(asctime)s [%(levelname)s] %(qThreadName)-10s | %(message)s'
         # fs = '%(asctime)s [%(levelname)s] %(message)s'
-        fs = '%(asctime)s %(message)s'
+        fs = '[%(levelname)s] %(asctime)s  %(message)s'
+        # fs = '%(asctime)s %(message)s'
         # fs = '%(levelname)-8s %(asctime)s %(qThreadname)-15s %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
         h.setFormatter(formatter)
@@ -133,18 +138,11 @@ class HeadupDisplay(QWidget):
         if self.hud_worker_thread.isRunning():
             self.kill_thread()
 
-    # def minimumSizeHint(self):
-    #     return QSize(50, 50)
-
-    # def sizeHint(self):
-    #     return QSize(500, 200)
-
     def done(self):
         txt = self.textedit.toPlainText()
         self.textedit.undo()
         last_line = txt.split('[INFO]')[-1].lstrip()
         self.post(last_line + 'done.')
-
 
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):

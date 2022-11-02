@@ -14,12 +14,14 @@ from copy import deepcopy
 from dataclasses import dataclass
 import src.config as cfg
 from src.data_structs import data_struct
-from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, get_scale_val
+from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
+    get_scale_val
 from src.funcs_image import ComputeBoundingRect, ImageSize
 
 __all__ = ['DataModel']
 
 logger = logging.getLogger(__name__)
+
 
 class DataModel:
     """ Encapsulate data model dictionary and wrap with methods for convenience """
@@ -102,7 +104,7 @@ class DataModel:
             logger.warning("current_layer Key Is Undefined -> Setting Layer to 0")
             try:
                 # self._data['data']['current_layer'] = 0
-                self.set_layer(0) #Todo check this
+                self.set_layer(0)  # Todo check this
                 return self.layer()
             except:
                 print_exception()
@@ -118,10 +120,10 @@ class DataModel:
         '''
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates),role,s,l))
+        logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
             coordinates
-            )
+        )
 
     def matchpoints(self, role, s=None, l=None) -> None:
         '''Example Usage:
@@ -246,8 +248,10 @@ class DataModel:
     def n_imgs(self) -> int:
         '''Returns # of imported images.
         #TODO Check this for off-by-one bug'''
-        try: n_imgs = len(self._data['data']['scales']['scale_1']['alignment_stack']); return n_imgs
-        except:  logger.warning('No Images Found - Returning 0'); return 0
+        try:
+            n_imgs = len(self._data['data']['scales']['scale_1']['alignment_stack']); return n_imgs
+        except:
+            logger.warning('No Images Found - Returning 0'); return 0
 
     def scales(self) -> list[str]:
         '''Get scales list.
@@ -285,7 +289,6 @@ class DataModel:
         except:
             logger.warning('Unable to To Return Skips List');
             return []
-
 
     def skips_by_name(self, s=None) -> list[str]:
         '''Returns the list of skipped images at the current s'''
@@ -361,7 +364,7 @@ class DataModel:
     def path_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        #Todo -- Refactor!
+        # Todo -- Refactor!
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
         except:
@@ -397,33 +400,33 @@ class DataModel:
     def set_destination(self, s):
         self._data['data']['destination_path'] = s
 
-    def set_scale(self, x:str) -> None:
+    def set_scale(self, x: str) -> None:
         '''Sets the Current Scale.'''
         self._data['data']['current_scale'] = x
 
-    def set_layer(self, x:int) -> None:
+    def set_layer(self, x: int) -> None:
         assert isinstance(x, int)
         logger.info('Setting Layer to %s' % str(x))
         '''Sets the Current Layer as Integer.'''
         self._data['data']['current_layer'] = int(x)
 
-    def set_skip(self, b:bool, s=None, l=None) -> None:
+    def set_skip(self, b: bool, s=None, l=None) -> None:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['data']['scales'][s]['alignment_stack'][l]['skipped'] = b
 
-    def set_whitening(self, f:float) -> None:
+    def set_whitening(self, f: float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
         self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['whitening_factor'] = f
 
-    def set_swim_window(self, f:float) -> None:
+    def set_swim_window(self, f: float) -> None:
         '''Sets the SWIM Window for the Current Layer.'''
         self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['win_scale_factor'] = f
 
-    def set_use_bounding_rect(self, b:bool, s=None) -> None:
+    def set_use_bounding_rect(self, b: bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None:
             for s in self.scales():
@@ -431,15 +434,15 @@ class DataModel:
         else:
             self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
 
-    def set_bounding_rect(self, bounding_rect:list, s=None) -> None:
+    def set_bounding_rect(self, bounding_rect: list, s=None) -> None:
         if s == None: s = self.scale()
         self._data['data']['scales'][s]['bounding_rect'] = bounding_rect
 
-    def set_poly_order(self, x:int) -> None:
+    def set_poly_order(self, x: int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
         self._data['data']['scales'][self.scale()]['poly_order'] = x
 
-    def set_use_poly_order(self, b:bool) -> None:
+    def set_use_poly_order(self, b: bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
         self._data['data']['scales'][self.scale()]['null_cafm_trends'] = bool(b)
 
@@ -454,7 +457,7 @@ class DataModel:
         except:
             logger.warning('Unable to set alignment dict')
 
-    def set_afm(self, afm:list, s=None, l=None) -> None:
+    def set_afm(self, afm: list, s=None, l=None) -> None:
         '''set afm as list of lists of floats'''
         if s == None: s = self.scale()
         if l == None: l = self.layer()
@@ -464,7 +467,7 @@ class DataModel:
         except:
             print_exception()
 
-    def set_cafm(self, cafm:list, s=None, l=None) -> None:
+    def set_cafm(self, cafm: list, s=None, l=None) -> None:
         '''set cafm as list of lists of floats'''
         if s == None: s = self.scale()
         if l == None: l = self.layer()
@@ -542,7 +545,7 @@ class DataModel:
         if scale == None: scale = cfg.data.scale()
         return statistics.fmean(self.snr_list(scale=scale))
 
-    def aligned_dict(self, s = None) -> dict:
+    def aligned_dict(self, s=None) -> dict:
         if s == None: s = self.scale()
         al_stack = self._data['data']['scales'][s]['alignment_stack']
         return al_stack
@@ -592,25 +595,25 @@ class DataModel:
         '''Checks if the current s is able to be aligned'''
         if cfg.data.dest() in ('', None):
             logger.debug("is_alignable returning False because: "
-                           "cfg.data.dest() in ('', None) is True")
+                         "cfg.data.dest() in ('', None) is True")
             return False
 
         if not are_images_imported():
             logger.debug("is_alignable returning False because: "
-                           "not are_images_imported() is True")
+                         "not are_images_imported() is True")
             return False
         scales_list = self.scales()
         cur_scale_key = self.scale()
         coarsest_scale = scales_list[-1]
         if cur_scale_key == coarsest_scale:
             logger.debug("is_alignable returning True because: "
-                        "cur_scale_key == coarsest_scale) is True")
+                         "cur_scale_key == coarsest_scale) is True")
             return True
         cur_scale_index = scales_list.index(cur_scale_key)
         next_coarsest_scale_key = scales_list[cur_scale_index + 1]
         if not is_arg_scale_aligned(next_coarsest_scale_key):
             logger.debug("is_alignable returning False because: "
-                           "not is_arg_scale_aligned(next_coarsest_scale_key) is True")
+                         "not is_arg_scale_aligned(next_coarsest_scale_key) is True")
             return False
         else:
             logger.debug('Returning True')
@@ -679,7 +682,7 @@ class DataModel:
             print_exception()
 
     def are_there_any_skips(self) -> bool:
-        if cfg.data.skips_list() == []:
+        if len(cfg.data.skips_list()) > 0:
             return False
         else:
             return True
@@ -725,8 +728,8 @@ class DataModel:
                         new_layer = deepcopy(l)
                         new_stack.append(new_layer)
                     self._data['data']['scales'][scale_key] = {'alignment_stack': new_stack,
-                                                                       'method_data': {
-                                                                           'alignment_option': 'init_affine'}}
+                                                               'method_data': {
+                                                                   'alignment_option': 'init_affine'}}
         else:
             logger.info("No input: Scales not changed")
 
@@ -952,6 +955,7 @@ class DataModel:
                 layer['images'][role]['metadata']['match_points'] = []
                 layer['images'][role]['metadata']['annotations'] = []
 
+
 @dataclass
 class StripNullFields:
     def asdict(self):
@@ -970,7 +974,6 @@ class StripNullFields:
                 else:
                     result[k] = v
         return result
-
 
 
 if __name__ == '__main__':
