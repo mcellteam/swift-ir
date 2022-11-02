@@ -1,0 +1,68 @@
+appnope==0.1.3
+asciitree==0.3.3
+asttokens==2.1.0
+atomicwrites==1.4.1
+backcall==0.2.0
+cachetools==5.2.0
+certifi==2022.9.24
+charset-normalizer==2.1.1
+debugpy==1.6.3
+decorator==5.1.1
+entrypoints @ file:///home/conda/feedstock_root/build_artifacts/entrypoints_1643888246732/work
+executing==1.2.0
+fasteners @ file:///home/conda/feedstock_root/build_artifacts/fasteners_1643971550063/work
+google-apitools==0.5.32
+google-auth==2.14.0
+httplib2==0.21.0
+idna==3.4
+imagecodecs @ file:///Users/runner/miniforge3/conda-bld/imagecodecs_1666836119554/work
+imageio @ file:///home/conda/feedstock_root/build_artifacts/imageio_1663572338894/work
+ipykernel==6.17.0
+ipython==8.6.0
+ipython-genutils==0.2.0
+jedi==0.18.1
+jupyter_client==7.4.4
+jupyter_core==4.11.2
+matplotlib-inline==0.1.6
+msgpack @ file:///Users/runner/miniforge3/conda-bld/msgpack-python_1666755158861/work
+nest-asyncio==1.5.6
+neuroglancer==2.31
+numcodecs @ file:///Users/runner/miniforge3/conda-bld/numcodecs_1659408391168/work
+numpy @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_e3f85f54-0572-4c0e-b190-4bc4766fc3fenewxarhq/croots/recipe/numpy_and_numpy_base_1652801682879/work
+oauth2client==4.1.3
+packaging @ file:///home/conda/feedstock_root/build_artifacts/packaging_1637239678211/work
+parso==0.8.3
+pexpect==4.8.0
+pickleshare==0.7.5
+Pillow @ file:///Users/runner/miniforge3/conda-bld/pillow_1666920647802/work
+prompt-toolkit==3.0.31
+psutil @ file:///opt/concourse/worker/volumes/live/da41f1b1-060b-47fa-4c17-557e069ead1d/volume/psutil_1612298011002/work
+ptyprocess==0.7.0
+pure-eval==0.2.2
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+Pygments==2.13.0
+pyparsing @ file:///home/conda/feedstock_root/build_artifacts/pyparsing_1652235407899/work
+PyQt5==5.15.7
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.11.0
+pyqtgraph==0.13.1
+PyQtWebEngine==5.15.6
+PyQtWebEngine-Qt5==5.15.2
+python-dateutil==2.8.2
+pyzmq==24.0.1
+QtAwesome @ file:///home/conda/feedstock_root/build_artifacts/qtawesome_1666638781418/work
+qtconsole==5.3.2
+QtPy @ file:///opt/conda/conda-bld/qtpy_1649073884068/work
+requests==2.28.1
+rsa==4.9
+six==1.16.0
+stack-data==0.6.0
+tensorstore==0.1.27
+tifffile @ file:///home/conda/feedstock_root/build_artifacts/tifffile_1665588749940/work
+tornado==6.2
+traitlets==5.5.0
+typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/typing_extensions_1665144421445/work
+urllib3==1.26.12
+wcwidth==0.2.5
+zarr @ file:///home/conda/feedstock_root/build_artifacts/zarr_1665320114269/work

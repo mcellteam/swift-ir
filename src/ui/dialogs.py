@@ -49,6 +49,7 @@ class ConfigDialog(QDialog):
         self.parent = parent
         super(ConfigDialog, self).__init__()
         logger.info('>>>> Config Dialog Start >>>>')
+        cfg.main_window.hud.post('Configuring Some Global Project Settings...')
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()
         # g.moveCenter(self.parent.geometry().center())
@@ -102,6 +103,8 @@ class ConfigDialog(QDialog):
         self.setLayout(self.main_layout)
 
         self.setWindowTitle("Project Configuration")
+
+        self.show()
 
 
         # self.load()

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
-import io
+import logging
+import multiprocessing as mp
+import subprocess as sp
 import sys
 import time
+
 import psutil
-import inspect
-import logging
-import subprocess as sp
-import multiprocessing as mp
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QApplication
+
 import src.config as cfg
 from src.helpers import print_exception
-
 
 '''SWIM/MIR:
 stdout <- result
@@ -21,7 +20,7 @@ stderr <- info + errors
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
-mpl = mp.log_to_stderr()
+# mpl = mp.log_to_stderr()
 # mpl.setLevel(logging.INFO)
 
 SENTINEL = 1
@@ -88,10 +87,10 @@ class TaskQueue(QObject):
         self.n_workers = n_workers
         self.retries = retries
         self.task_dict = {}
-        if cfg.DEBUG_MP:
-            mpl.setLevel(logging.DEBUG)
-        else:
-            mpl.setLevel(logging.INFO)
+        # if cfg.DEBUG_MP:
+        #     mpl.setLevel(logging.DEBUG)
+        # else:
+        #     mpl.setLevel(logging.INFO)
         logger.info('TaskQueue Initialization')
         # logger.info('self.start_method = %s' % self.start_method)
         logger.info('self.ctx.get_start_method() = %s' % self.ctx.get_start_method())

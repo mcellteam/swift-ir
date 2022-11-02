@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
-import os, sys, time, json, logging, inspect, platform, shutil, psutil
+import json
+import logging
+import multiprocessing as mp
+import os
+import platform
+import psutil
+import shutil
+import sys
+import time
 from glob import glob
 from pathlib import Path
-import multiprocessing as mp
-from numcodecs import Blosc
-import imageio.v3 as iio
+
+import tensorstore as ts
+import tifffile
 # from PIL import Image
 import zarr
-import tifffile
-import tensorstore as ts
+from numcodecs import Blosc
+
 # import imagecodecs
 # import dask.array as da
 import src.config as cfg
-from src.helpers import get_scale_val, time_limit, get_img_filenames, print_exception
-from src.funcs_image import ImageSize, ComputeBoundingRect, imageio_read_image
+from src.funcs_image import ImageSize, imageio_read_image
+from src.helpers import get_scale_val, time_limit, print_exception
 
 '''
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
@@ -164,6 +172,7 @@ def preallocate_zarr_aligned(scales=None):
         print_exception()
     else:
         cfg.main_window.hud.done()
+
 
 
 def write_metadata_zarr_multiscale(path):
