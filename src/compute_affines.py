@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def compute_affines(scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
-    logger.critical('>>>> Compute Affines >>>>')
+    logger.info('>>>> Compute Affines >>>>')
 
     rename_switch = False
     alignment_dict = cfg.data['data']['scales'][scale]['alignment_stack']
@@ -213,7 +213,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     #     cfg.data.update_datamodel(updated_model)
     #     # cfg.main_window.refresh_all_images()
 
-    logger.critical('<<<< Compute Affines End <<<<')
+    logger.info('<<<< Compute Affines End <<<<')
 
 def write_run_to_file(scale=None):
     if scale == None: scale = cfg.data.scale()
