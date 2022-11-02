@@ -177,7 +177,7 @@ class NgHost(QRunnable):
 
     def initViewer(self, l=None):
         # logger.info('Initializing NG Viewer (called by %s)' % inspect.stack()[1].function)
-        logger.info('Creating Viewer (Scale %d)...' % self.sf)
+        logger.info('Initializing Thread For NG Client (Scale %d)...' % self.sf)
 
         app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         os.chdir(app_dir) # This sucks but is necessary to reverse simple HTTP server shortcomings

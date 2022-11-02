@@ -1305,7 +1305,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
+        # logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
         self.scales_combobox_switch = 0
         curr_scale = cfg.data.scale()
         image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
@@ -1611,6 +1611,7 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud.post('Unable To Initialize Neuroglancer Client', logging.WARNING)
         finally:
+            self.save_project_to_file() # Save for New Project, Not for Open Project
             logger.info('<<<< New Project <<<<')
 
     def open_project(self):
@@ -2197,7 +2198,7 @@ class MainWindow(QMainWindow):
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function # Note: the caller is 'main' when user toggles
         if caller == 'read_project_data_update_gui': return
-        logger.critical('Skip changed callback (caller: %s)' % caller)
+        # logger.info('Skip changed callback (caller: %s)' % caller)
         layer = self.ng_layer()
         # self.read_project_data_update_gui()
         for scale in cfg.data.scales():
