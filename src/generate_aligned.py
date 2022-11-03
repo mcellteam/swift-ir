@@ -13,7 +13,7 @@ from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
 from src.mp_queue import TaskQueue
-from src.funcs_image import SetStackCafm, ComputeBoundingRect, ImageSize
+from src.funcs_image import SetStackCafm, ComputeBoundingRect
 from src.funcs_zarr import preallocate_zarr_aligned
 
 
@@ -45,7 +45,19 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     print_example_cafms(scale_dict)
     alstack = scale_dict['alignment_stack']
     save_bias_analysis(alstack, os.path.join(cfg.data.dest(), scale, 'bias_data'))
-    rect = getSetBoundingRect(scale, alstack)
+
+
+    if cfg.data.has_bb():
+        # Note: we just got new cafm's -> must recalculate bounding box
+        cfg.data.set_bounding_rect(ComputeBoundingRect(alstack)) #Not Scale Agnostic #Only AFTER SetStackCafm
+        rect = cfg.data.bounding_rect(s=scale)
+    else:
+        width, height = cfg.data.image_size(s=scale)
+        # rect = [0, 0, height, width] # May need to swap width, height for Zarr representation
+        rect = [0, 0, width, height]
+    cfg.data.set_bounding_rect(rect)
+    logger.info('Bounding Rect is %s' % str(rect))
+    logger.info('rect = %s' % str(rect))
     if preallocate: preallocate_zarr_aligned(scales=[scale])
     if num_layers == -1: end_layer = len(alstack)
     else: end_layer = start_layer + num_layers
@@ -74,15 +86,6 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     del task_queue
     logger.info('<<<< Generate Aligned End <<<<')
 
-def getSetBoundingRect(scale, alstack):
-    if cfg.data.has_bb():
-        rect = ComputeBoundingRect(alstack) # Must come AFTER SetStackCafm
-    else:
-        width, height = ImageSize(cfg.data.path_base(s=scale,l=0))
-        rect = [0, 0, width, height]
-    cfg.data.set_bounding_rect(rect)
-    logger.info('Bounding Rect is %s' % str(rect))
-    return rect
 
 def makeTasksList(al_substack, job_script, rect, zarr_group):
     args_list = []

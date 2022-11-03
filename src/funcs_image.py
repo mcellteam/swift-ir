@@ -576,10 +576,11 @@ array([[   0,    0],
     # logger.critical('>>>> ComputeBoundingRect >>>>')
 
     if cfg.SUPPORT_NONSQUARE:
+        '''Non-square'''
         # model_bounds = None
         # al_stack = cfg.data.aligned_dict()
         model_bounds = [[0,0]] #Todo initialize this better
-        siz = ImageSize(al_stack[0]['images']['base']['filename'])
+        siz = cfg.data.image_size()
         for item in al_stack:
             c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
             model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
@@ -591,8 +592,9 @@ array([[   0,    0],
                 int(siz[1] + 2 * border_width_y)]
         logger.info('Returning: %s' % str(rect))
     else:
+        '''Old code/square only'''
         model_bounds = None
-        siz = ImageSize(al_stack[0]['images']['base']['filename'])
+        siz = cfg.data.image_size()
         for item in al_stack:
             c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
             if type(model_bounds) == type(None):

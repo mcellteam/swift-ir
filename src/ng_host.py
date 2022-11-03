@@ -19,7 +19,6 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 
 import src.config as cfg
-from src.funcs_image import ImageSize
 # from src.funcs_ng import SimpleHTTPServer, launch_server, write_some_annotations
 from src.funcs_ng import SimpleHTTPServer, launch_server
 from src.funcs_zarr import get_zarr_tensor_from_path
@@ -84,16 +83,14 @@ class NgHost(QRunnable):
         self.src_url = os.path.join('img_src.zarr', 's' + str(self.sf))
         self.al_name = os.path.join(src, self.aligned_url)
         self.unal_name = os.path.join(src, self.src_url)
-        self.base_img_siz = ImageSize(cfg.data.path_base(s=scale))
+        self.src_size = cfg.data.image_size(s=self.scale)
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
         logger.info('zarr_addr: %s' % self.zarr_addr)
         self.http_server = None
         if is_arg_scale_aligned(self.scale):
-            # path = os.path.join(cfg.data.path_aligned(s=self.s), cfg.data.name_base())
-            br = cfg.data.bounding_rect()
-            self.al_img_siz = [br[2], br[3]]
+            self.aligned_size = cfg.data.aligned_size(s=self.scale)
         else:
-            self.al_img_siz = None
+            self.aligned_size = None
 
         self.num_actions = 0  # for 'add_matchpoint' method
 
@@ -185,10 +182,11 @@ class NgHost(QRunnable):
         is_aligned = is_arg_scale_aligned(self.scale)
 
         if is_aligned:
-            if self.al_img_siz is None:
-                self.al_img_siz = ImageSize(cfg.data.path_aligned(s=self.scale))
-            x_offset = (self.al_img_siz[0] - self.base_img_siz[0]) / 2
-            y_offset = (self.al_img_siz[1] - self.base_img_siz[1]) / 2
+            if self.aligned_size is None:
+                # self.aligned_size = ImageSize(cfg.data.path_aligned(s=self.scale))
+                self.aligned_size = cfg.data.aligned_size(s=self.scale)
+            x_offset = (self.aligned_size[0] - self.src_size[0]) / 2
+            y_offset = (self.aligned_size[1] - self.src_size[1]) / 2
         else:
             x_offset, y_offset = 0, 0
 
@@ -258,7 +256,7 @@ class NgHost(QRunnable):
                                               ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout)])
                 else:
                     # s.position = [cfg.data.layer(), img_dim[0] / 2, img_dim[1] / 2]
-                    s.position = [cfg.data.layer(), self.base_img_siz[1] / 2, self.base_img_siz[0] / 2]
+                    s.position = [cfg.data.layer(), self.src_size[1] / 2, self.src_size[0] / 2]
                     s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.ref_l, 'matchpoint_ref'], layout=self.layout),
                                               ng.LayerGroupViewer(layers=[self.base_l, 'matchpoint_base'], layout=self.layout)])
             else:
@@ -337,7 +335,7 @@ class NgHost(QRunnable):
             self.cur_index = self.request_layer()
             project_dict_layer = cfg.data.layer()
             if project_dict_layer == self.cur_index:
-                logger.info('State Changed, But Layer Is The Same -> Surpressing The Callback Signal')
+                logger.debug('State Changed, But Layer Is The Same -> Surpressing The Callback Signal')
                 return
             self.signals.stateChanged.emit(self.cur_index)
         except:
@@ -399,7 +397,6 @@ class NgHost(QRunnable):
         coords = np.array(s.mouse_voxel_coordinates)
         cfg.main_window.hud.post('Matchpoint Added: %s' % str(coords))
 
-
         cfg.selected = s.selected_values
         cfg.mouse_coords = coords
         cfg.matchpoint_layer = self.viewport.state.position[0]
@@ -444,6 +441,53 @@ if __name__ == '__main__':
     NgHost(args.source, args.bind, args.port)
 
 '''
+{'crossSectionBackgroundColor': '#004060',
+ 'crossSectionScale': 2.4999999999999996,
+ 'dimensions': {'x': [8e-09, 'm'], 'y': [8e-09, 'm'], 'z': [5e-08, 'm']},
+ 'layers': [{'name': 'ref_4',
+             'source': 'python://volume/35191a77e78799ae7f7cd6476ef9c7e1fd336cb7.38acc78d4eba0e47cab02434280d213fd13f08ba',
+             'tab': 'source',
+             'type': 'image'},
+            {'name': 'base_4',
+             'source': 'python://volume/35191a77e78799ae7f7cd6476ef9c7e1fd336cb7.6751114dfc2e0f85e66f969df6bb402b1961a1ff',
+             'tab': 'source',
+             'type': 'image'},
+            {'annotations': [],
+             'name': 'matchpoint_ref',
+             'source': {'transform': {...}, 'url': 'local://annotations'},
+             'tab': 'source',
+             'type': 'annotation'},
+            {'annotations': [],
+             'name': 'matchpoint_base',
+             'source': {'transform': {...}, 'url': 'local://annotations'},
+             'tab': 'source',
+             'type': 'annotation'},
+            {'name': 'aligned_4',
+             'source': 'python://volume/35191a77e78799ae7f7cd6476ef9c7e1fd336cb7.c3478cf03ef1bc7957a86c0ae0aa5a30842e1096',
+             'tab': 'source',
+             'type': 'image'}],
+ 'layout': {'children': [{'layers': [...], 'layout': 'yz', 'type': 'viewer'},
+                         {'layers': [...], 'layout': 'yz', 'type': 'viewer'},
+                         {'layers': [...], 'layout': 'yz', 'type': 'viewer'}],
+            'type': 'row'},
+ 'position': [28.5, 880, 880.5],
+ 'projectionScale': 1024}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 NOTES: 
 
 Note tensorstore appears not to support multiscale metadata yet: However, we do have to deal with 

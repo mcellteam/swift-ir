@@ -117,8 +117,7 @@ def reptoshape(mat, pattern):
                              + str(pattern.shape))
     return mat
 
-def shiftAffine(afm, dx):
-    return afm + np.array([[0,0,dx[0]],[0,0,dx[1]]])
+
 
 def invertAffine(afm):
     '''INVERTAFFINE - Invert affine transform
@@ -143,14 +142,6 @@ def composeAffine(afm, bfm):
     bfm = np.vstack((bfm, [0,0,1]))
     fm = np.matmul(afm, bfm)
     return fm[0:2,:]
-
-def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply affine transform to a point
-    xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
-    Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
-    if not type(xy)==np.ndarray:
-        xy = np.array([xy[0], xy[1]])
-    return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
 
 def identityAffine():
     '''IDENTITYAFFINE - Return an idempotent affine transform
@@ -385,6 +376,20 @@ def extractTransformedWindow(img, xy=None, tfm=None, siz=512):
     return cv2.warpAffine(img, afm, siz,
                           flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR)
 
+
+def shiftAffine(afm, dx):
+    return afm + np.array([[0,0,dx[0]],[0,0,dx[1]]])
+
+
+def applyAffine(afm, xy):
+    '''APPLYAFFINE - Apply affine transform to a point
+    xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
+    Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
+    if not type(xy)==np.ndarray:
+        xy = np.array([xy[0], xy[1]])
+    return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
+
+
 def affineImage(afm, img, rect=None, grayBorder=False ):
     '''AFFINEIMAGE - Apply an affine transformation to an image
     res = AFFINEIMAGE(afm, img) returns an image the same size of IMGimage_funcs
@@ -406,6 +411,7 @@ def affineImage(afm, img, rect=None, grayBorder=False ):
         return cv2.warpAffine(img, shiftAffine(afm, p2-p1), (rect[2], rect[3]),
                               flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR,
                               borderValue=border)
+
 
 '''
     if grayBorder:

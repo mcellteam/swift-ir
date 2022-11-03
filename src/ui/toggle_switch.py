@@ -168,8 +168,6 @@ class ToggleSwitch(QCheckBox):
             # p.setPen(self._black_pen)
             # p.setPen(self._red_pen)
             p.setPen(self._snow_pen)
-            # p.setPen(self._red_pen)
-            # p.setPen(self._almost_black_pen)
             p.setBrush(self._handle_brush)
             font = QFont("PT Sans", self._fontSize)
             p.setFont(font)
@@ -184,7 +182,7 @@ class ToggleSwitch(QCheckBox):
             # p.drawText(contRect.center().x(), contRect.center().y() + self.handle_radius / 3, " ×")
             # p.drawText(xLeft + self.handle_radius / 3, contRect.center().y() + self.handle_radius / 3, "✓")
 
-        '''Circle around handle, ON & OFF; looks good transparent'''
+        # Circle around handle, ON & OFF; looks good transparent
         # p.setPen(self._light_grey_pen)
         # p.setPen(self._snow_pen)
         p.setPen(self._transparent_pen)
@@ -195,20 +193,6 @@ class ToggleSwitch(QCheckBox):
     def handle_state_change(self, value):
         '''Position of Handle; orig= 1 or 0'''
         self._handle_position = .8 if value else 0
-
-    # @Property(float)
-    # def handle_position(self):
-    #     return self._handle_position
-
-    # @handle_position.setter
-    # def handle_position(self, pos):
-    #     """change the property
-    #        we need to trigger QWidget.update() method, either by:
-    #        1- calling it here [ what we're doing ].
-    #        2- connecting the QPropertyAnimation.valueChanged() signal to it.
-    #     """
-    #     self._handle_position = pos
-    #     self.update()
 
     def setH_scale(self, value):
         self._h_scale = value

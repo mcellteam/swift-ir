@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 import qtconsole
 from IPython.lib import guisupport

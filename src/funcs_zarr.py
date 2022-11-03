@@ -21,7 +21,7 @@ from numcodecs import Blosc
 # import imagecodecs
 # import dask.array as da
 import src.config as cfg
-from src.funcs_image import ImageSize, imageio_read_image
+from src.funcs_image import imageio_read_image
 from src.helpers import get_scale_val, time_limit, print_exception
 
 '''
@@ -111,6 +111,7 @@ def remove_zarr(path) -> None:
 
 def preallocate_zarr_src():
     cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
+    logger.info('Preallocating Scaled Zarr Array...')
     try:
         zarr_path = os.path.join(cfg.data.dest(), 'img_src.zarr')
         logger.info('Zarr Root Location: %s' % zarr_path)
@@ -126,10 +127,13 @@ def preallocate_zarr_src():
         chunkshape = cfg.data.chunkshape()
 
         for scale in cfg.data.scales():
-            dimx, dimy = ImageSize(cfg.data.path_base(s=scale))
+            logger.critical('scale is %s' % str(scale))
+            dimx, dimy = cfg.data.image_size(s=scale)
             name = 's' + str(get_scale_val(scale))
             shape = (cfg.data.n_imgs(), dimy, dimx)
+
             logger.info('Preallocating Zarr %s array, shape: %s' % (scale, str(shape)))
+
             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
             # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
@@ -140,6 +144,7 @@ def preallocate_zarr_src():
 
 def preallocate_zarr_aligned(scales=None):
     cfg.main_window.hud.post('Preallocating Aligned Zarr Array...')
+    logger.info('Preallocating Aligned Zarr Array...')
     try:
         if scales == None: scales = [cfg.data.scale()]
         src = os.path.abspath(cfg.data.dest())
@@ -156,8 +161,11 @@ def preallocate_zarr_aligned(scales=None):
                 remove_zarr(out_path)
             group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
             rect = cfg.data.bounding_rect(s=scale)
-            shape = (cfg.data.n_imgs(), rect[2], rect[3])
+            # shape = (cfg.data.n_imgs(), rect[2], rect[3])
+            shape = (cfg.data.n_imgs(), rect[3], rect[2])
+
             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
+
             name = 's' + str(get_scale_val(scale))
             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
             group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)

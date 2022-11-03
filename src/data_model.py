@@ -326,7 +326,8 @@ class DataModel:
         except:
             try:
                 self.set_bounding_rect(ComputeBoundingRect(self.aligned_dict(s=s)))
-                return self._data['data']['scales'][s]['bounding_rect']
+                return self.bounding_rect()
+                # return self._data['data']['scales'][s]['bounding_rect']
             except:
                 logger.warning('Unable to return a bounding rect (scale=%s)' % s)
                 return None
@@ -334,12 +335,25 @@ class DataModel:
     def image_size(self, s=None):
         if s == None: s = self.scale()
         try:
-            return self._data['data']['scales'][s]['image_size']
+            return self._data['data']['scales'][s]['image_src_size']
         except:
             try:
-                img_size = ImageSize(cfg.data.path_base(s=s))
-                self._data['data']['scales'][s]['image_size'] = img_size
-                return self._data['data']['scales'][s]['image_size']
+                img_size = ImageSize(self.path_base(s=s))
+                self._data['data']['scales'][s]['image_src_size'] = img_size
+                return self.image_size(s=s)
+            except:
+                logger.warning('Unable to return the image size (scale=%s)' % s)
+                return None
+
+    def aligned_size(self, s=None):
+        if s == None: s = self.scale()
+        try:
+            return self._data['data']['scales'][s]['aligned_size']
+        except:
+            try:
+                img_size = ImageSize(self.path_aligned(s=s))
+                self._data['data']['scales'][s]['aligned_size'] = img_size
+                return self.aligned_size()
             except:
                 logger.warning('Unable to return the image size (scale=%s)' % s)
                 return None
@@ -406,7 +420,7 @@ class DataModel:
 
     def set_layer(self, x: int) -> None:
         assert isinstance(x, int)
-        logger.info('Setting Layer to %s' % str(x))
+        # logger.info('Setting Layer to %s' % str(x))
         '''Sets the Current Layer as Integer.'''
         self._data['data']['current_layer'] = int(x)
 
@@ -437,6 +451,14 @@ class DataModel:
     def set_bounding_rect(self, bounding_rect: list, s=None) -> None:
         if s == None: s = self.scale()
         self._data['data']['scales'][s]['bounding_rect'] = bounding_rect
+
+    def set_image_size(self, size, s=None) -> None:
+        if s == None: s = self.scale()
+        self._data['data']['scales'][s]['image_size'] = size
+
+    def set_aligned_size(self, size, s=None) -> None:
+        if s == None: s = self.scale()
+        self._data['data']['scales'][s]['aligned_size'] = size
 
     def set_poly_order(self, x: int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
