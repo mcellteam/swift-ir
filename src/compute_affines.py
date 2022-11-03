@@ -220,13 +220,13 @@ def write_run_to_file(scale=None):
     snr_avg = 'SNR=%.3f' % cfg.data.snr_average(scale=scale)
     # date = datetime.now().strftime("%Y-%m-%d") # date + time is always 17 chars
     # time = datetime.now().strftime("%H%M%S")
-    timestamp = datetime.now().strftime("%Y-%m-%d_%I:%M:%S%p")
+    timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     results = 'results'
     swim_input = 'swim=%.3f' % cfg.main_window.get_swim_input()
     whitening_input = 'whitening=%.3f' % cfg.main_window.get_whitening_input()
     # details = [date, time, s, swim_input, whitening_input, snr_avg]
     scale_str = 's' + str(get_scale_val(scale))
-    details = [scale, timestamp]
+    details = [scale_str, results, timestamp]
     fn = '_'.join(details) + '.json'
     of = Path(os.path.join(cfg.data.dest(), scale, 'history', fn))
     of.parent.mkdir(exist_ok=True, parents=True)

@@ -7,7 +7,6 @@ from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridL
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
-from src.funcs_image import ImageSize
 from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
@@ -286,7 +285,7 @@ class ConfigDialog(QDialog):
             scales_lst = [str(v) for v in
                               sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
         else:
-            width, height = ImageSize(cfg.data.path_base())
+            width, height = cfg.data.image_size(s='scale_1')
             if (width*height) > 400_000_000:
                 scales_lst = ['24 6 2 1']
             elif (width*height) > 200_000_000:

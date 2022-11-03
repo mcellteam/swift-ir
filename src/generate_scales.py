@@ -8,7 +8,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, is_tacc, is_linux, is_mac
+    get_best_path, is_tacc, is_linux, is_mac, natural_sort
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 def generate_scales():
     logger.info('>>>> Generate Scales >>>>')
+    # image_scales_to_run = [get_scale_val(s) for s in natural_sort(cfg.data['data']['scales'].keys())]
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     n_tasks = cfg.data.n_imgs() * (cfg.data.n_scales() - 1)  #0901 #Refactor
