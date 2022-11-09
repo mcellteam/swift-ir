@@ -109,10 +109,6 @@ def main():
 
     # logger.propagate = False # TESTING
 
-    # logger = logging.getLogger(__name__)
-
-
-
     check_for_binaries()
 
     '''Save Logs to 'messages.log' '''
@@ -129,8 +125,9 @@ def main():
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--no_embed_ng', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
-    parser.add_argument('--no_multiview', action='store_true', help='Use single view rather than three-panel view')
+    # parser.add_argument('--no_multiview', action='store_true', help='Use single webengineview rather than three-panel webengineview')
     parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
+    parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
@@ -149,8 +146,9 @@ def main():
     if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     if args.no_splash: cfg.NO_SPLASH = True
-    if args.no_multiview: cfg.MULTIVIEW = False
+    # if args.no_multiview: cfg.MULTIVIEW = False
     if args.opencv: cfg.USE_OPENCV = True
+    if args.dummy: cfg.DUMMY = True
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
@@ -162,8 +160,6 @@ def main():
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-
-
 
     if qtpy.QT6:
         logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())

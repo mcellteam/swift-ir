@@ -11,11 +11,11 @@ from pathlib import Path
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
-    makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
+    makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks, show_mp_queue_results, \
+    kill_task_queue, renew_directory
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm, ComputeBoundingRect
 from src.funcs_zarr import preallocate_zarr_aligned
-
 
 
 __all__ = ['generate_aligned']
@@ -36,9 +36,8 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     path = os.path.split(os.path.realpath(__file__))[0]
     job_script = os.path.join(path, job_script)
     zarr_group = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
-    if are_aligned_images_generated():
-        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d' % get_scale_val(scale))
-        remove_aligned(use_scale=scale, start_layer=start_layer)
+    od = os.path.join(cfg.data.dest(), scale, 'img_aligned')
+    renew_directory(directory=od)
     scale_dict = cfg.data['data']['scales'][scale]
     print_example_cafms(scale_dict)
     SetStackCafm(scale_dict, null_biases=cfg.data.null_cafm()) #***
@@ -46,10 +45,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     alstack = scale_dict['alignment_stack']
     save_bias_analysis(alstack, os.path.join(cfg.data.dest(), scale, 'bias_data'))
 
-
     if cfg.data.has_bb():
-        # Note: we just got new cafm's -> must recalculate bounding box
-        cfg.data.set_bounding_rect(ComputeBoundingRect(alstack)) #Not Scale Agnostic #Only AFTER SetStackCafm
+        # Note: now have got new cafm's -> recalculate bounding box
+        cfg.data.set_bounding_rect(ComputeBoundingRect(alstack)) # Only after SetStackCafm
         rect = cfg.data.bounding_rect(s=scale)
     else:
         width, height = cfg.data.image_size(s=scale)
@@ -76,14 +74,13 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         t0 = time.time()
         task_queue.collect_results()
         dt = time.time() - t0
-        cfg.main_window.hud.post('Completed in %.2f seconds.' % dt)
+        cfg.main_window.hud.done()
+        # cfg.main_window.hud.post('  Completed in %.2f seconds.' % dt)
+        show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()
         logger.warning('task_queue.collect_results() encountered a problem')
-    try: task_queue.end_tasks()
-    except: print_exception()
-    task_queue.stop()
-    del task_queue
+    kill_task_queue(task_queue=task_queue)
     logger.info('<<<< Generate Aligned End <<<<')
 
 

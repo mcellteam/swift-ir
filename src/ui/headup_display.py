@@ -69,7 +69,7 @@ class HeadupDisplay(QWidget):
         self.setFocusPolicy(Qt.NoFocus)
         self.setMinimumHeight(140)
         self.textedit = te = QPlainTextEdit(self)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         f = QFont()
         f.setStyleHint(QFont.Monospace)
         te.setFont(f)
@@ -89,8 +89,8 @@ class HeadupDisplay(QWidget):
         self.handler = h = QtHandler(self.update_status)
         # fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
         # fs = '%(asctime)s [%(levelname)s] %(qThreadName)-10s | %(message)s'
-        # fs = '%(asctime)s [%(levelname)s] %(message)s'
-        fs = '[%(levelname)s] %(asctime)s  %(message)s'
+        fs = '%(asctime)s [%(levelname)s] %(message)s'
+        # fs = '[%(levelname)s] %(asctime)s  %(message)s'
         # fs = '%(asctime)s %(message)s'
         # fs = '%(levelname)-8s %(asctime)s %(qThreadname)-15s %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
@@ -116,7 +116,7 @@ class HeadupDisplay(QWidget):
         extra = {'qThreadName': ctname()}
         logger.log(level, message, extra=extra)
         self.textedit.moveCursor(QTextCursor.End)
-        # QApplication.processEvents()
+        QApplication.processEvents()
 
     def start_thread(self):
         self.hud_worker = HudWorker()
@@ -138,11 +138,7 @@ class HeadupDisplay(QWidget):
         if self.hud_worker_thread.isRunning():
             self.kill_thread()
 
-    def done(self):
-        txt = self.textedit.toPlainText()
-        self.textedit.undo()
-        last_line = txt.split('[INFO]')[-1].lstrip()
-        self.post(last_line + 'done.')
+
 
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
@@ -161,6 +157,14 @@ class HeadupDisplay(QWidget):
         # extra = {'qThreadName': ctname()}
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
+        self.textedit.moveCursor(QTextCursor.End)
+        QApplication.processEvents()
+
+    def done(self):
+        txt = self.textedit.toPlainText()
+        self.textedit.undo()
+        last_line = txt.split('[INFO]')[-1].lstrip()
+        self.post(last_line + 'done.')
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 

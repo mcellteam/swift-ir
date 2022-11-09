@@ -494,9 +494,9 @@ def si_unpackSize(siz):
     return (w, h)
 
 def modelBounds2(afm, siz):
-    '''MODELBOUNDS - Returns a bounding rectangle in model space
+    '''MODELBOUNDS - Returns a bounding rectangle in previewmodel space
     (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
-    of an input rectangle (siz) in model space if pixel lookup is through affine
+    of an input rectangle (siz) in previewmodel space if pixel lookup is through affine
     transform AFM.'''
     inv = invertAffine(afm)
     w, h = si_unpackSize(siz)
@@ -543,7 +543,7 @@ def ComputeBoundingRect(al_stack):
 
     To get result for current s, in the main process, use:
     from src.image_funcs import ComputeBoundingRect, ImageSize
-    ComputeBoundingRect(cfg.data.aligned_dict())
+    ComputeBoundingRect(cfg.data.alstack())
 
     model_bounds example:
 AlignEM [29]:
@@ -578,7 +578,7 @@ array([[   0,    0],
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
         # model_bounds = None
-        # al_stack = cfg.data.aligned_dict()
+        # al_stack = cfg.data.alstack()
         model_bounds = [[0,0]] #Todo initialize this better
         siz = cfg.data.image_size()
         for item in al_stack:
@@ -866,7 +866,7 @@ class StripNullFields:
 #         raise
 #
 # def _wrap_bitmap_bits_in_array(bitmap, shape, dtype):
-#     """Return an ndarray view on the data in a FreeImage bitmap. Only
+#     """Return an ndarray webengineview on the data in a FreeImage bitmap. Only
 #     valid for as long as the bitmap is loaded (if single page) / locked
 #     in memory (if multipage).
 #     """

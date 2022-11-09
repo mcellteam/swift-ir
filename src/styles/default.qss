@@ -8,6 +8,7 @@ QCheckBox#toggle_skip {
 	font-size: 10px;
 }
 
+
 QTableView{
     background-color: transparent;
 
@@ -23,7 +24,6 @@ QCheckBox {
 	border-style: outset;
 	font-size: 10px;
 }
-
 
 
 QLabel#browser_overlay_label {
@@ -56,6 +56,14 @@ QTextEdit#afm_widget {
 QTextEdit#cafm_widget {
     background: transparent;
     font-size: 11px;
+}
+
+QTextEdit#matchpoint_text_prompt {
+	background-color: transparent;
+}
+
+QTextEdit#matchpoint_text_snr {
+	background-color: transparent;
 }
 
 QTreeView#projectdata_treeview {

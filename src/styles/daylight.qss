@@ -10,21 +10,88 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
+
+QCheckBox#toggle_skip {
+	spacing: 5px;
+	outline: none;
+	/*color: #f3f6fb;*/
+	color: #000000;
+	/*margin-bottom: 2px;*/
+	font-size: 10px;
+}
+
+
+QTableView{
+    background-color: transparent;
+
+}
+
+QCheckBox {
+	spacing: 5px;
+	outline: none;
+	/*color: #f3f6fb;*/
+	/*margin-bottom: 2px;*/
+	/*border: 1px solid #f3f6fb;*/
+	border-radius: 2px;
+	border-style: outset;
+	font-size: 10px;
+}
+
+
 QLabel#browser_overlay_label {
     color: #FF0000;
     font-size: 28px;
 }
 
+QTextEdit#main_details_subwidgetA {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetB {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetC {
+    background: transparent;
+    font-size: 11px;
+}
+QTextEdit#main_details_subwidgetD {
+    background: transparent;
+    font-size: 11px;
+}
 
-QTreeView#treeview_widget {
+QTextEdit#afm_widget {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTextEdit#cafm_widget {
+    background: transparent;
+    font-size: 11px;
+}
+
+QTextEdit#matchpoint_text_prompt {
+	background-color: transparent;
+}
+
+QTextEdit#matchpoint_text_snr {
+	background-color: transparent;
+}
+
+QTreeView#projectdata_treeview {
     background-color: #ffffff;
     color: #333;
-    border: 2px solid #555;
-    border-radius: 3px;
-    padding: 3px;
+    /*border: 2px solid #555;*/
+    /*border-radius: 3px;*/
+    padding: 2px;
     background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
     min-width: 10px;
 }
+
+
+
+
+
 
 QWidget {
 

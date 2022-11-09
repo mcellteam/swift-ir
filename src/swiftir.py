@@ -117,8 +117,6 @@ def reptoshape(mat, pattern):
                              + str(pattern.shape))
     return mat
 
-
-
 def invertAffine(afm):
     '''INVERTAFFINE - Invert affine transform
     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
@@ -261,7 +259,7 @@ def stationaryToMoving(afm, psta):
 def toLocal(afm, topleft):
     '''TOLOCAL - Modify affine transform for use with local coordinates
     lafm = TOLOCAL(afm, topleft) takes an affine that transforms global
-    model coordinates to coordinates in a moving image and returns an
+    previewmodel coordinates to coordinates in a moving image and returns an
     affine that for use on a stationary image located at the given
     position. That is, if AFM acts by p_moving = AFM p_model, then LAFM
     acts by p_moving = LAFM p_stationary = AFM (p_stationary + topleft).'''
@@ -272,7 +270,7 @@ def toGlobal(afm, topleft):
     '''TOGLOBAL - Modify affine transform for use with global coordinates
     afm = TOGLOBAL(lafm, topleft) takes an affine that transforms
     coordinates in a stationary image to coordinates in a moving image
-    and returns an affine that for use on global model coordinates, given
+    and returns an affine that for use on global previewmodel coordinates, given
     that the stationary image is located at the provided TOPLEFT position.
     That is, if LAFM acts by p_moving = LAFM p_stationary, then AFM acts by
     p_moving = AFM p_model = LAFM (p_model - topleft).'''
@@ -395,7 +393,7 @@ def affineImage(afm, img, rect=None, grayBorder=False ):
     res = AFFINEIMAGE(afm, img) returns an image the same size of IMGimage_funcs
     looking up pixels in the original using affine transformation.
     res = AFFINEIMAGE(afm, img, rect), where rect is an (x0,y0,w,h)-tuple
-    as from MODELBOUNDS, returns the given rectangle of model space.
+    as from MODELBOUNDS, returns the given rectangle of previewmodel space.
     If grayBorder is True, set the image border color to the mean image value'''
     if grayBorder:
       border = img.mean()
@@ -428,9 +426,9 @@ def affineImage(afm, img, rect=None, grayBorder=False ):
 '''
 
 def modelBounds(afm, img):
-    '''MODELBOUNDS - Returns image bounding rectangle in model space
+    '''MODELBOUNDS - Returns image bounding rectangle in previewmodel space
     (x0, y0, w, h) = MODELBOUNDS(afm, img) returns the bounding rectangle
-    of the image IMG in model space if pixel lookup is through affine
+    of the image IMG in previewmodel space if pixel lookup is through affine
     transform AFM.'''
     inv = invertAffine(afm)
     p0 = np.floor(applyAffine(inv, [0,0])).astype('int32')
@@ -438,9 +436,9 @@ def modelBounds(afm, img):
     return (p0[0], p0[1], p1[0], p1[1])
 
 def modelBounds2(afm, siz):
-    '''MODELBOUNDS - Returns a bounding rectangle in model space
+    '''MODELBOUNDS - Returns a bounding rectangle in previewmodel space
     (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
-    of an input rectangle (siz) in model space if pixel lookup is through affine
+    of an input rectangle (siz) in previewmodel space if pixel lookup is through affine
     transform AFM.'''
     inv = invertAffine(afm)
     w, h = si_unpackSize(siz)

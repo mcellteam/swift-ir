@@ -42,11 +42,63 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
 
 logger = logging.getLogger(__name__)
 
+def renew_directory(directory:str) -> None:
+    '''Remove and re-create a directory, if it exists.'''
+    if os.path.exists(directory):
+        cfg.main_window.hud.post("Renewing Directory '%s'..." % directory)
+        try:     shutil.rmtree(directory)
+        except:  print_exception()
+        try:     os.makedirs(directory, exist_ok=True)
+        except:  print_exception()
+        cfg.main_window.hud.done()
 
-def load(self):
+def kill_task_queue(task_queue):
+    '''End task queue multiprocessing tasks and delete a task queue object'''
+    try: task_queue.end_tasks()
+    except: print_exception()
+    task_queue.stop()
+    del task_queue
+
+def show_mp_queue_results(task_queue, dt):
+
+    logger.info('Checking Status of Tasks...')
+    n_tasks = len(task_queue.task_dict.keys())
+    n_success, n_queued, n_failed = 0, 0, 0
+    for k in task_queue.task_dict.keys():
+        task_item = task_queue.task_dict[k]
+        if task_item['statusBar'] == 'completed':
+            # logger.info('\nCompleted:')
+            # logger.info('   CMD:    %s' % (str(task_item['cmd'])))
+            # logger.info('   ARGS:   %s' % (str(task_item['args'])))
+            # logger.info('   STDERR: %s\n' % (str(task_item['stderr'])))
+            n_success += 1
+        elif task_item['statusBar'] == 'queued':
+            # logger.warning('\nQueued:')
+            # logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+            # logger.info('   ARGS:   %s' % (str(task_item['args'])))
+            # logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+            n_queued += 1
+        elif task_item['statusBar'] == 'task_error':
+            logger.debug('\nTask Error:')
+            logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
+            logger.debug('   ARGS:   %s' % (str(task_item['args'])))
+            logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+            n_failed += 1
+
+    cfg.main_window.hud.post('  Completed in %.2f seconds' % (dt))
+    cfg.main_window.hud.post('  Tasks Successful:   %d' % n_success, logging.INFO)
+    cfg.main_window.hud.post('  Tasks Still Queued: %d' % n_queued, logging.INFO)
+    if n_failed > 0:
+        cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.ERROR)
+    else:
+        cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.INFO)
+
+
+
+def load():
     try:
         with open('data.json', 'r') as f:
-            self.model.todos = json.load(f)
+            self.previewmodel.todos = json.load(f)
     except Exception:
         pass
 

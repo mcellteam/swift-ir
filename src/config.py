@@ -19,9 +19,9 @@ cfg.selected
 AlignEM [2]: Map({"ref_4": {"value": 145}, "base_4": {"value": 56}, "matchpoint_ref": {}, "matchpoint_base": {}, "aligned_4": {"value": 149}})
 '''
 
-mouse_coords = None # type = numpy.nd array (s.mouse_voxel_coords)
-matchpoint_layer = None
-viewport_temp_state = None
+# mouse_coords = None # type = numpy.nd array (s.mouse_voxel_coords)
+# matchpoint_layer = None
+# viewport_temp_state = None
 
 '''Default Window Size'''
 WIDTH, HEIGHT = 1180, 800
@@ -46,29 +46,27 @@ CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 CNAME = 'zstd'
 CLEVEL = 5
 
+''''''
+SHADER = ''''''
+
 '''Other Defaults'''
+DUMMY = False
 USE_TENSORSTORE = True
-# USE_TENSORSTORE = False
 NO_EMBED_NG = False
 # TACC_MAX_CPUS = 128  # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 # REFRESH_RATE = 300 # GUI refresh/synchronization rate (ms). None = OFF.
 # REFRESH_RATE = None
-
-MULTIVIEW = True
-
+# MULTIVIEW = True
 SUPPORT_NONSQUARE = True
 DEBUG_MP = False
-# NO_SPLASH = False
 NO_SPLASH = True
 USE_OPENCV = False
-# USE_OPENCV = True
+USE_TORNADO = True
 
 USE_FILE_IO = 0
 CODE_MODE = 'c'
 HTTP_PORT = 9000
-
-PROJECT_OPEN = False
 
 # cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'

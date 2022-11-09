@@ -30,7 +30,7 @@ import sys
 import inspect
 import argparse
 import pandas as pd
-from python_console import PythonConsole
+# from python_console import PythonConsole
 
 from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTabWidget, QGridLayout, \
@@ -57,25 +57,6 @@ class DataTable(QMainWindow):
         '''Import Data From CSV File Into Pandas Dataframe'''
         print('Reading CSV data into pandas dataframe...')
         self._dataframe = pd.read_csv(path)
-
-    @Slot()
-    def import_dialog(self):
-        '''Get User File Selection Dialog
-        Note: This function is a 'Slot' function. It is connected
-        to the 'clicked' signal of the import_button'''
-        print('Getting User File Selection...')
-        dialog = QFileDialog()
-        dialog.setOption(QFileDialog.DontUseNativeDialog)
-        dialog.setWindowTitle('Open Spinehead Data (*.csv)')
-        dialog.setNameFilter('Text Files (*.csv)')
-        dialog.setViewMode(QFileDialog.Detail)
-        if dialog.exec() == QFileDialog.Accepted:
-            self._file = dialog.selectedFiles()[0]
-            self.import_data(self._file)
-            self.load_dataframe()
-            print("Loaded: '%s'" % self._file)
-        else:
-            print("Nothing Loaded")
 
     def load_dataframe(self):
         '''Load Dataframe Into GUI Table'''
@@ -178,10 +159,6 @@ class DataTable(QMainWindow):
         self.tab_widget.addTab(tab2, "Another Tab")
         self.tab_widget.addTab(tab3, "Python")
 
-        self.import_button = QPushButton('Import Data')
-        self.import_button.setFixedSize(QSize(120, 28))
-        self.import_button.clicked.connect(self.import_dialog)
-
         self.clear_button = QPushButton('Clear')
         self.clear_button.setFixedSize(QSize(120, 28))
         self.clear_button.clicked.connect(self.clear_selection)
@@ -192,7 +169,6 @@ class DataTable(QMainWindow):
 
         self.buttons = QGroupBox('Control Panel')
         self.buttons_layout = QHBoxLayout()
-        self.buttons_layout.addWidget(self.import_button)
         self.buttons_layout.addWidget(self.clear_button)
         self.buttons_layout.addWidget(self.quit_button)
         self.buttons_layout.addStretch()
@@ -206,8 +182,8 @@ class DataTable(QMainWindow):
         self.results_widget = QTextEdit('Results')
         self.results_widget.setReadOnly(True)
 
-        self.python_console = PythonConsole()
-        tab3_layout.addWidget(self.python_console,0, 0)
+        # self.python_console = PythonConsole()
+        # tab3_layout.addWidget(self.python_console,0, 0)
 
         self.splitter = QSplitter(Qt.Vertical)
         self.splitter.addWidget(self.table_widget)
@@ -218,7 +194,7 @@ class DataTable(QMainWindow):
 
 
 class PandasModel(QAbstractTableModel):
-    """A model to interface a Qt table_widget with pandas dataframe.
+    """A previewmodel to interface a Qt table_widget with pandas dataframe.
     Adapted from Qt Documentation Example:
     https://doc.qt.io/qtforpython/examples/example_external__pandas.html"""
     def __init__(self, dataframe: pd.DataFrame, parent=None):
@@ -233,7 +209,13 @@ class PandasModel(QAbstractTableModel):
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole):
         if not index.isValid(): return None
-        if role == Qt.DisplayRole: return str(self._dataframe.iloc[index.row(), index.column()])
+        # if role == Qt.DisplayRole:
+        #     return str(self._dataframe.iloc[index.row(), index.column()])
+
+        if role == Qt.DisplayRole:
+            return data   # Pass the data to our delegate to draw.
+        if role == Qt.ToolTipRole:
+            return data.title
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole):
         if role == Qt.DisplayRole:
