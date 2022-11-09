@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 #     atexit.register(shutil.rmtree, tempdir)
 #
 #     writer = neuroglancer.write_annotations.AnnotationWriter(
-#         coordinate_space=self.coordinate_space,
+#         coordinate_space_3d=self.coordinate_space_3d,
 #         annotation_type='point',
 #         properties=[
 #             ng.AnnotationPropertySpec(id='size', type='float32'),

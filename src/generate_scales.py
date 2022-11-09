@@ -8,7 +8,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, is_tacc, is_linux, is_mac, natural_sort
+    get_best_path, is_tacc, is_linux, is_mac, natural_sort, show_mp_queue_results, kill_task_queue
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -23,7 +23,7 @@ def generate_scales():
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     n_tasks = cfg.data.n_imgs() * (cfg.data.n_scales() - 1)  #0901 #Refactor
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy - %d Cores' % cpus)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Image Hierarchy - %d Cores' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     for s in cfg.data.scales():
         create_project_structure_directories(s)
@@ -66,15 +66,16 @@ def generate_scales():
 
             layer['images']['base']['filename'] = ofn
         cfg.main_window.hud.done()
-    cfg.main_window.hud.post('Generating Scale Hierarchy...')
+    cfg.main_window.hud.post('Generating Scale Image Hierarchy...')
     t0 = time.time()
     task_queue.collect_results()
-    try: task_queue.end_tasks()
-    except: print_exception()
-    task_queue.stop()
-    del task_queue
     dt = time.time() - t0
-    cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
+    cfg.main_window.hud.done()
+    show_mp_queue_results(task_queue=task_queue, dt=dt)
+    kill_task_queue(task_queue=task_queue)
+
+
+    # cfg.main_window.hud.post("Completed in %.2f Seconds" % dt)
 
     # '''Set more lenient permissions on Tifs'''
     # Triggers a warning when working with image files owned by other TACC users

@@ -9,6 +9,7 @@ import psutil
 import shutil
 import sys
 import time
+import numpy as np
 from glob import glob
 from pathlib import Path
 
@@ -28,7 +29,7 @@ from src.helpers import get_scale_val, time_limit, print_exception
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
 processing of large datasets in neuroscience, such as peta-s 3d electron microscopy data and “4d” videos of 
 neuronal activity). TensorStore has also been used in the creation of large-s machine learning models such as 
-PaLM by addressing the problem of managing model parameters (checkpoints) during distributed training.
+PaLM by addressing the problem of managing previewmodel parameters (checkpoints) during distributed training.
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''
 
@@ -36,9 +37,11 @@ __all__ = ['preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff'
 
 logger = logging.getLogger(__name__)
 
-def get_zarr_tensor_from_path(zarr_path):
+
+
+def get_zarr_tensor(zarr_path):
     '''
-    Returns an asynchronous TensorStore future object which is a view
+    Returns an asynchronous TensorStore future object which is a webengineview
     into the Zarr image on disk. All TensorStore indexing operations
     produce lazy views.
 
@@ -46,7 +49,7 @@ def get_zarr_tensor_from_path(zarr_path):
 
     :param zarr_path:
     :type zarr_path:
-    :return: A view into the dataset.
+    :return: A webengineview into the dataset.
     :rtype: tensorstore.Future
     '''
     node = platform.node()
@@ -58,12 +61,92 @@ def get_zarr_tensor_from_path(zarr_path):
         total_bytes_limit = 6_000_000_000
     # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
     arr = ts.open({
+        'dtype': 'uint8',
         'driver': 'zarr',
         'kvstore': { 'driver': 'file', 'path': zarr_path },
         'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
         'recheck_cached_data': 'open',
     })
     return arr
+
+
+def get_zarr_array_layer_view(zarr_path:str, layer:int):
+    arr = ts.open({
+        'driver': 'zarr',
+        'kvstore': {
+            'driver': 'file',
+            'path': zarr_path,
+        },
+        'path': 'temp.zarr',
+        'metadata': {
+            'dtype': '<f4',
+            # 'shape': [cfg.data.res_z(), cfg.data.res_y(), cfg.data.res_x()],
+            # 'chunks': list(cfg.data.chunkshape()),
+            'shape': [4, 32, 32],
+            'chunks': [1, 16, 16],
+            'order': 'C',
+            'compressor': None,
+            'filters': None,
+            'fill_value': None,
+        },
+    }, create=True).result()
+    # arr[1] = 42  # Overwrites, just like numpy/zarr library
+    view = arr[layer, :, :]  # Returns a lazy view, no I/O performed
+    np.array(view)  # Reads from the view
+    # Returns JSON spec that can be passed to `ts.open` to reopen the view.
+    view.spec().to_json()
+
+
+def get_tensor_from_tiff(dir=None, s=None, l=None):
+    if s == None: s = cfg.data.scale()
+    if l == None: l = cfg.data.layer()
+    fn = os.path.basename(cfg.data.image_name(s=s,l=l))
+    path = os.path.join(cfg.data.dest(), s, 'img_src', fn)
+    logger.info('Path: %s' % path)
+    arr = ts.open({
+        'driver': 'tiff',
+        'kvstore': {
+            'driver': 'file',
+            'path': path,
+        },
+    }, create=True).result()
+    return arr
+
+
+
+
+def get_zarr_tensor_layer(zarr_path:str, layer:int):
+    '''
+    Returns an asynchronous TensorStore future object which is a webengineview
+    into the Zarr image on disk. All TensorStore indexing operations
+    produce lazy views.
+
+    Ref: https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
+
+    :param zarr_path:
+    :type zarr_path:
+    :return: A webengineview into the dataset.
+    :rtype: tensorstore.Future
+    '''
+    node = platform.node()
+    if '.tacc.utexas.edu' in node:
+        # Lonestar6: 256 GB (3200 MT/s) DDR4
+        # total_bytes_limit = 200_000_000_000
+        total_bytes_limit = 200_000_000_000_000
+    else:
+        total_bytes_limit = 8_000_000_000
+    # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
+    arr = ts.open({
+        'driver': 'zarr',
+        'kvstore': { 'driver': 'file', 'path': zarr_path },
+        'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
+        'recheck_cached_data': 'open',
+    }, dtype=ts.uint32,)
+
+    slice = np.array(arr[layer,:, :])
+
+    # return arr[layer, :, :]
+    return slice
 
 def loadTiffsMp(directory:str):
     '''
@@ -131,9 +214,7 @@ def preallocate_zarr_src():
             dimx, dimy = cfg.data.image_size(s=scale)
             name = 's' + str(get_scale_val(scale))
             shape = (cfg.data.n_imgs(), dimy, dimx)
-
             logger.info('Preallocating Zarr %s array, shape: %s' % (scale, str(shape)))
-
             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
             # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)

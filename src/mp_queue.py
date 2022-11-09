@@ -181,7 +181,6 @@ class TaskQueue(QObject):
         logger.info('>>>> Task Queue (collect_results) >>>>')
         logger.info('self.ctx.get_start_method() = %s' % str(self.ctx.get_start_method()))
         # logger.info('mp.log_to_stderr() = %s' % str(mp.log_to_stderr())) #?
-        logger.info('self.ctx.cpu_count() = %s' % str(self.ctx.cpu_count()))
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending

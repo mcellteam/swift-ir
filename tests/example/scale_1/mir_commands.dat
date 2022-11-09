@@ -1,0 +1,40 @@
+
+---------------------------
+B 4298 4780 1
+Z 128
+F /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.105.tif
+A 1.01968 -0.034016 -90.6765 -0.0109376 1.05813 -453.079
+RW /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_aligned/R34CA1-BS12.105.tif
+E
+
+---------------------------
+B 4298 4780 1
+Z 128
+F /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.104.tif
+A 1.01433 -0.0276287 -67.8997 -0.0138059 1.07435 -438.612
+RW /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_aligned/R34CA1-BS12.104.tif
+E
+
+---------------------------
+B 4298 4780 1
+Z 128
+F /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.103.tif
+A 0.996479 0.0176429 -106.541 0.000601969 1.02101 -344.699
+RW /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_aligned/R34CA1-BS12.103.tif
+E
+
+---------------------------
+B 4298 4780 1
+Z 128
+F /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.102.tif
+A 0.985682 0.0271196 -135.573 0.0131051 0.952748 -211.576
+RW /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_aligned/R34CA1-BS12.102.tif
+E
+
+---------------------------
+B 4298 4780 1
+Z 128
+F /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.101.tif
+A 0.979634 0.0182768 -116.289 0.0185704 0.899571 -203.767
+RW /Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_aligned/R34CA1-BS12.101.tif
+E

@@ -24,12 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 class DataModel:
-    """ Encapsulate data model dictionary and wrap with methods for convenience """
+    """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
 
     def __init__(self, data=None, name=''):
         logger.info('Constructing Data Model')
-        self._current_version = 0.31
-        # self._current_version = 0.50
+        # self._current_version = 0.31
+        # self._current_version = 0.31
+        self._current_version = 0.40
         if data == None:
             self._data = data_struct
             self._data['data']['destination_path'] = name
@@ -39,8 +40,11 @@ class DataModel:
         if self.layer() == None:
             self.set_layer(0)
 
-        if self._data['version'] != self._current_version:
-            self.upgrade_data_model()
+        # if self._data['version'] != self._current_version:
+        #     self.upgrade_data_model()
+
+        self._data['user_settings'].setdefault('mp_marker_size', 7)
+        self._data['user_settings'].setdefault('mp_marker_border_width', 4)
 
         logger.info('Current Scale: %s' % str(self.scale()))
         logger.info('Current Layer: %s' % str(self.layer()))
@@ -93,6 +97,13 @@ class DataModel:
     def name(self) -> str:
         return os.path.split(cfg.data.dest())[-1]
 
+    def image_name(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        # return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
+
+
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''
         # logger.info('layer:')
@@ -108,6 +119,18 @@ class DataModel:
                 return self.layer()
             except:
                 print_exception()
+
+    def print_all_matchpoints(self):
+        logger.info('Match Points:')
+        for i, l in enumerate(self.alstack()):
+            r = l['images']['ref']['metadata']['match_points']
+            b = l['images']['base']['metadata']['match_points']
+            if r != []:
+                logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
+            if b != []:
+                logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
+
+
 
     def scale(self) -> str:
         '''Returns the Current Scale as a String.'''
@@ -125,17 +148,116 @@ class DataModel:
             coordinates
         )
 
-    def matchpoints(self, role, s=None, l=None) -> None:
-        '''Example Usage:
-             cfg.data.matchpoints(role='base')
-        '''
+    # def matchpoints(self, role, s=None, l=None) -> None:
+    #     '''Example Usage:
+    #          cfg.data.matchpoints(role='base')
+    #     '''
+    #     if s == None: s = self.scale()
+    #     if l == None: l = self.layer()
+    #     matchpoints = self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points']
+    #     logger.info('Getting matchpoints for %s, %s, layer=%d...' % (role, s, l))
+    #     # for point in matchpoints:
+    #     #     logger.info('Matchpoint at %s for %s on %s, layer=%d' % (str(point), role, s, l))
+    #     return matchpoints
+
+
+    def match_points(self, s=None, l=None):
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        matchpoints = self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points']
-        logger.info('Getting matchpoints for %s, %s, layer=%d...' % (role, s, l))
-        for point in matchpoints:
-            logger.info('Matchpoint at %s for %s on %s, layer=%d' % (str(point), role, s, l))
-        return matchpoints
+        layer = self._data['data']['scales'][s]['alignment_stack'][l]
+        r = layer['images']['ref']['metadata']['match_points']
+        b = layer['images']['base']['metadata']['match_points']
+        combined ={'ref': r, 'base': b }
+        # logger.info(f'Ref, Match Points: {str(r)}')
+        # logger.info(f'Base, Match Points: {str(b)}')
+        return combined
+
+    def print_all_match_points(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        for i,layer in enumerate(self.alstack()):
+            r = layer['images']['ref']['metadata']['match_points']
+            b = layer['images']['base']['metadata']['match_points']
+            if r != [] or b!= []:
+                combined = {'ref': r, 'base': b}
+                logger.info('____Layer %d Matchpoints____\n  Ref: %s\n  Base: %s' % (i, str(r), str(b)))
+
+
+    def match_points_ref(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['metadata']['match_points']
+
+    def match_points_base(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['metadata']['match_points']
+
+    def all_match_points_ref(self, s=None):
+        if s == None: s = self.scale()
+        lst = []
+        for i, layer in enumerate(self.alstack(s=s)):
+            mp = layer['images']['ref']['metadata']['match_points']
+            if mp != []:
+                for p in mp:
+                    lst.append([i, p[0], p[1]])
+        return lst
+
+    def all_match_points_base(self, s=None):
+        if s == None: s = self.scale()
+        lst = []
+        for i, layer in enumerate(self.alstack(s=s)):
+            mp = layer['images']['base']['metadata']['match_points']
+            if mp != []:
+                for p in mp:
+                    lst.append([i, p[0], p[1]])
+        return lst
+
+    def annotations(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        layer = self._data['data']['scales'][s]['alignment_stack'][l]
+        r = layer['images']['ref']['metadata']['annotations']
+        b = layer['images']['base']['metadata']['annotations']
+        a = layer['images']['aligned']['metadata']['annotations']
+        combined = {'ref': r, 'base': b, 'aligned': a}
+        logger.info(f'Ref, Annotations: {str(r)}')
+        logger.info(f'Base, Annotations: {str(b)}')
+        logger.info(f'Base, Annotations: {str(a)}')
+        return combined
+
+    def clear_match_points(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        layer = self._data['data']['scales'][s]['alignment_stack'][l]
+        for role in layer['images'].keys():
+            if 'metadata' in layer['images'][role]:
+                layer['images'][role]['metadata']['match_points'] = []
+                # layer['images'][role]['metadata']['annotations'] = []
+
+    def clear_all_match_points(self, s=None, l=None):
+        for layer in self.alstack():
+            for role in layer['images'].keys():
+                if 'metadata' in layer['images'][role]:
+                    layer['images'][role]['metadata']['match_points'] = []
+                    # layer['images'][role]['metadata']['annotations'] = []
+
+    def clear_annotations(self):
+        logger.info("Removing all match points for this l")
+        s, l = self.scale(), self.layer()
+        layer = self._data['data']['scales'][s]['alignment_stack'][l]
+        for role in layer['images'].keys():
+            if 'metadata' in layer['images'][role]:
+                layer['images'][role]['metadata']['annotations'] = []
+
+    def set_match_points(self, role, matchpoints, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        logger.info("Writing match point to project dictionary")
+        if role not in ('ref', 'base', 'aligned'):
+            logger.warning('Invalid Role Argument- Returning')
+            return
+        self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'] = matchpoints
 
     def afm(self, s=None, l=None) -> list:
         if s == None: s = self.scale()
@@ -149,7 +271,13 @@ class DataModel:
     def afm_list(self, s=None, l=None) -> list:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        lst = [l['align_to_ref_method']['method_results']['affine_matrix'] for l in self.aligned_dict()]
+        lst = [l['align_to_ref_method']['method_results']['affine_matrix'] for l in self.alstack()]
+        return lst
+
+    def cafm_list(self, s=None, l=None) -> list:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
         return lst
 
     def cafm(self, s=None, l=None) -> list:
@@ -164,7 +292,7 @@ class DataModel:
     def cafm_list(self, s=None, l=None):
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.aligned_dict()]
+        lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
         return lst
 
     def bias_data_path(self, s=None, l=None):
@@ -325,7 +453,7 @@ class DataModel:
             return self._data['data']['scales'][s]['bounding_rect']
         except:
             try:
-                self.set_bounding_rect(ComputeBoundingRect(self.aligned_dict(s=s)))
+                self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
                 return self.bounding_rect()
                 # return self._data['data']['scales'][s]['bounding_rect']
             except:
@@ -348,11 +476,11 @@ class DataModel:
     def aligned_size(self, s=None):
         if s == None: s = self.scale()
         try:
-            return self._data['data']['scales'][s]['aligned_size']
+            return self._data['data']['scales'][s]['al_size']
         except:
             try:
                 img_size = ImageSize(self.path_aligned(s=s))
-                self._data['data']['scales'][s]['aligned_size'] = img_size
+                self._data['data']['scales'][s]['al_size'] = img_size
                 return self.aligned_size()
             except:
                 logger.warning('Unable to return the image size (scale=%s)' % s)
@@ -458,7 +586,7 @@ class DataModel:
 
     def set_aligned_size(self, size, s=None) -> None:
         if s == None: s = self.scale()
-        self._data['data']['scales'][s]['aligned_size'] = size
+        self._data['data']['scales'][s]['al_size'] = size
 
     def set_poly_order(self, x: int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
@@ -567,10 +695,9 @@ class DataModel:
         if scale == None: scale = cfg.data.scale()
         return statistics.fmean(self.snr_list(scale=scale))
 
-    def aligned_dict(self, s=None) -> dict:
+    def alstack(self, s=None) -> dict:
         if s == None: s = self.scale()
-        al_stack = self._data['data']['scales'][s]['alignment_stack']
-        return al_stack
+        return self._data['data']['scales'][s]['alignment_stack']
 
     def aligned_list(self) -> list[str]:
         '''Get aligned scales list. Check project data and aligned Zarr group presence.'''
@@ -680,7 +807,7 @@ class DataModel:
         # Load the alignment stack after the alignment has completed
         aln_image_stack = []
         scale = self.scale()
-        for layer in self.aligned_dict():
+        for layer in self.alstack():
             image_name = None
             if 'base' in layer['images'].keys():
                 image_name = layer['images']['base']['filename']
@@ -756,7 +883,7 @@ class DataModel:
             logger.info("No input: Scales not changed")
 
     def ensure_proper_data_structure(self):
-        '''Ensure Proper Data Structure (that the model is usable)...'''
+        '''Ensure Proper Data Structure (that the previewmodel is usable)...'''
         logger.debug('Ensuring called by %s' % inspect.stack()[1].function)
         '''  '''
         scales_dict = self._data['data']['scales']
@@ -821,9 +948,12 @@ class DataModel:
 
             # Begin the upgrade process:
 
+            self._data['user_settings'].setdefault('mp_marker_size', 7)
+            self._data['user_settings'].setdefault('mp_marker_border_width', 4)
+
             if self._data['version'] <= 0.26:
-                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.27))
-                # Need to modify the data model from 0.26 or lower up to 0.27
+                logger.info("Upgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.27))
+                # Need to modify the data previewmodel from 0.26 or lower up to 0.27
                 # The "alignment_option" had been in the method_data at each l
                 # This new version defines it only at the s level
                 # So loop through each s and move the alignment_option from the l to the s
@@ -855,12 +985,12 @@ class DataModel:
                         scale['method_data'] = {}
                     # Finally set the value
                     scale['method_data']["alignment_option"] = scale_option
-                # Now the data model is at 0.27, so give it the appropriate version
+                # Now the data previewmodel is at 0.27, so give it the appropriate version
                 self._data['version'] = 0.27
 
             if self._data['version'] == 0.27:
-                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.28))
-                # Need to modify the data model from 0.27 up to 0.28
+                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.28))
+                # Need to modify the data previewmodel from 0.27 up to 0.28
                 # The "alignment_option" had been left in the method_data at each l
                 # This new version removes that option from the l method data
                 # So loop through each s and remove the alignment_option from the l
@@ -874,30 +1004,30 @@ class DataModel:
                             if 'method_data' in align_method:
                                 if 'alignment_option' in align_method['method_data']:
                                     align_method['method_data'].pop('alignment_option')
-                # Now the data model is at 0.28, so give it the appropriate version
+                # Now the data previewmodel is at 0.28, so give it the appropriate version
                 self._data['version'] = 0.28
 
             if self._data['version'] == 0.28:
-                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.29))
-                # Need to modify the data model from 0.28 up to 0.29
+                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.29))
+                # Need to modify the data previewmodel from 0.28 up to 0.29
                 # The "use_c_version" was added to the "user_settings" dictionary
                 self._data['user_settings']['use_c_version'] = True
-                # Now the data model is at 0.29, so give it the appropriate version
+                # Now the data previewmodel is at 0.29, so give it the appropriate version
                 self._data['version'] = 0.29
 
             if self._data['version'] == 0.29:
-                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.30))
-                # Need to modify the data model from 0.29 up to 0.30
+                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.30))
+                # Need to modify the data previewmodel from 0.29 up to 0.30
                 # The "poly_order" was added to the "scales" dictionary
                 for scale_key in self._data['data']['scales'].keys():
                     scale = self._data['data']['scales'][scale_key]
                     scale['poly_order'] = 4
-                # Now the data model is at 0.30, so give it the appropriate version
+                # Now the data previewmodel is at 0.30, so give it the appropriate version
                 self._data['version'] = 0.30
 
             if self._data['version'] == 0.30:
-                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.31))
-                # Need to modify the data model from 0.30 up to 0.31
+                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.31))
+                # Need to modify the data previewmodel from 0.30 up to 0.31
                 # The "skipped(1)" annotation is currently unused (now hard-coded in alignem.py)
                 # Remove alll "skipped(1)" annotations since they can not otherwise be removed
                 for scale_key in self._data['data']['scales'].keys():
@@ -913,11 +1043,11 @@ class DataModel:
                                 if 'annotations' in m.keys():
                                     print("Removing any \"skipped()\" annotations ... ")
                                     m['annotations'] = [a for a in m['annotations'] if not a.startswith('skipped')]
-                # Now the data model is at 0.31, so give it the appropriate version
+                # Now the data previewmodel is at 0.31, so give it the appropriate version
                 self._data['version'] = 0.31
             if self._data['version'] == 0.31:
-                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.32))
-                # Need to modify the data model from 0.31 up to 0.32
+                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.32))
+                # Need to modify the data previewmodel from 0.31 up to 0.32
                 #   1) change name of method_results key "affine_matrix" to "afm"
                 #   2) change name of method_results key "cumulative_afm" to "cafm"
                 #   3) add new method_results key, "aim" and compute/store this value
@@ -935,12 +1065,12 @@ class DataModel:
                 #
 
                 # FIXME: leave this commented out until we have finished 1-8 above
-                # Now the data model is at 0.32, so give it the appropriate version
+                # Now the data previewmodel is at 0.32, so give it the appropriate version
                 # data_model ['version'] = 0.32
 
             # Make the final test
             if self._data['version'] != self._current_version:
-                # The data model could not be upgraded, so return a string with the error
+                # The data previewmodel could not be upgraded, so return a string with the error
                 data_model = 'Version mismatch. Expected "' + str(
                     self._current_version) + '" but found ' + str(
                     self._data['version'])
@@ -965,17 +1095,6 @@ class DataModel:
         logger.info("Clearing 'method_results' Key")
         for layer in self._data['data']['scales'][scale_key]['alignment_stack'][start_layer:]:
             layer['align_to_ref_method']['method_results'] = {}
-
-    def clear_match_points(self):
-        logger.info("Deleting all match points for this l")
-        scale_key = self._data['data']['current_scale']
-        layer_num = self._data['data']['current_layer']
-        stack = self._data['data']['scales'][scale_key]['alignment_stack']
-        layer = stack[layer_num]
-        for role in layer['images'].keys():
-            if 'metadata' in layer['images'][role]:
-                layer['images'][role]['metadata']['match_points'] = []
-                layer['images'][role]['metadata']['annotations'] = []
 
 
 @dataclass

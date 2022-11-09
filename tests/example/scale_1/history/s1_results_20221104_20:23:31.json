@@ -1,0 +1,389 @@
+{
+    "method_data": {
+        "alignment_option": "init_affine"
+    },
+    "null_cafm_trends": true,
+    "use_bounding_rect": true,
+    "alignment_stack": [
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "bias_rot_per_image": 0.0,
+                    "bias_scale_x_per_image": 1.0,
+                    "bias_scale_y_per_image": 1.0,
+                    "bias_skew_x_per_image": 0.0,
+                    "bias_x_per_image": 0.0,
+                    "bias_y_per_image": 0.0,
+                    "whitening_factor": -0.68,
+                    "win_scale_factor": 0.8125
+                },
+                "method_options": {},
+                "method_results": {
+                    "affine_matrix": [
+                        [
+                            1.0,
+                            0.0,
+                            0.0
+                        ],
+                        [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    ],
+                    "cumulative_afm": [
+                        [
+                            0.9807302719541497,
+                            0.021345109550716085,
+                            -4.421661101406064
+                        ],
+                        [
+                            0.01838948347028605,
+                            0.9049219764700814,
+                            23.50928146303191
+                        ]
+                    ],
+                    "snr": [
+                        0.0
+                    ],
+                    "snr_report": "SNR: --"
+                },
+                "selected_method": "Auto Swim Align"
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.101.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "bias_rot_per_image": 0,
+                    "bias_scale_x_per_image": 0,
+                    "bias_scale_y_per_image": 0,
+                    "bias_skew_x_per_image": 0,
+                    "bias_x_per_image": 0,
+                    "bias_y_per_image": 0,
+                    "whitening_factor": -0.68,
+                    "win_scale_factor": 0.8125
+                },
+                "method_options": {},
+                "method_results": {
+                    "affine_matrix": [
+                        [
+                            1.0059900283813477,
+                            0.009708319790661335,
+                            -16.60919952392578
+                        ],
+                        [
+                            -0.006702189799398184,
+                            1.059249997138977,
+                            3.48540997505188
+                        ]
+                    ],
+                    "cumulative_afm": [
+                        [
+                            1.0059900283813477,
+                            0.009708319790661335,
+                            -16.60919952392578
+                        ],
+                        [
+                            -0.006702189799398184,
+                            1.059249997138977,
+                            3.48540997505188
+                        ]
+                    ],
+                    "snr": [
+                        12.7732,
+                        7.32892,
+                        8.36962,
+                        10.6386,
+                        10.6784,
+                        9.86545,
+                        15.3198,
+                        10.0883,
+                        8.5821,
+                        14.0868,
+                        17.9774,
+                        13.9514
+                    ],
+                    "snr_report": "SNR: 11.6 (+-3.1 n:12)  <7.3  18.0>"
+                },
+                "selected_method": "Auto Swim Align"
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.102.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.101.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "bias_rot_per_image": 0,
+                    "bias_scale_x_per_image": 0,
+                    "bias_scale_y_per_image": 0,
+                    "bias_skew_x_per_image": 0,
+                    "bias_x_per_image": 0,
+                    "bias_y_per_image": 0,
+                    "whitening_factor": -0.68,
+                    "win_scale_factor": 0.8125
+                },
+                "method_options": {},
+                "method_results": {
+                    "affine_matrix": [
+                        [
+                            1.0110900402069092,
+                            -0.010262399911880493,
+                            28.36370086669922
+                        ],
+                        [
+                            -0.013642500154674053,
+                            1.0720399618148804,
+                            -119.73100280761719
+                        ]
+                    ],
+                    "cumulative_afm": [
+                        [
+                            1.0110900402069092,
+                            -0.010262399911880493,
+                            28.36370086669922
+                        ],
+                        [
+                            -0.013642500154674053,
+                            1.0720399618148804,
+                            -119.73100280761719
+                        ]
+                    ],
+                    "snr": [
+                        14.0548,
+                        8.12143,
+                        10.2295,
+                        9.94493,
+                        9.65932,
+                        12.6999,
+                        13.629,
+                        10.0181,
+                        10.5882,
+                        10.4858,
+                        16.6438,
+                        14.6162,
+                        10.6823,
+                        9.78655,
+                        11.3276,
+                        8.57152
+                    ],
+                    "snr_report": "SNR: 11.3 (+-2.3 n:16)  <8.1  16.6>"
+                },
+                "selected_method": "Auto Swim Align"
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.103.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.102.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "bias_rot_per_image": 0,
+                    "bias_scale_x_per_image": 0,
+                    "bias_scale_y_per_image": 0,
+                    "bias_skew_x_per_image": 0,
+                    "bias_x_per_image": 0,
+                    "bias_y_per_image": 0,
+                    "whitening_factor": -0.68,
+                    "win_scale_factor": 0.8125
+                },
+                "method_options": {},
+                "method_results": {
+                    "affine_matrix": [
+                        [
+                            1.0179400444030762,
+                            -0.044649798423051834,
+                            25.16230010986328
+                        ],
+                        [
+                            -0.014490500092506409,
+                            1.052489995956421,
+                            -77.36289978027344
+                        ]
+                    ],
+                    "cumulative_afm": [
+                        [
+                            1.0179400444030762,
+                            -0.044649798423051834,
+                            25.16230010986328
+                        ],
+                        [
+                            -0.014490500092506409,
+                            1.052489995956421,
+                            -77.36289978027344
+                        ]
+                    ],
+                    "snr": [
+                        11.6771,
+                        6.85313,
+                        10.8047,
+                        7.81678,
+                        14.5598,
+                        12.0659,
+                        12.0064,
+                        8.42134,
+                        13.3347,
+                        11.425,
+                        14.8925,
+                        12.0788
+                    ],
+                    "snr_report": "SNR: 11.3 (+-2.4 n:12)  <6.9  14.9>"
+                },
+                "selected_method": "Auto Swim Align"
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.104.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.103.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "bias_rot_per_image": 0,
+                    "bias_scale_x_per_image": 0,
+                    "bias_scale_y_per_image": 0,
+                    "bias_skew_x_per_image": 0,
+                    "bias_x_per_image": 0,
+                    "bias_y_per_image": 0,
+                    "whitening_factor": -0.68,
+                    "win_scale_factor": 0.8125
+                },
+                "method_options": {},
+                "method_results": {
+                    "affine_matrix": [
+                        [
+                            1.0052000284194946,
+                            -0.005811579991132021,
+                            -24.972700119018555
+                        ],
+                        [
+                            0.002623130101710558,
+                            0.9849640130996704,
+                            -20.884000778198242
+                        ]
+                    ],
+                    "cumulative_afm": [
+                        [
+                            1.0052000284194946,
+                            -0.005811579991132021,
+                            -24.972700119018555
+                        ],
+                        [
+                            0.002623130101710558,
+                            0.9849640130996704,
+                            -20.884000778198242
+                        ]
+                    ],
+                    "snr": [
+                        14.9462,
+                        7.34578,
+                        15.1921,
+                        14.5957,
+                        12.8666,
+                        13.1545,
+                        12.5166,
+                        10.5425,
+                        12.5644,
+                        13.5472,
+                        15.0985,
+                        11.9647,
+                        12.9398,
+                        14.1813,
+                        12.2335,
+                        10.5589
+                    ],
+                    "snr_report": "SNR: 12.8 (+-2.0 n:16)  <7.3  15.2>"
+                },
+                "selected_method": "Auto Swim Align"
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.105.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/test_projects/example/scale_1/img_src/R34CA1-BS12.104.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false
+        }
+    ],
+    "image_src_size": [
+        4096,
+        4096
+    ],
+    "poly_order": 0,
+    "resolution_x": 2,
+    "resolution_y": 2,
+    "resolution_z": 50
+}

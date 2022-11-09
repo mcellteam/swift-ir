@@ -12,7 +12,8 @@ from datetime import datetime
 from pathlib import Path
 import src.config as cfg
 from src.mp_queue import TaskQueue
-from src.helpers import print_exception, rename_layers, remove_aligned, get_scale_val, are_aligned_images_generated
+from src.helpers import print_exception, rename_layers, remove_aligned, get_scale_val, are_aligned_images_generated, \
+    show_mp_queue_results, show_mp_queue_results, kill_task_queue
 
 
 __all__ = ['compute_affines','rename_layers','remove_aligned']
@@ -37,7 +38,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     cfg.data.clear_method_results(scale_key=scale)
     if rename_switch: rename_layers(use_scale=scale, al_dict=alignment_dict)
 
-    dm = copy.deepcopy(cfg.data) # Copy the data model for this data to add local fields for SWiFT
+    dm = copy.deepcopy(cfg.data) # Copy the data previewmodel for this data to add local fields for SWiFT
     alignment_dict = dm['data']['scales'][scale]['alignment_stack']
     n_tasks = 0
     for layer in alignment_dict: # Operating on the Copy!
@@ -90,36 +91,37 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     task_queue.collect_results()
     dt = time.time() - t0
     cfg.main_window.hud.done()
-    cfg.main_window.hud.post('Completed in %.2f seconds' % (dt))
-
-    logger.info('Checking Status of Tasks...')
-    n_tasks = len(task_queue.task_dict.keys())
-    n_success, n_queued, n_failed = 0, 0, 0
-    for k in task_queue.task_dict.keys():
-        task_item = task_queue.task_dict[k]
-        if task_item['statusBar'] == 'completed':
-            # logger.info('\nCompleted:')
-            # logger.info('   CMD:    %s' % (str(task_item['cmd'])))
-            # logger.info('   ARGS:   %s' % (str(task_item['args'])))
-            # logger.info('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_success += 1
-        elif task_item['statusBar'] == 'queued':
-            # logger.warning('\nQueued:')
-            # logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-            # logger.info('   ARGS:   %s' % (str(task_item['args'])))
-            # logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_queued += 1
-        elif task_item['statusBar'] == 'task_error':
-            logger.critical('\nTask Error:')
-            logger.critical('   CMD:    %s' % (str(task_item['cmd'])))
-            logger.critical('   ARGS:   %s' % (str(task_item['args'])))
-            logger.critical('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_failed += 1
-
-    cfg.main_window.hud.post('%d Alignment Tasks Completed in %.2f seconds' % (n_tasks, dt))
-    cfg.main_window.hud.post('  Num Successful:   %d' % n_success)
-    cfg.main_window.hud.post('  Num Still Queued: %d' % n_queued)
-    cfg.main_window.hud.post('  Num Failed:       %d' % n_failed)
+    # cfg.main_window.hud.post('  Completed in %.2f seconds' % (dt))
+    show_mp_queue_results(task_queue=task_queue, dt=dt)
+    #
+    # logger.info('Checking Status of Tasks...')
+    # n_tasks = len(task_queue.task_dict.keys())
+    # n_success, n_queued, n_failed = 0, 0, 0
+    # for k in task_queue.task_dict.keys():
+    #     task_item = task_queue.task_dict[k]
+    #     if task_item['statusBar'] == 'completed':
+    #         # logger.info('\nCompleted:')
+    #         # logger.info('   CMD:    %s' % (str(task_item['cmd'])))
+    #         # logger.info('   ARGS:   %s' % (str(task_item['args'])))
+    #         # logger.info('   STDERR: %s\n' % (str(task_item['stderr'])))
+    #         n_success += 1
+    #     elif task_item['statusBar'] == 'queued':
+    #         # logger.warning('\nQueued:')
+    #         # logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+    #         # logger.info('   ARGS:   %s' % (str(task_item['args'])))
+    #         # logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+    #         n_queued += 1
+    #     elif task_item['statusBar'] == 'task_error':
+    #         logger.critical('\nTask Error:')
+    #         logger.critical('   CMD:    %s' % (str(task_item['cmd'])))
+    #         logger.critical('   ARGS:   %s' % (str(task_item['args'])))
+    #         logger.critical('   STDERR: %s\n' % (str(task_item['stderr'])))
+    #         n_failed += 1
+    #
+    # cfg.main_window.hud.post('Completed in %.2f seconds' % (n_tasks, dt))
+    # cfg.main_window.hud.post('  Num Successful:   %d' % n_success)
+    # cfg.main_window.hud.post('  Num Still Queued: %d' % n_queued)
+    # cfg.main_window.hud.post('  Num Failed:       %d' % n_failed)
 
     # Sort the tasks by layers rather than by process IDs
     task_dict = {}
@@ -131,20 +133,20 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     task_list = [task_dict[k] for k in sorted(task_dict.keys())]
 
     logger.info("Copying The Project Dictionary")
-    updated_model = copy.deepcopy(cfg.data) # Integrate output of each task into a new combined data model
+    updated_model = copy.deepcopy(cfg.data) # Integrate output of each task into a new combined data previewmodel
 
     for tnum in range(len(task_list)):
 
 
         if cfg.USE_FILE_IO:
-            # Get the updated data model from the file written by single_alignment_job
+            # Get the updated data previewmodel from the file written by single_alignment_job
             output_dir = os.path.join(os.path.split(run_project_name)[0], scale)
             output_file = "single_alignment_out_" + str(tnum) + ".json"
             with open(os.path.join(output_dir, output_file), 'r') as f:
                 dm_text = f.read()
 
         else:
-            # Get the updated data model from stdout for the task
+            # Get the updated data previewmodel from stdout for the task
             parts = task_list[tnum]['stdout'].split('---JSON-DELIMITER---')
             dm_text = None
             for p in parts:
@@ -177,10 +179,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
             need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
 
-    try: task_queue.end_tasks()
-    except: print_exception()
-    task_queue.stop()
-    del task_queue
+    kill_task_queue(task_queue=task_queue)
 
     # '''BUG OCCURS BEFORE THIS POINT'''
     # logger.info('\nExample Layer from Alignment Stack:')

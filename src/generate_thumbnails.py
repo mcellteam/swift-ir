@@ -11,7 +11,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, is_tacc, is_linux, is_mac, natural_sort
+    get_best_path, is_tacc, is_linux, is_mac, natural_sort, show_mp_queue_results, kill_task_queue
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_thumbnails']
@@ -55,6 +55,7 @@ def generate_thumbnails():
     elif is_linux():  bindir = 'bin_linux'
     else:             logger.error("Operating System Could Not Be Resolved"); return
     iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
+    cfg.main_window.hud.done()
     task_queue.start(cpus)
     for i, layer in enumerate(cfg.data['data']['scales'][smallest_scale_key]['alignment_stack']):
         fn = os.path.abspath(layer['images']['base']['filename'])
@@ -65,23 +66,14 @@ def generate_thumbnails():
         task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
         if i in [0, 1, 2]:
             logger.info('\nTQ Params:\n1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
-    cfg.main_window.hud.done()
+
     cfg.main_window.hud.post('Generating Thumbnails...')
     t0 = time.time()
     task_queue.collect_results()
-    try: task_queue.end_tasks()
-    except: print_exception()
-    task_queue.stop()
-    del task_queue
     dt = time.time() - t0
-    cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
+    cfg.main_window.hud.done()
+    show_mp_queue_results(task_queue=task_queue, dt=dt)
+    kill_task_queue(task_queue=task_queue)
 
     logger.info('<<<< Generate Thumbnails End <<<<')
 
-    '''
-    ____task_queue Parameters (Example)____
-    (1) : iscale2_c : /Users/joelyancey/glanceem_swift/alignEM/src/src/lib/bin_darwin/iscale2
-    (2) : scale_arg : +2
-    (3) : of_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif
-    (4) : if_arg : /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.104.tif
-    '''

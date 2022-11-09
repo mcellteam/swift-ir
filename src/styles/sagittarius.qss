@@ -4,6 +4,11 @@ QLabel#browser_overlay_label {
     font-size: 28px;
 }
 
+QTextEdit#matchpoint_text_prompt {
+	background-color: transparent;
+	font-size: 13px;
+}
+
 QTextEdit#main_details_subwidgetA {
     background: transparent;
     font-size: 11px;
@@ -19,6 +24,14 @@ QTextEdit#main_details_subwidgetC {
 QTextEdit#main_details_subwidgetD {
     background: transparent;
     font-size: 11px;
+}
+
+QTextEdit#matchpoint_text_prompt {
+	background-color: transparent;
+}
+
+QTextEdit#matchpoint_text_snr {
+	background-color: transparent;
 }
 
 QTreeView#projectdata_treeview {
