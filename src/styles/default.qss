@@ -1,4 +1,8 @@
 
+QStackedWidget#ImagePanel {
+    background-color: #004060;
+}
+
 QCheckBox#toggle_skip {
 	spacing: 5px;
 	outline: none;

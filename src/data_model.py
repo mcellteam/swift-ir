@@ -43,8 +43,8 @@ class DataModel:
         # if self._data['version'] != self._current_version:
         #     self.upgrade_data_model()
 
-        self._data['user_settings'].setdefault('mp_marker_size', 7)
-        self._data['user_settings'].setdefault('mp_marker_border_width', 4)
+        self._data['user_settings'].setdefault('mp_marker_size', 5)
+        self._data['user_settings'].setdefault('mp_marker_border_width', 3)
 
         logger.info('Current Scale: %s' % str(self.scale()))
         logger.info('Current Layer: %s' % str(self.layer()))
@@ -212,6 +212,18 @@ class DataModel:
                 for p in mp:
                     lst.append([i, p[0], p[1]])
         return lst
+
+    def get_mps(self, role, s=None):
+        if s == None: s = self.scale()
+        lst = []
+        for i, layer in enumerate(self.alstack(s=s)):
+            mp = layer['images'][role]['metadata']['match_points']
+            if mp != []:
+                for p in mp:
+                    lst.append([i, p[0], p[1]])
+        return lst
+
+
 
     def annotations(self, s=None, l=None):
         if s == None: s = self.scale()
@@ -782,7 +794,7 @@ class DataModel:
                 "align_to_ref_method": {
                     "method_data": {},
                     "method_options": {},
-                    "selected_method": "None",
+                    "selected_method": "Auto Swim Align",
                     "method_results": {}
                 },
                 "images": {},
@@ -1091,9 +1103,9 @@ class DataModel:
     #             l['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
     #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
 
-    def clear_method_results(self, scale_key, start_layer=0):
+    def clear_method_results(self, scale, start, end):
         logger.info("Clearing 'method_results' Key")
-        for layer in self._data['data']['scales'][scale_key]['alignment_stack'][start_layer:]:
+        for layer in self._data['data']['scales'][scale]['alignment_stack'][start:end]:
             layer['align_to_ref_method']['method_results'] = {}
 
 

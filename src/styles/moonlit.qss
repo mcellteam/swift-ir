@@ -17,6 +17,10 @@ Useful reference on QSS:
 Be sure to change all image urls to the appropriate folder on your system.
 */
 
+QStackedWidget#ImagePanel {
+    background-color: #004060;
+}
+
 QLabel#browser_overlay_label {
     color: #FF0000;
     font-size: 28px;

@@ -70,7 +70,8 @@ def get_zarr_tensor(zarr_path):
     return arr
 
 
-def get_zarr_array_layer_view(zarr_path:str, layer:int):
+def get_zarr_array_layer_view(zarr_path:str, l=None):
+    if l == None: l = cfg.data.layer()
     arr = ts.open({
         'driver': 'zarr',
         'kvstore': {
@@ -80,14 +81,14 @@ def get_zarr_array_layer_view(zarr_path:str, layer:int):
         'path': 'temp.zarr',
         'metadata': {
             'dtype': '<f4',
-            # 'shape': [cfg.data.res_z(), cfg.data.res_y(), cfg.data.res_x()],
-            # 'chunks': list(cfg.data.chunkshape()),
-            'shape': [4, 32, 32],
-            'chunks': [1, 16, 16],
+            'shape': [cfg.data.res_z(), cfg.data.res_y(), cfg.data.res_x()],
+            'chunks': list(cfg.data.chunkshape()),
+            # 'shape': [4, 32, 32],
+            # 'chunks': [1, 16, 16],
             'order': 'C',
-            'compressor': None,
-            'filters': None,
-            'fill_value': None,
+            # 'compressor': None,
+            # 'filters': None,
+            # 'fill_value': None,
         },
     }, create=True).result()
     # arr[1] = 42  # Overwrites, just like numpy/zarr library
@@ -95,6 +96,7 @@ def get_zarr_array_layer_view(zarr_path:str, layer:int):
     np.array(view)  # Reads from the view
     # Returns JSON spec that can be passed to `ts.open` to reopen the view.
     view.spec().to_json()
+    return view
 
 
 def get_tensor_from_tiff(dir=None, s=None, l=None):
@@ -183,7 +185,7 @@ def tiffs2MultiTiff(directory:str, out:str):
 def remove_zarr(path) -> None:
     # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
-        logger.critical('Removing Extant Zarr Located at %s' % path)
+        logger.info('Removing Extant Zarr Located at %s' % path)
         try:
             with time_limit(20):
                 shutil.rmtree(path, ignore_errors=True)

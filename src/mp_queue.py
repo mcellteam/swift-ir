@@ -67,15 +67,10 @@ class TaskQueue(QObject):
         self.workers = []
         self.close_worker = False
         self.n_tasks = n_tasks
-        self.pbar_text = pbar_text
+        self.pbar_text = pbar_text if pbar_text != None else ''
         if sys.version_info >= (3, 7):
             self.close_worker = True
         self.logging_handler = logging_handler
-        # self.work_queue = self.ctx.JoinableQueue()
-        # self.result_queue = self.ctx.Queue()
-
-
-
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
@@ -98,13 +93,12 @@ class TaskQueue(QObject):
         logger.info('self.n_tasks = %d' % self.n_tasks)
         logger.info('sys.version_info = %s' % str(sys.version_info))
 
-        cfg.main_window.hud.post('%d Workers Are Processing %d tasks' % (self.n_workers, self.n_tasks))
+        cfg.main_window.hud.post('%d Workers Are Processing %d tasks [%s]' % (self.n_workers, self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
             if i != 0: sys.stderr.write('\n')
             sys.stderr.write('Starting Worker %d >>>>' % i)
             try:
-                # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
@@ -123,7 +117,6 @@ class TaskQueue(QObject):
         for i in range(self.n_workers):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
             try:
-                # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
@@ -179,9 +172,7 @@ class TaskQueue(QObject):
     def collect_results(self) -> None:
         '''Run All Tasks and Collect Results'''
         logger.info('>>>> Task Queue (collect_results) >>>>')
-        logger.info('self.ctx.get_start_method() = %s' % str(self.ctx.get_start_method()))
-        # logger.info('mp.log_to_stderr() = %s' % str(mp.log_to_stderr())) #?
-        # cfg.main_window.hud.post('Collecting Results...')
+        logger.info('Start Method: %s' % str(self.ctx.get_start_method()))
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
         retries_tot = 0

@@ -11,6 +11,11 @@ Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
 
+QStackedWidget#ImagePanel {
+    background-color: #004060;
+}
+
+
 QCheckBox#toggle_skip {
 	spacing: 5px;
 	outline: none;

@@ -293,7 +293,7 @@ def check_for_binaries():
                os.path.join(bindir, 'swim')
                ]
     for f in bin_lst:
-        if os.path.isfile(f):  print(u'[\u2713] FOUND: ' + f)
+        if os.path.isfile(f):  print(u'\u2713 FOUND: ' + f)
         else:  logger.warning('BINARY FILE NOT FOUND, PLEASE COMPILE: ' + f)
 
 
