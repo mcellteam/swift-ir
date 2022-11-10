@@ -413,7 +413,7 @@ class MainWindow(QMainWindow):
             diff = [a_i - b_i for a_i, b_i in zip(snr_before, snr_after)]
 
             no_chg = [i for i, x in enumerate(diff) if x == 0]
-            pos = [i for i, x in enumerate(diff) if x >= 0]
+            pos = [i for i, x in enumerate(diff) if x > 0]
             neg = [i for i, x in enumerate(diff) if x < 0]
             self.hud.post('Re-alignment Results:')
             self.hud.post('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
