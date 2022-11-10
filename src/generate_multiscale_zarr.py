@@ -51,8 +51,6 @@ def generate_multiscale_zarr(src, out):
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
     cfg.main_window.hud.done()
-    # cfg.main_window.hud.post("Completed in %.2f Seconds" % dt)
-
     logger.info('<<<< Generate Zarr End <<<<')
 
 

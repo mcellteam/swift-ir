@@ -46,9 +46,6 @@ CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 CNAME = 'zstd'
 CLEVEL = 5
 
-''''''
-SHADER = ''''''
-
 '''Other Defaults'''
 DUMMY = False
 USE_TENSORSTORE = True
@@ -63,10 +60,15 @@ DEBUG_MP = False
 NO_SPLASH = True
 USE_OPENCV = False
 USE_TORNADO = True
+SHADER = None
+THEME = 0
+SHOW_UI_CONTROLS = False
 
 USE_FILE_IO = 0
 CODE_MODE = 'c'
 HTTP_PORT = 9000
+
+MATCH_POINT_MODE = False
 
 # cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'

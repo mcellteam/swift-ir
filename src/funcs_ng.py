@@ -19,13 +19,14 @@ __all__ = []
 
 logger = logging.getLogger(__name__)
 
+
 # def write_some_annotations(self):
 #     logger.info('Writing some annotations...')
 #     tempdir = tempfile.mkdtemp()
 #     atexit.register(shutil.rmtree, tempdir)
 #
 #     writer = neuroglancer.write_annotations.AnnotationWriter(
-#         coordinate_space_3d=self.coordinate_space_3d,
+#         coordinate_space=self.coordinate_space,
 #         annotation_type='point',
 #         properties=[
 #             ng.AnnotationPropertySpec(id='size', type='float32'),
@@ -41,19 +42,16 @@ logger = logging.getLogger(__name__)
 #     writer.add_point([20, 20, 20], size=80, cell_type=16, point_color=(255, 0, 0, 255))
 #     writer.write(tempdir)
 
-class CORS_RequestHandler(http.server.SimpleHTTPRequestHandler):
-    def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        http.server.SimpleHTTPRequestHandler.end_headers(self)
-
-class SimpleHTTPServer(http.server.HTTPServer):
-    protocol_version = 'HTTP/1.1'
-    def __init__(self, server_address):
-        http.server.HTTPServer.__init__(self, server_address, CORS_RequestHandler)
-
-
-
-
+# class CORS_RequestHandler(http.server.SimpleHTTPRequestHandler):
+#     def end_headers(self):
+#         self.send_header('Access-Control-Allow-Origin', '*')
+#         http.server.SimpleHTTPRequestHandler.end_headers(self)
+#
+# class SimpleHTTPServer(http.server.HTTPServer):
+#     protocol_version = 'HTTP/1.1'
+#     def __init__(self, server_address):
+#         http.server.HTTPServer.__init__(self, server_address, CORS_RequestHandler)
+#
 
 class CorsStaticFileHandler(tornado.web.StaticFileHandler):
 

@@ -73,20 +73,6 @@ def generate_scales():
     cfg.main_window.hud.done()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
-
-
-    # cfg.main_window.hud.post("Completed in %.2f Seconds" % dt)
-
-    # '''Set more lenient permissions on Tifs'''
-    # Triggers a warning when working with image files owned by other TACC users
-    # for s in cfg.data.scales():
-    #     logger.info('Setting permissions on generated images for s %s...' % s)
-    #     path = os.path.join(cfg.data.dest(), s, 'img_src')
-    #     for dirpath, dirnames, filenames in os.walk(path):
-    #         for filename in filenames:
-    #             path = os.path.join(dirpath, filename)
-    #             os.chmod(path, 0o766)
-
     logger.info('<<<< Generate Scales End <<<<')
 
     '''

@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 
-shader_normal = ''''''
+ann_shader = '''
+void main() { 
+  setPointMarkerBorderColor(prop_ptColor()); 
+  setPointMarkerBorderWidth(prop_ptWidth()); 
+  setPointMarkerSize(prop_size()); 
+}
+'''
 
-shader_test1 = '''#uicontrol vec3 color color(default="red")
+shader_test1 = '''
+#uicontrol vec3 color color(default="red")
 #uicontrol float brightness slider(min=-1, max=1)
 #uicontrol float contrast slider(min=-3, max=3, step=0.01)
 void main() {
@@ -11,6 +18,7 @@ void main() {
           exp(contrast));
 }
 '''
+
 shader_test2 = '''
 #uicontrol vec3 color color(default="white")
 #uicontrol float min slider(default=0, min=0, max=1, step=0.01)
@@ -30,9 +38,7 @@ void main() {
       scale(toNormalized(getDataValue()), min, max) + brightness
     ) * exp(contrast)
   );
-  setPointMarkerBorderColor(prop_ptColor()); 
-  setPointMarkerBorderWidth(prop_ptWidth()); 
-  setPointMarkerSize(prop_size());
+  
 }
 '''
 

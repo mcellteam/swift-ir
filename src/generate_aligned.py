@@ -75,7 +75,6 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         task_queue.collect_results()
         dt = time.time() - t0
         cfg.main_window.hud.done()
-        # cfg.main_window.hud.post('  Completed in %.2f seconds.' % dt)
         show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()
