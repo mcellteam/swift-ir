@@ -194,7 +194,7 @@ class NgHost(QRunnable):
                 s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV, shader=cfg.SHADER)
                 s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV, shader=cfg.SHADER)
                 if is_aligned and not self.match_point_mode:
-                    s.layers[self.aligned_l] = ng.ImageLayer( source=self.alLV)
+                    s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV, shader=cfg.SHADER)
 
             s.layers['mp_ref'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
                                                          annotations = self.pt2ann(points=cfg.data.get_mps(role='ref')),

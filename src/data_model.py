@@ -131,7 +131,6 @@ class DataModel:
                 logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
 
 
-
     def scale(self) -> str:
         '''Returns the Current Scale as a String.'''
         assert isinstance(self._data['data']['current_scale'], str)
