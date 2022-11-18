@@ -1,7 +1,35 @@
+/*
+Colors:
+#1B1E23 - Duron black
+#141414 - Chinese Black
+*/
 
-QStackedWidget#ImagePanel {
-    background-color: #004060;
+
+HeadupDisplay#hud {
+    background-color: #141414;
+    color: #f3f6fb;
 }
+
+QLabel#banner_layer_label { color: #F3F6FB; }
+QLabel#banner_view_label { color: #F3F6FB; }
+QLabel#banner_scale_label { color: #F3F6FB; }
+QLabel#align_label_resolution { color: #F3F6FB; }
+QLabel#extra_header_text_label { color: #F3F6FB; }
+
+QWidget#show_hide_main_features_widget {
+background-color: #141414;
+border-radius: 2px;
+}
+
+QWidget#details_banner {
+	background-color: #141414;
+	color: #F3F6FB;
+	font-size: 14px;
+}
+
+/* These should be the same */
+QStackedWidget#ImagePanel { background-color: #1B1E23;  }
+QWidget#ng_panel { background-color: #1B1E23; }
 
 QCheckBox#toggle_skip {
 	spacing: 5px;
@@ -28,6 +56,8 @@ QCheckBox {
 	border-style: outset;
 	font-size: 10px;
 }
+
+
 
 
 QLabel#browser_overlay_label {
@@ -81,10 +111,48 @@ QTreeView#projectdata_treeview {
 }
 
 
-##############################################
+ /* ---- QMenu  ---- */
+
+QMenu {
+    background-color: white;
+    margin: 2px; /* some spacing around the menu */
+}
+
+QMenu::item {
+    padding: 2px 25px 2px 20px;
+    border: 1px solid transparent; /* reserve space for selection border */
+}
+
+QMenu::item:selected {
+    border-color: darkblue;
+    background: rgba(100, 100, 100, 150);
+}
+
+QMenu::icon:checked { /* appearance of a 'checked' icon */
+    background: gray;
+    border: 1px inset gray;
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    bottom: 1px;
+    left: 1px;
+}
+
+QMenu::separator {
+    height: 2px;
+    background: lightblue;
+    margin-left: 10px;
+    margin-right: 5px;
+}
+
+QMenu::indicator {
+    width: 13px;
+    height: 13px;
+}
 
 
- /* --------------------------------------- QScrollBar  -----------------------------------*/
+ /* ---- QScrollBar  ---- */
+
 QScrollArea {
 	color: #FFFFFF;
 	background-color:#000000;
@@ -137,46 +205,7 @@ QDialog QLabel {
 }
 
 #####
-QMenu {
-	border-width: 2px;
-	/*border-radius: 10px;*/
-	/*border-color: rgb(255, 153, 0);*/
-	border-color: #171d22;
-	border-style: outset;
-	color: #000000;
-}
 
-QMenuBar {
-	background: #1c2321;
-	color: #F3F6FB;
-}
-
-QMenu::item {
-	spacing: 3px;
-	padding: 3px 15px;
-}
-
-QMenuBar::item {
-  	spacing: 3px;
-	padding: 1px 4px;
-  	background: transparent;
-}
-
-QMenuBar::item:selected {
-  	background:rgb(115, 115, 115);
-}
-
-
-QMenu::item:selected {
-	spacing: 3px;
-	padding: 3px 15px;
-	background:rgb(115, 115, 115);
-	color:rgb(255, 255, 255);
-	border-width: 1px;
-	border-radius: 1px;
-	border-color: rgb(58, 58, 58);
-	border-style: inset;
-}
 
 
 
@@ -213,17 +242,6 @@ QMainWindow {
 	color: #f3f6fb; /* dark */
 }
 
-
-
-QLabel {
-	/*color: #d3dae3;*/
-	/*color: #ffffff;*/
-
-
-	/*color: #F3F6FB;*/
-	color: #151a1e;
-
-}
 
 QToolTip {
     background-color: #8ad4ff;

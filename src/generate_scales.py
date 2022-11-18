@@ -55,7 +55,7 @@ def generate_scales():
                 '''All Other Scales'''
                 if cfg.CODE_MODE == 'python':
                     task_queue.add_task(cmd=sys.executable,
-                                        args=['job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')
+                                        args=['src/job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')
                 else:
                     scale_arg = '+%d' % scale
                     of_arg = 'of=%s' % ofn

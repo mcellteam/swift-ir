@@ -1,25 +1,26 @@
 /*
 Derived From:
-
 https://github.com/thatlittleboy/TeXstudio-Qt-Stylesheet/blob/master/stylesheet.qss
 
-Colour scheme used:
-- White (text): #eff0f1
-- Dark black (main bg): #272a2d
-- Lighter dark black (menu bar): #373b3f
-- Dark blue: #18465d
-- Gray: #76797C
-- Red (accents): #db1c49
-
-Useful reference on QSS:
- - http://doc.qt.io/qt-5/stylesheet-reference.html#alternate-background-color-prop
-
-Be sure to change all image urls to the appropriate folder on your system.
+Colors:
+#6D7D77 - blue smoke, green blue
 */
 
-QStackedWidget#ImagePanel {
-    background-color: #004060;
+QWidget#details_banner {
+	background-color: #141414;
+	color: #f3f6fb;
+	font-size: 14px;
 }
+
+/* These should be the same */
+QStackedWidget#ImagePanel { background-color: #6D7D77;  }
+QWidget#ng_panel { background-color: #6D7D77; }
+
+QLabel#banner_layer_label { background-color: transparent; }
+QLabel#banner_view_label { background-color: transparent; }
+QLabel#banner_scale_label { background-color: transparent; }
+QLabel#align_label_resolution { background-color: transparent; }
+
 
 QLabel#browser_overlay_label {
     color: #FF0000;
@@ -30,18 +31,19 @@ QTextEdit#matchpoint_text_prompt {
 	font-size: 13px;
 }
 
-
 QTextEdit#main_details_subwidgetA {
     background: transparent;
+    color: #1B1E23;
     font-size: 11px;
 }
 QTextEdit#main_details_subwidgetB {
     background: transparent;
+    color: #1B1E23;
     font-size: 11px;
 }
-QTextEdit#main_details_subwidgetC {
-    background: transparent;
+QTextEdit#afm_widget {
     font-size: 11px;
+    color: #1B1E23;
 }
 QTextEdit#main_details_subwidgetD {
     background: transparent;

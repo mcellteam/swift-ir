@@ -26,8 +26,6 @@ logger = logging.getLogger(__name__)
 SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     '''Function run by worker processes'''
-    time.sleep(.1)
-
     for task_id, task in iter(task_q.get, 'END_TASKS'):
         QApplication.processEvents()
 
@@ -81,23 +79,25 @@ class TaskQueue(QObject):
         self.task_id = 0
         self.n_workers = n_workers
         self.retries = retries
-        self.task_dict = {}
         # if cfg.DEBUG_MP:
         #     mpl.setLevel(logging.DEBUG)
         # else:
         #     mpl.setLevel(logging.INFO)
-        logger.info('TaskQueue Initialization')
-        # logger.info('self.start_method = %s' % self.start_method)
-        logger.info('self.ctx.get_start_method() = %s' % self.ctx.get_start_method())
-        logger.info('self.close_worker = %s' % str(self.close_worker))
-        logger.info('self.n_tasks = %d' % self.n_tasks)
-        logger.info('sys.version_info = %s' % str(sys.version_info))
+        logger.info('Starting Multiprocessing Queue [# tasks: %d, method: %s]' % (self.n_tasks, self.ctx.get_start_method()))
 
-        cfg.main_window.hud.post('%d Workers Are Processing %d tasks [%s]' % (self.n_workers, self.n_tasks, self.pbar_text))
+        if self.n_tasks == 1:
+            cfg.main_window.hud.post('1 Worker Is Working On 1 Task')
+        elif self.n_workers >= self.n_tasks:
+            cfg.main_window.hud.post(
+                '%d Workers Are Processing %d tasks [%s]' % (self.n_tasks, self.n_tasks, self.pbar_text))
+        else:
+            cfg.main_window.hud.post(
+                '%d Workers Are Processing %d tasks [%s]' % (self.n_workers, self.n_tasks, self.pbar_text))
+
 
         for i in range(self.n_workers):
-            if i != 0: sys.stderr.write('\n')
-            sys.stderr.write('Starting Worker %d >>>>' % i)
+            # if i != 0: sys.stderr.write('\n')
+            sys.stderr.write('Starting Worker %d >>>>\n' % i)
             try:
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -127,12 +127,12 @@ class TaskQueue(QObject):
 
     def end_tasks(self) -> None:
         '''Tell child processes to stop'''
-        logger.info("'Calling 'end_tasks' on Task Queue")
+        # logger.info('Ending Tasks...')
         for i in range(self.n_workers):
             self.work_queue.put('END_TASKS')
 
     def stop(self) -> None:
-        logger.info("Calling 'stop' on Task Queue")
+        logger.info('Closing the Queue...')
         self.work_queue.close()
         time.sleep(0.1)  # Needed to Avoid Race Condition
     #    for i in range(len(self.workers)):
@@ -171,12 +171,11 @@ class TaskQueue(QObject):
 
     def collect_results(self) -> None:
         '''Run All Tasks and Collect Results'''
-        logger.info('>>>> Task Queue (collect_results) >>>>')
-        logger.info('Start Method: %s' % str(self.ctx.get_start_method()))
+        logger.info('Running Task Queue Tasks...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
         retries_tot = 0
-        logger.info('# Retries Allowed: %s' % self.retries)
+        logger.info('# Retries Allowed : %s' % self.retries)
         try:
             self.parent.pbar_max(self.n_tasks)
             if self.pbar_text != None:
@@ -185,7 +184,7 @@ class TaskQueue(QObject):
         except:
             print_exception()
         while (retries_tot < self.retries + 1) and n_pending:
-            logger.info('# Tasks Pending: %d' % n_pending)
+            logger.info('# Tasks Pending   : %d' % n_pending)
             # self.end_tasks()
             # self.work_queue.join()
             # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
@@ -225,13 +224,13 @@ class TaskQueue(QObject):
         logger.debug('    Failed Tasks: %d\n' % (n_pending))
         logger.debug('    Retries: %d\n\n' % (retries_tot - 1))
         if n_pending == 0:
-            logger.info('Failed Tasks   : %d' % n_pending)
-            logger.info('Retries        : %d' % (retries_tot - 1))
+            logger.info('Failed Tasks      : %d' % n_pending)
+            logger.info('Retries           : %d' % (retries_tot - 1))
             logger.info('Complete')
         else:
             logger.error('Something Went Wrong')
-            logger.error('Failed Tasks  : %d' % n_pending)
-            logger.error('Retries       : %d' % (retries_tot - 1))
+            logger.error('Failed Tasks     : %d' % n_pending)
+            logger.error('Retries          : %d' % (retries_tot - 1))
             logger.error('Complete')
 
         # self.end_tasks()
@@ -239,7 +238,7 @@ class TaskQueue(QObject):
         # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
         self.parent.pbar.hide()
 
-        logger.info('<<<< Task Queue (collect_results) <<<<')
+        logger.info('Exiting Task Queue scope')
 
 
 

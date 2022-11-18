@@ -35,7 +35,7 @@ def generate_zarr_scales():
     for ID, img in enumerate(imgs):
         for scale in cfg.data.scales()[::-1]:
             path_out = os.path.join(od, 's' + str(get_scale_val(scale)))
-            script = 'job_convert_zarr.py'
+            script = 'src/job_convert_zarr.py'
             task_args = [sys.executable,
                          script,
                          str(ID),

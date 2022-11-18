@@ -102,7 +102,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
 def get_tensor_from_tiff(dir=None, s=None, l=None):
     if s == None: s = cfg.data.scale()
     if l == None: l = cfg.data.layer()
-    fn = os.path.basename(cfg.data.image_name(s=s,l=l))
+    fn = os.path.basename(cfg.data.base_image_name(s=s, l=l))
     path = os.path.join(cfg.data.dest(), s, 'img_src', fn)
     logger.info('Path: %s' % path)
     arr = ts.open({
@@ -196,27 +196,28 @@ def remove_zarr(path) -> None:
 
 def preallocate_zarr_src():
     cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
-    logger.info('Preallocating Scaled Zarr Array...')
+    logger.info('Preallocating Zarr scales...')
     try:
         zarr_path = os.path.join(cfg.data.dest(), 'img_src.zarr')
-        logger.info('Zarr Root Location: %s' % zarr_path)
+        logger.info('Zarr Root: %s' % zarr_path)
         if os.path.exists(zarr_path):
+            cfg.main_window.hud.post('Zarr source arrays already exist - Removing them...')
             remove_zarr(zarr_path)
 
         root = zarr.group(store=zarr_path, overwrite=True)
         # synchronizer = zarr.ThreadSynchronizer()
         # root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
 
-        cname = cfg.data.cname()
-        clevel = cfg.data.clevel()
-        chunkshape = cfg.data.chunkshape()
+        # cname = cfg.data.cname()
+        # clevel = cfg.data.clevel()
+        # chunkshape = cfg.data.chunkshape()
+        cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
 
         for scale in cfg.data.scales():
-            logger.critical('scale is %s' % str(scale))
             dimx, dimy = cfg.data.image_size(s=scale)
             name = 's' + str(get_scale_val(scale))
             shape = (cfg.data.n_imgs(), dimy, dimx)
-            logger.info('Preallocating Zarr %s array, shape: %s' % (scale, str(shape)))
+            logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(scale), str(shape)))
             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
             # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
@@ -226,7 +227,6 @@ def preallocate_zarr_src():
         cfg.main_window.hud.done()
 
 def preallocate_zarr_aligned(scales=None):
-    cfg.main_window.hud.post('Preallocating Aligned Zarr Array...')
     logger.info('Preallocating Aligned Zarr Array...')
     try:
         if scales == None: scales = [cfg.data.scale()]
