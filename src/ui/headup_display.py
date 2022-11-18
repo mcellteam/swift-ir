@@ -177,24 +177,25 @@ class HeadupDisplay(QWidget):
         self.textedit.undo()
 
     def set_theme_default(self):
+
         self.textedit.setStyleSheet("""
             /*background-color: #d3dae3;*/
             /*background-color:  #f5ffff;*/
             /*background-color:  #151a1e;*/
-            background-color:  #000000;
+            background-color:  #141414;
             /*border-style: solid;*/
             border-style: inset;
             /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
             border-color: #d3dae3;     /* light off-white */
             border-width: 0px;
-            border-radius: 2px;            
+            border-radius: 2px;
         """)
 
 
     def set_theme_light(self):
 
         self.textedit.setStyleSheet("""
-            color: #171d22;
+            color: #003B5C;
             /*background-color: #d3dae3;*/
             /*background-color:  #f5ffff;*/
             /*background-color:  #151a1e;*/

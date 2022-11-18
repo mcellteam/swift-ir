@@ -59,7 +59,6 @@ def ImageSize(file_path):
     :returns:  (width, height) for a given img file content
     :rtype: (int, int)
     '''
-    logger.debug('ImageSize:')
     size = os.path.getsize(file_path)
 
     with open(file_path, 'rb') as input:
@@ -208,7 +207,10 @@ def ImageSize(file_path):
             raise UnknownImageFormat(
                 "Sorry, don't know how to get information from this file."
             )
-
+    try:
+        logger.info('Returning: %d x %d' % (width,height))
+    except:
+        logger.warning('Returning: ? - ImageSize has a problem')
     return width, height
 
 class UnknownImageFormat(Exception):

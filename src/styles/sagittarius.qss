@@ -1,8 +1,9 @@
 
 
-QStackedWidget#ImagePanel {
-    background-color: #004060;
-}
+
+/* These should be the same */
+QStackedWidget#ImagePanel { background-color: #004060;  }
+QWidget#ng_panel { background-color: #004060; }
 
 QLabel#browser_overlay_label {
     color: #FF0000;
@@ -16,19 +17,17 @@ QTextEdit#matchpoint_text_prompt {
 
 QTextEdit#main_details_subwidgetA {
     background: transparent;
+    color: #1B1E23;
     font-size: 11px;
 }
 QTextEdit#main_details_subwidgetB {
     background: transparent;
+    color: #1B1E23;
     font-size: 11px;
 }
-QTextEdit#main_details_subwidgetC {
-    background: transparent;
+QTextEdit#afm_widget {
     font-size: 11px;
-}
-QTextEdit#main_details_subwidgetD {
-    background: transparent;
-    font-size: 11px;
+    color: #1B1E23;
 }
 
 QTextEdit#matchpoint_text_prompt {

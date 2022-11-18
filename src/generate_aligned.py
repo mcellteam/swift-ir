@@ -47,15 +47,24 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
 
     if cfg.data.has_bb():
         # Note: now have got new cafm's -> recalculate bounding box
-        cfg.data.set_bounding_rect(ComputeBoundingRect(alstack)) # Only after SetStackCafm
+        try: logger.info(f'Old Bounding Rect: {cfg.data.bounding_rect(s=scale)}')
+        except: pass
+        rect = ComputeBoundingRect(alstack)
+        logger.info(f'New Bounding Box: {str(rect)}')
+        cfg.data.set_bounding_rect(rect) # Only after SetStackCafm
         rect = cfg.data.bounding_rect(s=scale)
+        logger.info(f'Setting Aligned Size To: {rect[2:]}')
+        cfg.data.set_aligned_size(rect[2:])
+
     else:
         width, height = cfg.data.image_size(s=scale)
         # rect = [0, 0, height, width] # May need to swap width, height for Zarr representation
         rect = [0, 0, width, height]
-    cfg.data.set_bounding_rect(rect)
-    logger.info('Bounding Rect is %s' % str(rect))
-    logger.info('rect = %s' % str(rect))
+    logger.info(f' Bounding Box x, y offsets: {rect[0]}, {rect[1]}')
+    logger.info(f' Null Bias is {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
+
+    # cfg.main_window.hud.post([])
+    logger.info('Bounding Rect:  %s' % str(rect))
     if preallocate: preallocate_zarr_aligned(scales=[scale])
     if num_layers == -1: end_layer = len(alstack)
     else: end_layer = start_layer + num_layers

@@ -27,8 +27,7 @@ class DataModel:
     """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
 
     def __init__(self, data=None, name=''):
-        logger.info('Constructing Data Model')
-        # self._current_version = 0.31
+        logger.info('Constructing Data Model (caller: %s)...' % inspect.stack()[1].function)
         # self._current_version = 0.31
         self._current_version = 0.40
         if data == None:
@@ -43,11 +42,8 @@ class DataModel:
         # if self._data['version'] != self._current_version:
         #     self.upgrade_data_model()
 
-        self._data['user_settings'].setdefault('mp_marker_size', 5)
-        self._data['user_settings'].setdefault('mp_marker_border_width', 3)
-
-        logger.info('Current Scale: %s' % str(self.scale()))
-        logger.info('Current Layer: %s' % str(self.layer()))
+        self._data['user_settings'].setdefault('mp_marker_size', 6)
+        self._data['user_settings'].setdefault('mp_marker_lineweight', 2)
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -97,28 +93,25 @@ class DataModel:
     def name(self) -> str:
         return os.path.split(cfg.data.dest())[-1]
 
-    def image_name(self, s=None, l=None):
+    def base_image_name(self, s=None, l=None):
         if s == None: s = self.scale()
         if l == None: l = self.layer()
         # return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
-        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
+        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
 
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''
-        # logger.info('layer:')
         try:
             layer = self._data['data']['current_layer']
-            assert layer is not None
+            if layer is None:
+                logger.warning('Layer is None!')
             return layer
         except:
-            logger.warning("current_layer Key Is Undefined -> Setting Layer to 0")
-            try:
-                # self._data['data']['current_layer'] = 0
-                self.set_layer(0)  # Todo check this
-                return self.layer()
-            except:
-                print_exception()
+            logger.warning('Falling Back To Layer 0')
+            self.set_layer(0)
+            return self._data['data']['current_layer']
+
 
     def print_all_matchpoints(self):
         logger.info('Match Points:')
@@ -129,6 +122,24 @@ class DataModel:
                 logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
             if b != []:
                 logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
+
+    def find_layers_with_matchpoints(self):
+        lst = []
+        for i, l in enumerate(self.alstack()):
+            r = l['images']['ref']['metadata']['match_points']
+            b = l['images']['base']['metadata']['match_points']
+            if (r != []) or (b != []):
+                lst.append(i)
+        return lst
+
+    # def find_layers_with_skips(self):
+    #     lst = []
+    #     for i, l in enumerate(self.alstack()):
+    #         r = l['images']['ref']['metadata']['match_points']
+    #         b = l['images']['base']['metadata']['match_points']
+    #         if (r != []) or (b != []):
+    #             lst.append(i)
+    #     return lst
 
 
     def scale(self) -> str:
@@ -363,6 +374,10 @@ class DataModel:
             logger.warning('chunkshape not in dictionary')
             return (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
 
+    def get_user_zarr_settings(self):
+        '''Returns user settings for cname, clevel, chunkshape as tuple (in that order).'''
+        return (self.cname(), self.clevel(), self.chunkshape())
+
     def scale_pretty(self) -> str:
         return 'Scale %d' % self.scale_val()
 
@@ -473,14 +488,17 @@ class DataModel:
 
     def image_size(self, s=None):
         if s == None: s = self.scale()
+        # logger.info('Called by %s' % inspect.stack()[1].function)
+        # logger.info('Scale: %s' % str(s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
+            # print_exception()
             try:
-                img_size = ImageSize(self.path_base(s=s))
-                self._data['data']['scales'][s]['image_src_size'] = img_size
-                return self.image_size(s=s)
+                self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+                return self._data['data']['scales'][s]['image_src_size']
             except:
+                print_exception()
                 logger.warning('Unable to return the image size (scale=%s)' % s)
                 return None
 
@@ -515,16 +533,18 @@ class DataModel:
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename']
 
     def path_base(self, s=None, l=None) -> str:
+
         if s == None: s = self.scale()
         if l == None: l = self.layer()
         # Todo -- Refactor!
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
         except:
-            try:
-                return self._data['data']['scales'][s]['alignment_stack'][0]['images']['base']['filename']
-            except:
-                print_exception()
+            print_exception()
+            # try:
+            #     return self._data['data']['scales'][s]['alignment_stack'][0]['images']['base']['filename']
+            # except:
+            #     print_exception()
 
     def name_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
@@ -591,6 +611,10 @@ class DataModel:
         if s == None: s = self.scale()
         self._data['data']['scales'][s]['bounding_rect'] = bounding_rect
 
+    def set_calculate_bounding_rect(self, s=None):
+        if s == None: s = self.scale()
+        self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
+
     def set_image_size(self, size, s=None) -> None:
         if s == None: s = self.scale()
         self._data['data']['scales'][s]['image_size'] = size
@@ -637,6 +661,16 @@ class DataModel:
                 'align_to_ref_method']['method_results']['cumulative_afm'] = cafm
         except:
             print_exception()
+
+    def selected_method(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method']
+
+    def set_selected_method(self, method, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method'] = method
 
     def set_paths_absolute(self, head):
         logger.info('setting absolute file paths')
@@ -959,8 +993,8 @@ class DataModel:
 
             # Begin the upgrade process:
 
-            self._data['user_settings'].setdefault('mp_marker_size', 7)
-            self._data['user_settings'].setdefault('mp_marker_border_width', 4)
+            self._data['user_settings'].setdefault('mp_marker_size', 5)
+            self._data['user_settings'].setdefault('mp_marker_lineweight', 2)
 
             if self._data['version'] <= 0.26:
                 logger.info("Upgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.27))
