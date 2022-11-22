@@ -11,6 +11,28 @@ from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
 
+class AskContinueDialog(QDialog):
+    '''Simple dialog to ask user if they wish to proceed. Usage:
+        dlg = AskContinueDialog(self)
+        if dlg.exec():
+            # Do if accepted
+        else:
+            # Do if Rejected'''
+    def __init__(self, title:str, msg:str, parent=None):
+        self.parent = parent
+        super(AskContinueDialog, self).__init__()
+
+        self.setWindowTitle(title)
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+        self.layout = QVBoxLayout()
+        message = QLabel(msg)
+        self.layout.addWidget(message)
+        self.layout.addWidget(self.buttonBox)
+        self.setLayout(self.layout)
+
 
 # class RenameProject(QWidget):
 #
@@ -47,7 +69,7 @@ class ConfigDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
         super(ConfigDialog, self).__init__()
-        logger.info('>>>> Config Dialog Start >>>>')
+        logger.critical('>>>> Config Dialog >>>>')
         cfg.main_window.hud.post('Configuring Project Settings Based On User Responses')
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()

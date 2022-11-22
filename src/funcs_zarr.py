@@ -208,9 +208,6 @@ def preallocate_zarr_src():
         # synchronizer = zarr.ThreadSynchronizer()
         # root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
 
-        # cname = cfg.data.cname()
-        # clevel = cfg.data.clevel()
-        # chunkshape = cfg.data.chunkshape()
         cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
 
         for scale in cfg.data.scales():

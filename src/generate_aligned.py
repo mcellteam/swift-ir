@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
-    logger.info('>>>> Generate Aligned >>>>')
+    logger.critical('>>>> Generate Aligned >>>>')
     tryRemoveDatFiles(scale)
     Z_STRIDE = 0
 

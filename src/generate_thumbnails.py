@@ -20,26 +20,22 @@ logger = logging.getLogger(__name__)
 
 
 def generate_thumbnails():
-    logger.info('>>>> Generate Thumbnails >>>>')
+    logger.critical('>>>> Generate Thumbnails >>>>')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
     # Todo: If the smallest scale happens to be less that thumbnail size, just copy smallest scale for thumbnails
 
     target_thumbnail_size = 200 # 200x200
-
-    # largest_scale = natural_sort(cfg.data['data']['scales'].keys())[0]
     smallest_scale_key = natural_sort(cfg.data['data']['scales'].keys())[-1]
     scale_val = get_scale_val(smallest_scale_key)
-
     siz_x, siz_y = cfg.data.image_size(s=smallest_scale_key)
     siz_start = siz_x if siz_x <= siz_y else siz_y
-
     scale_factor = int(siz_start/target_thumbnail_size)
     logger.info("Thumbnail Scaling Factor : %s" % str(scale_factor))
-
-    n_tasks = cfg.data.n_imgs()
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Thumbnails - %d Cores' % cpus)
+    task_queue = TaskQueue(n_tasks=cfg.data.n_imgs(),
+                           parent=cfg.main_window,
+                           pbar_text='Generating Thumbnails - %d Cores' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
     od = os.path.join(cfg.data.dest(), 'thumbnails')
@@ -64,8 +60,8 @@ def generate_thumbnails():
         of_arg = 'of=%s' % ofn
         if_arg = '%s' % fn
         task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
-        if i in [0, 1, 2]:
-            logger.info('\nTQ Params:\n1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
+        # if i in [0, 1]:
+        #     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 
     cfg.main_window.hud.post('Generating Thumbnails...')
     t0 = time.time()

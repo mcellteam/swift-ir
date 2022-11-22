@@ -99,6 +99,29 @@ class DataModel:
         # return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
+    def filenames(self):
+        files = []
+        for layer in self._data['data']['scales'][self.scales()[0]]['alignment_stack']:
+            # files.append(layer['images']['base']['filename'])
+            files.append(os.path.abspath(layer['images']['base']['filename']))
+
+        return files
+
+    def set_source_path(self, dir):
+        # self._data['data']['src_img_root'] = dir
+        self._data['data'].update({'source_path': dir})
+
+    def source_path(self):
+        return self._data['data']['source_path']
+
+    def get_source_img_paths(self):
+        imgs = []
+        for f in self.filenames():
+            imgs.append(os.path.join(self.source_path(), os.path.basename(f)))
+        return imgs
+
+
+
 
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''
@@ -411,8 +434,7 @@ class DataModel:
         '''Get scales list.
         Faster than O(n*m) performance.
         Preserves order of scales.'''
-        l = natural_sort([key for key in self._data['data']['scales'].keys()])
-        return l
+        return natural_sort([key for key in self._data['data']['scales'].keys()])
 
     def skipped(self, s=None, l=None) -> bool:
         # logger.info('skipped (called By %s)' % inspect.stack()[1].function)
@@ -836,6 +858,7 @@ class DataModel:
         pass
 
     def add_img(self, scale_key, layer_index, role, filename=''):
+        logger.info('add_img scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))
         self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
             {
                 "filename": filename,

@@ -4,6 +4,8 @@ import logging
 import sys
 import traceback
 
+import src.config as cfg
+
 from qtpy.QtCore import Slot, Signal, QObject, QRunnable
 
 __all__ = ['BackgroundWorker']
@@ -85,7 +87,7 @@ class BackgroundWorker(QRunnable):
         #     # QApplication.processEvents()
         # else:
         #     logger.critical('self.status equals None')
-        # cfg.main_window._working = True
+        cfg.main_window._working = True
         # cfg.main_window.pbar.show()
 
         try:
@@ -100,8 +102,9 @@ class BackgroundWorker(QRunnable):
         else:
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
+            cfg.main_window._working = False
             self.signals.finished.emit()
-            # cfg.main_window._working = False
+
             # cfg.main_window.pbar.hide()
             # cfg.main_window.set_idle()
             # cfg.main_window._working = False

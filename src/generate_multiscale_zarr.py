@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 Z_STRIDE = 1
 
 def generate_multiscale_zarr(src, out):
-    logger.info('>>>> Generate Zarr Multi >>>>')
+    logger.critical('>>>> Generate Zarr Multi >>>>')
     logger.info('src : %s\nout: %s' % (src, out))
     # Todo conditional handling of skips
     tasks_ = []

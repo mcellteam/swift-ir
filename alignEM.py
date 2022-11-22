@@ -195,7 +195,6 @@ def main():
     logger.info('Showing AlignEM-SWiFT')
     cfg.main_window.show()
 
-    logger.info('Calling sys.exit(app.exec())')
     try:
         sys.exit(app.exec())
     except:

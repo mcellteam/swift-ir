@@ -46,7 +46,7 @@ from src.helpers import natural_sort
 from src.http_ng_server import NgHost
 # from src.utils.PyQtImageStackViewer import QtImageStackViewer
 # from src.utils.PyQtImageViewer import QtImageViewer
-from src.ui.dialogs import ConfigDialog, QFileDialogPreview
+from src.ui.dialogs import AskContinueDialog, ConfigDialog, QFileDialogPreview
 # from src.napari_test import napari_test
 from src.ui.headup_display import HeadupDisplay
 from src.ui.kimage_window import KImageWindow
@@ -307,13 +307,13 @@ class MainWindow(QMainWindow):
     def refreshJsonWidget(self):
         self.project_model.load(cfg.data.to_dict())
 
-    def autoscale(self):
-        logger.info('>>>> Autoscale >>>>')
+    def autoscale(self, is_rescale=False):
+        logger.critical('>>>> Autoscale >>>>')
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.hud.post('Generating TIFF Scale Hierarchy...')
         try:
             self.set_status('Scaling...')
-            self.worker = BackgroundWorker(fn=generate_scales())
+            self.worker = BackgroundWorker(fn=generate_scales(is_rescale=is_rescale))
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -366,7 +366,7 @@ class MainWindow(QMainWindow):
 
     # @Slot()
     def align_all(self, use_scale=None) -> None:
-        logger.info('>>>> Align All >>>>')
+        logger.critical('>>>> Align All >>>>')
 
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING);
@@ -458,7 +458,7 @@ class MainWindow(QMainWindow):
 
     # @Slot()
     def align_forward(self, use_scale=None, num_layers=1) -> None:
-        logger.info('>>>> Align Forward >>>>')
+        logger.critical('>>>> Align Forward >>>>')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -509,7 +509,7 @@ class MainWindow(QMainWindow):
 
     # @Slot()
     def align_one(self, use_scale=None, num_layers=1) -> None:
-        logger.info('>>>> Align One >>>>')
+        logger.critical('>>>> Align One >>>>')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -569,7 +569,7 @@ class MainWindow(QMainWindow):
 
     # @Slot()
     def regenerate(self, use_scale) -> None:
-        logger.info('>>>> Regenerate >>>>')
+        logger.critical('>>>> Regenerate >>>>')
         if not is_cur_scale_aligned():
             self.hud.post('Must align before regenerating.', logging.WARNING)
             return
@@ -613,7 +613,7 @@ class MainWindow(QMainWindow):
         pass
 
     def export(self):
-        logger.info('>>>> Exporting to Zarr >>>>')
+        logger.critical('>>>> Exporting to Zarr >>>>')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -954,6 +954,10 @@ class MainWindow(QMainWindow):
         # logger.info('Updating...')
         # logger.info('called by %s' % inspect.stack()[1].function)
 
+        if self._working == True:
+            logger.warning("Can't update GUI now - working...")
+            return
+
         if cfg.data.dest() in ('', None):
             logger.warning('No Project Is Started');
             return
@@ -1063,12 +1067,6 @@ class MainWindow(QMainWindow):
             layers_w_mps = cfg.data.find_layers_with_matchpoints()
             skips_str = ', '.join(map(str, layers_w_skips))
             mps_str = ', '.join(map(str, layers_w_mps))
-            # if skips == []:
-            #     self.main_details_subwidgetB.setText('<b>Skips:</b><br>None.<br>'
-            #                                          '')
-            # else:
-            #     self.main_details_subwidgetB.setText('<b>Skips:</b><br>%s' % '<br>'.join(skips))
-
             self.main_details_subwidgetB.setText(f'<b>Skipped Layers:</b><br>{skips_str}<br>'
                                                  f'<b>Match Point Layers:</b><br>{mps_str}<br>')
 
@@ -1506,10 +1504,10 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(None, title, text)
 
     def new_project(self):
-        logger.info('>>>> New Project >>>>')
+        logger.critical('>>>> New Project >>>>')
+        self.hud.post('Set New Project Save Path...')
         self.scales_combobox_switch = 0
-
-        app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        # app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         # os.chdir(app_dir)
         if is_destination_set():
             logger.info('Asking user to confirm new data')
@@ -1518,9 +1516,9 @@ class MainWindow(QMainWindow):
                               'Please confirm create new project.',
                               buttons=QMessageBox.Cancel | QMessageBox.Ok)
             msg.setIcon(QMessageBox.Question)
-            button_cancel = msg.button(QMessageBox.Cancel)
-            button_cancel.setText('Cancel')
-            button_ok = msg.button(QMessageBox.Ok)
+            # button_cancel = msg.button(QMessageBox.Cancel)
+            # button_cancel.setText('Cancel')
+            # button_ok = msg.button(QMessageBox.Ok)
             msg.setDefaultButton(QMessageBox.Cancel)
             reply = msg.exec_()
             if reply == QMessageBox.Ok:
@@ -1553,23 +1551,25 @@ class MainWindow(QMainWindow):
             filename += ".proj"
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path)
-        makedirs_exist_ok(cfg.data['data']['destination_path'], exist_ok=True)
+        makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
         # self.save_project()
-        try:
-            self.import_images()
-        except:
-            print_exception()
-            logger.warning('import_images Was Canceled')
-            return
+        self.import_images()
+        # try:
+        #     self.import_images()
+        # except:
+        #     print_exception()
+        #     logger.warning('Import Images Dialog Was Canceled')
+        #     return
         try:
             recipe_dialog = ConfigDialog(parent=self)
+            if recipe_dialog.exec() != QFileDialog.Accepted:
+                logger.warning('Configuration Dialog Did Not Return A Result - Canceling...')
+                return
         except:
             logger.warning('Project Configuation Dialog Exited Abruptly')
             return
         # result = recipe_dialog.exec_()  # result = 0 or 1
-        if recipe_dialog.exec() != QFileDialog.Accepted:
-            logger.warning('Configuration Dialog Did Not Return A Result - Canceling...')
-            return
+
         try:
             self.autoscale()
         except:
@@ -1582,8 +1582,74 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()  # Save for New Project, Not for Open Project
             logger.info('<<<< New Project <<<<')
 
+
+    def rescale(self):
+        dlg = AskContinueDialog(title='Confirm Rescale', msg='Warning: Rescaling resets project data.\n'
+                                                             'Progress will be lost.  Continue?')
+        if dlg.exec():
+            pass
+        else:
+            logger.info('Rescale Canceled')
+            return
+
+        logger.info('Clobbering project JSON file...')
+
+        try:
+            os.remove(cfg.data.dest() + '.proj')
+        except OSError:
+            pass
+
+        self.scales_combobox_switch = 0
+        self.normal_view()
+        self.shutdownNeuroglancer()
+        self.clear_snr_plot()
+
+
+        path = cfg.data.dest()
+        filenames = cfg.data.get_source_img_paths()
+        cfg.main_window.hud.post("Removing Extrant Scale Directories...")
+        scales = cfg.data.scales()
+        for scale in scales:
+            # if scale != 'scale_1':
+            p = os.path.join(path, scale)
+            if os.path.exists(p):
+                import shutil
+                shutil.rmtree(p)
+
+        if os.path.exists(os.path.join(path, 'img_src.zarr')):
+            shutil.rmtree(os.path.join(path, 'img_src.zarr'), ignore_errors=True)
+        if os.path.exists(os.path.join(path, 'img_aligned.zarr')):
+            shutil.rmtree(os.path.join(path, 'img_aligned.zarr'), ignore_errors=True)
+        if os.path.exists(os.path.join(path, 'thumbnails')):
+            shutil.rmtree(os.path.join(path, 'thumbnails'), ignore_errors=True)
+
+        try:
+            recipe_dialog = ConfigDialog(parent=self)
+            if recipe_dialog.exec() != QFileDialog.Accepted:
+                logger.warning('Configuration Dialog Did Not Return A Result - Canceling...')
+                return
+        except:
+            logger.warning('Project Configuation Dialog Exited Abruptly')
+            return
+
+        logger.info('Clobbering The Project Dictionary...')
+        cfg.data = DataModel(name=path)
+        makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
+        logger.info(str(filenames))
+        # self.import_images_silent(filenames)
+
+        try:
+            self.autoscale(is_rescale=True)
+        except:
+            print_exception()
+        try:
+            self.onStartProject()
+        except:
+            print_exception()
+
+
     def open_project(self):
-        logger.info('>>>> Open Project >>>>')
+        logger.critical('>>>> Open Project >>>>')
         filename = self.open_project_dialog()
         if filename == '':
             self.hud.post("No Project File (.proj) Was Selected (='')", logging.WARNING)
@@ -1707,19 +1773,25 @@ class MainWindow(QMainWindow):
     def ng_toggle_show_ui_controls(self):
         if self.ngShowUiControlsAction.isChecked():
             cfg.SHOW_UI_CONTROLS = True
+            self.ngShowUiControlsAction.setText('Hide UI Controls')
         else:
             cfg.SHOW_UI_CONTROLS = False
+            self.ngShowUiControlsAction.setText('Show UI Controls')
         self.initNgServer()
 
     def import_images(self, clear_role=False):
         ''' Import images into data '''
-        logger.info('>>>> Import Images >>>>')
+        logger.critical('>>>> Import Images >>>>')
+        self.hud.post('Select Images To Import...')
         role_to_import = 'base'
         try:
             filenames = natural_sort(self.import_images_dialog())
         except:
             logger.warning('No images were selected.')
             return 1
+
+        cfg.data.set_source_path(os.path.dirname(filenames[0]))
+
         logger.debug('filenames = %s' % str(filenames))
         if clear_role:
             for layer in cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack']:
@@ -1738,6 +1810,7 @@ class MainWindow(QMainWindow):
                         self.add_image_to_role(f, role_to_import)
 
         if are_images_imported():
+            self.hud.post('%d Images Imported Successfully' % len(filenames))
             cfg.IMAGES_IMPORTED = True
             img_size = cfg.data.image_size(s='scale_1')
             cfg.data.link_all_stacks()
@@ -1746,13 +1819,40 @@ class MainWindow(QMainWindow):
             '''Todo save the image dimensions in project dictionary for quick lookup later'''
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
-        logger.info('Exiting import_images')
+        logger.info('<<<< Import Images <<<<')
+
+    def import_images_silent(self, filenames):
+        ''' Import images into data '''
+        logger.critical('>>>> Import Images Silent >>>>')
+        role_to_import = 'base'
+        for i, f in enumerate(filenames):
+            # Find next l with an empty role matching the requested role_to_import
+            logger.info("Role " + str(role_to_import) + ", Importing file: " + str(f))
+            if f is None:
+                self.add_empty_to_role(role_to_import)
+            else:
+                self.add_image_to_role(f, role_to_import)
+
+        cfg.IMAGES_IMPORTED = True
+        img_size = cfg.data.image_size(s='scale_1')
+        cfg.data.link_all_stacks()
+        self.hud.post('%d Images Imported Successfully.' % cfg.data.n_imgs())
+        self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
+        '''Todo save the image dimensions in project dictionary for quick lookup later'''
+
+        logger.info('<<<< Import Images Silent <<<<')
 
 
+    # def add_image_to_role(self, image_file_name, role_name, scale=None):
     def add_image_to_role(self, image_file_name, role_name):
         logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
         #### prexisting note: This function is now much closer to empty_into_role and should be merged
-        scale = cfg.data.scale()
+
+        #1118
+        # if scale == None:
+        #     scale = cfg.data.scale()
+        scale = 'scale_1'
+
         if image_file_name != None:
             if len(image_file_name) > 0:
                 used_for_this_role = [role_name in l['images'].keys() for l in
@@ -1841,7 +1941,7 @@ class MainWindow(QMainWindow):
 
 
     def shutdownInstructions(self):
-        logger.info('Running Shutdown Instructions...')
+        logger.info('Running Shutdown Instructions:')
 
         try:
             logger.info('Shutting down jupyter...')
@@ -1850,7 +1950,7 @@ class MainWindow(QMainWindow):
             sys.stdout.flush()
             logger.info('Having trouble shutting down jupyter')
         else:
-            logger.info('done')
+            logger.info('Success')
 
         # try:
         #     for scale in cfg.data.scales():
@@ -1870,7 +1970,7 @@ class MainWindow(QMainWindow):
             sys.stdout.flush()
             logger.warning('Having trouble shutting down neuroglancer')
         else:
-            logger.info('done')
+            logger.info('Success')
 
         try:
             logger.info('Shutting down threadpool...')
@@ -1878,7 +1978,7 @@ class MainWindow(QMainWindow):
         except:
             logger.warning('Having trouble shutting down threadpool')
         else:
-            logger.info('done')
+            logger.info('Success')
 
         logger.info('Quitting app...')
         self.app.quit()
@@ -1959,11 +2059,11 @@ class MainWindow(QMainWindow):
             self.ng_browser.setFocus()
 
     def initNgServer(self):
-
+        # logger.info('caller: %s' % inspect.stack()[1].function)
         if not self.is_project_open():
             self.hud.post('Nothing to view.', logging.WARNING)
             return
-        logger.info('>>>> Initializing NG Workers >>>>')
+        logger.critical('>>>> Initializing NG Workers >>>>')
         scales = cfg.data.scales()
         logger.info('Initializing Neuroglancer Client for All Scales (%s)' % ' '.join(scales))
         self.hud.post('Starting Neuroglancer Workers...')
@@ -2500,13 +2600,12 @@ class MainWindow(QMainWindow):
         self.ngRefreshUrlAction.triggered.connect(self.refreshNeuroglancerURL)
         ngDebugMenu.addAction(self.ngRefreshUrlAction)
 
-        ngSettingsMenu = neuroglancerMenu.addMenu('Settings')
-
         self.ngShowUiControlsAction = QAction('Show UI Controls', self)
+        self.ngShowUiControlsAction.setShortcut('Ctrl+U')
         self.ngShowUiControlsAction.setCheckable(True)
         self.ngShowUiControlsAction.setChecked(cfg.SHOW_UI_CONTROLS)
         self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
-        ngSettingsMenu.addAction(self.ngShowUiControlsAction)
+        neuroglancerMenu.addAction(self.ngShowUiControlsAction)
 
         self.ngRemoteAction = QAction('External Client', self)
         self.ngRemoteAction.triggered.connect(self.remote_view)
@@ -2533,6 +2632,10 @@ class MainWindow(QMainWindow):
         self.alignMatchPointAction.triggered.connect(self.enter_exit_match_point_mode)
         self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
+
+        self.rescaleAction = QAction('Rescale', self)
+        self.rescaleAction.triggered.connect(self.rescale)
+        toolsMenu.addAction(self.rescaleAction)
 
 
         self.skipChangeAction = QAction('Toggle Skip', self)
@@ -2624,87 +2727,6 @@ class MainWindow(QMainWindow):
         self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
         self.reloadBrowserAction.triggered.connect(self.browser_reload)
         helpMenu.addAction(self.reloadBrowserAction)
-
-
-
-
-
-        # menu
-        #   0:MenuName
-        #   1:Shortcut-or-None
-        #   2:Action-Function
-        #   3:Checkbox (None,False,True)
-        #   4:Checkbox-Group-Name (None,string),
-        #   5:User-Data
-
-        # file_menu = menu.addMenu("&File")
-
-        # ml = [
-            # ['&Tools',
-            #  [
-                 # ['Show/Hide Tools',
-                 #   [
-                 #       ['Feedback Display', None, self.show_hide_hud, None, None, None],
-                 #       ['SNR Plot', None, self.show_hide_snr_plot, None, None, None],
-                 #       ['Project Dictionary Tree', None, self.show_hide_treeview, None, None, None],
-                 #       ['Jupyter Console', None, self.show_hide_python, None, None, None],
-                 #   ]
-                 #   ],
-
-                 # ['Regenerate Zarr Scales', None, generate_zarr_scales, None, None, None],
-                 # ['Generate Multiscale Zarr', None, self.generate_multiscale_zarr, None, None, None],
-                 # ['Toggle Autogenerate Callback', None, self.toggle_auto_generate_callback, True, None, None], # TEST
-                 # ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
-                 # ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
-                 # ['&Write Multipage Tifs', 'None', self.write_paged_tiffs, None, None, None],
-                 # ['&Match Point Align Mode',
-                 #  [
-                 #      ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
-                 #      ['Clear Match Points', 'None', self.clear_match_points, None, None, None],
-                 #  ]
-                 #  ],
-                 # ['&Advanced',
-                 #  [
-                 #      ['Toggle Zarr Controls', None, self.toggle_zarr_controls, None, None, None],
-                 #  ]
-                 #  ],
-             # ]
-             # ],
-        #     ['&Debug',
-        #      [
-        #          ['Test WebGL', None, self.webgl2_test, None, None, None],
-        #          ['Check GPU Configuration', None, self.gpu_config, None, None, None],
-        #          ['Restart Python Kernel', None, self.restart_python_kernel, None, None, None],
-        #          # ['Show SNR List', None, self.show_snr_list, None, None, None],
-        #          ['Update SNR Plot', None, self.updateSnrPlot, None, None, None],
-        #          ['Neuroglancer',
-        #           [
-        #               ['Refresh NG URL', None, self.refreshNeuroglancerURL, None, None, None],
-        #               ['Reinitialize NG Viewer', None, self.initNgViewer, None, None, None], #BAD
-        #               ['Reinitialize Neuroglancer', None, self.initNgServer, None, None, None],
-        #               ['Invalidate NG Layers', None, self.invalidate_all, None, None, None],
-        #               ['Show Neuroglancer State URL', None, self.print_ng_state_url, None, None, None],
-        #               ['Show Neuroglancer State', None, self.print_ng_state, None, None, None],
-        #               ['Show Neuroglancer Raw State', None, self.print_ng_raw_state, None, None, None],
-        #               ['Dump Neuroglancer Details', None, self.dump_ng_details, None, None, None],
-        #           ]
-        #           ],
-        #
-        #          ['Reload Browser', None, self.browser_reload, None, None, None],
-        #          ['Show Zarr Info', None, self.show_zarr_info, None, None, None],
-        #          ['Show Environment', None, self.show_run_path, None, None, None],
-        #          ['Show Module Search Path', None, self.show_module_search_path, None, None, None],
-        #          ['Print Sanity Check', None, print_sanity_check, None, None, None],
-        #          ['Print Project Tree', None, print_project_tree, None, None, None],
-        #          ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
-        #          ['Print All Match Points', None, self.show_all_matchpoints, None, None, None],
-        #          ['Create Multipage TIF', None, create_paged_tiff, None, None, None],
-        #          ['Test HTML Page', None, self.html_view, None, None, None],
-        #      ]
-        #      ],
-        #
-        # ]
-        # self.build_menu_from_list(self.menu, ml)
 
     def initUI(self):
         '''Initialize Main UI'''
@@ -3804,7 +3826,6 @@ class MainWindow(QMainWindow):
         # self.snr_plot_and_control_layout.setContentsMargins(8, 4, 8, 4)
         self.details_banner_layout.setContentsMargins(8, 0, 8, 0)
         self.new_control_panel.setContentsMargins(8, 4, 8, 4)
-        # self.snr_plot_and_control_layout.setContentsMargins(8, 4, 8, 4)
         self.projectdata_treeview.setContentsMargins(8, 4, 8, 4)
         self.python_console.setContentsMargins(8, 4, 8, 4)
         self.low_low_gridlayout.setContentsMargins(8, 4, 8, 4)

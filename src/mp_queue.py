@@ -29,7 +29,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     for task_id, task in iter(task_q.get, 'END_TASKS'):
         QApplication.processEvents()
 
-        logger.debug('worker_id %d  task_id %d  n_tasks %d  n_workers %d' % (worker_id, task_id, n_tasks, n_workers))
+        logger.info('worker_id %d  task_id %d  n_tasks %d  n_workers %d' % (worker_id, task_id, n_tasks, n_workers))
         logger.debug('task: %s' % str(task))
         t0 = time.time()
         try:
@@ -72,7 +72,7 @@ class TaskQueue(QObject):
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
-        logger.debug('>>>> TaskQueue.start >>>>')
+        logger.critical('>>>> TaskQueue.start >>>>')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.task_dict = {}
@@ -84,20 +84,22 @@ class TaskQueue(QObject):
         # else:
         #     mpl.setLevel(logging.INFO)
         logger.info('Starting Multiprocessing Queue [# tasks: %d, method: %s]' % (self.n_tasks, self.ctx.get_start_method()))
+        logger.info(self.pbar_text)
 
         if self.n_tasks == 1:
             cfg.main_window.hud.post('1 Worker Is Working On 1 Task')
         elif self.n_workers >= self.n_tasks:
             cfg.main_window.hud.post(
-                '%d Workers Are Processing %d tasks [%s]' % (self.n_tasks, self.n_tasks, self.pbar_text))
+                '  %d Workers Are Processing %d tasks [%s]' % (self.n_tasks, self.n_tasks, self.pbar_text))
         else:
             cfg.main_window.hud.post(
-                '%d Workers Are Processing %d tasks [%s]' % (self.n_workers, self.n_tasks, self.pbar_text))
+                '  %d Workers Are Processing %d tasks [%s]' % (self.n_workers, self.n_tasks, self.pbar_text))
 
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
-            sys.stderr.write('Starting Worker %d >>>>\n' % i)
+            # sys.stderr.write('Starting Worker %d >>>>\n' % i)
+            logger.info('Starting Worker %d >>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -238,7 +240,7 @@ class TaskQueue(QObject):
         # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
         self.parent.pbar.hide()
 
-        logger.info('Exiting Task Queue scope')
+        # logger.info('Exiting Task Queue scope')
 
 
 

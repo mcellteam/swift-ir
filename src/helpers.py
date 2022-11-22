@@ -67,40 +67,49 @@ def show_mp_queue_results(task_queue, dt):
     for k in task_queue.task_dict.keys():
         task_item = task_queue.task_dict[k]
         if task_item['statusBar'] == 'completed':
-            # logger.info('\nCompleted:')
-            # logger.info('   CMD:    %s' % (str(task_item['cmd'])))
-            # logger.info('   ARGS:   %s' % (str(task_item['args'])))
-            # logger.info('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_success += 1
-        elif task_item['statusBar'] == 'queued':
-            # logger.warning('\nQueued:')
-            # logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-            # logger.info('   ARGS:   %s' % (str(task_item['args'])))
-            # logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_queued += 1
-        elif task_item['statusBar'] == 'task_error':
-            logger.debug('\nTask Error:')
+            logger.debug('\nCompleted:')
             logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
             logger.debug('   ARGS:   %s' % (str(task_item['args'])))
             logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+            n_success += 1
+        elif task_item['statusBar'] == 'queued':
+            logger.warning('\nQueued:')
+            logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+            logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+            logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+            n_queued += 1
+        elif task_item['statusBar'] == 'task_error':
+            logger.error('\nTask Error:')
+            logger.error('   CMD:    %s' % (str(task_item['cmd'])))
+            logger.error('   ARGS:   %s' % (str(task_item['args'])))
+            logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
             n_failed += 1
 
-    cfg.main_window.hud.post('  Completed in %.2f seconds' % (dt))
-    cfg.main_window.hud.post('  Tasks Successful:   %d' % n_success, logging.INFO)
-    cfg.main_window.hud.post('  Tasks Still Queued: %d' % n_queued, logging.INFO)
+    # cfg.main_window.hud.post('  Completed in %.2f seconds' % (dt))
+    # cfg.main_window.hud.post('  Tasks Successful:   %d' % n_success, logging.INFO)
+    # cfg.main_window.hud.post('  Tasks Still Queued: %d' % n_queued, logging.INFO)
+    # if n_failed > 0:
+    #     cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.ERROR)
+    # else:
+    #     cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.INFO)
+
+    cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
+
     if n_failed > 0:
-        cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.ERROR)
+        cfg.main_window.hud.post('  Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
+                                 logging.WARNING)
     else:
-        cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.INFO)
+        cfg.main_window.hud.post('  Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
+                                 logging.INFO)
 
 
 
-def load():
-    try:
-        with open('data.json', 'r') as f:
-            self.previewmodel.todos = json.load(f)
-    except Exception:
-        pass
+# def load():
+#     try:
+#         with open('data.json', 'r') as f:
+#             self.previewmodel.todos = json.load(f)
+#     except Exception:
+#         pass
 
 def obj_to_string(obj, extra='    '):
     return str(obj.__class__) + '\n' + '\n'.join(
@@ -425,6 +434,22 @@ def make_relative(file_path, proj_path):
 def make_absolute(file_path, proj_path):
     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
     return abs_path
+
+def create_symlink(fn, ofn):
+    if get_best_path(fn) != get_best_path(ofn):
+        try:
+            os.unlink(ofn)
+        except:
+            pass
+        try:
+            os.symlink(fn, ofn)
+        except:
+            logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
+            try:
+                shutil.copy(fn, ofn)
+            except:
+                logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+
 
 
 def create_project_structure_directories(scale_key:str) -> None:

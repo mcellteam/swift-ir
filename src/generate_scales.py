@@ -8,7 +8,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, is_tacc, is_linux, is_mac, natural_sort, show_mp_queue_results, kill_task_queue
+    get_best_path, is_tacc, is_linux, is_mac, natural_sort, show_mp_queue_results, kill_task_queue, create_symlink
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -16,8 +16,8 @@ __all__ = ['generate_scales']
 logger = logging.getLogger(__name__)
 
 
-def generate_scales():
-    logger.info('>>>> Generate Scales >>>>')
+def generate_scales(is_rescale=False):
+    logger.critical('>>>> Generate Scales >>>>')
     # image_scales_to_run = [get_scale_val(s) for s in natural_sort(cfg.data['data']['scales'].keys())]
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
@@ -33,37 +33,34 @@ def generate_scales():
     else:             logger.error("Operating System Could Not Be Resolved"); return
     iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
     task_queue.start(cpus)
+
+    source_path = cfg.data.source_path()
+
+    # if not is_rescale:
+    for i, layer in enumerate(cfg.data['data']['scales']['scale_1']['alignment_stack']):
+        base = cfg.data.base_image_name(s='scale_1', l=i)
+        fn = os.path.join(source_path, base)
+        ofn = os.path.join(cfg.data.dest(), 'scale_1', 'img_src', os.path.split(fn)[1])
+        create_symlink(fn, ofn)
+
+    image_scales_to_run.remove(1) # Remove Scale 1
+
     for scale in sorted(image_scales_to_run):  # value string '1 2 4'
         cfg.main_window.hud.post("Preparing to Downsample Scale %s..." % str(scale))
+        logger.info('SCALE %d:' % scale)
         scale_key = get_scale_key(scale)
         for i, layer in enumerate(cfg.data['data']['scales'][scale_key]['alignment_stack']):
-            fn = os.path.abspath(layer['images']['base']['filename'])
-            ofn = os.path.join(cfg.data.dest(), scale_key, 'img_src', os.path.split(fn)[1])
-
-            if scale == 1:
-                '''Scale 1 Only'''
-                if get_best_path(fn) != get_best_path(ofn):
-                    try:    os.unlink(ofn)
-                    except: pass
-                    try:
-                        os.symlink(fn, ofn)
-                    except:
-                        logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
-                        try:     shutil.copy(fn, ofn)
-                        except:  logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-            else:
-                '''All Other Scales'''
-                if cfg.CODE_MODE == 'python':
-                    task_queue.add_task(cmd=sys.executable,
-                                        args=['src/job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')
-                else:
-                    scale_arg = '+%d' % scale
-                    of_arg = 'of=%s' % ofn
-                    if_arg = '%s' % fn
-                    task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
-                    if i in [0,1,2]:
-                        logger.info('\nTQ Params:\n1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
-
+            base = cfg.data.base_image_name(s=scale_key, l=i)
+            if_arg = os.path.join(source_path, base)
+            ofn = os.path.join(cfg.data.dest(), scale_key, 'img_src', os.path.split(if_arg)[1])
+            of_arg = 'of=%s' % ofn
+            scale_arg = '+%d' % scale
+            task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
+            if i in [0, 1]:
+                logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
+            # if cfg.CODE_MODE == 'python':
+            #     task_queue.add_task(cmd=sys.executable,
+            #                         args=['src/job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')
             layer['images']['base']['filename'] = ofn
         cfg.main_window.hud.done()
     cfg.main_window.hud.post('Generating Scale Image Hierarchy...')
