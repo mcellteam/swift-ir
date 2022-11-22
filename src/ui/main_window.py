@@ -1646,6 +1646,10 @@ class MainWindow(QMainWindow):
             self.onStartProject()
         except:
             print_exception()
+        try:
+            self.save_project_to_file()
+        except:
+            print_exception()
 
 
     def open_project(self):
