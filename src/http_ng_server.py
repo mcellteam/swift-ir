@@ -110,7 +110,8 @@ class NgHost(QRunnable):
 
     def initViewer(self):
         self.match_point_mode = cfg.main_window._is_mp_mode
-        # logger.info('initViewer (caller: %s):' % inspect.stack()[1].function)
+        # logger.info('Initializing Viewer (caller: %s):' % inspect.stack()[1].function)
+        logger.info('Initializing Viewer (Scale %d)...' % self.sf)
         cfg.main_window.hud.post('Initializing Neuroglancer Viewer (Scale %d)...' % self.sf)
 
         if self.match_point_mode:

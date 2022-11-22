@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 Z_STRIDE = 1
 
 def generate_zarr_scales():
-    logger.info('>>>> Generate Zarr >>>>')
+    logger.critical('>>>> Generate Zarr >>>>')
     # Todo conditional handling of skips
 
     src = os.path.abspath(cfg.data['data']['destination_path'])

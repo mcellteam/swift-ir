@@ -58,7 +58,7 @@ def run_json_project(project,
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
   
     '''
-    logger.info('\n\nrun_json_project >>>>\n\n')
+    logger.critical('\n\nrun_json_project >>>>\n\n')
     logger.info("alignment_option = %s" % str(alignment_option))
     logger.info("s = %s" % str(use_scale))
     logger.info("code_mode = %s" % str(swiftir_code_mode))

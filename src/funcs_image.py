@@ -208,7 +208,7 @@ def ImageSize(file_path):
                 "Sorry, don't know how to get information from this file."
             )
     try:
-        logger.info('Returning: %d x %d' % (width,height))
+        logger.debug('Returning: %d x %d' % (width,height))
     except:
         logger.warning('Returning: ? - ImageSize has a problem')
     return width, height
@@ -423,7 +423,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 
 def SetStackCafm(scale_dict, null_biases=False):
     '''Calculate cafm across the whole stack with optional bias correction'''
-    logger.info('>>>> Setting Stack CAFM (null_biases=%s) >>>>' % str(null_biases))
+    logger.critical('>>>> Setting Stack CAFM (null_biases=%s) >>>>' % str(null_biases))
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
         SetStackCafm(scale_dict, null_biases=False)
