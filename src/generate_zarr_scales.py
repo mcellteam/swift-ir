@@ -10,7 +10,7 @@ import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_img_filenames, print_exception, show_mp_queue_results, kill_task_queue, \
     renew_directory
-from src.funcs_zarr import preallocate_zarr_src
+from src.funcs_zarr import preallocate_zarr, preallocate_zarr_src
 
 __all__ = ['generate_zarr_scales']
 
@@ -26,7 +26,10 @@ def generate_zarr_scales():
     imgs = sorted(get_img_filenames(os.path.join(src, 'scale_1', 'img_src')))
     od = os.path.abspath(os.path.join(src, 'img_src.zarr'))
     renew_directory(directory=od)
-    preallocate_zarr_src()
+    # preallocate_zarr_src()
+    for scale in cfg.data.scales():
+        dimx, dimy = cfg.data.image_size(s=scale)
+        preallocate_zarr(name='img_src.zarr', scales=[scale], dimx=dimx, dimy=dimy, dtype='uint8', overwrite=True)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     n_tasks = len(cfg.data) * cfg.data.n_scales()
     cfg.main_window.hud('# Tasks: %d' % n_tasks)
