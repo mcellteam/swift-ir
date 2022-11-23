@@ -13,7 +13,7 @@ from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generat
     kill_task_queue, renew_directory
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm, ComputeBoundingRect
-from src.funcs_zarr import preallocate_zarr_aligned
+from src.funcs_zarr import preallocate_zarr_aligned, preallocate_zarr
 
 
 __all__ = ['generate_aligned']
@@ -44,7 +44,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     save_bias_analysis(alstack, os.path.join(cfg.data.dest(), scale, 'bias_data'))
 
     if cfg.data.has_bb():
-        logger.info('Bounding Box               : ON')
+        logger.info(f'Bounding Box              : ON')
         # Note: now have got new cafm's -> recalculate bounding box
         try: logger.info(f'Old Bounding Box: {cfg.data.bounding_rect(s=scale)}')
         except: pass
@@ -55,16 +55,23 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         # logger.info(f'Setting Aligned Size To: {rect[2:]}')
         # cfg.data.set_aligned_size(rect[2:])
         logger.info(f'Null Bias                 :  {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
+
     else:
-        logger.info('Bounding Box               : OFF')
+        logger.info(f'Bounding Box              : OFF')
         width, height = cfg.data.image_size(s=scale)
         rect = [0, 0, width, height] # May need to swap width, height for Zarr representation
-    logger.info(f'Aligned Size             : {rect[2:]}')
+    logger.info(f'Aligned Size              : {rect[2:]}')
     cfg.data.set_aligned_size(rect[2:])
-    logger.info(f'Offsets                  : {rect[0]}, {rect[1]}')
-    if preallocate: preallocate_zarr_aligned(scales=[scale])
-    if num_layers == -1: end_layer = len(alstack)
-    else: end_layer = start_layer + num_layers
+    logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
+    if preallocate:
+        # preallocate_zarr_aligned(scales=[scale])
+        # preallocate_zarr(name, scales, dimx, dimy, dtype, overwrite)
+        preallocate_zarr(name='img_aligned.zarr', scales=[scale], dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
+
+    if num_layers == -1:
+        end_layer = len(alstack)
+    else:
+        end_layer = start_layer + num_layers
     al_substack = alstack[start_layer:end_layer]
     args_list = makeTasksList(al_substack, job_script, rect, zarr_group)
     # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
