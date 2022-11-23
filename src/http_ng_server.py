@@ -21,6 +21,7 @@ import shutil
 import atexit
 import inspect
 import logging
+import datetime
 import argparse
 import tempfile
 from math import floor
@@ -62,7 +63,7 @@ class NgHost(QRunnable):
         super(NgHost, self).__init__()
 
         self.signals = WorkerSignals()
-
+        self.created = datetime.datetime.now()
         # self.viewer = ng.Viewer()
         self.viewer_url = None
         self.ref_pts = []
@@ -88,7 +89,7 @@ class NgHost(QRunnable):
 
     def __del__(self):
         caller = inspect.stack()[1].function
-        logger.info('__del__ was called by [%s] on ng_host worker' % caller)
+        logger.info('__del__ was called by [%s] on NgHost for scale %s created:%s' % (caller, self.sf, self.created))
 
     def __str__(self):
         return obj_to_string(self)
@@ -111,7 +112,9 @@ class NgHost(QRunnable):
     def initViewer(self):
         self.match_point_mode = cfg.main_window._is_mp_mode
         # logger.info('Initializing Viewer (caller: %s):' % inspect.stack()[1].function)
-        logger.info('Initializing Viewer (Scale %d)...' % self.sf)
+        is_aligned = is_arg_scale_aligned(self.scale)
+        # is_aligned = is_arg_scale_aligned(cfg.data.scale())
+        logger.info('Initializing Viewer | Scale %d | aligned? %s)...' % (self.sf, is_aligned))
         cfg.main_window.hud.post('Initializing Neuroglancer Viewer (Scale %d)...' % self.sf)
 
         if self.match_point_mode:
@@ -122,8 +125,6 @@ class NgHost(QRunnable):
         self.viewer_url = str(self.viewer)
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
-        is_aligned = is_arg_scale_aligned(self.scale)
-
         # logger.info('Match Point Mode  : %s' % str(self.match_point_mode))
         # logger.info('Shader            : %s' % str(cfg.SHADER))
         # logger.info('Is Aligned        : %s' % str(is_aligned))
@@ -146,10 +147,6 @@ class NgHost(QRunnable):
 
         with self.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
-            # cfg.main_window.ng_browser.geometry()
-            # AlignEM[0]: PyQt5.QtCore.QRect(0, 0, 1162, 276)
-            # cfg.main_window.image_panel_stack_widget.geometry()
-            # AlignEM[1]: PyQt5.QtCore.QRect(9, 50, 1162, 276)
 
             # 276 pixels of widget
             # 1024 pixel image, 8 nm/pixel
@@ -157,15 +154,30 @@ class NgHost(QRunnable):
             #trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            img_height = cfg.data.bounding_rect()[3] if is_aligned else cfg.data.image_size()[1]  # pixels
-            tissue_height = cfg.data.res_y() * img_height  # nm
-            widget_height = cfg.main_window.ng_browser.geometry().getRect()[3]  # pixels
+            # img_height = cfg.data.bounding_rect()[3] if is_aligned else cfg.data.image_size()[1]  # pixels
+            if is_aligned:
+                img_height, img_width = cfg.data.bounding_rect(s=self.scale)[3], cfg.data.bounding_rect(s=self.scale)[2]
+            else:
+                img_height, img_width = cfg.data.image_size(s=self.scale)[1], cfg.data.image_size(s=self.scale)[0]
+
+            widget_size = cfg.main_window.ng_browser.geometry().getRect()
+
+            tissue_height = cfg.data.res_y(s=self.scale) * img_height  # nm
+            widget_height = widget_size[3]  # pixels
             cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
 
-            # s.cross_section_scale = 2e-09
-            # s.cross_section_scale = 2e-08
-            adjustment = 1.05
-            s.cross_section_scale = cross_section_height * adjustment
+            tissue_width = cfg.data.res_x(s=self.scale) * img_width  # nm
+            if is_aligned:  widget_width = widget_size[2] / 3
+            else:           widget_width = widget_size[2] / 2
+            cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
+
+            cross_section_scale = max(cross_section_height, cross_section_width)
+            adjustment = 1.02
+            s.cross_section_scale = cross_section_scale * adjustment
+            logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
+
+            # adjustment = 1.04
+
             # s.dimensions = self.coordinate_space # ? causes scale to bug out, why?
 
             if cfg.USE_TENSORSTORE:
@@ -270,7 +282,7 @@ class NgHost(QRunnable):
             grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout))
             grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout))
             if is_aligned and not self.match_point_mode:
-                rect = cfg.data.bounding_rect()
+                rect = cfg.data.bounding_rect(s=self.scale)
                 grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout))
                 s.position = [cfg.data.layer(), rect[3] / 2, rect[2] / 2]
             else:
@@ -281,16 +293,11 @@ class NgHost(QRunnable):
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            if cfg.THEME == 0:
-                s.crossSectionBackgroundColor = '#1B1E23'
-            elif cfg.THEME == 1:
-                s.crossSectionBackgroundColor = '#FFFFE0'
-            elif cfg.THEME == 2:
-                s.crossSectionBackgroundColor = '#6D7D77'
-            elif cfg.THEME == 3:
-                s.crossSectionBackgroundColor = '#0C0C0C'
-            else:
-                s.crossSectionBackgroundColor = '#004060'
+            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#1B1E23'
+            elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
+            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#6D7D77'
+            elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
+            else:                 s.crossSectionBackgroundColor = '#004060'
 
         mp_key_bindings = [
             ['enter', 'add_matchpoint'],

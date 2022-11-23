@@ -515,7 +515,7 @@ class DataModel:
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
-            print_exception()
+            # print_exception()
             try:
                 self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
                 return self._data['data']['scales'][s]['image_src_size']
@@ -858,7 +858,7 @@ class DataModel:
         pass
 
     def add_img(self, scale_key, layer_index, role, filename=''):
-        logger.info('add_img scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))
+        logger.info('Adding Image scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))
         self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
             {
                 "filename": filename,

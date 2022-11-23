@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_thumbnails():
-    logger.critical('>>>> Generate Thumbnails >>>>')
+    logger.critical('Generating Thumbnails...')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
     # Todo: If the smallest scale happens to be less that thumbnail size, just copy smallest scale for thumbnails

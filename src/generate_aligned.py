@@ -13,7 +13,7 @@ from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generat
     kill_task_queue, renew_directory
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm, ComputeBoundingRect
-from src.funcs_zarr import preallocate_zarr_aligned, preallocate_zarr
+from src.funcs_zarr import preallocate_zarr
 
 
 __all__ = ['generate_aligned']
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
-    logger.critical('>>>> Generate Aligned >>>>')
+    logger.critical('Generating Aligned Images...')
     tryRemoveDatFiles(scale)
     Z_STRIDE = 0
 
@@ -52,10 +52,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         logger.info(f'New Bounding Box          : {str(rect)}')
         cfg.data.set_bounding_rect(rect) # Only after SetStackCafm
         rect = cfg.data.bounding_rect(s=scale)
-        # logger.info(f'Setting Aligned Size To: {rect[2:]}')
-        # cfg.data.set_aligned_size(rect[2:])
-        logger.info(f'Null Bias                 :  {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
-
+        logger.info(f'Null Bias                 : {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
     else:
         logger.info(f'Bounding Box              : OFF')
         width, height = cfg.data.image_size(s=scale)
@@ -64,9 +61,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     cfg.data.set_aligned_size(rect[2:])
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
     if preallocate:
-        # preallocate_zarr_aligned(scales=[scale])
-        # preallocate_zarr(name, scales, dimx, dimy, dtype, overwrite)
-        preallocate_zarr(name='img_aligned.zarr', scales=[scale], dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
+        preallocate_zarr(name='img_aligned.zarr', scale=scale, dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
 
     if num_layers == -1:
         end_layer = len(alstack)

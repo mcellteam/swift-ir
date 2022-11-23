@@ -194,14 +194,20 @@ def remove_zarr(path) -> None:
         logger.info('Done Removing Zarr')
 
 
-def preallocate_zarr(name, scales, dimx, dimy, dtype, overwrite):
-    logger.info('Preallocating Zarr Arrays...')
+def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
+    logger.info('Preallocating Zarr Array...')
     cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
     zarr_path = os.path.join(src, name)
+    slug = 's' + str(get_scale_val(scale))
+    out_path = os.path.join(zarr_path, slug)
     shape = (cfg.data.n_imgs(), dimy, dimx)  # Todo check this, inverting x & y
-    logger.info(f'zarr root  : {zarr_path}\n'
-                f'scales     : {str(scales)}\n'
+
+    logger.info(f'\n'
+                f'zarr root  : {zarr_path}\n'
+                f'out_path   : {out_path}\n'
+                f'scale      : {scale}\n'
+                f'slug       : {slug}\n'
                 f'dim x,y    : {dimx},{dimy}\n'
                 f'name       : {name}\n'
                 f'shape      : {str(shape)}\n'
@@ -211,23 +217,13 @@ def preallocate_zarr(name, scales, dimx, dimy, dtype, overwrite):
                 f'dtype      : {dtype}\n'
                 f'overwrite  : {overwrite}')
     try:
-        for scale in scales:
-            out_path = os.path.join(zarr_path, 's' + str(get_scale_val(scale)))
-            if os.path.exists(out_path):
-                remove_zarr(out_path)
-            group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
-            logger.info('Preallocating Aligned Zarr Array for %s, shape: %s...' % (scale, str(shape)))
-            name = 's' + str(get_scale_val(scale))
-            compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-            # group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=overwrite)
-            group.zeros(name=name, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
-            # group.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
-            '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
-
+        if overwrite and os.path.exists(out_path):
+            remove_zarr(out_path)
+        group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
+        compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+        group.zeros(name=slug, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
+        '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
-
-        # if cfg.data.s() == 'scale_1':
-        #     write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
     except:
         print_exception()
     else:
