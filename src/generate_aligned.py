@@ -6,8 +6,6 @@ import time
 import json
 import psutil
 import logging
-import importlib
-from pathlib import Path
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
@@ -46,25 +44,24 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     save_bias_analysis(alstack, os.path.join(cfg.data.dest(), scale, 'bias_data'))
 
     if cfg.data.has_bb():
+        logger.info('Bounding Box               : ON')
         # Note: now have got new cafm's -> recalculate bounding box
-        try: logger.info(f'Old Bounding Rect: {cfg.data.bounding_rect(s=scale)}')
+        try: logger.info(f'Old Bounding Box: {cfg.data.bounding_rect(s=scale)}')
         except: pass
         rect = ComputeBoundingRect(alstack)
-        logger.info(f'New Bounding Box: {str(rect)}')
+        logger.info(f'New Bounding Box          : {str(rect)}')
         cfg.data.set_bounding_rect(rect) # Only after SetStackCafm
         rect = cfg.data.bounding_rect(s=scale)
-        logger.info(f'Setting Aligned Size To: {rect[2:]}')
-        cfg.data.set_aligned_size(rect[2:])
-
+        # logger.info(f'Setting Aligned Size To: {rect[2:]}')
+        # cfg.data.set_aligned_size(rect[2:])
+        logger.info(f'Null Bias                 :  {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
     else:
+        logger.info('Bounding Box               : OFF')
         width, height = cfg.data.image_size(s=scale)
-        # rect = [0, 0, height, width] # May need to swap width, height for Zarr representation
-        rect = [0, 0, width, height]
-    logger.info(f' Bounding Box x, y offsets: {rect[0]}, {rect[1]}')
-    logger.info(f' Null Bias is {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
-
-    # cfg.main_window.hud.post([])
-    logger.info('Bounding Rect:  %s' % str(rect))
+        rect = [0, 0, width, height] # May need to swap width, height for Zarr representation
+    logger.info(f'Aligned Size             : {rect[2:]}')
+    cfg.data.set_aligned_size(rect[2:])
+    logger.info(f'Offsets                  : {rect[0]}, {rect[1]}')
     if preallocate: preallocate_zarr_aligned(scales=[scale])
     if num_layers == -1: end_layer = len(alstack)
     else: end_layer = start_layer + num_layers
@@ -72,7 +69,6 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     args_list = makeTasksList(al_substack, job_script, rect, zarr_group)
     # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
                            pbar_text='Generating Alignment w/ MIR - Scale %d - %d Cores' %
