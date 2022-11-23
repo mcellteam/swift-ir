@@ -72,7 +72,7 @@ class TaskQueue(QObject):
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
-        logger.critical('>>>> TaskQueue.start >>>>')
+        logger.critical('Starting Task Queue [%s]...' % self.pbar_text)
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.task_dict = {}
@@ -154,7 +154,7 @@ class TaskQueue(QObject):
         self.task_id += 1
 
     def requeue_task(self, task_id) -> None:
-        logger.debug(">>>> TaskQueue.requeue  >>>>")
+        logger.critical("Requeing Tasks...")
         task = []
         task.append(self.task_dict[task_id]['cmd'])
         task.extend(self.task_dict[task_id]['args'])

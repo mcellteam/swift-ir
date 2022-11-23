@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_scales(is_rescale=False):
-    logger.critical('>>>> Generate Scales >>>>')
+    logger.critical('Generating Scales...')
     # image_scales_to_run = [get_scale_val(s) for s in natural_sort(cfg.data['data']['scales'].keys())]
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))

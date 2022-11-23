@@ -100,7 +100,8 @@ class MainWindow(QMainWindow):
         logger.info("Initializing Thread Pool")
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
         self.threadpool.setExpiryTimeout(3000)  # ms
-        self.ng_workers = None
+        # self.ng_workers = None
+        self.ng_workers = {}
         self._snr_by_scale = dict()
 
         if qtpy.PYSIDE6:
@@ -308,7 +309,7 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
 
     def autoscale(self, is_rescale=False):
-        logger.critical('>>>> Autoscale >>>>')
+        logger.critical('Autoscaling...')
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.hud.post('Generating TIFF Scale Hierarchy...')
         try:
@@ -366,7 +367,7 @@ class MainWindow(QMainWindow):
 
     # @Slot()
     def align_all(self, use_scale=None) -> None:
-        logger.critical('>>>> Align All >>>>')
+        logger.critical('Aligning All...')
 
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING);
@@ -451,14 +452,14 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()  # 0908+
             # self.refreshNeuroglancerURL()
             # self.initNgServer(s=cfg.data.s())
-            self.initNgServer()
+            self.initNgServer(scales=[cfg.data.scale()])
             # self.invalidate_all()
             # self.updateEnabledButtons()
             self.set_idle()
 
     # @Slot()
     def align_forward(self, use_scale=None, num_layers=1) -> None:
-        logger.critical('>>>> Align Forward >>>>')
+        logger.critical('Aligning Forward...')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -504,12 +505,12 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd()
         self.save_project_to_file()  # 0908+
         # self.refreshNeuroglancerURL()
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.invalidate_all()
 
     # @Slot()
     def align_one(self, use_scale=None, num_layers=1) -> None:
-        logger.critical('>>>> Align One >>>>')
+        logger.critical('Aligning Layer...')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -562,14 +563,14 @@ class MainWindow(QMainWindow):
         self.save_project_to_file()  # 0908+
         self.onAlignmentEnd()
         # self.refreshNeuroglancerURL()
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.invalidate_all()
         self.read_project_data_update_gui()
         self.matchpoint_text_snr.setHtml(f'<p><b>{cfg.data.snr()}</b></p>')
 
     # @Slot()
     def regenerate(self, use_scale) -> None:
-        logger.critical('>>>> Regenerate >>>>')
+        logger.critical('Regenerate Aligned Images...')
         if not is_cur_scale_aligned():
             self.hud.post('Must align before regenerating.', logging.WARNING)
             return
@@ -606,14 +607,14 @@ class MainWindow(QMainWindow):
         self.initSnrPlot()
         self.save_project_to_file()  # 0908+
         # self.initNgServer(s=cfg.data.s())
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.invalidate_all()
 
     def generate_multiscale_zarr(self):
         pass
 
     def export(self):
-        logger.critical('>>>> Exporting to Zarr >>>>')
+        logger.critical('Exporting To Zarr...')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -835,7 +836,7 @@ class MainWindow(QMainWindow):
         self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
         # self.reset_groupbox_styles()
         if inspect.stack()[1].function != '__init__':
-            self.initNgServer()
+            self.initNgServer(scales=[cfg.data.scale()])
 
     def apply_daylight_style(self):
         cfg.THEME = 1
@@ -851,7 +852,7 @@ class MainWindow(QMainWindow):
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
         # self.reset_groupbox_styles()
         if inspect.stack()[1].function != '__init__':
-            self.initNgServer()
+            self.initNgServer(scales=[cfg.data.scale()])
 
     def apply_moonlit_style(self):
         cfg.THEME = 2
@@ -865,7 +866,7 @@ class MainWindow(QMainWindow):
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
         # self.reset_groupbox_styles()
         if inspect.stack()[1].function != '__init__':
-            self.initNgServer()
+            self.initNgServer(scales=[cfg.data.scale()])
 
     def apply_sagittarius_style(self):
         cfg.THEME = 3
@@ -879,7 +880,7 @@ class MainWindow(QMainWindow):
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         # self.reset_groupbox_styles()
         if inspect.stack()[1].function != '__init__':
-            self.initNgServer()
+            self.initNgServer(scales=[cfg.data.scale()])
 
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
@@ -953,6 +954,7 @@ class MainWindow(QMainWindow):
         # if self._working == True: return
         # logger.info('Updating...')
         # logger.info('called by %s' % inspect.stack()[1].function)
+        caller = inspect.stack()[1].function
 
         if self._working == True:
             logger.warning("Can't update GUI now - working...")
@@ -978,12 +980,10 @@ class MainWindow(QMainWindow):
                 logger.warning('Unable To Set Layer from Passed In Value')
             logger.info('Layer %d Updating...' % ng_layer)
         else:
-            logger.info('Updating...')
+            logger.info('Updating (caller: %s)...' % caller)
 
         self.updateLowLowWidgetB()
         # cfg.main_window.updateTextWidgetA()
-
-
         '''This Condition Is True At The End Of The Image Stack'''
         if ng_layer == cfg.data.n_imgs():
             self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 1.0);')
@@ -1032,7 +1032,7 @@ class MainWindow(QMainWindow):
         except:
             logger.warning('Polynomial Order Combobox Widget Failed to Update')
 
-        self.updateAffineWidgets()
+        # self.updateAffineWidgets()
 
 
     def updateTextWidgetA(self, show=True):
@@ -1504,7 +1504,7 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(None, title, text)
 
     def new_project(self):
-        logger.critical('>>>> New Project >>>>')
+        logger.critical('Starting A New Project...')
         self.hud.post('Set New Project Save Path...')
         self.scales_combobox_switch = 0
         # app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -1516,9 +1516,6 @@ class MainWindow(QMainWindow):
                               'Please confirm create new project.',
                               buttons=QMessageBox.Cancel | QMessageBox.Ok)
             msg.setIcon(QMessageBox.Question)
-            # button_cancel = msg.button(QMessageBox.Cancel)
-            # button_cancel.setText('Cancel')
-            # button_ok = msg.button(QMessageBox.Ok)
             msg.setDefaultButton(QMessageBox.Cancel)
             reply = msg.exec_()
             if reply == QMessageBox.Ok:
@@ -1552,7 +1549,6 @@ class MainWindow(QMainWindow):
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path)
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
-        # self.save_project()
         self.import_images()
         # try:
         #     self.import_images()
@@ -1604,7 +1600,6 @@ class MainWindow(QMainWindow):
         self.shutdownNeuroglancer()
         self.clear_snr_plot()
 
-
         path = cfg.data.dest()
         filenames = cfg.data.get_source_img_paths()
         cfg.main_window.hud.post("Removing Extrant Scale Directories...")
@@ -1653,7 +1648,7 @@ class MainWindow(QMainWindow):
 
 
     def open_project(self):
-        logger.critical('>>>> Open Project >>>>')
+        logger.critical('Opening Project...')
         filename = self.open_project_dialog()
         if filename == '':
             self.hud.post("No Project File (.proj) Was Selected (='')", logging.WARNING)
@@ -1702,7 +1697,7 @@ class MainWindow(QMainWindow):
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
         ng_layouts = ['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
         self.ng_layout_combobox.addItems(ng_layouts)
-        self.initNgServer() # must come AFTER scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
+        self.initNgServer(scales=cfg.data.scales()) # must come AFTER scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
 
     def save_project(self):
         self.hud.post('Saving Project...')
@@ -1781,11 +1776,11 @@ class MainWindow(QMainWindow):
         else:
             cfg.SHOW_UI_CONTROLS = False
             self.ngShowUiControlsAction.setText('Show UI Controls')
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
 
     def import_images(self, clear_role=False):
         ''' Import images into data '''
-        logger.critical('>>>> Import Images >>>>')
+        logger.critical('Importing Images...')
         self.hud.post('Select Images To Import...')
         role_to_import = 'base'
         try:
@@ -1827,7 +1822,7 @@ class MainWindow(QMainWindow):
 
     def import_images_silent(self, filenames):
         ''' Import images into data '''
-        logger.critical('>>>> Import Images Silent >>>>')
+        logger.critical('Importing Images Silently...')
         role_to_import = 'base'
         for i, f in enumerate(filenames):
             # Find next l with an empty role matching the requested role_to_import
@@ -2057,22 +2052,22 @@ class MainWindow(QMainWindow):
             return
         if s == None: s = cfg.data.scale()
         self.main_widget.setCurrentIndex(0)
-        logger.info("Updating NG View (caller: %s)" % inspect.stack()[1].function)
+        # logger.info("Updating NG View (caller: %s)" % inspect.stack()[1].function)
         if not cfg.NO_EMBED_NG:
             self.ng_browser.setUrl(QUrl(self.ng_workers[s].url()))
             self.ng_browser.setFocus()
 
-    def initNgServer(self):
+    def initNgServer(self, scales=None):
         # logger.info('caller: %s' % inspect.stack()[1].function)
         if not self.is_project_open():
             self.hud.post('Nothing to view.', logging.WARNING)
             return
-        logger.critical('>>>> Initializing NG Workers >>>>')
-        scales = cfg.data.scales()
-        logger.info('Initializing Neuroglancer Client for All Scales (%s)' % ' '.join(scales))
+        if scales in (None, False):
+            scales = cfg.data.scales()
+        logger.critical('Initializing NG Workers For Scales %s' % ', '.join(scales))
         self.hud.post('Starting Neuroglancer Workers...')
         self.set_status('Starting Neuroglancer...')
-        self.ng_workers = {}  # Todo not good but for now just initialize everything together
+        # self.ng_workers = {}  # Todo not good but for now just initialize everything together
         try:
             for s in scales:
                 # logger.info('Starting Server, Scale %d' % get_scale_val(s))
@@ -2313,13 +2308,14 @@ class MainWindow(QMainWindow):
     def set_mp_marker_lineweight(self):
         cfg.data['user_settings']['mp_marker_lineweight'] = self.mp_marker_lineweight_spinbox.value()
         # self.initNgViewer()
-        self.initNgServer()
+        # self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
 
     def set_mp_marker_size(self):
         cfg.data['user_settings']['mp_marker_size'] = self.mp_marker_size_spinbox.value()
         # self.initNgViewer()
-        # self.initNgServer(match_point_mode=True)
-        self.initNgServer()
+        # self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
 
 
     def initShortcuts(self):
@@ -2340,22 +2336,22 @@ class MainWindow(QMainWindow):
 
     def set_shader_none(self):
         cfg.SHADER = None
-        self.initNgServer() # Note: must restart NG
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.initNgViewer() # Note: must restart NG
 
     def set_shader_colormapJet(self):
         cfg.SHADER = src.shaders.colormapJet
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.initNgViewer()
 
     def set_shader_test1(self):
         cfg.SHADER = src.shaders.shader_test1
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.initNgViewer()
 
     def set_shader_test2(self):
         cfg.SHADER = src.shaders.shader_test2
-        self.initNgServer()
+        self.initNgServer(scales=[cfg.data.scale()])
         # self.initNgViewer()
 
     def initToolbar(self):
@@ -3655,7 +3651,7 @@ class MainWindow(QMainWindow):
             self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
             self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
             # self.initNgViewer() # insufficient
-            self.initNgServer()
+            self.initNgServer(scales=cfg.data.scales())
 
         else:
             self._is_mp_mode = False
@@ -3690,7 +3686,7 @@ class MainWindow(QMainWindow):
         self.show_hide_snr_plot_callback(force_hide=True)
         self.show_hide_python_callback(force_hide=True)
         # self.ng_workers[cfg.data.scale()].match_point_mode = False
-        self.initNgServer()
+        # self.initNgServer(scales=[cfg.data.scale()]) #1122-
 
     def expand_viewer_size(self):
         self.full_window_controls.show()

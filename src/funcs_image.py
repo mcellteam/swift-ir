@@ -423,7 +423,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 
 def SetStackCafm(scale_dict, null_biases=False):
     '''Calculate cafm across the whole stack with optional bias correction'''
-    logger.critical('>>>> Setting Stack CAFM (null_biases=%s) >>>>' % str(null_biases))
+    logger.critical('Setting Stack CAFM (null_biases: %s)...' % str(null_biases))
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
         SetStackCafm(scale_dict, null_biases=False)
@@ -444,14 +444,14 @@ def SetStackCafm(scale_dict, null_biases=False):
                 bias_mat = BiasMat(align_idx, bias_funcs)
             c_afm = SetSingleCafm(al_stack[align_idx], c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
             # if i in [0,1,2,n,n-1]:
-            logger.info('c_afm: %s' % format_cafm(c_afm))
+            # logger.info('c_afm: %s' % format_cafm(c_afm))
             # cfg.data.set_cafm(c_afm.tolist(), l=align_idx)
 
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(al_stack, bias_funcs=bias_funcs)
 
-    logger.info('Returning: %s' % format_cafm(c_afm_init))
-    logger.info('<<<< Setting Stack CAFM <<<<\n')
+    logger.debug('Returning: %s' % format_cafm(c_afm_init))
+    logger.debug('<<<< Setting Stack CAFM <<<<\n')
     return c_afm_init
 
 
@@ -575,7 +575,7 @@ array([[   0,    0],
        [   9,   80],
        [ 997,  580]], dtype=int32)
     '''
-    # logger.critical('>>>> ComputeBoundingRect >>>>')
+    logger.critical('Computing Bounding Rect...')
 
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
