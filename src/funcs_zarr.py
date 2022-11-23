@@ -33,7 +33,7 @@ PaLM by addressing the problem of managing previewmodel parameters (checkpoints)
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''
 
-__all__ = ['preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
+__all__ = ['preallocate_zarr', 'preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +192,48 @@ def remove_zarr(path) -> None:
         except TimeoutError as e:
             logger.warning("Timed out!")
         logger.info('Done Removing Zarr')
+
+
+def preallocate_zarr(name, scales, dimx, dimy, dtype, overwrite):
+    logger.info('Preallocating Zarr Arrays...')
+    cname = cfg.data.cname()
+    clevel = cfg.data.clevel()
+    chunkshape = cfg.data.chunkshape()
+    src = os.path.abspath(cfg.data.dest())
+    zarr_path = os.path.join(src, name)
+    shape = (cfg.data.n_imgs(), dimy, dimx)  # Todo check this, inverting x & y
+    logger.info(f'zarr root  : {zarr_path}\n'
+                f'scales     : {str(scales)}\n'
+                f'dim x,y    : {dimx},{dimy}\n'
+                f'name       : {name}\n'
+                f'shape      : {str(shape)}\n'
+                f'chunkshape : {str(chunkshape)}\n'
+                f'cname      : {cname}\n'
+                f'clevel     : {clevel}\n'
+                f'dtype      : {dtype}\n'
+                f'overwrite  : {overwrite}')
+    try:
+        for scale in scales:
+            out_path = os.path.join(zarr_path, 's' + str(get_scale_val(scale)))
+            if os.path.exists(out_path):
+                remove_zarr(out_path)
+            group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
+            logger.info('Preallocating Aligned Zarr Array for %s, shape: %s...' % (scale, str(shape)))
+            name = 's' + str(get_scale_val(scale))
+            compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+            # group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=overwrite)
+            group.zeros(name=name, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
+            # group.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
+            '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
+
+        # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
+
+        # if cfg.data.s() == 'scale_1':
+        #     write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+    except:
+        print_exception()
+    else:
+        cfg.main_window.hud.done()
 
 
 def preallocate_zarr_src():
