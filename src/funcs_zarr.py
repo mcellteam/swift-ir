@@ -33,7 +33,7 @@ PaLM by addressing the problem of managing previewmodel parameters (checkpoints)
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''
 
-__all__ = ['preallocate_zarr', 'preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
+__all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
 
 logger = logging.getLogger(__name__)
 
@@ -228,75 +228,75 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
         print_exception()
     else:
         cfg.main_window.hud.done()
-
-
-def preallocate_zarr_src():
-    cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
-    logger.info('Preallocating Zarr scales...')
-    try:
-        zarr_path = os.path.join(cfg.data.dest(), 'img_src.zarr')
-        logger.info('Zarr Root: %s' % zarr_path)
-        if os.path.exists(zarr_path):
-            cfg.main_window.hud.post('Zarr source arrays already exist - Removing them...')
-            remove_zarr(zarr_path)
-
-        root = zarr.group(store=zarr_path, overwrite=True)
-        # synchronizer = zarr.ThreadSynchronizer()
-        # root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
-
-        cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
-
-        for scale in cfg.data.scales():
-            dimx, dimy = cfg.data.image_size(s=scale)
-            name = 's' + str(get_scale_val(scale))
-            shape = (cfg.data.n_imgs(), dimy, dimx)
-            logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(scale), str(shape)))
-            compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-            root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
-            # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
-    except:
-        print_exception()
-    else:
-        cfg.main_window.hud.done()
-
-def preallocate_zarr_aligned(scales=None):
-    logger.info('Preallocating Aligned Zarr Array...')
-    try:
-        if scales == None: scales = [cfg.data.scale()]
-        src = os.path.abspath(cfg.data.dest())
-        zarr_path = os.path.join(src, 'img_aligned.zarr')
-        logger.info('Zarring these scales: %s' % str(scales))
-        logger.info('Zarr Root: %s' % zarr_path)
-        cname = cfg.data.cname()
-        clevel = cfg.data.clevel()
-        chunkshape = cfg.data.chunkshape()
-
-        for scale in scales:
-            out_path = os.path.join(zarr_path, 's' + str(get_scale_val(scale)))
-            if os.path.exists(out_path):
-                remove_zarr(out_path)
-            group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
-            rect = cfg.data.bounding_rect(s=scale)
-            # shape = (cfg.data.n_imgs(), rect[2], rect[3])
-            shape = (cfg.data.n_imgs(), rect[3], rect[2])
-
-            logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
-
-            name = 's' + str(get_scale_val(scale))
-            compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-            group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
-            # group.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
-            '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
-
-        # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
-
-        # if cfg.data.s() == 'scale_1':
-        #     write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
-    except:
-        print_exception()
-    else:
-        cfg.main_window.hud.done()
-
+#
+#
+# def preallocate_zarr_src():
+#     cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
+#     logger.info('Preallocating Zarr scales...')
+#     try:
+#         zarr_path = os.path.join(cfg.data.dest(), 'img_src.zarr')
+#         logger.info('Zarr Root: %s' % zarr_path)
+#         if os.path.exists(zarr_path):
+#             cfg.main_window.hud.post('Zarr source arrays already exist - Removing them...')
+#             remove_zarr(zarr_path)
+#
+#         root = zarr.group(store=zarr_path, overwrite=True)
+#         # synchronizer = zarr.ThreadSynchronizer()
+#         # root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
+#
+#         cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
+#
+#         for scale in cfg.data.scales():
+#             dimx, dimy = cfg.data.image_size(s=scale)
+#             name = 's' + str(get_scale_val(scale))
+#             shape = (cfg.data.n_imgs(), dimy, dimx)
+#             logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(scale), str(shape)))
+#             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+#             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+#             # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
+#     except:
+#         print_exception()
+#     else:
+#         cfg.main_window.hud.done()
+#
+# def preallocate_zarr_aligned(scales=None):
+#     logger.info('Preallocating Aligned Zarr Array...')
+#     try:
+#         if scales == None: scales = [cfg.data.scale()]
+#         src = os.path.abspath(cfg.data.dest())
+#         zarr_path = os.path.join(src, 'img_aligned.zarr')
+#         logger.info('Zarring these scales: %s' % str(scales))
+#         logger.info('Zarr Root: %s' % zarr_path)
+#         cname = cfg.data.cname()
+#         clevel = cfg.data.clevel()
+#         chunkshape = cfg.data.chunkshape()
+#
+#         for scale in scales:
+#             out_path = os.path.join(zarr_path, 's' + str(get_scale_val(scale)))
+#             if os.path.exists(out_path):
+#                 remove_zarr(out_path)
+#             group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
+#             rect = cfg.data.bounding_rect(s=scale)
+#             # shape = (cfg.data.n_imgs(), rect[2], rect[3])
+#             shape = (cfg.data.n_imgs(), rect[3], rect[2])
+#
+#             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
+#
+#             name = 's' + str(get_scale_val(scale))
+#             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+#             group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+#             # group.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
+#             '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
+#
+#         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
+#
+#         # if cfg.data.s() == 'scale_1':
+#         #     write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+#     except:
+#         print_exception()
+#     else:
+#         cfg.main_window.hud.done()
+#
 
 
 def write_metadata_zarr_multiscale(path):
