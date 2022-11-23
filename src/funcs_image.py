@@ -592,7 +592,7 @@ array([[   0,    0],
                 int(-border_width_y),
                 int(siz[0] + 2 * border_width_x),
                 int(siz[1] + 2 * border_width_y)]
-        logger.info('Returning: %s' % str(rect))
+        logger.debug('Returning: %s' % str(rect))
     else:
         '''Old code/square only'''
         model_bounds = None

@@ -196,9 +196,7 @@ def remove_zarr(path) -> None:
 
 def preallocate_zarr(name, scales, dimx, dimy, dtype, overwrite):
     logger.info('Preallocating Zarr Arrays...')
-    cname = cfg.data.cname()
-    clevel = cfg.data.clevel()
-    chunkshape = cfg.data.chunkshape()
+    cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
     zarr_path = os.path.join(src, name)
     shape = (cfg.data.n_imgs(), dimy, dimx)  # Todo check this, inverting x & y
