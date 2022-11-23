@@ -41,6 +41,7 @@ class DataModel:
 
         # if self._data['version'] != self._current_version:
         #     self.upgrade_data_model()
+        self.more = None
 
         self._data['user_settings'].setdefault('mp_marker_size', 6)
         self._data['user_settings'].setdefault('mp_marker_lineweight', 2)
@@ -50,6 +51,21 @@ class DataModel:
 
     def __getitem__(self, key):
         return self._data[key]
+
+    '''------'''
+    def __iter__(self):
+        return iter(self._data)
+
+    def keys(self):
+        return self._data.keys()
+
+    def items(self):
+        return self._data.items()
+
+    def values(self):
+        return self._data.values()
+
+    '''------'''
 
     # def __str__(self):
     #     return json.dumps(self._data)
@@ -510,13 +526,15 @@ class DataModel:
 
     def image_size(self, s=None):
         if s == None: s = self.scale()
-        # logger.info('Called by %s' % inspect.stack()[1].function)
+        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         # logger.info('Scale: %s' % str(s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
             # print_exception()
             try:
+                logger.info('Setting image_src_size (s=%s)...' % str(s))
+                logger.info(f"ImageSize(self.path_base(s=s)) = {ImageSize(self.path_base(s=s))}")
                 self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
                 return self._data['data']['scales'][s]['image_src_size']
             except:
@@ -563,6 +581,7 @@ class DataModel:
             return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
         except:
             print_exception()
+            return ''
             # try:
             #     return self._data['data']['scales'][s]['alignment_stack'][0]['images']['base']['filename']
             # except:

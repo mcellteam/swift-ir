@@ -36,7 +36,7 @@ from src.background_worker import BackgroundWorker
 from src.compute_affines import compute_affines
 from src.config import ICON_COLOR
 from src.data_model import DataModel
-from src.funcs_zarr import tiffs2MultiTiff, preallocate_zarr_src
+from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
@@ -707,6 +707,8 @@ class MainWindow(QMainWindow):
             self.regenerate_button.setEnabled(False)
         if cfg.data.is_alignable():
             self.align_all_button.setEnabled(True)
+        else:
+            self.align_all_button.setEnabled(False) #1123+
         if cfg.data.n_scales() == 1:
             self.next_scale_button.setEnabled(False)
             self.prev_scale_button.setEnabled(False)
@@ -723,6 +725,8 @@ class MainWindow(QMainWindow):
             else:
                 self.prev_scale_button.setEnabled(True)
                 self.next_scale_button.setEnabled(True)
+
+
 
     @Slot()
     def updateGuiDetails(self) -> None:

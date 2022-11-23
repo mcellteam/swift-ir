@@ -51,9 +51,9 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
         if not layer['skipped']: n_tasks +=1
         else:                    n_skips +=1
-    cfg.main_window.hud.post('# Layers (total)           : %d' % cfg.data.n_imgs())
-    cfg.main_window.hud.post('# Tasks (excluding skips)  : %d' % n_tasks)
-    cfg.main_window.hud.post('# Skipped Layers           : %d' % n_skips)
+    logger.info('# Layers (total)           : %d' % cfg.data.n_imgs())
+    logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
+    logger.info('# Skipped Layers           : %d' % n_skips)
     temp_file = os.path.join(cfg.data.dest(), "temp_project_file.json")
     with open(temp_file, 'w') as f:
         f.write(cfg.data.to_json())

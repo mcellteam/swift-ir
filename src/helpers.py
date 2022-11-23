@@ -93,13 +93,13 @@ def show_mp_queue_results(task_queue, dt):
     # else:
     #     cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.INFO)
 
-    cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
+    cfg.main_window.hud.post('Time Elapsed    : %.2f seconds' % dt)
 
     if n_failed > 0:
-        cfg.main_window.hud.post('  Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
+        cfg.main_window.hud.post('Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
                                  logging.WARNING)
     else:
-        cfg.main_window.hud.post('  Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
+        cfg.main_window.hud.post('Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
                                  logging.INFO)
 
 
