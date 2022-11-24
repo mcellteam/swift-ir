@@ -309,7 +309,8 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
 
     def autoscale(self, is_rescale=False):
-        logger.critical('Autoscaling...')
+        #Todo This should check for existence of original source files before doing anything
+        # logger.critical('Autoscaling...')
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.hud.post('Generating TIFF Scale Hierarchy...')
         try:
@@ -331,6 +332,10 @@ class MainWindow(QMainWindow):
         cfg.data.link_all_stacks() #Todo: check if this is necessary
         self.clear_snr_plot() #Todo: Move this it should not be here
         cfg.data.set_scale(cfg.data.scales()[-1])
+
+        for s in cfg.data.scales():
+            cfg.data.set_image_size(scale=s)
+
         self.set_status('Generating Zarr Scales...')
         try:
             self.worker = BackgroundWorker(fn=generate_zarr_scales())
@@ -745,7 +750,7 @@ class MainWindow(QMainWindow):
             self.alignment_status_label.setText("Not Aligned")
             self.alignment_status_label.setStyleSheet('color: #FF0000;')
         try:
-            img_size = cfg.data.image_size()
+            img_size = cfg.data.image_size(s=cfg.data.scale())
             self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
         except:
             self.align_label_resolution.setText('')
@@ -973,7 +978,7 @@ class MainWindow(QMainWindow):
         #     logger.warning('Invalid Index requested: None'); return
         # if ng_layer < 0:
         #     logger.warning('Invalid Index requested: Too Low'); return
-        # if ng_layer > cfg.data.n_imgs():
+        # if ng_layer > cfg.data.n_layers():
         #     logger.warning('Invalid Index requested: Too High'); return
 
         if ng_layer is not None:
@@ -989,7 +994,7 @@ class MainWindow(QMainWindow):
         self.updateLowLowWidgetB()
         # cfg.main_window.updateTextWidgetA()
         '''This Condition Is True At The End Of The Image Stack'''
-        if ng_layer == cfg.data.n_imgs():
+        if ng_layer == cfg.data.n_layers():
             self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 1.0);')
             self.browser_overlay_label.setText('End Of Image Stack')
             self.browser_overlay_widget.show()
@@ -1226,12 +1231,12 @@ class MainWindow(QMainWindow):
         return self.ng_workers[cfg.data.scale()].request_layer()
 
     def updateJumpValidator(self):
-        self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
+        self.jump_validator = QIntValidator(0, cfg.data.n_layers())
         self.jump_input.setValidator(self.jump_validator)
 
     @Slot()
     def jump_to(self, requested) -> None:
-        if requested not in range(cfg.data.n_imgs()):
+        if requested not in range(cfg.data.n_layers()):
             logger.warning('Requested layer is not a valid layer')
             return
         self.hud.post('Jumping To Layer %d' % requested)
@@ -1247,7 +1252,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def jump_to_layer(self) -> None:
         requested = int(self.jump_input.text())
-        if requested not in range(cfg.data.n_imgs()):
+        if requested not in range(cfg.data.n_layers()):
             logger.warning('Requested layer is not a valid layer')
             return
         self.hud.post('Jumping To Layer %d' % requested)
@@ -1313,13 +1318,11 @@ class MainWindow(QMainWindow):
     def reload_scales_combobox(self) -> None:
         # logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
         self.scales_combobox_switch = 0
-        curr_scale = cfg.data.scale()
-        image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
         self.scales_combobox.clear()
-        for scale in sorted(image_scales_to_run):
-            self.scales_combobox.addItems(["scale_" + str(scale)])
-        index = self.scales_combobox.findText(curr_scale, Qt.MatchFixedString)
-        if index >= 0: self.scales_combobox.setCurrentIndex(index)
+        self.scales_combobox.addItems(cfg.data.scales())
+        index = self.scales_combobox.findText(cfg.data.scale(), Qt.MatchFixedString)
+        if index >= 0:
+            self.scales_combobox.setCurrentIndex(index)
         self.scales_combobox_switch = 1
 
     @Slot()
@@ -1334,9 +1337,7 @@ class MainWindow(QMainWindow):
             return None
 
         caller = inspect.stack()[1].function
-        logger.info(f'fn_scales_combobox is changing s (caller: {caller})')
-        # if caller == 'onStartProject':
-        #     return
+        logger.info(f'Changing Scales (caller: {caller})')
         cfg.data.set_scale(self.scales_combobox.currentText())
         # self.read_project_data_update_gui()
         self.onScaleChange()
@@ -1632,12 +1633,14 @@ class MainWindow(QMainWindow):
             return
 
         logger.info('Clobbering The Project Dictionary...')
-        cfg.data = DataModel(name=path)
+        # cfg.data = DataModel(name=path)
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
         logger.info(str(filenames))
+        # self.import_images_silent(filenames, clear_role=True)
         # self.import_images_silent(filenames)
 
         try:
+            # self.autoscale(is_rescale=True)
             self.autoscale(is_rescale=True)
         except:
             print_exception()
@@ -1669,13 +1672,16 @@ class MainWindow(QMainWindow):
         self.shutdownNeuroglancer()
         try:
             with open(filename, 'r') as f:
-                project = DataModel(json.load(f))
+                project = DataModel(json.load(f)) #1123-
+                # cfg.data = DataModel(json.load(f)) #1123+
+
         except:
             self.hud.post('No Project Was Opened.', logging.WARNING)
             return
-        assert isinstance(project, DataModel)
-        cfg.data = copy.deepcopy(project)
-        cfg.data.set_paths_absolute(head=filename)  # Todo This may not work
+        cfg.data = copy.deepcopy(project) #1123-
+        cfg.data.set_paths_absolute(filename=filename)
+
+        # cfg.data.set_destination_absolute(head=filename)
         cfg.data.link_all_stacks()
         self.onStartProject()
 
@@ -1745,24 +1751,19 @@ class MainWindow(QMainWindow):
         if saveas is not None:
             cfg.data.set_destination(saveas)
         self.read_gui_update_project_data()
-        data_cp = copy.deepcopy(cfg.data.to_dict())
-        data_cp['data']['destination_path'] = \
-            make_relative(data_cp['data']['destination_path'], cfg.data['data']['destination_path'])
-        for s in data_cp['data']['scales'].keys():
-            scales = data_cp['data']['scales'][s]
-            for l in scales['alignment_stack']:
-                for role in l['images'].keys():
-                    filename = l['images'][role]['filename']
-                    if filename != '':
-                        l['images'][role]['filename'] = make_relative(filename, cfg.data.dest())
+        data_cp = copy.deepcopy(cfg.data)
+        data_cp.make_paths_relative(start=cfg.data.dest())
+        data_cp_json = data_cp.to_dict()
         logger.info('---- SAVING DATA TO PROJECT FILE ----')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-        proj_json = jde.encode(data_cp)
+        proj_json = jde.encode(data_cp_json)
         name = cfg.data.dest()
+        logger.info('Save Name: %s' % name)
         if not name.endswith('.proj'): name += ".proj"
-        with open(name, 'w') as f:
-            f.write(proj_json)
+        with open(name, 'w') as f: f.write(proj_json)
+        del data_cp
         self._unsaved_changes = False
+
 
     def has_unsaved_changes(self):
         logger.debug("Called by " + inspect.stack()[1].function)
@@ -1794,10 +1795,9 @@ class MainWindow(QMainWindow):
             return 1
 
         cfg.data.set_source_path(os.path.dirname(filenames[0]))
-
         logger.debug('filenames = %s' % str(filenames))
         if clear_role:
-            for layer in cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack']:
+            for layer in cfg.data.alstack():
                 if role_to_import in layer['images'].keys():  layer['images'].pop(role_to_import)
 
         if filenames != None:
@@ -1817,29 +1817,42 @@ class MainWindow(QMainWindow):
             cfg.IMAGES_IMPORTED = True
             img_size = cfg.data.image_size(s='scale_1')
             cfg.data.link_all_stacks()
-            self.hud.post('%d Images Imported Successfully.' % cfg.data.n_imgs())
-            self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
+            self.hud.post('%d Images Imported Successfully.' % cfg.data.n_layers())
+            self.hud.post(f'Image Dimensions: {img_size[0]}x{img_size[1]} pixels')
             '''Todo save the image dimensions in project dictionary for quick lookup later'''
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
+        self.save_project_to_file() #1123+
         logger.info('<<<< Import Images <<<<')
 
-    def import_images_silent(self, filenames):
+    def import_images_silent(self, filenames, clear_role=False):
+        logger.info(f'Filenames For Silent Import:\n{filenames}')
         ''' Import images into data '''
         logger.critical('Importing Images Silently...')
         role_to_import = 'base'
-        for i, f in enumerate(filenames):
-            # Find next l with an empty role matching the requested role_to_import
-            logger.info("Role " + str(role_to_import) + ", Importing file: " + str(f))
-            if f is None:
-                self.add_empty_to_role(role_to_import)
-            else:
-                self.add_image_to_role(f, role_to_import)
+
+        cfg.data.set_source_path(os.path.dirname(filenames[0]))
+        logger.debug('filenames = %s' % str(filenames))
+        if clear_role:
+            for layer in cfg.data.alstack():
+                if role_to_import in layer['images'].keys():  layer['images'].pop(role_to_import)
+
+        if filenames != None:
+            if len(filenames) > 0:
+                for i, f in enumerate(filenames):
+                    # Find next l with an empty role matching the requested role_to_import
+                    logger.info("Role " + str(role_to_import) + ", Importing file: " + str(f))
+                    if f is None:
+                        logger.info(f'Adding Empty To ({role_to_import})')
+                        self.add_empty_to_role(role_to_import)
+                    else:
+                        logger.info(f'Adding Image To ({role_to_import}): {f}')
+                        self.add_image_to_role(f, role_to_import)
 
         cfg.IMAGES_IMPORTED = True
         img_size = cfg.data.image_size(s='scale_1')
         cfg.data.link_all_stacks()
-        self.hud.post('%d Images Imported Successfully.' % cfg.data.n_imgs())
+        self.hud.post('%d Images Imported Successfully.' % cfg.data.n_layers())
         self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
         '''Todo save the image dimensions in project dictionary for quick lookup later'''
 
@@ -2232,6 +2245,7 @@ class MainWindow(QMainWindow):
             else:
                 cfg.data.set_skip(False, s=scale, l=layer)  # for checkbox
                 self.hud.post("Keep: %s (Scale %d)" % (cfg.data.name_base(), scale_val))
+        cfg.data.link_all_stacks()
         self.read_project_data_update_gui() #2022-11-13
         self.updateLowLowWidgetB()
 
@@ -3918,7 +3932,7 @@ class MainWindow(QMainWindow):
         max_snr = cfg.data.snr_max_all_scales()
         if is_any_scale_aligned_and_generated():
             try:
-                if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_imgs(), yMin=0, yMax=max_snr + 1)
+                if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
             except:
                 logger.warning('updateSnrPlot encountered a problem setting plot limits')
 

@@ -201,7 +201,7 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
     zarr_path = os.path.join(src, name)
     slug = 's' + str(get_scale_val(scale))
     out_path = os.path.join(zarr_path, slug)
-    shape = (cfg.data.n_imgs(), dimy, dimx)  # Todo check this, inverting x & y
+    shape = (cfg.data.n_layers(), dimy, dimx)  # Todo check this, inverting x & y
 
     logger.info(f'\n'
                 f'zarr root  : {zarr_path}\n'
@@ -249,7 +249,7 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
 #         for scale in cfg.data.scales():
 #             dimx, dimy = cfg.data.image_size(s=scale)
 #             name = 's' + str(get_scale_val(scale))
-#             shape = (cfg.data.n_imgs(), dimy, dimx)
+#             shape = (cfg.data.n_layers(), dimy, dimx)
 #             logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(scale), str(shape)))
 #             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
 #             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
@@ -277,8 +277,8 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
 #                 remove_zarr(out_path)
 #             group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
 #             rect = cfg.data.bounding_rect(s=scale)
-#             # shape = (cfg.data.n_imgs(), rect[2], rect[3])
-#             shape = (cfg.data.n_imgs(), rect[3], rect[2])
+#             # shape = (cfg.data.n_layers(), rect[2], rect[3])
+#             shape = (cfg.data.n_layers(), rect[3], rect[2])
 #
 #             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
 #

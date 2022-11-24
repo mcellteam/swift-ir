@@ -28,12 +28,13 @@ def generate_thumbnails():
     target_thumbnail_size = 200 # 200x200
     smallest_scale_key = natural_sort(cfg.data['data']['scales'].keys())[-1]
     scale_val = get_scale_val(smallest_scale_key)
-    siz_x, siz_y = cfg.data.image_size(s=smallest_scale_key)
+    size = cfg.data.image_size(s=smallest_scale_key)
+    siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
     scale_factor = int(siz_start/target_thumbnail_size)
     logger.info("Thumbnail Scaling Factor : %s" % str(scale_factor))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=cfg.data.n_imgs(),
+    task_queue = TaskQueue(n_tasks=cfg.data.n_layers(),
                            parent=cfg.main_window,
                            pbar_text='Generating Thumbnails - %d Cores' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'

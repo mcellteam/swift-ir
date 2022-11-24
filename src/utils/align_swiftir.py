@@ -1,9 +1,10 @@
 #!/usr/bin/env python2.7
 
-import swiftir
-from get_image_size import get_image_size
+# import swiftir
+import src.swiftir as swiftir
+from src.funcs_image import ImageSize
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import os
 import sys
 import platform
