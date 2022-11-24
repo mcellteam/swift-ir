@@ -114,7 +114,7 @@ class NgHost(QRunnable):
         # logger.info('Initializing Viewer (caller: %s):' % inspect.stack()[1].function)
         is_aligned = is_arg_scale_aligned(self.scale)
         # is_aligned = is_arg_scale_aligned(cfg.data.scale())
-        logger.info('Initializing Viewer | Scale %d | aligned? %s)...' % (self.sf, is_aligned))
+        logger.info('Initializing Viewer, Scale %d, aligned? %s...' % (self.sf, is_aligned))
         cfg.main_window.hud.post('Initializing Neuroglancer Viewer (Scale %d)...' % self.sf)
 
         if self.match_point_mode:
@@ -174,7 +174,7 @@ class NgHost(QRunnable):
             cross_section_scale = max(cross_section_height, cross_section_width)
             adjustment = 1.02
             s.cross_section_scale = cross_section_scale * adjustment
-            logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
+            # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
 
             # adjustment = 1.04
 

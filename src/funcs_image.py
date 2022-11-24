@@ -539,7 +539,8 @@ def reptoshape(mat, pattern):
                              + str(pattern.shape))
     return mat
 
-def ComputeBoundingRect(al_stack):
+# def ComputeBoundingRect(al_stack, scale=None):
+def ComputeBoundingRect(al_stack, scale=None):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
 
@@ -576,13 +577,14 @@ array([[   0,    0],
        [ 997,  580]], dtype=int32)
     '''
     logger.critical('Computing Bounding Rect...')
+    if scale == None: scale = cfg.data.scale()
 
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
         # model_bounds = None
         # al_stack = cfg.data.alstack()
         model_bounds = [[0,0]] #Todo initialize this better
-        siz = cfg.data.image_size()
+        siz = cfg.data.image_size(s=scale)
         for item in al_stack:
             c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
             model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
@@ -596,7 +598,7 @@ array([[   0,    0],
     else:
         '''Old code/square only'''
         model_bounds = None
-        siz = cfg.data.image_size()
+        siz = cfg.data.image_size(s=scale)
         for item in al_stack:
             c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
             if type(model_bounds) == type(None):

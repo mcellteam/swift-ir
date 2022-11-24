@@ -51,7 +51,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
         if not layer['skipped']: n_tasks +=1
         else:                    n_skips +=1
-    logger.info('# Layers (total)           : %d' % cfg.data.n_imgs())
+    logger.info('# Layers (total)           : %d' % cfg.data.n_layers())
     logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
     logger.info('# Skipped Layers           : %d' % n_skips)
     temp_file = os.path.join(cfg.data.dest(), "temp_project_file.json")
@@ -62,6 +62,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
     for layer in substack:
+    # for index, layer in enumerate(cfg.data):
         index = alstack.index(layer)
         if layer['skipped']:
             logger.info(f'Layer {index} is skipped')

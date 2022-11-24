@@ -490,7 +490,7 @@ def printProjectDetails(project_data: dict) -> None:
     logger.info("  Any Scale Aligned Status  :", is_any_scale_aligned_and_generated())
     logger.info("  Cur Scale Aligned         :", are_aligned_images_generated())
     logger.info("  Any Exported Status       :", is_any_alignment_exported())
-    logger.info("  # Imported Images         :", cfg.data.n_imgs())
+    logger.info("  # Imported Images         :", cfg.data.n_layers())
     logger.info("  Current Layer SNR         :", cfg.data.snr())
 
 
@@ -584,7 +584,7 @@ def print_sanity_check():
         print("  Alignment Option                                 : n/a")
     print("Data Selection & Scaling___________________________")
     print("  Are images imported?                             :", are_images_imported())
-    print("  How many images?                                 :", cfg.data.n_imgs())
+    print("  How many images?                                 :", cfg.data.n_layers())
     skips = cfg.data.skips_list()
     if skips != []:
         print("  Skip list                                        :", skips)

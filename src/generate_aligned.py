@@ -46,9 +46,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     if cfg.data.has_bb():
         logger.info(f'Bounding Box              : ON')
         # Note: now have got new cafm's -> recalculate bounding box
-        try: logger.info(f'Old Bounding Box          : {cfg.data.bounding_rect(s=scale)}')
-        except: pass
-        rect = ComputeBoundingRect(alstack)
+        rect = cfg.data.bounding_rect(s=scale)
         logger.info(f'New Bounding Box          : {str(rect)}')
         cfg.data.set_bounding_rect(rect) # Only after SetStackCafm
         rect = cfg.data.bounding_rect(s=scale)

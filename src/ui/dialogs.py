@@ -164,7 +164,7 @@ class ConfigDialog(QDialog):
 
     @Slot()
     def set_project_configuration(self):
-        cfg.main_window.hud('Initializing Project Data...')
+        cfg.main_window.hud('Setting Project Data...')
         cfg.data.set_scales_from_string(self.scales_input.text())
         cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
         cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
@@ -176,9 +176,10 @@ class ConfigDialog(QDialog):
                                           int(self.chunk_x_lineedit.text())]
         for scale in cfg.data.scales():
             scale_val = get_scale_val(scale)
-            cfg.data['data']['scales'][scale]['resolution_x'] = int(self.res_x_lineedit.text()) * scale_val
-            cfg.data['data']['scales'][scale]['resolution_y'] = int(self.res_y_lineedit.text()) * scale_val
-            cfg.data['data']['scales'][scale]['resolution_z'] = int(self.res_z_lineedit.text())
+            res_x = int(self.res_x_lineedit.text()) * scale_val
+            res_y = int(self.res_y_lineedit.text()) * scale_val
+            res_z = int(self.res_z_lineedit.text())
+            cfg.data.set_resolutions(scale=scale, res_x=res_x, res_y=res_y, res_z=res_z)
         self.close()
 
     def on_cancel(self):

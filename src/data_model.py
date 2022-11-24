@@ -22,6 +22,18 @@ __all__ = ['DataModel']
 
 logger = logging.getLogger(__name__)
 
+class DataModelIterator:
+    def __init__(self, datamodel):
+        self._datamodel = datamodel
+        self._index = 0
+
+    def __next__(self):
+        if self._index < self._datamodel.n_layers():
+            return self._datamodel['data']['scales'][self._datamodel.scale()]['alignment_stack'][self._index]
+        else:
+            raise StopIteration
+
+
 
 class DataModel:
     """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
@@ -46,24 +58,39 @@ class DataModel:
         self._data['user_settings'].setdefault('mp_marker_size', 6)
         self._data['user_settings'].setdefault('mp_marker_lineweight', 2)
 
+        self._index = 0
+
+    # def __setitem__(self, key, item):
+    #     self._data[key] = item
+
+    # def __getitem__(self, key):
+    #     caller = inspect.stack()[1].function
+    #     cur_scale = cfg.data.scale()
+    #     logger.info('iterating scale %s... (caller: %s)' % (cur_scale, caller))
+    #     return self._data['data']['scales'][cur_scale]['alignment_stack'][key]
+    #     # return self._data[key]
+
     def __setitem__(self, key, item):
         self._data[key] = item
 
     def __getitem__(self, key):
+        # return self._data[key]
         return self._data[key]
 
     '''------'''
-    def __iter__(self):
-        return iter(self._data)
 
-    def keys(self):
-        return self._data.keys()
+    # def __iter__(self):
+    #     # return iter(self._data)
+    #     return DataModelIterator(self)
 
-    def items(self):
-        return self._data.items()
-
-    def values(self):
-        return self._data.values()
+    # def keys(self):
+    #     return self._data.keys()
+    #
+    # def items(self):
+    #     return self._data.items()
+    #
+    # def values(self):
+    #     return self._data.values()
 
     '''------'''
 
@@ -89,7 +116,7 @@ class DataModel:
 
     def __len__(self):
         try:
-            return self.n_imgs()
+            return self.n_layers()
         except:
             logger.warning('No Images Found')
             return 0
@@ -373,7 +400,7 @@ class DataModel:
             return int(self._data['data']['scales'][s]['resolution_x'])
         else:
             logger.warning('resolution_x not in dictionary')
-            return int(2)
+            # return int(2)
 
     def res_y(self, s=None) -> int:
         if s == None: s = self.scale()
@@ -381,7 +408,7 @@ class DataModel:
             return int(self._data['data']['scales'][s]['resolution_y'])
         else:
             logger.warning('resolution_y not in dictionary')
-            return int(2)
+            # return int(2)
 
     def res_z(self, s=None) -> int:
         if s == None: s = self.scale()
@@ -389,7 +416,15 @@ class DataModel:
             return int(self._data['data']['scales'][s]['resolution_z'])
         else:
             logger.warning('resolution_z not in dictionary')
-            return int(50)
+            # return int(50)
+
+    def set_resolutions(self, scale, res_x:int, res_y:int, res_z:int):
+        self._data['data']['scales'][scale]['resolution_x'] = res_x
+        self._data['data']['scales'][scale]['resolution_y'] = res_y
+        self._data['data']['scales'][scale]['resolution_z'] = res_z
+
+
+
 
     def cname(self):
         if 'cname' in self._data['data']:
@@ -426,8 +461,8 @@ class DataModel:
             scale = scale[len('scale_'):]
         return int(scale)
 
-    def scale_vals_list(self) -> list[int]:
-        return [int(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
+    def scale_vals(self) -> list[int]:
+        return [int(v) for v in sorted([get_scale_val(s) for s in self.scales()])]
 
     def n_scales(self) -> int:
         '''Returns the number of scales in s pyramid'''
@@ -438,7 +473,7 @@ class DataModel:
             logger.warning('No Scales Found - Returning 0')
             return 0
 
-    def n_imgs(self) -> int:
+    def n_layers(self) -> int:
         '''Returns # of imported images.
         #TODO Check this for off-by-one bug'''
         try:
@@ -446,11 +481,23 @@ class DataModel:
         except:
             logger.warning('No Images Found - Returning 0'); return 0
 
+
     def scales(self) -> list[str]:
         '''Get scales list.
         Faster than O(n*m) performance.
         Preserves order of scales.'''
         return natural_sort([key for key in self._data['data']['scales'].keys()])
+
+    def downscales(self) -> list[str]:
+        '''Get downscales list (similar to scales() but with scale_1 removed).
+        Faster than O(n*m) performance.
+        Preserves order of scales.'''
+        lst = natural_sort([key for key in self._data['data']['scales'].keys()])
+        try:
+            lst.remove('scale_1')
+        except:
+            print_exception()
+        return lst
 
     def skipped(self, s=None, l=None) -> bool:
         # logger.info('skipped (called By %s)' % inspect.stack()[1].function)
@@ -474,7 +521,7 @@ class DataModel:
         lst = []
         try:
             scale = self.scale()
-            for i in range(self.n_imgs()):
+            for i in range(self.n_layers()):
                 if self._data['data']['scales'][scale]['alignment_stack'][i]['skipped'] == True:
                     lst.append(i)
             return lst
@@ -487,7 +534,7 @@ class DataModel:
         if s == None: s = self.scale()
         lst = []
         try:
-            for i in range(self.n_imgs()):
+            for i in range(self.n_layers()):
                 if self._data['data']['scales'][s]['alignment_stack'][i]['skipped'] == True:
                     f = os.path.basename(self._data['data']['scales'][s]['alignment_stack'][i][
                                              'images']['base']['filename'])
@@ -517,7 +564,7 @@ class DataModel:
             return self._data['data']['scales'][s]['bounding_rect']
         except:
             try:
-                self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
+                self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s), scale=s))
                 return self.bounding_rect()
                 # return self._data['data']['scales'][s]['bounding_rect']
             except:
@@ -526,16 +573,13 @@ class DataModel:
 
     def image_size(self, s=None):
         if s == None: s = self.scale()
-        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
-        # logger.info('Scale: %s' % str(s))
+        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
             # print_exception()
             try:
-                logger.info('Setting image_src_size (s=%s)...' % str(s))
-                logger.info(f"ImageSize(self.path_base(s=s)) = {ImageSize(self.path_base(s=s))}")
-                self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+                self.set_image_size(scale=s)
                 return self._data['data']['scales'][s]['image_src_size']
             except:
                 print_exception()
@@ -573,19 +617,21 @@ class DataModel:
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename']
 
     def path_base(self, s=None, l=None) -> str:
-
         if s == None: s = self.scale()
         if l == None: l = self.layer()
+        logger.info('>>>> path_base (layer: %d, scale: %s) >>>>' % (l,s))
         # Todo -- Refactor!
         try:
-            return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
+            name = self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
+            logger.info('Returning name: %s' % name)
+            return name
         except:
             print_exception()
-            return ''
             # try:
             #     return self._data['data']['scales'][s]['alignment_stack'][0]['images']['base']['filename']
             # except:
             #     print_exception()
+        logger.info('<<<< path_base <<<<')
 
     def name_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
@@ -656,9 +702,12 @@ class DataModel:
         if s == None: s = self.scale()
         self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
 
-    def set_image_size(self, size, s=None) -> None:
-        if s == None: s = self.scale()
-        self._data['data']['scales'][s]['image_size'] = size
+    def set_image_size(self, scale) -> None:
+        logger.info('')
+        size = ImageSize(self.path_base(s=scale))
+        logger.warning(f"ATTENTION: Setting image size for {scale}, ImageSize: {size}")
+        self._data['data']['scales'][scale]['image_src_size'] = size
+        logger.info(str(self._data['data']['scales'][scale]['image_src_size']))
 
     def set_aligned_size(self, size, s=None) -> None:
         if s == None: s = self.scale()
@@ -713,18 +762,34 @@ class DataModel:
         if l == None: l = self.layer()
         self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method'] = method
 
-    def set_paths_absolute(self, head):
-        logger.info('setting absolute file paths')
+
+    def set_destination_absolute(self, head):
+        head = os.path.split(head)[0]
+        self.set_destination(os.path.join(head, self.dest()))
+
+    def set_paths_absolute(self, filename):
+        logger.info('Setting Absolute File Paths...')
+        logger.info(f'Setting Destination: {filename}')
+
+        # returns path to project file minus extension (should be the project directory)
+        self.set_destination(os.path.splitext(filename)[0])
         try:
-            head = os.path.split(head)[0]
-            self.set_destination(os.path.join(head, self.dest()))
-            for s in self._data['data']['scales'].keys():
-                for l in self._data['data']['scales'][s]['alignment_stack']:
-                    for r in l['images'].keys():
-                        # if (not l==0) and (not r=='ref'):
-                        tail = l['images'][r]['filename']
-                        l['images'][r]['filename'] = os.path.join(head, tail)
-                # self._data['data']['scales'][s]['alignment_stack'][0]['images']['ref']['filename'] = None
+            head = os.path.split(filename)[0] # returns parent directory
+            logger.info(f'head: {head}')
+            for s in self.scales():
+                if s == 'scale_1':
+                    pass
+                else:
+                    for l in self._data['data']['scales'][s]['alignment_stack']:
+                        for r in l['images'].keys():
+
+
+                            # if (not l==0) and (not r=='ref'):
+                            tail = l['images'][r]['filename']
+                            l['images'][r]['filename'] = os.path.join(head, tail)
+
+                            logger.info(f'tail: {tail}')
+                    # self._data['data']['scales'][s]['alignment_stack'][0]['images']['ref']['filename'] = None
         except:
             logger.warning('Setting Absolute Paths Triggered This Exception')
             print_exception()
@@ -788,7 +853,7 @@ class DataModel:
     def aligned_list(self) -> list[str]:
         '''Get aligned scales list. Check project data and aligned Zarr group presence.'''
         lst = []
-        for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
+        for s in self.scales():
             r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
             if r != {}:
                 lst.append(s)
@@ -800,7 +865,7 @@ class DataModel:
     def not_aligned_list(self) -> list[str]:
         '''Get not aligned scales list.'''
         lst = []
-        for s in cfg.data.scales():
+        for s in self.scales():
             if not is_arg_scale_aligned(s):
                 lst.append(s)
         logger.debug('Not Aligned Scales List: %s ' % str(lst))
@@ -808,8 +873,7 @@ class DataModel:
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''
-        k = natural_sort(list(self._data['data']['scales'].keys()))[-1]
-        return k
+        return self.scales()[-1]
 
     def next_coarsest_scale_key(self) -> str:
         if self.n_scales() == 1:
@@ -856,8 +920,7 @@ class DataModel:
 
     def clear_all_skips(self):
         logger.info('Clearing all skips...')
-        image_scale_keys = [s for s in sorted(self._data['data']['scales'].keys())]
-        for scale in image_scale_keys:
+        for scale in self.scales():
             scale_key = str(scale)
             for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
                 layer['skipped'] = False
@@ -945,7 +1008,7 @@ class DataModel:
 
                 # Remove any scales not in the new list (except always leave 1)
                 scales_to_remove = []
-                for scale_key in self._data['data']['scales'].keys():
+                for scale_key in self.scales():
                     if not (scale_key in input_scale_keys):
                         if get_scale_val(scale_key) != 1:
                             scales_to_remove.append(scale_key)
@@ -955,7 +1018,7 @@ class DataModel:
                 # Add any scales not in the new list
                 scales_to_add = []
                 for scale_key in input_scale_keys:
-                    if not (scale_key in self._data['data']['scales'].keys()):
+                    if not (scale_key in self.scales()):
                         scales_to_add.append(scale_key)
                 for scale_key in scales_to_add:
                     new_stack = []
@@ -995,7 +1058,7 @@ class DataModel:
         '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
         # logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
         self.ensure_proper_data_structure()  # 0712 #0802 #original
-        for scale_key in self._data['data']['scales'].keys():
+        for scale_key in self.scales():
             skip_list = []
             for layer_index in range(len(self._data['data']['scales'][scale_key]['alignment_stack'])):
                 try:
@@ -1032,6 +1095,7 @@ class DataModel:
     def upgrade_data_model(self):
         # Upgrade the "Data Model"
         if self._data['version'] != self._current_version:
+            logger.critical('Upgrading Data Model...')
 
             # Begin the upgrade process:
 
@@ -1044,7 +1108,7 @@ class DataModel:
                 # The "alignment_option" had been in the method_data at each l
                 # This new version defines it only at the s level
                 # So loop through each s and move the alignment_option from the l to the s
-                for scale_key in self._data['data']['scales'].keys():
+                for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
                     current_alignment_options = []
@@ -1081,7 +1145,7 @@ class DataModel:
                 # The "alignment_option" had been left in the method_data at each l
                 # This new version removes that option from the l method data
                 # So loop through each s and remove the alignment_option from the l
-                for scale_key in self._data['data']['scales'].keys():
+                for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
                     current_alignment_options = []
@@ -1106,7 +1170,7 @@ class DataModel:
                 print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.30))
                 # Need to modify the data previewmodel from 0.29 up to 0.30
                 # The "poly_order" was added to the "scales" dictionary
-                for scale_key in self._data['data']['scales'].keys():
+                for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
                     scale['poly_order'] = 4
                 # Now the data previewmodel is at 0.30, so give it the appropriate version
@@ -1117,7 +1181,7 @@ class DataModel:
                 # Need to modify the data previewmodel from 0.30 up to 0.31
                 # The "skipped(1)" annotation is currently unused (now hard-coded in alignem.py)
                 # Remove alll "skipped(1)" annotations since they can not otherwise be removed
-                for scale_key in self._data['data']['scales'].keys():
+                for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
                     for layer in stack:
@@ -1182,6 +1246,15 @@ class DataModel:
         logger.info("Clearing 'method_results' Key")
         for layer in self._data['data']['scales'][scale]['alignment_stack'][start:end]:
             layer['align_to_ref_method']['method_results'] = {}
+
+    def make_paths_relative(self, start):
+        self.set_destination(os.path.relpath(self.dest(), start=start))
+        for s in self.downscales():
+            for layer in self.alstack(s=s):
+                for role in layer['images'].keys():
+                    filename = layer['images'][role]['filename']
+                    if filename != '':
+                        layer['images'][role]['filename'] = os.path.relpath(filename, start=start)
 
 
 @dataclass
