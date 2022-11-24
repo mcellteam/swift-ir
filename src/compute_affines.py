@@ -84,9 +84,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
 
     # task_queue.work_q.join()
     cfg.main_window.hud.post('Computing Alignment Using SWIM...')
-    t0 = time.time()
-    task_queue.collect_results()
-    dt = time.time() - t0
+    dt = task_queue.collect_results()
     cfg.main_window.hud.done()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
 

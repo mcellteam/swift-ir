@@ -246,11 +246,11 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
 #
 #         cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
 #
-#         for scale in cfg.data.scales():
-#             dimx, dimy = cfg.data.image_size(s=scale)
-#             name = 's' + str(get_scale_val(scale))
+#         for s in cfg.data.scales():
+#             dimx, dimy = cfg.data.image_size(s=s)
+#             name = 's' + str(get_scale_val(s))
 #             shape = (cfg.data.n_layers(), dimy, dimx)
-#             logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(scale), str(shape)))
+#             logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(s), str(shape)))
 #             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
 #             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
 #             # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
@@ -262,7 +262,7 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
 # def preallocate_zarr_aligned(scales=None):
 #     logger.info('Preallocating Aligned Zarr Array...')
 #     try:
-#         if scales == None: scales = [cfg.data.scale()]
+#         if scales == None: scales = [cfg.data.s()]
 #         src = os.path.abspath(cfg.data.dest())
 #         zarr_path = os.path.join(src, 'img_aligned.zarr')
 #         logger.info('Zarring these scales: %s' % str(scales))
@@ -271,18 +271,18 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
 #         clevel = cfg.data.clevel()
 #         chunkshape = cfg.data.chunkshape()
 #
-#         for scale in scales:
-#             out_path = os.path.join(zarr_path, 's' + str(get_scale_val(scale)))
+#         for s in scales:
+#             out_path = os.path.join(zarr_path, 's' + str(get_scale_val(s)))
 #             if os.path.exists(out_path):
 #                 remove_zarr(out_path)
 #             group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
-#             rect = cfg.data.bounding_rect(s=scale)
+#             rect = cfg.data.bounding_rect(s=s)
 #             # shape = (cfg.data.n_layers(), rect[2], rect[3])
 #             shape = (cfg.data.n_layers(), rect[3], rect[2])
 #
-#             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
+#             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (s, str(shape)))
 #
-#             name = 's' + str(get_scale_val(scale))
+#             name = 's' + str(get_scale_val(s))
 #             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
 #             group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
 #             # group.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)

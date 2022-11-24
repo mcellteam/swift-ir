@@ -139,6 +139,7 @@ class MainWindow(QMainWindow):
         self._unsaved_changes = False
         self._working = False
         self._is_mp_mode = False
+        self._is_viewer_expanded = False
         # self._up = 0
 
         self.initPbar()
@@ -313,16 +314,16 @@ class MainWindow(QMainWindow):
         # logger.critical('Autoscaling...')
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.hud.post('Generating TIFF Scale Hierarchy...')
+        self.set_status('Scaling...')
         try:
-            self.set_status('Scaling...')
             self.worker = BackgroundWorker(fn=generate_scales(is_rescale=is_rescale))
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('Something Unexpected Happened While Generating TIFF Scale Hierarchy', logging.WARNING)
 
+        self.set_status('Generating Thumbnails...')
         try:
-            self.set_status('Generating Thumbnails...')
             self.worker = BackgroundWorker(fn=generate_thumbnails())
             self.threadpool.start(self.worker)
         except:
@@ -358,6 +359,7 @@ class MainWindow(QMainWindow):
         # could be redundant, check this later...
         self.updateAffineWidgets()
         self.updateLowLowWidgetB()
+        self.initNgServer(scales=[cfg.data.scale()])
 
     def isProjectOpen(self):
         if cfg.data.dest() in ('', None):
@@ -775,8 +777,8 @@ class MainWindow(QMainWindow):
     def scale_up(self) -> None:
         '''Callback function for the Next Scale button.'''
         # logger.critical('scale_up:')
-        # cur_layer = self.ng_layer() # Get current layer before scale change
-        cur_layer = self.request_ng_layer()  # Get current layer before scale change
+        # cur_layer = self.ng_layer() # Get current layer before s change
+        cur_layer = self.request_ng_layer()  # Get current layer before s change
         if not self.next_scale_button.isEnabled():
             return
         if self._working:
@@ -797,8 +799,8 @@ class MainWindow(QMainWindow):
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
         # logger.critical('scale_down:')
-        # cur_layer = self.ng_layer() # Get current layer before scale change
-        cur_layer = self.request_ng_layer() # Get current layer before scale change
+        # cur_layer = self.ng_layer() # Get current layer before s change
+        cur_layer = self.request_ng_layer() # Get current layer before s change
         assert isinstance(cur_layer, int)
         if not self.prev_scale_button.isEnabled():
             return
@@ -807,7 +809,7 @@ class MainWindow(QMainWindow):
             return
         try:
             self.scales_combobox.setCurrentIndex(self.scales_combobox.currentIndex() + 1)
-            cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous scale
+            cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
             self.onScaleChange()
             self.hud.post('Viewing Scale %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
@@ -908,7 +910,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def read_gui_update_project_data(self) -> None:
         '''Reads MainWindow to Update Project Data.'''
-        #1109 Rethink this. No longer can be called for every layer change... removing from scale change mechanics
+        #1109 Rethink this. No longer can be called for every layer change... removing from s change mechanics
         logger.debug('read_gui_update_project_data:')
 
         if not are_images_imported():
@@ -1484,7 +1486,7 @@ class MainWindow(QMainWindow):
         dialog.setSidebarUrls(urls)
 
         if dialog.exec() == QFileDialog.Accepted:
-            logger.info('Save File Name:\n%s' % dialog.selectedFiles()[0])
+            logger.info('Save File Name: %s' % dialog.selectedFiles()[0])
             # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
             return dialog.selectedFiles()[0]
 
@@ -1610,7 +1612,7 @@ class MainWindow(QMainWindow):
         cfg.main_window.hud.post("Removing Extrant Scale Directories...")
         scales = cfg.data.scales()
         for scale in scales:
-            # if scale != 'scale_1':
+            # if s != 'scale_1':
             p = os.path.join(path, scale)
             if os.path.exists(p):
                 import shutil
@@ -1859,14 +1861,14 @@ class MainWindow(QMainWindow):
         logger.info('<<<< Import Images Silent <<<<')
 
 
-    # def add_image_to_role(self, image_file_name, role_name, scale=None):
+    # def add_image_to_role(self, image_file_name, role_name, s=None):
     def add_image_to_role(self, image_file_name, role_name):
         logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
         #### prexisting note: This function is now much closer to empty_into_role and should be merged
 
         #1118
-        # if scale == None:
-        #     scale = cfg.data.scale()
+        # if s == None:
+        #     s = cfg.data.s()
         scale = 'scale_1'
 
         if image_file_name != None:
@@ -1969,10 +1971,10 @@ class MainWindow(QMainWindow):
             logger.info('Success')
 
         # try:
-        #     for scale in cfg.data.scales():
-        #         self.ng_workers[scale].http_server.server_close()
+        #     for s in cfg.data.scales():
+        #         self.ng_workers[s].http_server.server_close()
         #         # self.ng_workers.http_server.shutdown()
-        #         logger.info('Closed http server on port %s...' % str(self.ng_workers[scale].http_server.server_port))
+        #         logger.info('Closed http server on port %s...' % str(self.ng_workers[s].http_server.server_port))
         # except:
         #     logger.info('Having trouble closing http_server ports')
         # else:
@@ -2112,7 +2114,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Neuroglancer is not running.', logging.WARNING)
             return
         if s == None: s = cfg.data.scale()
-        logger.info('scale: %s' % s)
+        logger.info('s: %s' % s)
         self.ng_workers[s].initViewer()
 
     # def fitNgImagesToWindow(self):
@@ -2190,7 +2192,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Neuroglancer is not running.', logging.WARNING)
             return
         # v = cfg.viewports
-        # v = self.ng_workers[cfg.data.scale()].viewer
+        # v = self.ng_workers[cfg.data.s()].viewer
         # self.hud.post("v.position: %s\n" % str(v.state.position))
         # self.hud.post("v.config_state: %s\n" % str(v.config_state))
         self.hud.post(self.ng_workers[cfg.data.scale()])
@@ -2286,6 +2288,7 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         self.resized.emit()
+        # self.initNgServer()
         return super(MainWindow, self).resizeEvent(event)
 
     def pbar_max(self, x):
@@ -2376,34 +2379,36 @@ class MainWindow(QMainWindow):
         self.toolbar = QToolBar()
         self.addToolBar(self.toolbar)
 
-        self.action_new_project = QAction("New Project", self)
-        self.action_new_project.setStatusTip("New Project")
+        self.action_new_project = QAction('New Project', self)
+        self.action_new_project.setStatusTip('New Project')
         self.action_new_project.triggered.connect(self.new_project)
-        self.action_new_project.setIcon(qta.icon("fa.plus", color=ICON_COLOR))
+        self.action_new_project.setIcon(qta.icon('fa.plus', color=ICON_COLOR))
         self.toolbar.addAction(self.action_new_project)
 
-        self.action_open_project = QAction("Open Project", self)
-        self.action_open_project.setStatusTip("Open Project")
+        self.action_open_project = QAction('Open Project', self)
+        self.action_open_project.setStatusTip('Open Project')
         self.action_open_project.triggered.connect(self.open_project)
-        self.action_open_project.setIcon(qta.icon("fa.folder-open", color=ICON_COLOR))
+        self.action_open_project.setIcon(qta.icon('fa.folder-open', color=ICON_COLOR))
         self.toolbar.addAction(self.action_open_project)
 
-        self.action_save_project = QAction("Save Project", self)
-        self.action_save_project.setStatusTip("Save Project")
+        self.action_save_project = QAction('Save Project', self)
+        self.action_save_project.setStatusTip('Save Project')
         self.action_save_project.triggered.connect(self.save_project)
-        self.action_save_project.setIcon(qta.icon("mdi.content-save", color=ICON_COLOR))
+        self.action_save_project.setIcon(qta.icon('mdi.content-save', color=ICON_COLOR))
         self.toolbar.addAction(self.action_save_project)
 
-        self.expandViewAction = QAction("Expand Neuroglancer to Full Window", self)
-        self.expandViewAction.setStatusTip("Expand")
+        self.expandViewAction = QAction('Expand Neuroglancer to Full Window', self)
+        self.expandViewAction.setStatusTip('Expand')
         self.expandViewAction.triggered.connect(self.expand_viewer_size)
-        self.expandViewAction.setIcon(qta.icon("ei.resize-full", color=ICON_COLOR))
+        # self.expandViewAction.setIcon(qta.icon("ei.resize-full", color=ICON_COLOR))
+        self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
+        self.expandViewAction.setToolTip('Set Expanded Viewer Size')
         self.toolbar.addAction(self.expandViewAction)
 
-        self.action_exit_app = QAction("Exit App", self)
-        self.action_exit_app.setStatusTip("Exit App")
+        self.action_exit_app = QAction('Exit App', self)
+        self.action_exit_app.setStatusTip('Exit App')
         self.action_exit_app.triggered.connect(self.exit_app)
-        self.action_exit_app.setIcon(qta.icon("fa.close", color=ICON_COLOR))
+        self.action_exit_app.setIcon(qta.icon('fa.close', color=ICON_COLOR))
         self.toolbar.addAction(self.action_exit_app)
 
     def initMenu(self):
@@ -3668,7 +3673,6 @@ class MainWindow(QMainWindow):
             self.update_match_point_snr()
             self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
             self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
-            # self.initNgViewer() # insufficient
             self.initNgServer(scales=cfg.data.scales())
 
         else:
@@ -3700,45 +3704,57 @@ class MainWindow(QMainWindow):
         self.matchpoint_controls.hide()
         self.hud.show()
 
+        self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
+
         self.show_hide_project_tree_callback(force_hide=True)
         self.show_hide_snr_plot_callback(force_hide=True)
         self.show_hide_python_callback(force_hide=True)
-        # self.ng_workers[cfg.data.scale()].match_point_mode = False
-        # self.initNgServer(scales=[cfg.data.scale()]) #1122-
+        # self.ng_workers[cfg.data.s()].match_point_mode = False
+        # self.initNgServer(scales=[cfg.data.s()]) #1122-
 
     def expand_viewer_size(self):
-        self.full_window_controls.show()
-        self._is_mp_mode = False
-        self.main_widget.setCurrentIndex(0)
-        self.image_panel_stack_widget.setCurrentIndex(1)
-        self.new_control_panel.hide()
-        self.details_banner.hide()
-        self.low_low_widget.hide()
-        self.hud.hide()
-        self.matchpoint_controls.hide()
 
-        self.viewer_and_banner_widget.show()
-        self.show_hide_project_tree_callback(force_hide=True)
-        self.show_hide_snr_plot_callback(force_hide=True)
-        self.show_hide_python_callback(force_hide=True)
 
-        # self.initNgServer()
+        if self._is_viewer_expanded:
+            self.hud.post('Collapsing Viewer')
+            self._is_viewer_expanded = False
+            self.normal_view()
+            self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
+            self.expandViewAction.setToolTip('Set Expanded Viewer Size')
+
+        else:
+            self.hud.post('Expanding Viewer')
+            self._is_viewer_expanded = True
+            self.full_window_controls.show()
+            self.main_widget.setCurrentIndex(0)
+            self.image_panel_stack_widget.setCurrentIndex(1)
+            self.new_control_panel.hide()
+            self.details_banner.hide()
+            self.low_low_widget.hide()
+            self.hud.hide()
+            self.matchpoint_controls.hide()
+            self.viewer_and_banner_widget.show()
+            self.show_hide_project_tree_callback(force_hide=True)
+            self.show_hide_snr_plot_callback(force_hide=True)
+            self.show_hide_python_callback(force_hide=True)
+            self.expandViewAction.setIcon(qta.icon('mdi.arrow-collapse-all', color=ICON_COLOR))
+            self.expandViewAction.setToolTip('Set Normal Viewer Size')
+
+        self.initNgServer()
 
     def expand_plot_size(self):
-        self.full_window_controls.show()
         self._is_mp_mode = False
+        self.full_window_controls.show()
         self.main_widget.setCurrentIndex(0)
         self.new_control_panel.hide()
         self.details_banner.hide()
         self.low_low_widget.hide()
         self.hud.hide()
         self.matchpoint_controls.hide()
-
         self.viewer_and_banner_widget.hide()
         self.show_hide_project_tree_callback(force_hide=True)
         self.show_hide_python_callback(force_hide=True)
         self.show_hide_snr_plot_callback(force_show=True)
-
         # self.initNgServer()
 
     def expand_treeview_size(self):
@@ -3750,9 +3766,7 @@ class MainWindow(QMainWindow):
         self.low_low_widget.hide()
         self.hud.hide()
         self.matchpoint_controls.hide()
-
         self.viewer_and_banner_widget.hide()
-
         self.show_hide_snr_plot_callback(force_hide=True)
         self.show_hide_python_callback(force_hide=True)
         self.show_hide_project_tree_callback(force_show=True)
@@ -3928,7 +3942,7 @@ class MainWindow(QMainWindow):
             cfg.data.scales().index(scale)
             color = self._snr_plot_colors[cfg.data.scales().index(scale)]
             self._snr_checkboxes[scale].setStyleSheet('border-color: %s; border-width: 3; border-style: solid;' % color)
-            # self._snr_checkboxes[scale].setStyleSheet('background-color: %s' % color)
+            # self._snr_checkboxes[s].setStyleSheet('background-color: %s' % color)
         max_snr = cfg.data.snr_max_all_scales()
         if is_any_scale_aligned_and_generated():
             try:

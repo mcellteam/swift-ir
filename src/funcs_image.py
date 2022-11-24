@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import copy
 import os, struct, logging
 from dataclasses import dataclass
 import numpy as np
@@ -277,9 +277,10 @@ def BiasMat(x, bias_funcs):
 # NEW
 # Find the bias functions that best fit the trends in cafm across the whole stack
 # For now the form of the functions is an Nth-order polynomial
-def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
+def BiasFuncs(layerator, bias_funcs=None, poly_order=4):
     logger.debug('BiasFuncs:')
     poly_order = int(poly_order)
+    n_tasks = sum(1 for _ in copy.deepcopy(layerator))
     if type(bias_funcs) == type(None):
         init_scalars = True
         bias_funcs = {}
@@ -293,16 +294,16 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
         init_scalars = False
         poly_order = len(bias_funcs['x']) - 1
 
-    skew_x_array = np.zeros((len(al_stack), 2))
-    scale_x_array = np.zeros((len(al_stack), 2))
-    scale_y_array = np.zeros((len(al_stack), 2))
-    rot_array = np.zeros((len(al_stack), 2))
-    x_array = np.zeros((len(al_stack), 2))
-    y_array = np.zeros((len(al_stack), 2))
+    skew_x_array = np.zeros((n_tasks, 2))
+    scale_x_array = np.zeros((n_tasks, 2))
+    scale_y_array = np.zeros((n_tasks, 2))
+    rot_array = np.zeros((n_tasks, 2))
+    x_array = np.zeros((n_tasks, 2))
+    y_array = np.zeros((n_tasks, 2))
 
-    i = 0
-    for align_idx in range(len(al_stack)):
-        c_afm = np.array(al_stack[align_idx]['align_to_ref_method']['method_results']['cumulative_afm'])
+    # for align_idx in range(len(al_stack)):
+    for i, layer in enumerate(layerator):
+        c_afm = np.array(layer['align_to_ref_method']['method_results']['cumulative_afm'])
 
         rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
         scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
@@ -310,13 +311,12 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
         skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
         det = (c_afm[0, 0] * c_afm[1, 1]) - (c_afm[0, 1] * c_afm[1, 0])
 
-        skew_x_array[i] = [align_idx, skew_x]
-        scale_x_array[i] = [align_idx, scale_x]
-        scale_y_array[i] = [align_idx, scale_y]
-        rot_array[i] = [align_idx, rot]
-        x_array[i] = [align_idx, c_afm[0, 2]]
-        y_array[i] = [align_idx, c_afm[1, 2]]
-        i += 1
+        skew_x_array[i]  = [i, skew_x]
+        scale_x_array[i] = [i, scale_x]
+        scale_y_array[i] = [i, scale_y]
+        rot_array[i]     = [i, rot]
+        x_array[i]       = [i, c_afm[0, 2]]
+        y_array[i]       = [i, c_afm[1, 2]]
 
     p = np.polyfit(skew_x_array[:, 0], skew_x_array[:, 1], poly_order)
     bias_funcs['skew_x'][:-1] += p[:-1]
@@ -348,7 +348,7 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
     if init_scalars:
         bias_funcs['y'][poly_order] = p[poly_order]
 
-    logging.info("init_scalars=%s\nReturning Biases: %s\n" % (str(init_scalars), str(bias_funcs)))
+    logging.debug("init_scalars=%s\nReturning Biases: %s\n" % (str(init_scalars), str(bias_funcs)))
 
     return bias_funcs
 
@@ -421,34 +421,31 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
     return c_afm
 
 
-def SetStackCafm(scale_dict, null_biases=False):
+def SetStackCafm(scale, null_biases=False, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
-    logger.critical('Setting Stack CAFM (null_biases: %s)...' % str(null_biases))
-    # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
-        SetStackCafm(scale_dict, null_biases=False)
-    al_stack = scale_dict['alignment_stack']
-    # If null_biases==True, Iteratively determine and null out bias in cafm
+        # To perform bias correction, first initialize Cafms without bias correction
+        SetStackCafm(scale=scale, null_biases=False)
     bias_mat = None
     if null_biases:
-        bias_funcs = BiasFuncs(al_stack, poly_order=int(scale_dict['poly_order']))
+        # If null_biases==True, Iteratively determine and null out bias in cafm
+        bias_funcs = BiasFuncs(cfg.data.get_iter(scale), poly_order=poly_order)
         c_afm_init = InitCafm(bias_funcs)
     else:
         c_afm_init = identityAffine()
     bias_iters = 2 if null_biases else 1
     for bi in range(bias_iters):
         c_afm = c_afm_init
-        n = len(al_stack)
-        for i, align_idx in enumerate(range(n)):
+        for i, layer in enumerate(cfg.data.get_iter(scale)):
             if null_biases:
-                bias_mat = BiasMat(align_idx, bias_funcs)
-            c_afm = SetSingleCafm(al_stack[align_idx], c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
+                bias_mat = BiasMat(i, bias_funcs)
+            c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
             # if i in [0,1,2,n,n-1]:
             # logger.info('c_afm: %s' % format_cafm(c_afm))
             # cfg.data.set_cafm(c_afm.tolist(), l=align_idx)
 
         if bi < bias_iters - 1:
-            bias_funcs = BiasFuncs(al_stack, bias_funcs=bias_funcs)
+            bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs)
 
     logger.debug('Returning: %s' % format_cafm(c_afm_init))
     logger.debug('<<<< Setting Stack CAFM <<<<\n')
@@ -539,7 +536,7 @@ def reptoshape(mat, pattern):
                              + str(pattern.shape))
     return mat
 
-# def ComputeBoundingRect(al_stack, scale=None):
+# def ComputeBoundingRect(al_stack, s=None):
 def ComputeBoundingRect(al_stack, scale=None):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.

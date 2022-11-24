@@ -171,7 +171,8 @@ class TaskQueue(QObject):
         self.task_id = 0
 
 
-    def collect_results(self) -> None:
+    def collect_results(self):
+        t0 = time.time()
         '''Run All Tasks and Collect Results'''
         logger.info('Running Task Queue Tasks...')
         n_pending = len(self.task_dict) # <-- # images in the stack
@@ -185,60 +186,88 @@ class TaskQueue(QObject):
             self.parent.pbar.show()
         except:
             print_exception()
-        while (retries_tot < self.retries + 1) and n_pending:
-            logger.info('# Tasks Pending   : %d' % n_pending)
-            # self.end_tasks()
-            # self.work_queue.join()
-            # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
-            retry_list = []
-            for j in range(n_pending):
-                # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                # logger.info(task_str)
-                try:     self.parent.pbar_update(self.n_tasks - realtime)
-                except:  print_exception()
-                task_id, outs, errs, rc, dt = self.result_queue.get()
-                # logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
-                # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
-                self.task_dict[task_id]['stdout'] = outs
-                self.task_dict[task_id]['stderr'] = errs
-                self.task_dict[task_id]['rc'] = rc
-                self.task_dict[task_id]['statusBar'] = 'completed' if rc == 0 else 'task_error'
-                if rc != 0:  retry_list.append(task_id)
-                self.task_dict[task_id]['dt'] = dt
+        try:
+            while (retries_tot < self.retries + 1) and n_pending:
+                logger.info('# Tasks Pending   : %d' % n_pending)
+                # self.end_tasks()
+                # self.work_queue.join()
+                # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
+                retry_list = []
+                for j in range(n_pending):
+                    # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                    # logger.info(task_str)
+                    try:     self.parent.pbar_update(self.n_tasks - realtime)
+                    except:  print_exception()
+                    task_id, outs, errs, rc, dt = self.result_queue.get()
+                    # logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
+                    # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
+                    self.task_dict[task_id]['stdout'] = outs
+                    self.task_dict[task_id]['stderr'] = errs
+                    self.task_dict[task_id]['rc'] = rc
+                    self.task_dict[task_id]['statusBar'] = 'completed' if rc == 0 else 'task_error'
+                    if rc != 0:  retry_list.append(task_id)
+                    self.task_dict[task_id]['dt'] = dt
 
-                realtime -= 1
+                    realtime -= 1
 
-            '''Restart Queue and Requeue failed tasks'''
-            n_pending = len(retry_list)
-            if (retries_tot < self.retries) and n_pending:
-                logger.info('Requeuing Failed Tasks...')
-                logger.info('  # Failed Tasks: %d' % n_pending)
-                logger.info('  Task IDs: %s' % str(retry_list))
+                '''Restart Queue and Requeue failed tasks'''
+                n_pending = len(retry_list)
+                if (retries_tot < self.retries) and n_pending:
+                    logger.info('Requeuing Failed Tasks...')
+                    logger.info('  # Failed Tasks: %d' % n_pending)
+                    logger.info('  Task IDs: %s' % str(retry_list))
 
-                self.restart()
-                for task_id in retry_list:
-                    logger.info('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
-                    logger.info('                    Task: %s' % (str(self.task_dict[task_id])))
-                    # [logger.info(key,':',value) for key, value in self.task_dict[task_id].items()]
-                    self.requeue_task(task_id)
-            retries_tot += 1
-        logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
-        logger.debug('    Failed Tasks: %d\n' % (n_pending))
-        logger.debug('    Retries: %d\n\n' % (retries_tot - 1))
-        if n_pending == 0:
-            logger.info('Failed Tasks      : %d' % n_pending)
-            logger.info('Retries           : %d' % (retries_tot - 1))
-            logger.info('Complete')
-        else:
-            logger.error('Something Went Wrong')
-            logger.error('Failed Tasks     : %d' % n_pending)
-            logger.error('Retries          : %d' % (retries_tot - 1))
-            logger.error('Complete')
-
-        # self.end_tasks()
-        # self.work_queue.join()
-        # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
-        self.parent.pbar.hide()
+                    self.restart()
+                    for task_id in retry_list:
+                        logger.info('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
+                        logger.info('                    Task: %s' % (str(self.task_dict[task_id])))
+                        # [logger.info(key,':',value) for key, value in self.task_dict[task_id].items()]
+                        self.requeue_task(task_id)
+                retries_tot += 1
+            logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
+            logger.debug('    Failed Tasks: %d\n' % (n_pending))
+            logger.debug('    Retries: %d\n\n' % (retries_tot - 1))
+            if n_pending == 0:
+                logger.info('Failed Tasks      : %d' % n_pending)
+                logger.info('Retries           : %d' % (retries_tot - 1))
+                logger.info('Complete')
+            else:
+                logger.error('Something Went Wrong')
+                logger.error('Failed Tasks     : %d' % n_pending)
+                logger.error('Retries          : %d' % (retries_tot - 1))
+                logger.error('Complete')
+        except:
+            print_exception()
+        finally:
+            # logger.info('Checking Status of Tasks...')
+            # n_success, n_queued, n_failed = 0, 0, 0
+            # for task_item in self.task_dict:
+            #     if task_item['statusBar'] == 'completed':
+            #         # logger.debug('\nCompleted:')
+            #         # logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
+            #         # logger.debug('   ARGS:   %s' % (str(task_item['args'])))
+            #         # logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         n_success += 1
+            #     elif task_item['statusBar'] == 'queued':
+            #         # logger.warning('\nQueued:')
+            #         # logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+            #         # logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+            #         # logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         n_queued += 1
+            #     elif task_item['statusBar'] == 'task_error':
+            #         # logger.error('\nTask Error:')
+            #         # logger.error('   CMD:    %s' % (str(task_item['cmd'])))
+            #         # logger.error('   ARGS:   %s' % (str(task_item['args'])))
+            #         # logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         n_failed += 1
+            #     # self.end_tasks()
+            #     # self.work_queue.join()
+            #     # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
+            #     # logger.critical('# TASKS: %d... SUCCESS: %d | QUEUED: %d | FAILED: %d' % (self.n_tasks, n_success, n_queued, n_failed))
+                self.parent.pbar.hide()
+                dt = time.time() - t0
+                # return (dt,n_success,n_queued, n_failed)
+                return (dt)
 
         # logger.info('Exiting Task Queue scope')
 

@@ -36,27 +36,28 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     zarr_group = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
     od = os.path.join(cfg.data.dest(), scale, 'img_aligned')
     renew_directory(directory=od)
-    scale_dict = cfg.data['data']['scales'][scale]
-    print_example_cafms(scale_dict)
-    SetStackCafm(scale_dict, null_biases=cfg.data.null_cafm()) #***
-    print_example_cafms(scale_dict)
-    alstack = scale_dict['alignment_stack']
-    save_bias_analysis(alstack, os.path.join(cfg.data.dest(), scale, 'bias_data'))
-
-    if cfg.data.has_bb():
-        logger.info(f'Bounding Box              : ON')
+    alstack = cfg.data.alstack(s=scale)
+    print_example_cafms()
+    # layerator = cfg.data.get_iter(s=scale)
+    logger.critical('Setting Stack CAFM...')
+    SetStackCafm(scale=scale, null_biases=cfg.data.null_cafm(s=scale), poly_order=cfg.data.poly_order(s=scale))
+    # print_example_cafms(scale_dict)
+    bias_path = os.path.join(cfg.data.dest(), scale, 'bias_data')
+    iterator = cfg.data.get_iter(s=scale)
+    save_bias_analysis(layers=iterator, bias_path=bias_path)
+    has_bb = cfg.data.has_bb()
+    logger.info(f'Bounding Box              : {has_bb}')
+    if has_bb:
         # Note: now have got new cafm's -> recalculate bounding box
         rect = cfg.data.bounding_rect(s=scale)
-        logger.info(f'New Bounding Box          : {str(rect)}')
         cfg.data.set_bounding_rect(rect) # Only after SetStackCafm
-        rect = cfg.data.bounding_rect(s=scale)
+        logger.info(f'New Bounding Box          : {str(rect)}')
         logger.info(f'Null Bias                 : {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
     else:
-        logger.info(f'Bounding Box              : OFF')
-        width, height = cfg.data.image_size(s=scale)
-        rect = [0, 0, width, height] # May need to swap width, height for Zarr representation
-    logger.info(f'Aligned Size              : {rect[2:]}')
+        w, h = cfg.data.image_size(s=scale)
+        rect = [0, 0, w, h] # might need to swap w/h for Zarr
     cfg.data.set_aligned_size(rect[2:])
+    logger.info(f'Aligned Size              : {rect[2:]}')
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
     if preallocate:
         preallocate_zarr(name='img_aligned.zarr', scale=scale, dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
@@ -65,8 +66,8 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         end_layer = len(alstack)
     else:
         end_layer = start_layer + num_layers
-    al_substack = alstack[start_layer:end_layer]
-    args_list = makeTasksList(al_substack, job_script, rect, zarr_group)
+    iterator = iter(alstack[start_layer:end_layer])
+    args_list = makeTasksList(iterator, job_script, rect, zarr_group)
     # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=len(args_list),
@@ -76,9 +77,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     task_queue.start(cpus)
     for task in args_list: task_queue.add_task(task)
     try:
-        t0 = time.time()
-        task_queue.collect_results()
-        dt = time.time() - t0
+        dt = task_queue.collect_results()
         cfg.main_window.hud.done()
         show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
@@ -88,9 +87,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     logger.info('<<<< Generate Aligned End <<<<')
 
 
-def makeTasksList(al_substack, job_script, rect, zarr_group):
+def makeTasksList(iter, job_script, rect, zarr_group):
     args_list = []
-    for ID, layer in enumerate(al_substack):
+    for ID, layer in enumerate(iter):
         # if ID in [0,1,2]:
         #     logger.critical('\nafm = %s\n' % ' '.join(map(str, cfg.data.afm(l=ID))))
         #     logger.critical('\ncafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
@@ -136,13 +135,14 @@ def tryRemoveDatFiles(scale):
     tryRemoveFile(os.path.join(bias_data_path, 'c_afm_1.dat'))
 
 
-def print_example_cafms(scale_dict):
+def print_example_cafms():
     try:
-        print('---------- First 3 CAFMs ----------')
+        # print('-----------------------------------')
+        print('First Three CAFMs:')
         print(str(cfg.data.cafm(l=0)))
         print(str(cfg.data.cafm(l=1)))
         print(str(cfg.data.cafm(l=2)))
-        print('-----------------------------------')
+        # print('-----------------------------------')
     except:
         pass
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# NOTE: Start with smallest scale already generated for efficiency
+# NOTE: Start with smallest s already generated for efficiency
 # 200px x 200px might be good thumbnail size to start with
 
 import os
@@ -23,7 +23,7 @@ def generate_thumbnails():
     logger.critical('Generating Thumbnails...')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
-    # Todo: If the smallest scale happens to be less that thumbnail size, just copy smallest scale for thumbnails
+    # Todo: If the smallest s happens to be less that thumbnail size, just copy smallest s for thumbnails
 
     target_thumbnail_size = 200 # 200x200
     smallest_scale_key = natural_sort(cfg.data['data']['scales'].keys())[-1]
@@ -54,7 +54,9 @@ def generate_thumbnails():
     iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
     cfg.main_window.hud.done()
     task_queue.start(cpus)
-    for i, layer in enumerate(cfg.data['data']['scales'][smallest_scale_key]['alignment_stack']):
+
+    it = cfg.data.get_iter(s=smallest_scale_key)
+    for i, layer in enumerate(it):
         fn = os.path.abspath(layer['images']['base']['filename'])
         ofn = os.path.join(od, os.path.split(fn)[1])
         scale_arg = '+%d' % scale_val
@@ -65,9 +67,7 @@ def generate_thumbnails():
         #     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 
     cfg.main_window.hud.post('Generating Thumbnails...')
-    t0 = time.time()
-    task_queue.collect_results()
-    dt = time.time() - t0
+    dt = task_queue.collect_results()
     cfg.main_window.hud.done()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
