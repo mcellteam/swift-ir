@@ -26,16 +26,16 @@ shader_test2 = '''
 #uicontrol float brightness slider(default=0, min=-1, max=1, step=0.1)
 #uicontrol float contrast slider(default=0, min=-3, max=3, step=0.1)
 
-float scale(float x, float min, float max) {
+float s(float x, float min, float max) {
   return (x - min) / (max - min);
 }
 
 void main() {
   emitRGB(
     color * vec3(
-      scale(toNormalized(getDataValue()), min, max) + brightness,
-      scale(toNormalized(getDataValue()), min, max) + brightness,
-      scale(toNormalized(getDataValue()), min, max) + brightness
+      s(toNormalized(getDataValue()), min, max) + brightness,
+      s(toNormalized(getDataValue()), min, max) + brightness,
+      s(toNormalized(getDataValue()), min, max) + brightness
     ) * exp(contrast)
   );
   

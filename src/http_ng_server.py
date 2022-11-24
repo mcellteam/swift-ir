@@ -73,7 +73,7 @@ class NgHost(QRunnable):
         self.scale = scale
         scales  = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
         self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
-        self.sf = get_scale_val(scale)  # scale factor
+        self.sf = get_scale_val(scale)  # s factor
         self.ref_l = 'ref_%d' % self.sf
         self.base_l = 'base_%d' % self.sf
         self.aligned_l = 'aligned_%d' % self.sf
@@ -86,10 +86,11 @@ class NgHost(QRunnable):
         self.src_size = cfg.data.image_size(s=self.scale)
         self.mp_colors = ['#0072b2']*2 + ['#f0e442']*2 + ['#FF0000']*2
         self.mp_count = 0
+        self._is_fullscreen = False
 
     def __del__(self):
         caller = inspect.stack()[1].function
-        logger.info('__del__ was called by [%s] on NgHost for scale %s created:%s' % (caller, self.sf, self.created))
+        logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
 
     def __str__(self):
         return obj_to_string(self)
@@ -109,11 +110,11 @@ class NgHost(QRunnable):
             print_exception()
 
 
-    def initViewer(self):
+    def initViewer(self, viewers='ref, base, aligned'):
         self.match_point_mode = cfg.main_window._is_mp_mode
         # logger.info('Initializing Viewer (caller: %s):' % inspect.stack()[1].function)
         is_aligned = is_arg_scale_aligned(self.scale)
-        # is_aligned = is_arg_scale_aligned(cfg.data.scale())
+        # is_aligned = is_arg_scale_aligned(cfg.data.s())
         logger.info('Initializing Viewer, Scale %d, aligned? %s...' % (self.sf, is_aligned))
         cfg.main_window.hud.post('Initializing Neuroglancer Viewer (Scale %d)...' % self.sf)
 
@@ -178,7 +179,7 @@ class NgHost(QRunnable):
 
             # adjustment = 1.04
 
-            # s.dimensions = self.coordinate_space # ? causes scale to bug out, why?
+            # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
 
             if cfg.USE_TENSORSTORE:
                 # Experimental Match Point Mode Code
@@ -318,6 +319,21 @@ class NgHost(QRunnable):
             # s.viewer_size = [1000,1000]
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
         cfg.main_window.hud.done()
+
+
+    # def _toggle_fullscreen(self, s):
+    #     self._is_fullscreen = not self._is_fullscreen
+    #     with self.viewer.config_state.txn() as s:
+    #         if self._is_fullscreen:
+    #             s.show_ui_controls = False
+    #             s.show_panel_borders = False
+    #             s.viewer_size = [self.fullscreen_width, self.fullscreen_height]
+    #             s.scale_bar_options.scale_factor = self.fullscreen_scale_bar_scale
+    #         else:
+    #             s.show_ui_controls = True
+    #             s.show_panel_borders = True
+    #             s.viewer_size = None
+    #             s.scale_bar_options.scale_factor = 1
 
 
     def on_state_changed(self):

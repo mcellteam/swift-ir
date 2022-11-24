@@ -22,17 +22,21 @@ __all__ = ['DataModel']
 
 logger = logging.getLogger(__name__)
 
-class DataModelIterator:
-    def __init__(self, datamodel):
-        self._datamodel = datamodel
+class ScaleIterator:
+    def __init__(self, data):
+        self._data = data
         self._index = 0
 
     def __next__(self):
-        if self._index < self._datamodel.n_layers():
-            return self._datamodel['data']['scales'][self._datamodel.scale()]['alignment_stack'][self._index]
+        if self._index < len(self._data):
+            result =  self._data[self._index]
         else:
             raise StopIteration
+        self._index += 1
+        return result
 
+    def __iter__(self):
+        return self
 
 
 class DataModel:
@@ -65,8 +69,8 @@ class DataModel:
 
     # def __getitem__(self, key):
     #     caller = inspect.stack()[1].function
-    #     cur_scale = cfg.data.scale()
-    #     logger.info('iterating scale %s... (caller: %s)' % (cur_scale, caller))
+    #     cur_scale = cfg.data.s()
+    #     logger.info('iterating s %s... (caller: %s)' % (cur_scale, caller))
     #     return self._data['data']['scales'][cur_scale]['alignment_stack'][key]
     #     # return self._data[key]
 
@@ -74,7 +78,6 @@ class DataModel:
         self._data[key] = item
 
     def __getitem__(self, key):
-        # return self._data[key]
         return self._data[key]
 
     '''------'''
@@ -143,12 +146,14 @@ class DataModel:
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
     def filenames(self):
-        files = []
-        for layer in self._data['data']['scales'][self.scales()[0]]['alignment_stack']:
-            # files.append(layer['images']['base']['filename'])
-            files.append(os.path.abspath(layer['images']['base']['filename']))
+        '''Returns filenames as absolute paths'''
+        return [os.path.abspath(l['images']['base']['filename'])
+                for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']]
 
-        return files
+    def basefilenames(self):
+        '''Returns filenames as absolute paths'''
+        return [os.path.basename(l['images']['base']['filename'])
+                for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']]
 
     def set_source_path(self, dir):
         # self._data['data']['src_img_root'] = dir
@@ -164,7 +169,9 @@ class DataModel:
         return imgs
 
 
-
+    def get_iter(self, s=None):
+        if s == None: s = cfg.data.scale()
+        return ScaleIterator(self._data['data']['scales'][s]['alignment_stack'])
 
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''
@@ -228,7 +235,7 @@ class DataModel:
     #     '''Example Usage:
     #          cfg.data.matchpoints(role='base')
     #     '''
-    #     if s == None: s = self.scale()
+    #     if s == None: s = self.s()
     #     if l == None: l = self.layer()
     #     matchpoints = self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points']
     #     logger.info('Getting matchpoints for %s, %s, layer=%d...' % (role, s, l))
@@ -568,7 +575,7 @@ class DataModel:
                 return self.bounding_rect()
                 # return self._data['data']['scales'][s]['bounding_rect']
             except:
-                logger.warning('Unable to return a bounding rect (scale=%s)' % s)
+                logger.warning('Unable to return a bounding rect (s=%s)' % s)
                 return None
 
     def image_size(self, s=None):
@@ -583,7 +590,7 @@ class DataModel:
                 return self._data['data']['scales'][s]['image_src_size']
             except:
                 print_exception()
-                logger.warning('Unable to return the image size (scale=%s)' % s)
+                logger.warning('Unable to return the image size (s=%s)' % s)
                 return None
 
     def aligned_size(self, s=None):
@@ -596,16 +603,18 @@ class DataModel:
                 self._data['data']['scales'][s]['al_size'] = img_size
                 return self.aligned_size()
             except:
-                logger.warning('Unable to return the image size (scale=%s)' % s)
+                logger.warning('Unable to return the image size (s=%s)' % s)
                 return None
 
-    def poly_order(self) -> int:
+    def poly_order(self, s=None) -> int:
         '''Returns the Polynomial Order for the Current Scale.'''
-        return int(self._data['data']['scales'][self.scale()]['poly_order'])
+        if s == None: s = self.scale()
+        return int(self._data['data']['scales'][s]['poly_order'])
 
-    def null_cafm(self) -> bool:
+    def null_cafm(self, s=None) -> bool:
         '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.scale()]['null_cafm_trends'])
+        if s == None: s = self.scale()
+        return bool(self._data['data']['scales'][s]['null_cafm_trends'])
 
     def al_option(self) -> str:
         '''Gets the Alignment Option for the Current Scale.'''
@@ -619,7 +628,7 @@ class DataModel:
     def path_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        logger.info('>>>> path_base (layer: %d, scale: %s) >>>>' % (l,s))
+        logger.info('>>>> path_base (layer: %d, s: %s) >>>>' % (l,s))
         # Todo -- Refactor!
         try:
             name = self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
@@ -1243,7 +1252,7 @@ class DataModel:
     #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
 
     def clear_method_results(self, scale, start, end):
-        logger.info("Clearing 'method_results' Key")
+        logger.info("Clearing 'method_results'...")
         for layer in self._data['data']['scales'][scale]['alignment_stack'][start:end]:
             layer['align_to_ref_method']['method_results'] = {}
 

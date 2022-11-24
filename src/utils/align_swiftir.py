@@ -167,7 +167,7 @@ class alignment_process:
         siz = get_image_size(self.im_sta_fn)
 
         atrm = self.layer_dict['align_to_ref_method']
-        # window size scale factor
+        # window size s factor
         wsf = atrm['method_data']['win_scale_factor']
 
         #    Previously hard-coded values for wsf chosen by trial-and-error

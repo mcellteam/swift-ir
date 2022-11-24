@@ -25,7 +25,7 @@ class PreviewDelegate(QStyledItemDelegate):
         height = option.rect.height() - CELL_PADDING * 2
 
         # option.rect holds the area we are painting on the widget (our table cell)
-        # scale our pixmap to fit
+        # s our pixmap to fit
         scaled = data.image.scaled(
             width,
             height,
