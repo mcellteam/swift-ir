@@ -1181,9 +1181,9 @@ class MainWindow(QMainWindow):
             logger.warning('Requested layer is not a valid layer')
             return
         self.hud.post('Jumping To Layer %d' % requested)
-        state = copy.deepcopy(self.get_viewport().state)
+        state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
         state.position[0] = requested
-        cfg.viewports.set_state(state)
+        self.ng_workers[cfg.data.scale()].viewer.set_state(state)
         self.read_project_data_update_gui()
         self.refreshNeuroglancerURL()
 
@@ -1194,9 +1194,9 @@ class MainWindow(QMainWindow):
             logger.warning('Requested layer is not a valid layer')
             return
         self.hud.post('Jumping To Layer %d' % requested)
-        state = copy.deepcopy(self.get_viewport().state)
+        state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
         state.position[0] = requested
-        cfg.viewports.set_state(state)
+        self.ng_workers[cfg.data.scale()].viewer.set_state(state)
         self.read_project_data_update_gui()
         self.refreshNeuroglancerURL()
 
