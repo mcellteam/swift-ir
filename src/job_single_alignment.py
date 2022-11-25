@@ -28,13 +28,13 @@ if __name__ == '__main__':
         start_layer = int(sys.argv[5].strip())
         num_layers = int(sys.argv[6].strip())
         use_file_io = (int(sys.argv[7].strip()) != 0)
-        logger.info("Inside single_alignment_job with: " +
-                    str(project_name) + ', ' +
-                    str(alignment_option) + ', ' +
-                    str(use_scale) + ', ' +
-                    str(swiftir_code_mode) + ', ' +
-                    str(start_layer) + ', ' +
-                    str(num_layers))
+        # logger.info("Inside single_alignment_job with: " +
+        #             str(project_name) + ', ' +
+        #             str(alignment_option) + ', ' +
+        #             str(use_scale) + ', ' +
+        #             str(swiftir_code_mode) + ', ' +
+        #             str(start_layer) + ', ' +
+        #             str(num_layers))
 
         with open(project_name, 'r') as f:
             project_dict = json.load(f)

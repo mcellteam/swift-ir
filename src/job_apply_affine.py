@@ -8,13 +8,13 @@ import sys
 import logging
 import subprocess as sp
 from PIL import Image
-import zarr
 import numpy as np
-# import tifffile
+import zarr
+
 try:
-    from helpers import is_tacc, is_linux, is_mac
+    from helpers import get_bindir
 except ImportError:
-    from src.helpers import is_tacc, is_linux, is_mac
+    from src.helpers import get_bindir
 try:
     import config as cfg
 except ImportError:
@@ -72,7 +72,6 @@ if (__name__ == '__main__'):
 
     # Scan arguments (excluding program name and last 2 file names)
     i = 1
-    # while (i < len(sys.argv) - 2):
     while (i < len(sys.argv) - 4):
         logger.info("Processing option " + sys.argv[i])
         if sys.argv[i] == '-afm':
@@ -102,34 +101,15 @@ if (__name__ == '__main__'):
         i += 1  # Increment to get the next option
 
 
-    if not cfg.USE_OPENCV:
+    if not cfg.USE_PYTHON:
         bb_x, bb_y = rect[2], rect[3]
         p1 = applyAffine(afm, (0,0))  # Transform Origin To Output Space
         p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
-        offset_x, offset_y = p2 - p1  # Offset Is The Difference of 'p2' and 'p1'
-        # offset_x, offset_y = rect[0], rect[1]
-
-        a = afm_list[0]
-        c = afm_list[1]
-        e = afm_list[2] + offset_x
-        b = afm_list[3]
-        d = afm_list[4]
-        f = afm_list[5] + offset_y
-
-        # a = afm_list[0]
-        # c = afm_list[1]
-        # e = afm_list[2]
-        # b = afm_list[3]
-        # d = afm_list[4]
-        # f = afm_list[5]
-
-        my_path = os.path.split(os.path.realpath(__file__))[0]
-
-        if is_tacc():   mir_c = my_path + '/lib/bin_tacc/mir'
-        elif is_mac():  mir_c = my_path + '/lib/bin_darwin/mir'
-        else:           mir_c = my_path + '/lib/bin_linux/mir'
-
-        # TODO Use pillow to store median greyscale value for each image in list, for now just use 128
+        offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+        a = afm_list[0];  c = afm_list[1];  e = afm_list[2] + offset_x
+        b = afm_list[3];  d = afm_list[4];  f = afm_list[5] + offset_y
+        mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
+        # Todo get exact median greyscale value for each image in list, for now just use 128
         mir_script = \
             'B %d %d 1\n' \
             'Z %g\n' \
@@ -137,21 +117,11 @@ if (__name__ == '__main__'):
             'A %g %g %g %g %g %g\n' \
             'RW %s\n' \
             'E' % (bb_x, bb_y, 128, in_fn, a, c, e, b, d, f, out_fn)
-
-        #1102
-        # mir_script = \
-        #     'B %d %d 1\n' \
-        #     'Z 128\n' \
-        #     'F %s\n' \
-        #     'A %g %g %g %g %g %g\n' \
-        #     '0 0 %g %g\n' \
-        #     'RW %s\n' \
-        #     'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, offset_x, offset_y, out_fn)
         o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
 
-        path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
-        with open(path, 'a+') as f:
-            f.write('\n---------------------------\n' + mir_script + '\n')
+        # path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
+        # with open(path, 'a+') as f:
+        #     f.write('\n---------------------------\n' + mir_script + '\n')
 
     # Python Implementation
     # try:
@@ -160,17 +130,19 @@ if (__name__ == '__main__'):
     #     logger.warning("An Exception Occurred Running 'image_apply_affine'")
     #     logger.warning(traceback.format_exc())
 
-    dimx, dimy = rect[2], rect[3]
-    # im = tifffile.imread(out_fn)
-    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
-    store = zarr.open(zarr_grp)
-    # print(store.info)
-    store[ID, :, :] = np.flip(Image.open(out_fn), axis=1)
-    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-    sys.stdout.close()
-    sys.stderr.close()
+    # dimx, dimy = rect[2], rect[3]
 
-# Todo ask Art about this...
+
+    # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+    # store = zarr.open(zarr_grp)
+    # store[ID, :, :] = np.flip(Image.open(out_fn), axis=1)
+    # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+    # sys.stdout.close()
+    # sys.stderr.close()
+
+
+
+# Ask Art about this...
 # im = Image.open('/Users/joelyancey/glanceEM_SWiFT/test_projects/test93/scale_4/img_aligned/R34CA1-BS12.109.tif')
 # /Users/joelyancey/miniconda3/envs/alignENV/lib/python3.9/site-packages/PIL/TiffImagePlugin.py:845:
 # UserWarning: Corrupt EXIF data.  Expecting to read 4 bytes but only got 0.

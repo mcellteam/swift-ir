@@ -147,7 +147,7 @@ def main():
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     if args.no_splash: cfg.NO_SPLASH = True
     # if args.no_multiview: cfg.MULTIVIEW = False
-    if args.opencv: cfg.USE_OPENCV = True
+    if args.opencv: cfg.USE_PYTHON = True
     if args.dummy: cfg.DUMMY = True
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'

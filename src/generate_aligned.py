@@ -26,14 +26,15 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     tryRemoveDatFiles(scale)
     Z_STRIDE = 0
 
-    if cfg.USE_OPENCV:
+    if cfg.USE_PYTHON:
         job_script = 'job_python_apply_affine.py'
     else:
         '''Default'''
         job_script = 'job_apply_affine.py'
     path = os.path.split(os.path.realpath(__file__))[0]
     job_script = os.path.join(path, job_script)
-    zarr_group = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
+    scale_val = get_scale_val(scale)
+    zarr_group = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % scale_val)
     od = os.path.join(cfg.data.dest(), scale, 'img_aligned')
     renew_directory(directory=od)
     alstack = cfg.data.alstack(s=scale)
@@ -74,8 +75,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
-                           pbar_text='Generating Alignment w/ MIR - Scale %d - %d Cores' %
-                                     (get_scale_val(scale), cpus))
+                           pbar_text='Generating Alignment w/ MIR - Scale %d - %d Cores' % (scale_val, cpus))
     task_queue.start(cpus)
     for task in args_list: task_queue.add_task(task)
     try:
@@ -84,12 +84,41 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()
-        logger.warning('task_queue.collect_results() encountered a problem')
-    kill_task_queue(task_queue=task_queue)
+        logger.warning('Task Queue encountered a problem')
+    finally:
+        kill_task_queue(task_queue=task_queue)
+
+    #### RUN ZARR TASKS
+
+    logger.info('Making Zarr Copy-convert Alignment Tasks List...')
+    cfg.main_window.set_status('Copy-converting TIFFs...')
+    task_queue = TaskQueue(n_tasks=len(args_list),
+                           parent=cfg.main_window,
+                           pbar_text='Copy-converting Alignment Results To Zarr - Scale %d - %d Cores' % (
+                           scale_val, cpus))
+    task_queue.start(cpus)
+    job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
+    for ID, layer in enumerate(iter(alstack[start_layer:end_layer])):
+        base_name = layer['images']['base']['filename']
+        al_path, fn = os.path.split(base_name)
+        al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
+        args = [sys.executable, job_script, str(ID), al_name, zarr_group]
+        task_queue.add_task(args)
+    try:
+        dt = task_queue.collect_results()
+        show_mp_queue_results(task_queue=task_queue, dt=dt)
+    except:
+        print_exception()
+        logger.warning('Task Queue encountered a problem')
+    finally:
+        kill_task_queue(task_queue=task_queue)
+        cfg.main_window.set_idle()
+
     logger.info('<<<< Generate Aligned End <<<<')
 
 
 def makeTasksList(iter, job_script, rect, zarr_group):
+    logger.info('Making Generate Alignment Tasks List...')
     args_list = []
     for ID, layer in enumerate(iter):
         # if ID in [0,1,2]:
@@ -108,6 +137,7 @@ def makeTasksList(iter, job_script, rect, zarr_group):
         # NOTE - previously had conditional here for 'if use_bounding_rect' then don't pass -rect args
         args_list.append(args)
     return args_list
+
 
 def tryRemoveFile(directory):
     try:

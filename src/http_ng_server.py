@@ -175,11 +175,10 @@ class NgHost(QRunnable):
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
         css = '%.2E' % Decimal(cross_section_scale)
-        string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d...' % \
-                 (self.sf, ('Unaligned', 'Aligned')[is_aligned], img_width, img_height)
+        string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
+                 (self.sf, ('Unaligned', 'Aligned')[is_aligned], img_width, img_height, caller)
         logger.info(string)
-        if caller not in ('set_viewer_layout_1', 'set_viewer_layout_2'):
-            cfg.main_window.hud.post(string)
+        # cfg.main_window.hud.post(string)
 
         with self.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
@@ -405,7 +404,11 @@ class NgHost(QRunnable):
     def on_state_changed(self):
         try:
             request_layer = floor(self.viewer.state.position[0])
+            # logger.info(f'\nState changed, request_layer: {request_layer}, cfg.data.layer(): {cfg.data.layer()}')
             project_dict_layer = cfg.data.layer() #1110-
+            if not -1 < request_layer <= cfg.data.n_layers():
+                logger.warning(f'Bad layer index requested ({request_layer}) - Canceling Signal!')
+
             if request_layer == project_dict_layer: #1110-
                 logger.debug('State Changed, But Layer Is The Same -> Suppressing The Callback Signal')
                 return
@@ -554,8 +557,8 @@ class NgHost(QRunnable):
 
 
     def request_layer(self):
-        l = floor(self.viewer.state.position[0])
-        return l
+
+        return floor(self.viewer.state.position[0])
 
 
     # Note: odd mapping of axes

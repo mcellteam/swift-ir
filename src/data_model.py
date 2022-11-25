@@ -832,7 +832,7 @@ class DataModel:
                 mean_snr = sum(snr_vals) / len(snr_vals)
                 snr_lst.append(mean_snr)
             except:
-                pass
+                print_exception()
         return snr_lst
 
     def snr_max_all_scales(self):

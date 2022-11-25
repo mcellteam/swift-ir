@@ -7,7 +7,7 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
-import os, re, sys, copy, json, time, signal, logging, inspect, platform, traceback, shutil
+import os, re, sys, copy, json, time, signal, logging, inspect, platform, traceback, shutil, statistics
 from typing import Dict, List, Tuple, Any, Union, Sequence
 from glob import glob
 from pathlib import Path
@@ -42,6 +42,24 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            ]
 
 logger = logging.getLogger(__name__)
+
+
+def snr_list(self, scale=None):
+    if scale == None: scale = self.scale()
+
+
+
+def get_snr_average(scale) -> float:
+    snr_lst = []
+    for layer in scale['alignment_stack']:
+        try:
+            snr_vals = layer['align_to_ref_method']['method_results']['snr']
+            mean_snr = sum(snr_vals) / len(snr_vals)
+            snr_lst.append(mean_snr)
+        except:
+            print_exception()
+    return statistics.fmean(snr_lst)
+
 
 def get_tensor_handle_unal():
     return cfg.main_window.ng_workers[cfg.data.scale()].unal_dataset
@@ -108,7 +126,7 @@ def show_mp_queue_results(task_queue, dt):
         cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
         cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
     else:
-        cfg.main_window.hud.post('  Tasks Cosmpleted : %d' % n_success, logging.INFO)
+        cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
         cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
         cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
 
@@ -196,7 +214,7 @@ def get_scale_val(scale_of_any_type) -> int:
                 scale = scale[len('scale_'):]
             return int(scale)
     except:
-        print_exception()
+        logger.warning('Unable to return scale value')
 
 
 def do_scales_exist() -> bool:
