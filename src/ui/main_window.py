@@ -158,9 +158,12 @@ class MainWindow(QMainWindow):
 
         # self.show_hide_controls_callback()
         # self.show_hide_hud_callback()
-        self.show_hide_python_callback()
-        self.show_hide_snr_plot_callback()
-        self.show_hide_project_tree_callback()
+
+
+        # self.show_hide_python_callback()
+        # self.show_hide_snr_plot_callback()
+        # self.show_hide_project_tree_callback()
+        self.normal_view()
 
         self._snr_plot_colors = ['#f3e375', '#5c4ccc', '#d6acd6', '#aaa672', '#152c74', '#404f74',
                                  '#f3e375', '#5c4ccc', '#d6acd6', '#aaa672', '#152c74', '#404f74']
@@ -180,7 +183,8 @@ class MainWindow(QMainWindow):
                                   ]
 
         # self.set_idle()
-        self.image_panel_stack_widget.setCurrentIndex(4)
+        # self.image_panel_stack_widget.setCurrentIndex(4)
+        self.image_panel_stack_widget.setCurrentIndex(2)
         if not cfg.NO_SPLASH:
             self.show_splash()
         self.resize(cfg.WIDTH, cfg.HEIGHT)
@@ -196,9 +200,11 @@ class MainWindow(QMainWindow):
             cfg.data.link_all_stacks()
             self.onStartProject()
         else:
-            cfg.data = DataModel()
+            # cfg.data = DataModel()
+            cfg.data = None
 
     def show_hide_project_tree_callback(self, force_hide=False, force_show=False):
+
         if force_show:
             self.read_project_data_update_gui()
             self.projectdata_treeview.show()
@@ -213,6 +219,7 @@ class MainWindow(QMainWindow):
             self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
             self.show_hide_project_tree_button.setText('Tree View')
             return
+
         if self.projectdata_treeview.isHidden():
             self.read_project_data_update_gui()
             self.projectdata_treeview.show()
@@ -227,7 +234,6 @@ class MainWindow(QMainWindow):
 
     def show_hide_snr_plot_callback(self, force_hide=False, force_show=False):
         if force_show:
-            self.read_project_data_update_gui()  # for short-circuiting speed-ups
             self.snr_plot_and_control.show()
             self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_snr_plot_button.setText('Hide SNR Plot')
@@ -238,7 +244,6 @@ class MainWindow(QMainWindow):
             self.show_hide_snr_plot_button.setText('SNR Plot')
             return
         if self.snr_plot_and_control.isHidden():
-            self.read_project_data_update_gui()  # for short-circuiting speed-ups
             self.snr_plot_and_control.show()
             self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_snr_plot_button.setText('Hide SNR Plot')
@@ -378,6 +383,10 @@ class MainWindow(QMainWindow):
 
     def align_all(self, scale=None) -> None:
 
+        if cfg.data is None:
+            self.hud.post('No data yet!', logging.WARNING);
+            return
+
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING);
             return
@@ -466,6 +475,10 @@ class MainWindow(QMainWindow):
 
     def align_forward(self, scale=None, num_layers=1) -> None:
 
+        if cfg.data is None:
+            self.hud.post('No data yet!', logging.WARNING);
+            return
+
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
@@ -518,6 +531,10 @@ class MainWindow(QMainWindow):
 
 
     def align_one(self, scale=None) -> None:
+
+        if cfg.data is None:
+            self.hud.post('No data yet!', logging.WARNING);
+            return
 
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
@@ -574,8 +591,13 @@ class MainWindow(QMainWindow):
 
     def regenerate(self, scale) -> None:
 
+        if cfg.data is None:
+            self.hud.post('No data yet!', logging.WARNING);
+            return
+
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING); return
+
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING); return
         self.read_gui_update_project_data()
@@ -881,6 +903,7 @@ class MainWindow(QMainWindow):
         self.updateLowLowWidgetB()
         self.updateBanner(s=s)
         self.updateEnabledButtons()
+        self.updateStatusTips()
 
     @Slot()
     def read_gui_update_project_data(self) -> None:
@@ -929,16 +952,15 @@ class MainWindow(QMainWindow):
             logger.warning("Can't update GUI now - working...")
             self.hud.post("Can't update GUI now - working...", logging.WARNING)
             return
-
-        assert cfg.data.dest() not in ('', None)
+        if cfg.data is None:
+            logger.warning('No need to update the interface')
+            return
         if isinstance(ng_layer, int):
             try:
                 # logger.info('Updating, Layer %d...' % ng_layer)
                 # if -1 < ng_layer < cfg.data.n_layers():
                 #     logger.info(f'Updating layer from {cfg.data.layer()} to {ng_layer}')
                 cfg.data.set_layer(ng_layer)
-                # else:
-                #     logger.warning(f'Bad layer index requested ({ng_layer})')
             except:
                 print_exception()
             '''This Condition Is True At The End Of The Image Stack'''
@@ -1091,7 +1113,8 @@ class MainWindow(QMainWindow):
         with open(path, 'r') as f:
             scale = json.load(f)
         snr_avg = get_snr_average(scale)
-        self.hud.post(f"Selected '%s' - SNR avg: %.4f" % (item.text(), snr_avg))
+        # self.hud.post(f"Selected '%s' - SNR avg: %.4f" % (item.text(), snr_avg))
+        self.hud.post(f'SNR avg: %.4f' % snr_avg)
 
 
     def updateAffineWidgets(self, show=True):
@@ -1419,7 +1442,7 @@ class MainWindow(QMainWindow):
         '''Dialog for saving a data. Returns 'filename'.'''
         dialog = QFileDialog()
         dialog.setOption(QFileDialog.DontUseNativeDialog)
-        dialog.setWindowTitle('Export Affines')
+        dialog.setWindowTitle('Export Affine Data as .csv')
         dialog.setNameFilter("Text Files (*.csv)")
         dialog.setViewMode(QFileDialog.Detail)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
@@ -1468,31 +1491,30 @@ class MainWindow(QMainWindow):
     def new_project(self):
         logger.critical('Starting A New Project...')
         self.hud.post('Set New Project Save Path...')
-        self.scales_combobox_switch = 0
         # app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         # os.chdir(app_dir)
-        if is_destination_set():
-            logger.info('Asking user to confirm new data')
-            msg = QMessageBox(QMessageBox.Warning,
-                              'Confirm New Project',
-                              'Please confirm create new project.',
-                              buttons=QMessageBox.Cancel | QMessageBox.Ok)
-            msg.setIcon(QMessageBox.Question)
-            msg.setDefaultButton(QMessageBox.Cancel)
-            reply = msg.exec_()
-            if reply == QMessageBox.Ok:
-                logger.info("Response was 'OK'")
-                pass
-            else:
-                logger.info("Response was not 'OK' - Returning")
-                self.hud.post('New Project Canceled', logging.WARNING)
-                self.set_idle()
-                return
-            if reply == QMessageBox.Cancel:
-                logger.info("Response was 'Cancel'")
-                self.hud.post('New Project Canceled', logging.WARNING)
-                self.set_idle()
-                return
+        # if is_destination_set():
+        logger.info('Asking user to confirm new data')
+        msg = QMessageBox(QMessageBox.Warning,
+                          'Confirm New Project',
+                          'Please confirm create new project.',
+                          buttons=QMessageBox.Cancel | QMessageBox.Ok)
+        msg.setIcon(QMessageBox.Question)
+        msg.setDefaultButton(QMessageBox.Cancel)
+        reply = msg.exec_()
+        if reply == QMessageBox.Ok:
+            logger.info("Response was 'OK'")
+            pass
+        else:
+            logger.info("Response was not 'OK' - Returning")
+            self.hud.post('New Project Canceled', logging.WARNING)
+            self.set_idle()
+            return
+        if reply == QMessageBox.Cancel:
+            logger.info("Response was 'Cancel'")
+            self.hud.post('New Project Canceled', logging.WARNING)
+            self.set_idle()
+            return
 
         self.normal_view()
         self.hud.clear_display()
@@ -1527,6 +1549,8 @@ class MainWindow(QMainWindow):
         except:
             logger.warning('Project Configuation Dialog Exited Abruptly')
             return
+
+        self.scales_combobox_switch = 1
         try:
             self.autoscale()
         except:
@@ -1556,7 +1580,7 @@ class MainWindow(QMainWindow):
         except OSError:
             pass
 
-        self.scales_combobox_switch = 0
+
         self.normal_view()
         self.shutdownNeuroglancer()
         self.clear_snr_plot()
@@ -1566,6 +1590,7 @@ class MainWindow(QMainWindow):
         filenames = cfg.data.get_source_img_paths()
         scales = cfg.data.scales()
 
+        self.scales_combobox_switch = 0 #refactor this out
         cfg.main_window.hud.post("Removing Extant Scale Directories...")
         try:
             for scale in scales:
@@ -1626,10 +1651,10 @@ class MainWindow(QMainWindow):
         filename = self.open_project_dialog()
         logger.info('filename: %s' % filename)
         if filename == '':
-            self.hud.post("No Project File (.proj) Was Selected (='')", logging.WARNING)
+            self.hud.post("No Project File (.proj) Selected (='')", logging.WARNING)
             return
         if filename == None:
-            self.hud.post('No Project File (.proj) Was Selected', logging.WARNING)
+            self.hud.post('No Project File (.proj) Selected', logging.WARNING)
             return
         if os.path.isdir(filename):
             self.hud.post("Selected Path Is A Directory. "
@@ -1645,7 +1670,7 @@ class MainWindow(QMainWindow):
                 # cfg.data = DataModel(json.load(f)) #1123+
 
         except:
-            self.hud.post('No Project Was Opened.', logging.WARNING)
+            self.hud.post('No Project Opened', logging.WARNING)
             return
         cfg.data = copy.deepcopy(project) #1123-
         cfg.data.set_paths_absolute(filename=filename)
@@ -1657,8 +1682,10 @@ class MainWindow(QMainWindow):
     def onStartProject(self):
         '''Functions that only need to be run once per project
         Do not automatically save, there is nothing to save yet'''
+        self.image_panel_stack_widget.setCurrentIndex(2)
         self.read_project_data_update_gui()
         self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
+        self.updateStatusTips()
         self.reload_scales_combobox()  # 0529 #0713+
         self.updateEnabledButtons()
         self.updateJumpValidator()
@@ -1666,10 +1693,8 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
         self.updateBanner()
         self.initSnrPlot()  # 1101
-        self.image_panel_stack_widget.setCurrentIndex(1)
         # self.read_project_data_update_gui()  # ***
         self.show_hide_low_low_side_widgets()
-        # self.updateLowLowWidgetB(clear=True)
         self.updateLowLowWidgetB()
         self.initOverviewPanel()
         self.scales_combobox_switch = 1
@@ -1685,6 +1710,10 @@ class MainWindow(QMainWindow):
 
 
     def save_project(self):
+        if cfg.data.dest() == '':
+            self.hud.post('Nothing To Save')
+            return
+        self.set_status('Saving...')
         self.hud.post('Saving Project...')
         try:
             self.save_project_to_file()
@@ -1948,16 +1977,6 @@ class MainWindow(QMainWindow):
             logger.info('Success')
 
         # try:
-        #     for s in cfg.data.scales():
-        #         self.ng_workers[s].http_server.server_close()
-        #         # self.ng_workers.http_server.shutdown()
-        #         logger.info('Closed http server on port %s...' % str(self.ng_workers[s].http_server.server_port))
-        # except:
-        #     logger.info('Having trouble closing http_server ports')
-        # else:
-        #     logger.info('done')
-
-        # try:
         #     if neuroglancer.server.is_server_running():
         #         logger.info('Stopping Neuroglancer SimpleHTTPServer...')
         #         neuroglancer.server.stop()
@@ -2032,7 +2051,7 @@ class MainWindow(QMainWindow):
 
     def invalidate_all(self, s=None):
         if not ng.is_server_running():
-            self.hud.post('Neuroglancer is not running.', logging.WARNING)
+            logger.warning('Neuroglancer is not running')
             return
         if s == None: s = cfg.data.scale()
         refLV = get_refLV()
@@ -2046,7 +2065,7 @@ class MainWindow(QMainWindow):
 
     def refreshNeuroglancerURL(self, s=None):
         if not ng.is_server_running():
-            self.hud.post('Neuroglancer is not running.', logging.WARNING)
+            logger.warning('Neuroglancer is not running')
             return
         if s == None: s = cfg.data.scale()
         if not cfg.NO_EMBED_NG:
@@ -2054,35 +2073,15 @@ class MainWindow(QMainWindow):
             self.ng_browser.setFocus()
 
 
-
-    # def update_viewer_originals(self, ng_layer):
-    #     logger.info('update_viewer1_layer:')
-    #     if ng_layer not in range(cfg.data.n_layers()):
-    #         logger.warning('Requested layer is not a valid layer')
-    #         return
-    #     state = copy.deepcopy(self.ng_workers[cfg.data.scale()]['originals'].viewer.state)
-    #     state.position[0] = ng_layer
-    #     # cfg.viewports.set_state(state)
-    #     self.ng_workers[cfg.data.scale()]['originals'].viewer.set_state(state)
-    #     self.refreshNeuroglancerURL()
-    #
-    # def update_viewer_aligned(self, ng_layer):
-    #     logger.info('update_viewer1_layer:')
-    #     if ng_layer not in range(cfg.data.n_layers()):
-    #         logger.warning('Requested layer is not a valid layer')
-    #         return
-    #     state = copy.deepcopy(self.ng_workers[cfg.data.scale()]['aligned'].viewer.state)
-    #     state.position[0] = ng_layer
-    #     # cfg.viewports.set_state(state)
-    #     self.ng_workers[cfg.data.scale()]['aligned'].viewer.set_state(state)
-    #     self.refreshNeuroglancerURL()
-
-
     def initNgServer(self, scales=None):
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+        if cfg.data is None:
+            logger.warning('Nothing To View')
+            return
+
         if not self.is_project_open():
-            self.hud.post('Nothing to view.', logging.WARNING)
+            logger.warning('Nothing to view in Neuroglancer')
             return
         if scales in (None, False):
             scales = cfg.data.scales()
@@ -2142,10 +2141,10 @@ class MainWindow(QMainWindow):
             # self.refreshNeuroglancerURL() #Important
             self.ng_layout_combobox.setCurrentText('xy')
             self.ng_layout_combobox.currentTextChanged.connect(self.fn_ng_layout_combobox)
-            self.image_panel_stack_widget.setCurrentIndex(1)
         except:
             print_exception()
         finally:
+            self.image_panel_stack_widget.setCurrentIndex(1)
             self.set_idle()
 
 
@@ -2157,7 +2156,7 @@ class MainWindow(QMainWindow):
     # does not work (?)
     def initNgViewer(self, s=None):
         if not ng.is_server_running():
-            self.hud.post('Neuroglancer is not running.', logging.WARNING)
+            logger.warning('Neuroglancer is not running')
             return
         if s == None: s = cfg.data.scale()
         logger.info('Initializing Viewer (%s)...' % s)
@@ -2171,10 +2170,6 @@ class MainWindow(QMainWindow):
     def create_ng_worker_dicts(self):
         logger.info('Creating NgWorker dictionaries...')
         self.ng_workers = dict.fromkeys(cfg.data.scales())
-
-    def get_viewport(self):
-        return self.ng_workers[cfg.data.scale()].viewer
-        # return self.get_panels()[-1].viewer
 
     def reload_remote(self):
         logger.info("Reloading Remote Neuroglancer Client")
@@ -2209,30 +2204,24 @@ class MainWindow(QMainWindow):
             return
         try:
             self.ng_workers[cfg.data.scale()].show_state()
-            # for panel in self.get_panels():
-            #     panel.show_state()
-                # logger.info("Viewer.url : ", self.viewports.get_viewer_url)
-                # logger.info("Viewer.screenshot : ", self.viewports.screenshot)
-                # logger.info("Viewer.txn : ", self.viewports.txn)
-                # logger.info("Viewer.actions : ", self.viewports.actions)
         except:
             print_exception()
 
     def print_ng_state(self):
         if not ng.is_server_running():
-            self.hud.post('Neuroglancer is not running.', logging.WARNING)
+            logger.warning('Neuroglancer is not running')
             return
         try:
-            self.hud.post('\n\n%s' % str(self.get_viewport().state))
+            self.hud.post('\n\n%s' % str(self.ng_workers[cfg.data.scale()].viewer.state))
         except:
             pass
 
     def print_ng_raw_state(self):
         if not ng.is_server_running():
-            self.hud.post('Neuroglancer is not running.', logging.WARNING)
+            logger.warning('Neuroglancer is not running')
             return
         try:
-            self.hud.post('\n\n%s' % str(self.get_viewport().config_state.raw_state))
+            self.hud.post('\n\n%s' % str(self.ng_workers[cfg.data.scale()].config_state.raw_state))
         except:
             pass
 
@@ -2244,7 +2233,7 @@ class MainWindow(QMainWindow):
 
     def dump_ng_details(self):
         if not ng.is_server_running():
-            self.hud.post('Neuroglancer is not running.', logging.WARNING)
+            logger.warning('Neuroglancer is not running')
             return
         v = self.ng_workers[cfg.data.s()].viewer
         self.hud.post("v.position: %s\n" % str(v.state.position))
@@ -2491,6 +2480,16 @@ class MainWindow(QMainWindow):
         # self.layoutTwoAction.setIcon(qta.icon('mdi.view-sequential', color=ICON_COLOR))
         self.layoutTwoAction.setIcon(qta.icon('mdi.view-stream-outline', color=ICON_COLOR))
         self.toolbar.addAction(self.layoutTwoAction)
+
+    def updateStatusTips(self):
+        logger.info('Updating Status Tips...')
+        self.regenerate_button.setStatusTip('Generate All Layers - Scale %d (alters Corrective Bias '
+                                            'and Bounding Rectangle)' % get_scale_val(cfg.data.scale()))
+        self.align_forward_button.setStatusTip(
+            'Align + Generate Layers %d -> End - Scale %d' % (cfg.data.layer(), get_scale_val(cfg.data.scale())))
+        self.align_all_button.setStatusTip('Generate + Align All Layers - Scale %d' % get_scale_val(cfg.data.scale()))
+        self.align_one_button.setStatusTip(
+            'Align + Generate Layer %d - Scale %d' % (cfg.data.layer(), get_scale_val(cfg.data.scale())))
 
 
 
@@ -2935,6 +2934,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Reset (Use Everything)'
         self.clear_skips_button = QPushButton('Use All')
+        self.clear_skips_button.setEnabled(False)
+        self.clear_skips_button.setStatusTip('Use All The Images')
         self.clear_skips_button.setStyleSheet("font-size: 10px;")
         self.clear_skips_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.clear_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3014,6 +3015,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
         self.apply_all_button = QPushButton("Apply To All")
+        self.apply_all_button.setEnabled(False)
+        self.apply_all_button.setStatusTip('Apply These Settings To All The Data')
         self.apply_all_button.setStyleSheet("font-size: 9px;")
         self.apply_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.apply_all_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -3022,6 +3025,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Go to next l.'
         self.next_scale_button = QPushButton()
+        self.next_scale_button.setEnabled(False)
         self.next_scale_button.setStyleSheet("font-size: 11px;")
         self.next_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.next_scale_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -3031,6 +3035,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Go to previous l.'
         self.prev_scale_button = QPushButton()
+        self.prev_scale_button.setEnabled(False)
         self.prev_scale_button.setStyleSheet("font-size: 11px;")
         self.prev_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.prev_scale_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -3046,6 +3051,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Align + Generate All Layers For Current Scale'
         self.align_all_button = QPushButton('Align This\nScale')
+        self.align_all_button.setEnabled(False)
         self.align_all_button.setStyleSheet("font-size: 11px;")
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -3054,6 +3060,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Align and Generate This Layer'
         self.align_one_button = QPushButton('Align This\nLayer')
+        self.align_one_button.setEnabled(False)
         self.align_one_button.setStyleSheet("font-size: 11px;")
         self.align_one_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_one_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -3062,6 +3069,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Align and Generate From Layer Current Layer to End'
         self.align_forward_button = QPushButton('Align\nForward')
+        self.align_forward_button.setEnabled(False)
         self.align_forward_button.setStyleSheet("font-size: 11px;")
         self.align_forward_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_forward_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -3115,10 +3123,11 @@ class MainWindow(QMainWindow):
         tip = "Recomputes the cumulative affine and generates new aligned images" \
               "based on the current Null Bias and Bounding Rectangle presets."
         self.regenerate_button = QPushButton('Regenerate')
-        self.regenerate_button.setStyleSheet("font-size: 10px;")
+        self.regenerate_button.setEnabled(False)
         self.regenerate_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.regenerate_button.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale()))
         self.regenerate_button.setFixedSize(normal_button_size)
+        self.regenerate_button.setStyleSheet("font-size: 10px;")
 
         self.new_control_panel = QWidget()
         self.new_control_panel.setFixedHeight(40)
@@ -3783,18 +3792,34 @@ class MainWindow(QMainWindow):
 
 
     def normal_view(self):
+
+        if cfg.data is None:
+            self.image_panel_stack_widget.setCurrentIndex(2)
+        else:
+            self.image_panel_stack_widget.setCurrentIndex(1)
+
+        self.new_control_panel.show()
         self.viewer_and_banner_widget.show()
         self.full_window_controls.hide()
         self.extra_header_text_label.setText('')
-        self.main_widget.setCurrentIndex(0)
-        self.image_panel_stack_widget.setCurrentIndex(1)
-        self.new_control_panel.show()
+        # self.main_widget.setCurrentIndex(0)
+        # self.image_panel_stack_widget.setCurrentIndex(1)
+
         self.details_banner.show()
         self.low_low_widget.show()
-        self.main_details_subwidgetA.show()
-        self.main_details_subwidgetB.show()
-        self.matrix_container.show()
-        self.history_widget.show()
+
+        if is_cur_scale_aligned():
+            self.updateStatusTips()
+            self.main_details_subwidgetA.show()
+            self.main_details_subwidgetB.show()
+            self.matrix_container.show()
+            self.history_widget.show()
+        else:
+            self.main_details_subwidgetA.hide()
+            self.main_details_subwidgetB.hide()
+            self.matrix_container.hide()
+            self.history_widget.hide()
+
         self._is_mp_mode = False
         self.matchpoint_controls.hide()
         self.hud.show()
@@ -3807,18 +3832,8 @@ class MainWindow(QMainWindow):
         # self.ng_workers[cfg.data.s()].match_point_mode = False
         # self.initNgServer(scales=[cfg.data.s()]) #1122-
 
-    def set_viewer_layout_1(self):
-        self._layout = 1
-        self.initNgServer()
-
-    def set_viewer_layout_2(self):
-        self._layout = 2
-        self.initNgServer()
-
-
 
     def expand_viewer_size(self):
-
 
         if self._is_viewer_expanded:
             self.hud.post('Collapsing Viewer')
@@ -3830,9 +3845,9 @@ class MainWindow(QMainWindow):
         else:
             self.hud.post('Expanding Viewer')
             self._is_viewer_expanded = True
-            self.full_window_controls.show()
+            # self.full_window_controls.show()
             self.main_widget.setCurrentIndex(0)
-            self.image_panel_stack_widget.setCurrentIndex(1)
+            # self.image_panel_stack_widget.setCurrentIndex(1)
             self.new_control_panel.hide()
             self.details_banner.hide()
             self.low_low_widget.hide()
@@ -3846,6 +3861,17 @@ class MainWindow(QMainWindow):
             self.expandViewAction.setToolTip('Set Normal Viewer Size')
 
         self.initNgServer()
+
+
+    def set_viewer_layout_1(self):
+        self._layout = 1
+        self.initNgServer()
+
+
+    def set_viewer_layout_2(self):
+        self._layout = 2
+        self.initNgServer()
+
 
     def expand_plot_size(self):
         self._is_mp_mode = False
@@ -3879,6 +3905,7 @@ class MainWindow(QMainWindow):
         # self.initNgServer()
 
     def expand_python_size(self):
+
         self.full_window_controls.show()
         self.extra_header_text_label.setText('')
         self._is_mp_mode = False
@@ -4141,7 +4168,10 @@ class MainWindow(QMainWindow):
     def back_callback(self):
         logger.info("Returning Home...")
         self.main_widget.setCurrentIndex(0)
-        self.image_panel_stack_widget.setCurrentIndex(1)
+        if cfg.data is None:
+            self.image_panel_stack_widget.setCurrentIndex(2)
+        else:
+            self.image_panel_stack_widget.setCurrentIndex(1)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.ContextMenu and source is self.historyListWidget:
