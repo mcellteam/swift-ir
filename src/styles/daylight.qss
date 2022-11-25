@@ -11,6 +11,10 @@ Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
 
+QWidget#browser_overlay_widget {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 QWidget#details_banner {
 	background-color: transparent;
 	color: #003B5C;

@@ -89,6 +89,7 @@ def launch_server(bind_address: str, output_dir: str) -> int:
 
     def run_server():
         try:
+
             ioloop = tornado.platform.asyncio.AsyncIOLoop()
             ioloop.make_current()
             asyncio.set_event_loop(ioloop.asyncio_loop)
@@ -96,7 +97,12 @@ def launch_server(bind_address: str, output_dir: str) -> int:
         except Exception as e:
             server_url_future.set_exception(e)
             return
-        ioloop.start()
+        # ioloop.start()
+        try:
+            ioloop.start()
+        except KeyboardInterrupt:
+            tornado.ioloop.IOLoop.instance().stop()
+
         ioloop.close()
 
     thread = threading.Thread(target=run_server)

@@ -6,6 +6,10 @@ Colors:
 #6D7D77 - blue smoke, green blue
 */
 
+QWidget#browser_overlay_widget {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 QWidget#details_banner {
 	background-color: #141414;
 	color: #f3f6fb;

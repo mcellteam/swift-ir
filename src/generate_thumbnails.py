@@ -11,7 +11,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, is_tacc, is_linux, is_mac, natural_sort, show_mp_queue_results, kill_task_queue
+    get_best_path, get_bindir, natural_sort, show_mp_queue_results, kill_task_queue
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_thumbnails']
@@ -47,12 +47,7 @@ def generate_thumbnails():
             print_exception()
     os.mkdir(od)
 
-    if is_tacc():     bindir = 'bin_tacc'
-    elif is_mac():    bindir = 'bin_darwin'
-    elif is_linux():  bindir = 'bin_linux'
-    else:             logger.error("Operating System Could Not Be Resolved"); return
-    iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
-    cfg.main_window.hud.done()
+    iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
     task_queue.start(cpus)
 
     it = cfg.data.get_iter(s=smallest_scale_key)
@@ -68,7 +63,6 @@ def generate_thumbnails():
 
     cfg.main_window.hud.post('Generating Thumbnails...')
     dt = task_queue.collect_results()
-    cfg.main_window.hud.done()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
 

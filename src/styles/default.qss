@@ -4,6 +4,10 @@ Colors:
 #141414 - Chinese Black
 */
 
+QWidget#browser_overlay_widget {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 
 HeadupDisplay#hud {
     background-color: #141414;
