@@ -1,15 +1,88 @@
 #!/usr/bin/env python3
 
-import os, logging, textwrap
+import os, logging, textwrap, platform
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton
-from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex
+from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
+
+def export_affines_dialog() -> str:
+    '''Dialog for saving a data. Returns 'filename'.'''
+    dialog = QFileDialog()
+    dialog.setOption(QFileDialog.DontUseNativeDialog)
+    dialog.setWindowTitle('Export Affine Data as .csv')
+    dialog.setNameFilter("Text Files (*.csv)")
+    dialog.setViewMode(QFileDialog.Detail)
+    dialog.setAcceptMode(QFileDialog.AcceptSave)
+    if dialog.exec() == QFileDialog.Accepted:
+        cfg.main_window.hud.post('Exported: %s' % dialog.selectedFiles()[0])
+        return dialog.selectedFiles()[0]
+
+
+def open_project_dialog() -> str:
+    '''Dialog for opening a data. Returns 'filename'.'''
+    dialog = QFileDialog()
+    dialog.setOption(QFileDialog.DontUseNativeDialog)
+    dialog.setWindowTitle('* Open Project *')
+    dialog.setNameFilter("Text Files (*.proj *.json)")
+    dialog.setViewMode(QFileDialog.Detail)
+    urls = dialog.sidebarUrls()
+    if '.tacc.utexas.edu' in platform.node():
+        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+    dialog.setSidebarUrls(urls)
+
+    if dialog.exec() == QFileDialog.Accepted:
+        logger.info('Save File Name: %s' % dialog.selectedFiles()[0])
+        # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
+        return dialog.selectedFiles()[0]
+
+
+def import_images_dialog():
+    '''Dialog for importing images. Returns list of filenames.'''
+    dialog = QFileDialogPreview()
+    dialog.setOption(QFileDialog.DontUseNativeDialog)
+    dialog.setWindowTitle('Import Images - %s' % cfg.data.name())
+    dialog.setNameFilter('Images (*.tif *.tiff)')
+    dialog.setFileMode(QFileDialog.ExistingFiles)
+    urls = dialog.sidebarUrls()
+    urls.append(QUrl.fromLocalFile(QDir.homePath()))
+    if '.tacc.utexas.edu' in platform.node():
+        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
+    dialog.setSidebarUrls(urls)
+    logger.debug('Selected Files:\n%s' % str(dialog.selectedFiles()))
+    logger.info('Dialog return value: %s' % dialog.Accepted)
+    if dialog.exec_() == QDialog.Accepted:
+        # self.set_mainwindow_project_view()
+        return dialog.selectedFiles()
+    else:
+        logger.warning('Import Images dialog did not return an image list')
+        return
+
+
+def new_project_dialog() -> str:
+    '''Dialog for saving a data. Returns 'filename'.'''
+    dialog = QFileDialog()
+    dialog.setOption(QFileDialog.DontUseNativeDialog)
+    dialog.setWindowTitle('* New Project *')
+    dialog.setNameFilter("Text Files (*.proj *.json)")
+    dialog.setViewMode(QFileDialog.Detail)
+    dialog.setAcceptMode(QFileDialog.AcceptSave)
+    urls = dialog.sidebarUrls()
+    if '.tacc.utexas.edu' in platform.node():
+        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+    dialog.setSidebarUrls(urls)
+    if dialog.exec() == QFileDialog.Accepted:
+        logger.info('Save File Path: %s' % dialog.selectedFiles()[0])
+        return dialog.selectedFiles()[0]
+
 
 class AskContinueDialog(QDialog):
     '''Simple dialog to ask user if they wish to proceed. Usage:
