@@ -168,6 +168,14 @@ class HeadupDisplay(QWidget):
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 
+    # def cycle_text(self):
+    #     txt = self.textedit.toPlainText()
+    #     self.textedit.undo()
+    #     last_line = txt.split('[INFO]')[-1].lstrip()
+    #     self.post(last_line + 'done.')
+    #     self.textedit.moveCursor(QTextCursor.End)
+    #     QApplication.processEvents()
+
     @Slot()
     def clear_display(self):
         self.textedit.clear()

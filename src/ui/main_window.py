@@ -42,7 +42,7 @@ from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
 from src.generate_zarr_scales import generate_zarr_scales
 from src.helpers import *
-from src.helpers import natural_sort
+from src.helpers import natural_sort, get_snr_average
 from src.http_ng_server import NgHost
 # from src.utils.PyQtImageStackViewer import QtImageStackViewer
 # from src.utils.PyQtImageViewer import QtImageViewer
@@ -323,16 +323,6 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud('Something Unexpected Happened While Generating TIFF Scale Hierarchy', logging.WARNING)
 
-        if make_thumbnails:
-            self.set_status('Generating Thumbnails...')
-            self.hud.post('Generating Thumbnails...')
-            try:
-                self.worker = BackgroundWorker(fn=generate_thumbnails())
-                self.threadpool.start(self.worker)
-            except:
-                print_exception()
-                self.hud('Something Unexpected Happened While Generating Thumbnails', logging.WARNING)
-
         cfg.data.link_all_stacks() #Todo: check if this is necessary
         self.clear_snr_plot() #Todo: Move this it should not be here
         cfg.data.set_scale(cfg.data.scales()[-1])
@@ -349,9 +339,19 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud('Something Unexpected Happened While Converting The Scale Hierarchy To Zarr', logging.WARNING)
 
-        finally:
-            # self.initNgServer()
-            logger.info('<<<< Autoscale <<<<')
+        if make_thumbnails:
+            self.set_status('Generating Thumbnails...')
+            self.hud.post('Generating Thumbnails...')
+            try:
+                self.worker = BackgroundWorker(fn=generate_thumbnails())
+                self.threadpool.start(self.worker)
+            except:
+                print_exception()
+                self.hud('Something Unexpected Happened While Generating Thumbnails', logging.WARNING)
+
+            finally:
+                # self.initNgServer()
+                logger.info('<<<< Autoscale <<<<')
 
     def onAlignmentEnd(self):
         s = cfg.data.scale()
@@ -523,7 +523,6 @@ class MainWindow(QMainWindow):
             self.hud.post('Another Process is Already Running', logging.WARNING)
             return
 
-        self.read_gui_update_project_data()
         if not cfg.data.is_alignable():
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.hud.post(warning_msg, logging.WARNING)
@@ -598,10 +597,13 @@ class MainWindow(QMainWindow):
             self.hud.post('An Exception Was Raised During Image Generation.', logging.ERROR)
         else:
 
-            self.initSnrPlot()
+
             self.read_project_data_update_gui()
             self.save_project_to_file()
         finally:
+            self.updateTextWidgetA()
+            self.updateAffineWidgets()
+            self.updateJsonWidget()
             self.initNgServer(scales=[cfg.data.scale()])
             if are_aligned_images_generated():
                 self.hud.post('Regenerate Succeeded')
@@ -676,7 +678,7 @@ class MainWindow(QMainWindow):
         swim_val = self.get_swim_input()
         whitening_val = self.get_whitening_input()
         scales_dict = cfg.data['data']['scales']
-        self.hud.post('Applying these alignment settings to data...')
+        self.hud.post('Applying These Settings To All Data...')
         self.hud.post('  SWIM Window  : %s' % str(swim_val))
         self.hud.post('  Whitening    : %s' % str(whitening_val))
         for scale_key in scales_dict.keys():
@@ -886,21 +888,6 @@ class MainWindow(QMainWindow):
         #1109 Rethink this. No longer can be called for every layer change... removing from s change mechanics
         logger.debug('read_gui_update_project_data:')
 
-        if not are_images_imported():
-            self.hud.post('Please create a new project or open an existing one.', logging.WARNING)
-            return
-
-        if not do_scales_exist():
-            self.hud.post('Scales do not exist yet', logging.WARNING)
-            return
-
-        '''NOTE: ng_layer() may only be called after initializing Neuroglancer'''
-        # cfg.data.set_layer(self.ng_layer())
-        if ng.is_server_running():
-            cfg.data.set_layer(self.request_ng_layer())
-        else:
-            logger.warning('DO NOT Read GUI into the project dictionary before Neuroglancer is even loaded!')
-            return
 
         if self.get_null_bias_value() == 'None':
             try:
@@ -914,6 +901,7 @@ class MainWindow(QMainWindow):
                 logger.warning('Unable to Update Project Dictionary with Null CAFM')
             try:
                 cfg.data.set_poly_order(int(self.get_null_bias_value()))
+                logger.info(f'Poly Order Set In Data To {int(self.get_null_bias_value())}')
             except:
                 logger.warning('Unable to Update Project Dictionary with Polynomial Order')
 
@@ -924,11 +912,13 @@ class MainWindow(QMainWindow):
 
         try:
             cfg.data.set_whitening(self.get_whitening_input())
+            logger.info(f'Whitening Set In Data To {self.get_whitening_input()}')
         except:
             logger.warning('Unable to Update Project Dictionary with Whitening Factor')
 
         try:
             cfg.data.set_swim_window(self.get_swim_input())
+            logger.info(f'SWIM Window Set In Data To {self.get_swim_input()}')
         except:
             logger.warning('Unable to Update Project Dictionary with SWIM Window')
 
@@ -943,8 +933,12 @@ class MainWindow(QMainWindow):
         assert cfg.data.dest() not in ('', None)
         if isinstance(ng_layer, int):
             try:
-                logger.info('Updating, Layer %d...' % ng_layer)
+                # logger.info('Updating, Layer %d...' % ng_layer)
+                # if -1 < ng_layer < cfg.data.n_layers():
+                #     logger.info(f'Updating layer from {cfg.data.layer()} to {ng_layer}')
                 cfg.data.set_layer(ng_layer)
+                # else:
+                #     logger.warning(f'Bad layer index requested ({ng_layer})')
             except:
                 print_exception()
             '''This Condition Is True At The End Of The Image Stack'''
@@ -955,9 +949,14 @@ class MainWindow(QMainWindow):
                 self.browser_overlay_widget.show()
                 self.clearTextWidgetA()
                 self.updateAffineWidgets(show=False)
+                logger.info(f'Showing Browser Overlay, layer({cfg.data.layer()}) - Returning')
                 return
-        else:
-            logger.info('Updating (caller: %s)...' % inspect.stack()[1].function)
+            else:
+                self.browser_overlay_widget.hide()
+                self.browser_overlay_label.hide()
+        # else:
+            # logger.info('Updating (caller: %s)...' % inspect.stack()[1].function)
+        logger.info(f'Updating, Current Layer {cfg.data.layer()}...')
         self.updateTextWidgetA()
         self.updateAffineWidgets(show=True)
         if cfg.data.skipped():
@@ -988,8 +987,12 @@ class MainWindow(QMainWindow):
         completed = "Scales Aligned: <b style='color: #212121;font-size:12px;'>(%d/%d)</b><br>" % \
                       (len(cfg.data.aligned_list()), cfg.data.n_scales())
         if is_cur_scale_aligned():
-            bb_dims = cfg.data.bounding_rect()
-            bb_dims = "Bounds: <b style='color: #212121;font-size:12px;'>%dx%dpx</b><br>" % (bb_dims[2], bb_dims[3])
+            if cfg.data.has_bb():
+                bb = cfg.data.bounding_rect()
+                dims = [bb[2], bb[3]]
+            else:
+                dims = cfg.data.image_size()
+            bb_dims = "Bounds: <b style='color: #212121;font-size:12px;'>%dx%dpx</b><br>" % (dims[0], dims[1])
             snr = "<font color='#212121';size='12'>%s</font><br>" % cfg.data.snr()
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
@@ -1083,7 +1086,13 @@ class MainWindow(QMainWindow):
 
     def historyItemClicked(self, qmodelindex):
         item = self.historyListWidget.currentItem()
-        logger.info(f'Selected {item.text()}')
+        logger.info(f"Selected {item.text()}")
+        path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'history', item.text())
+        with open(path, 'r') as f:
+            scale = json.load(f)
+        snr_avg = get_snr_average(scale)
+        self.hud.post(f"Selected '%s' - SNR avg: %.4f" % (item.text(), snr_avg))
+
 
     def updateAffineWidgets(self, show=True):
 
@@ -1165,6 +1174,7 @@ class MainWindow(QMainWindow):
         self.jump_validator = QIntValidator(0, cfg.data.n_layers())
         self.jump_input.setValidator(self.jump_validator)
 
+    #Todo Fix These
     @Slot()
     def jump_to(self, requested) -> None:
         if requested not in range(cfg.data.n_layers()):
@@ -1312,9 +1322,9 @@ class MainWindow(QMainWindow):
             elif self.ng_layout_combobox.currentText() == 'xz-3d':
                 self.ng_workers[s].set_layout_xz_3d()
                 self.ngLayout6Action.setChecked(True)
-            # elif self.ng_layout_combobox.currentText() == '3d':
-            #     self.ng_workers[s].set_layout_3d()
-            #     self.ngLayout7Action.setChecked(True)
+            elif self.ng_layout_combobox.currentText() == '3d':
+                self.ng_workers[s].set_layout_3d()
+                self.ngLayout7Action.setChecked(True)
             elif self.ng_layout_combobox.currentText() == '4panel':
                 self.ng_workers[s].set_layout_4panel()
                 self.ngLayout8Action.setChecked(True)
@@ -1499,6 +1509,7 @@ class MainWindow(QMainWindow):
         if not filename.endswith('.proj'):
             filename += ".proj"
         path, extension = os.path.splitext(filename)
+        cfg.data = None
         cfg.data = DataModel(name=path)
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
         # self.import_images()
@@ -1716,6 +1727,10 @@ class MainWindow(QMainWindow):
             cfg.data.set_destination(saveas)
         self.read_gui_update_project_data()
         data_cp = copy.deepcopy(cfg.data)
+        if data_cp.layer() >= data_cp.n_layers():
+            real_layer = data_cp.n_layers() - 1
+            logger.info(f'Adjusting Save Layer Down to Real Stack Layer ({real_layer}) ')
+            data_cp.set_layer(real_layer)
         data_cp.make_paths_relative(start=cfg.data.dest())
         data_cp_json = data_cp.to_dict()
         logger.info('---- SAVING DATA TO PROJECT FILE ----')
@@ -2278,10 +2293,15 @@ class MainWindow(QMainWindow):
         # caller is 'main' when user is toggler
         if inspect.stack()[1].function == 'read_project_data_update_gui': return
         skip_state = self.toggle_skip.isChecked()
+        for s in cfg.data.scales():
+            layer = self.request_ng_layer()
+            logger.info(f'request_ng_layer: {layer}, cfg.data.layer(): {cfg.data.layer()}, cfg.data.n_layers(): {cfg.data.n_layers()}')
+            if layer >= cfg.data.n_layers():
+                logger.warning(f'Request layer is out of range ({layer}) - Returning')
+                return
+            cfg.data.set_skip(skip_state, s=s, l=layer)  # for checkbox
         if skip_state: self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
         else:          self.hud.post("No Skip: %s" % cfg.data.name_base())
-        for s in cfg.data.scales():
-            cfg.data.set_skip(skip_state, s=s, l=self.request_ng_layer())  # for checkbox
         cfg.data.link_all_stacks()
         self.read_project_data_update_gui()
         self.updateLowLowWidgetB()
@@ -2545,7 +2565,7 @@ class MainWindow(QMainWindow):
         self.ngLayout4Action = QAction('yz-3d', self)
         self.ngLayout5Action = QAction('xy-3d', self)
         self.ngLayout6Action = QAction('xz-3d', self)
-        # self.ngLayout7Action = QAction('3d', self)
+        self.ngLayout7Action = QAction('3d', self)
         self.ngLayout8Action = QAction('4panel', self)
         ngLayoutMenu.addAction(self.ngLayout1Action)
         ngLayoutMenu.addAction(self.ngLayout2Action)
@@ -2553,7 +2573,7 @@ class MainWindow(QMainWindow):
         ngLayoutMenu.addAction(self.ngLayout4Action)
         ngLayoutMenu.addAction(self.ngLayout5Action)
         ngLayoutMenu.addAction(self.ngLayout6Action)
-        # ngLayoutMenu.addAction(self.ngLayout7Action)
+        ngLayoutMenu.addAction(self.ngLayout7Action)
         ngLayoutMenu.addAction(self.ngLayout8Action)
         self.ngLayout1Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('xy'))
         self.ngLayout2Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('xz'))
@@ -2561,7 +2581,7 @@ class MainWindow(QMainWindow):
         self.ngLayout4Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('yz-3d'))
         self.ngLayout5Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('xy-3d'))
         self.ngLayout6Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('xz-3d'))
-        # self.ngLayout6Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('3d'))
+        self.ngLayout6Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('3d'))
         self.ngLayout8Action.triggered.connect(lambda: self.ng_layout_combobox.setCurrentText('4panel'))
         ngLayoutActionGroup = QActionGroup(self)
         ngLayoutActionGroup.setExclusive(True)
@@ -2571,7 +2591,7 @@ class MainWindow(QMainWindow):
         ngLayoutActionGroup.addAction(self.ngLayout4Action)
         ngLayoutActionGroup.addAction(self.ngLayout5Action)
         ngLayoutActionGroup.addAction(self.ngLayout6Action)
-        # ngLayoutActionGroup.addAction(self.ngLayout7Action)
+        ngLayoutActionGroup.addAction(self.ngLayout7Action)
         ngLayoutActionGroup.addAction(self.ngLayout8Action)
         self.ngLayout1Action.setCheckable(True)
         self.ngLayout1Action.setChecked(True)
@@ -2580,9 +2600,8 @@ class MainWindow(QMainWindow):
         self.ngLayout4Action.setCheckable(True)
         self.ngLayout5Action.setCheckable(True)
         self.ngLayout6Action.setCheckable(True)
-        # self.ngLayout7Action.setCheckable(True)
+        self.ngLayout7Action.setCheckable(True)
         self.ngLayout8Action.setCheckable(True)
-
 
         shaderMenu = viewMenu.addMenu("Shader")
 

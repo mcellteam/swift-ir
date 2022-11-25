@@ -34,11 +34,14 @@ def generate_zarr_scales():
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Zarr Scale Arrays - %d Cores' % cpus)
     task_queue.start(cpus)
+    script = 'src/job_convert_zarr.py'
     for ID, img in enumerate(imgs):
-        for scale in cfg.data.scales()[::-1]:
-            path_out = os.path.join(od, 's' + str(get_scale_val(scale)))
-            script = 'src/job_convert_zarr.py'
-            task_queue.add_task([sys.executable, script, str(ID), img, dest, path_out, scale, ])
+        # for scale in cfg.data.scales()[::-1]:
+        for scale in cfg.data.scales():
+            out = os.path.join(od, 's%d' % get_scale_val(scale))
+            # task_queue.add_task([sys.executable, script, str(ID), img, dest, path_out, scale, ])
+            fn = os.path.join(dest, scale, 'img_src', img)
+            task_queue.add_task([sys.executable, script, str(ID), fn, out ])
     dt = task_queue.collect_results()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)

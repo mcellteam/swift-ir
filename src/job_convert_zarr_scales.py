@@ -13,7 +13,6 @@ import sys
 import zarr
 from PIL import Image
 import numpy as np
-# import tifffile
 
 if __name__ == '__main__':
 
@@ -24,15 +23,11 @@ if __name__ == '__main__':
     out          = sys.argv[4] #*
     scale_str    = sys.argv[5] #*
 
-    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
-
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000  # Tb
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
-    # im = tifffile.imread(scale_img)
-    # im = Image.open(scale_img)
     im = Image.open(scale_img)
     store = zarr.open(out)
     store[ID,:,:] = im
-    # store[ID,::-1,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     sys.stdout.close()
     sys.stderr.close()

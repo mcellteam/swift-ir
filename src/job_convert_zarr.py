@@ -13,25 +13,24 @@ import sys
 import zarr
 from PIL import Image
 import numpy as np
-# import tifffile
-# import imageio.v3 as iio
 
 if __name__ == '__main__':
 
+    # job_script   = sys.argv[0] #*
+    # ID           = int(sys.argv[1]) #*
+    # # img          = sys.argv[2] #*
+    # # src          = sys.argv[3] #*
+    # out          = sys.argv[4] #*
+    # # scale_str    = sys.argv[5] #*
+
     job_script   = sys.argv[0] #*
     ID           = int(sys.argv[1]) #*
-    img          = sys.argv[2] #*
-    src          = sys.argv[3] #*
-    out          = sys.argv[4] #*
-    scale_str    = sys.argv[5] #*
+    fn           = sys.argv[2]
+    out          = sys.argv[3] #*
 
     Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
-
-    scale_img = os.path.join(src, scale_str, 'img_src', img)
-    # im = tifffile.imread(scale_img)
-    # im = iio.imread(scale_img)
     store = zarr.open(out)
-    store[ID,:,:] = np.flip(Image.open(scale_img), axis=1)
+    store[ID,:,:] = np.flip(Image.open(fn), axis=1)
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     sys.stdout.close()
     sys.stderr.close()
