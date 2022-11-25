@@ -84,7 +84,7 @@ class NgHost(QRunnable):
         self.mp_colors = ['#0072b2']*2 + ['#f0e442']*2 + ['#FF0000']*2
         self.mp_count = 0
         self._is_fullscreen = False
-        self._layout = 2
+        self._layout = 1
 
     def __del__(self):
         caller = inspect.stack()[1].function
@@ -108,7 +108,7 @@ class NgHost(QRunnable):
             print_exception()
 
 
-    def initViewer(self, show_ui_controls=True, show_panel_borders=False, layout=None, w=None, h=None):
+    def initViewer(self, widget_size=None, show_ui_controls=True, show_panel_borders=False, layout=None):
         if layout is not None:
             self._layout = layout
         self.match_point_mode = cfg.main_window._is_mp_mode
@@ -118,6 +118,8 @@ class NgHost(QRunnable):
 
         if self.match_point_mode:
             self.clear_mp_buffer()
+
+
 
         # self.viewer = ng.UnsynchronizedViewer()
         self.viewer = ng.Viewer() #1108+
@@ -144,9 +146,12 @@ class NgHost(QRunnable):
 
 
 
-        # if (w is None) or (h is None):
-        widget_size = cfg.main_window.ng_browser.geometry().getRect()
+        if widget_size is None:
+            widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
         widget_height = widget_size[3]  # pixels
+        logger.info('widget size=%s' % str(widget_size))
+        logger.info('layout=%d' % self._layout)
+        logger.info('is_aligned=%s' % is_aligned)
         if self._layout == 1:
             if is_aligned:
                 widget_width = widget_size[2] / 3
@@ -154,7 +159,6 @@ class NgHost(QRunnable):
                 widget_width = widget_size[2] / 2
         else:
             widget_width = widget_size[2] / 2
-
 
         # if layout == 2:
         #     widget_size = cfg.main_window.ng_browser.geometry().getRect()
@@ -166,9 +170,6 @@ class NgHost(QRunnable):
         # else:
         #     widget_height = h
         #     widget_width = w
-
-        logger.info('widget size  width=%.4f height=%.4f' % (widget_width, widget_height))
-
         tissue_height = cfg.data.res_y(s=self.scale) * img_height  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
         tissue_width = cfg.data.res_x(s=self.scale) * img_width  # nm
@@ -180,6 +181,13 @@ class NgHost(QRunnable):
         logger.info(string)
         # cfg.main_window.hud.post(string)
 
+        logger.info('widget_width=%d, widget_height=%d' % (widget_width, widget_height))
+        logger.info('tissue_width=%d, tissue_height=%d' % (tissue_width, tissue_height))
+        logger.info('cross_section width=%.3f, height=%.3f' % (cross_section_width, cross_section_height))
+        logger.info('cross_section_scale=%.3f' % cross_section_scale)
+
+
+
         with self.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
 
@@ -189,7 +197,7 @@ class NgHost(QRunnable):
             #trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            adjustment = 1.2
+            adjustment = 1.20
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
@@ -311,11 +319,12 @@ class NgHost(QRunnable):
 
             if is_aligned:
                 rect = cfg.data.bounding_rect(s=self.scale)
-                img_x, img_y = rect[3] / 2, rect[2] / 2
+                pos_x, pos_y = rect[3] / 2, rect[2] / 2
             else:
-                img_x, img_y = self.src_size[1] / 2, self.src_size[0] / 2
+                # img_x, img_y = self.src_size[1] / 2, self.src_size[0] / 2
+                pos_x, pos_y = self.src_size[1] / 2, self.src_size[0] / 2
 
-            s.position = [cfg.data.layer(), img_x, img_y]
+            s.position = [cfg.data.layer(), pos_x, pos_y]
 
             if self._layout == 1:
                 s.layout = ng.row_layout(grps)

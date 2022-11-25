@@ -191,8 +191,8 @@ def main():
     cfg.main_window = MainWindow()
     # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+ #Todo use app.aboutToQuit
     # app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
-    logger.info('Working Directory: %s' % os.getcwd())
-    logger.info('Showing AlignEM-SWiFT')
+    # logger.info('Working Directory: %s' % os.getcwd())
+    logger.info('Showing AlignEM-SWiFT...')
     cfg.main_window.show()
 
     try:

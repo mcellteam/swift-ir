@@ -629,7 +629,6 @@ class DataModel:
     def path_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        logger.info('>>>> path_base (layer: %d, s: %s) >>>>' % (l,s))
         # Todo -- Refactor!
         try:
             name = self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
@@ -637,11 +636,6 @@ class DataModel:
             return name
         except:
             print_exception()
-            # try:
-            #     return self._data['data']['scales'][s]['alignment_stack'][0]['images']['base']['filename']
-            # except:
-            #     print_exception()
-        logger.info('<<<< path_base <<<<')
 
     def name_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
@@ -712,11 +706,11 @@ class DataModel:
         self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
 
     def set_image_size(self, scale) -> None:
-        logger.info('')
         size = ImageSize(self.path_base(s=scale))
         logger.warning(f"ATTENTION: Setting image size for {scale}, ImageSize: {size}")
         self._data['data']['scales'][scale]['image_src_size'] = size
-        logger.info(str(self._data['data']['scales'][scale]['image_src_size']))
+        logger.info('Setting Image Size, Scale %d: %s' %
+                    (get_scale_val(scale), str(self._data['data']['scales'][scale]['image_src_size'])))
 
     def set_aligned_size(self, size, s=None) -> None:
         if s == None: s = self.scale()
