@@ -235,6 +235,13 @@ def is_cur_scale_aligned() -> bool:
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a data that does not need scales.'''
     # logger.info('Called by %s' % inspect.stack()[1].function)
+
+    if cfg.data is None:
+        logger.warning('No data to check')
+        return False
+
+
+
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
     # logger.info('zarr_path = %s' % zarr_path)
     if not os.path.isdir(zarr_path):
