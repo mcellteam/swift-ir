@@ -2072,7 +2072,7 @@ class MainWindow(QMainWindow):
         if scales in (None, False):
             scales = cfg.data.scales()
         logger.critical('Initializing NG Workers For Scales %s' % ', '.join(scales))
-        self.hud.post('Starting Neuroglancer Workers...' % caller)
+        self.hud.post('Starting Neuroglancer Workers...')
         self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}  # Todo not good but for now just initialize everything together
         try:
