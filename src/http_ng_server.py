@@ -3,13 +3,10 @@
 """WARNING: Because this web server permits cross-origin requests, it exposes any
 data in the directory that is served to any web page running on a machine that
 can connect to the web server"""
-
 '''
 old app:
 type(match_point_data) = <class 'list'>
 match_point_data = [584.021484375, 696.3277343750001]
-
-
 
 cfg.main_window.ng_workers['scale_4'].refLV.info()
 
@@ -24,6 +21,7 @@ import logging
 import datetime
 import argparse
 import tempfile
+from decimal import Decimal
 from math import floor
 import numpy as np
 
@@ -32,7 +30,6 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 
 import src.config as cfg
-# from src.funcs_ng import SimpleHTTPServer, launch_server, write_some_annotations
 from src.funcs_ng import launch_server
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
 from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string
@@ -87,6 +84,7 @@ class NgHost(QRunnable):
         self.mp_colors = ['#0072b2']*2 + ['#f0e442']*2 + ['#FF0000']*2
         self.mp_count = 0
         self._is_fullscreen = False
+        self._layout = 2
 
     def __del__(self):
         caller = inspect.stack()[1].function
@@ -110,13 +108,13 @@ class NgHost(QRunnable):
             print_exception()
 
 
-    def initViewer(self, viewers='ref, base, aligned'):
+    def initViewer(self, show_ui_controls=True, show_panel_borders=False, layout=None, w=None, h=None):
+        if layout is not None:
+            self._layout = layout
         self.match_point_mode = cfg.main_window._is_mp_mode
-        # logger.info('Initializing Viewer (caller: %s):' % inspect.stack()[1].function)
+        caller = inspect.stack()[1].function
+        logger.info('Initializing Viewer (caller: %s):' % caller)
         is_aligned = is_arg_scale_aligned(self.scale)
-        # is_aligned = is_arg_scale_aligned(cfg.data.s())
-        logger.info('Initializing Viewer, Scale %d, aligned? %s...' % (self.sf, is_aligned))
-        cfg.main_window.hud.post('Initializing Neuroglancer Viewer (Scale %d)...' % self.sf)
 
         if self.match_point_mode:
             self.clear_mp_buffer()
@@ -132,19 +130,56 @@ class NgHost(QRunnable):
 
         if is_aligned:
             self.al_size = cfg.data.aligned_size(s=self.scale)
-            # print(f'self.al_size[0] = {self.al_size[0]}')
-            # print(f'self.al_size[1] = {self.al_size[1]}')
-            # print(f'self.src_size[0] = {self.src_size[0]}')
-            # print(f'self.src_size[1] = {self.src_size[1]}')
             x_offset = (self.al_size[0] - self.src_size[0]) / 2
             y_offset = (self.al_size[1] - self.src_size[1]) / 2
-            # x_offset = cfg.data.bounding_rect()[0]
-            # y_offset = cfg.data.bounding_rect()[1]
-            # x_offset, y_offset = 0, 0
         else:
             x_offset, y_offset = 0, 0
 
-        logger.info('Offsets x: %s, y: %s' % (str(x_offset), str(y_offset)))
+        if is_aligned:
+            img_height, img_width = \
+                cfg.data.bounding_rect(s=self.scale)[3], cfg.data.bounding_rect(s=self.scale)[2]
+        else:
+            img_height, img_width = \
+                cfg.data.image_size(s=self.scale)[1], cfg.data.image_size(s=self.scale)[0]
+
+
+
+        # if (w is None) or (h is None):
+        widget_size = cfg.main_window.ng_browser.geometry().getRect()
+        widget_height = widget_size[3]  # pixels
+        if self._layout == 1:
+            if is_aligned:
+                widget_width = widget_size[2] / 3
+            else:
+                widget_width = widget_size[2] / 2
+        else:
+            widget_width = widget_size[2] / 2
+
+
+        # if layout == 2:
+        #     widget_size = cfg.main_window.ng_browser.geometry().getRect()
+        #     widget_height = widget_size[3]  # pixels
+        #     if is_aligned:
+        #         widget_width = widget_size[2] / 3
+        #     else:
+        #         widget_width = widget_size[2] / 2
+        # else:
+        #     widget_height = h
+        #     widget_width = w
+
+        logger.info('widget size  width=%.4f height=%.4f' % (widget_width, widget_height))
+
+        tissue_height = cfg.data.res_y(s=self.scale) * img_height  # nm
+        cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
+        tissue_width = cfg.data.res_x(s=self.scale) * img_width  # nm
+        cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
+        cross_section_scale = max(cross_section_height, cross_section_width)
+        css = '%.2E' % Decimal(cross_section_scale)
+        string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d...' % \
+                 (self.sf, ('Unaligned', 'Aligned')[is_aligned], img_width, img_height)
+        logger.info(string)
+        if caller not in ('set_viewer_layout_1', 'set_viewer_layout_2'):
+            cfg.main_window.hud.post(string)
 
         with self.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
@@ -155,25 +190,11 @@ class NgHost(QRunnable):
             #trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            # img_height = cfg.data.bounding_rect()[3] if is_aligned else cfg.data.image_size()[1]  # pixels
-            if is_aligned:
-                img_height, img_width = cfg.data.bounding_rect(s=self.scale)[3], cfg.data.bounding_rect(s=self.scale)[2]
-            else:
-                img_height, img_width = cfg.data.image_size(s=self.scale)[1], cfg.data.image_size(s=self.scale)[0]
-
-            widget_size = cfg.main_window.ng_browser.geometry().getRect()
-
-            tissue_height = cfg.data.res_y(s=self.scale) * img_height  # nm
-            widget_height = widget_size[3]  # pixels
-            cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-
-            tissue_width = cfg.data.res_x(s=self.scale) * img_width  # nm
-            if is_aligned:  widget_width = widget_size[2] / 3
-            else:           widget_width = widget_size[2] / 2
-            cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
-
-            cross_section_scale = max(cross_section_height, cross_section_width)
-            adjustment = 1.02
+            adjustment = 1.2
+            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
 
@@ -200,21 +221,25 @@ class NgHost(QRunnable):
                 #     dimensions=self.coordinate_space,
                 #     voxel_offset=[0, ] * 3,  # voxel offset of 1
                 # )
-                unal_dataset = get_zarr_tensor(self.unal_name).result()
+                self.unal_dataset = get_zarr_tensor(self.unal_name).result()
+                self.json_unal_dataset = self.unal_dataset.spec().to_json()
+                logger.info(self.json_unal_dataset)
                 self.refLV = ng.LocalVolume(
-                    data=unal_dataset,
+                    data=self.unal_dataset,
                     dimensions=self.coordinate_space,
                     voxel_offset=[1, x_offset, y_offset],
                 )
                 self.baseLV = ng.LocalVolume(
-                    data=unal_dataset,
+                    data=self.unal_dataset,
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, x_offset, y_offset]
                 )
                 if is_aligned:
-                    al_dataset = get_zarr_tensor(self.al_name).result()
+                    self.al_dataset = get_zarr_tensor(self.al_name).result()
+                    self.json_al_dataset = self.al_dataset.spec().to_json()
+                    logger.info(self.json_al_dataset)
                     self.alLV = ng.LocalVolume(
-                        data=al_dataset,
+                        data=self.al_dataset,
                         dimensions=self.coordinate_space,
                         voxel_offset=[0, ] * 3,
                     )
@@ -282,13 +307,46 @@ class NgHost(QRunnable):
             grps = []
             grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout))
             grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout))
-            if is_aligned and not self.match_point_mode:
-                rect = cfg.data.bounding_rect(s=self.scale)
+            if is_aligned:
                 grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout))
-                s.position = [cfg.data.layer(), rect[3] / 2, rect[2] / 2]
+
+            if is_aligned:
+                rect = cfg.data.bounding_rect(s=self.scale)
+                img_x, img_y = rect[3] / 2, rect[2] / 2
             else:
-                s.position = [cfg.data.layer(), self.src_size[1] / 2, self.src_size[0] / 2]
-            s.layout = ng.row_layout(grps)
+                img_x, img_y = self.src_size[1] / 2, self.src_size[0] / 2
+
+            s.position = [cfg.data.layer(), img_x, img_y]
+
+            if self._layout == 1:
+                s.layout = ng.row_layout(grps)
+                # if is_aligned:
+                #     ng.column_layout([
+                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout),
+                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout),
+                #         ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout)
+                #     ]),
+                # else:
+                #     ng.column_layout([
+                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout),
+                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout),
+                #     ]),
+
+            if self._layout == 2:
+                if is_aligned:
+                    s.layout = ng.row_layout([
+                        ng.column_layout([
+                            ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout),
+                            ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout),
+                        ]),
+                        ng.column_layout([
+                            ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout),
+                        ]),
+                    ])
+                else:
+                    s.layout = ng.row_layout(grps)
+
+
             # self.viewer.shared_state.add_changed_callback(self.on_state_changed)
             self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
@@ -314,10 +372,18 @@ class NgHost(QRunnable):
             if self.match_point_mode:
                 for key, command in mp_key_bindings:
                     s.input_event_bindings.viewer[key] = command
-            s.show_ui_controls = cfg.SHOW_UI_CONTROLS
-            s.show_panel_borders = False
+            if show_ui_controls:
+                s.show_ui_controls = True
+            else:
+                # s.show_ui_controls = cfg.SHOW_UI_CONTROLS
+                s.show_ui_controls = False
+            if show_panel_borders:
+                s.show_panel_borders = True
+            else:
+                s.show_panel_borders = False
+
             # s.viewer_size = [1000,1000]
-            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
+
         cfg.main_window.hud.done()
 
 
@@ -613,5 +679,17 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
         # self.viewer.shared_state.add_changed_callback(
         #     lambda: self.viewer.defer_callback(self.on_state_changed))
         
+        
+        
+        
+        13:00:28 INFO [http_ng_server.initViewer:212] 
+        {'driver': 'zarr', 'dtype': 'uint8', 'kvstore': 
+        {'driver': 'file', 'path': '/Users/joelyancey/glanceem_swift/test_projects/test1/img_src.zarr/s4/'}, 
+        'metadata': {'chunks': [1, 512, 512], 'compressor': 
+        {'blocksize': 0, 'clevel': 5, 'cname': 'zstd', 'id': 'blosc', 'shuffle': 1}, 
+        'dimension_separator': '.', 'dtype': '|u1', 'fill_value': 0, 'filters': None, 'order': 'C', 
+        'shape': [100, 1024, 1024], 'zarr_format': 2}, 
+        'recheck_cached_data': 'open', 'transform': 
+        {'input_exclusive_max': [[100], [1024], [1024]], 'input_inclusive_min': [0, 0, 0]}}
         
 '''

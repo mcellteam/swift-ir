@@ -58,13 +58,18 @@ def get_zarr_tensor(zarr_path):
         # total_bytes_limit = 200_000_000_000
         total_bytes_limit = 200_000_000_000_000
     else:
-        total_bytes_limit = 6_000_000_000
+        total_bytes_limit = 6_000_000_000_000
     # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
     arr = ts.open({
         'dtype': 'uint8',
         'driver': 'zarr',
-        'kvstore': { 'driver': 'file', 'path': zarr_path },
-        'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
+        'kvstore': {
+            'driver': 'file',
+            'path': zarr_path
+        },
+        'context': {
+            'cache_pool': { 'total_bytes_limit': total_bytes_limit}
+        },
         'recheck_cached_data': 'open',
     })
     return arr
@@ -196,6 +201,8 @@ def remove_zarr(path) -> None:
 
 def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
     logger.info('Preallocating Zarr Array...')
+    scale_val = get_scale_val(scale)
+    cfg.main_window.hud.post('Preallocating Zarr Array, Scale %s...' % scale_val)
     cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
     zarr_path = os.path.join(src, name)
@@ -228,6 +235,19 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
         print_exception()
     else:
         cfg.main_window.hud.done()
+        cfg.main_window.hud.post(f'\n'
+                        f'zarr root  : {zarr_path}\n'
+                        f'out_path   : {out_path}\n'
+                        f'scale      : {scale}\n'
+                        f'slug       : {slug}\n'
+                        f'dim x,y    : {dimx},{dimy}\n'
+                        f'name       : {name}\n'
+                        f'shape      : {str(shape)}\n'
+                        f'chunkshape : {str(chunkshape)}\n'
+                        f'cname      : {cname}\n'
+                        f'clevel     : {clevel}\n'
+                        f'dtype      : {dtype}\n'
+                        f'overwrite  : {overwrite}')
 #
 #
 # def preallocate_zarr_src():

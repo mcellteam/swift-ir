@@ -37,10 +37,26 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'print_sanity_check', 'are_images_imported', 'is_cur_scale_exported',
            'get_img_filenames', 'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok',
            'print_project_tree','verify_image_file', 'is_arg_scale_aligned', 'print_snr_list',
-           'is_any_scale_aligned_and_generated',
+           'is_any_scale_aligned_and_generated', 'get_tensor_handle_unal', 'get_tensor_handle_al', 'get_refLV',
+           'get_baseLV', 'get_alLV'
            ]
 
 logger = logging.getLogger(__name__)
+
+def get_tensor_handle_unal():
+    return cfg.main_window.ng_workers[cfg.data.scale()].unal_dataset
+
+def get_tensor_handle_al():
+    return cfg.main_window.ng_workers[cfg.data.scale()].al_dataset
+
+def get_refLV():
+    return cfg.main_window.ng_workers[cfg.data.scale()].refLV
+
+def get_baseLV():
+    return cfg.main_window.ng_workers[cfg.data.scale()].baseLV
+
+def get_alLV():
+    return cfg.main_window.ng_workers[cfg.data.scale()].baseLV
 
 def renew_directory(directory:str) -> None:
     '''Remove and re-create a directory, if it exists.'''
@@ -85,24 +101,16 @@ def show_mp_queue_results(task_queue, dt):
             logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
             n_failed += 1
 
-    # cfg.main_window.hud.post('  Completed in %.2f seconds' % (dt))
-    # cfg.main_window.hud.post('  Tasks Successful:   %d' % n_success, logging.INFO)
-    # cfg.main_window.hud.post('  Tasks Still Queued: %d' % n_queued, logging.INFO)
-    # if n_failed > 0:
-    #     cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.ERROR)
-    # else:
-    #     cfg.main_window.hud.post('  Tasks Failed:       %d' % n_failed, logging.INFO)
-
     cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
 
     if n_failed > 0:
-        cfg.main_window.hud.post('  Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
-                                 logging.WARNING)
+        cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
+        cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
+        cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
     else:
-        cfg.main_window.hud.post('  Tasks Completed : %d | Queued : %d | Failed : %d' % (n_success, n_queued, n_failed),
-                                 logging.INFO)
-
-
+        cfg.main_window.hud.post('  Tasks Cosmpleted : %d' % n_success, logging.INFO)
+        cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
+        cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
 
 # def load():
 #     try:
@@ -135,6 +143,21 @@ def is_mac() -> bool:
     system = platform.system()
     if system == 'Darwin':  return True
     else:                   return False
+
+def get_bindir() -> str:
+    '''Checks operating system. Returns the operating system-dependent
+    path to where SWiFT-IR binaries should exist'''
+    bindir = ''
+    error = 'Operating System Could Not Be Resolved'
+    if is_tacc():     bindir = 'bin_tacc'
+    elif is_mac():    bindir = 'bin_darwin'
+    elif is_linux():  bindir = 'bin_linux'
+    else:
+        logger.error(error)
+        cfg.main_window.hud.post(error, logging.ERROR)
+    assert len(bindir) > 0
+    return bindir
+
 
 def is_destination_set() -> bool:
     '''Checks if there is a data open'''
@@ -443,34 +466,41 @@ def make_absolute(file_path, proj_path):
     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
     return abs_path
 
-def create_symlink(fn, ofn):
-    if get_best_path(fn) != get_best_path(ofn):
-        try:
-            os.unlink(ofn)
-        except:
-            pass
-        try:
-            os.symlink(fn, ofn)
-        except:
-            logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
+def create_scale_one_symlinks(src, dest, imgs):
+    for img in imgs:
+        fn = os.path.join(src, img)
+        ofn = os.path.join(dest, 'scale_1', 'img_src', os.path.split(fn)[1])
+        if get_best_path(fn) != get_best_path(ofn):
             try:
-                shutil.copy(fn, ofn)
+                os.unlink(ofn)
             except:
-                logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+                pass
+            try:
+                os.symlink(fn, ofn)
+            except:
+                logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
+                try:
+                    shutil.copy(fn, ofn)
+                except:
+                    logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+
+
 
 
 
 def create_project_structure_directories(scale_key:str) -> None:
     subdir_path = os.path.join(cfg.data.dest(), scale_key)
-    cfg.main_window.hud.post('Creating Project Directory Structure for Scale %s...' % scale_key)
+    cfg.main_window.hud.post('Creating Project Directory Structure for Scale %s...' % get_scale_val(scale_key))
     src_path = os.path.join(subdir_path, 'img_src')
     aligned_path = os.path.join(subdir_path, 'img_aligned')
     bias_data_path = os.path.join(subdir_path, 'bias_data')
+    history_path = os.path.join(subdir_path, 'history')
     try:
-        os.mkdir(subdir_path)
-        os.mkdir(src_path)
-        os.mkdir(aligned_path)
-        os.mkdir(bias_data_path)
+        os.makedirs(subdir_path)
+        os.makedirs(src_path)
+        os.makedirs(aligned_path)
+        os.makedirs(bias_data_path)
+        os.makedirs(history_path)
     except:
         print_exception()
         logger.warning('There Was A Problem Creating Directory Structure')

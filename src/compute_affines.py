@@ -58,7 +58,9 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     with open(temp_file, 'w') as f:
         f.write(cfg.data.to_json())
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Computing Alignments - Scale %d - %d Cores' % (get_scale_val(scale), cpus))
+    task_queue = TaskQueue(n_tasks=n_tasks,
+                           parent=cfg.main_window,
+                           pbar_text='Computing Alignments w/ SWIM - Scale %d - %d Cores' % (scale_val, cpus))
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
     for layer in substack:
@@ -83,9 +85,9 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
                 logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
 
     # task_queue.work_q.join()
-    cfg.main_window.hud.post('Computing Alignment Using SWIM...')
+    # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
     dt = task_queue.collect_results()
-    cfg.main_window.hud.done()
+    # cfg.main_window.hud.done()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
 
     # Sort the tasks by layers rather than by process IDs

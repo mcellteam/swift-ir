@@ -1,5 +1,8 @@
 
 
+QWidget#browser_overlay_widget {
+    background-color: rgba(0, 0, 0, 0.5);
+}
 
 /* These should be the same */
 QStackedWidget#ImagePanel { background-color: #004060;  }

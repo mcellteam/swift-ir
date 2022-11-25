@@ -77,24 +77,15 @@ class TaskQueue(QObject):
         self.result_queue = self.ctx.Queue()
         self.task_dict = {}
         self.task_id = 0
-        self.n_workers = n_workers
+        self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
         # if cfg.DEBUG_MP:
         #     mpl.setLevel(logging.DEBUG)
         # else:
         #     mpl.setLevel(logging.INFO)
-        logger.info('Starting Multiprocessing Queue [# tasks: %d, method: %s]' % (self.n_tasks, self.ctx.get_start_method()))
+        logger.info('Starting Task Queue (# tasks: %d, method: %s)' % (self.n_tasks, self.ctx.get_start_method()))
         logger.info(self.pbar_text)
-
-        if self.n_tasks == 1:
-            cfg.main_window.hud.post('1 Worker Is Working On 1 Task')
-        elif self.n_workers >= self.n_tasks:
-            cfg.main_window.hud.post(
-                '  %d Workers Are Processing %d tasks [%s]' % (self.n_tasks, self.n_tasks, self.pbar_text))
-        else:
-            cfg.main_window.hud.post(
-                '  %d Workers Are Processing %d tasks [%s]' % (self.n_workers, self.n_tasks, self.pbar_text))
-
+        cfg.main_window.hud.post('Workers (%d) Are Processing Tasks (%d) - %s' % (self.n_workers, self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')

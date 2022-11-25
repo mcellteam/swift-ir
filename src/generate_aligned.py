@@ -60,7 +60,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     logger.info(f'Aligned Size              : {rect[2:]}')
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
     if preallocate:
-        preallocate_zarr(name='img_aligned.zarr', scale=scale, dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
+        preallocate_zarr(name='img_aligned.zarr',
+                         scale=scale,
+                         dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
 
     if num_layers == -1:
         end_layer = len(alstack)
@@ -78,7 +80,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     for task in args_list: task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
-        cfg.main_window.hud.done()
+        # cfg.main_window.hud.done()
         show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()

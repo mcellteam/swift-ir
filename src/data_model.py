@@ -147,13 +147,13 @@ class DataModel:
 
     def filenames(self):
         '''Returns filenames as absolute paths'''
-        return [os.path.abspath(l['images']['base']['filename'])
-                for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']]
+        return natural_sort([os.path.abspath(l['images']['base']['filename'])
+                for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
     def basefilenames(self):
         '''Returns filenames as absolute paths'''
-        return [os.path.basename(l['images']['base']['filename'])
-                for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']]
+        return natural_sort([os.path.basename(l['images']['base']['filename'])
+                for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
     def set_source_path(self, dir):
         # self._data['data']['src_img_root'] = dir
@@ -616,9 +616,10 @@ class DataModel:
         if s == None: s = self.scale()
         return bool(self._data['data']['scales'][s]['null_cafm_trends'])
 
-    def al_option(self) -> str:
+    def al_option(self, s=None) -> str:
         '''Gets the Alignment Option for the Current Scale.'''
-        return cfg.data['data']['scales'][self.scale()]['method_data']['alignment_option']
+        if s == None: s = self.scale()
+        return cfg.data['data']['scales'][s]['method_data']['alignment_option']
 
     def path_ref(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
@@ -669,15 +670,14 @@ class DataModel:
     def set_destination(self, s):
         self._data['data']['destination_path'] = s
 
-    def set_scale(self, x: str) -> None:
+    def set_scale(self, x:str) -> None:
         '''Sets the Current Scale.'''
         self._data['data']['current_scale'] = x
 
-    def set_layer(self, x: int) -> None:
-        assert isinstance(x, int)
-        # logger.info('Setting Layer to %s' % str(x))
-        '''Sets the Current Layer as Integer.'''
-        self._data['data']['current_layer'] = int(x)
+    def set_layer(self, index:int) -> None:
+        '''Sets Current Layer To Index.'''
+        assert isinstance(index, int)
+        self._data['data']['current_layer'] = index
 
     def set_skip(self, b: bool, s=None, l=None) -> None:
         if s == None: s = self.scale()
@@ -784,20 +784,17 @@ class DataModel:
         self.set_destination(os.path.splitext(filename)[0])
         try:
             head = os.path.split(filename)[0] # returns parent directory
-            logger.info(f'head: {head}')
+            # logger.info(f'head: {head}')
             for s in self.scales():
                 if s == 'scale_1':
                     pass
                 else:
                     for l in self._data['data']['scales'][s]['alignment_stack']:
                         for r in l['images'].keys():
-
-
                             # if (not l==0) and (not r=='ref'):
                             tail = l['images'][r]['filename']
                             l['images'][r]['filename'] = os.path.join(head, tail)
-
-                            logger.info(f'tail: {tail}')
+                            # logger.info(f'tail: {tail}')
                     # self._data['data']['scales'][s]['alignment_stack'][0]['images']['ref']['filename'] = None
         except:
             logger.warning('Setting Absolute Paths Triggered This Exception')

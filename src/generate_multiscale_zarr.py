@@ -50,7 +50,7 @@ def generate_multiscale_zarr(src, out):
     dt = time.time() - t0
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
-    cfg.main_window.hud.done()
+    # cfg.main_window.hud.done()
     logger.info('<<<< Generate Zarr End <<<<')
 
 
