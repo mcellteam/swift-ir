@@ -6,6 +6,10 @@ Colors:
 #6D7D77 - blue smoke, green blue
 */
 
+QToolBar#toolbar {
+    background-color: #6D7D77;
+}
+
 QWidget#browser_overlay_widget {
     background-color: rgba(0, 0, 0, 0.5);
 }
@@ -20,9 +24,9 @@ QWidget#details_banner {
 QStackedWidget#ImagePanel { background-color: #6D7D77;  }
 QWidget#ng_panel { background-color: #6D7D77; }
 
-QLabel#banner_layer_label { background-color: transparent; }
-QLabel#banner_view_label { background-color: transparent; }
-QLabel#banner_scale_label { background-color: transparent; }
+QLabel#toolbar_layer_label { background-color: transparent; }
+QLabel#toolbar_layout_label { background-color: transparent; }
+QLabel#toolbar_scale_label { background-color: transparent; }
 QLabel#align_label_resolution { background-color: transparent; }
 
 

@@ -150,8 +150,8 @@ def write_run_to_file(scale=None):
     snr_avg = 'SNR=%.3f' % cfg.data.snr_average(scale=scale)
     timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     results = 'results'
-    swim_input = 'swim=%.3f' % cfg.main_window.get_swim_input()
-    whitening_input = 'whitening=%.3f' % cfg.main_window.get_whitening_input()
+    swim_input = 'swim=%.3f' % cfg.data.swim_window()
+    whitening_input = 'whitening=%.3f' % cfg.data.whitening()
     # details = [date, time, s, swim_input, whitening_input, snr_avg]
     scale_str = 's' + str(get_scale_val(scale))
     details = [scale_str, results, timestamp]

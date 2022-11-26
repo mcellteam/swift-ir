@@ -73,8 +73,12 @@ MATCH_POINT_MODE = False
 
 # cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'
-ICON_COLOR = '#455364' # off blue-ish color
+# ICON_COLOR = '#455364' # off blue-ish color
 # ICON_COLOR = '#F3F6FB' # snow white
+# ICON_COLOR = '#DAEBFE' # lightest ucla blue
+# ICON_COLOR = '#003B5C'
+ICON_COLOR = '#2774AE'
+# ICON_COLOR = '#455364'
 
 
 

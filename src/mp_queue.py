@@ -85,7 +85,7 @@ class TaskQueue(QObject):
         #     mpl.setLevel(logging.INFO)
         logger.info('Starting Task Queue (# tasks: %d, method: %s)' % (self.n_tasks, self.ctx.get_start_method()))
         logger.info(self.pbar_text)
-        cfg.main_window.hud.post('Workers (%d) Are Processing Tasks (%d) - %s' % (self.n_workers, self.n_tasks, self.pbar_text))
+        cfg.main_window.hud.post('Workers (%d) Are Processing Tasks (%d): %s' % (self.n_workers, self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
@@ -145,7 +145,7 @@ class TaskQueue(QObject):
         self.task_id += 1
 
     def requeue_task(self, task_id) -> None:
-        logger.critical("Requeing Tasks...")
+        logger.warning("Requeing Task (ID: %d)..." % task_id)
         task = []
         task.append(self.task_dict[task_id]['cmd'])
         task.extend(self.task_dict[task_id]['args'])
@@ -180,9 +180,6 @@ class TaskQueue(QObject):
         try:
             while (retries_tot < self.retries + 1) and n_pending:
                 logger.info('# Tasks Pending   : %d' % n_pending)
-                # self.end_tasks()
-                # self.work_queue.join()
-                # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
                 retry_list = []
                 for j in range(n_pending):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
@@ -204,14 +201,13 @@ class TaskQueue(QObject):
                 '''Restart Queue and Requeue failed tasks'''
                 n_pending = len(retry_list)
                 if (retries_tot < self.retries) and n_pending:
-                    logger.info('Requeuing Failed Tasks...')
-                    logger.info('  # Failed Tasks: %d' % n_pending)
-                    logger.info('  Task IDs: %s' % str(retry_list))
-
+                    logger.warning('Requeuing Failed Tasks...')
+                    logger.warning('  # Failed Tasks: %d' % n_pending)
+                    logger.warning('  Task IDs: %s' % str(retry_list))
                     self.restart()
                     for task_id in retry_list:
-                        logger.info('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
-                        logger.info('                    Task: %s' % (str(self.task_dict[task_id])))
+                        logger.debug('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
+                        logger.debug('                    Task: %s' % (str(self.task_dict[task_id])))
                         # [logger.info(key,':',value) for key, value in self.task_dict[task_id].items()]
                         self.requeue_task(task_id)
                 retries_tot += 1

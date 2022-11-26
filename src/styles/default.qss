@@ -2,7 +2,19 @@
 Colors:
 #1B1E23 - Duron black
 #141414 - Chinese Black
+#DAEBFE - off-white blue
 */
+
+QMainWindow#mainwindow{
+    /*background-color: #DAEBFE;*/
+    /*background-color: #7c7c7c;*/
+    background-color: #f3f6fb;
+
+}
+
+QToolBar#toolbar {
+    background-color: #141414;
+}
 
 QWidget#browser_overlay_widget {
     background-color: rgba(0, 0, 0, 0.5);
@@ -14,21 +26,15 @@ HeadupDisplay#hud {
     color: #f3f6fb;
 }
 
-QLabel#banner_layer_label { color: #F3F6FB; }
-QLabel#banner_view_label { color: #F3F6FB; }
-QLabel#banner_scale_label { color: #F3F6FB; }
+QLabel#toolbar_layer_label { color: #F3F6FB; }
+QLabel#toolbar_layout_label { color: #F3F6FB; }
+QLabel#toolbar_scale_label { color: #F3F6FB; }
 QLabel#align_label_resolution { color: #F3F6FB; }
 QLabel#extra_header_text_label { color: #F3F6FB; }
 
 QWidget#show_hide_main_features_widget {
 background-color: #141414;
-border-radius: 2px;
-}
-
-QWidget#details_banner {
-	background-color: #141414;
-	color: #F3F6FB;
-	font-size: 14px;
+border-radius: 4px;
 }
 
 /* These should be the same */
@@ -62,19 +68,19 @@ QCheckBox {
 }
 
 
-
-
 QLabel#browser_overlay_label {
     color: #FF0000;
     font-size: 28px;
 }
 
 QTextEdit#main_details_subwidgetA {
-    background: transparent;
-    font-size: 11px;
+    /*background: transparent;*/
+    background-color: #DAEBFE;
+    font-size: 12px;
 }
 QTextEdit#main_details_subwidgetB {
-    background: transparent;
+    /*background: transparent;*/
+    background-color: #DAEBFE;
     font-size: 11px;
 }
 QTextEdit#main_details_subwidgetC {
@@ -86,15 +92,22 @@ QTextEdit#main_details_subwidgetD {
     font-size: 11px;
 }
 
+QWidget#history_widget {
+    /*background-color: #DAEBFE;*/
+    /*font-size: 11px;*/
+}
+
+QListWidget#historyListWidget {
+    background-color: #f3f6fb;
+    /*font-size: 11px;*/
+}
+
 QTextEdit#afm_widget {
-    background: transparent;
+    /*background: transparent;*/
+    background-color: #DAEBFE;
     font-size: 11px;
 }
 
-QTextEdit#cafm_widget {
-    background: transparent;
-    font-size: 11px;
-}
 
 QTextEdit#matchpoint_text_prompt {
 	background-color: transparent;
