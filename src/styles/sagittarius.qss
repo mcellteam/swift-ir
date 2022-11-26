@@ -1,5 +1,9 @@
 
 
+QToolBar#toolbar {
+    background-color: #141414;
+}
+
 QWidget#browser_overlay_widget {
     background-color: rgba(0, 0, 0, 0.5);
 }

@@ -34,8 +34,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     path = os.path.split(os.path.realpath(__file__))[0]
     job_script = os.path.join(path, job_script)
     scale_val = get_scale_val(scale)
-    zarr_group = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-    od = os.path.join(cfg.data.dest(), scale, 'img_aligned')
+    dest = cfg.data.dest()
+    zarr_group = os.path.join(dest, 'img_aligned.zarr', 's%d' % scale_val)
+    od = os.path.join(dest, scale, 'img_aligned')
     renew_directory(directory=od)
     alstack = cfg.data.alstack(s=scale)
     print_example_cafms()
@@ -43,21 +44,18 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     logger.critical('Setting Stack CAFM...')
     SetStackCafm(scale=scale, null_biases=cfg.data.null_cafm(s=scale), poly_order=cfg.data.poly_order(s=scale))
     # print_example_cafms(scale_dict)
-    bias_path = os.path.join(cfg.data.dest(), scale, 'bias_data')
+    bias_path = os.path.join(dest, scale, 'bias_data')
     iterator = cfg.data.get_iter(s=scale)
     save_bias_analysis(layers=iterator, bias_path=bias_path)
-    has_bb = cfg.data.has_bb()
-    logger.info(f'Bounding Box              : {has_bb}')
-    if has_bb:
+    if cfg.data.has_bb():
         # Note: now have got new cafm's -> recalculate bounding box
-        rect = cfg.data.bounding_rect(s=scale)
-        cfg.data.set_bounding_rect(rect) # Only after SetStackCafm
-        logger.info(f'New Bounding Box          : {str(rect)}')
+        rect = cfg.data.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
+        logger.info(f'Bounding Box              : ON\nNew Bounding Box          : {str(rect)}')
         logger.info(f'Null Bias                 : {cfg.data.null_cafm()} (Polynomial Order: {cfg.data.poly_order()})')
     else:
+        logger.info(f'Bounding Box              : OFF')
         w, h = cfg.data.image_size(s=scale)
         rect = [0, 0, w, h] # might need to swap w/h for Zarr
-    cfg.data.set_aligned_size(rect[2:])
     logger.info(f'Aligned Size              : {rect[2:]}')
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
     if preallocate:
@@ -70,17 +68,18 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     else:
         end_layer = start_layer + num_layers
     iterator = iter(alstack[start_layer:end_layer])
-    args_list = makeTasksList(iterator, job_script, rect, zarr_group)
+    args_list = makeTasksList(iterator, job_script, scale, rect, zarr_group)
     # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
                            pbar_text='Generating Alignment w/ MIR - Scale %d - %d Cores' % (scale_val, cpus))
     task_queue.start(cpus)
-    for task in args_list: task_queue.add_task(task)
+    for task in args_list:
+        task_queue.add_task(task)
     try:
-        dt = task_queue.collect_results()
         # cfg.main_window.hud.done()
+        dt = task_queue.collect_results()
         show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()
@@ -91,7 +90,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     #### RUN ZARR TASKS
 
     logger.info('Making Zarr Copy-convert Alignment Tasks List...')
-    cfg.main_window.set_status('Copy-converting TIFFs...')
+    # cfg.main_window.set_status('Copy-converting TIFFs...')
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
                            pbar_text='Copy-converting Alignment Results To Zarr - Scale %d - %d Cores' % (
@@ -99,9 +98,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     task_queue.start(cpus)
     job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
     for ID, layer in enumerate(iter(alstack[start_layer:end_layer])):
-        base_name = layer['images']['base']['filename']
-        al_path, fn = os.path.split(base_name)
-        al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
+        _ , fn = os.path.split(layer['images']['base']['filename'])
+        al_name = os.path.join(dest, scale, 'img_aligned', fn)
+        zarr_group = os.path.join(dest, 'img_aligned.zarr', 's%d' % scale_val)
         args = [sys.executable, job_script, str(ID), al_name, zarr_group]
         task_queue.add_task(args)
     try:
@@ -117,16 +116,17 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     logger.info('<<<< Generate Aligned End <<<<')
 
 
-def makeTasksList(iter, job_script, rect, zarr_group):
+def makeTasksList(iter, job_script, scale, rect, zarr_group):
     logger.info('Making Generate Alignment Tasks List...')
     args_list = []
+    dest = cfg.data.dest()
     for ID, layer in enumerate(iter):
         # if ID in [0,1,2]:
-        #     logger.critical('\nafm = %s\n' % ' '.join(map(str, cfg.data.afm(l=ID))))
-        #     logger.critical('\ncafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
+        #     logger.info('afm = %s\n' % ' '.join(map(str, cfg.data.afm(l=ID))))
+        #     logger.info('cafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
         base_name = layer['images']['base']['filename']
-        al_path, fn = os.path.split(base_name)
-        al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
+        _ , fn = os.path.split(base_name)
+        al_name = os.path.join(dest, scale, 'img_aligned', fn)
         layer['images']['aligned'] = {}
         layer['images']['aligned']['filename'] = al_name
         cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
@@ -134,6 +134,9 @@ def makeTasksList(iter, job_script, rect, zarr_group):
                 str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
                 str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name,
                 zarr_group, str(ID)]
+        if ID in [0,1,2]:
+            logger.info('\nExample Arguments (ID: %d):\n%s' % (ID, str(args)))
+            logger.info('cafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
         # NOTE - previously had conditional here for 'if use_bounding_rect' then don't pass -rect args
         args_list.append(args)
     return args_list

@@ -561,9 +561,10 @@ class DataModel:
         return float(self._data['data']['scales'][self.scale()]['alignment_stack'][
                          self.layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
 
-    def has_bb(self) -> bool:
+    def has_bb(self, s=None) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
+        if s == None: s = self.scale()
+        return bool(self._data['data']['scales'][s]['use_bounding_rect'])
 
     def bounding_rect(self, s=None):
         if s == None: s = self.scale()
@@ -572,8 +573,7 @@ class DataModel:
         except:
             try:
                 self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s), scale=s))
-                return self.bounding_rect()
-                # return self._data['data']['scales'][s]['bounding_rect']
+                return self._data['data']['scales'][s]['bounding_rect']
             except:
                 logger.warning('Unable to return a bounding rect (s=%s)' % s)
                 return None
@@ -590,19 +590,6 @@ class DataModel:
                 return self._data['data']['scales'][s]['image_src_size']
             except:
                 print_exception()
-                logger.warning('Unable to return the image size (s=%s)' % s)
-                return None
-
-    def aligned_size(self, s=None):
-        if s == None: s = self.scale()
-        try:
-            return self._data['data']['scales'][s]['al_size']
-        except:
-            try:
-                img_size = ImageSize(self.path_aligned(s=s))
-                self._data['data']['scales'][s]['al_size'] = img_size
-                return self.aligned_size()
-            except:
                 logger.warning('Unable to return the image size (s=%s)' % s)
                 return None
 
@@ -704,6 +691,7 @@ class DataModel:
     def set_calculate_bounding_rect(self, s=None):
         if s == None: s = self.scale()
         self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
+        return self.bounding_rect()
 
     def set_image_size(self, scale) -> None:
         size = ImageSize(self.path_base(s=scale))
@@ -712,13 +700,9 @@ class DataModel:
         logger.info('Setting Image Size, Scale %d: %s' %
                     (get_scale_val(scale), str(self._data['data']['scales'][scale]['image_src_size'])))
 
-    def set_aligned_size(self, size, s=None) -> None:
-        if s == None: s = self.scale()
-        self._data['data']['scales'][s]['al_size'] = size
-
     def set_poly_order(self, x: int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
-        self._data['data']['scales'][self.scale()]['poly_order'] = x
+        self._data['data']['scales'][self.scale()]['poly_order'] = int(x)
 
     def set_use_poly_order(self, b: bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
@@ -773,12 +757,11 @@ class DataModel:
     def set_paths_absolute(self, filename):
         logger.info('Setting Absolute File Paths...')
         logger.info(f'Setting Destination: {filename}')
-
         # returns path to project file minus extension (should be the project directory)
         self.set_destination(os.path.splitext(filename)[0])
+        logger.info(f'Setting absolute project dest/head: {self.dest()}')
         try:
-            head = os.path.split(filename)[0] # returns parent directory
-            # logger.info(f'head: {head}')
+            head = self.dest() # returns parent directory
             for s in self.scales():
                 if s == 'scale_1':
                     pass
@@ -788,7 +771,6 @@ class DataModel:
                             # if (not l==0) and (not r=='ref'):
                             tail = l['images'][r]['filename']
                             l['images'][r]['filename'] = os.path.join(head, tail)
-                            # logger.info(f'tail: {tail}')
                     # self._data['data']['scales'][s]['alignment_stack'][0]['images']['ref']['filename'] = None
         except:
             logger.warning('Setting Absolute Paths Triggered This Exception')

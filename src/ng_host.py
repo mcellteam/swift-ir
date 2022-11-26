@@ -74,7 +74,7 @@ class NgHost(QRunnable):
         self.ref_l = 'ref_%d' % self.sf
         self.base_l = 'base_%d' % self.sf
         self.aligned_l = 'aligned_%d' % self.sf
-        self.layout = 'yz'  # maps to 'xy'
+        self.nglayout = 'yz'  # maps to 'xy'
         self.al_url = os.path.join('img_aligned.zarr', 's' + str(self.sf))
         self.src_url = os.path.join('img_src.zarr', 's' + str(self.sf))
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
@@ -84,7 +84,7 @@ class NgHost(QRunnable):
         self.mp_colors = ['#0072b2']*2 + ['#f0e442']*2 + ['#FF0000']*2
         self.mp_count = 0
         self._is_fullscreen = False
-        self._layout = 1
+        self.arrangement = 1
 
     def __del__(self):
         caller = inspect.stack()[1].function
@@ -99,7 +99,7 @@ class NgHost(QRunnable):
 
     @Slot()
     def run(self):
-        logger.info('Launching Tornado HTTP Server (Scale %d)...' % self.sf)
+        logger.critical('Launching Tornado HTTP Server (Scale %d)...' % self.sf)
         try:
             tempdir = tempfile.mkdtemp()
             atexit.register(shutil.rmtree, tempdir)
@@ -108,18 +108,33 @@ class NgHost(QRunnable):
             print_exception()
 
 
-    def initViewer(self, widget_size=None, show_ui_controls=True, show_panel_borders=False, layout=None):
-        if layout is not None:
-            self._layout = layout
+    def request_layer(self):
+        return floor(self.viewer.state.position[0])
+
+
+    def invalidateAlignedLayers(self):
+        self.alLV.invalidate()
+
+
+    def invalidateAllLayers(self):
+        self.refLV.invalidate()
+        self.baseLV.invalidate()
+        try:
+            self.alLV.invalidate()
+        except:
+            pass
+
+
+    def initViewer(self, widget_size=None, show_ui_controls=True, show_panel_borders=False):
+
         self.match_point_mode = cfg.main_window._is_mp_mode
         caller = inspect.stack()[1].function
-        logger.info('Initializing Viewer (caller: %s):' % caller)
+        logger.critical('Initializing Viewer, %s... caller: %s...' % (self.scale, caller))
         is_aligned = is_arg_scale_aligned(self.scale)
+        has_bb = cfg.data.has_bb(s=self.scale)
 
         if self.match_point_mode:
             self.clear_mp_buffer()
-
-
 
         # self.viewer = ng.UnsynchronizedViewer()
         self.viewer = ng.Viewer() #1108+
@@ -130,29 +145,28 @@ class NgHost(QRunnable):
         # logger.info('Shader            : %s' % str(cfg.SHADER))
         # logger.info('Is Aligned        : %s' % str(is_aligned))
 
-        if is_aligned:
-            self.al_size = cfg.data.aligned_size(s=self.scale)
-            x_offset = (self.al_size[0] - self.src_size[0]) / 2
-            y_offset = (self.al_size[1] - self.src_size[1]) / 2
+
+        src_size = cfg.data.image_size()
+        src_width, src_height = src_size[0], src_size[1]
+
+        if is_aligned and has_bb:
+            bb = cfg.data.bounding_rect(s=self.scale)
+            max_width, max_height = bb[2], bb[3]
+            x_nudge = (max_width - src_width) / 2
+            y_nudge = (max_height - src_height) / 2
         else:
-            x_offset, y_offset = 0, 0
-
-        if is_aligned:
-            img_height, img_width = \
-                cfg.data.bounding_rect(s=self.scale)[3], cfg.data.bounding_rect(s=self.scale)[2]
-        else:
-            img_height, img_width = \
-                cfg.data.image_size(s=self.scale)[1], cfg.data.image_size(s=self.scale)[0]
-
-
+            max_width, max_height = src_width, src_height
+            x_nudge, y_nudge = 0, 0
 
         if widget_size is None:
+            logger.warning('Getting widget size from thread...')
             widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
         widget_height = widget_size[3]  # pixels
-        logger.info('widget size=%s' % str(widget_size))
-        logger.info('layout=%d' % self._layout)
-        logger.info('is_aligned=%s' % is_aligned)
-        if self._layout == 1:
+        logger.info('widget size  =%s' % str(widget_size))
+        logger.info('arrangement  =%d' % self.arrangement)
+        logger.info('is_aligned   =%s' % is_aligned)
+        logger.info('has_bb       =%s' % has_bb)
+        if self.arrangement == 1:
             if is_aligned:
                 widget_width = widget_size[2] / 3
             else:
@@ -170,21 +184,23 @@ class NgHost(QRunnable):
         # else:
         #     widget_height = h
         #     widget_width = w
-        tissue_height = cfg.data.res_y(s=self.scale) * img_height  # nm
+        tissue_height = cfg.data.res_y(s=self.scale) * max_height  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-        tissue_width = cfg.data.res_x(s=self.scale) * img_width  # nm
+        tissue_width = cfg.data.res_x(s=self.scale) * max_width  # nm
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
         css = '%.2E' % Decimal(cross_section_scale)
         string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
-                 (self.sf, ('Unaligned', 'Aligned')[is_aligned], img_width, img_height, caller)
+                 (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
         logger.info(string)
         # cfg.main_window.hud.post(string)
 
-        logger.info('widget_width=%d, widget_height=%d' % (widget_width, widget_height))
-        logger.info('tissue_width=%d, tissue_height=%d' % (tissue_width, tissue_height))
-        logger.info('cross_section width=%.3f, height=%.3f' % (cross_section_width, cross_section_height))
-        logger.info('cross_section_scale=%.3f' % cross_section_scale)
+        logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
+        logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
+        logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
+        logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
+        logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
+        logger.info('cross_section_scale=%.10f' % cross_section_scale)
 
 
 
@@ -197,10 +213,12 @@ class NgHost(QRunnable):
             #trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            adjustment = 1.20
+            adjustment = 1.12
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
+            # s.gpu_memory_limit = -1
+            # s.system_memory_limit = -1
+            s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+            s.system_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
@@ -215,7 +233,7 @@ class NgHost(QRunnable):
                 # self.coordinate_space = ng.CoordinateSpace(names=['height', 'width', 'channel'], units='nm',
                 #                                            scales=[2, 2, 1])
                 # unal_dataset = get_zarr_tensor(self.unal_name).result()
-                # self.layout = 'yx'
+                # self.nglayout = 'yx'
                 # layer_base = cfg.data.layer()
                 # layer_ref = layer_base - 1
                 # self.refLV = ng.LocalVolume(
@@ -234,12 +252,12 @@ class NgHost(QRunnable):
                 self.refLV = ng.LocalVolume(
                     data=self.unal_dataset,
                     dimensions=self.coordinate_space,
-                    voxel_offset=[1, x_offset, y_offset],
+                    voxel_offset=[1, x_nudge, y_nudge],
                 )
                 self.baseLV = ng.LocalVolume(
                     data=self.unal_dataset,
                     dimensions=self.coordinate_space,
-                    voxel_offset=[0, x_offset, y_offset]
+                    voxel_offset=[0, x_nudge, y_nudge]
                 )
                 if is_aligned:
                     self.al_dataset = get_zarr_tensor(self.al_name).result()
@@ -312,10 +330,10 @@ class NgHost(QRunnable):
                                                           )
 
             grps = []
-            grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout))
-            grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout))
+            grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout))
+            grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout))
             if is_aligned:
-                grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout))
+                grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout))
 
             if is_aligned:
                 rect = cfg.data.bounding_rect(s=self.scale)
@@ -326,29 +344,29 @@ class NgHost(QRunnable):
 
             s.position = [cfg.data.layer(), pos_x, pos_y]
 
-            if self._layout == 1:
+            if self.arrangement == 1:
                 s.layout = ng.row_layout(grps)
                 # if is_aligned:
                 #     ng.column_layout([
-                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout),
-                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout),
-                #         ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout)
+                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
+                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
+                #         ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout)
                 #     ]),
                 # else:
                 #     ng.column_layout([
-                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout),
-                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout),
+                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
+                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
                 #     ]),
 
-            if self._layout == 2:
+            if self.arrangement == 2:
                 if is_aligned:
                     s.layout = ng.row_layout([
                         ng.column_layout([
-                            ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.layout),
-                            ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.layout),
+                            ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
+                            ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
                         ]),
                         ng.column_layout([
-                            ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.layout),
+                            ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout),
                         ]),
                     ])
                 else:
@@ -360,9 +378,11 @@ class NgHost(QRunnable):
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#1B1E23'
+            # if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#1B1E23'
+            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
-            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#6D7D77'
+            # elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#6D7D77'
+            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080' #128 grey
             elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
             else:                 s.crossSectionBackgroundColor = '#004060'
 
@@ -392,7 +412,7 @@ class NgHost(QRunnable):
 
             # s.viewer_size = [1000,1000]
 
-        cfg.main_window.hud.done()
+        # cfg.main_window.hud.done()
 
 
     # def _toggle_fullscreen(self, s):
@@ -545,19 +565,6 @@ class NgHost(QRunnable):
         return annotations
 
 
-    def invalidateAlignedLayers(self):
-        self.alLV.invalidate()
-
-
-    def invalidateAllLayers(self):
-        self.refLV.invalidate()
-        self.baseLV.invalidate()
-        try:
-            self.alLV.invalidate()
-        except:
-            pass
-
-
     def take_screenshot(self, directory=None):
         if directory is None:
             directory = cfg.data.dest()
@@ -565,42 +572,45 @@ class NgHost(QRunnable):
         ss.capture()
 
 
-    def request_layer(self):
-
-        return floor(self.viewer.state.position[0])
-
-
-    # Note: odd mapping of axes
-    def set_layout_yz(self):
-        self.layout = 'xy'; self.initViewer()
-
-
-    def set_layout_xy(self):
-        self.layout = 'yz'; self.initViewer()
-
-
-    def set_layout_xz(self):
-        self.layout = 'xz'; self.initViewer()
-
-
-    def set_layout_xy_3d(self):
-        self.layout = 'yz-3d'; self.initViewer()
-
-
-    def set_layout_yz_3d(self):
-        self.layout = 'xy-3d'; self.initViewer()
-
-
-    def set_layout_xz_3d(self):
-        self.layout = 'xz-3d'; self.initViewer()
-
-
-    def set_layout_3d(self):
-        self.layout = '3d'; self.initViewer()
-
-
-    def set_layout_4panel(self):
-        self.layout = '4panel'; self.initViewer()
+    # # Note: odd mapping of axes
+    # def set_layout_yz(self):
+    #     self.nglayout = 'xy'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_xy(self):
+    #     self.nglayout = 'yz'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_xz(self):
+    #     self.nglayout = 'xz'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_xy_3d(self):
+    #     self.nglayout = 'yz-3d'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_yz_3d(self):
+    #     self.nglayout = 'xy-3d'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_xz_3d(self):
+    #     self.nglayout = 'xz-3d'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_3d(self):
+    #     self.nglayout = '3d'
+    #     self.initViewer()
+    #
+    #
+    # def set_layout_4panel(self):
+    #     self.nglayout = '4panel'
+    #     self.initViewer()
 
 
     def url(self):

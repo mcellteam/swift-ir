@@ -47,26 +47,26 @@ def make_affine_widget_HTML(afm, cafm):
     # 'cellspacing' affects table width and 'cellpadding' affects table height
     text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='3' border='0'>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='background-color: #dcdcdc; width: 20px'><b>AFM</b></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
+           f"    <td style='width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='background-color: #f5f5f5; width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
            f"    <td rowspan=2 style='background-color: #dcdcdc; width: 10%'><b>CAFM</b></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='background-color: #f5f5f5; width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px'><center>{str(round(cafm[1][1], 3)).center(8)}</center></td>"\
-           f"    <td style='background-color: #f5f5f5; width:34px'><center>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"</table>"
     return text
