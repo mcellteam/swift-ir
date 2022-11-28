@@ -89,3 +89,5 @@ echo "    # cd $WORK/swift-ir"
 echo "    swr python3 alignEM.py"
 echo ""
 echo "Complete."
+
+swr python3 alignEM.py
