@@ -894,31 +894,34 @@ class DataModel:
 
     def is_alignable(self) -> bool:
         '''Checks if the current s is able to be aligned'''
-        if cfg.data.dest() in ('', None):
-            logger.debug("is_alignable returning False because: "
-                         "cfg.data.dest() in ('', None) is True")
-            return False
+        try:
+            if cfg.data.dest() in ('', None):
+                logger.debug("is_alignable returning False because: "
+                             "cfg.data.dest() in ('', None) is True")
+                return False
 
-        if not are_images_imported():
-            logger.debug("is_alignable returning False because: "
-                         "not are_images_imported() is True")
-            return False
-        scales_list = self.scales()
-        cur_scale_key = self.scale()
-        coarsest_scale = scales_list[-1]
-        if cur_scale_key == coarsest_scale:
-            logger.debug("is_alignable returning True because: "
-                         "cur_scale_key == coarsest_scale) is True")
-            return True
-        cur_scale_index = scales_list.index(cur_scale_key)
-        next_coarsest_scale_key = scales_list[cur_scale_index + 1]
-        if not is_arg_scale_aligned(next_coarsest_scale_key):
-            logger.debug("is_alignable returning False because: "
-                         "not is_arg_scale_aligned(next_coarsest_scale_key) is True")
-            return False
-        else:
-            logger.debug('Returning True')
-            return True
+            if not are_images_imported():
+                logger.debug("is_alignable returning False because: "
+                             "not are_images_imported() is True")
+                return False
+            scales_list = self.scales()
+            cur_scale_key = self.scale()
+            coarsest_scale = scales_list[-1]
+            if cur_scale_key == coarsest_scale:
+                logger.debug("is_alignable returning True because: "
+                             "cur_scale_key == coarsest_scale) is True")
+                return True
+            cur_scale_index = scales_list.index(cur_scale_key)
+            next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+            if not is_arg_scale_aligned(next_coarsest_scale_key):
+                logger.debug("is_alignable returning False because: "
+                             "not is_arg_scale_aligned(next_coarsest_scale_key) is True")
+                return False
+            else:
+                logger.debug('Returning True')
+                return True
+        except:
+            print_exception()
 
     def clear_all_skips(self):
         logger.info('Clearing all skips...')
