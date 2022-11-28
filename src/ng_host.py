@@ -21,6 +21,7 @@ import logging
 import datetime
 import argparse
 import tempfile
+from math import floor
 from decimal import Decimal
 from math import floor
 import numpy as np
@@ -81,10 +82,15 @@ class NgHost(QRunnable):
         self.al_name = os.path.join(src, self.al_url)
         self.unal_name = os.path.join(src, self.src_url)
         self.src_size = cfg.data.image_size(s=self.scale)
-        self.mp_colors = ['#0072b2']*2 + ['#f0e442']*2 + ['#FF0000']*2
+        # self.mp_colors = ['#0072b2'] * 2 + ['#f0e442'] * 2 + ['#FF0000'] * 2
+        self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
+                          '#aaa672', '#152c74', '#404f74',
+                          '#f3e375', '#5c4ccc', '#d6acd6',
+                          '#aaa672', '#152c74', '#404f74']
         self.mp_count = 0
         self._is_fullscreen = False
         self.arrangement = 1
+        self.mp_mode = False
 
     def __del__(self):
         caller = inspect.stack()[1].function
@@ -99,7 +105,7 @@ class NgHost(QRunnable):
 
     @Slot()
     def run(self):
-        logger.critical('Launching Tornado HTTP Server (Scale %d)...' % self.sf)
+        logger.critical('Launching Tornado HTTP Server for Scale %d...' % self.sf)
         try:
             tempdir = tempfile.mkdtemp()
             atexit.register(shutil.rmtree, tempdir)
@@ -125,15 +131,16 @@ class NgHost(QRunnable):
             pass
 
 
-    def initViewer(self, widget_size=None, show_ui_controls=True, show_panel_borders=False):
-
-        self.match_point_mode = cfg.main_window._is_mp_mode
+    def initViewer(self, matchpoint=None, widget_size=None, show_ui_controls=True, show_panel_borders=False):
+        if matchpoint != None:
+            self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
-        logger.critical('Initializing Viewer, %s... caller: %s...' % (self.scale, caller))
+        logger.critical('Initializing Viewer, %s (%s, matchpoint: %s)...'
+                        % (cfg.data.scale_pretty(s=self.scale), caller, self.mp_mode))
         is_aligned = is_arg_scale_aligned(self.scale)
         has_bb = cfg.data.has_bb(s=self.scale)
 
-        if self.match_point_mode:
+        if self.mp_mode:
             self.clear_mp_buffer()
 
         # self.viewer = ng.UnsynchronizedViewer()
@@ -141,7 +148,7 @@ class NgHost(QRunnable):
         self.viewer_url = str(self.viewer)
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
-        # logger.info('Match Point Mode  : %s' % str(self.match_point_mode))
+        # logger.info('Match Point Mode  : %s' % str(self.mp_mode))
         # logger.info('Shader            : %s' % str(cfg.SHADER))
         # logger.info('Is Aligned        : %s' % str(is_aligned))
 
@@ -159,13 +166,13 @@ class NgHost(QRunnable):
             x_nudge, y_nudge = 0, 0
 
         if widget_size is None:
-            logger.warning('Getting widget size from thread...')
+            logger.info('Getting widget size from thread...')
             widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
         widget_height = widget_size[3]  # pixels
-        logger.info('widget size  =%s' % str(widget_size))
-        logger.info('arrangement  =%d' % self.arrangement)
-        logger.info('is_aligned   =%s' % is_aligned)
-        logger.info('has_bb       =%s' % has_bb)
+        logger.debug('widget size  =%s' % str(widget_size))
+        logger.debug('arrangement  =%d' % self.arrangement)
+        logger.debug('is_aligned   =%s' % is_aligned)
+        logger.debug('has_bb       =%s' % has_bb)
         if self.arrangement == 1:
             if is_aligned:
                 widget_width = widget_size[2] / 3
@@ -195,12 +202,12 @@ class NgHost(QRunnable):
         logger.info(string)
         # cfg.main_window.hud.post(string)
 
-        logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
-        logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
-        logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
-        logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
-        logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
-        logger.info('cross_section_scale=%.10f' % cross_section_scale)
+        logger.debug('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
+        logger.debug('max_width=%d, max_height=%d' % (max_width, max_height))
+        logger.debug('widget width=%d, widget height=%d' % (widget_width, widget_height))
+        logger.debug('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
+        logger.debug('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
+        logger.debug('cross_section_scale=%.10f' % cross_section_scale)
 
 
 
@@ -213,7 +220,7 @@ class NgHost(QRunnable):
             #trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            adjustment = 1.12
+            adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
             # s.gpu_memory_limit = -1
             # s.system_memory_limit = -1
@@ -229,7 +236,7 @@ class NgHost(QRunnable):
 
             if cfg.USE_TENSORSTORE:
                 # Experimental Match Point Mode Code
-                # if match_point_mode:
+                # if self.mp_mode:
                 # self.coordinate_space = ng.CoordinateSpace(names=['height', 'width', 'channel'], units='nm',
                 #                                            scales=[2, 2, 1])
                 # unal_dataset = get_zarr_tensor(self.unal_name).result()
@@ -277,12 +284,12 @@ class NgHost(QRunnable):
             if cfg.SHADER == None:
                 s.layers[self.ref_l] = ng.ImageLayer( source=self.refLV)
                 s.layers[self.base_l] = ng.ImageLayer( source=self.baseLV)
-                if is_aligned and not self.match_point_mode:
+                if is_aligned:
                     s.layers[self.aligned_l] = ng.ImageLayer( source=self.alLV)
             else:
                 s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV, shader=cfg.SHADER)
                 s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV, shader=cfg.SHADER)
-                if is_aligned and not self.match_point_mode:
+                if is_aligned:
                     s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV, shader=cfg.SHADER)
 
             s.layers['mp_ref'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
@@ -386,20 +393,21 @@ class NgHost(QRunnable):
             elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
             else:                 s.crossSectionBackgroundColor = '#004060'
 
-        mp_key_bindings = [
-            ['enter', 'add_matchpoint'],
-            ['keys', 'save_matchpoints'],
-            ['keyc', 'clear_matchpoints'],
-        ]
-
-        if self.match_point_mode:
+        if self.mp_mode:
+            mp_key_bindings = [
+                ['enter', 'add_matchpoint'],
+                ['keys', 'save_matchpoints'],
+                ['keyc', 'clear_matchpoints'],
+            ]
             self.viewer.actions.add('add_matchpoint', self.add_matchpoint)
             self.viewer.actions.add('save_matchpoints', self.save_matchpoints)
             self.viewer.actions.add('clear_matchpoints', self.clear_matchpoints)
+        else:
+            mp_key_bindings = []
+
         with self.viewer.config_state.txn() as s:
-            if self.match_point_mode:
-                for key, command in mp_key_bindings:
-                    s.input_event_bindings.viewer[key] = command
+            for key, command in mp_key_bindings:
+                s.input_event_bindings.viewer[key] = command
             if show_ui_controls:
                 s.show_ui_controls = True
             else:
@@ -442,7 +450,7 @@ class NgHost(QRunnable):
                 logger.debug('State Changed, But Layer Is The Same -> Suppressing The Callback Signal')
                 return
             self.signals.stateChanged.emit(request_layer)
-            if self.match_point_mode:
+            if self.mp_mode:
                 self.clear_mp_buffer()
         except:
             print_exception()
@@ -450,15 +458,21 @@ class NgHost(QRunnable):
 
     def add_matchpoint(self, s):
         logger.info('add_matchpoint:')
-        assert self.match_point_mode == True
+        assert self.mp_mode == True
         coords = np.array(s.mouse_voxel_coordinates)
         if coords.ndim == 0:
             logger.warning('Coordinates are dimensionless!')
             return
         try:
+            bounds = self.src_size
             if (coords[1] < 0) or (coords[2] < 0):
-                logger.warning('Invalid match point, outside the image')
+                logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
+                               % (coords[1], coords[2], bounds[0], bounds[1]))
                 return
+            if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
+                logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
+                               % (coords[1], coords[2], bounds[0], bounds[1]))
+
         except:
             print_exception()
             # with self.viewer.txn() as s:
@@ -466,7 +480,8 @@ class NgHost(QRunnable):
             #     s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
             # logger.info('Zeroing matchpoint ticker')
             # return
-        props = [self.mp_colors[self.mp_count], self.mp_marker_lineweight, self.mp_marker_size, ]
+        n_mp_pairs = floor(self.mp_count / 2)
+        props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]
         with self.viewer.txn() as s:
             if self.mp_count in range(0,100,2):
                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))

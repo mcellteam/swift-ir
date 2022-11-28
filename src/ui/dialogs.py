@@ -143,7 +143,6 @@ class ConfigDialog(QDialog):
         self.parent = parent
         super(ConfigDialog, self).__init__()
         logger.critical('Showing Project Configuration Dialog...')
-        cfg.main_window.hud.post('Configuring Project Settings Based On User Responses')
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()
         # g.moveCenter(self.parent.geometry().center())

@@ -97,7 +97,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
         },
     }, create=True).result()
     # arr[1] = 42  # Overwrites, just like numpy/zarr library
-    view = arr[layer, :, :]  # Returns a lazy view, no I/O performed
+    view = arr[l, :, :]  # Returns a lazy view, no I/O performed
     np.array(view)  # Reads from the view
     # Returns JSON spec that can be passed to `ts.open` to reopen the view.
     view.spec().to_json()
@@ -206,23 +206,19 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
     cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
     zarr_path = os.path.join(src, name)
-    slug = 's' + str(get_scale_val(scale))
+    slug = str('s' + str(get_scale_val(scale)))
     out_path = os.path.join(zarr_path, slug)
     shape = (cfg.data.n_layers(), dimy, dimx)  # Todo check this, inverting x & y
 
-    logger.info(f'\n'
-                f'zarr root  : {zarr_path}\n'
-                f'out_path   : {out_path}\n'
-                f'scale      : {scale}\n'
-                f'slug       : {slug}\n'
-                f'dim x,y    : {dimx},{dimy}\n'
-                f'name       : {name}\n'
-                f'shape      : {str(shape)}\n'
-                f'chunkshape : {str(chunkshape)}\n'
-                f'cname      : {cname}\n'
-                f'clevel     : {clevel}\n'
-                f'dtype      : {dtype}\n'
-                f'overwrite  : {overwrite}')
+    output_text = f'\nscale             : {scale}' \
+                  f'\nzarr root         : {zarr_path}' \
+                  f'\nname/group        : {name}/{slug}' \
+                  f'\ndata shape/type   : {str(shape)}/{dtype}' \
+                  f'\ncompression/level : {cname}/{clevel}' \
+                  f'\nchunk shape       : {chunkshape}'
+
+    logger.info(output_text)
+
     try:
         if overwrite and os.path.exists(out_path):
             remove_zarr(out_path)
@@ -235,21 +231,9 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
         print_exception()
     else:
         cfg.main_window.hud.done()
-        cfg.main_window.hud.post(f'\n'
-                        f'zarr root  : {zarr_path}\n'
-                        f'out_path   : {out_path}\n'
-                        f'scale      : {scale}\n'
-                        f'slug       : {slug}\n'
-                        f'dim x,y    : {dimx},{dimy}\n'
-                        f'name       : {name}\n'
-                        f'shape      : {str(shape)}\n'
-                        f'chunkshape : {str(chunkshape)}\n'
-                        f'cname      : {cname}\n'
-                        f'clevel     : {clevel}\n'
-                        f'dtype      : {dtype}\n'
-                        f'overwrite  : {overwrite}')
-#
-#
+        cfg.main_window.hud.post(output_text)
+
+
 # def preallocate_zarr_src():
 #     cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
 #     logger.info('Preallocating Zarr scales...')
