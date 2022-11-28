@@ -835,8 +835,8 @@ class MainWindow(QMainWindow):
         try:
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() - 1)  # Changes Scale
             cfg.data.set_layer(cur_layer)
-            if not cfg.data.is_alignable():
-                self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
+            # if not cfg.data.is_alignable():
+            #     self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
         except:
             print_exception()
 
@@ -854,8 +854,8 @@ class MainWindow(QMainWindow):
         try:
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() + 1)  # Changes Scale
             cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
-            if not cfg.data.is_alignable():
-                self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
+            # if not cfg.data.is_alignable():
+            #     self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
         except:
             print_exception()
 
