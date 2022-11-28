@@ -6,8 +6,6 @@ echo "Setting QT API environment flag..."
 unset QT_API
 export QT_API=pyqt5
 
-#ml intel/19.1.1 impi/19.0.9
-
 hostname=$(hostname)
 
 if [[ $hostname == *"tacc.utexas.edu"* ]]; then
@@ -23,7 +21,8 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 
   echo "Activating alignment conda env..."
 #  conda activate $WORK/miniconda3/envs/alignPYQT
-  conda activate alignTACC1024
+#  conda activate alignTACC1024
+  conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
   # echo "Setting MAX_NUM_THREADS flag..."
   # unset MAX_NUM_THREADS
