@@ -1101,7 +1101,7 @@ class MainWindow(QMainWindow):
         if name is None: return
         scale_val = cfg.data.scale_val()
         msg = "Are you sure you want to swap your alignment data for Scale %d with '%s'?\n" \
-              "Note: You must 'regenerate' after swapping it in." % (scale_val, name)
+              "Note: You must realign after swapping it in." % (scale_val, name)
         reply = QMessageBox.question(self, 'Message', msg, QMessageBox.Yes, QMessageBox.No)
         if reply != QMessageBox.Yes:
             logger.info("Returning without changing anything.")
@@ -1112,7 +1112,7 @@ class MainWindow(QMainWindow):
             scale = json.load(f)
         self.hud.post('Swapping Current Scale %d Dictionary with %s' % (scale_val, name))
         cfg.data.set_al_dict(aldict=scale)
-        self.regenerate() #Todo test this under a range of possible scenarios
+        # self.regenerate() #Todo test this under a range of possible scenarios
 
 
     def remove_historical_alignment(self):
@@ -2051,12 +2051,11 @@ class MainWindow(QMainWindow):
 
 
     def initNgViewer(self, scales=None, matchpoint=None):
-        logger.critical(f'caller: {inspect.stack()[1].function}')
+        # logger.critical(f'caller: {inspect.stack()[1].function}')
         if cfg.data:
             if ng.is_server_running():
                 if scales == None: scales = [cfg.data.scale()]
                 for s in scales:
-                    logger.info('Initializing Viewer For %s...' % s)
                     if matchpoint != None:
                         self.ng_workers[s].initViewer(matchpoint=matchpoint)
                     else:
@@ -2754,7 +2753,7 @@ class MainWindow(QMainWindow):
         self.detailsGpuAction.triggered.connect(self.gpu_config)
         detailsMenu.addAction(self.detailsGpuAction)
 
-        zarrMenu = detailsMenu.addMenu('Zarr')
+        zarrMenu = detailsMenu.addMenu('Zarr Details')
 
         self.detailsZarrSourceAction = QAction('img_src.zarr', self)
         self.detailsZarrSourceAction.triggered.connect(self.show_zarr_info_source)
@@ -2764,19 +2763,17 @@ class MainWindow(QMainWindow):
         self.detailsZarrAlignedAction.triggered.connect(self.show_zarr_info_aligned)
         zarrMenu.addAction(self.detailsZarrAlignedAction)
 
-        self.moduleSearchPathAction = QAction('Show Module Search Path', self)
+        self.moduleSearchPathAction = QAction('Print Module Search Path', self)
         self.moduleSearchPathAction.triggered.connect(self.show_module_search_path)
         detailsMenu.addAction(self.moduleSearchPathAction)
 
-        self.runtimePathAction = QAction('Show Runtime Path', self)
+        self.runtimePathAction = QAction('Print Runtime Path', self)
         self.runtimePathAction.triggered.connect(self.show_run_path)
         detailsMenu.addAction(self.runtimePathAction)
 
-        projectMenu = self.menu.addMenu('Project')
-
         self.showMatchpointsAction = QAction('Print Matchpoints', self)
         self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
-        projectMenu.addAction(self.showMatchpointsAction)
+        detailsMenu.addAction(self.showMatchpointsAction)
 
 
         helpMenu = self.menu.addMenu('Help')
