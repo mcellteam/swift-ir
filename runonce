@@ -1,0 +1,101 @@
+#!/bin/bash
+# INSTRUCTIONS TO RUN AlignEM-SWiFT ON Lonestar6 AT TACC
+# (DEPLOYMENT BY CONDA ENVIRONMENT STRATEGY)
+
+# NOTES:
+#     CONNECT TO Lonestar6 THROUGH THE VIS PORTAL. CHOOSE DCV SESSION.
+#     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
+
+##############################################
+# RUN ONCE AFTER LOGGING IN TO LONESTAR6 @ TACC
+##############################################
+
+echo "Setting things up..."
+
+echo "Changing directory to WORK directory..."
+cd $WORK
+
+echo "Checking if miniconda3 is installed..."
+if [ ! -d "$WORK/miniconda3" ]; then
+  echo "Miniconda not found in $WORK..."
+  echo "Installing..."
+  mkdir -p $WORK/miniconda3
+  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $WORK/miniconda3/miniconda.sh
+  bash $WORK/miniconda3/miniconda.sh -b -u -p $WORK/miniconda3
+  rm -rf $WORK/miniconda3/miniconda.sh
+
+  echo "Ensuring conda base environment is OFF..."
+  conda config --set auto_activate_base false
+fi
+echo "Initializing conda..."
+$WORK/miniconda3/bin/conda init bash
+
+echo "Sourcing .bashrc..."
+source ~/.bashrc
+
+echo "Updating conda..."
+conda update conda
+
+echo "Checking if AlignEM-SWiFT exists in $WORK..."
+if [ ! -d "$WORK/swift-ir" ]; then
+  echo "AlignEM-SWiFT not found in $WORK..."
+  git clone https://github.com/mcellteam/swift-ir.git
+fi
+
+echo "Changing directory to swift-ir..."
+cd $WORK/swift-ir
+
+echo "Checking out development_ng branch..."
+git checkout development_ng
+git pull
+
+echo "Purging modules..."
+module purge
+
+if [[ $hostname == *"tacc.utexas.edu"* ]]; then
+  echo "This process is running on TACC system..."
+
+  echo "Purging modules..."
+  module purge
+
+  echo "cd'ing to swift-ir and pulling changes..."
+  cd $WORK/swift-ir
+  git stash
+  git pull --ff-only
+
+  echo "Activating conda environment..."
+  conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+
+  echo "Unsetting MAX_NUM_THREADS..."
+  unset MAX_NUM_THREADS
+  echo "Unsetting GALLIUM_DRIVER..."
+  unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
+  echo "Unsetting MESA_DEBUG..."
+  unset MESA_DEBUG
+  echo "Unsetting QT_API..."
+  unset QT_API
+  echo "Setting QT API environment flag QT_API=pyqt5..."
+  export QT_API=pyqt5
+
+  echo "Loading swr and fftw3 modules..."
+  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+
+  swr glxinfo -B
+
+    node=$(hostname --alias)
+    domain=$(hostname--domain)
+    echo "Hostname : $hostname"
+    echo "Node     : $node"
+
+else
+  echo "This process is not running on Lonestar6 @ TACC. Falling back to local environment..."
+  glxinfo -B
+fi
+
+echo ""
+echo "You should now be inthe environment 'alignTACC1024'.\nTo run AlignEM-SWiFT on Lonestar6 @ TACC:"
+echo ""
+echo "    cd $WORK/swift-ir"
+echo "    swr python3 alignEM.py"
+echo ""
+echo "Complete."
