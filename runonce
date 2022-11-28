@@ -84,11 +84,11 @@ echo "Node     : $node"
 
 
 echo ""
-echo "You should now be inthe environment 'alignTACC1024'.\nTo run AlignEM-SWiFT on Lonestar6 @ TACC:"
+echo "You should now be in the environment 'alignTACC1024'.\nTo launch AlignEM-SWiFT on Lonestar6 @ TACC:"
 echo ""
-echo "    # cd $WORK/swift-ir"
+echo "    cd $WORK/swift-ir"
 echo "    swr python3 alignEM.py"
 echo ""
-echo "Complete."
+echo "Launching..."
 
 swr python3 alignEM.py
