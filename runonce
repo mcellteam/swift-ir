@@ -52,10 +52,6 @@ git pull
 echo "Purging modules..."
 module purge
 
-
-echo "Purging modules..."
-module purge
-
 echo "cd'ing to swift-ir and pulling changes..."
 cd $WORK/swift-ir
 git stash
@@ -80,11 +76,10 @@ ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
 
 swr glxinfo -B
 
-  node=$(hostname --alias)
-  domain=$(hostname--domain)
-  echo "Hostname : $hostname"
-  echo "Node     : $node"
-
+node=$(hostname --alias)
+domain=$(hostname--domain)
+echo "Hostname : $hostname"
+echo "Node     : $node"
 
 
 echo ""
