@@ -941,7 +941,10 @@ class MainWindow(QMainWindow):
         logger.critical('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
         # self.refreshNeuroglancerURL(s=cfg.data.scale())
-        self.initNgViewer(scales=[cfg.data.scale()])
+        if cfg.SIMULTANEOUS_SERVERS:
+            self.initNgViewer(scales=[cfg.data.scale()])
+        else:
+            self.initNgServer(scales=[cfg.data.scale()])
         self.jump_to(cfg.data.layer())
         self.read_project_data_update_gui()
         self.updateHistoryListWidget(s=s)
@@ -1287,6 +1290,7 @@ class MainWindow(QMainWindow):
         if caller == 'onStartProject':
             # logger.warning('Canceling scale change...')
             return
+        self.ng_workers[cfg.data.scale()] = {}
         new_scale = self.toolbar_scale_combobox.currentText()
         # logger.info(f'Setting Scale: %s...' % new_scale)
         cfg.data.set_scale(new_scale)
@@ -1601,7 +1605,7 @@ class MainWindow(QMainWindow):
         self.updateLowLowWidgetB()
         self.initOverviewPanel()
         self.ng_workers = dict.fromkeys(cfg.data.scales())
-        self.initNgServer(scales=cfg.data.scales())
+        # self.initNgServer(scales=cfg.data.scales())
         self._scales_combobox_switch = 1
         self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.count() - 1)
         ng_layouts = ['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
@@ -1609,6 +1613,10 @@ class MainWindow(QMainWindow):
         self.toolbar_layout_combobox.addItems(ng_layouts)
         self.align_all_button.setText('Align All\n%s' % cfg.data.scale_pretty())
         self.set_idle()
+        if cfg.SIMULTANEOUS_SERVERS:
+            self.initNgViewer(scales=cfg.data.scales())
+        else:
+            self.initNgServer(scales=[cfg.data.scale()])
         QApplication.processEvents()
 
 
@@ -2004,7 +2012,10 @@ class MainWindow(QMainWindow):
             logger.warning('Nothing To View'); return
         if not scales:
             # scales = [cfg.data.scale()]
-            scales = cfg.data.scales()
+            if cfg.SIMULTANEOUS_SERVERS:
+                scales = cfg.data.scales()
+            else:
+                scales = [cfg.data.scale()]
         logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
         self.hud.post('Starting Neuroglancer Workers...')
         self.set_status('Starting Neuroglancer...')
