@@ -43,7 +43,7 @@ from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
 from src.generate_zarr_scales import generate_zarr_scales
 from src.helpers import *
-from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML
+from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc
 from src.ng_host import NgHost
 from src.ui.dialogs import AskContinueDialog, ConfigDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog
@@ -99,6 +99,11 @@ class MainWindow(QMainWindow):
         self.initPrivateMembers()
         self.initShortcuts()
         self.initData()
+
+        if is_tacc():
+            cfg.USE_TORNADO = True
+            cfg.USE_NG_WEBDRIVER = False
+
         if not cfg.NO_SPLASH:
             self.show_splash()
 
