@@ -52,45 +52,40 @@ git pull
 echo "Purging modules..."
 module purge
 
-if [[ $hostname == *"tacc.utexas.edu"* ]]; then
-  echo "This process is running on TACC system..."
 
-  echo "Purging modules..."
-  module purge
+echo "Purging modules..."
+module purge
 
-  echo "cd'ing to swift-ir and pulling changes..."
-  cd $WORK/swift-ir
-  git stash
-  git pull --ff-only
+echo "cd'ing to swift-ir and pulling changes..."
+cd $WORK/swift-ir
+git stash
+git pull --ff-only
 
-  echo "Activating conda environment..."
-  conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+echo "Activating conda environment..."
+conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
-  echo "Unsetting MAX_NUM_THREADS..."
-  unset MAX_NUM_THREADS
-  echo "Unsetting GALLIUM_DRIVER..."
-  unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
-  echo "Unsetting MESA_DEBUG..."
-  unset MESA_DEBUG
-  echo "Unsetting QT_API..."
-  unset QT_API
-  echo "Setting QT API environment flag QT_API=pyqt5..."
-  export QT_API=pyqt5
+echo "Unsetting MAX_NUM_THREADS..."
+unset MAX_NUM_THREADS
+echo "Unsetting GALLIUM_DRIVER..."
+unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
+echo "Unsetting MESA_DEBUG..."
+unset MESA_DEBUG
+echo "Unsetting QT_API..."
+unset QT_API
+echo "Setting QT API environment flag QT_API=pyqt5..."
+export QT_API=pyqt5
 
-  echo "Loading swr and fftw3 modules..."
-  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+echo "Loading swr and fftw3 modules..."
+ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
 
-  swr glxinfo -B
+swr glxinfo -B
 
-    node=$(hostname --alias)
-    domain=$(hostname--domain)
-    echo "Hostname : $hostname"
-    echo "Node     : $node"
+  node=$(hostname --alias)
+  domain=$(hostname--domain)
+  echo "Hostname : $hostname"
+  echo "Node     : $node"
 
-else
-  echo "This process is not running on Lonestar6 @ TACC. Falling back to local environment..."
-  glxinfo -B
-fi
+
 
 echo ""
 echo "You should now be inthe environment 'alignTACC1024'.\nTo run AlignEM-SWiFT on Lonestar6 @ TACC:"
