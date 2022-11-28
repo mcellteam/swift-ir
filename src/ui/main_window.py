@@ -387,6 +387,8 @@ class MainWindow(QMainWindow):
                 # self.initNgServer()
                 logger.info('<<<< Autoscale <<<<')
 
+        cfg.data.set_scale(cfg.data.scales()[-1])
+
 
     def onAlignmentEnd(self):
         s = cfg.data.scale()
@@ -1607,7 +1609,8 @@ class MainWindow(QMainWindow):
         self.ng_workers = dict.fromkeys(cfg.data.scales())
         # self.initNgServer(scales=cfg.data.scales())
         self._scales_combobox_switch = 1
-        self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.count() - 1)
+        # self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.count() - 1)
+        self.toolbar_scale_combobox.setCurrentText(cfg.data.scale())
         ng_layouts = ['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
         self.toolbar_layout_combobox.clear()
         self.toolbar_layout_combobox.addItems(ng_layouts)
