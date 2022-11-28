@@ -27,6 +27,7 @@ from math import floor
 import numpy as np
 
 import neuroglancer as ng
+import neuroglancer.webdriver
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 
@@ -105,13 +106,14 @@ class NgHost(QRunnable):
 
     @Slot()
     def run(self):
-        logger.critical('Launching Tornado HTTP Server for Scale %d...' % self.sf)
-        try:
-            tempdir = tempfile.mkdtemp()
-            atexit.register(shutil.rmtree, tempdir)
-            self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-        except:
-            print_exception()
+        if cfg.USE_TORNADO:
+            logger.critical('Launching Tornado HTTP Server for Scale %d...' % self.sf)
+            try:
+                tempdir = tempfile.mkdtemp()
+                atexit.register(shutil.rmtree, tempdir)
+                self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+            except:
+                print_exception()
 
 
     def request_layer(self):
@@ -222,10 +224,10 @@ class NgHost(QRunnable):
 
             adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
-            # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
-            s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
-            s.system_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+            # s.system_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
@@ -417,6 +419,10 @@ class NgHost(QRunnable):
                 s.show_panel_borders = True
             else:
                 s.show_panel_borders = False
+
+        # webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=False)
+        if cfg.USE_NG_WEBDRIVER:
+            self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
             # s.viewer_size = [1000,1000]
 
@@ -729,4 +735,28 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
         'recheck_cached_data': 'open', 'transform': 
         {'input_exclusive_max': [[100], [1024], [1024]], 'input_inclusive_min': [0, 0, 0]}}
         
+'''
+
+
+'''
+
+All signs point to your system being out of resources it needs to launch a thread (probably memory, 
+but you could be leaking threads or other resources). You could use OS system monitoring tools (top 
+for Linux, Resource Monitor for windows) to look at the number of threads and memory usage to track 
+this down, but I would recommend you just use an easier, more efficient programming pattern.
+
+While not a perfect comparison, you generally are seeing the C10K problem and it states that blocking 
+threads waiting for results do not scale well and can be prone to leaking errors like this. The 
+solution was to implement Async IO patterns (one blocking thread that launches other workers) and 
+this is pretty straight forward to do in Web Servers.
+
+A framework like pythons aiohttp should be a good fit for what you want. You just need a handler 
+that can get the ID of the remote code and the result. The framework should hopefully take care of 
+the scaling for you.
+
+So in your case you can keep your launching code, but after it starts the process on the remote machine, 
+kill the thread. Have the remote code then send an HTTP message to your server with 1) its ID and 2) 
+its result. Throw in a little extra code to ask it to try again if it does not get a 200 'OK' Status 
+code and you should be in much better shape.
+https://stackoverflow.com/questions/63532917/python-cant-start-new-thread-multiprocessing
 '''

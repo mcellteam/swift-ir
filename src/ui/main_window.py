@@ -1176,7 +1176,7 @@ class MainWindow(QMainWindow):
         if requested not in range(cfg.data.n_layers()):
             logger.warning('Requested layer is not a valid layer')
             return
-        logger.info('Jumping To Layer %d' % requested)
+        # logger.info('Jumping To Layer %d' % requested)
         state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
         state.position[0] = requested
         self.ng_workers[cfg.data.scale()].viewer.set_state(state)
@@ -1273,7 +1273,7 @@ class MainWindow(QMainWindow):
                 logger.info('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
             return
         if caller == 'onStartProject':
-            logger.warning('Canceling scale change...')
+            # logger.warning('Canceling scale change...')
             return
         new_scale = self.toolbar_scale_combobox.currentText()
         # logger.info(f'Setting Scale: %s...' % new_scale)

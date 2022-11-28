@@ -38,10 +38,10 @@ border-radius: 4px;
 }
 
 /* These should be the same */
-/*QStackedWidget#ImagePanel { background-color: #1B1E23;  }*/
-/*QWidget#ng_panel { background-color: #1B1E23; }*/
-QStackedWidget#ImagePanel { background-color: #ffffff;  }
-QWidget#ng_panel { background-color: #ffffff; }
+QStackedWidget#ImagePanel { background-color: #1B1E23;  }
+QWidget#ng_panel { background-color: #1B1E23; }
+/*QStackedWidget#ImagePanel { background-color: #ffffff;  }*/
+/*QWidget#ng_panel { background-color: #ffffff; }*/
 
 QCheckBox#toggle_skip {
 	spacing: 5px;
