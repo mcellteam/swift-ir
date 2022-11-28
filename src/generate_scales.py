@@ -48,7 +48,7 @@ def generate_scales():
             #     task_queue.add_task(cmd=sys.executable,
             #                         args=['src/job_single_scale.py', str(s), str(fn), str(ofn)], wd='.')
             layer['images']['base']['filename'] = ofn
-        # cfg.main_window.hud.done()
+        cfg.main_window.hud.done()
     cfg.main_window.hud.post('Generating Scale Image Hierarchy...')
     dt = task_queue.collect_results()
     show_mp_queue_results(task_queue=task_queue, dt=dt)

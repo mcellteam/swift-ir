@@ -59,8 +59,8 @@ class DataModel:
         #     self.upgrade_data_model()
         self.more = None
 
-        self._data['user_settings'].setdefault('mp_marker_size', 6)
-        self._data['user_settings'].setdefault('mp_marker_lineweight', 2)
+        self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
+        self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
 
         self._index = 0
 
@@ -196,7 +196,24 @@ class DataModel:
             if b != []:
                 logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
 
-    def find_layers_with_matchpoints(self):
+    def find_layers_with_matchpoints(self, s=None) -> list:
+        '''Returns the list of layers that have match points'''
+        if s == None: s = self.scale()
+        indexes, names = [], []
+        try:
+            for i,layer in enumerate(self.alstack()):
+                r = layer['images']['ref']['metadata']['match_points']
+                b = layer['images']['base']['metadata']['match_points']
+                if (r != []) or (b != []):
+                    indexes.append(i)
+                    names.append(os.path.basename(layer['images']['base']['filename']))
+            return list(zip(indexes, names))
+        except:
+            print_exception()
+            logger.warning('Unable to To Return List of Match Point Layers');
+            return []
+
+
         lst = []
         for i, l in enumerate(self.alstack()):
             r = l['images']['ref']['metadata']['match_points']
@@ -459,14 +476,15 @@ class DataModel:
         '''Returns user settings for cname, clevel, chunkshape as tuple (in that order).'''
         return (self.cname(), self.clevel(), self.chunkshape())
 
-    def scale_pretty(self) -> str:
-        return 'Scale %d' % self.scale_val()
+    def scale_pretty(self, s=None) -> str:
+        if s == None: s = cfg.data.scale()
+        return 'Scale %d' % self.scale_val(s=s)
 
-    def scale_val(self) -> int:
-        scale = self.scale()
-        while scale.startswith('scale_'):
-            scale = scale[len('scale_'):]
-        return int(scale)
+    def scale_val(self, s=None) -> int:
+        if s == None: s = cfg.data.scale()
+        while s.startswith('scale_'):
+            s = s[len('scale_'):]
+        return int(s)
 
     def scale_vals(self) -> list[int]:
         return [int(v) for v in sorted([get_scale_val(s) for s in self.scales()])]
@@ -523,21 +541,23 @@ class DataModel:
             logger.warning('Returning False, but there was a problem')
             return False
 
-    def skips_list(self) -> list[int]:
-        '''Returns the list of skipped images at the current s'''
-        lst = []
+    def skips_list(self, s=None) -> list:
+        '''Returns the list of skipped images for a scale'''
+        if s == None: s = self.scale()
+        indexes, names = [], []
         try:
-            scale = self.scale()
-            for i in range(self.n_layers()):
-                if self._data['data']['scales'][scale]['alignment_stack'][i]['skipped'] == True:
-                    lst.append(i)
-            return lst
+            for i,layer in enumerate(self.alstack()):
+                if layer['skipped'] == True:
+                    indexes.append(i)
+                    names.append(os.path.basename(layer['images']['base']['filename']))
+            return list(zip(indexes, names))
         except:
+            print_exception()
             logger.warning('Unable to To Return Skips List');
             return []
 
     def skips_by_name(self, s=None) -> list[str]:
-        '''Returns the list of skipped images at the current s'''
+        '''Returns the list of skipped images for a scale'''
         if s == None: s = self.scale()
         lst = []
         try:
@@ -606,7 +626,7 @@ class DataModel:
     def al_option(self, s=None) -> str:
         '''Gets the Alignment Option for the Current Scale.'''
         if s == None: s = self.scale()
-        return cfg.data['data']['scales'][s]['method_data']['alignment_option']
+        return self._data['data']['scales'][s]['method_data']['alignment_option']
 
     def path_ref(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
@@ -695,7 +715,7 @@ class DataModel:
 
     def set_image_size(self, scale) -> None:
         size = ImageSize(self.path_base(s=scale))
-        logger.warning(f"ATTENTION: Setting image size for {scale}, ImageSize: {size}")
+        logger.info(f"Setting image size for {scale}, ImageSize: {size}")
         self._data['data']['scales'][scale]['image_src_size'] = size
         logger.info('Setting Image Size, Scale %d: %s' %
                     (get_scale_val(scale), str(self._data['data']['scales'][scale]['image_src_size'])))
@@ -1081,8 +1101,8 @@ class DataModel:
 
             # Begin the upgrade process:
 
-            self._data['user_settings'].setdefault('mp_marker_size', 5)
-            self._data['user_settings'].setdefault('mp_marker_lineweight', 2)
+            self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
+            self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
 
             if self._data['version'] <= 0.26:
                 logger.info("Upgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.27))

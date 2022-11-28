@@ -3,6 +3,7 @@
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
 import os
+import shutil
 import sys
 import copy
 import time
@@ -206,6 +207,7 @@ class MainWindow(QMainWindow):
         self.low_low_widget.show()
         self.hud.show()
         self.new_control_panel.show()
+        self.toolbar_scale_combobox.setEnabled(True)
         cfg.SHADER = None
 
         if cfg.data:
@@ -479,7 +481,7 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
 
 
-    def align_forward(self, scale=None, num_layers=1) -> None:
+    def align_forward(self, scale=None, num_layers=-1) -> None:
 
         if not cfg.data:
             self.hud.post('No data yet!', logging.WARNING);
@@ -821,8 +823,6 @@ class MainWindow(QMainWindow):
         try:
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() - 1)  # Changes Scale
             cfg.data.set_layer(cur_layer)
-            # self.read_project_data_update_gui()
-            # self.onScaleChange()
             if not cfg.data.is_alignable():
                 self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
         except:
@@ -842,7 +842,6 @@ class MainWindow(QMainWindow):
         try:
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() + 1)  # Changes Scale
             cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
-            # self.onScaleChange()
             if not cfg.data.is_alignable():
                 self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
         except:
@@ -877,7 +876,6 @@ class MainWindow(QMainWindow):
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         self.toolbar_scale_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
         if inspect.stack()[1].function != 'initStyle':
-            # self.initNgServer(scales=[cfg.data.scale()])
             self.initNgViewer(scales=cfg.data.scales())
 
 
@@ -893,7 +891,6 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_light()
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
         if inspect.stack()[1].function != 'initStyle':
-            # self.initNgServer(scales=[cfg.data.scale()])
             self.initNgViewer(scales=cfg.data.scales())
 
 
@@ -907,7 +904,6 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
         if inspect.stack()[1].function != 'initStyle':
-            # self.initNgServer(scales=[cfg.data.scale()])
             self.initNgViewer(scales=cfg.data.scales())
 
 
@@ -921,7 +917,6 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         if inspect.stack()[1].function != 'initStyle':
-            # self.initNgServer(scales=[cfg.data.scale()])
             self.initNgViewer(scales=cfg.data.scales())
 
 
@@ -1050,10 +1045,12 @@ class MainWindow(QMainWindow):
 
 
     def updateLowLowWidgetB(self):
+        skips = '\n'.join(map(str,cfg.data.skips_list()))
+        matchpoints = '\n'.join(map(str,cfg.data.find_layers_with_matchpoints()))
         self.main_details_subwidgetB.setText(f"<b>Skipped Layers:</b><br>"
-                                             f"{', '.join(map(str, cfg.data.skips_list()))}<br>"
+                                             f"{skips}<br>"
                                              f"<b>Match Point Layers:</b><br>"
-                                             f"{', '.join(map(str, cfg.data.find_layers_with_matchpoints()))}<br>")
+                                             f"{matchpoints}<br>")
 
 
     def clearLowLowWidgetB(self):
@@ -1065,7 +1062,10 @@ class MainWindow(QMainWindow):
         self.history_label = QLabel('<b>Saved Alignments (Scale %d)</b>' % get_scale_val(s))
         self.historyListWidget.clear()
         dir = os.path.join(cfg.data.dest(), s, 'history')
-        self.historyListWidget.addItems(os.listdir(dir))
+        try:
+            self.historyListWidget.addItems(os.listdir(dir))
+        except:
+            logger.warning(f"History Directory '{dir}' Not Found")
 
 
     def view_historical_alignment(self):
@@ -1262,9 +1262,10 @@ class MainWindow(QMainWindow):
             self.toolbar_scale_combobox.setCurrentIndex(index)
         self._scales_combobox_switch = 1
 
-
-    @Slot()
     def fn_scales_combobox(self) -> None:
+
+        if self._is_mp_mode == True:
+            return
         caller = inspect.stack()[1].function
         # logger.info('caller: %s' % caller)
         if self._scales_combobox_switch == 0:
@@ -1281,6 +1282,9 @@ class MainWindow(QMainWindow):
 
 
     def fn_ng_layout_combobox(self) -> None:
+        caller = inspect.stack()[1].function
+        if caller == 'onStartProject':
+            return
         # logger.info("Setting Neuroglancer Layout [%s]... " % inspect.stack()[1].function)
         if not cfg.data:
             logger.info('Cant change layout, no data is loaded')
@@ -1391,53 +1395,62 @@ class MainWindow(QMainWindow):
 
     def new_project(self):
         logger.critical('Starting A New Project...')
-        self.hud.post('Set New Project Save Path...')
-        logger.info('Asking user to confirm new data')
-        msg = QMessageBox(QMessageBox.Warning,
-                          'Confirm New Project',
-                          'Please confirm create new project.',
-                          buttons=QMessageBox.Cancel | QMessageBox.Ok)
-        msg.setIcon(QMessageBox.Question)
-        msg.setDefaultButton(QMessageBox.Cancel)
-        reply = msg.exec_()
-        if reply == QMessageBox.Ok:
-            logger.info("Response was 'OK'")
-            pass
-        else:
-            logger.info("Response was not 'OK' - Returning")
-            self.hud.post('New Project Canceled', logging.WARNING)
-            self.set_idle()
-            return
-        if reply == QMessageBox.Cancel:
-            logger.info("Response was 'Cancel'")
-            self.hud.post('New Project Canceled', logging.WARNING)
-            self.set_idle()
-            return
+        if cfg.data:
+            logger.info('Data is not None. Asking user to confirm new data...')
+            msg = QMessageBox(QMessageBox.Warning,
+                              'Confirm New Project',
+                              'Please confirm create new project.',
+                              buttons=QMessageBox.Cancel | QMessageBox.Ok)
+            msg.setIcon(QMessageBox.Question)
+            msg.setDefaultButton(QMessageBox.Cancel)
+            reply = msg.exec_()
+            if reply == QMessageBox.Ok:
+                logger.info("Response was 'OK'")
+                pass
+            else:
+                logger.info("Response was not 'OK' - Returning")
+                self.hud.post('New Project Canceled', logging.WARNING)
+                return
+            if reply == QMessageBox.Cancel:
+                logger.info("Response was 'Cancel'")
+                self.hud.post('New Project Canceled', logging.WARNING)
+                return
         self.initView()
         self.hud.clear_display()
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.shutdownNeuroglancer()
         self.clear_snr_plot()
         self.hud.post('Creating A New Project...')
+        self.hud.post('Set New Project Path:')
         filename = new_project_dialog()
+        logger.info('User Chosen Filename: %s' % filename)
         if filename in ['', None]:
             self.hud.post("New Project Canceled")
             self.set_idle()
             return 0
-        logger.info("Overwriting Project Data In Memory With New Template")
         if not filename.endswith('.proj'):
             filename += ".proj"
+        if os.path.exists(filename):
+            logger.warning("The file '%s' already exists." % filename)
+            path_proj = os.path.splitext(filename)[0]
+            logger.info(f"Removing Extant Project Directory '{path_proj}'...")
+            shutil.rmtree(path_proj)
+            logger.info(f"Removing Extant Project File '{path_proj}'...")
+            shutil.rmtree(filename)
+
+        logger.info("Overwriting Project Data In Memory With New Template")
+
         path, extension = os.path.splitext(filename)
         cfg.data = None
         cfg.data = DataModel(name=path)
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
-        # self.import_images()
         try:
             self.import_images()
         except:
             print_exception()
             logger.warning('Import Images Dialog Was Canceled')
             return
+
         try:
             recipe_dialog = ConfigDialog(parent=self)
             if recipe_dialog.exec() != QFileDialog.Accepted:
@@ -1446,7 +1459,7 @@ class MainWindow(QMainWindow):
         except:
             logger.warning('Project Configuation Dialog Exited Abruptly')
             return
-
+        cfg.main_window.hud.post('Configuring Project Settings Based On User Responses...')
         self._scales_combobox_switch = 1
         try:
             self.autoscale()
@@ -1462,6 +1475,9 @@ class MainWindow(QMainWindow):
 
 
     def rescale(self):
+        if not cfg.data:
+            self.hud.post('No data yet!', logging.WARNING);
+            return
         dlg = AskContinueDialog(title='Confirm Rescale', msg='Warning: Rescaling resets project data.\n'
                                                              'Progress will be lost.  Continue?')
         if not dlg.exec(): logger.info('Rescale Canceled'); return
@@ -1534,9 +1550,9 @@ class MainWindow(QMainWindow):
         filename = open_project_dialog()
         logger.info('filename: %s' % filename)
         if filename == '':
-            self.hud.post("No Project File (.proj) Selected (='')", logging.WARNING); return
+            self.hud.post("No Project File Selected (.proj), dialog returned empty string...", logging.WARNING); return
         if filename == None:
-            self.hud.post('No Project File (.proj) Selected', logging.WARNING); return
+            self.hud.post('No Project File Selected (.proj)', logging.WARNING); return
         if os.path.isdir(filename):
             self.hud.post("Selected Path Is A Directory.", logging.WARNING); return
         self.image_panel_stack_widget.setCurrentIndex(2)
@@ -1669,7 +1685,7 @@ class MainWindow(QMainWindow):
     def import_images(self, clear_role=False):
         ''' Import images into data '''
         logger.critical('Importing Images...')
-        self.hud.post('Select Images To Import...')
+        self.hud.post('Select Images To Import:')
         role_to_import = 'base'
         try:
             filenames = natural_sort(import_images_dialog())
@@ -1700,8 +1716,7 @@ class MainWindow(QMainWindow):
             cfg.IMAGES_IMPORTED = True
             img_size = cfg.data.image_size(s='scale_1')
             cfg.data.link_all_stacks()
-            self.hud.post('%d Images Imported Successfully.' % cfg.data.n_layers())
-            self.hud.post(f'Image Dimensions: {img_size[0]}x{img_size[1]} pixels')
+            self.hud.post(f'Full Scale Image Dimensions: {img_size[0]}x{img_size[1]} pixels')
             '''Todo save the image dimensions in project dictionary for quick lookup later'''
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
@@ -1900,7 +1915,6 @@ class MainWindow(QMainWindow):
 
     def remote_view(self):
         self.hud.post("Loading A Neuroglancer Instance Running On A Remote Server...")
-        # self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.main_stack_widget.setCurrentIndex(3)
 
@@ -1963,9 +1977,13 @@ class MainWindow(QMainWindow):
         # self.ng_workers = {}
         try:
             for s in scales:
+                try:
+                    mp_mode = self.ng_workers[s].mp_mode
+                except:
+                    mp_mode = False
                 # logger.info('Deleting Viewer for %s...' % s)
                 del self.ng_workers[s]
-                logger.critical('Launching NG Server for %s...' % s)
+                logger.debug('Launching NG Server for %s...' % s)
 
                 is_aligned = is_arg_scale_aligned(s)
                 # logger.info('%s is aligned? %s' % (s, is_aligned))
@@ -2007,7 +2025,7 @@ class MainWindow(QMainWindow):
                 widget_size = self.image_panel_stack_widget.geometry().getRect()
                 self.ng_workers[s] = NgHost(src=cfg.data.dest(), scale=s)
                 self.threadpool.start(self.ng_workers[s])
-                self.ng_workers[s].initViewer(widget_size=widget_size)
+                self.ng_workers[s].initViewer(widget_size=widget_size, matchpoint=mp_mode)
                 self.ng_workers[s].signals.stateChanged.connect(lambda l: self.read_project_data_update_gui(ng_layer=l))
                 self.refreshNeuroglancerURL(s=s)  # Important
             # self.refreshNeuroglancerURL() #Important
@@ -2016,6 +2034,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
         finally:
+            self.hud.done()
             self.image_panel_stack_widget.setCurrentIndex(1)
             self.set_idle()
 
@@ -2031,17 +2050,22 @@ class MainWindow(QMainWindow):
             QShortcut(event, self, action)
 
 
-    def initNgViewer(self, scales=None):
-        if not cfg.data:
-            logger.warning('Data is not initialized')
-        if not ng.is_server_running():
-            logger.warning('Neuroglancer is not running')
-            return
-        if scales == None: scales = [cfg.data.scale()]
-        logger.critical('Initializing Viewer For: %s...' % str(scales))
-        for s in scales:
-            self.ng_workers[s].initViewer()
-            self.refreshNeuroglancerURL(s=s)
+    def initNgViewer(self, scales=None, matchpoint=None):
+        logger.critical(f'caller: {inspect.stack()[1].function}')
+        if cfg.data:
+            if ng.is_server_running():
+                if scales == None: scales = [cfg.data.scale()]
+                for s in scales:
+                    logger.info('Initializing Viewer For %s...' % s)
+                    if matchpoint != None:
+                        self.ng_workers[s].initViewer(matchpoint=matchpoint)
+                    else:
+                        self.ng_workers[s].initViewer()
+                    self.refreshNeuroglancerURL(s=s)
+            else:
+                logger.warning('Neuroglancer is not running')
+        else:
+            logger.warning('Cannot initialize viewer. Data model is not initialized')
 
 
     def reload_remote(self):
@@ -2072,29 +2096,32 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.setCurrentIndex(1)
 
     def print_ng_state_url(self):
-        if ng.is_server_running():
-            try:     self.ng_workers[cfg.data.scale()].show_state()
-            except:  print_exception()
-        else:
-            self.hud.post('Neuroglancer is not running.')
+        if cfg.data:
+            if ng.is_server_running():
+                try:     self.ng_workers[cfg.data.scale()].show_state()
+                except:  print_exception()
+            else:
+                self.hud.post('Neuroglancer is not running.')
 
 
     def print_ng_state(self):
-        if ng.is_server_running():
-            try:     self.hud.post('\nViewer State:\n%s' % str(self.ng_workers[cfg.data.scale()].viewer.state))
-            except:  print_exception()
-        else:
-            self.hud.post('Neuroglancer is not running')
+        if cfg.data:
+            if ng.is_server_running():
+                try:     self.hud.post('\nViewer State:\n%s' % str(self.ng_workers[cfg.data.scale()].viewer.state))
+                except:  print_exception()
+            else:
+                self.hud.post('Neuroglancer is not running')
 
 
     def print_ng_raw_state(self):
-        if ng.is_server_running():
-            try:
-                self.hud.post('\nRaw State:\n%s' % str(self.ng_workers[cfg.data.scale()].config_state.raw_state))
-            except:
-                print_exception()
-        else:
-            self.hud.post('Neuroglancer is not running')
+        if cfg.data:
+            if ng.is_server_running():
+                try:
+                    self.hud.post('\nRaw State:\n%s' % str(self.ng_workers[cfg.data.scale()].config_state.raw_state))
+                except:
+                    print_exception()
+            else:
+                self.hud.post('Neuroglancer is not running')
 
 
     def browser_reload(self):
@@ -2105,12 +2132,13 @@ class MainWindow(QMainWindow):
 
 
     def dump_ng_details(self):
-        if not ng.is_server_running():
-            logger.warning('Neuroglancer is not running')
-            return
-        v = self.ng_workers[cfg.data.s()].viewer
-        self.hud.post("v.position: %s\n" % str(v.state.position))
-        self.hud.post("v.config_state: %s\n" % str(v.config_state))
+        if cfg.data:
+            if not ng.is_server_running():
+                logger.warning('Neuroglancer is not running')
+                return
+            v = self.ng_workers[cfg.data.s()].viewer
+            self.hud.post("v.position: %s\n" % str(v.state.position))
+            self.hud.post("v.config_state: %s\n" % str(v.config_state))
 
 
     def blend_ng(self):
@@ -2134,44 +2162,48 @@ class MainWindow(QMainWindow):
 
 
     def configure_project(self):
-        logger.info('Showing configure project dialog...')
-        recipe_dialog = ConfigDialog(parent=self)
-        result = recipe_dialog.exec_()
-        if not result:  logger.warning('Dialog Did Not Return A Result')
+        if cfg.data:
+            logger.info('Showing configure project dialog...')
+            recipe_dialog = ConfigDialog(parent=self)
+            result = recipe_dialog.exec_()
+            if not result:  logger.warning('Dialog Did Not Return A Result')
 
 
     def view_k_img(self):
-        self.w = KImageWindow(parent=self)
-        self.w.show()
+        if cfg.data:
+            self.w = KImageWindow(parent=self)
+            self.w.show()
 
 
     def bounding_rect_changed_callback(self, state):
-        if inspect.stack()[1].function == 'read_project_data_update_gui': return
-        if state:
-            self.hud.post('Bounding Box is ON. Warning: Dimensions may grow larger than the original images.')
-            cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
-        else:
-            self.hud.post('Bounding Box is OFF (faster). Dimensions will equal the original images.')
-            cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
+        if cfg.data:
+            if inspect.stack()[1].function == 'read_project_data_update_gui': return
+            if state:
+                self.hud.post('Bounding Box is ON. Warning: Dimensions may grow larger than the original images.')
+                cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
+            else:
+                self.hud.post('Bounding Box is OFF (faster). Dimensions will equal the original images.')
+                cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
 
 
     def skip_changed_callback(self, state):  # 'state' is connected to skipped toggle
         '''Callback Function for Skip Image Toggle'''
-        # caller is 'main' when user is toggler
-        if inspect.stack()[1].function == 'read_project_data_update_gui': return
-        skip_state = self.toggle_skip.isChecked()
-        for s in cfg.data.scales():
-            layer = self.request_ng_layer()
-            logger.info(f'request_ng_layer: {layer}, cfg.data.layer(): {cfg.data.layer()}, cfg.data.n_layers(): {cfg.data.n_layers()}')
-            if layer >= cfg.data.n_layers():
-                logger.warning(f'Request layer is out of range ({layer}) - Returning')
-                return
-            cfg.data.set_skip(skip_state, s=s, l=layer)  # for checkbox
-        if skip_state: self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
-        # else:          self.hud.post("No Skip: %s" % cfg.data.name_base())
-        cfg.data.link_all_stacks()
-        self.read_project_data_update_gui()
-        self.updateLowLowWidgetB()
+        if cfg.data:
+            # caller is 'main' when user is toggler
+            if inspect.stack()[1].function == 'read_project_data_update_gui': return
+            skip_state = self.toggle_skip.isChecked()
+            for s in cfg.data.scales():
+                layer = self.request_ng_layer()
+                logger.info(f'request_ng_layer: {layer}, cfg.data.layer(): {cfg.data.layer()}, cfg.data.n_layers(): {cfg.data.n_layers()}')
+                if layer >= cfg.data.n_layers():
+                    logger.warning(f'Request layer is out of range ({layer}) - Returning')
+                    return
+                cfg.data.set_skip(skip_state, s=s, l=layer)  # for checkbox
+            if skip_state: self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
+            # else:          self.hud.post("No Skip: %s" % cfg.data.name_base())
+            cfg.data.link_all_stacks()
+            self.read_project_data_update_gui()
+            self.updateLowLowWidgetB()
 
 
     def skip_change_shortcut(self):
@@ -2182,26 +2214,34 @@ class MainWindow(QMainWindow):
                 self.toggle_skip.setChecked(True)
 
 
-    def enter_exit_match_point_mode(self):
-        if self._is_mp_mode == False:
-            self._is_mp_mode = True
-            self.extra_header_text_label.setText('Match Point Mode')
-            self.hud.post('Entering Match Point Mode.')
-            self.new_control_panel.hide()
-            self.force_hide_expandable_widgets()
-            # self.low_low_widget.hide()
-            self.matchpoint_controls.show()
-            self.update_match_point_snr()
-            self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
-            self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
-            # self.initNgServer(scales=cfg.data.scales())
-            self.initNgViewer()
-        else:
-            self._is_mp_mode = False
-            self.extra_header_text_label.setText('')
-            self.hud.post('Exiting Match Point Mode.')
-            self.updateLowLowWidgetB()
-            self.initView()
+    def enterExitMatchPointMode(self):
+        if cfg.data:
+            if self._is_mp_mode == False:
+                logger.info('\nEntering Match Point Mode...')
+                self.hud.post('Entering Match Point Mode...')
+                self._is_mp_mode = True
+                self.toolbar_scale_combobox.setEnabled(False)
+                self.extra_header_text_label.setText('Match Point Mode')
+                self.new_control_panel.hide()
+                self.force_hide_expandable_widgets()
+                # self.low_low_widget.hide()
+                self.matchpoint_controls.show()
+                self.update_match_point_snr()
+                self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
+                self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
+                # self.initNgServer(scales=cfg.data.scales())
+                self.initNgViewer(matchpoint=True)
+            else:
+                logger.info('\nExiting Match Point Mode...')
+                self.hud.post('Exiting Match Point Mode...')
+                self._is_mp_mode = False
+                self.toolbar_scale_combobox.setEnabled(True)
+                self.extra_header_text_label.setText('')
+
+                self.updateLowLowWidgetB()
+                self.initView()
+                self.initNgViewer(matchpoint=False)
+                # self.initNgServer()
 
 
     def update_match_point_snr(self):
@@ -2269,12 +2309,14 @@ class MainWindow(QMainWindow):
 
     def set_mp_marker_lineweight(self):
         cfg.data['user_settings']['mp_marker_lineweight'] = self.mp_marker_lineweight_spinbox.value()
-        self.initNgViewer(cfg.data.scales())
+        if inspect.stack()[1].function != 'enterExitMatchPointMode':
+            self.initNgViewer(cfg.data.scales())
 
 
     def set_mp_marker_size(self):
         cfg.data['user_settings']['mp_marker_size'] = self.mp_marker_size_spinbox.value()
-        self.initNgViewer(cfg.data.scales())
+        if inspect.stack()[1].function != 'enterExitMatchPointMode':
+            self.initNgViewer(cfg.data.scales())
 
 
     def set_opacity(self, obj, val):
@@ -2636,7 +2678,7 @@ class MainWindow(QMainWindow):
         ngDebugMenu.addAction(self.ngInvalidateAction)
 
         self.ngRefreshViewerAction = QAction('Recreate View', self)
-        self.ngRefreshViewerAction.triggered.connect(lambda: self.initNgViewer(s=cfg.data.scales()))
+        self.ngRefreshViewerAction.triggered.connect(lambda: self.initNgViewer(scales=cfg.data.scales()))
         ngDebugMenu.addAction(self.ngRefreshViewerAction)
 
         self.ngRefreshUrlAction = QAction('Refresh URL', self)
@@ -2663,20 +2705,20 @@ class MainWindow(QMainWindow):
         alignMenu = toolsMenu.addMenu('Align')
 
         self.alignAllAction = QAction('Align All', self)
-        self.alignAllAction.triggered.connect(self.align_all)
+        self.alignAllAction.triggered.connect(lambda: self.align_all(scale=cfg.data.scale()))
         self.alignAllAction.setShortcut('Ctrl+A')
         alignMenu.addAction(self.alignAllAction)
 
         self.alignOneAction = QAction('Align One', self)
-        self.alignOneAction.triggered.connect(self.align_one)
+        self.alignOneAction.triggered.connect(lambda: self.align_one(scale=cfg.data.scale()))
         alignMenu.addAction(self.alignOneAction)
 
         self.alignForwardAction = QAction('Align Forward', self)
-        self.alignForwardAction.triggered.connect(self.align_forward)
+        self.alignForwardAction.triggered.connect(lambda: self.align_forward(scale=cfg.data.scale()))
         alignMenu.addAction(self.alignForwardAction)
 
         self.alignMatchPointAction = QAction('Match Point Align', self)
-        self.alignMatchPointAction.triggered.connect(self.enter_exit_match_point_mode)
+        self.alignMatchPointAction.triggered.connect(self.enterExitMatchPointMode)
         self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
 
@@ -2732,7 +2774,7 @@ class MainWindow(QMainWindow):
 
         projectMenu = self.menu.addMenu('Project')
 
-        self.showMatchpointsAction = QAction('Show Matchpoints', self)
+        self.showMatchpointsAction = QAction('Print Matchpoints', self)
         self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
         projectMenu.addAction(self.showMatchpointsAction)
 
@@ -2804,7 +2846,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Welcome To AlignEM-SWiFT.')
 
         tip = 'Use All Images (Reset)'
-        self.clear_skips_button = QPushButton('Keep All')
+        self.clear_skips_button = QPushButton('Reset')
         self.clear_skips_button.setEnabled(False)
         self.clear_skips_button.setStyleSheet("font-size: 10px;")
         self.clear_skips_button.setStatusTip(tip)
@@ -2868,7 +2910,7 @@ class MainWindow(QMainWindow):
         self.apply_all_button = QPushButton("Apply All")
         self.apply_all_button.setEnabled(False)
         self.apply_all_button.setStatusTip('Apply These Settings To The Entire Project')
-        self.apply_all_button.setStyleSheet("font-size: 11px;")
+        self.apply_all_button.setStyleSheet("font-size: 10px;")
         self.apply_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.apply_all_button.clicked.connect(self.apply_all)
         self.apply_all_button.setFixedSize(slim_button_size)
@@ -3166,15 +3208,15 @@ class MainWindow(QMainWindow):
         self.mp_marker_lineweight_spinbox.setSuffix('pt')
         self.mp_marker_lineweight_spinbox.valueChanged.connect(self.set_mp_marker_lineweight)
 
-        self.exit_matchpoint_button = QPushButton('Back')
+        self.exit_matchpoint_button = QPushButton('Exit')
         self.exit_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.exit_matchpoint_button.clicked.connect(self.initView)
+        self.exit_matchpoint_button.clicked.connect(self.enterExitMatchPointMode)
         self.exit_matchpoint_button.setFixedSize(normal_button_size)
 
         self.realign_matchpoint_button = QPushButton('Realign\nLayer')
         self.realign_matchpoint_button.setStyleSheet("font-size: 11px;")
         self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.realign_matchpoint_button.clicked.connect(lambda: self.align_one(use_scale=cfg.data.scale()))
+        self.realign_matchpoint_button.clicked.connect(lambda: self.align_one(scale=cfg.data.scale()))
         self.realign_matchpoint_button.setFixedSize(normal_button_size)
 
         self.matchpoint_controls_hlayout.addWidget(self.exit_matchpoint_button)

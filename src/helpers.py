@@ -48,25 +48,25 @@ def make_affine_widget_HTML(afm, cafm):
     text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='3' border='0'>"\
            f"  <tr>"\
            f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
-           f"    <td style='width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
            f"    <td rowspan=2 style='background-color: #dcdcdc; width: 10%'><b>CAFM</b></td>"\
-           f"    <td style='width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"</table>"
     return text
@@ -667,11 +667,11 @@ def print_sanity_check():
     print("Data Selection & Scaling___________________________")
     print("  Are images imported?                             :", are_images_imported())
     print("  How many images?                                 :", cfg.data.n_layers())
-    skips = cfg.data.skips_list()
-    if skips != []:
-        print("  Skip list                                        :", skips)
-    else:
-        print("  Skip list                                        : n/a")
+    # skips = cfg.data.skips_list()
+    # if skips != []:
+    #     print("  Skip list                                        :", skips)
+    # else:
+    #     print("  Skip list                                        : n/a")
     print("  Is dataset scaled?                               :", do_scales_exist())
     if do_scales_exist():
         print("  How many scales?                                 :", cfg.data.n_scales())
@@ -789,7 +789,7 @@ def print_scratch(msg):
 
 def makedirs_exist_ok(path_to_build, exist_ok=False):
     # Needed for old python which doesn't have the exist_ok option!!!
-    logger.debug("Making directories for path %s" % path_to_build)
+    logger.info("Making directories for path %s" % path_to_build)
     parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
     full = ""
     if len(parts[0]) == 0:
