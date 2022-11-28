@@ -15,7 +15,14 @@ import operator
 import platform
 import textwrap
 from pathlib import Path
+import psutil
 import zarr
+import dis
+
+from neuroglancer.viewer_config_state import AggregateChunkSourceStatistics
+from neuroglancer.viewer_config_state import ChunkSourceStatistics
+
+# import memory_profiler
 import neuroglancer as ng
 import neuroglancer.server
 import pyqtgraph as pg
@@ -1969,13 +1976,35 @@ class MainWindow(QMainWindow):
             self.ng_browser.setUrl(QUrl(self.ng_workers[s].url()))
             self.ng_browser.setFocus()
 
+    def stopNgServer(self):
+        if ng.is_server_running():
+            self.hud.post('Stopping Neuroglancer...')
+            try:
+                ng.stop()
+            except:
+                print_exception()
+            else:
+                self.hud.done()
+            try:
+                logger.info('Garbage collecting Ng viewers...')
+            except:
+                print_exception()
+            else:
+                self.hud.done()
 
+
+        else:
+            self.hud.post('Neuroglancer Is Not Running')
+
+
+    # @track
     def initNgServer(self, scales=None):
         # logger.info(f'caller: {inspect.stack()[1].function}')
         if not cfg.data:
             logger.warning('Nothing To View'); return
         if not scales:
-            scales = [cfg.data.scale()]
+            # scales = [cfg.data.scale()]
+            scales = cfg.data.scales()
         logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
         self.hud.post('Starting Neuroglancer Workers...')
         self.set_status('Starting Neuroglancer...')
@@ -2580,6 +2609,11 @@ class MainWindow(QMainWindow):
         self.ngRestartAction = QAction('Restart', self)
         self.ngRestartAction.triggered.connect(self.initNgServer)
         neuroglancerMenu.addAction(self.ngRestartAction)
+
+        self.ngStopAction = QAction('Stop', self)
+        self.ngStopAction.triggered.connect(self.stopNgServer)
+        neuroglancerMenu.addAction(self.ngStopAction)
+
 
         ngLayoutMenu = neuroglancerMenu.addMenu("Layout")
 
@@ -3884,3 +3918,5 @@ class MainWindow(QMainWindow):
                 logger.info(f'Item Text: {item.text()}')
             return True
         return super().eventFilter(source, event)
+
+

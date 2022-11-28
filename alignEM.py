@@ -140,9 +140,12 @@ def main():
     logger.addHandler(ch)
 
     LOGLEVELS = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
-    if args.debug:  logger.setLevel(logging.DEBUG)
-    if args.debug_mp: cfg.DEBUG_MP = True
-    else:  logger.setLevel(LOGLEVELS[args.loglevel])
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(LOGLEVELS[args.loglevel])
+    if args.debug_mp:
+        cfg.DEBUG_MP = True
     if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     if args.no_splash: cfg.NO_SPLASH = True

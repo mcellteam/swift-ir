@@ -17,6 +17,7 @@ import imghdr
 import tifffile
 import numpy as np
 from shutil import rmtree
+import psutil
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
 # blosc.set_nthreads(8)
@@ -71,6 +72,29 @@ def make_affine_widget_HTML(afm, cafm):
            f"</table>"
     return text
 
+
+def elapsed_since(start):
+    return time.strftime("%H:%M:%S", time.gmtime(time.time() - start))
+
+
+def get_process_memory():
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss
+
+
+def track(func):
+    def wrapper(*args, **kwargs):
+        mem_before = get_process_memory()
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed_time = elapsed_since(start)
+        mem_after = get_process_memory()
+        logger.critical("{}: memory before: {:,}, after: {:,}, consumed: {:,}; exec time: {}".format(
+            func.__name__,
+            mem_before, mem_after, mem_after - mem_before,
+            elapsed_time))
+        return result
+    return wrapper
 
 def snr_list(self, scale=None):
     if scale == None: scale = self.scale()
@@ -763,9 +787,7 @@ def module_debug() -> None:
         pass
 
 def show_process_diagnostics():
-    nthreadpool = cfg.main_window.threadpool.activeThreadCount
-
-
+    nthreadpool = cfg.main_window.threadpool.activeThreadCount()
     cfg.main_window.hud.post('\n\nmain_window.threadpool Active thread count: %d' % nthreadpool)
 
 

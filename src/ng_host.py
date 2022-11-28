@@ -34,7 +34,7 @@ from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
 from src.funcs_ng import launch_server
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
-from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string
+from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string, track
 from src.shaders import ann_shader
 
 
@@ -171,10 +171,7 @@ class NgHost(QRunnable):
             logger.info('Getting widget size from thread...')
             widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
         widget_height = widget_size[3]  # pixels
-        logger.debug('widget size  =%s' % str(widget_size))
-        logger.debug('arrangement  =%d' % self.arrangement)
-        logger.debug('is_aligned   =%s' % is_aligned)
-        logger.debug('has_bb       =%s' % has_bb)
+
         if self.arrangement == 1:
             if is_aligned:
                 widget_width = widget_size[2] / 3
@@ -183,16 +180,6 @@ class NgHost(QRunnable):
         else:
             widget_width = widget_size[2] / 2
 
-        # if layout == 2:
-        #     widget_size = cfg.main_window.ng_browser.geometry().getRect()
-        #     widget_height = widget_size[3]  # pixels
-        #     if is_aligned:
-        #         widget_width = widget_size[2] / 3
-        #     else:
-        #         widget_width = widget_size[2] / 2
-        # else:
-        #     widget_height = h
-        #     widget_width = w
         tissue_height = cfg.data.res_y(s=self.scale) * max_height  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
         tissue_width = cfg.data.res_x(s=self.scale) * max_width  # nm
@@ -202,14 +189,16 @@ class NgHost(QRunnable):
         string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
                  (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
         logger.info(string)
-        # cfg.main_window.hud.post(string)
-
-        logger.debug('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
-        logger.debug('max_width=%d, max_height=%d' % (max_width, max_height))
-        logger.debug('widget width=%d, widget height=%d' % (widget_width, widget_height))
-        logger.debug('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
-        logger.debug('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
-        logger.debug('cross_section_scale=%.10f' % cross_section_scale)
+        # logger.info('widget size  =%s' % str(widget_size))
+        # logger.info('arrangement  =%d' % self.arrangement)
+        # logger.info('is_aligned   =%s' % is_aligned)
+        # logger.info('has_bb       =%s' % has_bb)
+        # logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
+        # logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
+        # logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
+        # logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
+        # logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
+        # logger.info('cross_section_scale=%.10f' % cross_section_scale)
 
 
 
@@ -224,10 +213,11 @@ class NgHost(QRunnable):
 
             adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
-            # s.system_memory_limit = 2 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+            # s.gpu_memory_limit = -1
+            # s.system_memory_limit = -1
+            # In general the existing defaults are pretty reasonable and you
+            # can't raise them too much without running into problems. -jbms
+
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
