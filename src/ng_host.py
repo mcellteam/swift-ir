@@ -213,8 +213,8 @@ class NgHost(QRunnable):
 
             adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
-            # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
             # In general the existing defaults are pretty reasonable and you
             # can't raise them too much without running into problems. -jbms
 
