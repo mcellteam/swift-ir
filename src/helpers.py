@@ -7,7 +7,9 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
-import os, re, sys, copy, json, time, signal, logging, inspect, platform, traceback, shutil, statistics
+import os, re, sys, copy, json, time, signal, logging, inspect
+import platform, traceback, shutil, statistics
+from time import time
 from typing import Dict, List, Tuple, Any, Union, Sequence
 from glob import glob
 from pathlib import Path
@@ -43,6 +45,17 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            ]
 
 logger = logging.getLogger(__name__)
+
+
+def timer(func):
+    def wrap_func(*args, **kwargs):
+        t1 = time()
+        result = func(*args, **kwargs)
+        t2 = time()
+        print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
+        return result
+
+    return wrap_func
 
 def make_affine_widget_HTML(afm, cafm):
     # 'cellspacing' affects table width and 'cellpadding' affects table height

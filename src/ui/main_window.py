@@ -50,7 +50,7 @@ from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
 from src.generate_zarr_scales import generate_zarr_scales
 from src.helpers import *
-from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc
+from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc, timer
 from src.ng_host import NgHost
 from src.ui.dialogs import AskContinueDialog, ConfigDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog
@@ -75,6 +75,10 @@ from collections import namedtuple
 __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
+
+
+from time import time
+
 
 
 class MainWindow(QMainWindow):
@@ -108,6 +112,9 @@ class MainWindow(QMainWindow):
         self.initShortcuts()
         self.initData()
 
+        # if cfg.PROFILER:
+        #     from scalene import scalene_profiler
+
         if is_tacc():
             cfg.USE_TORNADO = True
             cfg.USE_NG_WEBDRIVER = False
@@ -115,20 +122,20 @@ class MainWindow(QMainWindow):
         if not cfg.NO_SPLASH:
             self.show_splash()
 
-
+    @timer
     def initSize(self, width, height):
         self.resize(width, height)
 
-
+    @timer
     def initPos(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-
+    @timer
     def initData(self):
-        logger.info('')
+        # logger.info('')
         cfg.data = None
         if cfg.DUMMY:
             with open('tests/example.proj', 'r') as f:
@@ -146,43 +153,45 @@ class MainWindow(QMainWindow):
             self.refreshNeuroglancerURL()
         return super(MainWindow, self).resizeEvent(event)
 
-
+    @timer
     def initThreadpool(self, timeout=3000):
-        logger.info('')
+        # logger.info('')
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
         self.threadpool.setExpiryTimeout(timeout)  # ms
 
-
-    def initOpenGlContext(self):
-        logger.info('')
-        self.context = QOpenGLContext(self)
-        self.context.setFormat(QSurfaceFormat())
-
-
-    def initWebEngine(self):
-        logger.info('')
-        self.webengineview = QWebEngineView()
-        # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
-        # if qtpy.PYSIDE6:
-        self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
-
-
+    @timer
     def initImageAllocations(self):
-        logger.info('')
+        # logger.info('')
         if qtpy.PYSIDE6:
-            QImageReader.setAllocationLimit(0)  # PySide6
-        elif qtpy.PYQT6:
-            os.environ['QT_IMAGEIO_MAXALLOC'] = "1000000000000000"  # PyQt6
+            QImageReader.setAllocationLimit(0)  # PySide6 only
+        os.environ['QT_IMAGEIO_MAXALLOC'] = "1_000_000_000_000_000"
         from PIL import Image
         Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
+    @timer
+    def initOpenGlContext(self):
+        # logger.info('')
+        self.context = QOpenGLContext(self)
+        self.context.setFormat(QSurfaceFormat())
 
+    @timer
+    def initWebEngine(self):
+        # Performance with settings: Function 'initWebEngine' executed in 0.1939s
+        # Without: Function 'initWebEngine' executed in 0.0001s
+
+        # logger.info('')
+        self.webengineview = QWebEngineView()
+        # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
+        # if qtpy.PYSIDE6:
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+
+    @timer
     def initPrivateMembers(self):
-        logger.info('')
+        # logger.info('')
         self._unsaved_changes = False
         self._working = False
         self._is_mp_mode = False
@@ -195,22 +204,22 @@ class MainWindow(QMainWindow):
         self._snr_by_scale = dict() #Todo
         self.ng_workers = {}
 
-
+    @timer
     def initStyle(self):
-        logger.info('')
+        # logger.info('')
         self.main_stylesheet = os.path.abspath('styles/default.qss')
         self.apply_default_style()
 
-
+    @timer
     def initPlotColors(self):
-        logger.info('')
+        # logger.info('')
         self._plot_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
                              '#aaa672', '#152c74', '#404f74',
                              '#f3e375', '#5c4ccc', '#d6acd6',
                              '#aaa672', '#152c74', '#404f74']
         self._plot_brushes = [pg.mkBrush(c) for c in self._plot_colors]
 
-
+    @timer
     def initView(self):
         self.main_tab_widget.show()
         self.full_window_controls.hide()
@@ -915,8 +924,9 @@ class MainWindow(QMainWindow):
         # self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         self.toolbar_scale_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
-        if inspect.stack()[1].function != 'initStyle':
-            self.initNgViewer(scales=cfg.data.scales())
+        if cfg.data:
+            if inspect.stack()[1].function != 'initStyle':
+                self.initNgViewer(scales=[cfg.data.scale()])
 
 
     def apply_daylight_style(self):
@@ -930,8 +940,9 @@ class MainWindow(QMainWindow):
         self.python_console.set_color_linux()
         self.hud.set_theme_light()
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
-        if inspect.stack()[1].function != 'initStyle':
-            self.initNgViewer(scales=cfg.data.scales())
+        if cfg.data:
+            if inspect.stack()[1].function != 'initStyle':
+                self.initNgViewer(scales=[cfg.data.scale()])
 
 
     def apply_moonlit_style(self):
@@ -943,8 +954,9 @@ class MainWindow(QMainWindow):
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
-        if inspect.stack()[1].function != 'initStyle':
-            self.initNgViewer(scales=cfg.data.scales())
+        if cfg.data:
+            if inspect.stack()[1].function != 'initStyle':
+                self.initNgViewer(scales=[cfg.data.scale()])
 
 
     def apply_sagittarius_style(self):
@@ -956,8 +968,9 @@ class MainWindow(QMainWindow):
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
-        if inspect.stack()[1].function != 'initStyle':
-            self.initNgViewer(scales=cfg.data.scales())
+        if cfg.data:
+            if inspect.stack()[1].function != 'initStyle':
+                self.initNgViewer(scales=[cfg.data.scale()])
 
 
     def reset_groupbox_styles(self):
@@ -1619,7 +1632,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_paths_absolute(filename=filename)
         self.onStartProject()
 
-
+    @timer
     def onStartProject(self):
         '''Functions that only need to be run once per project
         Do not automatically save, there is nothing to save yet'''
@@ -1932,6 +1945,17 @@ class MainWindow(QMainWindow):
         else:
             logger.info('Success')
 
+        # if cfg.PROFILER:
+        #     try:
+        #         logger.info('Shutting down profiler...')
+        #         scalene_profiler.stop()
+        #     except:
+        #         logger.warning('Having trouble stopping profiler')
+        #     else:
+        #         logger.info('Success')
+
+
+
         logger.info('Quitting app...')
         self.app.quit()
 
@@ -2040,7 +2064,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Neuroglancer Is Not Running')
 
 
-    # @track
+    @timer
     def initNgServer(self, scales=None):
         # logger.info(f'caller: {inspect.stack()[1].function}')
         if not cfg.data:
@@ -2121,7 +2145,7 @@ class MainWindow(QMainWindow):
 
     def initShortcuts(self):
         '''Initialize Shortcuts'''
-        logger.info('')
+        # logger.info('')
         events = (
             (QKeySequence.MoveToPreviousChar, self.scale_down),
             (QKeySequence.MoveToNextChar, self.scale_up)
@@ -2573,11 +2597,10 @@ class MainWindow(QMainWindow):
             if cfg.data:
                 self.layer_view_widget.set_data()
 
-
-
+    @timer
     def initMenu(self):
         '''Initialize Menu'''
-        logger.info('')
+        # logger.info('')
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # Fix for non-native menubar on macOS
@@ -2614,13 +2637,13 @@ class MainWindow(QMainWindow):
 
         viewMenu = self.menu.addMenu('View')
 
-        self.normalizeViewAction = QAction('Normal View', self)
+        self.normalizeViewAction = QAction('Normal', self)
         self.normalizeViewAction.triggered.connect(self.initView)
         viewMenu.addAction(self.normalizeViewAction)
 
-        expandMenu = viewMenu.addMenu("Full Window")
+        expandMenu = viewMenu.addMenu("Enlarge")
 
-        self.expandViewerAction = QAction('Viewer', self)
+        self.expandViewerAction = QAction('Neuroglancer', self)
         self.expandViewerAction.triggered.connect(self.expand_viewer_size)
         expandMenu.addAction(self.expandViewerAction)
 
@@ -2666,7 +2689,7 @@ class MainWindow(QMainWindow):
         self.theme3Action.setCheckable(True)
         self.theme4Action.setCheckable(True)
 
-        self.splashAction = QAction('Show Splash', self)
+        self.splashAction = QAction('Splash', self)
         self.splashAction.triggered.connect(self.show_splash)
         viewMenu.addAction(self.splashAction)
 
@@ -2914,9 +2937,11 @@ class MainWindow(QMainWindow):
         self.reloadBrowserAction.triggered.connect(self.browser_reload)
         helpMenu.addAction(self.reloadBrowserAction)
 
+
+    @timer
     def initUI(self):
         '''Initialize Main UI'''
-        logger.info('')
+        # logger.info('')
         std_height = int(22)
         std_width = int(96)
         std_button_size = QSize(std_width, std_height)
@@ -3716,10 +3741,10 @@ class MainWindow(QMainWindow):
     def get_thumbnail_list(self):
         pass
 
-
+    @timer
     def initOverviewPanel(self):
 
-        logger.info('')
+        # logger.info('')
         preview = namedtuple("preview", "id title image")
 
         self.previewmodel = PreviewModel()
@@ -3754,6 +3779,7 @@ class MainWindow(QMainWindow):
         self.thumbnail_table.resizeRowsToContents()
         self.thumbnail_table.resizeColumnsToContents()
 
+    @timer
     def initWidgetSizeAndSpacing(self):
         self.main_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.main_details_subwidgetA.setContentsMargins(0, 0, 0, 0)
@@ -3802,7 +3828,7 @@ class MainWindow(QMainWindow):
         for i in reversed(range(self.snr_plot_controls_hlayout.count())):
             self.snr_plot_controls_hlayout.removeItem(self.snr_plot_controls_hlayout.itemAt(i))
 
-
+    @timer
     def initSnrPlot(self, s=None):
         '''
         cfg.main_window.snr_points.data <- numpy.ndarray of snr data points
@@ -3908,8 +3934,10 @@ class MainWindow(QMainWindow):
         self.last_snr_click = points
         self.jump_to(index)
 
+
+    @timer
     def initPbar(self):
-        logger.info('')
+        # logger.info('')
         self.statusBar = self.statusBar()
         self.pbar = QProgressBar(self)
         # self.statusBar.addPermanentWidget(self.pbar)
@@ -3927,13 +3955,15 @@ class MainWindow(QMainWindow):
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
 
+    @timer
     def initJupyter(self):
-        logger.info('')
+        # logger.info('')
         self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
                                                          'event loop of AlignEM-SWiFT - '
                                                          'As they say, with great power...!\n\n')
         self.python_console.setObjectName('python_console')
         # self.python_console.push_vars({'align_all':self.align_all})
+
 
     def shutdownJupyter(self):
         try:
@@ -3943,9 +3973,11 @@ class MainWindow(QMainWindow):
             logger.info('Having trouble shutting down Jupyter Console Kernel')
             self.python_console.request_interrupt_kernel()
 
+
     def restart_python_kernel(self):
         self.hud.post('Restarting Python Kernel...')
         self.python_console.request_restart_kernel()
+
 
     def back_callback(self):
         logger.info("Returning Home...")

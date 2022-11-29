@@ -5,6 +5,11 @@ Colors:
 #DAEBFE - off-white blue
 */
 
+QTabWidget#main_tab_widget{
+    /*background-color: #ffed8a;*/
+    color: #141414;
+}
+
 
 QMainWindow#mainwindow{
     /*background-color: #DAEBFE;*/
@@ -22,9 +27,13 @@ QWidget#browser_overlay_widget {
 }
 
 
-HeadupDisplay#hud {
+QWidget#hud {
     background-color: #141414;
     color: #f3f6fb;
+    border-style: inset;
+    border-color: #d3dae3;     /* light off-white */
+    border-width: 0px;
+    border-radius: 1px;
 }
 
 QLabel#toolbar_layer_label { color: #F3F6FB; }
@@ -54,10 +63,7 @@ QCheckBox#toggle_skip {
 }
 
 
-QTableView{
-    background-color: transparent;
-
-}
+/*TableView{background-color: transparent;}*/
 
 QCheckBox {
 	spacing: 5px;

@@ -58,13 +58,16 @@ import time
 
 import os, sys, signal, logging, argparse
 import src.config as cfg
-from src.helpers import check_for_binaries, print_exception
+from src.helpers import check_for_binaries, print_exception, is_tacc
 from qtpy import QtCore
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication, QTimer
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 from qtpy import QtWebEngineCore
+if not is_tacc():
+    from scalene import scalene_profiler
+
 
 class CustomFormatter(logging.Formatter):
 
@@ -128,6 +131,7 @@ def main():
     # parser.add_argument('--no_multiview', action='store_true', help='Use single webengineview rather than three-panel webengineview')
     parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
     parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
+    parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
@@ -152,6 +156,11 @@ def main():
     # if args.no_multiview: cfg.MULTIVIEW = False
     if args.opencv: cfg.USE_PYTHON = True
     if args.dummy: cfg.DUMMY = True
+    if args.profile:
+        cfg.PROFILER = True
+        # from scalene import scalene_profiler
+        # scalene_profiler.start()
+
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')

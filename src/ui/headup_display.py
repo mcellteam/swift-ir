@@ -19,7 +19,6 @@ import src.config as cfg
 
 # __all__ = ['HeadupDisplay', 'HudWorker']
 
-# logger = logging.getLogger(__name__)
 logger = logging.getLogger("hud")
 logger.propagate = False # Prevents Message Propagation To The Root Handler
 
@@ -69,44 +68,22 @@ class HeadupDisplay(QWidget):
         self.setFocusPolicy(Qt.NoFocus)
         self.setMinimumHeight(140)
         self.textedit = te = QPlainTextEdit(self)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         f = QFont()
         f.setStyleHint(QFont.Monospace)
         te.setFont(f)
         te.setReadOnly(True)
-        te.setStyleSheet("""
-            /*background-color: #d3dae3;*/
-            /*background-color:  #f5ffff;*/
-            /*background-color:  #151a1e;*/
-            background-color:  #000000;
-            /*border-style: solid;*/
-            border-style: inset;
-            /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
-            border-color: #d3dae3;     /* light off-white */
-            border-width: 0px;
-            border-radius: 2px;            
-        """)
         self.handler = h = QtHandler(self.update_status)
-        # fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
-        # fs = '%(asctime)s [%(levelname)s] %(qThreadName)-10s | %(message)s'
         fs = '%(asctime)s [%(levelname)s] %(message)s'
-        # fs = '[%(levelname)s] %(asctime)s  %(message)s'
-        # fs = '%(asctime)s %(message)s'
-        # fs = '%(levelname)-8s %(asctime)s %(qThreadname)-15s %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
         h.setFormatter(formatter)
         logger.addHandler(h)
 
-        self.setStyleSheet("""QToolTip { 
-                                                background-color: #8ad4ff;
-                                                /*color: white;*/
-                                                color: #000000;
-                                                border: #8ad4ff solid 1px;
-                                                }""")
-
-        # Set up to terminate the QThread when we exit
-        # app.aboutToQuit.connect(self.force_quit) #0816- (!) This caused error after refactor:
-        # AttributeError: 'NoneType' object has no attribute 'aboutToQuit'
+        # self.setStyleSheet("""QToolTip {
+        #                                         background-color: #8ad4ff;
+        #                                         /*color: white;*/
+        #                                         color: #000000;
+        #                                         border: #8ad4ff solid 1px;
+        #                                         }""")
 
         layout = QVBoxLayout(self)
         layout.addWidget(te)
