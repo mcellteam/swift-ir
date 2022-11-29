@@ -107,7 +107,7 @@ class NgHost(QRunnable):
     @Slot()
     def run(self):
         if cfg.USE_TORNADO:
-            logger.critical('Launching Tornado HTTP Server for Scale %d...' % self.sf)
+            logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
             try:
                 tempdir = tempfile.mkdtemp()
                 atexit.register(shutil.rmtree, tempdir)
