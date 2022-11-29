@@ -85,7 +85,7 @@ echo "You should now be in the environment 'alignTACC1024'."
 echo "To relaunch AlignEM-SWiFT on Lonestar6 @ TACC:"
 echo ""
 echo "    cd $WORK/swift-ir"
-echo "    swr python3 alignEM.py"
+echo "    source bootstrap_alignEM
 echo ""
 echo "Launching AlignEM-SWiFT..."
 
