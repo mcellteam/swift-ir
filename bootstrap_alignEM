@@ -70,6 +70,9 @@ echo "Unsetting QT_API..."
 unset QT_API
 echo "Setting QT API environment flag QT_API=pyqt5..."
 export QT_API=pyqt5
+echo "Disabling QtWebEngine sandbox..."
+export QTWEBENGINE_CHROMIUM_FLAGS='--disable-sandbox'
+export QTWEBENGINE_DISABLE_SANDBOX=1
 
 echo "Loading swr and fftw3 modules..."
 #ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10 python_cacher/1.2
