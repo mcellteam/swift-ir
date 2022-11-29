@@ -27,6 +27,7 @@ if [ ! -d "$WORK/miniconda3" ]; then
   echo "Ensuring conda base environment is OFF..."
   conda config --set auto_activate_base false
 fi
+
 echo "Initializing conda..."
 $WORK/miniconda3/bin/conda init bash
 
