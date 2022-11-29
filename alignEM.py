@@ -43,10 +43,6 @@ import qtpy
 import os
 import time
 
-# os.environ['OPENBLAS_NUM_THREADS'] = '1'
-# Fix for Error: PyCapsule_Import could not import module "datetime"
-# https://github.com/numpy/numpy/issues/14474
-
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyqt6'
 # os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
@@ -56,7 +52,11 @@ import time
 # os.environ['QT_API'] = 'pyside2'
 # os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
-import os, sys, signal, logging, argparse
+import os
+os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
+import sys, signal, logging, argparse
 from src.helpers import check_for_binaries, print_exception, is_tacc
 import src.config as cfg
 
@@ -163,10 +163,14 @@ def main():
 
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
+
+    # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
+
+    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
+
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=2'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
