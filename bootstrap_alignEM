@@ -6,9 +6,8 @@
 #     CONNECT TO Lonestar6 THROUGH THE VIS PORTAL. CHOOSE DCV SESSION.
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
 
-###############################################
-# RUN ONCE AFTER LOGGING IN TO LONESTAR6 @ TACC
-###############################################
+# TO RUN THIS SCRIPT:
+# $ source bootstrap_alignEM
 
 echo "Setting things up..."
 

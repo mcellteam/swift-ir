@@ -3,17 +3,13 @@
 
 # NOTES:
 #     CONNECT TO Lonestar6 THROUGH THE VIS PORTAL. CHOOSE DCV SESSION.
-#     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
+#     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR
+#     ACTIVATING A CONDA ENV
 
-========================== ALIGNEM-SWIFT THE EASY WAY ======
+# TO BOOTSTRAP-RUN AlignEM-SWiFT on Lonestar6 @ TACC, SIMPLY:
+# 1) Download or copy+paste this script into a file:
+#    https://github.com/mcellteam/swift-ir/blob/development_ng/bootstrap_alignEM
 
-
- --------------------------------------
-
-cdw
-git clone https://github.com/mcellteam/swift-ir.git
-cd swift-ir/
-git checkout development_ng
-source tacc_runonce
+     $ source bootstrap_alignEM
 
 
