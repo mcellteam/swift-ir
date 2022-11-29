@@ -229,19 +229,27 @@ class MainWindow(QMainWindow):
             self.image_panel_stack_widget.setCurrentIndex(1)
             if is_cur_scale_aligned():
                 self.updateStatusTips()
-                self.main_details_subwidgetA.show()
-                self.main_details_subwidgetB.show()
-                self.matrix_container.show()
-                self.history_widget.show()
+                self.showScoreboardWidegts()
             else:
-                self.main_details_subwidgetA.hide()
-                self.main_details_subwidgetB.hide()
-                self.matrix_container.hide()
-                self.history_widget.hide()
+                self.hideScoreboardWidgets()
             self.matchpoint_controls.hide()
             self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
         else:
             self.image_panel_stack_widget.setCurrentIndex(2)
+
+
+    def showScoreboardWidegts(self):
+        self.main_details_subwidgetA.show()
+        self.main_details_subwidgetB.show()
+        self.matrix_container.show()
+        self.history_widget.show()
+
+
+    def hideScoreboardWidgets(self):
+        self.main_details_subwidgetA.hide()
+        self.main_details_subwidgetB.hide()
+        self.matrix_container.hide()
+        self.history_widget.hide()
 
 
     def force_hide_python_console(self):
@@ -402,7 +410,7 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
         self.updateBanner()
         self.updateEnabledButtons()
-        self.show_hide_low_low_side_widgets()
+        self.showScoreboardWidegts()
         self.project_model.load(cfg.data.to_dict())
 
 
@@ -1628,7 +1636,7 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
         self.updateBanner()
         self.initSnrPlot()
-        self.show_hide_low_low_side_widgets()
+        self.showScoreboardWidegts()
         self.updateLowLowWidgetB()
         self.initOverviewPanel()
         self.ng_workers = dict.fromkeys(cfg.data.scales())
@@ -1640,7 +1648,6 @@ class MainWindow(QMainWindow):
         self.toolbar_layout_combobox.clear()
         self.toolbar_layout_combobox.addItems(ng_layouts)
         self.align_all_button.setText('Align All\n%s' % cfg.data.scale_pretty())
-        self.set_idle()
         if cfg.SIMULTANEOUS_SERVERS:
             self.initNgViewer(scales=cfg.data.scales())
         else:
@@ -3612,20 +3619,6 @@ class MainWindow(QMainWindow):
         else:
             self.python_console.setHidden(True)
         self.read_project_data_update_gui()
-
-    def show_hide_low_low_side_widgets(self):
-        '''Called onStartProject and onAlignmentEnd'''
-
-        if is_cur_scale_aligned():
-            self.main_details_subwidgetA.show()
-            self.main_details_subwidgetB.show()
-            self.matrix_container.show()
-            self.history_widget.show()
-        else:
-            self.main_details_subwidgetA.hide()
-            self.main_details_subwidgetB.hide()
-            self.matrix_container.hide()
-            self.history_widget.hide()
 
 
     def expand_viewer_size(self):
