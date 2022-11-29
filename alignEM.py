@@ -65,8 +65,6 @@ from qtpy.QtCore import Qt, QCoreApplication, QTimer
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 from qtpy import QtWebEngineCore
-if not is_tacc():
-    from scalene import scalene_profiler
 
 
 class CustomFormatter(logging.Formatter):

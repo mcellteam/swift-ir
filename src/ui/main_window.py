@@ -22,7 +22,6 @@ import dis
 from neuroglancer.viewer_config_state import AggregateChunkSourceStatistics
 from neuroglancer.viewer_config_state import ChunkSourceStatistics
 
-# import memory_profiler
 import neuroglancer as ng
 import neuroglancer.server
 import pyqtgraph as pg
@@ -111,9 +110,6 @@ class MainWindow(QMainWindow):
         self.initPrivateMembers()
         self.initShortcuts()
         self.initData()
-
-        # if cfg.PROFILER:
-        #     from scalene import scalene_profiler
 
         if is_tacc():
             cfg.USE_TORNADO = True
@@ -1944,17 +1940,6 @@ class MainWindow(QMainWindow):
             logger.warning('Having trouble shutting down threadpool')
         else:
             logger.info('Success')
-
-        # if cfg.PROFILER:
-        #     try:
-        #         logger.info('Shutting down profiler...')
-        #         scalene_profiler.stop()
-        #     except:
-        #         logger.warning('Having trouble stopping profiler')
-        #     else:
-        #         logger.info('Success')
-
-
 
         logger.info('Quitting app...')
         self.app.quit()
@@ -3938,8 +3923,8 @@ class MainWindow(QMainWindow):
     @timer
     def initPbar(self):
         # logger.info('')
-        # self.statusBar = self.statusBar()
-        self.statusBar = QStatusBar()
+        self.statusBar = self.statusBar()
+        # self.statusBar = QStatusBar()
         # self.pbar = QProgressBar(self)
         self.pbar = QProgressBar()
         # self.statusBar.addPermanentWidget(self.pbar)
