@@ -960,6 +960,8 @@ class MainWindow(QMainWindow):
         self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
+        if self.main_tab_widget.currentIndex() == 1:
+            self.layer_view_widget.set_data()
         self.read_project_data_update_gui()
 
 
@@ -1037,6 +1039,9 @@ class MainWindow(QMainWindow):
         except:  logger.warning('Bounding Rect Widget Failed to Update')
         try:     self.bias_bool_combo.setCurrentText(str(cfg.data.poly_order())) if cfg.data.null_cafm() else 'None'
         except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+
+        if self.main_tab_widget.currentIndex() == 1:
+            self.layer_view_widget.set_data()
 
 
     def updateTextWidgetA(self, s=None, l=None):
@@ -2240,24 +2245,36 @@ class MainWindow(QMainWindow):
                 cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
 
 
-    def skip_changed_callback(self, state):  # 'state' is connected to skipped toggle
+    def skip_changed_callback(self, state:int):  # 'state' is connected to skipped toggle
         '''Callback Function for Skip Image Toggle'''
+        logger.critical(state)
+        caller = inspect.stack()[1].function
+        logger.info(caller)
         if cfg.data:
             # caller is 'main' when user is toggler
             if inspect.stack()[1].function == 'read_project_data_update_gui': return
             skip_state = self.toggle_skip.isChecked()
+            logger.info(f'skip state: {skip_state}')
             for s in cfg.data.scales():
-                layer = self.request_ng_layer()
-                logger.info(f'request_ng_layer: {layer}, cfg.data.layer(): {cfg.data.layer()}, cfg.data.n_layers(): {cfg.data.n_layers()}')
+                # layer = self.request_ng_layer()
+                layer = cfg.data.layer()
                 if layer >= cfg.data.n_layers():
                     logger.warning(f'Request layer is out of range ({layer}) - Returning')
                     return
                 cfg.data.set_skip(skip_state, s=s, l=layer)  # for checkbox
-            if skip_state: self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
+            if skip_state:
+                self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
+                logger.info("Flagged For Skip: %s" % cfg.data.name_base())
             # else:          self.hud.post("No Skip: %s" % cfg.data.name_base())
             cfg.data.link_all_stacks()
             self.read_project_data_update_gui()
             self.updateLowLowWidgetB()
+            logger.info(f'skip state: {skip_state}')
+
+    def updateOverview(self):
+        selected_indexes = self.layer_view_widget.table_widget.selectedIndexes()
+        # self.layer_view_widget.table_widget.set
+
 
 
     def skip_change_shortcut(self):
@@ -2531,7 +2548,7 @@ class MainWindow(QMainWindow):
 
     def main_tab_changed(self, index:int):
         if index == 0:
-            pass
+            self.initNgViewer()
         if index == 1:
             if cfg.data:
                 self.layer_view_widget.set_data()
