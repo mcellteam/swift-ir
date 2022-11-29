@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         self.initToolbar()
         self.initPbar()
         self.initUI()
-        self.initWidgetSizeAndSpacing()
+        self.initWidgetSpacing()
         self.initSize(cfg.WIDTH, cfg.HEIGHT)
         self.initPos()
         self.initStyle()
@@ -3780,7 +3780,7 @@ class MainWindow(QMainWindow):
         self.thumbnail_table.resizeColumnsToContents()
 
     @timer
-    def initWidgetSizeAndSpacing(self):
+    def initWidgetSpacing(self):
         self.main_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.main_details_subwidgetA.setContentsMargins(0, 0, 0, 0)
         self.main_details_subwidgetB.setContentsMargins(0, 0, 0, 0)
@@ -3938,8 +3938,10 @@ class MainWindow(QMainWindow):
     @timer
     def initPbar(self):
         # logger.info('')
-        self.statusBar = self.statusBar()
-        self.pbar = QProgressBar(self)
+        # self.statusBar = self.statusBar()
+        # self.statusBar = self.statusBar()
+        # self.pbar = QProgressBar(self)
+        self.pbar = QProgressBar()
         # self.statusBar.addPermanentWidget(self.pbar)
         # self.statusBar.addWidget(self.pbar)
         self.pbar.setAlignment(Qt.AlignCenter)
