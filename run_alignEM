@@ -6,9 +6,9 @@
 #     CONNECT TO Lonestar6 THROUGH THE VIS PORTAL. CHOOSE DCV SESSION.
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
 
-##############################################
+###############################################
 # RUN ONCE AFTER LOGGING IN TO LONESTAR6 @ TACC
-##############################################
+###############################################
 
 echo "Setting things up..."
 
@@ -78,17 +78,15 @@ ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10 python_cacher/1.2
 swr glxinfo -B
 
 node=$(hostname --alias)
-domain=$(hostname--domain)
-echo "Hostname : $hostname"
 echo "Node     : $node"
 
-
 echo ""
-echo "You should now be in the environment 'alignTACC1024'.\nTo launch AlignEM-SWiFT on Lonestar6 @ TACC:"
+echo "You should now be in the environment 'alignTACC1024'."
+echo "To relaunch AlignEM-SWiFT on Lonestar6 @ TACC:"
 echo ""
 echo "    cd $WORK/swift-ir"
 echo "    swr python3 alignEM.py"
 echo ""
-echo "Launching..."
+echo "Launching AlignEM-SWiFT..."
 
 swr python3 alignEM.py
