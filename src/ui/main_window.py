@@ -501,11 +501,15 @@ class MainWindow(QMainWindow):
     def align_forward(self, scale=None, num_layers=-1) -> None:
 
         if not cfg.data:
-            self.hud.post('No data yet!', logging.WARNING);
+            self.hud.post('No data yet!', logging.WARNING)
             return
 
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
+            return
+
+        if not is_cur_scale_aligned():
+            self.hud.post('Please align the full series first!', logging.WARNING)
             return
 
         if not cfg.data.is_alignable():
@@ -558,11 +562,15 @@ class MainWindow(QMainWindow):
     def align_one(self, scale=None) -> None:
 
         if cfg.data is None:
-            self.hud.post('No data yet!', logging.WARNING);
+            self.hud.post('No data yet!', logging.WARNING)
             return
 
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
+            return
+
+        if not is_cur_scale_aligned():
+            self.hud.post('Please align the full series first!', logging.WARNING)
             return
 
         if not cfg.data.is_alignable():
@@ -617,11 +625,16 @@ class MainWindow(QMainWindow):
     def regenerate(self, scale) -> None:
 
         if cfg.data is None:
-            self.hud.post('No data yet!', logging.WARNING);
+            self.hud.post('No data yet!', logging.WARNING)
             return
 
         if self._working == True:
-            self.hud.post('Another Process is Already Running', logging.WARNING); return
+            self.hud.post('Another Process is Already Running', logging.WARNING)
+            return
+
+        if not is_cur_scale_aligned():
+            self.hud.post('Please align the full series first!', logging.WARNING)
+            return
 
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING); return
@@ -3270,8 +3283,10 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.addWidget(self.historyview_widget)
 
         self.layer_view_widget = LayerViewWidget()
+        self.layer_view_widget.setObjectName('layer_view_widget')
 
         self.main_tab_widget = QTabWidget()
+        self.main_tab_widget.setObjectName('main_tab_widget')
         self.main_tab_widget.addTab(self.image_panel_stack_widget, 'Neuroglancer')
         self.main_tab_widget.addTab(self.layer_view_widget, 'Overview')
         self.main_tab_widget.currentChanged.connect(self.main_tab_changed)

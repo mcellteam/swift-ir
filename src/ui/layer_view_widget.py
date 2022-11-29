@@ -26,12 +26,10 @@ class LayerViewWidget(QWidget):
         super(LayerViewWidget, self).__init__(*args, **kwargs)
         # self.parent = parent
         self.layout = QGridLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
-
         self._dataframe = None # path to a file on disk
-
         self._selected_rows = []
-
         self.table_widget = QTableView()
         self.table_widget.setSelectionMode(QAbstractItemView.SingleSelection)
         self.hheader = self.table_widget.horizontalHeader()
@@ -39,7 +37,7 @@ class LayerViewWidget(QWidget):
         # delegate = ThumbnailDelegate()
         # self.table_widget.setItemDelegateForColumn(0, ThumbnailDelegate())
         self.table_widget.horizontalHeader().setStretchLastSection(True)
-        self.table_widget.setAlternatingRowColors(True)
+        # self.table_widget.setAlternatingRowColors(True)
         self.table_widget.setSelectionBehavior(QTableView.SelectRows)
         self.layout.addWidget(self.table_widget, 0, 0)
 
