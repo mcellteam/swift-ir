@@ -8,7 +8,7 @@
 ========================== ALIGNEM-SWIFT THE EASY WAY ======
 
 
-Do Once --------------------------------------
+ --------------------------------------
 
 cdw
 git clone https://github.com/mcellteam/swift-ir.git
@@ -16,9 +16,4 @@ cd swift-ir/
 git checkout development_ng
 source tacc_runonce
 
-Do Every Time --------------------------------
-
-cd $WORK/swift-ir
-source tacc_runalways
-swr python3 alignEM.py
 
