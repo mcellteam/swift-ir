@@ -35,6 +35,7 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
+PROFILER = None
 DUMMY = False
 USE_TENSORSTORE = True
 NO_EMBED_NG = False
