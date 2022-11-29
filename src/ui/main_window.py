@@ -36,7 +36,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
     QShortcut, QGraphicsOpacityEffect, QDialog, QStyle, QCheckBox, QSpinBox, \
-    QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView
+    QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget
 
 import src.config as cfg
 import src.shaders
@@ -62,6 +62,7 @@ from src.ui.snr_plot import SnrPlot
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.models.json_tree import JsonModel
 from src.ui.models.preview import PreviewModel, PreviewDelegate
+from src.ui.layer_view_widget import LayerViewWidget
 
 
 # MAIN_PANEL_STARTING_INDEX = 4
@@ -211,9 +212,10 @@ class MainWindow(QMainWindow):
 
 
     def initView(self):
-        self.viewer_and_banner_widget.show()
+        self.main_tab_widget.show()
         self.full_window_controls.hide()
         self.main_stack_widget.setCurrentIndex(0)
+        self.main_tab_widget.setCurrentIndex(0)
         self.force_hide_expandable_widgets()
         self.details_banner.show()
         self.low_low_widget.show()
@@ -331,6 +333,7 @@ class MainWindow(QMainWindow):
 
     def go_to_overview_callback(self):
         self.main_stack_widget.setCurrentIndex(4)
+        self.layer_view_widget.set_data()
 
 
     # def write_paged_tiffs(self):
@@ -799,10 +802,12 @@ class MainWindow(QMainWindow):
         # self.align_label_affine.setText(method_str)
 
 
-    def updateAffineWidget(self):
+    def updateAffineWidget(self, s=None, l=None):
+        if s == None: s = cfg.data.scale()
+        if l == None: l = cfg.data.layer()
         if is_cur_scale_aligned():
-            afm, cafm = cfg.data.afm(), cfg.data.cafm()
-        self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
+            afm, cafm = cfg.data.afm(l=l), cfg.data.cafm(l=l)
+            self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
 
 
     def clearAffineWidget(self):
@@ -940,7 +945,7 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         s = cfg.data.scale()
-        logger.critical('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
+        logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
         # self.refreshNeuroglancerURL(s=cfg.data.scale())
         if cfg.SIMULTANEOUS_SERVERS:
@@ -1034,19 +1039,21 @@ class MainWindow(QMainWindow):
         except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
 
 
-    def updateTextWidgetA(self):
-        name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base()
-        skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped() else ''
+    def updateTextWidgetA(self, s=None, l=None):
+        if s == None: s = cfg.data.scale()
+        if l == None: l = cfg.data.layer()
+        name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
+        skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
         completed = "Scales Aligned: <b style='color: #212121;font-size:12px;'>(%d/%d)</b><br>" % \
                       (len(cfg.data.aligned_list()), cfg.data.n_scales())
         if is_cur_scale_aligned():
-            if cfg.data.has_bb():
-                bb = cfg.data.bounding_rect()
+            if cfg.data.has_bb(s=s):
+                bb = cfg.data.bounding_rect(s=s)
                 dims = [bb[2], bb[3]]
             else:
-                dims = cfg.data.image_size()
+                dims = cfg.data.image_size(s=s)
             bb_dims = "Bounds: <b style='color: #212121;font-size:12px;'>%dx%dpx</b><br>" % (dims[0], dims[1])
-            snr = "<font color='#212121';size='12'>%s</font><br>" % cfg.data.snr()
+            snr = "<font color='#212121';size='12'>%s</font><br>" % cfg.data.snr(s=s, l=l)
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
@@ -2019,7 +2026,7 @@ class MainWindow(QMainWindow):
                 scales = cfg.data.scales()
             else:
                 scales = [cfg.data.scale()]
-        logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
+        logger.debug('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
         self.hud.post('Starting Neuroglancer Workers...')
         self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
@@ -2520,6 +2527,14 @@ class MainWindow(QMainWindow):
         self.align_all_button.setStatusTip('Generate + Align All Layers,  Scale %d' % get_scale_val(cfg.data.scale()))
         self.align_one_button.setStatusTip(
             'Align + Generate Layer %d,  Scale %d' % (cfg.data.layer(), get_scale_val(cfg.data.scale())))
+
+
+    def main_tab_changed(self, index:int):
+        if index == 0:
+            pass
+        if index == 1:
+            if cfg.data:
+                self.layer_view_widget.set_data()
 
 
 
@@ -3227,6 +3242,7 @@ class MainWindow(QMainWindow):
         self.full_window_controls.setLayout(self.full_window_controls_hlayout)
         self.full_window_controls.hide()
 
+
         '''Image Panel Stack Widget'''
         self.image_panel_stack_widget = QStackedWidget()
         self.image_panel_stack_widget.setObjectName('ImagePanel')
@@ -3236,10 +3252,12 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.addWidget(self.image_panel_landing_page)
         self.image_panel_stack_widget.addWidget(self.historyview_widget)
 
-        self.viewer_and_banner_widget = QWidget()
-        self.viewer_and_banner_layout = QVBoxLayout()
-        self.viewer_and_banner_layout.addWidget(self.image_panel_stack_widget)
-        self.viewer_and_banner_widget.setLayout(self.viewer_and_banner_layout)
+        self.layer_view_widget = LayerViewWidget()
+
+        self.main_tab_widget = QTabWidget()
+        self.main_tab_widget.addTab(self.image_panel_stack_widget, 'Neuroglancer')
+        self.main_tab_widget.addTab(self.layer_view_widget, 'Overview')
+        self.main_tab_widget.currentChanged.connect(self.main_tab_changed)
 
         self.matchpoint_controls = QWidget()
         self.matchpoint_controls_hlayout = QHBoxLayout()
@@ -3358,15 +3376,15 @@ class MainWindow(QMainWindow):
         self.show_hide_python_button.setFixedSize(show_hide_button_sizes)
         self.show_hide_python_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
 
-        tip = 'Go To Project Overview'
-        self.show_hide_overview_button = QPushButton('Overview')
-        self.show_hide_overview_button.setObjectName('show_hide_overview_button')
-        self.show_hide_overview_button.setStyleSheet(lower_controls_style)
-        self.show_hide_overview_button.setStatusTip(tip)
-        self.show_hide_overview_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_hide_overview_button.clicked.connect(self.go_to_overview_callback)
-        self.show_hide_overview_button.setFixedSize(show_hide_button_sizes)
-        # self.show_hide_overview_button.setIcon(qta.icon('fa.table', color='#f3f6fb'))
+        # tip = 'Go To Project Overview'
+        # self.show_hide_overview_button = QPushButton('Overview')
+        # self.show_hide_overview_button.setObjectName('show_hide_overview_button')
+        # self.show_hide_overview_button.setStyleSheet(lower_controls_style)
+        # self.show_hide_overview_button.setStatusTip(tip)
+        # self.show_hide_overview_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.show_hide_overview_button.clicked.connect(self.go_to_overview_callback)
+        # self.show_hide_overview_button.setFixedSize(show_hide_button_sizes)
+        # # self.show_hide_overview_button.setIcon(qta.icon('fa.table', color='#f3f6fb'))
 
         tip = 'Show/Hide Project Treeview'
         self.show_hide_project_tree_button = QPushButton('Hide Tools')
@@ -3381,7 +3399,7 @@ class MainWindow(QMainWindow):
 
         '''Main Splitter'''
         self.main_splitter = QSplitter(Qt.Orientation.Vertical)
-        self.main_splitter.addWidget(self.viewer_and_banner_widget)
+        self.main_splitter.addWidget(self.main_tab_widget)
         self.main_splitter.addWidget(self.new_control_panel)
         self.main_splitter.addWidget(self.hud)
         self.main_splitter.addWidget(self.snr_plot_and_control)
@@ -3411,7 +3429,7 @@ class MainWindow(QMainWindow):
         self.show_hide_main_features_vlayout.addWidget(self.show_hide_snr_plot_button, alignment=Qt.AlignHCenter)
         self.show_hide_main_features_vlayout.addWidget(self.show_hide_project_tree_button, alignment=Qt.AlignHCenter)
         self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignHCenter)
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_overview_button, alignment=Qt.AlignHCenter)
+        # self.show_hide_main_features_vlayout.addWidget(self.show_hide_overview_button, alignment=Qt.AlignHCenter)
         self.show_hide_main_features_widget.setLayout(self.show_hide_main_features_vlayout)
 
         self.low_low_widget = QWidget()
@@ -3506,6 +3524,9 @@ class MainWindow(QMainWindow):
         self.overview_layout = QGridLayout()
         self.overview_layout.addWidget(self.thumbnail_table, 1, 0, 1, 3)
 
+        self.overview_tab_widget = QTabWidget()
+        self.overview_tab_widget.addTab(self.overview_panel, 'Overview')
+
         self.overview_panel.setLayout(self.overview_layout)
         self.overview_panel_title = QLabel('<h1>Project Overview [ Under Construction :) ]</h1>')
         self.overview_back_button = QPushButton("Back")
@@ -3519,7 +3540,7 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.addWidget(self.docs_panel)           # (1) docs_panel
         self.main_stack_widget.addWidget(self.demos_panel)          # (2) demos_panel
         self.main_stack_widget.addWidget(self.remote_viewer_panel)  # (3) remote_viewer_panel
-        self.main_stack_widget.addWidget(self.overview_panel)       # (4) overview_panel
+        self.main_stack_widget.addWidget(self.overview_tab_widget)       # (4) overview_panel
 
         self.pageComboBox = QComboBox()
         self.pageComboBox.addItem('Main')
@@ -3587,14 +3608,15 @@ class MainWindow(QMainWindow):
             logger.info('Expanding Viewer')
             self._is_viewer_expanded = True
             # self.full_window_controls.show()
-            self.main_stack_widget.setCurrentIndex(0)
-            # self.image_panel_stack_widget.setCurrentIndex(1)
             self.new_control_panel.hide()
             self.details_banner.hide()
             self.low_low_widget.hide()
             self.hud.hide()
             self.matchpoint_controls.hide()
-            self.viewer_and_banner_widget.show()
+            self.main_tab_widget.show()
+            self.main_tab_widget.setCurrentIndex(0)
+            self.image_panel_stack_widget.setCurrentIndex(1)
+            self.main_stack_widget.setCurrentIndex(0)
             self.force_hide_expandable_widgets()
             self.expandViewAction.setIcon(qta.icon('mdi.arrow-collapse-all', color=ICON_COLOR))
             self.expandViewAction.setStatusTip('Set Normal Viewer Size')
@@ -3634,7 +3656,7 @@ class MainWindow(QMainWindow):
         self.low_low_widget.hide()
         self.hud.hide()
         self.matchpoint_controls.hide()
-        self.viewer_and_banner_widget.hide()
+        self.main_tab_widget.hide()
         self.snr_plot_and_control.show()
         self.force_hide_expandable_widgets()
 
@@ -3647,7 +3669,7 @@ class MainWindow(QMainWindow):
         self.low_low_widget.hide()
         self.hud.hide()
         self.matchpoint_controls.hide()
-        self.viewer_and_banner_widget.hide()
+        self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
         self.projectdata_treeview.show()
         self.projectdata_treeview_widget.show()
@@ -3662,25 +3684,24 @@ class MainWindow(QMainWindow):
         self.low_low_widget.hide()
         self.hud.hide()
         self.matchpoint_controls.hide()
-        self.viewer_and_banner_widget.hide()
+        self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
         self.python_console.show()
 
+    def get_thumbnail_list(self):
+        pass
 
-    def initOverviewPanel(self, destination=None):
-        if destination == None:
-            destination = os.path.join(cfg.data.dest(), 'thumbnails')
+
+    def initOverviewPanel(self):
 
         logger.info('')
-        logger.info('thumbnails directory: %s' % str(destination))
-
         preview = namedtuple("preview", "id title image")
 
         self.previewmodel = PreviewModel()
 
         self.thumbnails = {}
         self.thumbnail_items = {}
-        for n, fn in enumerate(glob.glob(os.path.join(destination, '*.tif'))):
+        for n, fn in enumerate(cfg.data.thumbnail_names()):
             thumbnail = QImage(fn)
             self.thumbnails[fn] = QImage(fn)
             # self.thumbnails[n].setText('filename', fn) # key, value
@@ -3693,7 +3714,7 @@ class MainWindow(QMainWindow):
 
         delegate = PreviewDelegate()
         self.thumbnail_table.setItemDelegate(delegate)
-        # self.thumbnail_table.setItemDelegateForColumn(1, PreviewDelegate())
+        # self.thumbnail_table.setItemDelegateForColumn(1, ThumbnailDelegate())
 
         # import pandas as pd
         # # df = pd.DataFrame(zip(cfg.data.snr_list(), self.thumbnail_items))
@@ -3736,7 +3757,7 @@ class MainWindow(QMainWindow):
 
         self.pbar.setFixedHeight(18)
         self.show_hide_main_features_vlayout.setSpacing(4)
-        self.show_hide_main_features_widget.setMaximumHeight(90)
+        self.show_hide_main_features_widget.setMaximumHeight(80)
         self.low_low_widget.setMaximumHeight(100)
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.main_details_subwidgetA.setMinimumWidth(128)
@@ -3767,25 +3788,27 @@ class MainWindow(QMainWindow):
           PyQt5.QtCore.QRectF(0.0, 0.0, 8.0, 8.0),
           PyQt5.QtCore.QRectF(57.99999999999997, 60.602795211005855, 8.0, 8.0), 4.)
         '''
-        self.clear_snr_plot_checkboxes()
+        try:
+            self.clear_snr_plot_checkboxes()
+            self._snr_checkboxes = dict()
 
-        self._snr_checkboxes = dict()
-
-        # self._snr_checkboxes = dict()
-        for i, s in enumerate(cfg.data.scales()[::-1]):
-            self._snr_checkboxes[s] = QCheckBox()
-            self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
-            self.snr_plot_controls_hlayout.addWidget(self._snr_checkboxes[s], alignment=Qt.AlignLeft)
-            self._snr_checkboxes[s].setChecked(True)
-            self._snr_checkboxes[s].setStyleSheet('border-color: %s' % self._plot_colors[i])
-            self._snr_checkboxes[s].clicked.connect(self.updateSnrPlot)
-            self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
-            if is_arg_scale_aligned(scale=s):
-                self._snr_checkboxes[s].show()
-            else:
-                self._snr_checkboxes[s].hide()
-        self.snr_plot_controls_hlayout.addStretch()
-        self.updateSnrPlot()
+            # self._snr_checkboxes = dict()
+            for i, s in enumerate(cfg.data.scales()[::-1]):
+                self._snr_checkboxes[s] = QCheckBox()
+                self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
+                self.snr_plot_controls_hlayout.addWidget(self._snr_checkboxes[s], alignment=Qt.AlignLeft)
+                self._snr_checkboxes[s].setChecked(True)
+                self._snr_checkboxes[s].setStyleSheet('border-color: %s' % self._plot_colors[i])
+                self._snr_checkboxes[s].clicked.connect(self.updateSnrPlot)
+                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
+                if is_arg_scale_aligned(scale=s):
+                    self._snr_checkboxes[s].show()
+                else:
+                    self._snr_checkboxes[s].hide()
+            self.snr_plot_controls_hlayout.addStretch()
+            self.updateSnrPlot()
+        except:
+            print_exception()
 
     def updateSnrPlot(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
@@ -3807,6 +3830,7 @@ class MainWindow(QMainWindow):
                 logger.warning('updateSnrPlot encountered a problem setting plot limits')
 
     def show_snr(self, scale=None):
+        #Todo This is being called too many times!
         # logger.info('called by %s' % inspect.stack()[1].function)
         if scale == None: scale = cfg.data.scale()
         # logger.info('show_snr (s: %s):' % str(s))

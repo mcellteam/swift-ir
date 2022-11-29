@@ -7,6 +7,7 @@ using any number of technologies.
 """
 import os
 import json
+import glob
 import inspect
 import logging
 import statistics
@@ -155,6 +156,15 @@ class DataModel:
         return natural_sort([os.path.basename(l['images']['base']['filename'])
                 for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
+    def thumbnail_names(self):
+        return glob.glob(os.path.join(self.dest(), 'thumbnails', '*.tif'))
+
+    def thumbnail_paths(self):
+        names = self.thumbnail_names()
+        for i, name in enumerate(names):
+            names[i] = os.path.join(self.dest(), 'thumbnails', name)
+        return names
+
     def set_source_path(self, dir):
         # self._data['data']['src_img_root'] = dir
         self._data['data'].update({'source_path': dir})
@@ -184,6 +194,31 @@ class DataModel:
             logger.warning('Falling Back To Layer 0')
             self.set_layer(0)
             return self._data['data']['current_layer']
+
+    def snr(self, s=None, l=None) -> str:
+        '''TODO This probably shouldn't return a string'''
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        try:
+            return str(self._data['data']['scales'][s]['alignment_stack'][l]
+                       ['align_to_ref_method']['method_results']['snr_report'])
+        except:
+            logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
+
+    def snr_list(self, scale=None):
+        # logger.info('Caller: %s' % inspect.stack()[1].function)
+        if scale == None: scale = self.scale()
+        snr_lst = []
+        try:
+            for layer in self._data['data']['scales'][scale]['alignment_stack']:
+                snr_vals = layer['align_to_ref_method']['method_results']['snr']
+                mean_snr = sum(snr_vals) / len(snr_vals)
+                snr_lst.append(mean_snr)
+            return snr_lst
+        except:
+            #Todo: revisit this
+            print_exception()
+            pass
 
 
     def print_all_matchpoints(self):
@@ -380,6 +415,15 @@ class DataModel:
         except:
             return [[0, 0, 0], [0, 0, 0]]
 
+    def cafm(self, s=None, l=None) -> list:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['cumulative_afm']
+        except:
+            return [[0, 0, 0], [0, 0, 0]]
+
     def afm_list(self, s=None, l=None) -> list:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
@@ -391,15 +435,6 @@ class DataModel:
         if l == None: l = self.layer()
         lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
         return lst
-
-    def cafm(self, s=None, l=None) -> list:
-        if s == None: s = self.scale()
-        if l == None: l = self.layer()
-        try:
-            return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['cumulative_afm']
-        except:
-            return [[0, 0, 0], [0, 0, 0]]
 
     def cafm_list(self, s=None, l=None):
         if s == None: s = self.scale()
@@ -796,41 +831,6 @@ class DataModel:
             logger.warning('Setting Absolute Paths Triggered This Exception')
             print_exception()
 
-    def snr(self) -> str:
-        '''TODO This probably shouldn't return a string'''
-        if not self._data['data']['current_scale']:
-            logger.warning("Can't Get SNR Because Scale is Not Set")
-            return ''
-        try:
-            s = self._data['data']['current_scale']
-            l = self._data['data']['current_layer']
-            if len(self._data['data']['scales']) > 0:
-                scale = self._data['data']['scales'][s]
-                if len(scale['alignment_stack']) > 0:
-                    layer = scale['alignment_stack'][l]
-                    if 'align_to_ref_method' in layer:
-                        if 'method_results' in layer['align_to_ref_method']:
-                            method_results = layer['align_to_ref_method']['method_results']
-                            if 'snr_report' in method_results:
-                                if method_results['snr_report'] != None:
-                                    curr_snr = method_results['snr_report']
-                                    logger.debug("  returning the current snr: %s" % str(curr_snr))
-                                    return str(curr_snr)
-        except:
-            logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-
-    def snr_list(self, scale=None):
-        if scale == None: scale = self.scale()
-        snr_lst = []
-        for layer in self._data['data']['scales'][scale]['alignment_stack']:
-            try:
-                snr_vals = layer['align_to_ref_method']['method_results']['snr']
-                mean_snr = sum(snr_vals) / len(snr_vals)
-                snr_lst.append(mean_snr)
-            except:
-                print_exception()
-        return snr_lst
-
     def snr_max_all_scales(self):
         max_snr = []
         for i, scale in enumerate(self.aligned_list()):
@@ -845,6 +845,7 @@ class DataModel:
             return []
 
     def snr_average(self, scale=None) -> float:
+        logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = cfg.data.scale()
         return statistics.fmean(self.snr_list(scale=scale))
 

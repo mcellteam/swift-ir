@@ -141,7 +141,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
 
     kill_task_queue(task_queue=task_queue)
     cfg.data = updated_model #0809-
-    write_run_to_file()
+    # write_run_to_file()
     logger.info('<<<< Compute Affines End <<<<')
 
 
