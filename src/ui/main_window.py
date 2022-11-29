@@ -3763,6 +3763,7 @@ class MainWindow(QMainWindow):
 
         self.thumbnail_table.resizeRowsToContents()
         self.thumbnail_table.resizeColumnsToContents()
+        QApplication.processEvents()
 
     @timer
     def initWidgetSpacing(self):
