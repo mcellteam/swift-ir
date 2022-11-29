@@ -179,11 +179,11 @@ class MainWindow(QMainWindow):
         self.webengineview = QWebEngineView()
         # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
         # if qtpy.PYSIDE6:
-        self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
     @timer
     def initPrivateMembers(self):

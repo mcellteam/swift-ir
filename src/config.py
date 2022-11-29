@@ -35,6 +35,7 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
+# IS_TACC = None
 PROFILER = None
 DUMMY = False
 USE_TENSORSTORE = True

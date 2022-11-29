@@ -57,8 +57,9 @@ import time
 # os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
 import os, sys, signal, logging, argparse
-import src.config as cfg
 from src.helpers import check_for_binaries, print_exception, is_tacc
+import src.config as cfg
+
 from qtpy import QtCore
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication, QTimer
@@ -158,6 +159,7 @@ def main():
         cfg.PROFILER = True
         # from scalene import scalene_profiler
         # scalene_profiler.start()
+
 
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
