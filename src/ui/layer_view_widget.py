@@ -49,6 +49,7 @@ class LayerViewWidget(QWidget):
         '''Get User File Selection Dialog
         Note: This function is a 'Slot' function. It is connected
         to the 'clicked' signal of the import_button'''
+        logger.info('Setting data..')
         n_layers = cfg.data.n_layers()
         thumbnails = cfg.data.thumbnail_paths()
         # names = cfg.data.basefilenames()
@@ -82,7 +83,8 @@ class LayerViewWidget(QWidget):
         self.table_widget.resizeRowsToContents()
         self.table_widget.resizeColumnsToContents()
         self.table_widget.setColumnWidth(0, 100)
-        self.table_widget.verticalHeader().setDefaultSectionSize(100);
+        self.table_widget.verticalHeader().setDefaultSectionSize(100)
+        QApplication.processEvents()
 
 
     def load_dataframe(self):
@@ -106,10 +108,17 @@ class LayerViewWidget(QWidget):
         caller = inspect.stack()[1].function
         if caller != 'clear_selection':
             # logger.info('Selection Changed!')
-            index = self.table_widget.currentIndex().row()
+            # indexes = self.table_widget.selectedIndexes()
+            selection = self.table_widget.selectedIndexes()
+            self._selection_indexes = list(set([row.row() for row in selection]))
+            print(str(self._selection_indexes))
             # logger.info(f'index.row: {index.row()}')
+
+            index = self.table_widget.currentIndex().row()
+            cfg.data.set_layer(index)
             cfg.main_window.updateAffineWidget(l=index)
             cfg.main_window.updateTextWidgetA(l=index)
+        QApplication.processEvents()
 
 
 class PushButtonDelegate(QStyledItemDelegate):
