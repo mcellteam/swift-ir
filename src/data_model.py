@@ -45,71 +45,34 @@ class DataModel:
 
     def __init__(self, data=None, name='', mendenhall=False):
         logger.info('Constructing Data Model (caller: %s)...' % inspect.stack()[1].function)
-        # self._current_version = 0.31
         self._current_version = 0.40
-        if data == None:
+
+        if data:
+            self._data = data
+        else:
             self._data = data_struct
             self._data['data']['destination_path'] = name
-        else:
-            self._data = data
 
         if self.layer() == None:
             self.set_layer(0)
 
-        self.mendenhall = mendenhall
-        if self.mendenhall:
-            self._data['data']['mendenhall'] = True
-        else:
-            self._data['data']['mendenhall'] = False
+        self._data['data']['mendenhall'] = mendenhall
 
         self.list_aligned = []
         self.naligned = None
         self.nscales = None
 
-        # if self._data['version'] != self._current_version:
-        #     self.upgrade_data_model()
-        self.more = None
-
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
         self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
-
-        self._index = 0
-
-    # def __setitem__(self, key, item):
-    #     self._data[key] = item
-
-    # def __getitem__(self, key):
-    #     caller = inspect.stack()[1].function
-    #     cur_scale = cfg.data.s()
-    #     logger.info('iterating s %s... (caller: %s)' % (cur_scale, caller))
-    #     return self._data['data']['scales'][cur_scale]['alignment_stack'][key]
-    #     # return self._data[key]
+        self._data['data'].setdefault('cname', cfg.CNAME)
+        self._data['data'].setdefault('clevel', cfg.CLEVEL)
+        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_X, cfg.CHUNK_Y, cfg.CHUNK_Z))
 
     def __setitem__(self, key, item):
         self._data[key] = item
 
     def __getitem__(self, key):
         return self._data[key]
-
-    '''------'''
-
-    # def __iter__(self):
-    #     # return iter(self._data)
-    #     return DataModelIterator(self)
-
-    # def keys(self):
-    #     return self._data.keys()
-    #
-    # def items(self):
-    #     return self._data.items()
-    #
-    # def values(self):
-    #     return self._data.values()
-
-    '''------'''
-
-    # def __str__(self):
-    #     return json.dumps(self._data)
 
     def __repr__(self):
         return self.to_json()
@@ -133,7 +96,6 @@ class DataModel:
             return self.n_layers()
         except:
             logger.warning('No Images Found')
-            return 0
 
     def sl(self):
         return (self.scale(), self.layer())
@@ -153,7 +115,6 @@ class DataModel:
     def base_image_name(self, s=None, l=None):
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        # return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
     def filenames(self):
@@ -232,7 +193,6 @@ class DataModel:
             print_exception()
             pass
 
-
     def print_all_matchpoints(self):
         logger.info('Match Points:')
         for i, l in enumerate(self.alstack()):
@@ -242,6 +202,42 @@ class DataModel:
                 logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
             if b != []:
                 logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
+
+    # def find_layers_with_skips(self):
+    #     lst = []
+    #     for i, l in enumerate(self.alstack()):
+    #         r = l['images']['ref']['metadata']['match_points']
+    #         b = l['images']['base']['metadata']['match_points']
+    #         if (r != []) or (b != []):
+    #             lst.append(i)
+    #     return lst
+
+    def scale(self) -> str:
+        '''Returns the Current Scale as a String.'''
+        assert isinstance(self._data['data']['current_scale'], str)
+        return self._data['data']['current_scale']
+
+    def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
+        '''Example Usage:
+             cfg.data.add_matchpoint(coordinates=(100, 200), role='base')
+        '''
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
+        self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
+            coordinates
+        )
+
+    def match_points(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        layer = self._data['data']['scales'][s]['alignment_stack'][l]
+        r = layer['images']['ref']['metadata']['match_points']
+        b = layer['images']['base']['metadata']['match_points']
+        combined ={'ref': r, 'base': b }
+        # logger.info(f'Ref, Match Points: {str(r)}')
+        # logger.info(f'Base, Match Points: {str(b)}')
+        return combined
 
     def find_layers_with_matchpoints(self, s=None) -> list:
         '''Returns the list of layers that have match points'''
@@ -260,7 +256,6 @@ class DataModel:
             logger.warning('Unable to To Return List of Match Point Layers');
             return []
 
-
         lst = []
         for i, l in enumerate(self.alstack()):
             r = l['images']['ref']['metadata']['match_points']
@@ -268,56 +263,6 @@ class DataModel:
             if (r != []) or (b != []):
                 lst.append(i)
         return lst
-
-    # def find_layers_with_skips(self):
-    #     lst = []
-    #     for i, l in enumerate(self.alstack()):
-    #         r = l['images']['ref']['metadata']['match_points']
-    #         b = l['images']['base']['metadata']['match_points']
-    #         if (r != []) or (b != []):
-    #             lst.append(i)
-    #     return lst
-
-
-    def scale(self) -> str:
-        '''Returns the Current Scale as a String.'''
-        assert isinstance(self._data['data']['current_scale'], str)
-        return self._data['data']['current_scale']
-
-    def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
-        '''Example Usage:
-             cfg.data.add_matchpoint(coordinates=(100, 200), role='base')
-        '''
-        if s == None: s = self.scale()
-        if l == None: l = self.layer()
-        logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
-        self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
-            coordinates
-        )
-
-    # def matchpoints(self, role, s=None, l=None) -> None:
-    #     '''Example Usage:
-    #          cfg.data.matchpoints(role='base')
-    #     '''
-    #     if s == None: s = self.s()
-    #     if l == None: l = self.layer()
-    #     matchpoints = self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points']
-    #     logger.info('Getting matchpoints for %s, %s, layer=%d...' % (role, s, l))
-    #     # for point in matchpoints:
-    #     #     logger.info('Matchpoint at %s for %s on %s, layer=%d' % (str(point), role, s, l))
-    #     return matchpoints
-
-
-    def match_points(self, s=None, l=None):
-        if s == None: s = self.scale()
-        if l == None: l = self.layer()
-        layer = self._data['data']['scales'][s]['alignment_stack'][l]
-        r = layer['images']['ref']['metadata']['match_points']
-        b = layer['images']['base']['metadata']['match_points']
-        combined ={'ref': r, 'base': b }
-        # logger.info(f'Ref, Match Points: {str(r)}')
-        # logger.info(f'Base, Match Points: {str(b)}')
-        return combined
 
     def print_all_match_points(self, s=None, l=None):
         if s == None: s = self.scale()
@@ -369,8 +314,6 @@ class DataModel:
                 for p in mp:
                     lst.append([i, p[0], p[1]])
         return lst
-
-
 
     def annotations(self, s=None, l=None):
         if s == None: s = self.scale()
@@ -448,12 +391,6 @@ class DataModel:
         lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
         return lst
 
-    def cafm_list(self, s=None, l=None):
-        if s == None: s = self.scale()
-        if l == None: l = self.layer()
-        lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
-        return lst
-
     def bias_data_path(self, s=None, l=None):
         if s == None: s = self.scale()
         if l == None: l = self.layer()
@@ -495,29 +432,19 @@ class DataModel:
         self._data['data']['scales'][scale]['resolution_z'] = res_z
 
 
-
-
     def cname(self):
-        if 'cname' in self._data['data']:
-            return self._data['data']['cname']
-        else:
-            logger.warning('cname not in dictionary')
-            return cfg.CNAME
+        try:     return self._data['data']['cname']
+        except:  logger.warning('cname not in dictionary')
 
     def clevel(self):
-        if 'clevel' in self._data['data']:
-            return int(self._data['data']['clevel'])
-        else:
-            logger.warning('clevel not in dictionary')
-            return int(cfg.CLEVEL)
+        try:     return int(self._data['data']['clevel'])
+        except:  logger.warning('clevel not in dictionary')
 
     def chunkshape(self):
-        if 'chunkshape' in self._data['data']:
-            chunks = self._data['data']['chunkshape']
-            return (int(chunks[0]), int(chunks[1]), int(chunks[2]))
-        else:
+        try:
+            return self._data['data']['chunkshape']
+        except:
             logger.warning('chunkshape not in dictionary')
-            return (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
 
     def get_user_zarr_settings(self):
         '''Returns user settings for cname, clevel, chunkshape as tuple (in that order).'''
@@ -543,7 +470,6 @@ class DataModel:
             return n_scales
         except:
             logger.warning('No Scales Found - Returning 0')
-            return 0
 
     def n_layers(self) -> int:
         '''Returns # of imported images.
@@ -555,8 +481,6 @@ class DataModel:
                 return len(self._data['data']['scales']['scale_1']['alignment_stack'])
         except:
             logger.warning('No Images Found - Returning 0')
-            return 0
-
 
     def scales(self) -> list[str]:
         '''Get scales list.
@@ -1163,9 +1087,6 @@ class DataModel:
             logger.critical('Upgrading Data Model...')
 
             # Begin the upgrade process:
-
-            self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
-            self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
 
             if self._data['version'] <= 0.26:
                 logger.info("Upgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.27))

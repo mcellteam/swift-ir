@@ -1040,9 +1040,9 @@ class MainWindow(QMainWindow):
             logger.warning('No need to update the interface')
             return
 
-        if cfg.data.is_mendenhall():
-            self.browser_overlay_widget.hide()
-            return
+        # if cfg.data.is_mendenhall():
+        #     self.browser_overlay_widget.hide()
+        #     return
 
         if self._working == True:
             logger.warning("Can't update GUI now - working...")
@@ -1544,22 +1544,11 @@ class MainWindow(QMainWindow):
                 self.import_images()
             except:
                 print_exception()
-                logger.warning('Import Images Dialog Was Canceled')
+                logger.warning('Import Images Dialog Was Canceled - Returning')
                 return
 
-            try:
-                recipe_dialog = ConfigDialog(parent=self)
-                if recipe_dialog.exec() != QFileDialog.Accepted:
-                    logger.warning('Configuration Dialog Did Not Return A Result - Canceling...')
-                    return
-            except:
-                print_exception()
-                logger.warning('Project Configuation Dialog Exited Abruptly')
-                return
-
-        # self._scales_combobox_switch = 1
-
-        if not mendenhall:
+            recipe_dialog = ConfigDialog(parent=self)
+            recipe_dialog.exec()
             try:
                 self.autoscale()
             except:
@@ -1691,15 +1680,8 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
-        try:
-            recipe_dialog = ConfigDialog(parent=self)
-            if recipe_dialog.exec() != QFileDialog.Accepted:
-                logger.warning('Configuration Dialog Did Not Return A Result - Canceling...')
-                return
-        except:
-            logger.warning('Project Configuation Dialog Exited Abruptly')
-            return
-
+        recipe_dialog = ConfigDialog(parent=self)
+        recipe_dialog.exec()
         logger.info('Clobbering The Project Dictionary...')
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
         logger.info(str(filenames))
