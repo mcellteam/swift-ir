@@ -81,13 +81,17 @@ class NgHost(QRunnable):
         self.src_url = os.path.join('img_src.zarr', 's' + str(self.sf))
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
         self.al_name = os.path.join(src, self.al_url)
-        self.unal_name = os.path.join(src, self.src_url)
+        if cfg.data.is_mendenhall():
+            self.unal_name = os.path.join(src, 'mendenhall.zarr', 'grp')
+        else:
+            self.unal_name = os.path.join(src, self.src_url)
         self.src_size = cfg.data.image_size(s=self.scale)
         # self.mp_colors = ['#0072b2'] * 2 + ['#f0e442'] * 2 + ['#FF0000'] * 2
-        self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
-                          '#aaa672', '#152c74', '#404f74',
+        self.mp_colors = ['#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
-                          '#aaa672', '#152c74', '#404f74']
+                          '#aaa672', '#152c74', '#404f74'
+                          '#f3e375', '#5c4ccc', '#d6acd6',
+                          ]
         self.mp_count = 0
         self._is_fullscreen = False
         self.arrangement = 1
@@ -125,6 +129,10 @@ class NgHost(QRunnable):
 
 
     def invalidateAllLayers(self):
+        if cfg.data.is_mendenhall():
+            self.menLV.invalidate()
+            return
+
         self.refLV.invalidate()
         self.baseLV.invalidate()
         try:
@@ -132,14 +140,61 @@ class NgHost(QRunnable):
         except:
             pass
 
+    def initViewerMendenhall(self):
+        logger.critical('Initializing Neuroglancer viewer (Mendenhall)...')
+        path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
+        scales = [50, 2, 2]
+        coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
+        self.mend_dataset = get_zarr_tensor(path).result()
+        self.json_unal_dataset = self.mend_dataset.spec().to_json()
+        logger.info(self.json_unal_dataset)
+        self.menLV = ng.LocalVolume(
+            data=self.mend_dataset,
+            dimensions=coordinate_space,
+            voxel_offset=[0, 0, 0],
+        )
+        logger.info('Initializing viewer...')
+        self.viewer = ng.Viewer()
+        self.viewer_url = str(self.viewer)
+        image_size = cfg.data.image_size()
+        widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
+        widget_height = widget_size[3]
+        tissue_height = 2 * image_size[1]  # nm
+        cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
+        tissue_width = 2 * image_size[0]  # nm
+        cross_section_width = (tissue_width / image_size[0]) * 1e-9  # nm/pixel
+        cross_section_scale = max(cross_section_height, cross_section_width)
+        css = '%.2E' % Decimal(cross_section_scale)
+        logger.info(f'cross_section_scale: {css}')
+
+        with self.viewer.txn() as s:
+            s.layers['layer'] = ng.ImageLayer(source=self.menLV)
+            s.crossSectionBackgroundColor = '#808080'
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+
+        self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
+
+
+
 
     def initViewer(self, matchpoint=None, widget_size=None, show_ui_controls=True, show_panel_borders=False):
+        if cfg.data.is_mendenhall() and cfg.MV:
+            logger.info('Transferring control to initViewerMendenhall...')
+            self.initViewerMendenhall()
+            return
+
         if matchpoint != None:
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
         logger.critical('Initializing Viewer, %s (%s, matchpoint: %s)...'
                         % (cfg.data.scale_pretty(s=self.scale), caller, self.mp_mode))
         is_aligned = is_arg_scale_aligned(self.scale)
+
+        # FORCE
+        if cfg.data.is_mendenhall():
+            is_aligned = True
+
         has_bb = cfg.data.has_bb(s=self.scale)
 
         if self.mp_mode:

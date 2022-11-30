@@ -199,20 +199,21 @@ def remove_zarr(path) -> None:
         logger.info('Done Removing Zarr')
 
 
-def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
-    logger.info('Preallocating Zarr Array...')
-    scale_val = get_scale_val(scale)
-    cfg.main_window.hud.post('Preallocating Zarr Array, Scale %s...' % scale_val)
+def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
+    logger.critical('Preallocating Zarr Array...')
+    cfg.main_window.hud.post('Preallocating Zarr Group: %s...' % group)
     cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
     zarr_path = os.path.join(src, name)
-    slug = str('s' + str(get_scale_val(scale)))
-    out_path = os.path.join(zarr_path, slug)
-    shape = (cfg.data.n_layers(), dimy, dimx)  # Todo check this, inverting x & y
+    out_path = os.path.join(zarr_path, group)
 
-    output_text = f'\nscale             : {scale}' \
-                  f'\nzarr root         : {zarr_path}' \
-                  f'\nname/group        : {name}/{slug}' \
+    if os.path.exists(out_path) and (overwrite == False):
+        logger.warning('Overwrite is False - Returning')
+        return
+    shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
+
+    output_text = f'\nzarr root         : {zarr_path}' \
+                  f'\nname/group        : {name}/{group}' \
                   f'\ndata shape/type   : {str(shape)}/{dtype}' \
                   f'\ncompression/level : {cname}/{clevel}' \
                   f'\nchunk shape       : {chunkshape}'
@@ -222,10 +223,10 @@ def preallocate_zarr(name, scale, dimx, dimy, dtype, overwrite):
     try:
         if overwrite and os.path.exists(out_path):
             remove_zarr(out_path)
-        group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
+        arr = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
         synchronizer = zarr.ThreadSynchronizer()
-        group.zeros(name=slug, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
+        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
     except:

@@ -1,4 +1,9 @@
 
+QWidget#layer_view_widget {
+    background-color: #141414;
+    color: #F3F6FB;
+}
+
 
 QToolBar#toolbar {
     background-color: #141414;
