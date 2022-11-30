@@ -60,6 +60,7 @@ def timer(func):
 
     return wrap_func
 
+
 def make_affine_widget_HTML(afm, cafm):
     # 'cellspacing' affects table width and 'cellpadding' affects table height
     text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='3' border='0'>"\

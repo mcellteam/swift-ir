@@ -18,6 +18,7 @@ from pathlib import Path
 import psutil
 import zarr
 import dis
+from collections import namedtuple
 
 from neuroglancer.viewer_config_state import AggregateChunkSourceStatistics
 from neuroglancer.viewer_config_state import ChunkSourceStatistics
@@ -49,7 +50,7 @@ from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
 from src.generate_zarr_scales import generate_zarr_scales
 from src.helpers import *
-from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc, timer
+from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc
 from src.ng_host import NgHost
 from src.ui.dialogs import AskContinueDialog, ConfigDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog
@@ -64,20 +65,9 @@ from src.ui.models.preview import PreviewModel, PreviewDelegate
 from src.ui.layer_view_widget import LayerViewWidget
 
 
-# MAIN_PANEL_STARTING_INDEX = 4
-MAIN_PANEL_STARTING_INDEX = 0
-
-# from src.zarr_funcs import generate_zarr_scales_da
-
-from collections import namedtuple
-
 __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
-
-
-from time import time
-
 
 
 class MainWindow(QMainWindow):
@@ -118,18 +108,18 @@ class MainWindow(QMainWindow):
         if not cfg.NO_SPLASH:
             self.show_splash()
 
-    @timer
+    #@timer
     def initSize(self, width, height):
         self.resize(width, height)
 
-    @timer
+    #@timer
     def initPos(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    @timer
+    #@timer
     def initData(self):
         # logger.info('')
         cfg.data = None
@@ -149,13 +139,13 @@ class MainWindow(QMainWindow):
             self.refreshNeuroglancerURL()
         return super(MainWindow, self).resizeEvent(event)
 
-    @timer
+    #@timer
     def initThreadpool(self, timeout=3000):
         # logger.info('')
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
         self.threadpool.setExpiryTimeout(timeout)  # ms
 
-    @timer
+    #@timer
     def initImageAllocations(self):
         # logger.info('')
         if qtpy.PYSIDE6:
@@ -164,13 +154,13 @@ class MainWindow(QMainWindow):
         from PIL import Image
         Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
-    @timer
+    #@timer
     def initOpenGlContext(self):
         # logger.info('')
         self.context = QOpenGLContext(self)
         self.context.setFormat(QSurfaceFormat())
 
-    @timer
+    #@timer
     def initWebEngine(self):
         # Performance with settings: Function 'initWebEngine' executed in 0.1939s
         # Without: Function 'initWebEngine' executed in 0.0001s
@@ -185,7 +175,7 @@ class MainWindow(QMainWindow):
         # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
-    @timer
+    #@timer
     def initPrivateMembers(self):
         # logger.info('')
         self._unsaved_changes = False
@@ -200,13 +190,13 @@ class MainWindow(QMainWindow):
         self._snr_by_scale = dict() #Todo
         self.ng_workers = {}
 
-    @timer
+    #@timer
     def initStyle(self):
         # logger.info('')
         self.main_stylesheet = os.path.abspath('styles/default.qss')
         self.apply_default_style()
 
-    @timer
+    #@timer
     def initPlotColors(self):
         # logger.info('')
         self._plot_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
@@ -215,7 +205,7 @@ class MainWindow(QMainWindow):
                              '#aaa672', '#152c74', '#404f74']
         self._plot_brushes = [pg.mkBrush(c) for c in self._plot_colors]
 
-    @timer
+    #@timer
     def initView(self):
         self.main_tab_widget.show()
         self.full_window_controls.hide()
@@ -417,6 +407,8 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.showScoreboardWidegts()
         self.project_model.load(cfg.data.to_dict())
+
+
 
 
     def align_all(self, scale=None) -> None:
@@ -1628,7 +1620,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_paths_absolute(filename=filename)
         self.onStartProject()
 
-    @timer
+    #@timer
     def onStartProject(self):
         '''Functions that only need to be run once per project
         Do not automatically save, there is nothing to save yet'''
@@ -2049,7 +2041,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Neuroglancer Is Not Running')
 
 
-    @timer
+    #@timer
     def initNgServer(self, scales=None):
         # logger.info(f'caller: {inspect.stack()[1].function}')
         if not cfg.data:
@@ -2582,7 +2574,7 @@ class MainWindow(QMainWindow):
             if cfg.data:
                 self.layer_view_widget.set_data()
 
-    @timer
+    #@timer
     def initMenu(self):
         '''Initialize Menu'''
         # logger.info('')
@@ -2838,6 +2830,9 @@ class MainWindow(QMainWindow):
         self.rescaleAction.triggered.connect(self.rescale)
         toolsMenu.addAction(self.rescaleAction)
 
+        # self.mendenhallAction = QAction('Mendenhall Protocol', self)
+        # self.mendenhallAction.triggered.connect(self.mendenhall_protocol)
+        # toolsMenu.addAction(self.mendenhallAction)
 
         self.skipChangeAction = QAction('Toggle Skip', self)
         self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
@@ -2923,7 +2918,7 @@ class MainWindow(QMainWindow):
         helpMenu.addAction(self.reloadBrowserAction)
 
 
-    @timer
+    #@timer
     def initUI(self):
         '''Initialize Main UI'''
         # logger.info('')
@@ -3604,7 +3599,7 @@ class MainWindow(QMainWindow):
         self.main_panel.setLayout(self.main_panel_layout)
         self.setCentralWidget(self.main_stack_widget)
         self.toolbar.setCursor(QCursor(Qt.PointingHandCursor))
-        self.main_stack_widget.setCurrentIndex(MAIN_PANEL_STARTING_INDEX)
+        self.main_stack_widget.setCurrentIndex(0)
 
     def get_application_root(self):
         return Path(__file__).parents[2]
@@ -3726,7 +3721,7 @@ class MainWindow(QMainWindow):
     def get_thumbnail_list(self):
         pass
 
-    @timer
+    #@timer
     def initOverviewPanel(self):
 
         # logger.info('')
@@ -3765,7 +3760,7 @@ class MainWindow(QMainWindow):
         self.thumbnail_table.resizeColumnsToContents()
         QApplication.processEvents()
 
-    @timer
+    #@timer
     def initWidgetSpacing(self):
         self.main_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.main_details_subwidgetA.setContentsMargins(0, 0, 0, 0)
@@ -3814,7 +3809,7 @@ class MainWindow(QMainWindow):
         for i in reversed(range(self.snr_plot_controls_hlayout.count())):
             self.snr_plot_controls_hlayout.removeItem(self.snr_plot_controls_hlayout.itemAt(i))
 
-    @timer
+    #@timer
     def initSnrPlot(self, s=None):
         '''
         cfg.main_window.snr_points.data <- numpy.ndarray of snr data points
@@ -3921,7 +3916,7 @@ class MainWindow(QMainWindow):
         self.jump_to(index)
 
 
-    @timer
+    #@timer
     def initPbar(self):
         # logger.info('')
         self.statusBar = self.statusBar()
@@ -3943,7 +3938,7 @@ class MainWindow(QMainWindow):
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
 
-    @timer
+    #@timer
     def initJupyter(self):
         # logger.info('')
         self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
