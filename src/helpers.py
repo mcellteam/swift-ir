@@ -360,7 +360,7 @@ def get_num_aligned() -> int:
     try:
         n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
     except:
-        return 0
+        print_exception()
     # logger.info('get_num_aligned() | returning:', n_aligned)
     return n_aligned
 
