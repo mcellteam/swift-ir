@@ -43,7 +43,7 @@ class ScaleIterator:
 class DataModel:
     """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
 
-    def __init__(self, data=None, name=''):
+    def __init__(self, data=None, name='', mendenhall=False):
         logger.info('Constructing Data Model (caller: %s)...' % inspect.stack()[1].function)
         # self._current_version = 0.31
         self._current_version = 0.40
@@ -55,6 +55,16 @@ class DataModel:
 
         if self.layer() == None:
             self.set_layer(0)
+
+        self.mendenhall = mendenhall
+        if self.mendenhall:
+            self._data['data']['mendenhall'] = True
+        else:
+            self._data['data']['mendenhall'] = False
+
+        self.list_aligned = []
+        self.naligned = None
+        self.nscales = None
 
         # if self._data['version'] != self._current_version:
         #     self.upgrade_data_model()
@@ -178,6 +188,8 @@ class DataModel:
             imgs.append(os.path.join(self.source_path(), os.path.basename(f)))
         return imgs
 
+    def is_mendenhall(self):
+        return self._data['data']['mendenhall']
 
     def get_iter(self, s=None):
         if s == None: s = cfg.data.scale()
@@ -537,9 +549,13 @@ class DataModel:
         '''Returns # of imported images.
         #TODO Check this for off-by-one bug'''
         try:
-            n_imgs = len(self._data['data']['scales']['scale_1']['alignment_stack']); return n_imgs
+            if self.is_mendenhall():
+                return cfg.main_window.mendenhall.n_files()
+            else:
+                return len(self._data['data']['scales']['scale_1']['alignment_stack'])
         except:
-            logger.warning('No Images Found - Returning 0'); return 0
+            logger.warning('No Images Found - Returning 0')
+            return 0
 
 
     def scales(self) -> list[str]:
@@ -635,7 +651,7 @@ class DataModel:
 
     def image_size(self, s=None):
         if s == None: s = self.scale()
-        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
@@ -755,6 +771,11 @@ class DataModel:
         logger.info('Setting Image Size, Scale %d: %s' %
                     (get_scale_val(scale), str(self._data['data']['scales'][scale]['image_src_size'])))
 
+    def set_image_size_directly(self, size, s=None):
+        if s == None: s = cfg.data.scale()
+        logger.info(f"Setting image size for {s}, ImageSize: {size}")
+        self._data['data']['scales'][s]['image_src_size'] = size
+
     def set_poly_order(self, x: int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
         self._data['data']['scales'][self.scale()]['poly_order'] = int(x)
@@ -833,7 +854,7 @@ class DataModel:
 
     def snr_max_all_scales(self):
         max_snr = []
-        for i, scale in enumerate(self.aligned_list()):
+        for i, scale in enumerate(self.list_aligned):
             if is_arg_scale_aligned(scale=scale):
                 try:
                     max_snr.append(max(self.snr_list(scale=scale)))
@@ -854,7 +875,9 @@ class DataModel:
         return self._data['data']['scales'][s]['alignment_stack']
 
     def aligned_list(self) -> list[str]:
-        '''Get aligned scales list. Check project data and aligned Zarr group presence.'''
+        '''Deprecate this
+
+        Get aligned scales list. Check project data and aligned Zarr group presence.'''
         lst = []
         for s in self.scales():
             r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
@@ -865,14 +888,17 @@ class DataModel:
                 lst.remove(s)
         return lst
 
-    def not_aligned_list(self) -> list[str]:
-        '''Get not aligned scales list.'''
-        lst = []
-        for s in self.scales():
-            if not is_arg_scale_aligned(s):
-                lst.append(s)
-        logger.debug('Not Aligned Scales List: %s ' % str(lst))
-        return lst
+    # def not_aligned_list(self) -> list[str]:
+    #     '''Get not aligned scales list.'''
+    #     lst = []
+    #     for s in self.scales():
+    #         if not is_arg_scale_aligned(s):
+    #             lst.append(s)
+    #     logger.debug('Not Aligned Scales List: %s ' % str(lst))
+    #     return lst
+
+    def not_aligned_list(self):
+        return set(self.scales()) - set(self.list_aligned)
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''
@@ -944,6 +970,39 @@ class DataModel:
                 "skipped": False
             })
         pass
+
+    def append_image(self, image_file_name, role_name='base'):
+        logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
+        scale = cfg.data.scale()
+        used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
+        if False in used_for_this_role:
+            layer_index = used_for_this_role.index(False)
+        else:
+            cfg.data.append_layer(scale_key=scale)
+            layer_index = self.n_layers() - 1
+        self.add_img(
+            scale_key=scale,
+            layer_index=layer_index,
+            role=role_name,
+            filename=image_file_name
+        )
+
+    def append_empty(self, role_name):
+        logger.debug('MainWindow.append_empty:')
+        scale = cfg.data.scale()
+        used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
+        layer_index = -1
+        if False in used_for_this_role:
+            layer_index = used_for_this_role.index(False)
+        else:
+            cfg.data.append_layer(scale_key=scale)
+            layer_index_for_new_role = len(cfg.data['data']['scales'][scale]['alignment_stack']) - 1
+        cfg.data.add_img(
+            scale_key=scale,
+            layer_index=layer_index,
+            role=role_name,
+            filename=None
+        )
 
     def add_img(self, scale_key, layer_index, role, filename=''):
         logger.info('Adding Image scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))

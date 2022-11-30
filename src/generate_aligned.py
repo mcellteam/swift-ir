@@ -58,10 +58,15 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         rect = [0, 0, w, h] # might need to swap w/h for Zarr
     logger.info(f'Aligned Size              : {rect[2:]}')
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
+    group = 's%d' % scale_val
     if preallocate:
         preallocate_zarr(name='img_aligned.zarr',
-                         scale=scale,
-                         dimx=rect[2], dimy=rect[3], dtype='uint8', overwrite=True)
+                         group=group,
+                         dimx=rect[2],
+                         dimy=rect[3],
+                         dimz=cfg.data.n_layers(),
+                         dtype='uint8',
+                         overwrite=True)
 
     if num_layers == -1:
         end_layer = len(alstack)

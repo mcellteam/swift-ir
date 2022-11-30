@@ -63,7 +63,7 @@ def timer(func):
 
 def make_affine_widget_HTML(afm, cafm):
     # 'cellspacing' affects table width and 'cellpadding' affects table height
-    text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='3' border='0'>"\
+    text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='4' cellpadding='3' border='0'>"\
            f"  <tr>"\
            f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
@@ -295,37 +295,14 @@ def do_scales_exist() -> bool:
     except:
         pass
 
-def is_cur_scale_aligned() -> bool:
-    '''Checks if there exists an alignment stack for the current s
 
-    #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
+def get_aligned_scales() -> list:
+    l = []
+    for s in cfg.data.scales():
+        if is_arg_scale_aligned(s):
+            l.append(s)
+    return l
 
-    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
-    functions even for a data that does not need scales.'''
-    # logger.info('Called by %s' % inspect.stack()[1].function)
-
-    if cfg.data is None:
-        logger.warning('No data to check')
-        return False
-
-
-
-    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
-    # logger.info('zarr_path = %s' % zarr_path)
-    if not os.path.isdir(zarr_path):
-        logger.debug('Returning False due to os.path.isdir(zarr_path)')
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zattrs')")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zarray')")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '0.0.0')")
-        return False
-
-    return True
 
 def is_arg_scale_aligned(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
@@ -342,6 +319,36 @@ def is_arg_scale_aligned(scale: str) -> bool:
         return False
     if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
         logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+        return False
+    return True
+
+
+def is_cur_scale_aligned() -> bool:
+    '''Checks if there exists an alignment stack for the current s
+
+    #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
+
+    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
+    functions even for a data that does not need scales.'''
+    # logger.info('Called by %s' % inspect.stack()[1].function)
+
+    if cfg.data is None:
+        logger.warning('No data to check')
+        return False
+
+    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
+    # logger.info('zarr_path = %s' % zarr_path)
+    if not os.path.isdir(zarr_path):
+        logger.debug('Returning False due to os.path.isdir(zarr_path)')
+        return False
+    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
+        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zattrs')")
+        return False
+    if not os.path.exists(os.path.join(zarr_path, '.zarray')):
+        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zarray')")
+        return False
+    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
+        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '0.0.0')")
         return False
     return True
 

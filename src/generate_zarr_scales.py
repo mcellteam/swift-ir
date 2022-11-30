@@ -28,7 +28,14 @@ def generate_zarr_scales():
     renew_directory(directory=od)
     for scale in cfg.data.scales():
         x, y = cfg.data.image_size(s=scale)
-        preallocate_zarr(name='img_src.zarr', scale=scale, dimx=x, dimy=y, dtype='uint8', overwrite=True)
+        group = 's%d' % get_scale_val(scale)
+        preallocate_zarr(name='img_src.zarr',
+                         group=group,
+                         dimx=x,
+                         dimy=y,
+                         dimz=cfg.data.n_layers(),
+                         dtype='uint8',
+                         overwrite=True)
     n_tasks = len(cfg.data) * cfg.data.n_scales()
     cfg.main_window.hud('# Tasks: %d' % n_tasks)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os, logging, textwrap, platform
+from os.path import expanduser
+from pathlib import Path
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton
@@ -10,6 +12,88 @@ import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
+
+#
+# class TestMend(QWidget):
+#     def __init__(self):
+#         super().__init__()
+#         layout = QHBoxLayout(self)
+#         self.pathEdit = QLineEdit(placeholderText='Select path...')
+#         self.button = QToolButton(text='...')
+#         layout.addWidget(self.pathEdit)
+#         layout.addWidget(self.button)
+#         self.button.clicked.connect(self.selectTarget)
+#
+#     def selectTarget(self):
+#         dialog = QFileDialog(self)
+#
+#         if self.pathEdit.text():
+#             dialog.setDirectory(self.pathEdit.text())
+#
+#         dialog.setFileMode(dialog.Directory)
+#
+#         # we cannot use the native dialog, because we need control over the UI
+#         options = dialog.Options(dialog.DontUseNativeDialog | dialog.ShowDirsOnly)
+#         dialog.setOptions(options)
+#
+#         def checkLineEdit(path):
+#             if not path:
+#                 return
+#             if path.endswith(QDir.separator()):
+#                 return checkLineEdit(path.rstrip(QDir.separator()))
+#             path = QFileInfo(path)
+#             if path.exists() or QFileInfo(path.absolutePath()).exists():
+#                 button.setEnabled(True)
+#                 return True
+#
+#         # get the "Open" button in the dialog
+#         button = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.Open)
+#
+#         # get the line edit used for the path
+#         lineEdit = dialog.findChild(QLineEdit)
+#         lineEdit.textChanged.connect(checkLineEdit)
+#
+#         # override the existing accept() method, otherwise selectedFiles() will
+#         # complain about selecting a non existing path
+#         def accept():
+#             if checkLineEdit(lineEdit.text()):
+#                 # if the path is acceptable, call the base accept() implementation
+#                 QDialog.accept(dialog)
+#         dialog.accept = accept
+#
+#         if dialog.exec_() and dialog.selectedFiles():
+#             path = QFileInfo(dialog.selectedFiles()[0]).absoluteFilePath()
+#             self.pathEdit.setText(path)
+
+def mendenhall_dialog() -> str:
+    home = expanduser("~")
+    dialog = QInputDialog()
+    dialog.resize(200,500)
+    dialog.setInputMode(QInputDialog.TextInput)
+    dialog.setWindowTitle('Create Directory')
+    dialog.setLabelText('Set Microscope Sink')
+    lineEdit = dialog.findChild(QLineEdit)
+    lineEdit.setPlaceholderText(home)
+    if dialog.exec_():
+        path = dialog.textValue()
+        logger.info(f'Selected Path: {path}')
+        if os.path.exists(path):
+            cfg.main_window.hud.post('Path Already Exists', logging.WARNING)
+            return
+        else:
+            try:
+                os.mkdir(path)
+            except:
+                logger.warning(f"Unable to create path '{path}'")
+                cfg.main_window.hud.post(f"Unable to create path '{path}'")
+            else:
+                logger.info(f"Directory Created: {path}")
+                cfg.main_window.hud.post(f"Directory Created: {path}")
+                return path
+
+
+
+
 
 
 def export_affines_dialog() -> str:
@@ -377,37 +461,39 @@ class ConfigDialog(QDialog):
 
 
         '''Scales Field'''
-        if do_scales_exist():
-            scales_lst = [str(v) for v in
-                              sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
-        else:
-            width, height = cfg.data.image_size(s='scale_1')
-            if (width*height) > 400_000_000:
-                scales_lst = ['24 6 2 1']
-            elif (width*height) > 200_000_000:
-                scales_lst = ['16 6 2 1']
-            elif (width * height) > 100_000_000:
-                scales_lst = ['8 2 1']
-            elif (width * height) > 10_000_000:
-                scales_lst = ['4 2 1']
+        if not cfg.data.is_mendenhall():
+
+            if do_scales_exist():
+                scales_lst = [str(v) for v in
+                                  sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
             else:
-                scales_lst = ['4 1']
+                width, height = cfg.data.image_size(s='scale_1')
+                if (width*height) > 400_000_000:
+                    scales_lst = ['24 6 2 1']
+                elif (width*height) > 200_000_000:
+                    scales_lst = ['16 6 2 1']
+                elif (width * height) > 100_000_000:
+                    scales_lst = ['8 2 1']
+                elif (width * height) > 10_000_000:
+                    scales_lst = ['4 2 1']
+                else:
+                    scales_lst = ['4 1']
 
-        scales_str = ' '.join(scales_lst)
+            scales_str = ' '.join(scales_lst)
 
-        self.scales_label = QLabel("Scale Factors:")
-        self.scales_input = QLineEdit(self)
-        self.scales_input.setFixedWidth(130)
-        self.scales_input.setText(scales_str)
-        self.scales_input.setAlignment(Qt.AlignCenter)
-        tip = "Scale factors, separated by spaces.\n(example) To generate 4x 2x and 1x/full scales, type: 4 2 1"
-        self.scale_instructions_label = QLabel(tip)
-        self.scale_instructions_label.setStyleSheet("font-size: 11px;")
-        self.scales_label.setToolTip(tip)
-        self.scales_input.setToolTip(tip)
-        self.scales_layout = QHBoxLayout()
-        self.scales_layout.addWidget(self.scales_label, alignment=Qt.AlignLeft)
-        self.scales_layout.addWidget(self.scales_input, alignment=Qt.AlignRight)
+            self.scales_label = QLabel("Scale Factors:")
+            self.scales_input = QLineEdit(self)
+            self.scales_input.setFixedWidth(130)
+            self.scales_input.setText(scales_str)
+            self.scales_input.setAlignment(Qt.AlignCenter)
+            tip = "Scale factors, separated by spaces.\n(example) To generate 4x 2x and 1x/full scales, type: 4 2 1"
+            self.scale_instructions_label = QLabel(tip)
+            self.scale_instructions_label.setStyleSheet("font-size: 11px;")
+            self.scales_label.setToolTip(tip)
+            self.scales_input.setToolTip(tip)
+            self.scales_layout = QHBoxLayout()
+            self.scales_layout.addWidget(self.scales_label, alignment=Qt.AlignLeft)
+            self.scales_layout.addWidget(self.scales_input, alignment=Qt.AlignRight)
 
         '''Resolution Fields'''
         tip = "Resolution or size of each voxel (nm)"
@@ -452,28 +538,31 @@ class ConfigDialog(QDialog):
         self.resolution_layout.addWidget(self.resolution_label, Qt.AlignLeft)
         self.resolution_layout.addWidget(self.resolution_widget, Qt.AlignRight)
 
+        if not cfg.data.is_mendenhall():
 
-        '''Initial Rotation Field'''
-        self.initial_rotation_label = QLabel("Initial Rotation:")
-        self.initial_rotation_input = QLineEdit(self)
-        self.initial_rotation_input.setFixedWidth(70)
-        self.initial_rotation_input.setText(str(cfg.DEFAULT_INITIAL_ROTATION))
-        self.initial_rotation_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
-        self.initial_rotation_input.setAlignment(Qt.AlignCenter)
-        self.initial_rotation_layout = QHBoxLayout()
-        self.initial_rotation_layout.addWidget(self.initial_rotation_label, alignment=Qt.AlignLeft)
-        self.initial_rotation_layout.addWidget(self.initial_rotation_input, alignment=Qt.AlignRight)
+            '''Initial Rotation Field'''
+            self.initial_rotation_label = QLabel("Initial Rotation:")
+            self.initial_rotation_input = QLineEdit(self)
+            self.initial_rotation_input.setFixedWidth(70)
+            self.initial_rotation_input.setText(str(cfg.DEFAULT_INITIAL_ROTATION))
+            self.initial_rotation_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
+            self.initial_rotation_input.setAlignment(Qt.AlignCenter)
+            self.initial_rotation_layout = QHBoxLayout()
+            self.initial_rotation_layout.addWidget(self.initial_rotation_label, alignment=Qt.AlignLeft)
+            self.initial_rotation_layout.addWidget(self.initial_rotation_input, alignment=Qt.AlignRight)
+            tip = "Initial rotation is sometimes needed to prevent alignment from aligning to unseen artifacts (default=0.0000)"
+            self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
 
-        '''Initial Scale Field'''
-        self.initial_scale_label = QLabel("Initial Scale:")
-        self.initial_scale_input = QLineEdit(self)
-        self.initial_scale_input.setFixedWidth(70)
-        self.initial_scale_input.setText(str(cfg.DEFAULT_INITIAL_SCALE))
-        self.initial_scale_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
-        self.initial_scale_input.setAlignment(Qt.AlignCenter)
-        self.initial_scale_layout = QHBoxLayout()
-        self.initial_scale_layout.addWidget(self.initial_scale_label, alignment=Qt.AlignLeft)
-        self.initial_scale_layout.addWidget(self.initial_scale_input, alignment=Qt.AlignRight)
+            '''Initial Scale Field'''
+            self.initial_scale_label = QLabel("Initial Scale:")
+            self.initial_scale_input = QLineEdit(self)
+            self.initial_scale_input.setFixedWidth(70)
+            self.initial_scale_input.setText(str(cfg.DEFAULT_INITIAL_SCALE))
+            self.initial_scale_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
+            self.initial_scale_input.setAlignment(Qt.AlignCenter)
+            self.initial_scale_layout = QHBoxLayout()
+            self.initial_scale_layout.addWidget(self.initial_scale_label, alignment=Qt.AlignLeft)
+            self.initial_scale_layout.addWidget(self.initial_scale_input, alignment=Qt.AlignRight)
 
         '''Bounding Box Field'''
         self.bounding_rectangle_label = QLabel("Bounding Box:")
@@ -485,26 +574,21 @@ class ConfigDialog(QDialog):
 
         '''Groupbox QFormLayout'''
         layout = QGridLayout()
-        layout.addLayout(self.scales_layout , 0, 0)
-        layout.addWidget(self.scale_instructions_label , 1, 0)
+        if not cfg.data.is_mendenhall():
+            layout.addLayout(self.scales_layout , 0, 0)
+            layout.addWidget(self.scale_instructions_label , 1, 0)
         layout.addLayout(self.resolution_layout, 2, 0)
-        layout.addLayout(self.initial_rotation_layout, 3, 0)
-        layout.addLayout(self.initial_scale_layout, 4, 0)
+        if not cfg.data.is_mendenhall():
+            layout.addLayout(self.initial_rotation_layout, 3, 0)
+            layout.addLayout(self.initial_scale_layout, 4, 0)
         layout.addLayout(self.bounding_rectangle_layout, 5, 0)
         # self.formGroupBox = QGroupBox('Recipe Maker')
         # self.formGroupBox.setLayout(layout)
 
         self.tab1.setLayout(layout)
 
-        # tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
-        # self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        # self.whitening_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        # tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
-        # self.swim_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        # self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        tip = "Initial rotation is sometimes needed to prevent alignment from aligning to unseen artifacts (default=0.0000)"
-        self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        # self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+
+
 
 
 def show_ng_commands():
