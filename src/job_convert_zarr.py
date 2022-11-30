@@ -13,6 +13,9 @@ import sys
 import zarr
 from PIL import Image
 import numpy as np
+import numcodecs
+numcodecs.blosc.use_threads = False
+
 
 if __name__ == '__main__':
 
