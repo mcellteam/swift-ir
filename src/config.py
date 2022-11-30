@@ -25,7 +25,7 @@ DEFAULT_INITIAL_ROTATION  = float(0.0000)
 DEFAULT_INITIAL_SCALE     = float(1.0000)
 
 '''Default Image Resolution (Voxel Dimensions)'''
-RES_X, RES_Y, RES_Z = 2, 2, 50
+DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
 
 '''Default Zarr Chunk Shape'''
 CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
