@@ -18,6 +18,8 @@ import tifffile
 # from PIL import Image
 import zarr
 from numcodecs import Blosc
+import numcodecs
+numcodecs.blosc.use_threads = False
 
 # import imagecodecs
 # import dask.array as da
@@ -225,8 +227,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
             remove_zarr(out_path)
         arr = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        synchronizer = zarr.ThreadSynchronizer()
-        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
+        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
         '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
     except:
