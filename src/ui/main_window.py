@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(QPixmap('src/resources/sims.png')))
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
-        # if cfg.USE_THREADING:
+        # if cfg.USE_EXTRA_THREADING:
         self.initThreadpool(timeout=3000)
         self.initImageAllocations()
         self.initOpenGlContext()
@@ -384,7 +384,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating TIFF Scale Hierarchy...')
         self.set_status('Scaling...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_scales())
                 self.threadpool.start(self.worker)
             else:
@@ -403,7 +403,7 @@ class MainWindow(QMainWindow):
         self.set_status('Copy-converting TIFFs...')
         self.hud.post('Copy-converting TIFFs to Zarr...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_zarr_scales())
                 self.threadpool.start(self.worker)
             else:
@@ -416,7 +416,7 @@ class MainWindow(QMainWindow):
             self.set_status('Generating Thumbnails...')
             self.hud.post('Generating Thumbnails...')
             try:
-                if cfg.USE_THREADING:
+                if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(fn=generate_thumbnails())
                     self.threadpool.start(self.worker)
                 else:
@@ -481,7 +481,7 @@ class MainWindow(QMainWindow):
             self.hud.post("Computing Refinement of Affine Transforms,  Scale %d..." % scale_val)
         self.set_status('Aligning...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=compute_affines(
                         scale=scale,
@@ -526,7 +526,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Images...')
         self.set_status('Generating Alignment...')
         try:
-                if cfg.USE_THREADING:
+                if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(
                         fn=generate_aligned(
                             scale=scale,
@@ -586,7 +586,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Computing Alignment For Layers %d -> End,  Scale %d...' % (start_layer, scale_val))
         self.set_status('Aligning...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=compute_affines(
                         scale=scale,
@@ -603,7 +603,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Images From Layers %d -> End,  Scale  %d...' % (start_layer, scale_val))
         self.set_status('Generating Alignment...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=generate_aligned(scale=scale, start_layer=start_layer, num_layers=num_layers, preallocate=False))
                 self.threadpool.start(self.worker)
@@ -652,7 +652,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Re-aligning The Current Layer,  Scale %d...' % scale_val)
         self.set_status('Aligning...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=compute_affines(
                         scale=scale,
@@ -675,7 +675,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Image For Layer %d Only...' % cur_layer)
         self.set_status('Generating Alignment...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=generate_aligned(scale=scale, start_layer=cur_layer, num_layers=1, preallocate=False))
                 self.threadpool.start(self.worker)
@@ -717,7 +717,7 @@ class MainWindow(QMainWindow):
         logger.info('Regenerate Aligned Images...')
         self.hud.post('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.set_status('Regenerating Alignment...')
                 self.worker = BackgroundWorker(
                     fn=generate_aligned(
@@ -773,7 +773,7 @@ class MainWindow(QMainWindow):
         self.hud.post('  Compression Type: %s' % cfg.CNAME)
         self.set_status('Exporting...')
         try:
-            if cfg.USE_THREADING:
+            if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_zarr_scales())
                 self.threadpool.start(self.worker)
             else:
@@ -1940,7 +1940,7 @@ class MainWindow(QMainWindow):
         # else:
         #     logger.info('Success')
 
-        if cfg.USE_THREADING:
+        if cfg.USE_EXTRA_THREADING:
             try:
                 logger.info('Shutting down threadpool...')
                 threadpool_result = self.threadpool.waitForDone(msecs=500)
