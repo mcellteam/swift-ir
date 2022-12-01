@@ -52,8 +52,8 @@ import qtpy
 
 import os
 os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
+os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --enable-logging --log-level=3'
+os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 import sys, signal, logging, argparse
 from src.helpers import check_for_binaries
 import src.config as cfg
@@ -108,9 +108,6 @@ def main():
 
     check_for_binaries()
 
-
-
-
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
@@ -154,15 +151,14 @@ def main():
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
 
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
-
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=3' # suppress JS warnings
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=2'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     # if qtpy.QT6:
     #     logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
