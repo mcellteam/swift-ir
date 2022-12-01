@@ -1998,7 +1998,8 @@ class MainWindow(QMainWindow):
 
 
     def set_url(self, text: str) -> None:
-        self.ng_browser.setUrl(QUrl(text))
+        self.browser_docs.setUrl(QUrl(text))
+        self.main_stack_widget.setCurrentIndex(1)
 
 
     def view_swiftir_examples(self):
@@ -2206,6 +2207,11 @@ class MainWindow(QMainWindow):
     def gpu_config(self):
         self.browser_docs.setUrl(QUrl('chrome://gpu'))
         self.main_stack_widget.setCurrentIndex(1)
+
+    def chromium_debug(self):
+        self.browser_docs.setUrl(QUrl('http://127.0.0.1:9000'))
+        self.main_stack_widget.setCurrentIndex(1)
+
 
     def print_ng_state_url(self):
         if cfg.data:
@@ -2967,6 +2973,10 @@ class MainWindow(QMainWindow):
         self.detailsGpuAction.triggered.connect(self.gpu_config)
         detailsMenu.addAction(self.detailsGpuAction)
 
+        self.chromiumDebugAction = QAction('Chromium Debug', self)
+        self.chromiumDebugAction.triggered.connect(self.chromium_debug)
+        detailsMenu.addAction(self.chromiumDebugAction)
+
         zarrMenu = detailsMenu.addMenu('Zarr Details')
 
         self.detailsZarrSourceAction = QAction('img_src.zarr', self)
@@ -3022,6 +3032,14 @@ class MainWindow(QMainWindow):
         self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
         self.reloadBrowserAction.triggered.connect(self.browser_reload)
         helpMenu.addAction(self.reloadBrowserAction)
+
+        self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
+        self.reloadBrowserAction.triggered.connect(self.browser_reload)
+        helpMenu.addAction(self.reloadBrowserAction)
+
+        self.googleAction = QAction('Google', self)
+        self.googleAction.triggered.connect(self.google)
+        helpMenu.addAction(self.googleAction)
 
 
     #@timer
