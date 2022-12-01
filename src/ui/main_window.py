@@ -1896,7 +1896,8 @@ class MainWindow(QMainWindow):
             logger.info('Success')
 
         logger.info('Quitting app...')
-        self.app.quit()
+        # self.app.quit() #1130-
+        QApplication.quit() #1130+
 
 
     def html_view(self):
@@ -3797,7 +3798,6 @@ class MainWindow(QMainWindow):
 
         self.thumbnail_table.resizeRowsToContents()
         self.thumbnail_table.resizeColumnsToContents()
-        QApplication.processEvents()
 
 
     def initWidgetSpacing(self):

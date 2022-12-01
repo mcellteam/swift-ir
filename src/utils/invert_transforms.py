@@ -2,14 +2,6 @@ import numpy as np
 import argparse
 import pandas as pd
 
-
-
-
-
-
-
-
-
 def invertAffine(afm):
     '''INVERTAFFINE - Invert affine transform
     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
@@ -17,8 +9,6 @@ def invertAffine(afm):
     afm = np.vstack((afm, [0,0,1]))
     ifm = np.linalg.inv(afm)
     return ifm[0:2,:]
-
-
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

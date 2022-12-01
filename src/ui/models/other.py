@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
-import json
-import sys
-from typing import Any, List, Dict, Union
-import qtpy
-from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
-from qtpy.QtCore import Qt, QAbstractItemModel, QAbstractTableModel, QModelIndex
+from qtpy.QtCore import Qt, QAbstractTableModel, QModelIndex
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QHeaderView, QTableView
 
 
 
@@ -36,10 +29,6 @@ class TableModel(QAbstractTableModel):
 # Below classes are from from:
 # https://www.pythonguis.com/faq/file-image-browser-app-with-thumbnails/
 #############################
-
-
-
-
 
 class GeneralTableModel(QAbstractTableModel):
 

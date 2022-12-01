@@ -27,7 +27,7 @@ SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     '''Function run by worker processes'''
     for task_id, task in iter(task_q.get, 'END_TASKS'):
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
         logger.info('worker_id %d  task_id %d  n_tasks %d  n_workers %d' % (worker_id, task_id, n_tasks, n_workers))
         logger.debug('task: %s' % str(task))
@@ -58,6 +58,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
 class TaskQueue(QObject):
     # def __init__(self, n_tasks, start_method='forkserver', progress_callback=None):
     def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None, pbar_text=None):
+        QObject.__init__(self)
         self.parent = parent
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
