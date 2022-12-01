@@ -85,6 +85,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(QPixmap('src/resources/sims.png')))
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
+        # if cfg.USE_THREADING:
         self.initThreadpool(timeout=3000)
         self.initImageAllocations()
         self.initOpenGlContext()
@@ -383,8 +384,11 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating TIFF Scale Hierarchy...')
         self.set_status('Scaling...')
         try:
-            self.worker = BackgroundWorker(fn=generate_scales())
-            self.threadpool.start(self.worker)
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(fn=generate_scales())
+                self.threadpool.start(self.worker)
+            else:
+                generate_scales()
         except:
             print_exception()
             self.hud('Something Unexpected Happened While Generating TIFF Scale Hierarchy', logging.WARNING)
@@ -399,8 +403,11 @@ class MainWindow(QMainWindow):
         self.set_status('Copy-converting TIFFs...')
         self.hud.post('Copy-converting TIFFs to Zarr...')
         try:
-            self.worker = BackgroundWorker(fn=generate_zarr_scales())
-            self.threadpool.start(self.worker)
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(fn=generate_zarr_scales())
+                self.threadpool.start(self.worker)
+            else:
+                generate_zarr_scales()
         except:
             print_exception()
             self.hud('Something Unexpected Happened While Converting The Scale Hierarchy To Zarr', logging.WARNING)
@@ -409,8 +416,12 @@ class MainWindow(QMainWindow):
             self.set_status('Generating Thumbnails...')
             self.hud.post('Generating Thumbnails...')
             try:
-                self.worker = BackgroundWorker(fn=generate_thumbnails())
-                self.threadpool.start(self.worker)
+                if cfg.USE_THREADING:
+                    self.worker = BackgroundWorker(fn=generate_thumbnails())
+                    self.threadpool.start(self.worker)
+                else:
+                    generate_thumbnails()
+
             except:
                 print_exception()
                 self.hud('Something Unexpected Happened While Generating Thumbnails', logging.WARNING)
@@ -470,14 +481,22 @@ class MainWindow(QMainWindow):
             self.hud.post("Computing Refinement of Affine Transforms,  Scale %d..." % scale_val)
         self.set_status('Aligning...')
         try:
-            self.worker = BackgroundWorker(
-                fn=compute_affines(
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=compute_affines(
+                        scale=scale,
+                        start_layer=0,
+                        num_layers=-1
+                    )
+                )
+                self.threadpool.start(self.worker)
+            else:
+                compute_affines(
                     scale=scale,
                     start_layer=0,
                     num_layers=-1
                 )
-            )
-            self.threadpool.start(self.worker)
+
         except:
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
@@ -507,15 +526,18 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Images...')
         self.set_status('Generating Alignment...')
         try:
-            self.worker = BackgroundWorker(
-                fn=generate_aligned(
-                    scale=scale,
-                    start_layer=0,
-                    num_layers=-1,
-                    preallocate=True
-                )
-            )
-            self.threadpool.start(self.worker)
+                if cfg.USE_THREADING:
+                    self.worker = BackgroundWorker(
+                        fn=generate_aligned(
+                            scale=scale,
+                            start_layer=0,
+                            num_layers=-1,
+                            preallocate=True
+                        )
+                    )
+                else:
+                    self.threadpool.start(self.worker)
+
         except:
             print_exception()
             self.hud.post('Alignment Succeeded But Image Generation Failed Unexpectedly. '
@@ -558,14 +580,16 @@ class MainWindow(QMainWindow):
         self.hud.post('Computing Alignment For Layers %d -> End,  Scale %d...' % (start_layer, scale_val))
         self.set_status('Aligning...')
         try:
-            self.worker = BackgroundWorker(
-                fn=compute_affines(
-                    scale=scale,
-                    start_layer=start_layer,
-                    num_layers=num_layers
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=compute_affines(
+                        scale=scale,
+                        start_layer=start_layer,
+                        num_layers=num_layers
+                    )
                 )
-            )
-            self.threadpool.start(self.worker)
+            else:
+                self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
@@ -573,9 +597,12 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Images From Layers %d -> End,  Scale  %d...' % (start_layer, scale_val))
         self.set_status('Generating Alignment...')
         try:
-            self.worker = BackgroundWorker(
-                fn=generate_aligned(scale=scale, start_layer=start_layer, num_layers=num_layers, preallocate=False))
-            self.threadpool.start(self.worker)
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=generate_aligned(scale=scale, start_layer=start_layer, num_layers=num_layers, preallocate=False))
+                self.threadpool.start(self.worker)
+            else:
+                generate_aligned(scale=scale, start_layer=start_layer, num_layers=num_layers, preallocate=False)
         except:
             print_exception()
             self.hud.post('Alignment Succeeded But Image Generation Failed Unexpectedly.'
@@ -619,14 +646,21 @@ class MainWindow(QMainWindow):
         self.hud.post('Re-aligning The Current Layer,  Scale %d...' % scale_val)
         self.set_status('Aligning...')
         try:
-            self.worker = BackgroundWorker(
-                fn=compute_affines(
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=compute_affines(
+                        scale=scale,
+                        start_layer=cfg.data.layer(),
+                        num_layers=1
+                    )
+                )
+                self.threadpool.start(self.worker)
+            else:
+                compute_affines(
                     scale=scale,
                     start_layer=cfg.data.layer(),
                     num_layers=1
                 )
-            )
-            self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
@@ -635,10 +669,12 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Image For Layer %d Only...' % cur_layer)
         self.set_status('Generating Alignment...')
         try:
-
-            self.worker = BackgroundWorker(
-                fn=generate_aligned(scale=scale, start_layer=cur_layer, num_layers=1, preallocate=False))
-            self.threadpool.start(self.worker)
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=generate_aligned(scale=scale, start_layer=cur_layer, num_layers=1, preallocate=False))
+                self.threadpool.start(self.worker)
+            else:
+                generate_aligned(scale=scale, start_layer=cur_layer, num_layers=1, preallocate=False)
         except:
             print_exception()
             self.hud.post('Alignment Succeeded But Image Generation Failed Unexpectedly.'
@@ -675,16 +711,24 @@ class MainWindow(QMainWindow):
         logger.info('Regenerate Aligned Images...')
         self.hud.post('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
-            self.set_status('Regenerating Alignment...')
-            self.worker = BackgroundWorker(
-                fn=generate_aligned(
+            if cfg.USE_THREADING:
+                self.set_status('Regenerating Alignment...')
+                self.worker = BackgroundWorker(
+                    fn=generate_aligned(
+                        scale=scale,
+                        start_layer=0,
+                        num_layers=-1,
+                        preallocate=True
+                    )
+                )
+                self.threadpool.start(self.worker)
+            else:
+                generate_aligned(
                     scale=scale,
                     start_layer=0,
                     num_layers=-1,
                     preallocate=True
                 )
-            )
-            self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud.post('An Exception Was Raised During Image Generation.', logging.ERROR)
@@ -721,10 +765,13 @@ class MainWindow(QMainWindow):
         out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
         self.hud.post('  Compression Level: %s' % cfg.CLEVEL)
         self.hud.post('  Compression Type: %s' % cfg.CNAME)
+        self.set_status('Exporting...')
         try:
-            self.set_status('Exporting...')
-            self.worker = BackgroundWorker(fn=generate_zarr_scales(src=src, out=out))
-            self.threadpool.start(self.worker)
+            if cfg.USE_THREADING:
+                self.worker = BackgroundWorker(fn=generate_zarr_scales())
+                self.threadpool.start(self.worker)
+            else:
+                generate_zarr_scales()
         except:
             print_exception()
             logger.error('Zarr Export Encountered an Exception')
@@ -1887,13 +1934,14 @@ class MainWindow(QMainWindow):
         # else:
         #     logger.info('Success')
 
-        try:
-            logger.info('Shutting down threadpool...')
-            threadpool_result = self.threadpool.waitForDone(msecs=500)
-        except:
-            logger.warning('Having trouble shutting down threadpool')
-        else:
-            logger.info('Success')
+        if cfg.USE_THREADING:
+            try:
+                logger.info('Shutting down threadpool...')
+                threadpool_result = self.threadpool.waitForDone(msecs=500)
+            except:
+                logger.warning('Having trouble shutting down threadpool')
+            else:
+                logger.info('Success')
 
         logger.info('Quitting app...')
         # self.app.quit() #1130-
