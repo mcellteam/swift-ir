@@ -191,7 +191,7 @@ def main():
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
 
-    app = QApplication([])
+    app = QApplication(['a'])
     app.setStyle('Fusion')
 
     cfg.main_window = MainWindow()
