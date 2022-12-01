@@ -25,83 +25,27 @@ from math import floor
 from decimal import Decimal
 from math import floor
 import numpy as np
-import concurrent
-import threading
-import asyncio
-import concurrent.futures
-import neuroglancer.random_token
-import tornado.web
-import tornado.netutil
-import tornado.httpserver
-# import tornado.platform
-import tornado.platform.asyncio
-import tornado.web
-import tornado.platform.asyncio
-import tornado.netutil
-import tornado
+
 import neuroglancer as ng
 import neuroglancer.webdriver
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 
 import src.config as cfg
+from src.funcs_ng import launch_server
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
 from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string, track
 from src.shaders import ann_shader
-
 
 __all__ = ['NgHost']
 
 logger = logging.getLogger(__name__)
 
-def _start_server(bind_address: str, output_dir: str):
-    token = neuroglancer.random_token.make_random_token()
-    handlers = [
-        (fr'/{token}/(.*)', CorsStaticFileHandler, {
-            'path': output_dir
-        }),
-    ]
-    settings = {}
-    app = tornado.web.Application(handlers, settings=settings)
-    http_server = tornado.httpserver.HTTPServer(app)
-    sockets = tornado.netutil.bind_sockets(port=0, address=bind_address)
-    http_server.add_sockets(sockets)
-    actual_port = sockets[0].getsockname()[1]
-    url = neuroglancer.server._get_server_url(bind_address, actual_port)
-    return f'{url}/{token}'
-
-class CorsStaticFileHandler(tornado.web.StaticFileHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
+KEEP_RUNNING = True
 
 
-def launch_server(bind_address: str, output_dir: str) -> int:
-    server_url_future = concurrent.futures.Future()
-    def run_server():
-        try:
-            ioloop = tornado.platform.asyncio.AsyncIOLoop()
-            ioloop.make_current()
-            asyncio.set_event_loop(ioloop.asyncio_loop)
-            server_url_future.set_result(_start_server(bind_address, output_dir))
-        except Exception as e:
-            server_url_future.set_exception(e)
-            return
-        # try:
-        #     ioloop.start()
-        # except KeyboardInterrupt:
-        #     tornado.ioloop.IOLoop.instance().stop()
-        ioloop.start()
-        ioloop.close()
-
-    thread = threading.Thread(target=run_server)
-    thread.daemon = True
-    thread.start()
-    return server_url_future.result()
+def keep_running():
+    return KEEP_RUNNING
 
 
 class WorkerSignals(QObject):
@@ -125,7 +69,7 @@ class NgHost(QRunnable):
         self.src = src
         self.port = port
         self.scale = scale
-        scales  = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
+        scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
         self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
         self.sf = get_scale_val(scale)  # s factor
         self.ref_l = 'ref_%d' % self.sf
@@ -142,11 +86,10 @@ class NgHost(QRunnable):
             self.unal_name = os.path.join(src, self.src_url)
         self.src_size = cfg.data.image_size(s=self.scale)
         # self.mp_colors = ['#0072b2'] * 2 + ['#f0e442'] * 2 + ['#FF0000'] * 2
-        self.mp_colors = ['#aaa672', '#152c74', '#404f74',
+        self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
+                          '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
-                          '#aaa672', '#152c74', '#404f74'
-                          '#f3e375', '#5c4ccc', '#d6acd6',
-                          ]
+                          '#aaa672', '#152c74', '#404f74']
         self.mp_count = 0
         self._is_fullscreen = False
         self.arrangement = 1
@@ -162,26 +105,22 @@ class NgHost(QRunnable):
     def __repr__(self):
         return copy.deepcopy(self.viewer.state)
 
-
     @Slot()
     def run(self):
-        # if cfg.USE_TORNADO:
-        #     logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
-        #     try:
-        #         tempdir = tempfile.mkdtemp()
-        #         atexit.register(shutil.rmtree, tempdir)
-        #         self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-        #     except:
-        #         print_exception()
-        pass
+        if cfg.USE_TORNADO:
+            logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
+            try:
+                tempdir = tempfile.mkdtemp()
+                atexit.register(shutil.rmtree, tempdir)
+                self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+            except:
+                print_exception()
 
     def request_layer(self):
         return floor(self.viewer.state.position[0])
 
-
     def invalidateAlignedLayers(self):
         self.alLV.invalidate()
-
 
     def invalidateAllLayers(self):
         if cfg.data.is_mendenhall():
@@ -231,12 +170,8 @@ class NgHost(QRunnable):
         self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
     def initViewer(self, matchpoint=None, widget_size=None, show_ui_controls=True, show_panel_borders=False):
-
-        tempdir = tempfile.mkdtemp()
-        server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-
         if cfg.data.is_mendenhall() and cfg.MV:
-            logger.info('Transferring control to initViewerMendenhall...')
+            logger.warning('Transferring control to initViewerMendenhall...')
             self.initViewerMendenhall()
             return
 
@@ -257,14 +192,13 @@ class NgHost(QRunnable):
             self.clear_mp_buffer()
 
         # self.viewer = ng.UnsynchronizedViewer()
-        self.viewer = ng.Viewer() #1108+
+        self.viewer = ng.Viewer()  # 1108+
         self.viewer_url = str(self.viewer)
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
         # logger.info('Match Point Mode  : %s' % str(self.mp_mode))
         # logger.info('Shader            : %s' % str(cfg.SHADER))
         # logger.info('Is Aligned        : %s' % str(is_aligned))
-
 
         src_size = cfg.data.image_size()
         src_width, src_height = src_size[0], src_size[1]
@@ -311,15 +245,13 @@ class NgHost(QRunnable):
         # logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
         # logger.info('cross_section_scale=%.10f' % cross_section_scale)
 
-
-
         with self.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
 
             # 276 pixels of widget
             # 1024 pixel image, 8 nm/pixel
             # --> X nm per pixel (i.e. 20 nm / pixel)
-            #trying to represent 1024 * 2 = 8192 nm of tissue
+            # trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
             adjustment = 1.16
@@ -332,6 +264,10 @@ class NgHost(QRunnable):
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
+
+            # adjustment = 1.04
+
+            # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
 
             if cfg.USE_TENSORSTORE:
                 # Experimental Match Point Mode Code
@@ -377,14 +313,14 @@ class NgHost(QRunnable):
 
             else:
                 # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
-                self.refLV =    self.baseLV = f'zarr://http://localhost:{self.port}/{self.src_url}'
+                self.refLV = self.baseLV = f'zarr://http://localhost:{self.port}/{self.src_url}'
                 if is_aligned:  self.alLV = f'zarr://http://localhost:{self.port}/{self.al_url}'
 
             if cfg.SHADER == None:
-                s.layers[self.ref_l] = ng.ImageLayer( source=self.refLV)
-                s.layers[self.base_l] = ng.ImageLayer( source=self.baseLV)
+                s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV)
+                s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV)
                 if is_aligned:
-                    s.layers[self.aligned_l] = ng.ImageLayer( source=self.alLV)
+                    s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV)
             else:
                 s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV, shader=cfg.SHADER)
                 s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV, shader=cfg.SHADER)
@@ -392,7 +328,7 @@ class NgHost(QRunnable):
                     s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV, shader=cfg.SHADER)
 
             s.layers['mp_ref'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
-                                                         annotations = self.pt2ann(points=cfg.data.get_mps(role='ref')),
+                                                         annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
                                                          annotation_properties=[
                                                              ng.AnnotationPropertySpec(
                                                                  id='ptColor',
@@ -414,7 +350,8 @@ class NgHost(QRunnable):
                                                          )
 
             s.layers['mp_base'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
-                                                          annotations =self.pt2ann(points=cfg.data.get_mps(role='base')) + self.base_pts,
+                                                          annotations=self.pt2ann(
+                                                              points=cfg.data.get_mps(role='base')) + self.base_pts,
                                                           annotation_properties=[
                                                               ng.AnnotationPropertySpec(
                                                                   id='ptColor',
@@ -478,17 +415,23 @@ class NgHost(QRunnable):
                 else:
                     s.layout = ng.row_layout(grps)
 
-
             # self.viewer.shared_state.add_changed_callback(self.on_state_changed)
             self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080' #128 grey
-            elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
-            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080'
-            elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
-            else:                 s.crossSectionBackgroundColor = '#004060'
+            # if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#1B1E23'
+            if cfg.THEME == 0:
+                s.crossSectionBackgroundColor = '#808080'
+            elif cfg.THEME == 1:
+                s.crossSectionBackgroundColor = '#FFFFE0'
+            # elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#6D7D77'
+            elif cfg.THEME == 2:
+                s.crossSectionBackgroundColor = '#808080'  # 128 grey
+            elif cfg.THEME == 3:
+                s.crossSectionBackgroundColor = '#0C0C0C'
+            else:
+                s.crossSectionBackgroundColor = '#004060'
 
         if self.mp_mode:
             mp_key_bindings = [
@@ -516,9 +459,12 @@ class NgHost(QRunnable):
                 s.show_panel_borders = False
 
         # webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=False)
-        # if cfg.USE_NG_WEBDRIVER:
-        #     self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
+        if cfg.USE_NG_WEBDRIVER:
+            self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
+            # s.viewer_size = [1000,1000]
+
+        # cfg.main_window.hud.done()
 
     # def _toggle_fullscreen(self, s):
     #     self._is_fullscreen = not self._is_fullscreen
@@ -534,16 +480,15 @@ class NgHost(QRunnable):
     #             s.viewer_size = None
     #             s.scale_bar_options.scale_factor = 1
 
-
     def on_state_changed(self):
         try:
             request_layer = floor(self.viewer.state.position[0])
             # logger.info(f'\nState changed, request_layer: {request_layer}, cfg.data.layer(): {cfg.data.layer()}')
-            project_dict_layer = cfg.data.layer() #1110-
+            project_dict_layer = cfg.data.layer()  # 1110-
             if not -1 < request_layer <= cfg.data.n_layers():
                 logger.warning(f'Bad layer index requested ({request_layer}) - Canceling Signal!')
 
-            if request_layer == project_dict_layer: #1110-
+            if request_layer == project_dict_layer:  # 1110-
                 logger.debug('State Changed, But Layer Is The Same -> Suppressing The Callback Signal')
                 return
             self.signals.stateChanged.emit(request_layer)
@@ -551,7 +496,6 @@ class NgHost(QRunnable):
                 self.clear_mp_buffer()
         except:
             print_exception()
-
 
     def add_matchpoint(self, s):
         logger.info('add_matchpoint:')
@@ -580,16 +524,15 @@ class NgHost(QRunnable):
         n_mp_pairs = floor(self.mp_count / 2)
         props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]
         with self.viewer.txn() as s:
-            if self.mp_count in range(0,100,2):
+            if self.mp_count in range(0, 100, 2):
                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
                 s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
                 logger.info(f"Ref Match Point Added: {coords}")
-            elif self.mp_count in range(1,100,2):
+            elif self.mp_count in range(1, 100, 2):
                 self.base_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
                 s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base')) + self.base_pts
                 logger.info(f"Base Match Point Added: {coords}")
         self.mp_count += 1
-
 
     def save_matchpoints(self, s):
         layer = self.request_layer()
@@ -617,20 +560,18 @@ class NgHost(QRunnable):
         cfg.data.print_all_match_points()
         cfg.main_window.hud.post('Match Points Saved!')
 
-
     def clear_matchpoints(self, s):
         logger.info('Clearing match points in project dict...')
         layer = self.request_layer()
-        cfg.data.clear_match_points(s=self.scale, l=layer) #Note
+        cfg.data.clear_match_points(s=self.scale, l=layer)  # Note
         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
-        self.clear_mp_buffer() #Note
+        self.clear_mp_buffer()  # Note
         with self.viewer.txn() as s:
             s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
             s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
         self.refLV.invalidate()
         self.baseLV.invalidate()
         cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
-
 
     def clear_mp_buffer(self):
         logger.info('Clearing match point buffer')
@@ -643,7 +584,6 @@ class NgHost(QRunnable):
         except:
             pass
 
-
     def count_saved_points_ref(self):
         layer = self.request_layer()
         points = self.pt2ann(points=cfg.data.get_mps(role='ref'))
@@ -653,7 +593,6 @@ class NgHost(QRunnable):
             if p[0] == layer:
                 count += 1
         return count
-
 
     def count_saved_points_base(self):
         layer = self.request_layer()
@@ -665,7 +604,6 @@ class NgHost(QRunnable):
                 count += 1
         return count
 
-
     def pt2ann(self, points: list):
         annotations = []
         for i, point in enumerate(points):
@@ -676,13 +614,11 @@ class NgHost(QRunnable):
                                                          self.mp_marker_lineweight]))
         return annotations
 
-
     def take_screenshot(self, directory=None):
         if directory is None:
             directory = cfg.data.dest()
         ss = ScreenshotSaver(viewer=self.viewer, directory=dir)
         ss.capture()
-
 
     # # Note: odd mapping of axes
     # def set_layout_yz(self):
@@ -724,7 +660,6 @@ class NgHost(QRunnable):
     #     self.nglayout = '4panel'
     #     self.initViewer()
 
-
     def url(self):
         while True:
             logger.debug('Still looking for an open port...')
@@ -732,21 +667,17 @@ class NgHost(QRunnable):
                 logger.debug('An Open Port Was Found')
                 return self.viewer_url
 
-
     def get_viewer_url(self):
         '''From extend_segments example'''
         return self.viewer.get_viewer_url()
 
-
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(self.viewer.state))
-
 
     def print_viewer_info(self, s):
         logger.info(f'Selected Values:\n{s.selected_values}')
         logger.info(f'Current Layer:\n{self.viewer.state.position[0]}')
         logger.info(f'Viewer State:\n{self.viewer.state}')
-
 
 
 if __name__ == '__main__':
@@ -812,10 +743,10 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
         # cfg.main_window.ng_workers[cfg.data.s()].baseLV.info()
         # self.viewer.shared_state.add_changed_callback(
         #     lambda: self.viewer.defer_callback(self.on_state_changed))
-        
-        
-        
-        
+
+
+
+
         13:00:28 INFO [http_ng_server.initViewer:212] 
         {'driver': 'zarr', 'dtype': 'uint8', 'kvstore': 
         {'driver': 'file', 'path': '/Users/joelyancey/glanceem_swift/test_projects/test1/img_src.zarr/s4/'}, 
@@ -825,9 +756,8 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
         'shape': [100, 1024, 1024], 'zarr_format': 2}, 
         'recheck_cached_data': 'open', 'transform': 
         {'input_exclusive_max': [[100], [1024], [1024]], 'input_inclusive_min': [0, 0, 0]}}
-        
-'''
 
+'''
 
 '''
 
