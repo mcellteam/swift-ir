@@ -57,15 +57,14 @@ os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
 os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
 import sys, signal, logging, argparse
-from src.helpers import check_for_binaries, print_exception, is_tacc
+from src.helpers import check_for_binaries
 import src.config as cfg
 
-from qtpy import QtCore
+from qtpy import QtCore,QtWebEngineCore
 from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import Qt, QCoreApplication, QTimer
+from qtpy.QtCore import Qt
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-from qtpy import QtWebEngineCore
 
 
 class CustomFormatter(logging.Formatter):
@@ -160,8 +159,6 @@ def main():
         # from scalene import scalene_profiler
         # scalene_profiler.start()
 
-
-
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
 
@@ -177,31 +174,24 @@ def main():
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
-    if qtpy.QT6:
-        logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
-        logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
+    # if qtpy.QT6:
+    #     logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
+    #     logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
 
-    # Ref: https://github.com/numpy/numpy/issues/14474
 
-    if qtpy.QT5:
-        logger.info('Setting Qt.AA_EnableHighDpiScaling')
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    # if qtpy.QT5:
+    #     logger.info('Setting Qt.AA_EnableHighDpiScaling')
+    #     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    #     logger.info('Setting Qt.AA_UseHighDpiPixmaps')
+    #     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    # logger.info('Setting limit on MAX_IMAGE_PIXELS to 1_000_000_000_000')
-    # PIL.Image.DecompressionBombError: Image size (605799240 pixels) exceeds limit of 178956970 pixels,
-    # could be decompression bomb DOS attack.
-    # Image.MAX_IMAGE_PIXELS = None
-    # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
-
-    logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
+    # 2230-
+    # logger.info('Setting Qt.AA_ShareOpenGLContexts')
+    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
-    signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
 
-    app = QApplication(sys.argv)
+    app = QApplication([])
     app.setStyle('Fusion')
 
     cfg.main_window = MainWindow()
@@ -215,8 +205,6 @@ def main():
         sys.exit(app.exec())
     except:
         pass
-        # print_exception()
-        # sys.exit(app.exec_())
     finally:
         sys.exit()
 
