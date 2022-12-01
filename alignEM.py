@@ -40,8 +40,6 @@ $ qtpy mypy-args
 
 """
 import qtpy
-import os
-import time
 
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyqt6'
@@ -62,7 +60,6 @@ import src.config as cfg
 
 from qtpy import QtCore,QtWebEngineCore
 from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import Qt
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 
@@ -93,8 +90,9 @@ class CustomFormatter(logging.Formatter):
 def main():
     logger = logging.getLogger()
     # logger = logging.getLogger(__name__)
-    # logging.propagate = False  # Prevents Message Propagation To The Root Handler
-
+    # logging.propagate = False  # stops message propogation to the root handler
+    # fh = logging.FileHandler('messages.log')
+    # logger.addHandler(fh)
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
     logging.getLogger('init').versioncheck('QtCore.__version__ = %s' % QtCore.__version__)
@@ -108,17 +106,13 @@ def main():
     # >>> logging.TRACE
     # logging.IM
 
-    # logger.propagate = False # TESTING
-
     check_for_binaries()
 
-    '''Save Logs to 'messages.log' '''
-    # fh = logging.FileHandler('messages.log')
-    # logger.addHandler(fh)
+
+
 
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--api', default='pyside6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--debug_mp', action='store_true', help='Set python multiprocessing debug level to DEBUG')
@@ -126,11 +120,9 @@ def main():
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--no_embed_ng', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
-    # parser.add_argument('--no_multiview', action='store_true', help='Use single webengineview rather than three-panel webengineview')
     parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
     parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
     parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
-    # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
@@ -151,7 +143,6 @@ def main():
     if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     if args.no_splash: cfg.NO_SPLASH = True
-    # if args.no_multiview: cfg.MULTIVIEW = False
     if args.opencv: cfg.USE_PYTHON = True
     if args.dummy: cfg.DUMMY = True
     if args.profile:
@@ -163,21 +154,19 @@ def main():
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
 
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-
     # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
 
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=3' # suppress JS warnings
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=2'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     # if qtpy.QT6:
     #     logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
     #     logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
-
 
     # if qtpy.QT5:
     #     logger.info('Setting Qt.AA_EnableHighDpiScaling')
@@ -193,21 +182,10 @@ def main():
 
     app = QApplication(['a'])
     app.setStyle('Fusion')
-
     cfg.main_window = MainWindow()
-    # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+ #Todo use app.aboutToQuit
-    # app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
-    # logger.info('Working Directory: %s' % os.getcwd())
     logger.info('Showing AlignEM-SWiFT...')
     cfg.main_window.show()
-
-    try:
-        sys.exit(app.exec())
-    except:
-        pass
-    finally:
-        sys.exit()
-
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
