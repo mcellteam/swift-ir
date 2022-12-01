@@ -535,8 +535,14 @@ class MainWindow(QMainWindow):
                             preallocate=True
                         )
                     )
-                else:
                     self.threadpool.start(self.worker)
+                else:
+                    fn = generate_aligned(
+                        scale=scale,
+                        start_layer=0,
+                        num_layers=-1,
+                        preallocate=True
+                    )
 
         except:
             print_exception()
