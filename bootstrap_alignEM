@@ -34,7 +34,8 @@ echo "Sourcing .bashrc..."
 source ~/.bashrc
 
 echo "Updating conda..."
-conda update conda -y
+conda update --name base conda
+#conda update conda -y
 
 echo "Checking if AlignEM-SWiFT exists in $WORK..."
 if [ ! -d "$WORK/swift-ir" ]; then
