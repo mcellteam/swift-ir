@@ -233,7 +233,7 @@ class ConfigDialog(QDialog):
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)
         self.cancelButton.clicked.connect(self.on_cancel)
-        self.applyButton = QPushButton('Apply & Continue')
+        self.applyButton = QPushButton('Apply + Continue')
         self.applyButton.setDefault(True)
         self.applyButton.clicked.connect(self.apply_settings)
         self.buttonLayout = QHBoxLayout()
