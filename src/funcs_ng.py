@@ -10,6 +10,7 @@ import neuroglancer as ng
 # import neuroglancer.write_annotations
 import neuroglancer.random_token
 import tornado.web
+import tornado.platform.asyncio
 import tornado.netutil
 import tornado.httpserver
 # import tornado.platform
@@ -53,59 +54,8 @@ logger = logging.getLogger(__name__)
 #         http.server.HTTPServer.__init__(self, server_address, CORS_RequestHandler)
 #
 
-class CorsStaticFileHandler(tornado.web.StaticFileHandler):
-
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
 
 
-def _start_server(bind_address: str, output_dir: str) -> int:
 
-    token = neuroglancer.random_token.make_random_token()
-    handlers = [
-        (fr'/{token}/(.*)', CorsStaticFileHandler, {
-            'path': output_dir
-        }),
-    ]
-    settings = {}
-    app = tornado.web.Application(handlers, settings=settings)
 
-    http_server = tornado.httpserver.HTTPServer(app)
-    sockets = tornado.netutil.bind_sockets(port=0, address=bind_address)
-    http_server.add_sockets(sockets)
-    actual_port = sockets[0].getsockname()[1]
-    url = neuroglancer.server._get_server_url(bind_address, actual_port)
-    return f'{url}/{token}'
 
-def launch_server(bind_address: str, output_dir: str) -> int:
-
-    server_url_future = concurrent.futures.Future()
-
-    def run_server():
-        try:
-
-            ioloop = tornado.platform.asyncio.AsyncIOLoop()
-            ioloop.make_current()
-            asyncio.set_event_loop(ioloop.asyncio_loop)
-            server_url_future.set_result(_start_server(bind_address, output_dir))
-        except Exception as e:
-            server_url_future.set_exception(e)
-            return
-        # ioloop.start()
-        try:
-            ioloop.start()
-        except KeyboardInterrupt:
-            tornado.ioloop.IOLoop.instance().stop()
-
-        ioloop.close()
-
-    thread = threading.Thread(target=run_server)
-    thread.daemon = True
-    thread.start()
-    return server_url_future.result()

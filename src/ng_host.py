@@ -25,14 +25,26 @@ from math import floor
 from decimal import Decimal
 from math import floor
 import numpy as np
-
+import concurrent
+import threading
+import asyncio
+import concurrent.futures
+import neuroglancer.random_token
+import tornado.web
+import tornado.netutil
+import tornado.httpserver
+# import tornado.platform
+import tornado.platform.asyncio
+import tornado.web
+import tornado.platform.asyncio
+import tornado.netutil
+import tornado
 import neuroglancer as ng
 import neuroglancer.webdriver
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 
 import src.config as cfg
-from src.funcs_ng import launch_server
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
 from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string, track
 from src.shaders import ann_shader
@@ -42,11 +54,54 @@ __all__ = ['NgHost']
 
 logger = logging.getLogger(__name__)
 
-KEEP_RUNNING = True
+def _start_server(bind_address: str, output_dir: str):
+    token = neuroglancer.random_token.make_random_token()
+    handlers = [
+        (fr'/{token}/(.*)', CorsStaticFileHandler, {
+            'path': output_dir
+        }),
+    ]
+    settings = {}
+    app = tornado.web.Application(handlers, settings=settings)
+    http_server = tornado.httpserver.HTTPServer(app)
+    sockets = tornado.netutil.bind_sockets(port=0, address=bind_address)
+    http_server.add_sockets(sockets)
+    actual_port = sockets[0].getsockname()[1]
+    url = neuroglancer.server._get_server_url(bind_address, actual_port)
+    return f'{url}/{token}'
+
+class CorsStaticFileHandler(tornado.web.StaticFileHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+    def options(self, *args):
+        self.set_status(204)
+        self.finish()
 
 
-def keep_running():
-    return KEEP_RUNNING
+def launch_server(bind_address: str, output_dir: str) -> int:
+    server_url_future = concurrent.futures.Future()
+    def run_server():
+        try:
+            ioloop = tornado.platform.asyncio.AsyncIOLoop()
+            ioloop.make_current()
+            asyncio.set_event_loop(ioloop.asyncio_loop)
+            server_url_future.set_result(_start_server(bind_address, output_dir))
+        except Exception as e:
+            server_url_future.set_exception(e)
+            return
+        # try:
+        #     ioloop.start()
+        # except KeyboardInterrupt:
+        #     tornado.ioloop.IOLoop.instance().stop()
+        ioloop.start()
+        ioloop.close()
+
+    thread = threading.Thread(target=run_server)
+    thread.daemon = True
+    thread.start()
+    return server_url_future.result()
 
 
 class WorkerSignals(QObject):
@@ -110,15 +165,15 @@ class NgHost(QRunnable):
 
     @Slot()
     def run(self):
-        if cfg.USE_TORNADO:
-            logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
-            try:
-                tempdir = tempfile.mkdtemp()
-                atexit.register(shutil.rmtree, tempdir)
-                self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-            except:
-                print_exception()
-
+        # if cfg.USE_TORNADO:
+        #     logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
+        #     try:
+        #         tempdir = tempfile.mkdtemp()
+        #         atexit.register(shutil.rmtree, tempdir)
+        #         self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+        #     except:
+        #         print_exception()
+        pass
 
     def request_layer(self):
         return floor(self.viewer.state.position[0])
@@ -175,10 +230,11 @@ class NgHost(QRunnable):
 
         self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
-
-
-
     def initViewer(self, matchpoint=None, widget_size=None, show_ui_controls=True, show_panel_borders=False):
+
+        tempdir = tempfile.mkdtemp()
+        server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+
         if cfg.data.is_mendenhall() and cfg.MV:
             logger.info('Transferring control to initViewerMendenhall...')
             self.initViewerMendenhall()
@@ -276,10 +332,6 @@ class NgHost(QRunnable):
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
-
-            # adjustment = 1.04
-
-            # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
 
             if cfg.USE_TENSORSTORE:
                 # Experimental Match Point Mode Code
@@ -432,11 +484,9 @@ class NgHost(QRunnable):
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            # if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#1B1E23'
-            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
+            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080' #128 grey
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
-            # elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#6D7D77'
-            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080' #128 grey
+            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
             else:                 s.crossSectionBackgroundColor = '#004060'
 
@@ -466,12 +516,8 @@ class NgHost(QRunnable):
                 s.show_panel_borders = False
 
         # webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=False)
-        if cfg.USE_NG_WEBDRIVER:
-            self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
-
-            # s.viewer_size = [1000,1000]
-
-        # cfg.main_window.hud.done()
+        # if cfg.USE_NG_WEBDRIVER:
+        #     self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
 
     # def _toggle_fullscreen(self, s):
