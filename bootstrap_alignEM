@@ -91,6 +91,6 @@ echo ""
 echo "    cd $WORK/swift-ir"
 echo "    source bootstrap_alignEM"
 echo ""
-echo "Launching AlignEM-SWiFT..."
+echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
 
 swr python3 alignEM.py --headless
