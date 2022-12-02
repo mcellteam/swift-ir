@@ -59,6 +59,7 @@ from src.helpers import check_for_binaries
 import src.config as cfg
 
 from qtpy import QtCore,QtWebEngineCore
+from qtpy.QtCore import Qt, QCoreApplication
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
@@ -160,23 +161,20 @@ def main():
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
-    # if qtpy.QT6:
-    #     logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
-    #     logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
 
-    # if qtpy.QT5:
-    #     logger.info('Setting Qt.AA_EnableHighDpiScaling')
-    #     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    #     logger.info('Setting Qt.AA_UseHighDpiPixmaps')
-    #     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    if qtpy.QT5:
+        logger.info('Setting Qt.AA_EnableHighDpiScaling')
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    # 2230-
-    # logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
+    2230-
+    logger.info('Setting Qt.AA_ShareOpenGLContexts')
+    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
 
-    app = QApplication(['a'])
+    app = QApplication([])
     app.setStyle('Fusion')
     cfg.main_window = MainWindow()
     logger.info('Showing AlignEM-SWiFT...')
