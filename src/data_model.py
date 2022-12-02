@@ -66,7 +66,7 @@ class DataModel:
         self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
-        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_X, cfg.CHUNK_Y, cfg.CHUNK_Z))
+        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
 
     def __setitem__(self, key, item):
         self._data[key] = item
