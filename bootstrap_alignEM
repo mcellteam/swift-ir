@@ -71,6 +71,17 @@ echo "Unsetting QT_API..."
 unset QT_API
 echo "Setting QT API environment flag QT_API=pyqt5..."
 export QT_API=pyqt5
+
+echo "Setting Environment Variables in Conda API..."
+
+conda env config vars set OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES'
+conda env config vars set QTWEBENGINE_CHROMIUM_FLAGS='--disable-web-security --no-sandbox --enable-logging --log-level=0'
+conda env config vars unset MY_VAR
+
+conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+conda env config vars list
+
+
 #echo "Disabling QtWebEngine sandbox..."
 #export QTWEBENGINE_CHROMIUM_FLAGS='--disable-sandbox'
 #export QTWEBENGINE_DISABLE_SANDBOX=1
