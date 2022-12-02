@@ -2150,7 +2150,7 @@ class MainWindow(QMainWindow):
         else:
             self.image_panel_stack_widget.setCurrentIndex(1)
             self.hud.done()
-            for s in scales():
+            for s in scales:
                 self.get_actual_viewer_url(s=s)
 
 
