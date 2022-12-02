@@ -2043,7 +2043,7 @@ class MainWindow(QMainWindow):
             logger.warning('Neuroglancer is not running')
             return
         if s == None: s = cfg.data.scale()
-        if not cfg.NO_EMBED_NG:
+        if not cfg.HEADLESS:
             self.ng_browser.setUrl(QUrl(self.ng_workers[s].url()))
             self.ng_browser.setFocus()
 
@@ -2146,10 +2146,12 @@ class MainWindow(QMainWindow):
             self.toolbar_layout_combobox.currentTextChanged.connect(self.fn_ng_layout_combobox)
         except:
             print_exception()
-        finally:
-            self.hud.done()
+
+        else:
             self.image_panel_stack_widget.setCurrentIndex(1)
-            self.set_idle()
+            self.hud.done()
+            for s in scales():
+                self.get_actual_viewer_url(s=s)
 
 
     def initShortcuts(self):
@@ -2175,6 +2177,7 @@ class MainWindow(QMainWindow):
                     else:
                         self.ng_workers[s].initViewer()
                     self.refreshNeuroglancerURL(s=s)
+                    self.get_actual_viewer_url(s=s)
             else:
                 logger.warning('Neuroglancer is not running')
         else:
@@ -2211,6 +2214,19 @@ class MainWindow(QMainWindow):
     def chromium_debug(self):
         self.browser_docs.setUrl(QUrl('http://127.0.0.1:9000'))
         self.main_stack_widget.setCurrentIndex(1)
+
+    def get_actual_viewer_url(self, s=None):
+        if cfg.data:
+            if s == None: s = cfg.data.scale()
+            if ng.is_server_running():
+                try:
+                    url = self.ng_workers[s].viewer.get_viewer_url()
+                    self.hud.post(url)
+                    logger.critical(f'\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n{url}\n')
+                except:
+                    logger.warning('No URL to show')
+            else:
+                self.hud.post('Neuroglancer is not running.')
 
 
     def print_ng_state_url(self):
@@ -2857,11 +2873,11 @@ class MainWindow(QMainWindow):
         self.ngShowStateJsonAction.triggered.connect(self.print_ng_state)
         ngStateMenu.addAction(self.ngShowStateJsonAction)
 
-        self.ngShowStateUrlAction = QAction('URL', self)
+        self.ngShowStateUrlAction = QAction('State URL', self)
         self.ngShowStateUrlAction.triggered.connect(self.print_ng_state_url)
         ngStateMenu.addAction(self.ngShowStateUrlAction)
 
-        self.ngShowRawStateAction = QAction('URL', self)
+        self.ngShowRawStateAction = QAction('Raw State', self)
         self.ngShowRawStateAction.triggered.connect(self.print_ng_raw_state)
         ngStateMenu.addAction(self.ngShowRawStateAction)
 
@@ -2886,6 +2902,10 @@ class MainWindow(QMainWindow):
         self.ngRestartClientAction = QAction('Restart Client', self)
         self.ngRestartClientAction.triggered.connect(self.initNgServer)
         ngDebugMenu.addAction(self.ngRestartClientAction)
+
+        self.ngGetUrlAction = QAction('Viewer URL', self)
+        self.ngGetUrlAction.triggered.connect(self.get_actual_viewer_url)
+        neuroglancerMenu.addAction(self.ngGetUrlAction)
 
         self.ngShowUiControlsAction = QAction('Show UI Controls', self)
         self.ngShowUiControlsAction.setShortcut('Ctrl+U')

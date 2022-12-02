@@ -115,7 +115,7 @@ def main():
     parser.add_argument('--debug_mp', action='store_true', help='Set python multiprocessing debug level to DEBUG')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
-    parser.add_argument('--no_embed_ng', action='store_true', help='Do not embed the neuroglancer browser if True')
+    parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
     parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
     parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
@@ -138,7 +138,7 @@ def main():
     if args.debug_mp:
         cfg.DEBUG_MP = True
     if args.no_tensorstore: cfg.USE_TENSORSTORE = False
-    if args.no_embed_ng:  cfg.NO_EMBED_NG = True
+    if args.headless:  cfg.HEADLESS = True
     if args.no_splash: cfg.NO_SPLASH = True
     if args.opencv: cfg.USE_PYTHON = True
     if args.dummy: cfg.DUMMY = True
