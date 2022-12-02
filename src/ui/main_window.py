@@ -2302,6 +2302,13 @@ class MainWindow(QMainWindow):
             result = recipe_dialog.exec_()
             if not result:  logger.warning('Dialog Did Not Return A Result')
 
+    def configure_application(self):
+        if cfg.data:
+            logger.info('Showing configure application dialog...')
+            recipe_dialog = ConfigAppDialog(parent=self)
+            result = recipe_dialog.exec_()
+            if not result:  logger.warning('Dialog Did Not Return A Result')
+
 
     def view_k_img(self):
         if cfg.data:
@@ -2949,10 +2956,6 @@ class MainWindow(QMainWindow):
         self.skipChangeAction.setShortcut('Ctrl+K')
         toolsMenu.addAction(self.skipChangeAction)
 
-        self.projectConfigAction = QAction('Project Configuration', self)
-        self.projectConfigAction.triggered.connect(self.configure_project)
-        toolsMenu.addAction(self.projectConfigAction)
-
         self.jumpWorstSnrAction = QAction('Jump To Next Worst SNR', self)
         self.jumpWorstSnrAction.triggered.connect(self.jump_to_worst_snr)
         toolsMenu.addAction(self.jumpWorstSnrAction)
@@ -2960,6 +2963,16 @@ class MainWindow(QMainWindow):
         self.jumpBestSnrAction = QAction('Jump To Next Best SNR', self)
         self.jumpBestSnrAction.triggered.connect(self.jump_to_best_snr)
         toolsMenu.addAction(self.jumpBestSnrAction)
+
+        configMenu = self.menu.addMenu('Config')
+
+        self.projectConfigAction = QAction('Project', self)
+        self.projectConfigAction.triggered.connect(self.configure_project)
+        configMenu.addAction(self.projectConfigAction)
+
+        self.appConfigAction = QAction('Application', self)
+        self.appConfigAction.triggered.connect(self.configure_application)
+        configMenu.addAction(self.appConfigAction)
 
         mendenhallMenu = toolsMenu.addMenu('Mendenhall Protocol')
 

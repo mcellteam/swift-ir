@@ -168,7 +168,7 @@ def main():
         logger.info('Setting Qt.AA_UseHighDpiPixmaps')
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    2230-
+    # 2230-
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
     QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)

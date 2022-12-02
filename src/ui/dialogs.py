@@ -214,20 +214,20 @@ class AskContinueDialog(QDialog):
 #
 
 
+class ConfigAppDialog(QDialog):
+    def __init__(self, parent=None):  # parent=None allows passing in MainWindow if needed
+        super(ConfigAppDialog, self).__init__()
+        self.parent = parent
+        logger.critical('Showing Application Configuration Dialog...')
+        self.initUI()
 
-'''
-Python-Qt Documentation - Using Adapters between Forms and Models
-https://doc.qt.io/qtforpython/overviews/modelview.html#using-adapters-between-forms-and-models
-***QDataWidgetMapper***
-
-***QAbstractListModel*** <-- May need to subclass 
-'''
+    def initUI(self):
+        layout
 
 class ConfigDialog(QDialog):
-
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
-        self.parent = parent
         super(ConfigDialog, self).__init__()
+        self.parent = parent
         logger.critical('Showing Project Configuration Dialog...')
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
