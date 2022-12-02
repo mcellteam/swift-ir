@@ -34,7 +34,7 @@ echo "Sourcing .bashrc..."
 source ~/.bashrc
 
 echo "Updating conda..."
-conda update --name base conda
+conda update --name base conda -y
 #conda update conda -y
 
 echo "Checking if AlignEM-SWiFT exists in $WORK..."
@@ -93,4 +93,4 @@ echo "    source bootstrap_alignEM"
 echo ""
 echo "Launching AlignEM-SWiFT..."
 
-swr python3 alignEM.py
+swr python3 alignEM.py --headless
