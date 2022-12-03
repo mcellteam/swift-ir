@@ -2129,7 +2129,7 @@ class MainWindow(QMainWindow):
                 scales = cfg.data.scales()
             else:
                 scales = [cfg.data.scale()]
-        logger.debug('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
+        logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
