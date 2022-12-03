@@ -397,7 +397,10 @@ class MainWindow(QMainWindow):
         #Todo This should check for existence of original source files before doing anything
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.hud.post('Generating TIFF Scale Hierarchy...')
-        self.set_status('Scaling...')
+        if ng.is_server_running():
+            logger.critical('Stopping Neuroglancer, which is running...')
+            ng.server.stop()
+
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_scales())

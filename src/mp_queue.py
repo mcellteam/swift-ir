@@ -170,7 +170,7 @@ class TaskQueue(QObject):
     def collect_results(self):
         t0 = time.time()
         '''Run All Tasks and Collect Results'''
-        logger.info('Running Task Queue Tasks...')
+        logger.info('Running Multiprocessing Tasks...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
         retries_tot = 0
