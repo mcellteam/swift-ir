@@ -5,6 +5,12 @@ Colors:
 #DAEBFE - off-white blue
 */
 
+QTextBrowser#external_link {
+background-color: transparent;
+border-width: 0px;
+
+}
+
 QTabWidget#main_tab_widget{
     /*background-color: #ffed8a;*/
     color: #141414;

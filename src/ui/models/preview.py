@@ -4,7 +4,7 @@ from qtpy.QtCore import QAbstractTableModel, Qt, QSize
 from qtpy.QtWidgets import QStyledItemDelegate
 
 NUMBER_OF_COLUMNS = 1
-CELL_PADDING = 10 # all sides
+CELL_PADDING = 2 # all sides
 
 
 class PreviewModel(QAbstractTableModel):
@@ -47,11 +47,9 @@ class PreviewDelegate(QStyledItemDelegate):
         if data is None:
             return
 
-        print(type(data))
-        print(str(data))
-        print(data.title)
-
-
+        # print(type(data))
+        # print(str(data))
+        # print(data.title)
         width = option.rect.width() - CELL_PADDING * 2
         height = option.rect.height() - CELL_PADDING * 2
 
@@ -76,7 +74,7 @@ class PreviewDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         # All items the same size.
         # return QSize(300, 200) #orig
-        return QSize(400, 100)
+        return QSize(60, 60)
 
 
 

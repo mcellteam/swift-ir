@@ -36,7 +36,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
     QShortcut, QGraphicsOpacityEffect, QDialog, QStyle, QCheckBox, QSpinBox, \
-    QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar
+    QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser
 
 import src.config as cfg
 import src.shaders
@@ -53,7 +53,7 @@ from src.helpers import *
 from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc, \
     create_project_structure_directories, get_aligned_scales
 from src.ng_host import NgHost
-from src.ui.dialogs import AskContinueDialog, ConfigDialog, QFileDialogPreview, \
+from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 # from src.napari_test import napari_test
 from src.ui.headup_display import HeadupDisplay
@@ -172,11 +172,11 @@ class MainWindow(QMainWindow):
         self.webengineview = QWebEngineView()
         # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
         # if qtpy.PYSIDE6:
-        # self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        # self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        # self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        # self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
     def initPrivateMembers(self):
@@ -259,6 +259,19 @@ class MainWindow(QMainWindow):
         else:
             self.image_panel_stack_widget.setCurrentIndex(2)
 
+        if cfg.HEADLESS:
+            self.main_tab_widget.setTabVisible(0, False)
+            self.update_ng_hyperlink()
+            self.external_link.show()
+        else:
+            self.main_tab_widget.setTabVisible(0, True)
+            self.external_link.hide()
+
+
+    def update_ng_hyperlink(self):
+        if cfg.data:
+            url = self.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
+            self.external_link.append(f"<a href='{url}'>Open In Browser</a>")
 
     def showScoreboardWidegts(self):
         self.main_details_subwidgetA.show()
@@ -1069,6 +1082,8 @@ class MainWindow(QMainWindow):
         if self.main_tab_widget.currentIndex() == 1:
             self.layer_view_widget.set_data()
         self.read_project_data_update_gui()
+        if cfg.HEADLESS:
+            self.update_ng_hyperlink()
 
 
     @Slot()
@@ -1600,7 +1615,7 @@ class MainWindow(QMainWindow):
                 logger.warning('Import Images Dialog Was Canceled - Returning')
                 return
 
-            recipe_dialog = ConfigDialog(parent=self)
+            recipe_dialog = ConfigProjectDialog(parent=self)
             recipe_dialog.exec()
             try:
                 self.autoscale()
@@ -1684,6 +1699,8 @@ class MainWindow(QMainWindow):
                 self.initNgViewer(scales=cfg.data.scales())
             else:
                 self.initNgServer(scales=[cfg.data.scale()])
+        if cfg.HEADLESS:
+            self.update_ng_hyperlink()
         QApplication.processEvents()
 
 
@@ -1733,7 +1750,7 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
-        recipe_dialog = ConfigDialog(parent=self)
+        recipe_dialog = ConfigProjectDialog(parent=self)
         recipe_dialog.exec()
         logger.info('Clobbering The Project Dictionary...')
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
@@ -1949,6 +1966,10 @@ class MainWindow(QMainWindow):
             else:
                 logger.info('Success')
 
+        if cfg.PROFILER == True:
+            from scalene import scalene_profiler
+            scalene_profiler.stop()
+
         logger.info('Quitting app...')
         # self.app.quit() #1130-
         QApplication.quit() #1130+
@@ -2151,7 +2172,7 @@ class MainWindow(QMainWindow):
             self.image_panel_stack_widget.setCurrentIndex(1)
             self.hud.done()
             for s in scales:
-                self.get_actual_viewer_url(s=s)
+                self.display_actual_viewer_url(s=s)
 
 
     def initShortcuts(self):
@@ -2177,7 +2198,7 @@ class MainWindow(QMainWindow):
                     else:
                         self.ng_workers[s].initViewer()
                     self.refreshNeuroglancerURL(s=s)
-                    self.get_actual_viewer_url(s=s)
+                    self.display_actual_viewer_url(s=s)
             else:
                 logger.warning('Neuroglancer is not running')
         else:
@@ -2215,19 +2236,19 @@ class MainWindow(QMainWindow):
         self.browser_docs.setUrl(QUrl('http://127.0.0.1:9000'))
         self.main_stack_widget.setCurrentIndex(1)
 
-    def get_actual_viewer_url(self, s=None):
+    def display_actual_viewer_url(self, s=None):
         if cfg.data:
             if s == None: s = cfg.data.scale()
             if ng.is_server_running():
                 try:
                     url = self.ng_workers[s].viewer.get_viewer_url()
-                    self.hud.post(url)
-                    logger.critical(f'\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n{url}\n')
+                    # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
+                    self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
+                    logger.critical(f"\n\n{cfg.data.scale_pretty(s=s)} URL:\n{url}\n")
                 except:
                     logger.warning('No URL to show')
             else:
                 self.hud.post('Neuroglancer is not running.')
-
 
     def print_ng_state_url(self):
         if cfg.data:
@@ -2297,17 +2318,16 @@ class MainWindow(QMainWindow):
 
     def configure_project(self):
         if cfg.data:
-            logger.info('Showing configure project dialog...')
-            recipe_dialog = ConfigDialog(parent=self)
-            result = recipe_dialog.exec_()
-            if not result:  logger.warning('Dialog Did Not Return A Result')
+            dialog = ConfigProjectDialog(parent=self)
+            result = dialog.exec_()
+            logger.info(f'ConfigProjectDialog exit code ({result})')
+        else:
+            self.hud.post('No Project Yet!')
 
     def configure_application(self):
-        if cfg.data:
-            logger.info('Showing configure application dialog...')
-            recipe_dialog = ConfigAppDialog(parent=self)
-            result = recipe_dialog.exec_()
-            if not result:  logger.warning('Dialog Did Not Return A Result')
+        dialog = ConfigAppDialog(parent=self)
+        result = dialog.exec_()
+        logger.info(f'ConfigAppDialog exit code ({result})')
 
 
     def view_k_img(self):
@@ -2911,7 +2931,7 @@ class MainWindow(QMainWindow):
         ngDebugMenu.addAction(self.ngRestartClientAction)
 
         self.ngGetUrlAction = QAction('Viewer URL', self)
-        self.ngGetUrlAction.triggered.connect(self.get_actual_viewer_url)
+        self.ngGetUrlAction.triggered.connect(self.display_actual_viewer_url)
         neuroglancerMenu.addAction(self.ngGetUrlAction)
 
         self.ngShowUiControlsAction = QAction('Show UI Controls', self)
@@ -3104,11 +3124,17 @@ class MainWindow(QMainWindow):
                                "background-color: #004060; color: #f3f6fb;" \
                                "font-size: 11px;"
 
-        '''GroupBox 1 Project'''
+        '''Headup Display'''
 
         self.hud = HeadupDisplay(self.app)
         self.hud.setObjectName('hud')
         self.hud.post('Welcome To AlignEM-SWiFT.')
+
+        self.hud_widget = QWidget()
+        self.hud_layout = QVBoxLayout()
+        self.hud_widget.setLayout(self.hud_layout)
+        self.hud_layout.setContentsMargins(0, 0, 0, 0)
+        self.hud_layout.addWidget(self.hud)
 
         tip = 'Use All Images (Reset)'
         self.clear_skips_button = QPushButton('Reset')
@@ -3441,13 +3467,29 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.addWidget(self.image_panel_landing_page)
         self.image_panel_stack_widget.addWidget(self.historyview_widget)
 
+        self.external_link = QTextBrowser()
+        self.external_link.setContentsMargins(8,0,0,0)
+        self.external_link.setObjectName('external_link')
+        self.external_link.setMaximumHeight(24)
+        self.external_link.setAcceptRichText(True)
+        self.external_link.setOpenExternalLinks(True)
+        self.external_link.hide()
+
+        self.layer_view_container = QWidget()
+        self.layer_view_container_layout = QVBoxLayout()
+        self.layer_view_container_layout.setContentsMargins(0,0,0,0)
+        self.layer_view_container.setLayout(self.layer_view_container_layout)
+
         self.layer_view_widget = LayerViewWidget()
         self.layer_view_widget.setObjectName('layer_view_widget')
+
+        self.layer_view_container_layout.addWidget(self.external_link)
+        self.layer_view_container_layout.addWidget(self.layer_view_widget)
 
         self.main_tab_widget = QTabWidget()
         self.main_tab_widget.setObjectName('main_tab_widget')
         self.main_tab_widget.addTab(self.image_panel_stack_widget, 'Neuroglancer')
-        self.main_tab_widget.addTab(self.layer_view_widget, 'Overview')
+        self.main_tab_widget.addTab(self.layer_view_container, 'Overview')
         self.main_tab_widget.currentChanged.connect(self.main_tab_changed)
 
         self.matchpoint_controls = QWidget()
@@ -3587,12 +3629,11 @@ class MainWindow(QMainWindow):
         self.show_hide_project_tree_button.setFixedSize(show_hide_button_sizes)
         self.show_hide_project_tree_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
 
-
         '''Main Splitter'''
         self.main_splitter = QSplitter(Qt.Orientation.Vertical)
         self.main_splitter.addWidget(self.main_tab_widget)
         self.main_splitter.addWidget(self.new_control_panel)
-        self.main_splitter.addWidget(self.hud)
+        self.main_splitter.addWidget(self.hud_widget)
         self.main_splitter.addWidget(self.snr_plot_and_control)
         self.main_splitter.addWidget(self.matchpoint_controls)
         self.main_splitter.addWidget(self.projectdata_treeview_widget)
@@ -3710,6 +3751,7 @@ class MainWindow(QMainWindow):
         self.thumbnail_table.horizontalHeader().hide()
         self.thumbnail_table.verticalHeader().hide()
         self.thumbnail_table.setGridStyle(Qt.NoPen)
+        self.thumbnail_table.sizeHintForRow()
 
         self.overview_panel = QWidget()
         self.overview_layout = QGridLayout()
