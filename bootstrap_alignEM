@@ -121,7 +121,7 @@ export QT_API=pyqt5
 echo "Activating Preconfigured Conda Environment..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
-echo "Environment Variables:'
+echo "Environment Variables:"
 conda env config vars list
 
 echo "Loading intel/19.1.1 module..."
