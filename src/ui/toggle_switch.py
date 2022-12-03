@@ -152,7 +152,7 @@ class ToggleSwitch(QCheckBox):
             # p.drawText(xLeft + self.handle_radius / 2, contRect.center().y() + self.handle_radius / 2, "✓")
             adjust_x = -1
             adjust_y = 4 # higher adjust is lower text
-            p.drawText(self.xLeft + self.handle_radius / 2 + adjust_x, contRect.center().y() + adjust_y, "✓") # higher
+            p.drawText(int(self.xLeft + self.handle_radius / 2 + adjust_x), int(contRect.center().y() + adjust_y), "✓") # higher
             # p.drawText(contRect.center().x(), contRect.center().y() + self.handle_radius / 2, " ×")
             # p.drawText(xLeft + self.handle_radius / 3, contRect.center().y() + self.handle_radius / 3, "✓")
             # self.setIcon(qta.icon("mdi.help"))
@@ -177,7 +177,7 @@ class ToggleSwitch(QCheckBox):
             # self.handle_radius = 7
             adjust_y = 4
             adjust_x = -2
-            p.drawText(contRect.center().x() + adjust_x, contRect.center().y() + adjust_y, " ×") #orig
+            p.drawText(int(contRect.center().x() + adjust_x), int(contRect.center().y() + adjust_y), " ×") #orig
 
             # p.drawText(contRect.center().x(), contRect.center().y() + self.handle_radius / 3, " ×")
             # p.drawText(xLeft + self.handle_radius / 3, contRect.center().y() + self.handle_radius / 3, "✓")
