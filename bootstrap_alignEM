@@ -9,10 +9,40 @@
 # TO RUN THIS SCRIPT:
 # $ source bootstrap_alignEM
 
-echo "Setting things up..."
+CACHER="0"
+DEBUG="0"
+PULL="1"
 
-echo "Changing directory to WORK directory..."
-cd $WORK
+echo "Parsing cli arguments..."
+
+for i in "$@"; do
+  case $i in
+    -c|--cacher
+      CACHER="1"
+      shift
+      ;;
+    --debug)
+      DEBUG="1"
+      shift # past argument with no value
+      ;;
+    -p=*|--pull=*)
+      PULL="${i#*=}"
+      shift
+      ;;
+    -*|--*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      ;;
+  esac
+done
+
+echo "CACHER  : ${EXTENSION}"
+echo "DEBUG   : ${SEARCHPATH}"
+echo "PULL    : ${DEFAULT}"
+
+echo "Setting things up..."
 
 echo "Checking if miniconda3 is installed..."
 if [ ! -d "$WORK/miniconda3" ]; then
@@ -35,11 +65,11 @@ source ~/.bashrc
 
 echo "Updating conda..."
 conda update --name base conda -y
-#conda update conda -y
 
 echo "Checking if AlignEM-SWiFT exists in $WORK..."
 if [ ! -d "$WORK/swift-ir" ]; then
   echo "AlignEM-SWiFT not found in $WORK..."
+  cd $WORK
   git clone https://github.com/mcellteam/swift-ir.git
 fi
 
@@ -53,16 +83,22 @@ git pull
 echo "Purging modules..."
 module purge
 
-echo "cd'ing to swift-ir and pulling changes..."
-cd $WORK/swift-ir
-git stash
-git pull --ff-only
+if [ "$PULL" != "0" ] ; then
+  echo "Pulling the latest changes from GitHub..."
+  cd $WORK/swift-ir
+  git stash
+  git pull --ff-only
+fi
+#echo "Pulling the latest changes from GitHUb..."
+#cd $WORK/swift-ir
+#git stash
+#git pull --ff-only
 
 echo "Activating conda environment..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
-echo "Unsetting MAX_NUM_THREADS..."
-unset MAX_NUM_THREADS
+#echo "Unsetting MAX_NUM_THREADS..."
+#unset MAX_NUM_THREADS
 #echo "Unsetting GALLIUM_DRIVER..."
 #unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
 echo "Unsetting MESA_DEBUG..."
@@ -72,24 +108,37 @@ unset QT_API
 echo "Setting QT API environment flag QT_API=pyqt5..."
 export QT_API=pyqt5
 
-echo "Setting Environment Variables in Conda API..."
-
+#echo "Setting Environment Variables in Conda API..."
 #NOTE THESE ARE ALREADY SET IN THE ENVIRONMENT
 #conda env config vars set OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES'
 #conda env config vars set QTWEBENGINE_CHROMIUM_FLAGS='--disable-web-security --no-sandbox --enable-logging --log-level=0'
 #conda env config vars set PYTHONDEVMODE=1
 
-conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
-conda env config vars list
-
 #echo "Disabling QtWebEngine sandbox..."
 #export QTWEBENGINE_CHROMIUM_FLAGS='--disable-sandbox'
 #export QTWEBENGINE_DISABLE_SANDBOX=1
 
-echo "Loading swr and fftw3 modules..."
-#ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10 python_cacher/1.2
-ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+echo "Activating Preconfigured Conda Environment..."
+conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
+echo "Environment Variables:'
+conda env config vars list
+
+echo "Loading intel/19.1.1 module..."
+ml intel/19.1.1
+echo "Loading swr/21.2.5 module..."
+ml swr/21.2.5
+echo "Loading impi/19.0.9 module..."
+ml impi/19.0.9
+echo "Loading fftw3/3.3.10 module..."
+ml fftw3/3.3.10
+
+if [ "$CACHER" = "1" ] ; then
+  echo "Loading python_cacher module..."
+  ml python_cacher/1.2
+fi
+
+echo "3D Acceleration/OpenGL Rendering:"
 swr glxinfo -B
 
 node=$(hostname --alias)
@@ -104,4 +153,11 @@ echo "    source bootstrap_alignEM"
 echo ""
 echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
 
-swr python3 alignEM.py --headless
+if [ "$PULL" = "1" ] ; then
+  PYTHONMALLOC=malloc valgrind swr python3 $WORK/swift-ir/alignEM.py --headless
+else
+  swr python3 $WORK/swift-ir/alignEM.py --headless
+fi
+
+
+

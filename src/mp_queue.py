@@ -90,6 +90,7 @@ class TaskQueue(QObject):
         logger.info('Starting Task Queue (# tasks: %d, method: %s)' % (self.n_tasks, self.ctx.get_start_method()))
         logger.info(self.pbar_text)
         cfg.main_window.hud.post('Workers (%d) Are Processing Tasks (%d): %s' % (self.n_workers, self.n_tasks, self.pbar_text))
+        logger.info('Workers (%d) Are Processing Tasks (%d): %s' % (self.n_workers, self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
