@@ -155,7 +155,7 @@ echo "    source bootstrap_alignEM"
 echo ""
 echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
 
-if [ "$PULL" = "1" ] ; then
+if [ "$DEBUG" = "1" ] ; then
   PYTHONMALLOC=malloc valgrind swr python3 $WORK/swift-ir/alignEM.py --headless
 else
   swr python3 $WORK/swift-ir/alignEM.py --headless
