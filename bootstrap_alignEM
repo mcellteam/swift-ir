@@ -63,8 +63,8 @@ conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
 echo "Unsetting MAX_NUM_THREADS..."
 unset MAX_NUM_THREADS
-echo "Unsetting GALLIUM_DRIVER..."
-unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
+#echo "Unsetting GALLIUM_DRIVER..."
+#unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
 echo "Unsetting MESA_DEBUG..."
 unset MESA_DEBUG
 echo "Unsetting QT_API..."
