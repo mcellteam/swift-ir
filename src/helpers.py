@@ -8,7 +8,7 @@ https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/i
 '''
 
 import os, re, sys, copy, json, time, signal, logging, inspect
-import platform, traceback, shutil, statistics
+import platform, traceback, shutil, statistics, tracemalloc
 from time import time
 from typing import Dict, List, Tuple, Any, Union, Sequence
 from glob import glob
@@ -45,6 +45,48 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            ]
 
 logger = logging.getLogger(__name__)
+
+snapshot = None
+
+def tracemalloc_start():
+    logger.info('Starting tracemalloc memory allocation analysis...')
+    tracemalloc.start()
+
+
+def tracemalloc_compare():
+    if tracemalloc.is_tracing():
+        global snapshot
+        snapshot2 = tracemalloc.take_snapshot()
+        snapshot2 = snapshot2.filter_traces((
+            tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+            tracemalloc.Filter(False, "<unknown>"),
+            tracemalloc.Filter(False, tracemalloc.__file__)
+        ))
+
+        if snapshot is not None:
+            print("================================== Begin Trace:")
+            top_stats = snapshot2.compare_to(snapshot, 'lineno', cumulative=True)
+            for stat in top_stats[:10]:
+                print(stat)
+        snapshot = snapshot2
+    else:
+        logger.warning('tracemalloc is not currently tracing')
+
+
+def tracemalloc_stop():
+    if tracemalloc.is_tracing():
+        logger.info('Stopping tracemalloc memory allocation analysis...')
+        tracemalloc.stop()
+    else:
+        logger.warning('tracemalloc is not currently tracing')
+
+
+def tracemalloc_clear():
+    if tracemalloc.is_tracing():
+        logger.info('Clearing tracemalloc traces...')
+        tracemalloc.clear_traces()
+    else:
+        logger.warning('tracemalloc is not currently tracing')
 
 
 def timer(func):
