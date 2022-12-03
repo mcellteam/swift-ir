@@ -10,6 +10,11 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
+QTextBrowser#external_link {
+background-color: transparent;
+border-width: 0px;
+
+}
 
 QWidget#browser_overlay_widget {
     background-color: rgba(0, 0, 0, 0.5);

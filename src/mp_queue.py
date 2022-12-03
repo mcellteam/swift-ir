@@ -73,6 +73,12 @@ class TaskQueue(QObject):
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
+        if cfg.DEBUG_MP:
+            logger.info('Debugging Python Multiprocessing Module')
+            mpl = mp.log_to_stderr()
+            mpl.setLevel(logging.DEBUG)
+        # else:
+        #     mpl.setLevel(logging.INFO)
         logger.critical('Starting Task Queue [%s]...' % self.pbar_text)
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
@@ -80,10 +86,7 @@ class TaskQueue(QObject):
         self.task_id = 0
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
-        # if cfg.DEBUG_MP:
-        #     mpl.setLevel(logging.DEBUG)
-        # else:
-        #     mpl.setLevel(logging.INFO)
+
         logger.info('Starting Task Queue (# tasks: %d, method: %s)' % (self.n_tasks, self.ctx.get_start_method()))
         logger.info(self.pbar_text)
         cfg.main_window.hud.post('Workers (%d) Are Processing Tasks (%d): %s' % (self.n_workers, self.n_tasks, self.pbar_text))

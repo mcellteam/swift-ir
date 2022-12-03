@@ -36,7 +36,7 @@ CLEVEL = 5
 
 '''Other Defaults'''
 # IS_TACC = None
-PROFILER = None
+PROFILER = False
 DUMMY = False
 USE_TENSORSTORE = True
 HEADLESS = False
@@ -58,8 +58,7 @@ MP_LINEWEIGHT = 3
 MP_SIZE = 6
 USE_FILE_IO = 0
 CODE_MODE = 'c'
-HTTP_PORT = 9000
-MATCH_POINT_MODE = False
+# HTTP_PORT = 9000
 ICON_COLOR = '#2774AE'
 
 MV = True

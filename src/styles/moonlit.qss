@@ -6,6 +6,12 @@ Colors:
 #6D7D77 - blue smoke, green blue
 */
 
+QTextBrowser#external_link {
+background-color: transparent;
+border-width: 0px;
+
+}
+
 QToolBar#toolbar {
     background-color: #6D7D77;
 }

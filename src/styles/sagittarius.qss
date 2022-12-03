@@ -1,4 +1,9 @@
 
+QTextBrowser#external_link {
+background-color: transparent;
+border-width: 0px;
+}
+
 QWidget#layer_view_widget {
     background-color: #141414;
     color: #F3F6FB;

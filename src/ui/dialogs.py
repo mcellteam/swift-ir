@@ -222,20 +222,114 @@ class ConfigAppDialog(QDialog):
         self.initUI()
 
     def initUI(self):
-        layout
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
-class ConfigDialog(QDialog):
+        tsWidget = QWidget()
+        tsLayout = QHBoxLayout()
+        tsLayout.setContentsMargins(4, 2, 4, 2)
+        tsWidget.setLayout(tsLayout)
+        self.tsCheckbox = QCheckBox()
+        self.tsCheckbox.setChecked(cfg.USE_TENSORSTORE)
+        tsLayout.addWidget(QLabel('Use Tensorstore Backend: '))
+        tsLayout.addWidget(self.tsCheckbox, alignment=Qt.AlignRight)
+
+        headlessWidget = QWidget()
+        headlessLayout = QHBoxLayout()
+        headlessLayout.setContentsMargins(4, 2, 4, 2)
+        headlessWidget.setLayout(headlessLayout)
+        self.headlessCheckbox = QCheckBox()
+        self.headlessCheckbox.setChecked(cfg.HEADLESS)
+        headlessLayout.addWidget(QLabel('Run Neuroglancer In Headless Mode: '))
+        headlessLayout.addWidget(self.headlessCheckbox, alignment=Qt.AlignRight)
+
+        mpdebugWidget = QWidget()
+        mpdebugLayout = QHBoxLayout()
+        mpdebugLayout.setContentsMargins(4, 2, 4, 2)
+        mpdebugWidget.setLayout(mpdebugLayout)
+        self.mpdebugCheckbox = QCheckBox()
+        self.mpdebugCheckbox.setChecked(cfg.DEBUG_MP)
+        mpdebugLayout.addWidget(QLabel('Debug Python Multiprocessing Module: '))
+        mpdebugLayout.addWidget(self.mpdebugCheckbox, alignment=Qt.AlignRight)
+
+        useprofilerWidget = QWidget()
+        useprofilerLayout = QHBoxLayout()
+        useprofilerLayout.setContentsMargins(4, 2, 4, 2)
+        useprofilerWidget.setLayout(useprofilerLayout)
+        self.useprofilerCheckbox = QCheckBox()
+        self.useprofilerCheckbox.setChecked(cfg.PROFILER)
+        useprofilerLayout.addWidget(QLabel('Use Scalene Profiler: '))
+        useprofilerLayout.addWidget(self.useprofilerCheckbox, alignment=Qt.AlignRight)
+
+        cancelButton = QPushButton('Cancel')
+        cancelButton.setDefault(False)
+        cancelButton.setAutoDefault(False)
+        cancelButton.clicked.connect(self.on_cancel)
+        applyButton = QPushButton('Apply')
+        applyButton.setDefault(True)
+        applyButton.clicked.connect(self.on_apply)
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(cancelButton)
+        buttonLayout.addWidget(applyButton)
+        buttonWidget = QWidget()
+        buttonWidget.setLayout(buttonLayout)
+
+        if 'CONDA_DEFAULT_ENV' in os.environ:
+            environLabel = QLabel(f"Conda Environment:  {os.environ['CONDA_DEFAULT_ENV']}\n")
+            layout.addWidget(environLabel)
+
+
+        layout.addWidget(tsWidget)
+        layout.addWidget(headlessWidget)
+        layout.addWidget(mpdebugWidget)
+        layout.addWidget(useprofilerWidget)
+        layout.addWidget(buttonWidget)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(0)
+
+    @Slot()
+    def on_apply(self):
+        try:
+            cfg.main_window.hud('Applying Application Settings...')
+            cfg.USE_TENCSORSTORE = self.tsCheckbox.isChecked()
+            cfg.HEADLESS = self.headlessCheckbox.isChecked()
+            if cfg.HEADLESS:
+                cfg.main_window.main_tab_widget.setTabVisible(0, False)
+                cfg.main_window.external_link.show()
+            else:
+                cfg.main_window.main_tab_widget.setTabVisible(0, True)
+                cfg.main_window.external_link.hide()
+            cfg.DEBUG_MP = self.mpdebugCheckbox.isChecked()
+            cfg.PROFILER = self.useprofilerCheckbox.isChecked()
+            if cfg.PROFILER:
+                pass
+                # from scalene import scalene_profiler
+                # scalene_profiler.start()
+        except Exception as e:
+            logger.warning(e)
+        finally:
+            self.close()
+
+
+    @Slot()
+    def on_cancel(self):
+        logger.warning("ConfigProjectDialog Exiting On 'Cancel'...")
+        self.close()
+
+
+
+class ConfigProjectDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
-        super(ConfigDialog, self).__init__()
+        super(ConfigProjectDialog, self).__init__()
         self.parent = parent
         logger.critical('Showing Project Configuration Dialog...')
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)
         self.cancelButton.clicked.connect(self.on_cancel)
-        self.applyButton = QPushButton('Apply + Continue')
+        self.applyButton = QPushButton('Apply')
         self.applyButton.setDefault(True)
-        self.applyButton.clicked.connect(self.apply_settings)
+        self.applyButton.clicked.connect(self.on_apply)
         self.buttonLayout = QHBoxLayout()
         self.buttonLayout.addWidget(self.cancelButton)
         self.buttonLayout.addWidget(self.applyButton)
@@ -256,28 +350,32 @@ class ConfigDialog(QDialog):
         self.show()
 
     @Slot()
-    def apply_settings(self):
-        cfg.main_window.hud('Applying User Settings...')
-        cfg.data.set_scales_from_string(self.scales_input.text())
-        cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-        cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
-        cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
-        cfg.data['data']['clevel'] = int(self.clevel_input.text())
-        cfg.data['data']['cname'] = self.cname_combobox.currentText()
-        cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
-                                          int(self.chunk_y_lineedit.text()),
-                                          int(self.chunk_x_lineedit.text()))
-        for scale in cfg.data.scales():
-            scale_val = get_scale_val(scale)
-            res_x = int(self.res_x_lineedit.text()) * scale_val
-            res_y = int(self.res_y_lineedit.text()) * scale_val
-            res_z = int(self.res_z_lineedit.text())
-            cfg.data.set_resolutions(scale=scale, res_x=res_x, res_y=res_y, res_z=res_z)
-        self.close()
+    def on_apply(self):
+        try:
+            cfg.main_window.hud('Applying Project Settings...')
+            cfg.data.set_scales_from_string(self.scales_input.text())
+            cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
+            cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
+            cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['data']['clevel'] = int(self.clevel_input.text())
+            cfg.data['data']['cname'] = self.cname_combobox.currentText()
+            cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
+                                              int(self.chunk_y_lineedit.text()),
+                                              int(self.chunk_x_lineedit.text()))
+            for scale in cfg.data.scales():
+                scale_val = get_scale_val(scale)
+                res_x = int(self.res_x_lineedit.text()) * scale_val
+                res_y = int(self.res_y_lineedit.text()) * scale_val
+                res_z = int(self.res_z_lineedit.text())
+                cfg.data.set_resolutions(scale=scale, res_x=res_x, res_y=res_y, res_z=res_z)
+        except Exception as e:
+            logger.warning(e)
+        finally:
+            self.close()
 
     @Slot()
     def on_cancel(self):
-        logger.warning("ConfigDialog Exiting On 'Cancel'...")
+        logger.warning("ConfigProjectDialog Exiting On 'Cancel'...")
         self.close()
 
     def initUI_tab2(self):
