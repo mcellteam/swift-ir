@@ -2065,7 +2065,7 @@ class MainWindow(QMainWindow):
 
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
-            logger.warning('Stopping Neuroglancer')
+            logger.warning('Stopping Neuroglancer...')
             ng.server.stop()
 
 
