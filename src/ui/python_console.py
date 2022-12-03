@@ -31,7 +31,8 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client = self._kernel_manager.client()
         self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
-        if not is_tacc():
+        # if not is_tacc():
+        if 1:
             self.execute_command('import src.config as cfg')
             self.execute_command('from src.config import *')
             self.execute_command('from src.config import main_window')
