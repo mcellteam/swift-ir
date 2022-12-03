@@ -43,7 +43,6 @@ def generate_zarr_scales():
     task_queue.start(cpus)
     script = 'src/job_convert_zarr.py'
     for ID, img in enumerate(imgs):
-        # for scale in cfg.data.scales()[::-1]:
         for scale in cfg.data.scales():
             out = os.path.join(od, 's%d' % get_scale_val(scale))
             #task_queue.add_task([sys.executable, script, str(ID), img, dest, path_out, scale, ])
