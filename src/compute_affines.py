@@ -10,6 +10,9 @@ import psutil
 import logging
 from datetime import datetime
 from pathlib import Path
+
+import neuroglancer as ng
+
 import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.helpers import print_exception, rename_layers, remove_aligned, get_scale_val, are_aligned_images_generated, \
@@ -23,6 +26,10 @@ logger = logging.getLogger(__name__)
 def compute_affines(scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     logger.critical('Computing Affines...')
+
+    if ng.is_server_running():
+        logger.critical('Stopping Neuroglancer, which is running...')
+        ng.server.stop()
 
     rename_switch = False
     alignment_dict = cfg.data['data']['scales'][scale]['alignment_stack']
