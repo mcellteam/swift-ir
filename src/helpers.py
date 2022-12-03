@@ -324,7 +324,7 @@ def get_scale_val(scale_of_any_type) -> int:
                 scale = scale[len('scale_'):]
             return int(scale)
     except:
-        logger.warning('Unable to return scale value')
+        logger.warning('Unable to return s value')
 
 
 def do_scales_exist() -> bool:
