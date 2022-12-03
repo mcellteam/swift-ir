@@ -17,7 +17,7 @@ echo "Parsing cli arguments..."
 
 for i in "$@"; do
   case $i in
-    -c|--cacher
+    -c|--cacher)
       CACHER="1"
       shift
       ;;
