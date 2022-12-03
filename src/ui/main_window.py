@@ -487,9 +487,14 @@ class MainWindow(QMainWindow):
         self.read_gui_update_project_data()
         is_realign = is_cur_scale_aligned()
         if is_realign:
-            # For computing SNR differences later
-            snr_before = cfg.data.snr_list()
-            snr_avg_before = cfg.data.snr_average()
+            try:
+                # For computing SNR differences later
+                snr_before = cfg.data.snr_list()
+                snr_avg_before = cfg.data.snr_average()
+            except:
+                print_exception()
+                logger.warning('Unable to get SNR average. Treating project as unaligned...')
+                is_realign = False
 
         if cfg.data.al_option(s=scale) == 'init_affine':
             self.hud.post("Computing Initial Affine Transforms,  Scale %d..." % scale_val)
