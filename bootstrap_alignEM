@@ -21,7 +21,7 @@ for i in "$@"; do
       CACHER="1"
       shift
       ;;
-    --debug)
+    -d|--debug)
       DEBUG="1"
       shift # past argument with no value
       ;;
