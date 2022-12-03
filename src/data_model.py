@@ -168,13 +168,13 @@ class DataModel:
             self.set_layer(0)
             return self._data['data']['current_layer']
 
-    def snr(self, s=None, l=None) -> str:
+    def snr(self, s=None, l=None) -> float:
         '''TODO This probably shouldn't return a string'''
         if s == None: s = self.scale()
         if l == None: l = self.layer()
         try:
-            return str(self._data['data']['scales'][s]['alignment_stack'][l]
-                       ['align_to_ref_method']['method_results']['snr_report'])
+            return statistics.fmean(self._data['data']['scales'][s]['alignment_stack'][l]
+                                   ['align_to_ref_method']['method_results']['snr'])
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
