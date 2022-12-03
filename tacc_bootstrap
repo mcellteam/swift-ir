@@ -157,9 +157,9 @@ echo ""
 echo "Launching AlignEM-SWiFT..."
 
 if [ "$DEBUG" = "1" ] ; then
-  PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind -s swr -p 10 -t 10 python3 $WORK/swift-ir/alignEM.py
+  PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind -s swr -p 1 python3 $WORK/swift-ir/alignEM.py
 else
-  swr -p 10 -t 10 python3 $WORK/swift-ir/alignEM.py
+  swr -p 1 python3 $WORK/swift-ir/alignEM.py
 fi
 
 
