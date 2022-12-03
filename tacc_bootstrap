@@ -156,7 +156,7 @@ echo ""
 echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
 
 if [ "$DEBUG" = "1" ] ; then
-  PYTHONMALLOC=malloc valgrind swr python3 $WORK/swift-ir/alignEM.py
+  PYTHONMALLOC=malloc catchsegv valgrind swr python3 $WORK/swift-ir/alignEM.py
 else
   swr python3 $WORK/swift-ir/alignEM.py
 fi
