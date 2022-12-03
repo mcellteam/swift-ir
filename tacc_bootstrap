@@ -7,7 +7,7 @@
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
 
 # TO RUN THIS SCRIPT:
-# $ source bootstrap_alignEM
+# $ source tacc_bootstrap
 
 CACHER="0"
 DEBUG="0"

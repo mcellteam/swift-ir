@@ -10,3 +10,4 @@ echo "Loading fftw3/3.3.10 module..."
 ml fftw3/3.3.10
 echo "Activating Preconfigured Conda Environment..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+git pull
