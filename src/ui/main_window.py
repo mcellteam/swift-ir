@@ -1081,11 +1081,10 @@ class MainWindow(QMainWindow):
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
         # self.refreshNeuroglancerURL(s=cfg.data.scale())
-        # if cfg.SIMULTANEOUS_SERVERS:
-        #     self.initNgViewer(scales=[cfg.data.scale()])
-        # else:
-        #     self.initNgServer(scales=[cfg.data.scale()])
-        self.initNgServer(scales=[cfg.data.scale()])
+        if cfg.SIMULTANEOUS_SERVERS:
+            self.initNgViewer(scales=[cfg.data.scale()])
+        else:
+            self.initNgServer(scales=[cfg.data.scale()])
         self.jump_to(cfg.data.layer())
         self.read_project_data_update_gui()
         self.updateHistoryListWidget(s=s)
