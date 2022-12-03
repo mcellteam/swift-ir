@@ -3751,7 +3751,6 @@ class MainWindow(QMainWindow):
         self.thumbnail_table.horizontalHeader().hide()
         self.thumbnail_table.verticalHeader().hide()
         self.thumbnail_table.setGridStyle(Qt.NoPen)
-        self.thumbnail_table.sizeHintForRow()
 
         self.overview_panel = QWidget()
         self.overview_layout = QGridLayout()
