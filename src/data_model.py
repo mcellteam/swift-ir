@@ -579,7 +579,7 @@ class DataModel:
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
-            # print_exception()
+            print_exception()
             try:
                 self.set_image_size(scale=s)
                 return self._data['data']['scales'][s]['image_src_size']
