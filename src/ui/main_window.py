@@ -668,7 +668,7 @@ class MainWindow(QMainWindow):
             self.hud.post(warning_msg, logging.WARNING)
             return
 
-        logger.info('SNR Before: %s' % str(cfg.data.snr()))
+        logger.info('SNR Before: %s' % str(cfg.data.snr_report()))
         logger.critical('Aligning Single Layer...')
         if scale == None: scale = cfg.data.scale()
         scale_val = get_scale_val(scale)
@@ -716,7 +716,7 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()
         finally:
             self.onAlignmentEnd()
-            self.matchpoint_text_snr.setHtml(f'<p><b>{cfg.data.snr()}</b></p>')
+            self.matchpoint_text_snr.setHtml(f'<p><b>{cfg.data.snr_report()}</b></p>')
             self.set_idle()
             QApplication.processEvents()
 
@@ -1209,7 +1209,7 @@ class MainWindow(QMainWindow):
             else:
                 dims = cfg.data.image_size(s=s)
             bb_dims = "<b style='color: #212121;font-size:12px;'>Bounds: %dx%dpx</b><br>" % (dims[0], dims[1])
-            snr = "<b style='color:#212121; font-size=10px;'>%s</b><br>" % cfg.data.snr(s=s, l=l)
+            snr = "<b style='color:#212121; font-size=10px;'>%s</b><br>" % cfg.data.snr_report(s=s, l=l)
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
@@ -2441,7 +2441,7 @@ class MainWindow(QMainWindow):
 
 
     def update_match_point_snr(self):
-        self.matchpoint_text_snr.setHtml(f'<h4>{cfg.data.snr()}</h4>')
+        self.matchpoint_text_snr.setHtml(f'<h4>{cfg.data.snr_report()}</h4>')
 
 
     def clear_match_points(self):
@@ -4048,7 +4048,7 @@ class MainWindow(QMainWindow):
     def initSnrPlot(self, s=None):
         logger.info('')
         '''
-        cfg.main_window.snr_points.data - numpy.ndarray (snr data points)
+        cfg.main_window.snr_points.data - numpy.ndarray (snr_report data points)
         AlignEM [11]: numpy.ndarray
         cfg.main_window.snr_points.data[0]
         AlignEM [13]: (1., 14.73061687, -1., None, None, None, None, None,
