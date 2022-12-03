@@ -191,15 +191,12 @@ class DataModel:
     def snr_list(self, s=None):
         # logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale()
-        snr_lst = []
+        # n should be 16 for layers except for index 0 which equals [0.0]
+        n = len(self._data['data']['scales'][s]['alignment_stack'][1]['align_to_ref_method']['method_results']['snr'])
         try:
-            for layer in self._data['data']['scales'][s]['alignment_stack']:
-                # snr_vals = layer['align_to_ref_method']['method_results']['snr_report'] #!
-                snr_vals = layer['align_to_ref_method']['method_results']['snr']
-                mean_snr = sum(snr_vals) / len(snr_vals)
-                snr_lst.append(mean_snr)
-
-            return snr_lst
+            lst = [sum(l['align_to_ref_method']['method_results']['snr']) / n for l in self.alstack(s=s)]
+            assert len(lst) == self.n_layers()
+            return lst
         except:
             #Todo: revisit this
             print_exception()
@@ -803,7 +800,8 @@ class DataModel:
     def snr_average(self, scale=None) -> float:
         logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = cfg.data.scale()
-        return statistics.fmean(self.snr_list(s=scale))
+        # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
+        return statistics.fmean(self.snr_list(s=scale)[1:])
 
     def alstack(self, s=None) -> dict:
         if s == None: s = self.scale()
