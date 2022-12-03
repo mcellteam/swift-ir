@@ -564,7 +564,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Alignment Succeeded But Image Generation Failed Unexpectedly. '
                           'Try Re-generating images.', logging.ERROR)
         else:
-            self.hud.post('Alignment Succeeded')
+            self.hud.post('Alignment Complete')
             self.initSnrPlot()
             self.read_project_data_update_gui()
             self.save_project_to_file()
@@ -630,7 +630,7 @@ class MainWindow(QMainWindow):
                           ' Try Re-generating images.', logging.ERROR)
 
         else:
-            self.hud.post('Alignment Succeeded')
+            self.hud.post('Alignment Complete')
             self.initSnrPlot()
             self.read_project_data_update_gui()
             self.save_project_to_file()
@@ -701,7 +701,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Alignment Succeeded But Image Generation Failed Unexpectedly.'
                           ' Try Re-generating images.', logging.ERROR)
         else:
-            self.hud.post('Alignment Succeeded')
+            self.hud.post('Alignment Complete')
             self.initSnrPlot()
             self.read_project_data_update_gui()
             self.save_project_to_file()
