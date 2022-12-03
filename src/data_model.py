@@ -196,7 +196,6 @@ class DataModel:
         try:
             return [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
         except:
-            #Todo: revisit this
             print_exception()
 
     def print_all_matchpoints(self):
