@@ -111,7 +111,7 @@ echo "Setting QT API environment flag QT_API=pyqt5..."
 export QT_API=pyqt5
 
 #echo "Setting Environment Variables in Conda API..."
-#NOTE THESE ARE ALREADY SET IN THE ENVIRONMENT
+#NOTE SOME OF THESE ARE ALREADY SET IN THE ENVIRONMENT
 #conda env config vars set OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES'
 #conda env config vars set QTWEBENGINE_CHROMIUM_FLAGS='--disable-web-security --no-sandbox --enable-logging --log-level=0'
 #conda env config vars set PYTHONDEVMODE=1
@@ -153,10 +153,11 @@ echo ""
 echo "    cd $WORK/swift-ir"
 echo "    source bootstrap_alignEM"
 echo ""
-echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
+#echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
+echo "Launching AlignEM-SWiFT..."
 
 if [ "$DEBUG" = "1" ] ; then
-  PYTHONMALLOC=malloc catchsegv valgrind swr python3 $WORK/swift-ir/alignEM.py
+  PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind -s swr python3 $WORK/swift-ir/alignEM.py
 else
   swr python3 $WORK/swift-ir/alignEM.py
 fi

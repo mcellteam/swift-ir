@@ -55,6 +55,7 @@ import os
 # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --enable-logging --log-level=0'
 # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 import sys, signal, logging, argparse
+import faulthandler
 from src.helpers import check_for_binaries
 import src.config as cfg
 
@@ -64,6 +65,8 @@ from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 
+
+faulthandler.enable(file=sys.stderr, all_threads=True)
 
 class CustomFormatter(logging.Formatter):
 
@@ -164,16 +167,16 @@ def main():
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
 
-    if qtpy.QT5:
-        logger.info('Setting Qt.AA_EnableHighDpiScaling')
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    # if qtpy.QT5:
+    #     logger.info('Setting Qt.AA_EnableHighDpiScaling')
+    #     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    #     logger.info('Setting Qt.AA_UseHighDpiPixmaps')
+    #     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     # 2230-
-    logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
+    # logger.info('Setting Qt.AA_ShareOpenGLContexts')
+    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
+    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
 
     app = QApplication([])
