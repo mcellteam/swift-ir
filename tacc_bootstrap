@@ -60,8 +60,8 @@ fi
 echo "Initializing conda..."
 $WORK/miniconda3/bin/conda init bash
 
-echo "Sourcing .bashrc..."
-source ~/.bashrc
+#echo "Sourcing .bashrc..."
+#source ~/.bashrc
 
 echo "Updating conda..."
 conda update --name base conda -y
