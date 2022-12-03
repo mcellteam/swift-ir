@@ -38,9 +38,9 @@ for i in "$@"; do
   esac
 done
 
-echo "CACHER  : ${EXTENSION}"
-echo "DEBUG   : ${SEARCHPATH}"
-echo "PULL    : ${DEFAULT}"
+echo "CACHER  : ${CACHER}"
+echo "DEBUG   : ${DEBUG}"
+echo "PULL    : ${PULL}"
 
 echo "Setting things up..."
 
@@ -88,6 +88,8 @@ if [ "$PULL" != "0" ] ; then
   cd $WORK/swift-ir
   git stash
   git pull --ff-only
+else
+  echo "Skipping pull from GitHub..."
 fi
 #echo "Pulling the latest changes from GitHUb..."
 #cd $WORK/swift-ir
