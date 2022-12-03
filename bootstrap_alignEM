@@ -76,6 +76,8 @@ echo "Setting Environment Variables in Conda API..."
 
 conda env config vars set OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES'
 conda env config vars set QTWEBENGINE_CHROMIUM_FLAGS='--disable-web-security --no-sandbox --enable-logging --log-level=0'
+conda env config vars set PYTHONDEVMODE=1
+conda env config vars set PYTHONPROFILEIMPORTTIME=1
 
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 conda env config vars list

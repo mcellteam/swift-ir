@@ -14,6 +14,7 @@ import logging
 import operator
 import platform
 import textwrap
+import tracemalloc
 from pathlib import Path
 import psutil
 import zarr
@@ -244,6 +245,7 @@ class MainWindow(QMainWindow):
         self.hud.show()
         self.new_control_panel.show()
         self.toolbar_scale_combobox.setEnabled(True)
+        self.update_ng_hyperlink()
         cfg.SHADER = None
 
         if cfg.data:
@@ -261,17 +263,14 @@ class MainWindow(QMainWindow):
 
         if cfg.HEADLESS:
             self.main_tab_widget.setTabVisible(0, False)
-            self.update_ng_hyperlink()
-            self.external_link.show()
         else:
             self.main_tab_widget.setTabVisible(0, True)
-            self.external_link.hide()
 
 
     def update_ng_hyperlink(self):
         if cfg.data:
             url = self.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
-            self.external_link.append(f"<a href='{url}'>Open In Browser</a>")
+            self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
     def showScoreboardWidegts(self):
         self.main_details_subwidgetA.show()
@@ -1079,11 +1078,11 @@ class MainWindow(QMainWindow):
         self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
+        self.update_ng_hyperlink()
         if self.main_tab_widget.currentIndex() == 1:
             self.layer_view_widget.set_data()
         self.read_project_data_update_gui()
-        if cfg.HEADLESS:
-            self.update_ng_hyperlink()
+
 
 
     @Slot()
@@ -1699,8 +1698,7 @@ class MainWindow(QMainWindow):
                 self.initNgViewer(scales=cfg.data.scales())
             else:
                 self.initNgServer(scales=[cfg.data.scale()])
-        if cfg.HEADLESS:
-            self.update_ng_hyperlink()
+        self.update_ng_hyperlink()
         QApplication.processEvents()
 
 
@@ -2475,6 +2473,12 @@ class MainWindow(QMainWindow):
     def show_zarr_info_source(self) -> None:
         z = zarr.open(os.path.join(cfg.data.dest(), 'img_src.zarr'))
         self.hud.post('\n' + str(z.info) + '\n' + str(z.tree()))
+
+
+    def show_memory_statistics(self):
+        pass
+
+
 
 
     def set_mp_marker_lineweight(self):
@@ -3467,13 +3471,13 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.addWidget(self.image_panel_landing_page)
         self.image_panel_stack_widget.addWidget(self.historyview_widget)
 
-        self.external_link = QTextBrowser()
-        self.external_link.setContentsMargins(8,0,0,0)
-        self.external_link.setObjectName('external_link')
-        self.external_link.setMaximumHeight(24)
-        self.external_link.setAcceptRichText(True)
-        self.external_link.setOpenExternalLinks(True)
-        self.external_link.hide()
+        self.external_hyperlink = QTextBrowser()
+        self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
+        self.external_hyperlink.setObjectName('external_hyperlink')
+        self.external_hyperlink.setMaximumHeight(24)
+        self.external_hyperlink.setAcceptRichText(True)
+        self.external_hyperlink.setOpenExternalLinks(True)
+        self.external_hyperlink.hide()
 
         self.layer_view_container = QWidget()
         self.layer_view_container_layout = QVBoxLayout()
@@ -3483,7 +3487,7 @@ class MainWindow(QMainWindow):
         self.layer_view_widget = LayerViewWidget()
         self.layer_view_widget.setObjectName('layer_view_widget')
 
-        self.layer_view_container_layout.addWidget(self.external_link)
+        self.layer_view_container_layout.addWidget(self.external_hyperlink)
         self.layer_view_container_layout.addWidget(self.layer_view_widget)
 
         self.main_tab_widget = QTabWidget()
