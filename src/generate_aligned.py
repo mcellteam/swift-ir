@@ -6,6 +6,7 @@ import time
 import json
 import psutil
 import logging
+import neuroglancer as ng
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
@@ -23,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     logger.critical('Generating Aligned Images...')
+
+    if ng.is_server_running():
+        logger.critical('Stopping Neuroglancer, which is running...')
+        ng.server.stop()
+
     tryRemoveDatFiles(scale)
     Z_STRIDE = 0
 

@@ -516,7 +516,9 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
         finally:
+            self.onAlignmentEnd()
             self.set_idle()
+            QApplication.processEvents()
 
         '''Compute SNR differences'''
         logger.info('Calculating SNR Delta Values...')
@@ -3088,7 +3090,6 @@ class MainWindow(QMainWindow):
         self.chromiumDebugAction.triggered.connect(self.chromium_debug)
         debugMenu.addAction(self.chromiumDebugAction)
 
-
         helpMenu = self.menu.addMenu('Help')
 
         self.documentationAction = QAction('Documentation', self)
@@ -4127,10 +4128,13 @@ class MainWindow(QMainWindow):
         self.snr_plot.addItem(self.snr_points)
         # self.snr_plot.autoRange()
 
-        max_snr = cfg.data.snr_max_all_scales()
-        if is_any_scale_aligned_and_generated():
-            if max_snr != None:
-                self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
+        # max_snr = cfg.data.snr_max_all_scales()
+        # if is_any_scale_aligned_and_generated():
+        #     if max_snr != None:
+        #         self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
+
+        # self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
+        # TypeError: can only concatenate list (not "int") to list
 
 
     def onSnrClick(self, plot, points):
