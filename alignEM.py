@@ -66,7 +66,7 @@ from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 
 
-faulthandler.enable(file=sys.stderr, all_threads=True)
+
 
 class CustomFormatter(logging.Formatter):
 
@@ -152,6 +152,9 @@ def main():
         cfg.PROFILER = True
         from scalene import scalene_profiler
         scalene_profiler.start()
+
+    if cfg.FAULT_HANDLER:
+        faulthandler.enable(file=sys.stderr, all_threads=True)
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
