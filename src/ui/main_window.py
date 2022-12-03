@@ -3034,18 +3034,6 @@ class MainWindow(QMainWindow):
 
         detailsMenu = self.menu.addMenu('Details')
 
-        self.detailsWebglAction = QAction('Web GL Configuration', self)
-        self.detailsWebglAction.triggered.connect(self.webgl2_test)
-        detailsMenu.addAction(self.detailsWebglAction)
-
-        self.detailsGpuAction = QAction('GPU Configuration', self)
-        self.detailsGpuAction.triggered.connect(self.gpu_config)
-        detailsMenu.addAction(self.detailsGpuAction)
-
-        self.chromiumDebugAction = QAction('Chromium Debug', self)
-        self.chromiumDebugAction.triggered.connect(self.chromium_debug)
-        detailsMenu.addAction(self.chromiumDebugAction)
-
         zarrMenu = detailsMenu.addMenu('Zarr Details')
 
         self.detailsZarrSourceAction = QAction('img_src.zarr', self)
@@ -3087,6 +3075,18 @@ class MainWindow(QMainWindow):
         self.tracemallocClearAction = QAction('Clear Traces', self)
         self.tracemallocClearAction.triggered.connect(tracemalloc_clear)
         tracemallocMenu.addAction(self.tracemallocClearAction)
+
+        self.detailsWebglAction = QAction('Web GL Configuration', self)
+        self.detailsWebglAction.triggered.connect(self.webgl2_test)
+        debugMenu.addAction(self.detailsWebglAction)
+
+        self.detailsGpuAction = QAction('GPU Configuration', self)
+        self.detailsGpuAction.triggered.connect(self.gpu_config)
+        debugMenu.addAction(self.detailsGpuAction)
+
+        self.chromiumDebugAction = QAction('Chromium Debug', self)
+        self.chromiumDebugAction.triggered.connect(self.chromium_debug)
+        debugMenu.addAction(self.chromiumDebugAction)
 
 
         helpMenu = self.menu.addMenu('Help')
