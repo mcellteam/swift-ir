@@ -1001,7 +1001,8 @@ class MainWindow(QMainWindow):
         if inspect.stack()[1].function != 'initStyle':
             self.hud.post('Setting Default Theme')
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
-        self.setStyleSheet(open(self.main_stylesheet).read())
+        with open(self.main_stylesheet, 'r') as f:
+            self.setStyleSheet(f.read())
         pg.setConfigOption('background', '#1B1E23')
         # self.python_console.set_color_none()
         self.hud.set_theme_default()
@@ -1018,7 +1019,8 @@ class MainWindow(QMainWindow):
         if inspect.stack()[1].function != 'initStyle':
             self.hud.post('Setting Daylight Theme')
         self.main_stylesheet = os.path.abspath('src/styles/daylight.qss')
-        self.setStyleSheet(open(self.main_stylesheet).read())
+        with open(self.main_stylesheet, 'r') as f:
+            self.setStyleSheet(f.read())
         pg.setConfigOption('background', 'w')
         # self.python_console.set_color_none()
         self.python_console.set_color_linux()
@@ -1034,7 +1036,8 @@ class MainWindow(QMainWindow):
         if inspect.stack()[1].function != 'initStyle':
             self.hud.post('Setting Moonlit Theme')
         self.main_stylesheet = os.path.abspath('src/styles/moonlit.qss')
-        self.setStyleSheet(open(self.main_stylesheet).read())
+        with open(self.main_stylesheet, 'r') as f:
+            self.setStyleSheet(f.read())
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
@@ -1048,7 +1051,8 @@ class MainWindow(QMainWindow):
         if inspect.stack()[1].function != 'initStyle':
             self.hud.post('Setting Sagittarius Theme')
         self.main_stylesheet = os.path.abspath('src/styles/sagittarius.qss')
-        self.setStyleSheet(open(self.main_stylesheet).read())
+        with open(self.main_stylesheet, 'r') as f:
+            self.setStyleSheet(f.read())
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
