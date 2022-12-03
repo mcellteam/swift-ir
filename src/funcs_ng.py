@@ -10,9 +10,9 @@ import neuroglancer as ng
 # import neuroglancer.write_annotations
 import neuroglancer.random_token
 import tornado.web
-import tornado.netutil
 import tornado.httpserver
-# import tornado.platform
+import tornado.netutil
+import tornado.platform
 import tornado.platform.asyncio
 
 __all__ = []

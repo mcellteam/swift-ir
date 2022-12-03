@@ -107,14 +107,15 @@ class NgHost(QRunnable):
 
     @Slot()
     def run(self):
-        if cfg.USE_TORNADO:
-            logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
-            try:
-                tempdir = tempfile.mkdtemp()
-                atexit.register(shutil.rmtree, tempdir)
-                self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-            except:
-                print_exception()
+        # if cfg.USE_TORNADO:
+        #     logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
+        #     try:
+        #         tempdir = tempfile.mkdtemp()
+        #         atexit.register(shutil.rmtree, tempdir)
+        #         self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+        #     except:
+        #         print_exception()
+        pass
 
     def request_layer(self):
         return floor(self.viewer.state.position[0])
