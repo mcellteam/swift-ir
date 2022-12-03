@@ -173,8 +173,9 @@ class DataModel:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
         try:
-            return statistics.fmean(self._data['data']['scales'][s]['alignment_stack'][l]
-                                   ['align_to_ref_method']['method_results']['snr'])
+            conv_float = map(float, self._data['data']['scales'][s]['alignment_stack'][l]
+                                               ['align_to_ref_method']['method_results']['snr'])
+            return statistics.fmean(conv_float)
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
@@ -192,11 +193,8 @@ class DataModel:
         # logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale()
         # n should be 16 for layers except for index 0 which equals [0.0]
-        n = len(self._data['data']['scales'][s]['alignment_stack'][1]['align_to_ref_method']['method_results']['snr'])
         try:
-            lst = [sum(l['align_to_ref_method']['method_results']['snr']) / n for l in self.alstack(s=s)]
-            assert len(lst) == self.n_layers()
-            return lst
+            return [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
         except:
             #Todo: revisit this
             print_exception()
