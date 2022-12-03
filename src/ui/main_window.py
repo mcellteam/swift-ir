@@ -960,6 +960,8 @@ class MainWindow(QMainWindow):
             self.hud.post('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
+            self.shutdownNeuroglancer()
+            self.ng_workers[cfg.data.scale()] = {}
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() - 1)  # Changes Scale
             cfg.data.set_layer(cur_layer)
             # if not cfg.data.is_alignable():
@@ -979,6 +981,8 @@ class MainWindow(QMainWindow):
             self.hud.post('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
+            self.shutdownNeuroglancer()
+            self.ng_workers[cfg.data.scale()] = {}
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() + 1)  # Changes Scale
             cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
             # if not cfg.data.is_alignable():
@@ -1077,14 +1081,15 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         s = cfg.data.scale()
-        self.shutdownNeuroglancer() #1203+
+        # self.shutdownNeuroglancer() #1203+
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
         # self.refreshNeuroglancerURL(s=cfg.data.scale())
-        if cfg.SIMULTANEOUS_SERVERS:
-            self.initNgViewer(scales=[cfg.data.scale()])
-        else:
-            self.initNgServer(scales=[cfg.data.scale()])
+        # if cfg.SIMULTANEOUS_SERVERS:
+        #     self.initNgViewer(scales=[cfg.data.scale()])
+        # else:
+        #     self.initNgServer(scales=[cfg.data.scale()])
+        self.initNgServer(scales=[cfg.data.scale()])
         self.jump_to(cfg.data.layer())
         self.read_project_data_update_gui()
         self.updateHistoryListWidget(s=s)
@@ -1445,7 +1450,8 @@ class MainWindow(QMainWindow):
         if caller == 'onStartProject':
             # logger.warning('Canceling scale change...')
             return
-        self.ng_workers[cfg.data.scale()] = {}
+        self.shutdownNeuroglancer()
+        self.ng_workers[cfg.data.scale()] = {} #2203 adding this to scale_up/down
         new_scale = self.toolbar_scale_combobox.currentText()
         # logger.info(f'Setting Scale: %s...' % new_scale)
         cfg.data.set_scale(new_scale)
