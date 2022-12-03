@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import os, logging, textwrap, platform
+import os, sys, logging, textwrap, platform
 from os.path import expanduser
 from pathlib import Path
+import faulthandler
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton
@@ -90,10 +91,6 @@ def mendenhall_dialog() -> str:
                 logger.info(f"Directory Created: {path}")
                 cfg.main_window.hud.post(f"Directory Created: {path}")
                 return path
-
-
-
-
 
 
 def export_affines_dialog() -> str:
@@ -210,15 +207,13 @@ class AskContinueDialog(QDialog):
 #         self.setGeometry(300, 150, 450, 350)
 #         self.setWindowTitle('Rename Project')
 #         self.show()
-#
-#
 
 
 class ConfigAppDialog(QDialog):
     def __init__(self, parent=None):  # parent=None allows passing in MainWindow if needed
         super(ConfigAppDialog, self).__init__()
         self.parent = parent
-        logger.critical('Showing Application Configuration Dialog...')
+        logger.info('Showing Application Configuration Dialog...')
         self.initUI()
 
     def initUI(self):
@@ -231,7 +226,7 @@ class ConfigAppDialog(QDialog):
         tsWidget.setLayout(tsLayout)
         self.tsCheckbox = QCheckBox()
         self.tsCheckbox.setChecked(cfg.USE_TENSORSTORE)
-        tsLayout.addWidget(QLabel('Use Tensorstore Backend: '))
+        tsLayout.addWidget(QLabel('Enable Tensorstore Backend: '))
         tsLayout.addWidget(self.tsCheckbox, alignment=Qt.AlignRight)
 
         headlessWidget = QWidget()
@@ -240,7 +235,7 @@ class ConfigAppDialog(QDialog):
         headlessWidget.setLayout(headlessLayout)
         self.headlessCheckbox = QCheckBox()
         self.headlessCheckbox.setChecked(cfg.HEADLESS)
-        headlessLayout.addWidget(QLabel('Run Neuroglancer In Headless Mode: '))
+        headlessLayout.addWidget(QLabel('Enable Neuroglancer Headless Mode: '))
         headlessLayout.addWidget(self.headlessCheckbox, alignment=Qt.AlignRight)
 
         mpdebugWidget = QWidget()
@@ -249,7 +244,7 @@ class ConfigAppDialog(QDialog):
         mpdebugWidget.setLayout(mpdebugLayout)
         self.mpdebugCheckbox = QCheckBox()
         self.mpdebugCheckbox.setChecked(cfg.DEBUG_MP)
-        mpdebugLayout.addWidget(QLabel('Debug Python Multiprocessing Module: '))
+        mpdebugLayout.addWidget(QLabel('Enable Python Multiprocessing Debugging: '))
         mpdebugLayout.addWidget(self.mpdebugCheckbox, alignment=Qt.AlignRight)
 
         useprofilerWidget = QWidget()
@@ -258,8 +253,17 @@ class ConfigAppDialog(QDialog):
         useprofilerWidget.setLayout(useprofilerLayout)
         self.useprofilerCheckbox = QCheckBox()
         self.useprofilerCheckbox.setChecked(cfg.PROFILER)
-        useprofilerLayout.addWidget(QLabel('Use Scalene Profiler: '))
+        useprofilerLayout.addWidget(QLabel('Enable Scalene Profiler: '))
         useprofilerLayout.addWidget(self.useprofilerCheckbox, alignment=Qt.AlignRight)
+
+        faultWidget = QWidget()
+        faultLayout = QHBoxLayout()
+        faultLayout.setContentsMargins(4, 2, 4, 2)
+        faultWidget.setLayout(faultLayout)
+        self.faultCheckbox = QCheckBox()
+        self.faultCheckbox.setChecked(cfg.FAULT_HANDLER)
+        faultLayout.addWidget(QLabel('Enable Fault Handler: '))
+        faultLayout.addWidget(self.faultCheckbox, alignment=Qt.AlignRight)
 
         cancelButton = QPushButton('Cancel')
         cancelButton.setDefault(False)
@@ -283,6 +287,7 @@ class ConfigAppDialog(QDialog):
         layout.addWidget(headlessWidget)
         layout.addWidget(mpdebugWidget)
         layout.addWidget(useprofilerWidget)
+        layout.addWidget(faultWidget)
         layout.addWidget(buttonWidget)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(0)
@@ -305,6 +310,18 @@ class ConfigAppDialog(QDialog):
                 pass
                 # from scalene import scalene_profiler
                 # scalene_profiler.start()
+            cfg.FAULT_HANDLER = self.faultCheckbox.isChecked()
+            if cfg.FAULT_HANDLER:
+                if not faulthandler.is_enabled():
+                    file=sys.stderr
+                    all_threads=True
+                    logger.info(f'Enabling faulthandler (file={file}, all_threads={all_threads})...')
+                    faulthandler.enable(file=sys.stderr, all_threads=True)
+            else:
+                if faulthandler.is_enabled():
+                    logger.info('Disabling faulthandler...')
+                    faulthandler.disable()
+
         except Exception as e:
             logger.warning(e)
         finally:
@@ -322,7 +339,7 @@ class ConfigProjectDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         super(ConfigProjectDialog, self).__init__()
         self.parent = parent
-        logger.critical('Showing Project Configuration Dialog...')
+        logger.info('Showing Project Configuration Dialog...')
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)

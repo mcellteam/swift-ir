@@ -43,6 +43,7 @@ USE_JUPYTER = True
 USE_TORNADO = True
 USE_NG_WEBDRIVER = False
 USE_EXTRA_THREADING = False
+FAULT_HANDLER = True
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
