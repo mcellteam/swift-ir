@@ -178,12 +178,23 @@ class DataModel:
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
+    def snr_report(self, s=None, l=None) -> str:
+        '''TODO This probably shouldn't return a string'''
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        try:
+            return str(self._data['data']['scales'][s]['alignment_stack'][l]
+                       ['align_to_ref_method']['method_results']['snr_report'])
+        except:
+            logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
+
     def snr_list(self, s=None):
         # logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale()
         snr_lst = []
         try:
             for layer in self._data['data']['scales'][s]['alignment_stack']:
+                # snr_vals = layer['align_to_ref_method']['method_results']['snr_report'] #!
                 snr_vals = layer['align_to_ref_method']['method_results']['snr']
                 mean_snr = sum(snr_vals) / len(snr_vals)
                 snr_lst.append(mean_snr)

@@ -600,7 +600,7 @@ def centerOfMass(img):
 
 def swim(sta, mov, wht=-.65):
     '''SWIM - Calculate alignment between two image tiles
-    (dx, dy, sx, sy, snr) = SWIM(sta, mov) calculates the optimal
+    (dx, dy, sx, sy, snr_report) = SWIM(sta, mov) calculates the optimal
     shift (dx,dy) between a pair of image tiles. Tiles are typically
     cut from a larger image using EXTRACTSTRAIGHTWINDOW or
     EXTRACTTRANSFORMEDWINDOW and one of them should be apodized first.
@@ -667,7 +667,7 @@ def movingPatches(img, pp, afm, siz=512):
 
 def multiSwim(stas, movs, wht=-.65, pp=None, afm=None):
     '''MULTISWIM - Run SWIM on multiple patches within an image
-    (dp, ss, snr) = MULTISWIM(stas, movs) performs SWIM on each of
+    (dp, ss, snr_report) = MULTISWIM(stas, movs) performs SWIM on each of
     the patches in STAS and MOVS, which should have been extracted
     from a stationary and a moving image using STATIONARYPATCHES and
     MOVINGPATCHES respectively.
@@ -918,7 +918,7 @@ if __name__=='__main__':
         pb = pb + dp
         print('after first swim', pb)
         print('peak width', ss)
-        print('snr', snr)
+        print('snr_report', snr)
 
         (afm, rms, iworst) = mirAffine(pa, pb)
         print('affine matrix from mir', afm, rms, iworst)
@@ -929,7 +929,7 @@ if __name__=='__main__':
         pb = pb + dp
         print('after second swim', pb)
         print('peak width', ss)
-        print('snr', snr)
+        print('snr_report', snr)
 
         (afm, rms, iworst) = mirAffine(pa, pb)
         print('affine matrix from mir', afm, rms, iworst)
@@ -940,7 +940,7 @@ if __name__=='__main__':
         pb = pb + dp
         print('after third swim', pb)
         print('peak width', ss)
-        print('snr', snr)
+        print('snr_report', snr)
 
         (afm, rms, iworst) = mirAffine(pa, pb)
         print('affine matrix from mir', afm, rms, iworst)

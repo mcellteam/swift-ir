@@ -157,7 +157,7 @@ def run_json_project(project,
             if s_tbd[i]['skipped'] or mr == {}:
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
-                mr['snr'] = [0.0]
+                mr['snr_report'] = [0.0]
                 mr['snr_report'] = 'SNR: --'
 
             # set alignment option
@@ -533,13 +533,13 @@ class alignment_process:
         self.setCafm(c_afm, bias_mat=None)  # returns new current cafm -jy
 
         # Retrieve alignment result
-        snr = self.recipe.ingredients[-1].snr
+        snr = self.recipe.ingredients[-1].snr_report
         snr_report = self.recipe.ingredients[-1].snr_report
         afm = self.recipe.ingredients[-1].afm
         c_afm = self.cumulative_afm
 
         # Put alignment results into layer_dict
-        atrm['method_results']['snr'] = list(snr)
+        atrm['method_results']['snr_report'] = list(snr)
         atrm['method_results']['snr_report'] = snr_report
         atrm['method_results']['affine_matrix'] = afm.tolist()
         atrm['method_results']['cumulative_afm'] = c_afm.tolist()
@@ -727,7 +727,7 @@ class align_ingredient:
         #    warp_matrix[0,2]=dx
         #    warp_matrix[1,2]=dy
         # logger.debug(
-        #     '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
+        #     '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr_report, self.dx, self.dy))
 
     # offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None):
     def run_swim_c(self):
@@ -914,7 +914,7 @@ class align_ingredient:
             self.afm = aim
 
         #    if self.align_mode == 'check_align':
-        #      self.snr = snr_list
+        #      self.snr_report = snr_list
         self.snr = snr_list
 
         logger.info('<<<< run_swim_c')
@@ -961,7 +961,7 @@ class align_ingredient:
                 logger.debug('pmov = ' + str(self.pmov))
                 mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
                 (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-                logger.debug('  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
+                logger.debug('  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
                 self.pmov = self.pmov + dp
                 (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
                 self.pmov = swiftir.stationaryToMoving(afm, self.psta)

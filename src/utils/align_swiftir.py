@@ -264,13 +264,13 @@ class alignment_process:
         self.setCafm(c_afm, bias_mat=None)
 
         # Retrieve alignment result
-        snr = self.recipe.ingredients[-1].snr
+        snr = self.recipe.ingredients[-1].snr_report
         snr_report = self.recipe.ingredients[-1].snr_report
         afm = self.recipe.ingredients[-1].afm
         c_afm = self.cumulative_afm
 
         # Put alignment results into layer_dict
-        atrm['method_results']['snr'] = list(snr)
+        atrm['method_results']['snr_report'] = list(snr)
         atrm['method_results']['snr_report'] = snr_report
         atrm['method_results']['affine_matrix'] = afm.tolist()
         atrm['method_results']['cumulative_afm'] = c_afm.tolist()
@@ -473,7 +473,7 @@ class align_ingredient:
 
         #    warp_matrix[0,2]=dx
         #    warp_matrix[1,2]=dy
-        #    print_debug ( 70, '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
+        #    print_debug ( 70, '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr_report, self.dx, self.dy))
         pass
 
     def run_swim_c(
@@ -644,7 +644,7 @@ class align_ingredient:
             self.afm = aim
 
         #    if self.align_mode == 'check_align':
-        #      self.snr = snr_list
+        #      self.snr_report = snr_list
         self.snr = snr_list
 
         return self.afm
@@ -700,7 +700,7 @@ class align_ingredient:
                 print_debug(50, 'pmov = ' + str(self.pmov))
                 mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
                 (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-                print_debug(50, '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
+                print_debug(50, '  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
                 self.pmov = self.pmov + dp
                 (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
                 self.pmov = swiftir.stationaryToMoving(afm, self.psta)
@@ -709,7 +709,7 @@ class align_ingredient:
             self.snr = snr
 
         snr_array = np.array(self.snr)
-        #    self.snr = [snr_array.mean()]
+        #    self.snr_report = [snr_array.mean()]
         self.snr = snr_array
         self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
@@ -942,8 +942,8 @@ if __name__ == '__main__':
     pmov = swiftir.stationaryToMoving(afm, psta)
     sta = swiftir.stationaryPatches(im_sta, psta, ww)
     mov = swiftir.movingPatches(im_mov, pmov, afm, ww)
-    (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=pmov, afm=afm, wht=-.65)
-    print_debug ( 50, snr)
+    (dp, ss, snr_report) = swiftir.multiSwim(sta, mov, pp=pmov, afm=afm, wht=-.65)
+    print_debug ( 50, snr_report)
     print_debug ( 50, afm)
     #best = swiftir.alignmentImage(sta[0], mov[0])
     #plt.imshow(best,cmap='gray')

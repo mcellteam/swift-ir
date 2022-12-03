@@ -163,7 +163,7 @@ def get_snr_average(scale) -> float:
     snr_lst = []
     for layer in scale['alignment_stack']:
         try:
-            snr_vals = layer['align_to_ref_method']['method_results']['snr']
+            snr_vals = layer['align_to_ref_method']['method_results']['snr_report']
             mean_snr = sum(snr_vals) / len(snr_vals)
             snr_lst.append(mean_snr)
         except:
@@ -663,7 +663,7 @@ def printProjectDetails(project_data: dict) -> None:
     logger.info("  Cur Scale Aligned         :", are_aligned_images_generated())
     logger.info("  Any Exported Status       :", is_any_alignment_exported())
     logger.info("  # Imported Images         :", cfg.data.n_layers())
-    logger.info("  Current Layer SNR         :", cfg.data.snr())
+    logger.info("  Current Layer SNR         :", cfg.data.snr_report())
 
 
 def is_not_hidden(path):
@@ -802,7 +802,7 @@ def print_sanity_check():
     except:
         print("  SWIM window (current l)                      : n/a")
     try:
-        print("  SNR (current l)                              :", cfg.data.snr())
+        print("  SNR (current l)                              :", cfg.data.snr_report())
     except:
         print("  SNR (current l)                              : n/a")
 
@@ -860,7 +860,7 @@ def show_process_diagnostics():
 def print_snr_list() -> None:
     try:
         snr_list = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][cfg.data.layer()][
-            'align_to_ref_method']['method_results']['snr']
+            'align_to_ref_method']['method_results']['snr_report']
         logger.debug('snr_list:  %s' % str(snr_list))
         mean_snr = sum(snr_list) / len(snr_list)
         logger.debug('mean(snr_list):  %s' % mean_snr)
