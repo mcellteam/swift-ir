@@ -768,7 +768,7 @@ for Linux, Resource Monitor for windows) to look at the number of threads and me
 this down, but I would recommend you just use an easier, more efficient programming pattern.
 
 While not a perfect comparison, you generally are seeing the C10K problem and it states that blocking 
-threads waiting for results do not scale well and can be prone to leaking errors like this. The 
+threads waiting for results do not s well and can be prone to leaking errors like this. The 
 solution was to implement Async IO patterns (one blocking thread that launches other workers) and 
 this is pretty straight forward to do in Web Servers.
 

@@ -178,20 +178,20 @@ class DataModel:
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
-    def snr_list(self, scale=None):
+    def snr_list(self, s=None):
         # logger.info('Caller: %s' % inspect.stack()[1].function)
-        if scale == None: scale = self.scale()
+        if s == None: s = self.scale()
         snr_lst = []
         try:
-            for layer in self._data['data']['scales'][scale]['alignment_stack']:
+            for layer in self._data['data']['scales'][s]['alignment_stack']:
                 snr_vals = layer['align_to_ref_method']['method_results']['snr']
                 mean_snr = sum(snr_vals) / len(snr_vals)
                 snr_lst.append(mean_snr)
+
             return snr_lst
         except:
             #Todo: revisit this
             print_exception()
-            pass
 
     def print_all_matchpoints(self):
         logger.info('Match Points:')
@@ -517,11 +517,11 @@ class DataModel:
             return False
 
     def skips_list(self, s=None) -> list:
-        '''Returns the list of skipped images for a scale'''
+        '''Returns the list of skipped images for a s'''
         if s == None: s = self.scale()
         indexes, names = [], []
         try:
-            for i,layer in enumerate(self.alstack()):
+            for i,layer in enumerate(self.alstack(s=s)):
                 if layer['skipped'] == True:
                     indexes.append(i)
                     names.append(os.path.basename(layer['images']['base']['filename']))
@@ -532,7 +532,7 @@ class DataModel:
             return []
 
     def skips_by_name(self, s=None) -> list[str]:
-        '''Returns the list of skipped images for a scale'''
+        '''Returns the list of skipped images for a s'''
         if s == None: s = self.scale()
         lst = []
         try:
@@ -579,7 +579,7 @@ class DataModel:
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
-            print_exception()
+            logger.info("No key 'image_src_size' found. Adding it now...")
             try:
                 self.set_image_size(scale=s)
                 return self._data['data']['scales'][s]['image_src_size']
@@ -781,7 +781,7 @@ class DataModel:
         for i, scale in enumerate(self.list_aligned):
             if is_arg_scale_aligned(scale=scale):
                 try:
-                    max_snr.append(max(self.snr_list(scale=scale)))
+                    max_snr.append(max(self.snr_list(s=scale)))
                 except:
                     logger.warning('Unable to append maximum SNR, none found')
         if max_snr != []:
@@ -792,7 +792,7 @@ class DataModel:
     def snr_average(self, scale=None) -> float:
         logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = cfg.data.scale()
-        return statistics.fmean(self.snr_list(scale=scale))
+        return statistics.fmean(self.snr_list(s=scale))
 
     def alstack(self, s=None) -> dict:
         if s == None: s = self.scale()

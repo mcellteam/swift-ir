@@ -455,7 +455,7 @@ class MainWindow(QMainWindow):
         cfg.data.list_aligned = get_aligned_scales()
         cfg.data.naligned = len(cfg.data.list_aligned)
         # self.initNgViewer()
-        self.initNgServer()
+        # self.initNgServer() #1203-
         self.updateHistoryListWidget(s=s)
         self.initSnrPlot()
         self.read_project_data_update_gui()
@@ -463,6 +463,7 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.showScoreboardWidegts()
         self.project_model.load(cfg.data.to_dict())
+        self.initNgServer(scales=[cfg.data.scale()]) #1203+
 
 
 
@@ -766,7 +767,7 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()
         finally:
             self.updateJsonWidget()
-            # self.initNgServer(scales=[cfg.data.scale()])
+            # self.initNgServer(scales=[cfg.data.s()])
             self.initNgViewer()
             if are_aligned_images_generated():
                 self.hud.post('Regenerate Succeeded')
@@ -1089,11 +1090,11 @@ class MainWindow(QMainWindow):
         # self.shutdownNeuroglancer() #1203+
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
-        # self.refreshNeuroglancerURL(s=cfg.data.scale())
+        # self.refreshNeuroglancerURL(s=cfg.data.s())
         # if cfg.SIMULTANEOUS_SERVERS:
-        #     self.initNgViewer(scales=[cfg.data.scale()])
+        #     self.initNgViewer(scales=[cfg.data.s()])
         # else:
-        #     self.initNgServer(scales=[cfg.data.scale()])
+        #     self.initNgServer(scales=[cfg.data.s()])
         self.initNgServer(scales=[cfg.data.scale()])
         self.jump_to(cfg.data.layer())
         self.read_project_data_update_gui()
@@ -1453,7 +1454,7 @@ class MainWindow(QMainWindow):
                 logger.info('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
             return
         if caller == 'onStartProject':
-            # logger.warning('Canceling scale change...')
+            # logger.warning('Canceling s change...')
             return
         self.shutdownNeuroglancer()
         self.ng_workers[cfg.data.scale()] = {} #2203 adding this to scale_up/down
@@ -1872,7 +1873,7 @@ class MainWindow(QMainWindow):
         else:
             cfg.SHOW_UI_CONTROLS = False
             self.ngShowUiControlsAction.setText('Hide UI Controls')
-        # self.initNgServer(scales=[cfg.data.scale()])
+        # self.initNgServer(scales=[cfg.data.s()])
         self.initNgViewer(scales=cfg.data.scales())
 
 
@@ -2120,17 +2121,18 @@ class MainWindow(QMainWindow):
             logger.warning('Nothing To View'); return
 
         if not scales:
-            # scales = [cfg.data.scale()]
+            # scales = [cfg.data.s()]
             if cfg.SIMULTANEOUS_SERVERS:
                 scales = cfg.data.scales()
             else:
                 scales = [cfg.data.scale()]
         logger.debug('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
-        self.hud.post('Starting Neuroglancer Worker(s)...')
-        self.set_status('Starting Neuroglancer...')
+        # self.hud.post('Starting Neuroglancer Worker(s)...')
+        # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
         try:
             for s in scales:
+                self.hud.post(f'Starting Neuroglancer Worker, {cfg.data.scale_pretty(s=s)}...')
                 try:
                     mp_mode = self.ng_workers[s].mp_mode
                 except:
@@ -2160,11 +2162,11 @@ class MainWindow(QMainWindow):
                 #     logger.info(f'right_w={right_w}')
                 #     logger.info(f'right_h={right_h}')
                 #
-                #     self.ng_workers[s]['originals'] = NgHost(src=cfg.data.dest(), scale=s)
+                #     self.ng_workers[s]['originals'] = NgHost(src=cfg.data.dest(), s=s)
                 #     self.threadpool.start(self.ng_workers[s]['originals'])
                 #     self.ng_workers[s]['originals'].initViewer(layout='column', views=['ref','base'], show_ui_controls=False, show_panel_borders=False, w=left_w, h=left_h)
                 #
-                #     self.ng_workers[s]['aligned'] = NgHost(src=cfg.data.dest(), scale=s)
+                #     self.ng_workers[s]['aligned'] = NgHost(src=cfg.data.dest(), s=s)
                 #     self.threadpool.start(self.ng_workers[s]['aligned'])
                 #     self.ng_workers[s]['aligned'].initViewer(layout='column', views=['aligned'], show_ui_controls=True, show_panel_borders=True, w=right_w, h=right_h)
                 #
@@ -2728,7 +2730,7 @@ class MainWindow(QMainWindow):
         # for i, f in enumerate(filenames):
         #     cfg.data.append_image(f, role_name='base')
         #     cfg.data.add_img(
-        #         scale_key=scale,
+        #         scale_key=s,
         #         layer_index=layer_index,
         #         role=role_name,
         #         filename=None
@@ -3180,12 +3182,6 @@ class MainWindow(QMainWindow):
         self.hud = HeadupDisplay(self.app)
         self.hud.setObjectName('hud')
         self.hud.post('Welcome To AlignEM-SWiFT.')
-
-        self.hud_widget = QWidget()
-        self.hud_layout = QVBoxLayout()
-        self.hud_widget.setLayout(self.hud_layout)
-        self.hud_layout.setContentsMargins(0, 0, 0, 0)
-        self.hud_layout.addWidget(self.hud)
 
         tip = 'Use All Images (Reset)'
         self.clear_skips_button = QPushButton('Reset')
@@ -3685,7 +3681,7 @@ class MainWindow(QMainWindow):
         self.main_splitter = QSplitter(Qt.Orientation.Vertical)
         self.main_splitter.addWidget(self.main_tab_widget)
         self.main_splitter.addWidget(self.new_control_panel)
-        self.main_splitter.addWidget(self.hud_widget)
+        self.main_splitter.addWidget(self.hud)
         self.main_splitter.addWidget(self.snr_plot_and_control)
         self.main_splitter.addWidget(self.matchpoint_controls)
         self.main_splitter.addWidget(self.projectdata_treeview_widget)
@@ -4109,7 +4105,7 @@ class MainWindow(QMainWindow):
         # logger.info('called by %s' % inspect.stack()[1].function)
         if scale == None: scale = cfg.data.scale()
         # logger.info('show_snr (s: %s):' % str(s))
-        snr_list = cfg.data.snr_list(scale=scale)
+        snr_list = cfg.data.snr_list(s=scale)
         pg.setConfigOptions(antialias=True)
         x_axis = []
         y_axis = []
@@ -4224,7 +4220,7 @@ class MainWindow(QMainWindow):
             self.history_view_action.triggered.connect(self.view_historical_alignment)
             self.history_swap_action = QAction('Swap')
             self.history_swap_action.setStatusTip('Swap the settings of this historical alignment '
-                                                  'with your current scale settings')
+                                                  'with your current s settings')
             self.history_swap_action.triggered.connect(self.swap_historical_alignment)
             self.history_rename_action = QAction('Rename')
             self.history_rename_action.setStatusTip('Rename this file')

@@ -46,7 +46,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     renew_directory(directory=od)
     alstack = cfg.data.alstack(s=scale)
     print_example_cafms()
-    # layerator = cfg.data.get_iter(s=scale)
+    # layerator = cfg.data.get_iter(s=s)
     logger.critical('Setting Stack CAFM...')
     SetStackCafm(scale=scale, null_biases=cfg.data.null_cafm(s=scale), poly_order=cfg.data.poly_order(s=scale))
     # print_example_cafms(scale_dict)
