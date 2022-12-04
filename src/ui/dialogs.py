@@ -139,7 +139,7 @@ def import_images_dialog():
         urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
     dialog.setSidebarUrls(urls)
     logger.debug('Selected Files:\n%s' % str(dialog.selectedFiles()))
-    logger.info('Dialog return value: %s' % dialog.Accepted)
+    logger.info('Dialog Return Code: %s' % dialog.Accepted)
     if dialog.exec_() == QDialog.Accepted:
         # self.set_mainwindow_project_view()
         return dialog.selectedFiles()
@@ -213,7 +213,7 @@ class ConfigAppDialog(QDialog):
     def __init__(self, parent=None):  # parent=None allows passing in MainWindow if needed
         super(ConfigAppDialog, self).__init__()
         self.parent = parent
-        logger.info('Showing Application Configuration Dialog...')
+        logger.info('Showing Application Configuration Dialog:')
         self.initUI()
 
     def initUI(self):
@@ -339,7 +339,7 @@ class ConfigProjectDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         super(ConfigProjectDialog, self).__init__()
         self.parent = parent
-        logger.info('Showing Project Configuration Dialog...')
+        logger.info('Showing Project Configuration Dialog:')
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)

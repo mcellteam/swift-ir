@@ -58,9 +58,10 @@ class DataModel:
 
         self._data['data']['mendenhall'] = mendenhall
 
-        self.list_aligned = []
+        self.aligned_scales = []
         self.naligned = None
         self.nscales = None
+        self.nlayers = None
 
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
         self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
@@ -127,14 +128,18 @@ class DataModel:
         return natural_sort([os.path.basename(l['images']['base']['filename'])
                 for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
-    def thumbnail_names(self):
-        return glob.glob(os.path.join(self.dest(), 'thumbnails', '*.tif'))
+    # def thumbnail_names(self):
+    #
+    #
+    #     [os.path.join(cfg.dest())            name in self.basefilenames()])
+    #     return glob.glob(os.path.join(self.dest(), 'thumbnails', '*.tif'))
+    def thumbnails(self) -> list:
+        return self._data['data']['thumbnails']
 
-    def thumbnail_paths(self):
-        names = self.thumbnail_names()
-        for i, name in enumerate(names):
-            names[i] = os.path.join(self.dest(), 'thumbnails', name)
-        return names
+    # def thumbnail_paths(self):
+    #     names = self.thumbnail_names()
+    #     for i, name in enumerate(names):
+    #         names[i] = os.path.join(self.dest(), 'thumbnails', name)
 
     def set_source_path(self, dir):
         # self._data['data']['src_img_root'] = dir
@@ -580,7 +585,7 @@ class DataModel:
 
     def image_size(self, s=None):
         if s == None: s = self.scale()
-        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
@@ -619,7 +624,6 @@ class DataModel:
         # Todo -- Refactor!
         try:
             name = self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
-            logger.info('Returning name: %s' % name)
             return name
         except:
             print_exception()
@@ -694,15 +698,12 @@ class DataModel:
         return self.bounding_rect()
 
     def set_image_size(self, scale) -> None:
-        size = ImageSize(self.path_base(s=scale))
-        logger.info(f"Setting image size for {scale}, ImageSize: {size}")
-        self._data['data']['scales'][scale]['image_src_size'] = size
-        logger.info('Setting Image Size, Scale %d: %s' %
-                    (get_scale_val(scale), str(self._data['data']['scales'][scale]['image_src_size'])))
+        self._data['data']['scales'][scale]['image_src_size'] = ImageSize(self.path_base(s=scale))
+        logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=scale)}: {self.image_size(s=scale)}')
 
     def set_image_size_directly(self, size, s=None):
         if s == None: s = cfg.data.scale()
-        logger.info(f"Setting image size for {s}, ImageSize: {size}")
+        logger.info(f"Setting Image Sizes Directly, {s}, ImageSize: {size}")
         self._data['data']['scales'][s]['image_src_size'] = size
 
     def set_poly_order(self, x: int) -> None:
@@ -783,7 +784,7 @@ class DataModel:
 
     def snr_max_all_scales(self):
         max_snr = []
-        for i, scale in enumerate(self.list_aligned):
+        for i, scale in enumerate(self.aligned_scales):
             if is_arg_scale_aligned(scale=scale):
                 try:
                     max_snr.append(max(self.snr_list(s=scale)))
@@ -828,7 +829,7 @@ class DataModel:
     #     return lst
 
     def not_aligned_list(self):
-        return set(self.scales()) - set(self.list_aligned)
+        return set(self.scales()) - set(self.aligned_scales)
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''

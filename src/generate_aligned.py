@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
-    logger.critical('Generating Aligned Images...')
+    logger.info('Generating Aligned Images...')
 
     if ng.is_server_running():
-        logger.critical('Stopping Neuroglancer, which is running...')
+        logger.info('Stopping Neuroglancer...')
         ng.server.stop()
 
     tryRemoveDatFiles(scale)

@@ -48,11 +48,11 @@ class LayerViewWidget(QWidget):
         Note: This function is a 'Slot' function. It is connected
         to the 'clicked' signal of the import_button'''
         logger.info('Setting data..')
-        n_layers = cfg.data.n_layers()
+        n_layers = cfg.data.n
         thumbnails = cfg.data.thumbnail_paths()
         # names = cfg.data.basefilenames()
         is_aligned = is_cur_scale_aligned()
-        scale = [cfg.data.scale()] * n_layers
+        scale = [cfg.data.scale()] * cfg.data.nlayers
 
         skips, ref, base, method, snr_report = [], [], [], [], []
         for l in cfg.data.alstack():

@@ -214,11 +214,13 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
 
-    output_text = f'\nzarr root         : {zarr_path}' \
-                  f'\nname/group        : {name}/{group}' \
-                  f'\ndata shape/type   : {str(shape)}/{dtype}' \
-                  f'\ncompression/level : {cname}/{clevel}' \
-                  f'\nchunk shape       : {chunkshape}'
+    output_text = f'\nzarr root  : {zarr_path}' \
+                  f'\ngroup         └ {group}({name})' \
+                  f'\narray shape       = {str(shape)}' \
+                  f'\nchunk shape       = {chunkshape}' \
+                  f'\ndata type         = {dtype}' \
+                  f'\ncompression/level = {cname}/{clevel}'
+
 
     logger.info(output_text)
 

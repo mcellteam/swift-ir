@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_thumbnails():
-    logger.critical('Generating Thumbnails...')
+    logger.info('Generating Thumbnails...')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
     # Todo: If the smallest s happens to be less that thumbnail size, just copy smallest s for thumbnails
@@ -54,6 +54,7 @@ def generate_thumbnails():
     for i, layer in enumerate(it):
         fn = os.path.abspath(layer['images']['base']['filename'])
         ofn = os.path.join(od, os.path.split(fn)[1])
+        cfg.data['data']['thumbnails'].append(ofn)
         scale_arg = '+%d' % scale_val
         of_arg = 'of=%s' % ofn
         if_arg = '%s' % fn
@@ -66,5 +67,5 @@ def generate_thumbnails():
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
 
-    logger.info('<<<< Generate Thumbnails End <<<<')
+    logger.info('Thumbnail Generation Complete')
 
