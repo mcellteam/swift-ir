@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 Z_STRIDE = 1
 
 def generate_zarr_scales():
-    logger.critical('Generating Scaled Zarr Arrays....')
+    logger.info('Generating Scaled Zarr Arrays...')
     # Todo conditional handling of skips
 
     dest = cfg.data.dest()

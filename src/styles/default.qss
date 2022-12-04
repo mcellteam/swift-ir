@@ -13,7 +13,7 @@ border-width: 0px;
 
 QTabWidget#main_tab_widget{
     /*background-color: #ffed8a;*/
-    color: #141414;
+    color: #1B1E23;
 }
 
 

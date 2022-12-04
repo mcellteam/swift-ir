@@ -79,18 +79,17 @@ class TaskQueue(QObject):
             mpl.setLevel(logging.DEBUG)
         # else:
         #     mpl.setLevel(logging.INFO)
-        logger.critical('Starting Task Queue [%s]...' % self.pbar_text)
+
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.task_dict = {}
         self.task_id = 0
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
-
-        logger.info('Starting Task Queue (# tasks: %d, method: %s)' % (self.n_tasks, self.ctx.get_start_method()))
-        logger.info(self.pbar_text)
-        cfg.main_window.hud.post('Workers (%d) Are Processing Tasks (%d): %s' % (self.n_workers, self.n_tasks, self.pbar_text))
-        logger.info('Workers (%d) Are Processing Tasks (%d): %s' % (self.n_workers, self.n_tasks, self.pbar_text))
+        logger.critical(f'Starting Task Queue: {self.pbar_text}...')
+        cfg.main_window.hud.post(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks: {self.pbar_text}')
+        logger.info(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks...')
+        logger.info(f'start method: {self.ctx.get_start_method()}')
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
@@ -222,12 +221,12 @@ class TaskQueue(QObject):
             if n_pending == 0:
                 logger.info('Failed Tasks      : %d' % n_pending)
                 logger.info('Retries           : %d' % (retries_tot - 1))
-                logger.info('Complete')
+                logger.info('══════ Complete ══════')
             else:
                 logger.error('Something Went Wrong')
                 logger.error('Failed Tasks     : %d' % n_pending)
                 logger.error('Retries          : %d' % (retries_tot - 1))
-                logger.error('Complete')
+                logger.error('══════ Complete ══════')
         except:
             print_exception()
         finally:

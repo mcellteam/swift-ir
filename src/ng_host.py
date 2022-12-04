@@ -14,6 +14,7 @@ cfg.main_window.ng_workers['scale_4'].refLV.info()
 
 import os
 import copy
+import pprint
 import shutil
 import atexit
 import inspect
@@ -62,6 +63,7 @@ class NgHost(QRunnable):
 
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
+        self._layer = None
         # self.viewer = ng.Viewer()
         self.viewer_url = None
         self.ref_pts = []
@@ -148,7 +150,6 @@ class NgHost(QRunnable):
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
-        logger.info('Initializing viewer...')
         self.viewer = ng.Viewer()
         self.viewer_url = str(self.viewer)
         image_size = cfg.data.image_size()
@@ -179,8 +180,8 @@ class NgHost(QRunnable):
         if matchpoint != None:
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
-        logger.critical('Initializing Viewer, %s (%s, matchpoint: %s)...'
-                        % (cfg.data.scale_pretty(s=self.scale), caller, self.mp_mode))
+        # logger.info('Initializing Viewer, %s (%s, matchpoint: %s)...' % (cfg.data.scale_pretty(s=self.scale), caller, self.mp_mode))
+        logger.info(f'Initializing Neuroglancer Client Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
         # FORCE
@@ -291,7 +292,8 @@ class NgHost(QRunnable):
                 # )
                 self.unal_dataset = get_zarr_tensor(self.unal_name).result()
                 self.json_unal_dataset = self.unal_dataset.spec().to_json()
-                logger.info(self.json_unal_dataset)
+                pprint.pprint(self.json_unal_dataset)
+                # logger.info(self.json_unal_dataset)
                 self.refLV = ng.LocalVolume(
                     data=self.unal_dataset,
                     dimensions=self.coordinate_space,
@@ -305,7 +307,8 @@ class NgHost(QRunnable):
                 if is_aligned:
                     self.al_dataset = get_zarr_tensor(self.al_name).result()
                     self.json_al_dataset = self.al_dataset.spec().to_json()
-                    logger.info(self.json_al_dataset)
+                    pprint.pprint(self.json_al_dataset)
+                    # logger.info(self.json_al_dataset)
                     self.alLV = ng.LocalVolume(
                         data=self.al_dataset,
                         dimensions=self.coordinate_space,
@@ -463,6 +466,8 @@ class NgHost(QRunnable):
         if cfg.USE_NG_WEBDRIVER:
             self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
+        self._layer = self.request_layer()
+
             # s.viewer_size = [1000,1000]
 
         # cfg.main_window.hud.done()
@@ -484,14 +489,16 @@ class NgHost(QRunnable):
     def on_state_changed(self):
         try:
             request_layer = floor(self.viewer.state.position[0])
-            # logger.info(f'\nState changed, request_layer: {request_layer}, cfg.data.layer(): {cfg.data.layer()}')
-            project_dict_layer = cfg.data.layer()  # 1110-
-            if not -1 < request_layer <= cfg.data.n_layers():
-                logger.warning(f'Bad layer index requested ({request_layer}) - Canceling Signal!')
-
-            if request_layer == project_dict_layer:  # 1110-
+            if request_layer == self._layer:
                 logger.debug('State Changed, But Layer Is The Same -> Suppressing The Callback Signal')
                 return
+            else:
+                self._layer = request_layer
+
+            # logger.info(f'\nState changed, request_layer: {request_layer}, cfg.data.layer(): {cfg.data.layer()}')
+            # if not -1 < request_layer < cfg.data.n_layers():
+            #     logger.warning(f'Bad layer index requested ({request_layer}) - Canceling Signal!')
+
             self.signals.stateChanged.emit(request_layer)
             if self.mp_mode:
                 self.clear_mp_buffer()

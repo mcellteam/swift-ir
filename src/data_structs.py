@@ -19,6 +19,7 @@ data_struct = \
                 "base",
                 "aligned"
             ],
+            "thumbnails": [],
             "scales": {
                 "scale_1": {
                     "method_data": {
