@@ -5,15 +5,54 @@ Colors:
 #DAEBFE - off-white blue
 */
 
-QTextBrowser#external_link {
-background-color: transparent;
-border-width: 0px;
 
+QTabBar::tab {
+	height: 20px;
 }
 
 QTabWidget#main_tab_widget{
     /*background-color: #ffed8a;*/
     color: #1B1E23;
+    font-size: 12px;
+}
+
+
+QSlider,
+QSlider:active,
+QSlider:!active {
+	border: none;
+	background-color: transparent;
+}
+
+QSlider::groove:horizontal {
+	height: 12px;
+}
+
+QSlider::groove:vertical {
+	width: 12px;
+}
+
+QSlider::handle:horizontal,
+QSlider::handle:vertical {
+	background-color: #db1c49;
+	border: 1px solid #db1c49;
+	width: 10px;
+	height: 15px;
+	border-radius: 8px;
+}
+
+QSlider::handle:horizontal:hover,
+QSlider::handle:vertical:hover,
+QSlider::handle:horizontal:pressed,
+QSlider::handle:vertical:pressed {
+	border: 1px solid #A21538;
+	background-color: #A21538;
+}
+
+QTextBrowser#external_hyperlink {
+background-color: transparent;
+border-width: 0px;
+
 }
 
 
@@ -26,6 +65,7 @@ QMainWindow#mainwindow{
 
 QToolBar#toolbar {
     background-color: #141414;
+    margin: 1px 1px 1px 1px;
 }
 
 QWidget#browser_overlay_widget {
@@ -39,7 +79,7 @@ QWidget#hud {
     border-style: inset;
     border-color: #d3dae3;     /* light off-white */
     border-width: 0px;
-    border-radius: 1px;
+    border-radius: 2px;
 }
 
 QLabel#toolbar_layer_label { color: #F3F6FB; }
@@ -48,10 +88,7 @@ QLabel#toolbar_scale_label { color: #F3F6FB; }
 QLabel#align_label_resolution { color: #F3F6FB; }
 QLabel#extra_header_text_label { color: #F3F6FB; }
 
-QWidget#show_hide_main_features_widget {
-background-color: #141414;
-border-radius: 4px;
-}
+
 
 /* These should be the same */
 QStackedWidget#ImagePanel { background-color: #1B1E23;  }
@@ -119,8 +156,8 @@ QListWidget#historyListWidget {
 
 QTextEdit#afm_widget {
     /*background: transparent;*/
-    background-color: #DAEBFE;
-    font-size: 11px;
+    background-color: #f3f6fb;
+    font-size: 10px;
 }
 
 

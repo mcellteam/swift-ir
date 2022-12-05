@@ -1,4 +1,10 @@
 
+
+
+QTabWidget#main_tab_widget{
+    font-size: 12px;
+}
+
 QTextBrowser#external_link {
 background-color: transparent;
 border-width: 0px;
@@ -28,17 +34,17 @@ QLabel#browser_overlay_label {
 }
 
 QTextEdit#matchpoint_text_prompt {
-	background-color: transparent;
+	background-color: #6D7D77;
 	font-size: 13px;
 }
 
 QTextEdit#main_details_subwidgetA {
-    background: transparent;
-    color: #1B1E23;
+    background-color: #6D7D77;
+    color: #F3F6FB;
     font-size: 11px;
 }
 QTextEdit#main_details_subwidgetB {
-    background: transparent;
+    background-color: #6D7D77;
     color: #1B1E23;
     font-size: 11px;
 }
@@ -48,11 +54,11 @@ QTextEdit#afm_widget {
 }
 
 QTextEdit#matchpoint_text_prompt {
-	background-color: transparent;
+	background-color: #6D7D77;
 }
 
 QTextEdit#matchpoint_text_snr {
-	background-color: transparent;
+	background-color: #6D7D77;
 }
 
 QTreeView#projectdata_treeview {
@@ -109,6 +115,7 @@ QTabWidget::pane {
 }
 
 QTabBar::tab {
+    height: 22px;
  	background-color:rgb(0, 0, 0);
  	border-style: outset;
 	border-width: 1px;

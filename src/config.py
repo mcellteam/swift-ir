@@ -13,7 +13,7 @@ opengllogger = None
 selected = None
 
 '''Default Window Size'''
-WIDTH, HEIGHT = 1180, 800
+WIDTH, HEIGHT = 1180, 780
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
