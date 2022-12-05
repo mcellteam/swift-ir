@@ -34,7 +34,7 @@ class SnrPlot(pg.PlotWidget):
         self.getAxis("left").setStyle(tickTextOffset=2)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
         self.setLabel('left', 'SNR', **style)
-        # self.setLabel('bottom', 'Layer #', **style)
+        self.setLabel('bottom', 'Layer', **style)
 
         self.setCursor(Qt.CrossCursor)
 

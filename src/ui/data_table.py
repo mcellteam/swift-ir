@@ -65,7 +65,7 @@ class DataTable(QMainWindow):
             self.table_widget.setModel(my_pandas_model)
             self.table_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
             self.selection_model = self.table_widget.selectionModel()
-            # This line connects  'self.selected_rows_changed' method/function (Slot)
+            # This line connects  'self.selectionChanged' method/function (Slot)
             # to 'self.selection_model.selectionChanged' (Signal)
             self.selection_model.selectionChanged.connect(self.selected_rows_changed)
         else:
@@ -194,7 +194,7 @@ class DataTable(QMainWindow):
 
 
 class PandasModel(QAbstractTableModel):
-    """A previewmodel to interface a Qt table_widget with pandas dataframe.
+    """A previewmodel to interface a Qt table_view with pandas dataframe.
     Adapted from Qt Documentation Example:
     https://doc.qt.io/qtforpython/examples/example_external__pandas.html"""
     def __init__(self, dataframe: pd.DataFrame, parent=None):

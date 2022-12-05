@@ -10,6 +10,14 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
+QTabBar::tab {
+	height: 20px;
+}
+
+QTabWidget#main_tab_widget{
+    font-size: 12px;
+}
+
 QTextBrowser#external_link {
 background-color: transparent;
 border-width: 0px;

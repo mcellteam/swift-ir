@@ -6,6 +6,14 @@ Colors:
 #6D7D77 - blue smoke, green blue
 */
 
+QTabBar::tab {
+	height: 20px;
+}
+
+QTabWidget#main_tab_widget{
+    font-size: 12px;
+}
+
 QTextBrowser#external_link {
 background-color: transparent;
 border-width: 0px;

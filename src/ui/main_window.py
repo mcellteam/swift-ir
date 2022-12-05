@@ -146,43 +146,6 @@ class MainWindow(QMainWindow):
             self.onStartProject()
 
 
-    def initOverviewPanel(self):
-        logger.info('')
-        preview = namedtuple("preview", "id title image")
-
-        self.previewmodel = PreviewModel()
-
-        self.thumbnails = {}
-        self.thumbnail_items = {}
-        for n, fn in enumerate(cfg.data.thumbnails()):
-            thumbnail = QImage(fn)
-            self.thumbnails[fn] = QImage(fn)
-            # self.thumbnails[n].setText('filename', fn) # key, value
-            # self.thumbnails[n].save()
-            # item = preview(n, fn, self.thumbnails[fn])
-            # item = preview(n, fn, thumbnail)
-            self.thumbnail_items[n] = preview(n, fn, thumbnail)
-            self.previewmodel.previews.append(self.thumbnail_items[n])
-        self.previewmodel.layoutChanged.emit()
-
-        delegate = PreviewDelegate()
-        self.thumbnail_table.setItemDelegate(delegate)
-        # self.thumbnail_table.setItemDelegateForColumn(1, ThumbnailDelegate())
-
-        # # df = pd.DataFrame(zip(cfg.data.snr_list(), self.thumbnail_items))
-        # df = pd.DataFrame(zip(self.thumbnails, cfg.data.snr_list()))
-        # self.pandasmodel = PandasModel(dataframe=df)
-
-        # self.thumbnail_table.setModel(self.pandasmodel)
-        self.thumbnail_table.setModel(self.previewmodel)
-        # self.generaltabelmodel = GeneralTableModel(self.thumbnail_items)
-        # self.thumbnail_table.setModel(self.generaltabelmodel)
-
-        # self.thumbnail_table.resizeRowsToContents() #1203-
-        # self.thumbnail_table.resizeColumnsToContents() #1203-
-
-
-
     def initThreadpool(self, timeout=3000):
         logger.info('')
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
@@ -1395,29 +1358,31 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def jump_to(self, requested) -> None:
-        if requested not in range(cfg.data.n_layers()):
-            logger.warning('Requested layer is not a valid layer')
-            return
-        # logger.info('Jumping To Layer %d' % requested)
-        state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
-        state.position[0] = requested
-        self.ng_workers[cfg.data.scale()].viewer.set_state(state)
-        self.dataUpdateWidgets()
-        self.refreshNeuroglancerURL()
+        if cfg.data:
+            if requested not in range(cfg.data.n_layers()):
+                logger.warning('Requested layer is not a valid layer')
+                return
+            # logger.info('Jumping To Layer %d' % requested)
+            state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
+            state.position[0] = requested
+            self.ng_workers[cfg.data.scale()].viewer.set_state(state)
+            self.dataUpdateWidgets()
+            self.refreshNeuroglancerURL()
 
 
     @Slot()
     def jump_to_layer(self) -> None:
-        requested = int(self.toolbar_jump_input.text())
-        if requested not in range(cfg.data.n_layers()):
-            logger.warning('Requested layer is not a valid layer')
-            return
-        logger.info('Jumping To Layer %d' % requested)
-        state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
-        state.position[0] = requested
-        self.ng_workers[cfg.data.scale()].viewer.set_state(state)
-        self.dataUpdateWidgets()
-        self.refreshNeuroglancerURL()
+        if cfg.data:
+            requested = int(self.toolbar_jump_input.text())
+            if requested not in range(cfg.data.n_layers()):
+                logger.warning('Requested layer is not a valid layer')
+                return
+            logger.info('Jumping To Layer %d' % requested)
+            state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
+            state.position[0] = requested
+            self.ng_workers[cfg.data.scale()].viewer.set_state(state)
+            self.dataUpdateWidgets()
+            self.refreshNeuroglancerURL()
 
 
     def jump_to_worst_snr(self) -> None:
@@ -1734,6 +1699,7 @@ class MainWindow(QMainWindow):
         cfg.data.aligned_scales = get_aligned_scales()
         cfg.data.naligned = len(cfg.data.aligned_scales)
         cfg.data.nscales = len(cfg.data.scales())
+        cfg.data.nlayers = cfg.data.n_layers()
         self._scales_combobox_switch = 0
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.dataUpdateWidgets()
@@ -1749,7 +1715,6 @@ class MainWindow(QMainWindow):
         self.initSnrPlot()
         self.showScoreboardWidegts()
         self.updateLowLowWidgetB()
-        self.initOverviewPanel()
         self.ng_workers = dict.fromkeys(cfg.data.scales())
         # self.initNgServer(scales=cfg.data.scales())
         self._scales_combobox_switch = 1
@@ -1831,7 +1796,6 @@ class MainWindow(QMainWindow):
         finally:
             self.onStartProject()
             self.set_idle()
-
 
 
     def save_project(self):
@@ -2426,8 +2390,8 @@ class MainWindow(QMainWindow):
             logger.info(f'skip state: {skip_state}')
 
     def updateOverview(self):
-        selected_indexes = self.layer_view_widget.table_widget.selectedIndexes()
-        # self.layer_view_widget.table_widget.set
+        selected_indexes = self.layer_view_widget.table_view.selectedIndexes()
+        # self.layer_view_widget.table_view.set
 
 
 
@@ -2580,6 +2544,7 @@ class MainWindow(QMainWindow):
     def initToolbar(self):
         logger.info('')
         self.toolbar = QToolBar()
+        # self.toolbar.setFixedHeight(50)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
@@ -2639,10 +2604,7 @@ class MainWindow(QMainWindow):
         self.toolbar_text_widget.setLayout(self.toolbar_text_layout)
         self.toolbar.addWidget(self.toolbar_text_widget)
 
-        std_height = int(22)
-        std_width = int(96)
-        std_button_size = QSize(std_width, std_height)
-        std_input_size = int(46)
+        height = int(18) #was 22
 
         tip = 'Jump To Image #'
         self.toolbar_layer_label = QLabel('Layer #: ')
@@ -2651,7 +2613,7 @@ class MainWindow(QMainWindow):
         self.toolbar_jump_input.setFocusPolicy(Qt.ClickFocus)
         self.toolbar_jump_input.setStatusTip(tip)
         self.toolbar_jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self.toolbar_jump_input.setFixedSize(std_input_size, std_height)
+        self.toolbar_jump_input.setFixedSize(QSize(46,height))
         self.toolbar_jump_input.returnPressed.connect(lambda: self.jump_to_layer())
         self.toolbar_layer_hlayout = QHBoxLayout()
         self.toolbar_layer_hlayout.addWidget(self.toolbar_layer_label, alignment=Qt.AlignmentFlag.AlignRight)
@@ -2664,7 +2626,7 @@ class MainWindow(QMainWindow):
         self.toolbar_layout_label.setObjectName('toolbar_layout_label')
         self.toolbar_layout_combobox = QComboBox()
         self.toolbar_layout_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.toolbar_layout_combobox.setFixedSize(QSize(76, std_height))
+        self.toolbar_layout_combobox.setFixedSize(QSize(68, height))
         self.toolbar_view_hlayout = QHBoxLayout()
         self.toolbar_view_hlayout.addWidget(self.toolbar_layout_label, alignment=Qt.AlignmentFlag.AlignRight)
         self.toolbar_view_hlayout.addWidget(self.toolbar_layout_combobox)
@@ -2676,7 +2638,7 @@ class MainWindow(QMainWindow):
         self.toolbar_scale_label.setObjectName('toolbar_scale_label')
         self.toolbar_scale_combobox = QComboBox(self)
         self.toolbar_scale_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.toolbar_scale_combobox.setFixedSize(std_button_size)
+        self.toolbar_scale_combobox.setFixedSize(QSize(82, height))
         self.toolbar_scale_combobox.currentTextChanged.connect(self.fn_scales_combobox)
         self.toolbar_scale_hlayout = QHBoxLayout()
         self.toolbar_scale_hlayout.addWidget(self.toolbar_scale_label)
@@ -2691,7 +2653,7 @@ class MainWindow(QMainWindow):
         self.info_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.info_button.setStatusTip(tip)
         self.info_button.clicked.connect(self.html_keyboard_commands)
-        self.info_button.setFixedSize(std_height, std_height)
+        self.info_button.setFixedSize(height, height)
         self.info_button.setIcon(qta.icon("fa.info", color=cfg.ICON_COLOR))
 
         self.toolbar.addWidget(self.info_button)
@@ -3544,7 +3506,6 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.addWidget(self.historyview_widget)
 
         self.external_hyperlink = QTextBrowser()
-        self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
         self.external_hyperlink.setObjectName('external_hyperlink')
         self.external_hyperlink.setMaximumHeight(24)
         self.external_hyperlink.setAcceptRichText(True)
@@ -3553,7 +3514,6 @@ class MainWindow(QMainWindow):
 
         self.layer_view_container = QWidget()
         self.layer_view_container_layout = QVBoxLayout()
-        self.layer_view_container_layout.setContentsMargins(0,0,0,0)
         self.layer_view_container.setLayout(self.layer_view_container_layout)
 
         self.layer_view_widget = LayerViewWidget()
@@ -3980,7 +3940,9 @@ class MainWindow(QMainWindow):
         self.main_details_subwidgetA.setContentsMargins(0, 0, 0, 0)
         self.main_details_subwidgetB.setContentsMargins(0, 0, 0, 0)
         self.new_main_widget_vlayout.setContentsMargins(0, 0, 0, 0)
-        self.show_hide_main_features_vlayout.setContentsMargins(4, 4, 4, 10)
+        self.show_hide_main_features_vlayout.setContentsMargins(0, 0, 0, 0)
+        # self.show_hide_main_features_vlayout.setContentsMargins(4, 4, 4, 10)
+        # self.show_hide_main_features_vlayout.setContentsMargins(2, 2, 2, 2)
         self.ng_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_panel_controls_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_browser_layout.setContentsMargins(0, 0, 0, 0)
@@ -3992,17 +3954,24 @@ class MainWindow(QMainWindow):
         self.toggle_bounding_hlayout.setContentsMargins(0, 0, 0, 0)
         self.new_control_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.full_window_controls_hlayout.setContentsMargins(8, 0, 8, 0)
-        self.new_control_panel.setContentsMargins(8, 4, 8, 4)
-        self.projectdata_treeview.setContentsMargins(8, 4, 8, 4)
+        self.new_control_panel.setContentsMargins(8, 2, 8, 2)
+        self.projectdata_treeview.setContentsMargins(6, 4, 6, 4)
         if cfg.USE_JUPYTER:
             self.python_console.setContentsMargins(8, 4, 8, 4)
-        self.low_low_gridlayout.setContentsMargins(8, 4, 8, 4)
+        self.low_low_gridlayout.setContentsMargins(8, 0, 8, 0)
         self.pbar_layout.setContentsMargins(0, 0, 0, 0)
+        self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)
+        self.toolbar_scale_hlayout.setContentsMargins(4, 0, 4, 0)
+        self.toolbar_view_hlayout.setContentsMargins(4, 0, 4, 0)
+        self.toolbar_text_layout.setContentsMargins(0, 0, 0, 0)
+        self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
+        self.layer_view_container_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.pbar.setFixedHeight(18)
-        self.show_hide_main_features_vlayout.setSpacing(4)
-        self.show_hide_main_features_widget.setMaximumHeight(80)
-        self.low_low_widget.setMaximumHeight(100)
+        self.pbar.setFixedHeight(16)
+        self.pbar.setFont(QFont('Arial', 12))
+        self.show_hide_main_features_vlayout.setSpacing(0)
+        self.show_hide_main_features_widget.setMaximumHeight(78)
+        self.low_low_widget.setMaximumHeight(80)
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.main_details_subwidgetA.setMinimumWidth(128)
         self.main_details_subwidgetB.setMinimumWidth(128)

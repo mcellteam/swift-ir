@@ -187,7 +187,7 @@ class HeadupDisplay(QWidget):
             background-color:  #FBFAF0;
             /*border-style: solid;*/
             border-style: inset;
-            border-color: #171d22;
+            border-color: #d3dae3;
             /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
             /*border-color: #d3dae3;*/     /* light off-white */
             border-width: 2px;
