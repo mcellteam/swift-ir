@@ -1086,6 +1086,7 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         s = cfg.data.scale()
+        self.shutdownNeuroglancer()
         # self.shutdownNeuroglancer() #1203+
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
@@ -2122,8 +2123,7 @@ class MainWindow(QMainWindow):
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
-
-        self.shutdownNeuroglancer()
+        # self.shutdownNeuroglancer()
         try:
             for s in scales:
                 self.hud.post(f'Starting Neuroglancer Worker, {cfg.data.scale_pretty(s=s)}...')
@@ -2132,10 +2132,10 @@ class MainWindow(QMainWindow):
                 except:
                     mp_mode = False
                 # logger.info('Deleting Viewer for %s...' % s)
-                try:
-                    del self.ng_workers[s]
-                except:
-                    pass
+                # try:
+                #     del self.ng_workers[s]
+                # except:
+                #     pass
                 logger.debug('Launching NG Server for %s...' % s)
 
                 # is_aligned = is_arg_scale_aligned(s)
