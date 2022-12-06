@@ -288,6 +288,12 @@ class MainWindow(QMainWindow):
         self.show_hide_snr_plot_button.setText('SNR Plot')
 
 
+    def force_show_snr_plot(self):
+        self.snr_plot.show()
+        self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
+        self.show_hide_snr_plot_button.setText('Hide SNR Plot')
+
+
     def force_hide_project_treeview(self):
         self.projectdata_treeview.hide()
         self.projectdata_treeview_widget.hide()
@@ -449,6 +455,7 @@ class MainWindow(QMainWindow):
         # self.initNgServer() #1203-
         self.updateHistoryListWidget(s=s)
         self.snr_plot.initSnrPlot()
+        self.force_show_snr_plot()
         self.dataUpdateWidgets()
         self.updateBanner()
         self.updateEnabledButtons()
@@ -1166,8 +1173,7 @@ class MainWindow(QMainWindow):
             self.browser_overlay_label.hide()
 
         self.updateTextWidgetA()
-        if is_cur_scale_aligned():
-            self.updateAffineWidget()
+        self.updateAffineWidget()
 
         # logger.info(f'Updating, Current Layer {cfg.data.layer()}...')
         try:     self.toggle_skip.setChecked(cfg.data.skipped())
@@ -1192,7 +1198,7 @@ class MainWindow(QMainWindow):
         if l == None: l = cfg.data.layer()
         name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
         skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
-        completed = "<b style='color: #212121;font-size:12px;'>Scales Aligned: (%d/%d)</b><br>" % \
+        completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
                     (cfg.data.naligned, cfg.data.nscales)
         if is_cur_scale_aligned():
             if cfg.data.has_bb(s=s):
@@ -1200,8 +1206,8 @@ class MainWindow(QMainWindow):
                 dims = [bb[2], bb[3]]
             else:
                 dims = cfg.data.image_size(s=s)
-            bb_dims = "<b style='color: #212121;font-size:12px;'>Bounds: %dx%dpx</b><br>" % (dims[0], dims[1])
-            snr = "<b style='color:#212121; font-size=10px;'>%s</b><br>" % cfg.data.snr_report(s=s, l=l)
+            bb_dims = "<b style='color: #212121;font-size:11px;'>Bounds: %dx%dpx</b><br>" % (dims[0], dims[1])
+            snr = "<b style='color:#212121; font-size:11px;'>%s</b><br>" % cfg.data.snr_report(s=s, l=l)
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
@@ -1702,6 +1708,8 @@ class MainWindow(QMainWindow):
         self.updateBanner()
         self.snr_plot.wipePlot()
         self.snr_plot.initSnrPlot()
+        if is_cur_scale_aligned():
+            self.force_show_snr_plot()
         self.showScoreboardWidegts()
         self.updateLowLowWidgetB()
         self.ng_workers = dict.fromkeys(cfg.data.scales())
@@ -2252,7 +2260,7 @@ class MainWindow(QMainWindow):
                     url = self.ng_workers[s].viewer.get_viewer_url()
                     # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
                     self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
-                    logger.critical(f"\n\n{cfg.data.scale_pretty(s=s)} URL:\n{url}\n")
+                    logger.info(f"{cfg.data.scale_pretty(s=s)}\nURL:  {url}\n")
                 except:
                     logger.warning('No URL to show')
             else:
@@ -2348,10 +2356,10 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if inspect.stack()[1].function == 'dataUpdateWidgets': return
             if state:
-                self.hud.post('Bounding Box is ON. Warning: Dimensions may grow larger than the original images.')
+                self.hud.post('Bounding Box is ON. Warning: Image dimensions may grow large.')
                 cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
             else:
-                self.hud.post('Bounding Box is OFF (faster). Dimensions will equal the original images.')
+                self.hud.post('Bounding Box is OFF. Image dimensions will not change.')
                 cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
 
 
@@ -2638,8 +2646,9 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.toolbar_scale_widget)
 
         tip = 'Show Neuroglancer key bindings'
-        self.info_button = QLabel('')
+        self.info_button_buffer_label = QLabel(' ')
         self.info_button = QPushButton()
+        self.info_button.setContentsMargins(4, 0, 4, 0)
         self.info_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.info_button.setStatusTip(tip)
         self.info_button.clicked.connect(self.html_keyboard_commands)
@@ -2647,6 +2656,7 @@ class MainWindow(QMainWindow):
         self.info_button.setIcon(qta.icon("fa.info", color=cfg.ICON_COLOR))
 
         self.toolbar.addWidget(self.info_button)
+        self.toolbar.addWidget(self.info_button_buffer_label)
 
 
     def updateStatusTips(self):
@@ -3078,7 +3088,7 @@ class MainWindow(QMainWindow):
         self.tracemallocClearAction.triggered.connect(tracemalloc_clear)
         tracemallocMenu.addAction(self.tracemallocClearAction)
 
-        self.detailsWebglAction = QAction('Web GL Configuration', self)
+        self.detailsWebglAction = QAction('Web GL Test', self)
         self.detailsWebglAction.triggered.connect(self.webgl2_test)
         debugMenu.addAction(self.detailsWebglAction)
 
@@ -3347,7 +3357,7 @@ class MainWindow(QMainWindow):
         self.regenerate_button.setStyleSheet("font-size: 10px;")
 
         self.new_control_panel = QWidget()
-        self.new_control_panel.setFixedHeight(40)
+        self.new_control_panel.setFixedHeight(36)
         self.new_control_panel_layout = QHBoxLayout()
         self.new_control_panel_layout.addStretch()
         self.new_control_panel_layout.addLayout(self.skip_layout)
@@ -3405,9 +3415,6 @@ class MainWindow(QMainWindow):
         self.afm_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.afm_widget.setObjectName('afm_widget')
         self.afm_widget.setReadOnly(True)
-
-        '''SNR Plot & Controls'''
-        self.snr_plot = SnrPlot()
 
         '''Neuroglancer Controls'''
         self.reload_ng_button = QPushButton("Reload")
@@ -3585,8 +3592,18 @@ class MainWindow(QMainWindow):
         self.refresh_project_view_button.clicked.connect(self.updateJsonWidget)
         self.projectdata_treeview_widget = QWidget()
         self.projectdata_treeview_layout = QHBoxLayout()
-        self.projectdata_treeview_widget.setLayout(self.projectdata_treeview_layout)
         self.projectdata_treeview_layout.addWidget(self.projectdata_treeview)
+        self.projectdata_treeview_widget.setLayout(self.projectdata_treeview_layout)
+
+        '''SNR Plot & Controls'''
+        self.snr_plot = SnrPlot()
+
+        self.hud_and_plot_splitter = QSplitter()
+        self.hud_and_plot_splitter.setHandleWidth(1)
+
+        self.hud_and_plot_splitter.addWidget(self.hud)
+        self.hud_and_plot_splitter.addWidget(self.snr_plot)
+        self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
 
         '''Show/Hide Primary Tools Buttons'''
         show_hide_button_sizes = QSize(normal_button_width + 32, 18)
@@ -3646,10 +3663,11 @@ class MainWindow(QMainWindow):
         self.main_splitter = QSplitter(Qt.Orientation.Vertical)
         self.main_splitter.addWidget(self.main_tab_widget)
         self.main_splitter.addWidget(self.new_control_panel)
-        self.main_splitter.addWidget(self.hud)
-        self.main_splitter.addWidget(self.snr_plot)
+        self.main_splitter.addWidget(self.hud_and_plot_splitter)
+        # self.main_splitter.addWidget(self.hud)
+        # self.main_splitter.addWidget(self.snr_plot)
         self.main_splitter.addWidget(self.matchpoint_controls)
-        self.main_splitter.addWidget(self.projectdata_treeview_widget)
+        # self.main_splitter.addWidget(self.projectdata_treeview_widget)
         if cfg.USE_JUPYTER:
             self.main_splitter.addWidget(self.python_console)
         self.main_splitter.setHandleWidth(0)
@@ -3760,7 +3778,7 @@ class MainWindow(QMainWindow):
         self.main_panel_layout = QGridLayout()
         self.main_panel_layout.addWidget(self.new_main_widget, 1, 0, 1, 5)
         self.main_panel_layout.addWidget(self.full_window_controls, 2, 0, 1, 5)
-        # self.main_panel_layout.addWidget(self.pbar_container, 3, 0, 1, 5)
+        self.main_panel_layout.addWidget(self.pbar, 3, 0, 1, 5)
 
         self.thumbnail_table = QTableView()
         self.thumbnail_table.horizontalHeader().hide()
@@ -3932,19 +3950,16 @@ class MainWindow(QMainWindow):
         self.ng_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_panel_controls_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_browser_layout.setContentsMargins(0, 0, 0, 0)
-        self.hud.setContentsMargins(0, 0, 0, 0)
         self.whitening_grid.setContentsMargins(0, 0, 0, 0)
         self.swim_grid.setContentsMargins(0, 0, 0, 0)
         self.scale_ctrl_layout.setContentsMargins(0, 0, 0, 0)
         self.history_layout.setContentsMargins(0, 0, 0, 0)
         self.toggle_bounding_hlayout.setContentsMargins(0, 0, 0, 0)
         self.new_control_panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.full_window_controls_hlayout.setContentsMargins(8, 0, 8, 0)
-        self.new_control_panel.setContentsMargins(8, 2, 8, 2)
-        self.projectdata_treeview.setContentsMargins(6, 4, 6, 4)
+        self.full_window_controls_hlayout.setContentsMargins(4, 0, 4, 0)
         if cfg.USE_JUPYTER:
-            self.python_console.setContentsMargins(8, 4, 8, 4)
-        self.low_low_gridlayout.setContentsMargins(8, 0, 8, 0)
+            self.python_console.setContentsMargins(4, 2, 4, 2)
+        self.low_low_gridlayout.setContentsMargins(4, 0, 4, 0)
         # self.pbar_layout.setContentsMargins(0, 0, 0, 0)
         self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_scale_hlayout.setContentsMargins(4, 0, 4, 0)
@@ -3952,10 +3967,12 @@ class MainWindow(QMainWindow):
         self.toolbar_text_layout.setContentsMargins(0, 0, 0, 0)
         self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
         self.layer_view_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.projectdata_treeview_layout.setContentsMargins(0, 0, 2, 0)
+        self.hud.setContentsMargins(2, 0, 0, 0)
 
         self.show_hide_main_features_vlayout.setSpacing(0)
-        self.show_hide_main_features_widget.setMaximumHeight(70)
-        self.low_low_widget.setMaximumHeight(74)
+        self.show_hide_main_features_widget.setMaximumHeight(74)
+        self.low_low_widget.setMaximumHeight(78)
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.main_details_subwidgetA.setMinimumWidth(128)
         self.main_details_subwidgetB.setMinimumWidth(128)
@@ -3969,7 +3986,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         # logger.info('')
         self.statusBar = self.statusBar()
-        self.statusBar.setFixedHeight(18)
+        self.statusBar.setFixedHeight(20)
         # self.statusBar = QStatusBar()
         # self.pbar = QProgressBar(self)
         self.pbar = QProgressBar()

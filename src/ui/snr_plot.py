@@ -10,7 +10,7 @@ import logging
 import pyqtgraph as pg
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
 from qtpy.QtGui import QFont
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QSize
 
 from src.helpers import print_exception, is_arg_scale_aligned, get_scale_val
 
@@ -23,7 +23,6 @@ class SnrPlot(QWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
         self.plot = pg.PlotWidget()
         self.plot.setAntialiasing(False)
         # pg.setConfigOptions(antialias=True)
@@ -47,9 +46,9 @@ class SnrPlot(QWidget):
         font.setPixelSize(14)
         self.plot.getAxis("bottom").tickFont = font
         self.plot.getAxis("bottom").setStyle(tickFont=font)
-        self.plot.getAxis("bottom").setHeight(18)
+        self.plot.getAxis("bottom").setHeight(24)
         self.plot.getAxis("left").setStyle(tickFont=font)
-        self.plot.getAxis("left").setWidth(36)
+        self.plot.getAxis("left").setWidth(28)
         self.plot.getAxis("left").setStyle(tickTextOffset=2)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
         self.plot.setLabel('left', 'SNR', **style)
@@ -65,7 +64,7 @@ class SnrPlot(QWidget):
         self.layout = QGridLayout()
         self.layout.addWidget(self.plot, 0, 0, 1, 5)
         self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1)
-        self.layout.setContentsMargins(8, 2, 8, 2)
+        self.layout.setContentsMargins(4, 2, 4, 2)
         self.setLayout(self.layout)
         self.setAutoFillBackground(False)
 
@@ -140,12 +139,12 @@ class SnrPlot(QWidget):
             hoverBrush=pg.mkBrush('#ffffff'),
             # pxMode=False # points transform with zoom
         )
-        self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], y_axis[1:])
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
         self.last_snr_click = []
         self.plot.addItem(self.snr_points)
+        self.snr_points.sigClicked.connect(self.onSnrClick)
 
 
     def wipePlot(self):
@@ -183,6 +182,9 @@ class SnrPlot(QWidget):
             p.setPen(clickedPen)
         self.last_snr_click = points
         cfg.main_window.jump_to(index)
+
+    def sizeHint(self):
+        return QSize(cfg.WIDTH / 2, 100)
 
 
 '''
