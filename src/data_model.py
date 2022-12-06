@@ -173,6 +173,42 @@ class DataModel:
             self.set_layer(0)
             return self._data['data']['current_layer']
 
+    # def snr(self) -> str:
+    #     '''TODO This probably shouldn't return a string'''
+    #     if not self._data['data']['current_scale']:
+    #         logger.warning("Can't Get SNR Because Scale is Not Set")
+    #         return ''
+    #     try:
+    #         s = self._data['data']['current_scale']
+    #         l = self._data['data']['current_layer']
+    #         if len(self._data['data']['scales']) > 0:
+    #             scale = self._data['data']['scales'][s]
+    #             if len(scale['alignment_stack']) > 0:
+    #                 layer = scale['alignment_stack'][l]
+    #                 if 'align_to_ref_method' in layer:
+    #                     if 'method_results' in layer['align_to_ref_method']:
+    #                         method_results = layer['align_to_ref_method']['method_results']
+    #                         if 'snr_report' in method_results:
+    #                             if method_results['snr_report'] != None:
+    #                                 curr_snr = method_results['snr_report']
+    #                                 logger.debug("  returning the current snr: %s" % str(curr_snr))
+    #                                 return str(curr_snr)
+    #     except:
+    #         logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
+    #
+    # def snr_list(self, s=None):
+    #     if s == None: s = self.scale()
+    #     snr_lst = []
+    #     for layer in self._data['data']['scales'][s]['alignment_stack']:
+    #         try:
+    #             snr_vals = layer['align_to_ref_method']['method_results']['snr']
+    #             mean_snr = sum(snr_vals) / len(snr_vals)
+    #             snr_lst.append(mean_snr)
+    #         except:
+    #             pass
+    #     return snr_lst
+
+
     def snr(self, s=None, l=None) -> float:
         '''TODO This probably shouldn't return a string'''
         if s == None: s = self.scale()
@@ -184,6 +220,38 @@ class DataModel:
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
+
+    def snr_list(self, s=None):
+        # logger.info('Caller: %s' % inspect.stack()[1].function)
+        if s == None: s = self.scale()
+        # n should be 16 for layers except for index 0 which equals [0.0]
+        try:
+            return [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
+        except:
+            print_exception()
+
+
+    def snr_max_all_scales(self):
+        max_snr = []
+        for i, scale in enumerate(self.aligned_scales):
+            if is_arg_scale_aligned(scale=scale):
+                try:
+                    max_snr.append(max(self.snr_list(s=scale)))
+                except:
+                    logger.warning('Unable to append maximum SNR, none found')
+        if max_snr != []:
+            return max(max_snr)
+        else:
+            return []
+
+
+    def snr_average(self, scale=None) -> float:
+        logger.info('caller: %s...' % inspect.stack()[1].function)
+        if scale == None: scale = cfg.data.scale()
+        # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
+        return statistics.fmean(self.snr_list(s=scale)[1:])
+
+
     def snr_report(self, s=None, l=None) -> str:
         '''TODO This probably shouldn't return a string'''
         if s == None: s = self.scale()
@@ -194,14 +262,7 @@ class DataModel:
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
-    def snr_list(self, s=None):
-        # logger.info('Caller: %s' % inspect.stack()[1].function)
-        if s == None: s = self.scale()
-        # n should be 16 for layers except for index 0 which equals [0.0]
-        try:
-            return [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
-        except:
-            print_exception()
+
 
     def print_all_matchpoints(self):
         logger.info('Match Points:')
@@ -662,6 +723,7 @@ class DataModel:
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
         assert isinstance(index, int)
+        logger.info(f'setting layer to {index}')
         self._data['data']['current_layer'] = index
 
     def set_skip(self, b: bool, s=None, l=None) -> None:
@@ -782,28 +844,11 @@ class DataModel:
             logger.warning('Setting Absolute Paths Triggered This Exception')
             print_exception()
 
-    def snr_max_all_scales(self):
-        max_snr = []
-        for i, scale in enumerate(self.aligned_scales):
-            if is_arg_scale_aligned(scale=scale):
-                try:
-                    max_snr.append(max(self.snr_list(s=scale)))
-                except:
-                    logger.warning('Unable to append maximum SNR, none found')
-        if max_snr != []:
-            return max(max_snr)
-        else:
-            return []
-
-    def snr_average(self, scale=None) -> float:
-        logger.info('caller: %s...' % inspect.stack()[1].function)
-        if scale == None: scale = cfg.data.scale()
-        # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
-        return statistics.fmean(self.snr_list(s=scale)[1:])
 
     def alstack(self, s=None) -> dict:
         if s == None: s = self.scale()
         return self._data['data']['scales'][s]['alignment_stack']
+
 
     def aligned_list(self) -> list[str]:
         '''Deprecate this

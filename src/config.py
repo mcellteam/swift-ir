@@ -13,7 +13,8 @@ opengllogger = None
 selected = None
 
 '''Default Window Size'''
-WIDTH, HEIGHT = 1180, 780
+# WIDTH, HEIGHT = 1180, 780
+WIDTH, HEIGHT = 1180, 720
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
@@ -41,7 +42,6 @@ DUMMY = False
 USE_TENSORSTORE = True
 USE_JUPYTER = True
 USE_TORNADO = True
-USE_NG_WEBDRIVER = False
 USE_EXTRA_THREADING = False
 FAULT_HANDLER = True
 HEADLESS = False

@@ -5,6 +5,25 @@ Colors:
 #DAEBFE - off-white blue
 */
 
+QTableView::item:hover
+{
+    color: #eeeeec;
+    background: #c4a000;
+}
+QTableView::item:selected {
+    color: #F4F4F4;
+    background: qlineargradient(y1:0,  y2:1, stop:0 #2a82da, stop:1 #1f3c5d);
+}
+QTableView QTableCornerButton::section {
+    background: transparent;
+    border: 0px outset black;
+}
+QHeaderView
+{
+color: #1B1E23;
+}
+
+
 
 QTabBar::tab {
 	height: 20px;
@@ -106,9 +125,10 @@ QCheckBox#toggle_skip {
 }
 
 
-/*TableView{background-color: transparent;}*/
+/* QTableView{background-color: #F3F6FB;} */
 
 QCheckBox {
+    color: #1B1E23;
 	spacing: 5px;
 	outline: none;
 	/*color: #f3f6fb;*/

@@ -157,7 +157,7 @@ def run_json_project(project,
             if s_tbd[i]['skipped'] or mr == {}:
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
-                mr['snr_report'] = [0.0]
+                mr['snr'] = [0.0]
                 mr['snr_report'] = 'SNR: --'
 
             # set alignment option
@@ -533,13 +533,13 @@ class alignment_process:
         self.setCafm(c_afm, bias_mat=None)  # returns new current cafm -jy
 
         # Retrieve alignment result
-        snr = self.recipe.ingredients[-1].snr_report
+        snr = self.recipe.ingredients[-1].snr
         snr_report = self.recipe.ingredients[-1].snr_report
         afm = self.recipe.ingredients[-1].afm
         c_afm = self.cumulative_afm
 
         # Put alignment results into layer_dict
-        atrm['method_results']['snr_report'] = list(snr)
+        atrm['method_results']['snr'] = list(snr)
         atrm['method_results']['snr_report'] = snr_report
         atrm['method_results']['affine_matrix'] = afm.tolist()
         atrm['method_results']['cumulative_afm'] = c_afm.tolist()
