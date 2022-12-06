@@ -122,7 +122,8 @@ class SnrPlot(QWidget):
                     if self._snr_checkboxes[scale].isChecked():
                         self.plotSingleScale(scale=scale)
             max_snr = cfg.data.snr_max_all_scales()
-            self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
+            logger.info(f'max_snr: {max_snr}')
+            self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr)
             # self.plot.autoRange()
 
 
