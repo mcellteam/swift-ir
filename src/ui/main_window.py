@@ -3599,7 +3599,7 @@ class MainWindow(QMainWindow):
         self.snr_plot = SnrPlot()
 
         self.hud_and_plot_splitter = QSplitter()
-        self.hud_and_plot_splitter.setHandleWidth(1)
+        self.hud_and_plot_splitter.setHandleWidth(0)
 
         self.hud_and_plot_splitter.addWidget(self.hud)
         self.hud_and_plot_splitter.addWidget(self.snr_plot)
