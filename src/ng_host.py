@@ -22,6 +22,10 @@ import logging
 import datetime
 import argparse
 import tempfile
+import asyncio
+import tornado
+import concurrent
+import threading
 from math import floor
 from decimal import Decimal
 from math import floor
@@ -100,6 +104,9 @@ class NgHost(QRunnable):
     def __del__(self):
         caller = inspect.stack()[1].function
         logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
+        # client.loop.run_until_complete(payload(client))
+        # for task in asyncio.Task.all_tasks(client.loop):
+        #     task.cancel()
 
     def __str__(self):
         return obj_to_string(self)
@@ -195,6 +202,10 @@ class NgHost(QRunnable):
 
         # self.viewer = ng.UnsynchronizedViewer()
         self.viewer = ng.Viewer()  # 1108+
+
+        tempdir = tempfile.mkdtemp()
+        self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+
         self.viewer_url = str(self.viewer)
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
@@ -673,7 +684,8 @@ class NgHost(QRunnable):
 
     def get_viewer_url(self):
         '''From extend_segments example'''
-        return self.viewer.get_viewer_url()
+        # return self.viewer.get_viewer_url()
+        return self.server_url
 
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(self.viewer.state))
@@ -682,6 +694,68 @@ class NgHost(QRunnable):
         logger.info(f'Selected Values:\n{s.selected_values}')
         logger.info(f'Current Layer:\n{self.viewer.state.position[0]}')
         logger.info(f'Viewer State:\n{self.viewer.state}')
+
+
+
+
+
+
+
+class CorsStaticFileHandler(tornado.web.StaticFileHandler):
+
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def options(self, *args):
+        self.set_status(204)
+        self.finish()
+
+
+def _start_server(bind_address: str, output_dir: str) -> int:
+
+    token = neuroglancer.random_token.make_random_token()
+    handlers = [
+        (fr'/{token}/(.*)', CorsStaticFileHandler, {
+            'path': output_dir
+        }),
+    ]
+    settings = {}
+    app = tornado.web.Application(handlers, settings=settings)
+
+    http_server = tornado.httpserver.HTTPServer(app)
+    sockets = tornado.netutil.bind_sockets(port=0, address=bind_address)
+    http_server.add_sockets(sockets)
+    actual_port = sockets[0].getsockname()[1]
+    url = neuroglancer.server._get_server_url(bind_address, actual_port)
+    return f'{url}/{token}'
+
+
+def launch_server(bind_address: str, output_dir: str) -> int:
+    server_url_future = concurrent.futures.Future()
+
+    def run_server():
+        try:
+            ioloop = tornado.platform.asyncio.AsyncIOLoop()
+            ioloop.make_current()
+            asyncio.set_event_loop(ioloop.asyncio_loop)
+            server_url_future.set_result(_start_server(bind_address, output_dir))
+        except Exception as e:
+            server_url_future.set_exception(e)
+            return
+        ioloop.start()
+        ioloop.close()
+
+    thread = threading.Thread(target=run_server)
+    thread.daemon = True
+    thread.start()
+    return server_url_future.result()
+
+
+
+
+
 
 
 if __name__ == '__main__':
