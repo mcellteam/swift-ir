@@ -292,7 +292,7 @@ class NgHost(QRunnable):
                 # )
                 self.unal_dataset = get_zarr_tensor(self.unal_name).result()
                 self.json_unal_dataset = self.unal_dataset.spec().to_json()
-                pprint.pprint(self.json_unal_dataset)
+                # pprint.pprint(self.json_unal_dataset)
                 # logger.info(self.json_unal_dataset)
                 self.refLV = ng.LocalVolume(
                     data=self.unal_dataset,
@@ -307,7 +307,7 @@ class NgHost(QRunnable):
                 if is_aligned:
                     self.al_dataset = get_zarr_tensor(self.al_name).result()
                     self.json_al_dataset = self.al_dataset.spec().to_json()
-                    pprint.pprint(self.json_al_dataset)
+                    # pprint.pprint(self.json_al_dataset)
                     # logger.info(self.json_al_dataset)
                     self.alLV = ng.LocalVolume(
                         data=self.al_dataset,
@@ -461,10 +461,6 @@ class NgHost(QRunnable):
                 s.show_panel_borders = True
             else:
                 s.show_panel_borders = False
-
-        # webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=False)
-        if cfg.USE_NG_WEBDRIVER:
-            self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
         self._layer = self.request_layer()
 

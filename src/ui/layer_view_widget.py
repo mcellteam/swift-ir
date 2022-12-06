@@ -8,7 +8,7 @@ import logging
 import pandas as pd
 from collections import namedtuple
 
-from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex, Signal
+from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex, Signal, QEvent
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTabWidget, QGridLayout, \
     QHBoxLayout, QFileDialog, QTableView, QErrorMessage, QGroupBox, QTextEdit, QSplitter, QStatusBar, \
     QAbstractItemView, QStyledItemDelegate, QItemDelegate, QSlider, QLabel
@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 class LayerViewWidget(QWidget):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent=None, *args, **kwargs):
         super(LayerViewWidget, self).__init__(*args, **kwargs)
-        # self.parent = parent
+        self.parent = parent
         self.layout = QGridLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
@@ -33,17 +33,13 @@ class LayerViewWidget(QWidget):
         self.INITIAL_ROW_HEIGHT = 50
         self.INITIAL_FONT_SIZE = 14
         self.table_view = QTableView()
-
         self.table_view.setFont(QFont('Arial', self.INITIAL_FONT_SIZE))
 
         self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.hheader = self.table_view.horizontalHeader()
         self.vheader = self.table_view.verticalHeader()
-        # delegate = ThumbnailDelegate()
-        # self.table_view.setItemDelegateForColumn(0, ThumbnailDelegate())
         self.table_view.horizontalHeader().setStretchLastSection(True)
         self.table_view.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-        # self.table_view.setAlternatingRowColors(True)
         self.table_view.setSelectionBehavior(QTableView.SelectRows)
 
         self.row_height_slider = Slider(min=4, max=100)
@@ -78,29 +74,36 @@ class LayerViewWidget(QWidget):
         self.controls_hlayout.addStretch()
         self.controls.setLayout(self.controls_hlayout)
 
-
         self.layout.addWidget(self.table_view, 0, 0)
         self.layout.addWidget(self.controls, 1, 0)
 
         # self.table_view.resizeRowsToContents()
-        self.table_view.resizeColumnsToContents()
+        # self.table_view.resizeColumnsToContents()
         # self.table_view.setColumnWidth(0, 68)
         # self.table_view.verticalHeader().setDefaultSectionSize(60)
-        # self.table_view.setColumnWidth(0, self.INITIAL_ROW_HEIGHT)
-
-        # self.updateRowHeight(self.INITIAL_ROW_HEIGHT)
+        self.table_view.setColumnWidth(0, self.INITIAL_ROW_HEIGHT)
+        self.table_view.setColumnWidth(2, 74)
+        self.table_view.setColumnWidth(3, 48)
+        self.table_view.setColumnWidth(4, 190)
 
         # cfg.main_window.layer_view_widget.table_view.setColumnWidth(0,
         #                                                             cfg.main_window.layer_view_widget.table_view.rowHeight(
         #                                                                 0))
 
+        self.thumbnail_delegate = ThumbnailDelegate()
+        self.table_view.setItemDelegateForColumn(0, self.thumbnail_delegate)
+
+
+    def selection(self):
+        '''Return Pandas Dataframe From Selection'''
+        return self._dataframe.iloc[self._selected_rows]
+
 
     @Slot()
     def set_data(self):
-        '''Get User File Selection Dialog
-        Note: This function is a 'Slot' function. It is connected
-        to the 'clicked' signal of the import_button'''
-        logger.info('Setting data..')
+        # logger.info('Setting Table Data..')
+        selection = self._selected_rows
+        # logger.info(f'selection: {selection}')
         is_aligned = is_cur_scale_aligned()
         scale = [cfg.data.scale_pretty()] * cfg.data.nlayers
 
@@ -115,7 +118,7 @@ class LayerViewWidget(QWidget):
             if is_aligned:
                 snr_report.append(l['align_to_ref_method']['method_results']['snr_report'])
 
-        buttons = ['buttons'] * cfg.data.nlayers
+        # buttons = ['buttons'] * cfg.data.nlayers
         if is_aligned:
             zipped = list(zip(cfg.data.thumbnails(), ref, scale, skips, method, snr_report))
             self._dataframe = pd.DataFrame(zipped, columns=['Img', 'Reference', 'Scale',
@@ -127,16 +130,26 @@ class LayerViewWidget(QWidget):
 
         self._dataframe.index = cfg.data.basefilenames()
         self.load_dataframe()
-        self.thumbnail_delegate = ThumbnailDelegate()
-        self.table_view.setItemDelegateForColumn(0, self.thumbnail_delegate)
+        # self.thumbnail_delegate = ThumbnailDelegate()
+        # self.table_view.setItemDelegateForColumn(0, self.thumbnail_delegate)
+        if selection:
+            self.table_view.selectRow(selection[0])
+
+        # self.skip_delegate = CheckBoxDelegate()
+        # self.table_view.setItemDelegateForColumn(3, self.skip_delegate)
         # self.table_view.setItemDelegateForColumn(3, ButtonDelegate())
         # self.button_delegate = PushButtonDelegate(view=self.table_view)
         # self.table_view.setItemDelegateForColumn(3, self.button_delegate)
-
         QApplication.processEvents()
+
+    def set_selected_row(self, row):
+        self._selected_rows = [row]
+        if self._selected_rows:
+            self.table_view.selectRow(self._selected_rows[0])
 
 
     def load_dataframe(self):
+        logger.info('Loading dataframe...')
         if isinstance(self._dataframe, pd.DataFrame):
             my_pandas_model = PandasModel(self._dataframe)
             self.table_view.setModel(my_pandas_model)
@@ -150,26 +163,23 @@ class LayerViewWidget(QWidget):
         self.updateRowHeight(self.INITIAL_ROW_HEIGHT)
 
 
-    def selection(self):
-        '''Return Pandas Dataframe From Selection'''
-        return self._dataframe.iloc[self._selection_indexes]
-
-
     def selectionChanged(self):
+        # logger.info('selection_changed:')
         caller = inspect.stack()[1].function
         if caller != 'clear_selection':
+
             # logger.info('Selection Changed!')
             # indexes = self.table_view.selectedIndexes()
             selection = self.table_view.selectedIndexes()
-            self._selection_indexes = list(set([row.row() for row in selection]))
-            print(str(self._selection_indexes))
+            self._selected_rows = list(set([row.row() for row in selection]))
+            # print(str(self._selected_rows))
             # logger.info(f'index.row: {index.row()}')
-
             index = self.table_view.currentIndex().row()
             cfg.data.set_layer(index)
             cfg.main_window.updateAffineWidget(l=index)
             cfg.main_window.updateTextWidgetA(l=index)
-        QApplication.processEvents()
+            QApplication.processEvents()
+        cfg.main_window.dataUpdateWidgets()
 
     def updateRowHeight(self, h):
         parentVerticalHeader = self.table_view.verticalHeader()
@@ -186,6 +196,9 @@ class LayerViewWidget(QWidget):
         fnt.setPointSize(s)
         self.table_view.setFont(fnt)
 
+    def flags(self, index):
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
+
 
 class Slider(QSlider):
     def __init__(self, min, max, parent=None):
@@ -198,6 +211,41 @@ class Slider(QSlider):
         self.setPageStep(2)
         self.setTickPosition(QSlider.TicksAbove)
         self.setTickInterval(1)
+
+
+class CheckBoxDelegate(QItemDelegate):
+    """A delegate that places a fully functioning QCheckBox cell of the column to which it's applied."""
+    def __init__(self, parent=None):
+        QItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        """Important, otherwise an editor is created if the user clicks in this cell."""
+        return None
+
+    def paint(self, painter, option, index):
+        """Paint a checkbox without the label."""
+        self.drawCheck(painter, option, option.rect, Qt.Unchecked if index.data() == False else Qt.Checked)
+
+    def editorEvent(self, event, model, option, index):
+        '''Change the data in the model and the state of the checkbox if the user presses
+        the left mousebutton and this cell is editable. Otherwise do nothing.'''
+        logger.info(f'index.row()={index.row()}')
+        # event  = <PyQt5.QtGui.QMouseEvent object at 0x1cd5eb310>
+        # model  = <src.ui.layer_view_widget.PandasModel object at 0x1cd5c8040>
+        # option = <PyQt5.QtWidgets.QStyleOptionViewItem object at 0x1d08da2e0
+        # index  = <PyQt5.QtCore.QModelIndex object at 0x1d08da120>
+
+        if not int(index.flags() & Qt.ItemIsEditable) > 0:
+            return False
+        if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
+            self.setModelData(None, model, index) # Change the checkbox-state
+            return True
+        return False
+
+    def setModelData (self, editor, model, index):
+        '''The user wanted to change the old state in the opposite.'''
+        logger.info(f'setModelData | editor={editor} | model={model} | index={index}')
+        model.setData(index, True if index.data() == False else False, Qt.EditRole)
 
 
 class ThumbnailDelegate(QStyledItemDelegate):
@@ -261,17 +309,23 @@ class PandasModel(QAbstractTableModel):
     def data(self, index: QModelIndex, role=Qt.ItemDataRole):
         '''The data method works by receiving an index and role and responding with
         instructions for the view to perform. The index says where and the role says what.'''
+        # logger.info(f'QModelIndex: {QModelIndex}, role: {role}')
         if not index.isValid():
             return None
-        elif role == Qt.DisplayRole:
-            return str(self._dataframe.iloc[index.row(), index.column()])
-        elif role == Qt.CheckStateRole:
-            if index.column() == 0:
+        if role == Qt.DisplayRole:
+            if index.column() == 3:
+                return None
+            else:
+                return str(self._dataframe.iloc[index.row(), index.column()])
+        if role == Qt.CheckStateRole:
+            if index.column() == 3:
                 # print(">>> data() row,col = %d, %d" % (index.row(), index.column()))
                 if self._dataframe.iloc[index.row(), index.column()] == True:
                     return Qt.Checked
                 else:
                     return Qt.Unchecked
+        if role == Qt.EditRole:
+            return self._df.values[index.row()][index.column()]
 
         # if role == Qt.CheckStateRole: # checked
         #     return 2
@@ -285,36 +339,38 @@ class PandasModel(QAbstractTableModel):
             if orientation == Qt.Vertical:
                 return str(self._dataframe.index[section])
 
-    class PushButtonDelegate(QStyledItemDelegate):
+
+
+class PushButtonDelegate(QStyledItemDelegate):
+    """
+    A delegate containing a clickable push button.  The button name will be
+    taken from the Qt.DisplayRole data.  Then clicked, this delegate will emit
+    a `clicked` signal with either:
+
+    - If `role` is None, a `QtCore.QModelIndex` for the cell that was clicked.
+    - Otherwise, the `role` data for the cell that was clicked.
+    """
+
+    clicked = Signal(object)
+
+    def __init__(self, view, role=None):
         """
-        A delegate containing a clickable push button.  The button name will be
-        taken from the Qt.DisplayRole data.  Then clicked, this delegate will emit
-        a `clicked` signal with either:
+        :param view: The view that this delegate will be added to.  Note that
+            mouse tracking will be enabled in the view.
+        :type view: `QtWidgets.QTableView`
 
-        - If `role` is None, a `QtCore.QModelIndex` for the cell that was clicked.
-        - Otherwise, the `role` data for the cell that was clicked.
+        :param role: The role to emit data for when a button is clicked.  If not
+            given, the index that was clicked will be emitted instead.  This value
+            may be specified after instantiation using `setRole`.
+        :type role: int or NoneType
         """
 
-        clicked = Signal(object)
-
-        def __init__(self, view, role=None):
-            """
-            :param view: The view that this delegate will be added to.  Note that
-                mouse tracking will be enabled in the view.
-            :type view: `QtWidgets.QTableView`
-
-            :param role: The role to emit data for when a button is clicked.  If not
-                given, the index that was clicked will be emitted instead.  This value
-                may be specified after instantiation using `setRole`.
-            :type role: int or NoneType
-            """
-
-            super().__init__(view)
-            self._btn_down = None  # index of the button that is down
-            self._mouse_over = None  # index of button that the mouse is over
-            # We only need the palette from the button, but we keep a reference to
-            # the button itself to prevent garbage collection of the button from
-            # triggering destruction of the palette.
-            self._button = QPushButton()
-            self.setRole(role)
+        super().__init__(view)
+        self._btn_down = None  # index of the button that is down
+        self._mouse_over = None  # index of button that the mouse is over
+        # We only need the palette from the button, but we keep a reference to
+        # the button itself to prevent garbage collection of the button from
+        # triggering destruction of the palette.
+        self._button = QPushButton()
+        self.setRole(role)
 

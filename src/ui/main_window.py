@@ -93,15 +93,14 @@ class MainWindow(QMainWindow):
         self.initOpenGlContext()
         self.initWebEngine()
         self.initJupyter()
-        self.initMenu()
         self.initToolbar()
         self.initPbar()
         self.initUI()
+        self.initMenu()
         self.initWidgetSpacing()
         self.initSize(cfg.WIDTH, cfg.HEIGHT)
         self.initPos()
         self.initStyle()
-        self.initPlotColors()
         self.initView()
         self.initPrivateMembers()
         self.initShortcuts()
@@ -109,7 +108,6 @@ class MainWindow(QMainWindow):
 
         if is_tacc():
             cfg.USE_TORNADO = True
-            cfg.USE_NG_WEBDRIVER = False
 
         if not cfg.NO_SPLASH:
             self.show_splash()
@@ -202,16 +200,6 @@ class MainWindow(QMainWindow):
         self.apply_default_style()
 
 
-    def initPlotColors(self):
-        logger.info('')
-        self._plot_colors = ['#aaa672', '#152c74', '#404f74',
-                             '#ffe135', '#5c4ccc', '#d6acd6',
-                             '#aaa672', '#152c74', '#404f74',
-                             '#f3e375', '#5c4ccc', '#d6acd6',
-                             ]
-        self._plot_brushes = [pg.mkBrush(c) for c in self._plot_colors]
-
-
     def initJupyter(self):
         if cfg.USE_JUPYTER:
             logger.info('')
@@ -295,7 +283,7 @@ class MainWindow(QMainWindow):
 
 
     def force_hide_snr_plot(self):
-        self.snr_plot_and_control.hide()
+        self.snr_plot.hide()
         self.show_hide_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
         self.show_hide_snr_plot_button.setText('SNR Plot')
 
@@ -330,12 +318,12 @@ class MainWindow(QMainWindow):
 
 
     def show_hide_snr_plot_callback(self):
-        if self.snr_plot_and_control.isHidden():
-            self.snr_plot_and_control.show()
+        if self.snr_plot.isHidden():
+            self.snr_plot.show()
             self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_snr_plot_button.setText('Hide SNR Plot')
         else:
-            self.snr_plot_and_control.hide()
+            self.snr_plot.hide()
             self.show_hide_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
             self.show_hide_snr_plot_button.setText('SNR Plot')
 
@@ -412,7 +400,7 @@ class MainWindow(QMainWindow):
             self.hud('Something Unexpected Happened While Generating TIFF Scale Hierarchy', logging.WARNING)
 
         cfg.data.link_all_stacks() #Todo: check if this is necessary
-        self.wipe_snr_plot() #Todo: Move this it should not be here
+        self.snr_plot.wipePlot() #Todo: Move this it should not be here
         cfg.data.set_scale(cfg.data.scales()[-1])
 
         for s in cfg.data.scales():
@@ -460,7 +448,7 @@ class MainWindow(QMainWindow):
         # self.initNgViewer()
         # self.initNgServer() #1203-
         self.updateHistoryListWidget(s=s)
-        self.initSnrPlot()
+        self.snr_plot.initSnrPlot()
         self.dataUpdateWidgets()
         self.updateBanner()
         self.updateEnabledButtons()
@@ -577,7 +565,7 @@ class MainWindow(QMainWindow):
                           'Try Re-generating images.', logging.ERROR)
         else:
             self.hud.post('Alignment Complete')
-            self.initSnrPlot()
+            self.snr_plot.initSnrPlot()
             self.dataUpdateWidgets()
             self.save_project_to_file()
         finally:
@@ -643,7 +631,7 @@ class MainWindow(QMainWindow):
 
         else:
             self.hud.post('Alignment Complete')
-            self.initSnrPlot()
+            self.snr_plot.initSnrPlot()
             self.dataUpdateWidgets()
             self.save_project_to_file()
         finally:
@@ -714,7 +702,7 @@ class MainWindow(QMainWindow):
                           ' Try Re-generating images.', logging.ERROR)
         else:
             self.hud.post('Alignment Complete')
-            self.initSnrPlot()
+            self.snr_plot.initSnrPlot()
             self.dataUpdateWidgets()
             self.save_project_to_file()
         finally:
@@ -1195,8 +1183,8 @@ class MainWindow(QMainWindow):
         try:     self.bias_bool_combo.setCurrentText(str(cfg.data.poly_order())) if cfg.data.null_cafm() else 'None'
         except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
 
-        if self.main_tab_widget.currentIndex() == 1:
-            self.layer_view_widget.set_data()
+        # if self.main_tab_widget.currentIndex() == 1:
+        #     self.layer_view_widget.set_data()
 
 
     def updateTextWidgetA(self, s=None, l=None):
@@ -1613,7 +1601,7 @@ class MainWindow(QMainWindow):
         self.clearAffineWidget()
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.shutdownNeuroglancer()
-        self.wipe_snr_plot()
+        self.snr_plot.wipePlot()
         self.hud.post('Creating A New Project...')
         self.hud.post('Set New Project Path:')
         filename = new_project_dialog()
@@ -1712,7 +1700,8 @@ class MainWindow(QMainWindow):
         self.updateHistoryListWidget()
         self.project_model.load(cfg.data.to_dict())
         self.updateBanner()
-        self.initSnrPlot()
+        self.snr_plot.wipePlot()
+        self.snr_plot.initSnrPlot()
         self.showScoreboardWidegts()
         self.updateLowLowWidgetB()
         self.ng_workers = dict.fromkeys(cfg.data.scales())
@@ -1749,7 +1738,7 @@ class MainWindow(QMainWindow):
 
         self.initView()
         self.shutdownNeuroglancer()
-        self.wipe_snr_plot()
+        self.snr_plot.wipePlot()
         self.clearLowLowWidgetB()
         path = cfg.data.dest()
         filenames = cfg.data.get_source_img_paths()
@@ -2374,7 +2363,6 @@ class MainWindow(QMainWindow):
             # caller is 'main' when user is toggler
             if inspect.stack()[1].function == 'dataUpdateWidgets': return
             skip_state = self.toggle_skip.isChecked()
-            logger.info(f'skip state: {skip_state}')
             for s in cfg.data.scales():
                 # layer = self.request_ng_layer()
                 layer = cfg.data.layer()
@@ -2387,7 +2375,9 @@ class MainWindow(QMainWindow):
             cfg.data.link_all_stacks()
             self.dataUpdateWidgets()
             self.updateLowLowWidgetB()
-            logger.info(f'skip state: {skip_state}')
+            if self.main_tab_widget.currentIndex() == 1:
+                self.layer_view_widget.set_data()
+            logger.info(f'new skip state: {skip_state}')
 
     def updateOverview(self):
         selected_indexes = self.layer_view_widget.table_view.selectedIndexes()
@@ -3008,6 +2998,10 @@ class MainWindow(QMainWindow):
         self.jumpBestSnrAction.triggered.connect(self.jump_to_best_snr)
         toolsMenu.addAction(self.jumpBestSnrAction)
 
+        self.reinitSnrPlotAction = QAction('Refresh SNR Plot', self)
+        self.reinitSnrPlotAction.triggered.connect(self.snr_plot.initSnrPlot)
+        toolsMenu.addAction(self.reinitSnrPlotAction)
+
         configMenu = self.menu.addMenu('Config')
 
         self.projectConfigAction = QAction('Project', self)
@@ -3413,15 +3407,7 @@ class MainWindow(QMainWindow):
         self.afm_widget.setReadOnly(True)
 
         '''SNR Plot & Controls'''
-        self.snr_plot_and_control = QWidget()
         self.snr_plot = SnrPlot()
-        self.snr_plot_controls_hlayout = QHBoxLayout()
-        self.snr_plot_and_control_layout = QVBoxLayout()
-        self.snr_plot_and_control_layout.addLayout(self.snr_plot_controls_hlayout)
-        self.snr_plot_and_control_layout.addWidget(self.snr_plot)
-        self.snr_plot_and_control_layout.setContentsMargins(8, 4, 8, 4)
-        self.snr_plot_and_control.setLayout(self.snr_plot_and_control_layout)
-        self.snr_plot_and_control.setAutoFillBackground(False)
 
         '''Neuroglancer Controls'''
         self.reload_ng_button = QPushButton("Reload")
@@ -3512,7 +3498,7 @@ class MainWindow(QMainWindow):
         self.external_hyperlink.setOpenExternalLinks(True)
         self.external_hyperlink.hide()
 
-        self.layer_view_container = QWidget()
+        self.layer_view_container = QWidget(parent=self)
         self.layer_view_container_layout = QVBoxLayout()
         self.layer_view_container.setLayout(self.layer_view_container_layout)
 
@@ -3661,7 +3647,7 @@ class MainWindow(QMainWindow):
         self.main_splitter.addWidget(self.main_tab_widget)
         self.main_splitter.addWidget(self.new_control_panel)
         self.main_splitter.addWidget(self.hud)
-        self.main_splitter.addWidget(self.snr_plot_and_control)
+        self.main_splitter.addWidget(self.snr_plot)
         self.main_splitter.addWidget(self.matchpoint_controls)
         self.main_splitter.addWidget(self.projectdata_treeview_widget)
         if cfg.USE_JUPYTER:
@@ -3765,16 +3751,16 @@ class MainWindow(QMainWindow):
         self.demos_panel_layout.addLayout(self.demos_panel_controls_layout)
         self.demos_panel.setLayout(self.demos_panel_layout)
 
-        self.pbar_container = QWidget()
-        self.pbar_layout = QVBoxLayout()
-        self.pbar_layout.addWidget(self.pbar)
-        self.pbar_container.setLayout(self.pbar_layout)
+        # self.pbar_container = QWidget()
+        # self.pbar_layout = QVBoxLayout()
+        # self.pbar_layout.addWidget(self.pbar)
+        # self.pbar_container.setLayout(self.pbar_layout)
 
         self.main_panel = QWidget()
         self.main_panel_layout = QGridLayout()
         self.main_panel_layout.addWidget(self.new_main_widget, 1, 0, 1, 5)
         self.main_panel_layout.addWidget(self.full_window_controls, 2, 0, 1, 5)
-        self.main_panel_layout.addWidget(self.pbar_container, 3, 0, 1, 5)
+        # self.main_panel_layout.addWidget(self.pbar_container, 3, 0, 1, 5)
 
         self.thumbnail_table = QTableView()
         self.thumbnail_table.horizontalHeader().hide()
@@ -3822,10 +3808,10 @@ class MainWindow(QMainWindow):
         return Path(__file__).parents[2]
 
     def show_hide_snr_plot(self):
-        if self.snr_plot_and_control.isHidden():
-            self.snr_plot_and_control.setHidden(False)
+        if self.snr_plot.isHidden():
+            self.snr_plot.setHidden(False)
         else:
-            self.snr_plot_and_control.setHidden(True)
+            self.snr_plot.setHidden(True)
         self.dataUpdateWidgets()
 
     def show_hide_hud(self):
@@ -3903,7 +3889,7 @@ class MainWindow(QMainWindow):
         self.matchpoint_controls.hide()
         self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
-        self.snr_plot_and_control.show()
+        self.snr_plot.show()
 
 
     def expand_treeview_size(self):
@@ -3959,7 +3945,7 @@ class MainWindow(QMainWindow):
         if cfg.USE_JUPYTER:
             self.python_console.setContentsMargins(8, 4, 8, 4)
         self.low_low_gridlayout.setContentsMargins(8, 0, 8, 0)
-        self.pbar_layout.setContentsMargins(0, 0, 0, 0)
+        # self.pbar_layout.setContentsMargins(0, 0, 0, 0)
         self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_scale_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_view_hlayout.setContentsMargins(4, 0, 4, 0)
@@ -3967,150 +3953,15 @@ class MainWindow(QMainWindow):
         self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
         self.layer_view_container_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.pbar.setFixedHeight(16)
-        self.pbar.setFont(QFont('Arial', 12))
         self.show_hide_main_features_vlayout.setSpacing(0)
-        self.show_hide_main_features_widget.setMaximumHeight(78)
-        self.low_low_widget.setMaximumHeight(80)
+        self.show_hide_main_features_widget.setMaximumHeight(70)
+        self.low_low_widget.setMaximumHeight(74)
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.main_details_subwidgetA.setMinimumWidth(128)
         self.main_details_subwidgetB.setMinimumWidth(128)
         self.afm_widget.setMinimumWidth(128)
         self.history_widget.setMinimumWidth(128)
 
-
-    def wipe_snr_plot(self):
-        try:
-            self.snr_plot.clear()
-            self.remove_snr_plot_checkboxes()
-        except:
-            logger.warning('Cannot clear SNR plot. Does it exist yet?')
-
-
-    def remove_snr_plot_checkboxes(self):
-        for i in reversed(range(self.snr_plot_controls_hlayout.count())):
-            self.snr_plot_controls_hlayout.removeItem(self.snr_plot_controls_hlayout.itemAt(i))
-
-
-    def initSnrPlot(self, s=None):
-        logger.info('')
-        '''
-        cfg.main_window.snr_points.data - numpy.ndarray (snr_report data points)
-        AlignEM [11]: numpy.ndarray
-        cfg.main_window.snr_points.data[0]
-        AlignEM [13]: (1., 14.73061687, -1., None, None, None, None, None,
-          PyQt5.QtCore.QRectF(0.0, 0.0, 8.0, 8.0),
-          PyQt5.QtCore.QRectF(57.99999999999997, 60.602795211005855, 8.0, 8.0), 4.)
-        '''
-        try:
-            self.remove_snr_plot_checkboxes()
-            self._snr_checkboxes = dict()
-
-            # self._snr_checkboxes = dict()
-            for i, s in enumerate(cfg.data.scales()[::-1]):
-                self._snr_checkboxes[s] = QCheckBox()
-                self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
-                self.snr_plot_controls_hlayout.addWidget(self._snr_checkboxes[s], alignment=Qt.AlignLeft)
-                self._snr_checkboxes[s].setChecked(True)
-                # self._snr_checkboxes[s].setStyleSheet('background-color: %s' % self._plot_colors[i]) #-
-                self._snr_checkboxes[s].clicked.connect(self.updateSnrPlot)
-                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
-                if is_arg_scale_aligned(scale=s):
-                    self._snr_checkboxes[s].show()
-                else:
-                    self._snr_checkboxes[s].hide()
-            self.snr_plot_controls_hlayout.addStretch()
-            self.updateSnrPlot()
-        except:
-            print_exception()
-
-
-    def updateSnrPlot(self):
-        '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
-        # logger.info('Updating SNR Plot...')
-        self.snr_plot.clear()
-        for i, scale in enumerate(cfg.data.scales()[::-1]):
-            if self._snr_checkboxes[scale].isChecked():
-                if is_arg_scale_aligned(scale=scale):
-                    self.show_snr(scale=scale)
-            cfg.data.scales().index(scale)
-            color = self._plot_colors[cfg.data.scales().index(scale)]
-            self._snr_checkboxes[scale].setStyleSheet('background-color: #F3F6FB;'
-                                                      'border-color: %s; '
-                                                      'border-width: 2px; '
-                                                      'border-style: outset;' % color)
-        # max_snr = cfg.data.snr_max_all_scales()
-        # if is_any_scale_aligned_and_generated():
-        #     try:
-        #         if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
-        #     except:
-        #         logger.warning('updateSnrPlot encountered a problem setting plot limits')
-
-
-    def show_snr(self, scale=None):
-        #Todo This is being called too many times!
-        # logger.info('called by %s' % inspect.stack()[1].function)
-        if scale == None: scale = cfg.data.scale()
-        # logger.info('show_snr (s: %s):' % str(s))
-        snr_list = cfg.data.snr_list(s=scale)
-        pg.setConfigOptions(antialias=True)
-        x_axis = []
-        y_axis = []
-        for layer, snr in enumerate(snr_list):
-            if not cfg.data.skipped(s=scale, l=layer):
-                x_axis.append(layer)
-                y_axis.append(snr)
-        # x_axis = [x for x in range(0, len(snr_list))]
-        brush = self._plot_brushes[cfg.data.scales().index(scale)]
-        # color = self._plot_colors[cfg.data.scales().index(s)]
-        # self._snr_checkboxes[s].setStyleSheet('border-color: %s' % color)
-        self.snr_points = pg.ScatterPlotItem(
-            size=7,
-            pen=pg.mkPen(None),
-            brush=brush,
-            hoverable=True,
-            # hoverSymbol='s',
-            hoverSize=11,
-            # hoverPen=pg.mkPen('r', width=2),
-            hoverBrush=pg.mkBrush('#41FF00'),
-            # pxMode=False #allow spots to transform with the
-        )
-        ##41FF00 <- good green color
-        self.snr_points.sigClicked.connect(self.onSnrClick)
-        self.snr_points.addPoints(x_axis[1:], y_axis[1:])
-        # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
-        # value = self.snr_points.setToolTip('Test')
-        self.last_snr_click = []
-        self.snr_plot.addItem(self.snr_points)
-        # self.snr_plot.autoRange()
-
-        # max_snr = cfg.data.snr_max_all_scales()
-        # if is_any_scale_aligned_and_generated():
-        #     if max_snr != None:
-        #         self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
-
-        # self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr + 1)
-        # TypeError: can only concatenate list (not "int") to list
-
-
-    def onSnrClick(self, plot, points):
-        '''
-        type(obj): <class 'pyqtgraph.graphicsItems.ScatterPlotItem.ScatterPlotItem'>
-        type(points): <class 'numpy.ndarray'>
-        '''
-        index = int(points[0].pos()[0])
-        snr = float(points[0].pos()[1])
-        self.hud.post(f'Layer: {index}, SNR: {snr}')
-        # clickedPen = pg.mkPen({'color': "#f3f6fb", 'width': 3})
-        clickedPen = pg.mkPen({'color': "#ffe135", 'width': 3})
-        for p in self.last_snr_click:
-            # p.resetPen()
-            p.resetBrush()
-        for p in points:
-            p.setBrush(pg.mkBrush('#FF0000'))
-            # p.setPen(clickedPen)
-        self.last_snr_click = points
-        self.jump_to(index)
 
 
     #@timer
@@ -4122,9 +3973,20 @@ class MainWindow(QMainWindow):
         # self.statusBar = QStatusBar()
         # self.pbar = QProgressBar(self)
         self.pbar = QProgressBar()
+        # self.pbar.setFixedWidth(400)
+        self.pbar.setFixedHeight(16)
+        self.pbar.setFont(QFont('Arial', 12))
         # self.statusBar.addPermanentWidget(self.pbar)
-        # self.statusBar.addWidget(self.pbar)
-        self.pbar.setAlignment(Qt.AlignCenter)
+
+        # self.pbar_container = QWidget()
+        # self.pbar_layout = QHBoxLayout()
+        # self.pbar_layout.setContentsMargins(0, 0, 0, 0)
+        # self.pbar_layout.addStretch()
+        # self.pbar_layout.addWidget(self.pbar, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.pbar_container.setLayout(self.pbar_layout)
+        # self.statusBar.addPermanentWidget(self.pbar_container)
+
+        # self.pbar.setAlignment(Qt.AlignmentFlag.AlignRight)
         # self.pbar.setGeometry(0, 0, 250, 50)
         self.pbar.hide()
 

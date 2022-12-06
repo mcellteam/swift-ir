@@ -36,8 +36,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     scale_val = get_scale_val(scale)
     last_layer = len(alignment_dict) if num_layers == -1 else start_layer + num_layers
     alignment_option = cfg.data['data']['scales'][scale]['method_data']['alignment_option']
-    logger.debug('Use Scale: %s\nCode Mode: %s\nUse File IO: %d' % (scale, cfg.CODE_MODE, cfg.USE_FILE_IO))
-    logger.debug('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
+    logger.info('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
 
     if are_aligned_images_generated():
         cfg.main_window.hud.post(f'Removing Aligned Images for Scale Level {scale_val}')
@@ -148,7 +147,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
 
     kill_task_queue(task_queue=task_queue)
     cfg.data = updated_model #0809-
-    # write_run_to_file()
+    write_run_to_file()
     logger.info('<<<< Compute Affines End <<<<')
 
 

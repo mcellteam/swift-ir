@@ -26,7 +26,8 @@ def save_bias_analysis(layers, bias_path):
             try:
                 atrm = layer['align_to_ref_method']
                 c_afm = np.array(atrm['method_results']['cumulative_afm'])
-                snr = np.array(atrm['method_results']['snr_report'])
+                # snr = np.array(atrm['method_results']['snr_report']) #1205-
+                snr = np.array(atrm['method_results']['snr'])
                 rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
                 afm = np.array(atrm['method_results']['affine_matrix'])
                 scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
