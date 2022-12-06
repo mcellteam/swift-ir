@@ -9,6 +9,7 @@ import copy
 import time
 import glob
 import json
+import asyncio
 import inspect
 import logging
 import operator
@@ -965,8 +966,6 @@ class MainWindow(QMainWindow):
             self.hud.post('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
-            self.shutdownNeuroglancer()
-            self.ng_workers[cfg.data.scale()] = {}
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() - 1)  # Changes Scale
             cfg.data.set_layer(cur_layer)
             # if not cfg.data.is_alignable():
@@ -986,8 +985,6 @@ class MainWindow(QMainWindow):
             self.hud.post('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
-            self.shutdownNeuroglancer()
-            self.ng_workers[cfg.data.scale()] = {}
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() + 1)  # Changes Scale
             cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
             # if not cfg.data.is_alignable():
@@ -1086,8 +1083,7 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         s = cfg.data.scale()
-        self.shutdownNeuroglancer()
-        # self.shutdownNeuroglancer() #1203+
+        self.shutdownNeuroglancer() #1203+
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
         # self.refreshNeuroglancerURL(s=cfg.data.s())
@@ -2119,6 +2115,8 @@ class MainWindow(QMainWindow):
             else:
                 scales = [cfg.data.scale()]
 
+        # asyncio.set_event_loop(asyncio.new_event_loop())
+
         logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
@@ -2131,11 +2129,11 @@ class MainWindow(QMainWindow):
                     mp_mode = self.ng_workers[s].mp_mode
                 except:
                     mp_mode = False
-                # logger.info('Deleting Viewer for %s...' % s)
-                # try:
-                #     del self.ng_workers[s]
-                # except:
-                #     pass
+                logger.info('Deleting Viewer for %s...' % s)
+                try:
+                    del self.ng_workers[s]
+                except:
+                    pass
                 logger.debug('Launching NG Server for %s...' % s)
 
                 # is_aligned = is_arg_scale_aligned(s)
@@ -3507,7 +3505,7 @@ class MainWindow(QMainWindow):
         self.external_hyperlink.setMaximumHeight(24)
         self.external_hyperlink.setAcceptRichText(True)
         self.external_hyperlink.setOpenExternalLinks(True)
-        self.external_hyperlink.hide()
+        # self.external_hyperlink.hide()
 
         self.layer_view_container = QWidget(parent=self)
         self.layer_view_container_layout = QVBoxLayout()
