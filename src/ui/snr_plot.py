@@ -5,6 +5,7 @@ SNR Plot Class. Depends on 'pyqtgraph' Python module.
 https://github.com/robertsj/poropy/blob/master/pyqtgraph/graphicsItems/ScatterPlotItem.py
 https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/ScatterPlotItem.html
 '''
+from math import ceil
 import logging
 
 import pyqtgraph as pg
@@ -123,7 +124,7 @@ class SnrPlot(QWidget):
                         self.plotSingleScale(scale=scale)
             max_snr = cfg.data.snr_max_all_scales()
             logger.info(f'max_snr: {max_snr}')
-            self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=max_snr)
+            self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
             # self.plot.autoRange()
 
 
