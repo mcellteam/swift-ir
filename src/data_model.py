@@ -44,7 +44,7 @@ class DataModel:
     """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
 
     def __init__(self, data=None, name='', mendenhall=False):
-        logger.info('Constructing Data Model (caller: %s)...' % inspect.stack()[1].function)
+        logger.info('Constructing Data Model...')
         self._current_version = 0.40
 
         if data:
@@ -823,11 +823,10 @@ class DataModel:
         self.set_destination(os.path.join(head, self.dest()))
 
     def set_paths_absolute(self, filename):
-        logger.info('Setting Absolute File Paths...')
-        logger.info(f'Setting Destination: {filename}')
+        logger.info('Setting Absolute File Paths - Destination: {filename}')
         # returns path to project file minus extension (should be the project directory)
         self.set_destination(os.path.splitext(filename)[0])
-        logger.info(f'Setting absolute project dest/head: {self.dest()}')
+        logger.debug(f'Setting absolute project dest/head: {self.dest()}')
         try:
             head = self.dest() # returns parent directory
             for s in self.scales():
