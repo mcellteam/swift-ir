@@ -163,7 +163,6 @@ class SnrPlot(QWidget):
     def mouse_clicked(self, mouseClickEvent):
         # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
         print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
-        print(mouseClickEvent(0))
         pos_click = int(mouseClickEvent.pos()[0])
         print('Position Clicked: %d' % pos_click)
 
