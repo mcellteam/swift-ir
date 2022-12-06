@@ -11,7 +11,7 @@ import random
 import time
 
 from qtpy.QtCore import QObject, QThread, Qt
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal, Slot, QSize
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 
@@ -66,7 +66,7 @@ class HeadupDisplay(QWidget):
         super(HeadupDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
-        self.setMinimumHeight(140)
+        self.setMinimumHeight(80)
         self.textedit = te = QPlainTextEdit(self)
         f = QFont()
         f.setStyleHint(QFont.Monospace)
@@ -86,6 +86,7 @@ class HeadupDisplay(QWidget):
         #                                         }""")
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(2, 2, 2, 2)
         layout.addWidget(te)
         self.start_thread()
 
@@ -174,6 +175,8 @@ class HeadupDisplay(QWidget):
             border-color: #d3dae3;     /* light off-white */
             border-width: 0px;
             border-radius: 2px;
+            font-size: 11px;
+            margin: 0px 0px 0px 0px;
         """)
 
 
@@ -191,8 +194,13 @@ class HeadupDisplay(QWidget):
             /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
             /*border-color: #d3dae3;*/     /* light off-white */
             border-width: 2px;
-            border-radius: 2px;            
+            border-radius: 2px;  
+            font-size: 11px;          
+            margin: 0px 0px 0px 0px;
         """)
+
+    def sizeHint(self):
+        return QSize(cfg.WIDTH / 2, 100)
 
 
 

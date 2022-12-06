@@ -92,14 +92,6 @@ QWidget#browser_overlay_widget {
 }
 
 
-QWidget#hud {
-    background-color: #141414;
-    color: #f3f6fb;
-    border-style: inset;
-    border-color: #d3dae3;     /* light off-white */
-    border-width: 0px;
-    border-radius: 2px;
-}
 
 QLabel#toolbar_layer_label { color: #F3F6FB; }
 QLabel#toolbar_layout_label { color: #F3F6FB; }
@@ -177,7 +169,8 @@ QListWidget#historyListWidget {
 QTextEdit#afm_widget {
     /*background: transparent;*/
     background-color: #f3f6fb;
-    font-size: 10px;
+    font-size: 11px;
+    border-width: 0px;
 }
 
 
@@ -246,6 +239,11 @@ QScrollArea {
 	color: #FFFFFF;
 	background-color:#000000;
 }
+QScrollBar:vertical {
+    border: none;
+    background-color: rgba(255,255,255,0);
+    width: 10px;
+ }
 QSlider::groove:horizontal {
 	height: 5px;
 	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
