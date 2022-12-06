@@ -66,7 +66,7 @@ class HeadupDisplay(QWidget):
         super(HeadupDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
-        self.setMinimumHeight(80)
+        self.setMinimumHeight(94)
         self.textedit = te = QPlainTextEdit(self)
         f = QFont()
         f.setStyleHint(QFont.Monospace)
@@ -200,7 +200,11 @@ class HeadupDisplay(QWidget):
         """)
 
     def sizeHint(self):
-        return QSize(cfg.WIDTH / 2, 100)
+        if cfg.main_window:
+            width = cfg.main_window.width() / 2
+        else:
+            width = cfg.WIDTH / 2
+        return QSize(width, 100)
 
 
 

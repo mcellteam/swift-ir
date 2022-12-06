@@ -242,6 +242,7 @@ class MainWindow(QMainWindow):
             self._is_mp_mode = False
             self.image_panel_stack_widget.setCurrentIndex(1)
             if is_cur_scale_aligned():
+                self.force_show_snr_plot()
                 self.updateStatusTips()
                 self.showScoreboardWidegts()
             else:
@@ -1456,8 +1457,8 @@ class MainWindow(QMainWindow):
         if caller == 'onStartProject':
             # logger.warning('Canceling s change...')
             return
-        self.shutdownNeuroglancer()
-        self.ng_workers[cfg.data.scale()] = {} #2203 adding this to scale_up/down
+        # self.shutdownNeuroglancer()
+        # self.ng_workers[cfg.data.scale()] = {} #2203 adding this to scale_up/down
         new_scale = self.toolbar_scale_combobox.currentText()
         # logger.info(f'Setting Scale: %s...' % new_scale)
         cfg.data.set_scale(new_scale)
@@ -1661,7 +1662,7 @@ class MainWindow(QMainWindow):
     def open_project(self):
         logger.critical('Opening Project...')
         filename = open_project_dialog()
-        logger.info('filename: %s' % filename)
+        logger.info(f'Project File: {filename}')
         if filename == '':
             self.hud.post("No Project File Selected (.proj), dialog returned empty string...", logging.WARNING); return
         if filename == None:
@@ -2116,10 +2117,13 @@ class MainWindow(QMainWindow):
                 scales = cfg.data.scales()
             else:
                 scales = [cfg.data.scale()]
+
         logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
+
+        self.shutdownNeuroglancer()
         try:
             for s in scales:
                 self.hud.post(f'Starting Neuroglancer Worker, {cfg.data.scale_pretty(s=s)}...')

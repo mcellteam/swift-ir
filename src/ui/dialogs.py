@@ -120,7 +120,6 @@ def open_project_dialog() -> str:
     dialog.setSidebarUrls(urls)
 
     if dialog.exec() == QFileDialog.Accepted:
-        logger.info('Save File Name: %s' % dialog.selectedFiles()[0])
         # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
         return dialog.selectedFiles()[0]
 

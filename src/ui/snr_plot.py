@@ -41,7 +41,7 @@ class SnrPlot(QWidget):
         # self.plot.getPlotItem().enableAutoRange()
         self.plot.hoverable = True
         self.plot.hoverSize = 11
-        self.plot.setFocusPolicy(Qt.NoFocus)
+        # self.plot.setFocusPolicy(Qt.NoFocus)
         font = QFont()
         font.setPixelSize(14)
         self.plot.getAxis("bottom").tickFont = font
@@ -55,6 +55,8 @@ class SnrPlot(QWidget):
         self.plot.setLabel('bottom', 'Layer #', **style)
 
         self.plot.setCursor(Qt.CrossCursor)
+
+        self.snr_points = {}
 
         self.checkboxes_widget = QWidget()
         self.checkboxes_hlayout = QHBoxLayout()
@@ -128,7 +130,7 @@ class SnrPlot(QWidget):
         if scale == None: scale = cfg.data.scale()
         x_axis, y_axis = self.get_axis_data(s=scale)
         brush = self._plot_brushes[cfg.data.scales().index(scale)]
-        self.snr_points = pg.ScatterPlotItem(
+        self.snr_points[scale] = pg.ScatterPlotItem(
             size=7,
             pen=pg.mkPen(None),
             brush=brush,
@@ -139,12 +141,12 @@ class SnrPlot(QWidget):
             hoverBrush=pg.mkBrush('#ffffff'),
             # pxMode=False # points transform with zoom
         )
-        self.snr_points.addPoints(x_axis[1:], y_axis[1:])
+        self.snr_points[scale].addPoints(x_axis[1:], y_axis[1:])
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
         self.last_snr_click = []
-        self.plot.addItem(self.snr_points)
-        self.snr_points.sigClicked.connect(self.onSnrClick)
+        self.plot.addItem(self.snr_points[scale])
+        self.snr_points[scale].sigClicked.connect(self.onSnrClick)
 
 
     def wipePlot(self):
@@ -183,7 +185,11 @@ class SnrPlot(QWidget):
         cfg.main_window.jump_to(index)
 
     def sizeHint(self):
-        return QSize(cfg.WIDTH / 2, 100)
+        if cfg.main_window:
+            width = cfg.main_window.width() / 2
+        else:
+            width = cfg.WIDTH / 2
+        return QSize(width, 100)
 
 
 '''
