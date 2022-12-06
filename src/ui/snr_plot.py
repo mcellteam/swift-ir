@@ -188,9 +188,9 @@ class SnrPlot(QWidget):
 
     def sizeHint(self):
         if cfg.main_window:
-            width = cfg.main_window.width() / 2
+            width = int(cfg.main_window.width() / 2)
         else:
-            width = cfg.WIDTH / 2
+            width = int(cfg.WIDTH / 2)
         return QSize(width, 100)
 
 
