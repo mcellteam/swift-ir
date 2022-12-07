@@ -2105,10 +2105,10 @@ class MainWindow(QMainWindow):
                 except:
                     mp_mode = False
                 logger.info('Deleting Viewer for %s...' % s)
-                try:
-                    del self.ng_workers[s]
-                except:
-                    pass
+                # try:
+                #     del self.ng_workers[s]
+                # except:
+                #     pass
                 logger.debug('Launching NG Server for %s...' % s)
 
                 # is_aligned = is_arg_scale_aligned(s)
