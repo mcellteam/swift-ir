@@ -207,7 +207,12 @@ class MainWindow(QMainWindow):
 
         ## initial text to display in the console
         text = """"""
-        self.python_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
+        self.python_console_ = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
+        self.python_console = QWidget()
+        self.python_console_lay = QVBoxLayout()
+        self.python_console_lay.addWidget(self.python_console_)
+        self.python_console.setLayout(self.python_console_lay)
+
         # self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
         #                                                  'event loop of AlignEM-SWiFT - '
         #                                                  'As they say, with great power...!\n\n')
@@ -252,6 +257,7 @@ class MainWindow(QMainWindow):
     def update_ng_hyperlink(self):
         if cfg.data:
             url = self.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
+            self.external_hyperlink.clear()
             self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
     def showScoreboardWidegts(self):

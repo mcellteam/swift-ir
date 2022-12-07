@@ -5,6 +5,7 @@ Colors:
 #DAEBFE - off-white blue
 */
 
+
 QTableView::item:hover
 {
     color: #eeeeec;
@@ -22,7 +23,6 @@ QHeaderView
 {
 color: #1B1E23;
 }
-
 
 
 QTabBar::tab {
