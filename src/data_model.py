@@ -232,6 +232,7 @@ class DataModel:
 
 
     def snr_max_all_scales(self):
+        #Todo refactor, store local copy, this is a bottleneck
         max_snr = []
         for i, scale in enumerate(self.aligned_scales):
             if is_arg_scale_aligned(scale=scale):
@@ -242,7 +243,7 @@ class DataModel:
         if max_snr != []:
             return max(max_snr)
         else:
-            return []
+            return None
 
 
     def snr_average(self, scale=None) -> float:

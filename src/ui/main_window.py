@@ -1690,8 +1690,8 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
         self.updateBanner()
         self.snr_plot.wipePlot()
-        self.snr_plot.initSnrPlot()
         if is_cur_scale_aligned():
+            self.snr_plot.initSnrPlot()
             self.force_show_snr_plot()
         self.showScoreboardWidegts()
         self.updateLowLowWidgetB()
@@ -2652,6 +2652,9 @@ class MainWindow(QMainWindow):
         if index == 1:
             if cfg.data:
                 self.layer_view_widget.set_data()
+        QApplication.processEvents()
+        self.repaint()
+
 
     def new_mendenhall_protocol(self):
         self.new_project(mendenhall=True)
@@ -3114,23 +3117,15 @@ class MainWindow(QMainWindow):
         helpMenu.addAction(self.googleAction)
 
 
-    #@timer
     def initUI(self):
-        logger.info('')
         '''Initialize Main UI'''
-        # logger.info('')
+        logger.info('')
+
         std_height = int(22)
-        std_width = int(96)
-        std_button_size = QSize(std_width, std_height)
-        normal_button_width = int(60)
-        normal_button_height = int(30)
-        normal_button_size = QSize(normal_button_width, normal_button_height)
-        slim_button_height = int(22)
-        slim_button_size = QSize(normal_button_width, slim_button_height)
-        small_button_width = int(48)
-        small_button_size = QSize(small_button_width, slim_button_height)
-        std_input_size = int(46)
-        small_input_size = int(36)
+        std_button_size = QSize(96, std_height)
+        normal_button_size = QSize(64, 28)
+        slim_button_size = QSize(64, std_height)
+        small_button_size = QSize(48, std_height)
         std_combobox_size = QSize(52, 20)
 
         lower_controls_style = "border-style: solid;" \
@@ -3183,7 +3178,7 @@ class MainWindow(QMainWindow):
         self.whitening_input.textEdited.connect(self.has_unsaved_changes)
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.whitening_input.setText("-0.68")
-        self.whitening_input.setFixedWidth(std_input_size + 20)  # 0829
+        self.whitening_input.setFixedWidth(66)  # 0829
         self.whitening_input.setFixedHeight(std_height)
         self.whitening_input.setValidator(QDoubleValidator(-5.0000, 5.0000, 4, self))
         self.whitening_label.setStatusTip(tip)
@@ -3200,7 +3195,7 @@ class MainWindow(QMainWindow):
         self.swim_input.textEdited.connect(self.has_unsaved_changes)
         self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.swim_input.setText("0.8125")
-        self.swim_input.setFixedWidth(std_input_size + 20)
+        self.swim_input.setFixedWidth(66)
         self.swim_input.setFixedHeight(std_height)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
         self.swim_label.setStatusTip(tip)
@@ -3577,7 +3572,7 @@ class MainWindow(QMainWindow):
         self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
 
         '''Show/Hide Primary Tools Buttons'''
-        show_hide_button_sizes = QSize(normal_button_width + 32, 18)
+        show_hide_button_sizes = QSize(98, 18)
 
         tip = 'Show/Hide Alignment Controls'
         self.show_hide_controls_button = QPushButton('Hide Controls')
