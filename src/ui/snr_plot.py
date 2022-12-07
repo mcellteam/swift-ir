@@ -77,7 +77,7 @@ class SnrPlot(QWidget):
         self.layout = QGridLayout()
         # self.layout.addWidget(self.plot, 0, 0, 1, 5)
         self.layout.addWidget(self.view, 0, 0, 1, 5)
-        self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1)
+        self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout.setContentsMargins(4, 2, 4, 2)
         self.setLayout(self.layout)
         self.setAutoFillBackground(False)

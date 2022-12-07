@@ -1221,7 +1221,7 @@ class MainWindow(QMainWindow):
 
 
     def clearLowLowWidgetB(self):
-        self.main_details_subwidgetB.setText(f'<b>Skipped Layers:<br><b>Match Point Layers:</b>')
+        self.main_details_subwidgetB.setText(f'<b>Skipped Layers:<br><br><b>Match Point Layers:</b>')
 
 
     def updateAffineWidget(self, s=None, l=None):
@@ -3087,6 +3087,10 @@ class MainWindow(QMainWindow):
         self.chromiumDebugAction = QAction('Chromium Debug', self)
         self.chromiumDebugAction.triggered.connect(self.chromium_debug)
         debugMenu.addAction(self.chromiumDebugAction)
+
+        self.anableAllControlsAction = QAction('Enable All Controls', self)
+        self.anableAllControlsAction.triggered.connect(self.enableAllButtons)
+        debugMenu.addAction(self.anableAllControlsAction)
 
         helpMenu = self.menu.addMenu('Help')
 
