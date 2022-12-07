@@ -1069,15 +1069,14 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         s = cfg.data.scale()
-        self.shutdownNeuroglancer() #1203+
+        # self.shutdownNeuroglancer() #1203+
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
         # self.initNgServer(scales=[s])
         # self.refreshNeuroglancerURL(s=cfg.data.s())
-        # if cfg.SIMULTANEOUS_SERVERS:
-        #     self.initNgViewer(scales=[cfg.data.s()])
-        # else:
-        #     self.initNgServer(scales=[cfg.data.s()])
-        self.initNgServer(scales=[cfg.data.scale()])
+        if cfg.SIMULTANEOUS_SERVERS:
+            self.initNgViewer(scales=[cfg.data.scale()])
+        else:
+            self.initNgServer(scales=[cfg.data.scale()])
         self.jump_to(cfg.data.layer())
         self.dataUpdateWidgets()
         self.updateHistoryListWidget(s=s)
