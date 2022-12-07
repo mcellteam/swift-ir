@@ -105,10 +105,11 @@ class NgHost(QRunnable):
 
     def __del__(self):
         caller = inspect.stack()[1].function
-        logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
+        logger.critical('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
         # client.loop.run_until_complete(payload(client))
         # for task in asyncio.Task.all_tasks(client.loop):
         #     task.cancel()
+        del self.viewer
 
     def __str__(self):
         return obj_to_string(self)
