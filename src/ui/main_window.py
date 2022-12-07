@@ -5,7 +5,6 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 import os
 import shutil
 import sys
-sys.settrace()
 import copy
 import time
 import glob
