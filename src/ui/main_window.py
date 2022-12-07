@@ -2148,7 +2148,7 @@ class MainWindow(QMainWindow):
                 #     # self.ng_browser_2.hide()
                 #     # QApplication.processEvents()
 
-                self.initThreadpool()
+                self.threadpool.waitForDone(500)
                 # self.threadpool.releaseThread()
                 widget_size = self.image_panel_stack_widget.geometry().getRect()
                 self.ng_workers[s] = NgHost(src=cfg.data.dest(), scale=s)
