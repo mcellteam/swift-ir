@@ -13,6 +13,9 @@ from qtpy.QtWidgets import QApplication
 import src.config as cfg
 from src.helpers import print_exception
 
+import numcodecs
+numcodecs.blosc.use_threads = False
+
 '''SWIM/MIR:
 stdout <- result
 stderr <- info + errors

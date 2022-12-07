@@ -51,6 +51,7 @@ import qtpy
 # os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
 import os
+os.environ["BLOSC_NOLOCK"] = "1"
 # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
 # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --enable-logging --log-level=0'
 # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
