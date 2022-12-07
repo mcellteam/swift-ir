@@ -196,7 +196,7 @@ class NgHost(QRunnable):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
-        self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
+        # self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
     def initViewer(self, matchpoint=None, widget_size=None, show_ui_controls=True, show_panel_borders=False):
         if cfg.data.is_mendenhall() and cfg.MV:
@@ -208,7 +208,7 @@ class NgHost(QRunnable):
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
         # logger.info('Initializing Viewer, %s (%s, matchpoint: %s)...' % (cfg.data.scale_pretty(s=self.scale), caller, self.mp_mode))
-        logger.info(f'Initializing Neuroglancer Client Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
+        logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
         logger.info(f'scale factor  : {self.sf}')
