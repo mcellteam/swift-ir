@@ -2096,7 +2096,7 @@ class MainWindow(QMainWindow):
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
-        # self.shutdownNeuroglancer()
+        self.shutdownNeuroglancer()
         try:
             for s in scales:
                 self.hud.post(f'Starting Neuroglancer Worker, {cfg.data.scale_pretty(s=s)}...')
