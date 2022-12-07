@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import sys
+sys.settrace()
+
 import logging
 import multiprocessing as mp
 import subprocess as sp
