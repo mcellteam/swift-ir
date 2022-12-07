@@ -1711,7 +1711,6 @@ class MainWindow(QMainWindow):
             else:
                 self.initNgServer(scales=[cfg.data.scale()])
         self.update_ng_hyperlink()
-        self.image_panel_stack_widget.setCurrentIndex(1)
         QApplication.processEvents()
 
 
@@ -3572,8 +3571,8 @@ class MainWindow(QMainWindow):
         self.hud_and_plot_splitter.setHandleWidth(0)
 
         self.hud_and_plot_splitter.addWidget(self.hud)
-        self.hud_and_plot_splitter.addWidget(self.snr_plot)
         self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
+        self.hud_and_plot_splitter.addWidget(self.snr_plot)
 
         '''Show/Hide Primary Tools Buttons'''
         show_hide_button_sizes = QSize(98, 18)

@@ -22,6 +22,7 @@ import inspect
 import logging
 import datetime
 import argparse
+import traceback
 import tempfile
 import asyncio
 import tornado
@@ -118,11 +119,21 @@ class NgHost(QRunnable):
         return obj_to_string(self)
 
     def __repr__(self):
-        return copy.deepcopy(self.viewer.state)
+        return copy.deepcopy(self.viewers.state)
 
     @Slot()
     def run(self):
-        self.viewer = ng.Viewer()
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            self.viewer = ng.Viewer()
+            # result = self.fn(
+            #     *self.args, **self.kwargs
+            # )
+        except:
+            traceback.print_exc()
+
+
+        # self.viewer = ng.Viewer()
         # launch_server(bind_address='127.0.0.1')
 
         # if cfg.USE_TORNADO:
@@ -711,7 +722,8 @@ class NgHost(QRunnable):
 
     def get_viewer_url(self):
         '''From extend_segments example'''
-        return self.viewer.get_viewer_url()
+        return self.viewer_url
+        # return self.viewer.get_viewer_url()
         # return self.server_url
 
     def show_state(self):
@@ -721,10 +733,6 @@ class NgHost(QRunnable):
         logger.info(f'Selected Values:\n{s.selected_values}')
         logger.info(f'Current Layer:\n{self.viewer.state.position[0]}')
         logger.info(f'Viewer State:\n{self.viewer.state}')
-
-
-
-
 
 
 
