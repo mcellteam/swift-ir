@@ -3967,7 +3967,7 @@ class MainWindow(QMainWindow):
         self.pbar = QProgressBar()
         # self.pbar.setFixedWidth(400)
         self.pbar.setFixedHeight(16)
-        self.pbar.setFont(QFont('Arial', 12))
+        self.pbar.setFont(QFont('Arial', 11))
         # self.statusBar.addPermanentWidget(self.pbar)
 
         # self.pbar_container = QWidget()
