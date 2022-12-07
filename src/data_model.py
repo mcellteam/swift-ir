@@ -823,7 +823,7 @@ class DataModel:
         self.set_destination(os.path.join(head, self.dest()))
 
     def set_paths_absolute(self, filename):
-        logger.info('Setting Absolute File Paths - Destination: {filename}')
+        logger.info(f'Setting Absolute File Paths - Destination: {filename}')
         # returns path to project file minus extension (should be the project directory)
         self.set_destination(os.path.splitext(filename)[0])
         logger.debug(f'Setting absolute project dest/head: {self.dest()}')

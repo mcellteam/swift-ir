@@ -22,9 +22,9 @@ import zarr
 import dis
 from collections import namedtuple
 
-from neuroglancer.viewer_config_state import AggregateChunkSourceStatistics
-from neuroglancer.viewer_config_state import ChunkSourceStatistics
-
+import numpy as np
+import pyqtgraph as pg
+import pyqtgraph.console
 import neuroglancer as ng
 import neuroglancer.server
 import pyqtgraph as pg
@@ -61,8 +61,6 @@ from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDial
 # from src.napari_test import napari_test
 from src.ui.headup_display import HeadupDisplay
 from src.ui.kimage_window import KImageWindow
-if cfg.USE_JUPYTER:
-    from src.ui.python_console import PythonConsole
 from src.ui.snr_plot import SnrPlot
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.models.json_tree import JsonModel
@@ -93,7 +91,7 @@ class MainWindow(QMainWindow):
         self.initImageAllocations()
         self.initOpenGlContext()
         self.initWebEngine()
-        self.initJupyter()
+        self.initPythonConsole()
         self.initToolbar()
         self.initPbar()
         self.initUI()
@@ -201,28 +199,20 @@ class MainWindow(QMainWindow):
         self.apply_default_style()
 
 
-    def initJupyter(self):
-        if cfg.USE_JUPYTER:
-            logger.info('')
-            self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
-                                                             'event loop of AlignEM-SWiFT - '
-                                                             'As they say, with great power...!\n\n')
-            self.python_console.setObjectName('python_console')
-            # self.python_console.push_vars({'align_all':self.align_all})
+    def initPythonConsole(self):
+        logger.info('')
+        ## build an initial namespace for console commands to be executed in (this is optional;
+        ## the user can always import these modules manually)
+        namespace = {'pg': pg, 'np': np, 'cfg': src.config}
 
-
-    def shutdownJupyter(self):
-        try:
-            # self.python_console._kernel_client.stop_channels()
-            self.python_console._kernel_manager.shutdown_kernel()
-        except:
-            logger.info('Having trouble shutting down Jupyter Console Kernel')
-            self.python_console.request_interrupt_kernel()
-
-
-    def restart_python_kernel(self):
-        self.hud.post('Restarting Python Kernel...')
-        self.python_console.request_restart_kernel()
+        ## initial text to display in the console
+        text = """"""
+        self.python_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
+        # self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
+        #                                                  'event loop of AlignEM-SWiFT - '
+        #                                                  'As they say, with great power...!\n\n')
+        self.python_console.setObjectName('python_console')
+        # self.python_console.push_vars({'align_all':self.align_all})
 
 
     def initView(self):
@@ -304,10 +294,11 @@ class MainWindow(QMainWindow):
 
 
     def force_hide_expandable_widgets(self):
-        if cfg.USE_JUPYTER:
-            self.force_hide_python_console()
-        self.force_hide_snr_plot()
+        caller = inspect.stack()[1].function
         self.force_hide_project_treeview()
+        self.force_hide_python_console()
+        if caller == 'expand_python_size':
+            self.force_hide_snr_plot()
 
 
     def show_hide_project_tree_callback(self):
@@ -1019,8 +1010,8 @@ class MainWindow(QMainWindow):
         # self.python_console.set_color_none()
         self.hud.set_theme_default()
         # self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
-        if cfg.USE_JUPYTER:
-            self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
+        # if cfg.USE_JUPYTER:
+        #     self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         self.toolbar_scale_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
         if cfg.data:
             if inspect.stack()[1].function != 'initStyle':
@@ -1036,8 +1027,7 @@ class MainWindow(QMainWindow):
             self.setStyleSheet(f.read())
         pg.setConfigOption('background', 'w')
         # self.python_console.set_color_none()
-        if cfg.USE_JUPYTER:
-            self.python_console.set_color_linux()
+
         self.hud.set_theme_light()
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
         if cfg.data:
@@ -1052,8 +1042,6 @@ class MainWindow(QMainWindow):
         self.main_stylesheet = os.path.abspath('src/styles/moonlit.qss')
         with open(self.main_stylesheet, 'r') as f:
             self.setStyleSheet(f.read())
-        if cfg.USE_JUPYTER:
-            self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
         if cfg.data:
@@ -1068,8 +1056,6 @@ class MainWindow(QMainWindow):
         self.main_stylesheet = os.path.abspath('src/styles/sagittarius.qss')
         with open(self.main_stylesheet, 'r') as f:
             self.setStyleSheet(f.read())
-        if cfg.USE_JUPYTER:
-            self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         if cfg.data:
@@ -1958,16 +1944,6 @@ class MainWindow(QMainWindow):
 
     def shutdownInstructions(self):
         logger.info('Running Shutdown Instructions:')
-        if cfg.USE_JUPYTER:
-            try:
-                logger.info('Shutting down jupyter...')
-                self.shutdownJupyter()
-            except:
-                sys.stdout.flush()
-                logger.info('Having trouble shutting down jupyter')
-            else:
-                logger.info('Success')
-
         # try:
         #     if neuroglancer.server.is_server_running():
         #         logger.info('Stopping Neuroglancer SimpleHTTPServer...')
@@ -2786,10 +2762,9 @@ class MainWindow(QMainWindow):
         self.expandViewerAction.triggered.connect(self.expand_viewer_size)
         expandMenu.addAction(self.expandViewerAction)
 
-        if cfg.USE_JUPYTER:
-            self.expandPythonAction = QAction('Python Console', self)
-            self.expandPythonAction.triggered.connect(self.expand_python_size)
-            expandMenu.addAction(self.expandPythonAction)
+        self.expandPythonAction = QAction('Python Console', self)
+        self.expandPythonAction.triggered.connect(self.expand_python_size)
+        expandMenu.addAction(self.expandPythonAction)
 
         self.expandPlotAction = QAction('SNR Plot', self)
         self.expandPlotAction.triggered.connect(self.expand_plot_size)
@@ -3127,11 +3102,6 @@ class MainWindow(QMainWindow):
         self.swiftirExamplesAction.triggered.connect(self.view_swiftir_examples)
         swiftirMenu.addAction(self.swiftirExamplesAction)
 
-        if cfg.USE_JUPYTER:
-            self.restartPythonKernelAction = QAction('Restart Python Kernel', self)
-            self.restartPythonKernelAction.triggered.connect(self.restart_python_kernel)
-            helpMenu.addAction(self.restartPythonKernelAction)
-
         self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
         self.reloadBrowserAction.triggered.connect(self.browser_reload)
         helpMenu.addAction(self.reloadBrowserAction)
@@ -3153,7 +3123,7 @@ class MainWindow(QMainWindow):
         std_height = int(22)
         std_width = int(96)
         std_button_size = QSize(std_width, std_height)
-        normal_button_width = int(68)
+        normal_button_width = int(60)
         normal_button_height = int(30)
         normal_button_size = QSize(normal_button_width, normal_button_height)
         slim_button_height = int(22)
@@ -3640,16 +3610,15 @@ class MainWindow(QMainWindow):
         self.show_hide_hud_button.setFixedSize(show_hide_button_sizes)
         self.show_hide_hud_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
 
-        if cfg.USE_JUPYTER:
-            tip = 'Show/Hide Python Console'
-            self.show_hide_python_button = QPushButton()
-            self.show_hide_python_button.setObjectName('show_hide_python_button')
-            self.show_hide_python_button.setStyleSheet(lower_controls_style)
-            self.show_hide_python_button.setStatusTip(tip)
-            self.show_hide_python_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            self.show_hide_python_button.clicked.connect(self.show_hide_python_callback)
-            self.show_hide_python_button.setFixedSize(show_hide_button_sizes)
-            self.show_hide_python_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
+        tip = 'Show/Hide Python Console'
+        self.show_hide_python_button = QPushButton()
+        self.show_hide_python_button.setObjectName('show_hide_python_button')
+        self.show_hide_python_button.setStyleSheet(lower_controls_style)
+        self.show_hide_python_button.setStatusTip(tip)
+        self.show_hide_python_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_hide_python_button.clicked.connect(self.show_hide_python_callback)
+        self.show_hide_python_button.setFixedSize(show_hide_button_sizes)
+        self.show_hide_python_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
 
         tip = 'Show/Hide Project Treeview'
         self.show_hide_project_tree_button = QPushButton('Hide Tools')
@@ -3670,23 +3639,22 @@ class MainWindow(QMainWindow):
         # self.main_splitter.addWidget(self.snr_plot)
         self.main_splitter.addWidget(self.matchpoint_controls)
         # self.main_splitter.addWidget(self.projectdata_treeview_widget)
-        if cfg.USE_JUPYTER:
-            self.main_splitter.addWidget(self.python_console)
+        self.main_splitter.addWidget(self.python_console)
         self.main_splitter.setHandleWidth(0)
         self.main_splitter.setCollapsible(0, False)
         self.main_splitter.setCollapsible(1, False)
         self.main_splitter.setCollapsible(2, False)
         self.main_splitter.setCollapsible(3, False)
         self.main_splitter.setCollapsible(4, False)
-        self.main_splitter.setCollapsible(5, False)
-        self.main_splitter.setCollapsible(6, False)
+        # self.main_splitter.setCollapsible(5, False)
+        # self.main_splitter.setCollapsible(6, False)
         self.main_splitter.setStretchFactor(0,5)
         self.main_splitter.setStretchFactor(1,1)
         self.main_splitter.setStretchFactor(2,1)
         self.main_splitter.setStretchFactor(3,1)
         self.main_splitter.setStretchFactor(4,1)
-        self.main_splitter.setStretchFactor(5,1)
-        self.main_splitter.setStretchFactor(6,1)
+        # self.main_splitter.setStretchFactor(5,1)
+        # self.main_splitter.setStretchFactor(6,1)
 
         self.show_hide_main_features_widget = QWidget()
         self.show_hide_main_features_widget.setObjectName('show_hide_main_features_widget')
@@ -3694,8 +3662,7 @@ class MainWindow(QMainWindow):
         self.show_hide_main_features_vlayout.addWidget(self.show_hide_controls_button, alignment=Qt.AlignHCenter)
         self.show_hide_main_features_vlayout.addWidget(self.show_hide_snr_plot_button, alignment=Qt.AlignHCenter)
         self.show_hide_main_features_vlayout.addWidget(self.show_hide_project_tree_button, alignment=Qt.AlignHCenter)
-        if cfg.USE_JUPYTER:
-            self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignHCenter)
+        self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignHCenter)
         # self.show_hide_main_features_vlayout.addWidget(self.show_hide_overview_button, alignment=Qt.AlignHCenter)
         self.show_hide_main_features_widget.setLayout(self.show_hide_main_features_vlayout)
 
@@ -3957,10 +3924,9 @@ class MainWindow(QMainWindow):
         self.scale_ctrl_layout.setContentsMargins(0, 0, 0, 0)
         self.history_layout.setContentsMargins(0, 0, 0, 0)
         self.toggle_bounding_hlayout.setContentsMargins(0, 0, 0, 0)
-        self.new_control_panel_layout.setContentsMargins(0, 0, 0, 0)
+        self.new_control_panel_layout.setContentsMargins(2, 2, 2, 2)
         self.full_window_controls_hlayout.setContentsMargins(4, 0, 4, 0)
-        if cfg.USE_JUPYTER:
-            self.python_console.setContentsMargins(4, 2, 4, 2)
+        self.python_console.setContentsMargins(4, 2, 4, 2)
         self.low_low_gridlayout.setContentsMargins(4, 0, 4, 0)
         # self.pbar_layout.setContentsMargins(0, 0, 0, 0)
         self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)

@@ -5,11 +5,13 @@ SNR Plot Class. Depends on 'pyqtgraph' Python module.
 https://github.com/robertsj/poropy/blob/master/pyqtgraph/graphicsItems/ScatterPlotItem.py
 https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/ScatterPlotItem.html
 '''
+import os
+import sys
 from math import ceil
 import logging
 
 import pyqtgraph as pg
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
+from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
 
@@ -24,8 +26,16 @@ class SnrPlot(QWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.plot = pg.PlotWidget()
-        self.plot.setAntialiasing(False)
+
+        self.app = pg.mkQApp()
+        self.view = pg.GraphicsLayoutWidget()
+        self.plot = self.view.addPlot()
+
+        self.spw = pg.ScatterPlotWidget()
+        # self.spw.
+
+        # self.plot = pg.PlotWidget()
+        # self.plot.setAntialiasing(False)
         # pg.setConfigOptions(antialias=True)
         self._plot_colors = ['#FF007F', '#66FF00', '#08E8DE',
                              '#8c001a', '#2CBFF7', '#c7b286',
@@ -65,7 +75,8 @@ class SnrPlot(QWidget):
         self.checkboxes_widget.setLayout(self.checkboxes_hlayout)
 
         self.layout = QGridLayout()
-        self.layout.addWidget(self.plot, 0, 0, 1, 5)
+        # self.layout.addWidget(self.plot, 0, 0, 1, 5)
+        self.layout.addWidget(self.view, 0, 0, 1, 5)
         self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1)
         self.layout.setContentsMargins(4, 2, 4, 2)
         self.setLayout(self.layout)
@@ -114,6 +125,7 @@ class SnrPlot(QWidget):
 
 
     def plotData(self):
+        logger.info('plotData:')
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         logger.info('plotData:')
         if cfg.data:
@@ -129,6 +141,7 @@ class SnrPlot(QWidget):
 
 
     def plotSingleScale(self, scale=None):
+        logger.info(f'plotSingleScale (scale: {scale}):')
         if scale == None: scale = cfg.data.scale()
         x_axis, y_axis = self.get_axis_data(s=scale)
         brush = self._plot_brushes[cfg.data.scales().index(scale)]
@@ -201,3 +214,10 @@ class SnrPlot(QWidget):
 
 '''
 
+if __name__ == '__main__':
+    app = QApplication([])
+    main_window = QMainWindow()
+    plot = SnrPlot()
+    main_window.setCentralWidget(plot)
+    main_window.show()
+    sys.exit(app.exec_())
