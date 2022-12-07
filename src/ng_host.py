@@ -202,8 +202,8 @@ class NgHost(QRunnable):
         # self.viewer = ng.UnsynchronizedViewer()
         self.viewer = ng.Viewer()  # 1108+
 
-        tempdir = tempfile.mkdtemp()
-        self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
+        # tempdir = tempfile.mkdtemp()
+        # self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
 
         self.viewer_url = str(self.viewer)
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
@@ -683,8 +683,8 @@ class NgHost(QRunnable):
 
     def get_viewer_url(self):
         '''From extend_segments example'''
-        # return self.viewer.get_viewer_url()
-        return self.server_url
+        return self.viewer.get_viewer_url()
+        # return self.server_url
 
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(self.viewer.state))
