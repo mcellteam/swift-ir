@@ -287,6 +287,9 @@ class DataModel:
     def scale(self) -> str:
         '''Returns the Current Scale as a String.'''
         assert isinstance(self._data['data']['current_scale'], str)
+        if self._data['data']['current_scale'] == '':
+            logger.warning('WARNING: Scale Was An Empty String')
+            self._data['data']['current_scale'] = cfg.data.scales()[-1]
         return self._data['data']['current_scale']
 
     def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
