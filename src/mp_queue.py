@@ -99,8 +99,10 @@ class TaskQueue(QObject):
             # sys.stderr.write('Starting Worker %d >>>>\n' % i)
             logger.info('Starting Worker %d >>>>' % i)
             try:
-                # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
-                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                if cfg.DAEMON_THREADS:
+                    p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                else:
+                    p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -117,8 +119,12 @@ class TaskQueue(QObject):
         for i in range(self.n_workers):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
             try:
-                # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
-                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                if cfg.DAEMON_THREADS:
+                    p = self.ctx.Process(target=worker, daemon=True,
+                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
+                else:
+                    p = self.ctx.Process(target=worker,
+                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
