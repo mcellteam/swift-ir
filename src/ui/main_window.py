@@ -305,6 +305,8 @@ class MainWindow(QMainWindow):
         self.force_hide_python_console()
         if caller == 'expand_python_size':
             self.force_hide_snr_plot()
+        elif caller == '__init__':
+            self.force_hide_snr_plot()
 
 
     def show_hide_project_tree_callback(self):
@@ -3116,10 +3118,6 @@ class MainWindow(QMainWindow):
         self.swiftirExamplesAction = QAction('SWiFT-IR Examples', self)
         self.swiftirExamplesAction.triggered.connect(self.view_swiftir_examples)
         swiftirMenu.addAction(self.swiftirExamplesAction)
-
-        self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
-        self.reloadBrowserAction.triggered.connect(self.browser_reload)
-        helpMenu.addAction(self.reloadBrowserAction)
 
         self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
         self.reloadBrowserAction.triggered.connect(self.browser_reload)
