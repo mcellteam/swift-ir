@@ -13,6 +13,8 @@ cfg.main_window.ng_workers['scale_4'].refLV.info()
 '''
 
 import os
+import sys
+sys.settrace()
 import copy
 import pprint
 import shutil
