@@ -57,9 +57,9 @@ class SnrPlot(QWidget):
         font.setPixelSize(14)
         self.plot.getAxis("bottom").tickFont = font
         self.plot.getAxis("bottom").setStyle(tickFont=font)
-        # self.plot.getAxis("bottom").setHeight(20)
+        self.plot.getAxis("bottom").setHeight(20)
         self.plot.getAxis("left").setStyle(tickFont=font)
-        # self.plot.getAxis("left").setWidth(24)
+        self.plot.getAxis("left").setWidth(24)
         self.plot.getAxis("left").setStyle(tickTextOffset=2)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
         self.plot.setLabel('left', 'SNR', **style)
