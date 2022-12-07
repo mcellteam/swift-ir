@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Performance:
-Function 'initJupyter' executed in 0.5900s
+Function 'initPythonConsole' executed in 0.5900s
 
 
 '''

@@ -37,7 +37,6 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 
 import src.config as cfg
-from src.funcs_ng import launch_server
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
 from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string, track
 from src.shaders import ann_shader
@@ -742,6 +741,7 @@ def launch_server(bind_address: str, output_dir: str) -> int:
             asyncio.set_event_loop(ioloop.asyncio_loop)
             server_url_future.set_result(_start_server(bind_address, output_dir))
         except Exception as e:
+            logger.warning('LAUNCH SERVER EXCEPTION')
             server_url_future.set_exception(e)
             return
         ioloop.start()
