@@ -119,7 +119,7 @@ export QT_API=pyqt5
 #echo "Disabling QtWebEngine sandbox..."
 #export QTWEBENGINE_CHROMIUM_FLAGS='--disable-sandbox'
 #export QTWEBENGINE_DISABLE_SANDBOX=1
-BLOSC_NTHREADS=1
+export BLOSC_NTHREADS=1
 
 echo "Activating Preconfigured Conda Environment..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
