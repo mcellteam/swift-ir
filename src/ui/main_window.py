@@ -825,6 +825,8 @@ class MainWindow(QMainWindow):
                 except:
                     print_exception()
                     self.hud.post('Something Went Wrong', logging.WARNING)
+                else:
+                    self.hud.done()
         else:
             self.hud.post('There Are No Skips To Clear.', logging.WARNING)
             return
@@ -2427,7 +2429,6 @@ class MainWindow(QMainWindow):
         logger.info('Clearing Match Points...')
         cfg.data.clear_match_points()
         self.updateLowLowWidgetB()
-        # self.image_panel.update_multi_self()
 
 
     def print_all_matchpoints(self):
@@ -2502,7 +2503,7 @@ class MainWindow(QMainWindow):
 
     def set_opacity(self, obj, val):
         op = QGraphicsOpacityEffect(self)
-        op.setOpacity(val)  # 0 to 1 will cause the fade effect to kick in
+        op.setOpacity(val)  # 0 to 1 -> fade effect
         obj.setGraphicsEffect(op)
         obj.setAutoFillBackground(True)
 
@@ -3168,7 +3169,6 @@ class MainWindow(QMainWindow):
         self.skip_label = QLabel("Toggle Image\nKeep/Reject:")
         self.skip_label.setStyleSheet("font-size: 11px;")
         self.skip_label.setStatusTip(tip)
-        # self.toggle_skip = ToggleSwitch()
         self.toggle_skip = QCheckBox()
         self.toggle_skip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.toggle_skip.setObjectName('toggle_skip')
@@ -3341,14 +3341,14 @@ class MainWindow(QMainWindow):
         self.new_control_panel_layout.addLayout(self.swim_grid)
         self.new_control_panel_layout.addLayout(self.whitening_grid)
         self.new_control_panel_layout.addWidget(self.apply_all_button)
-        self.new_control_panel_layout.addWidget(self.scale_ctrl_label)
-        self.new_control_panel_layout.addLayout(self.scale_ctrl_layout)
         self.new_control_panel_layout.addLayout(self.poly_order_hlayout)
         self.new_control_panel_layout.addLayout(self.toggle_bounding_hlayout)
         self.new_control_panel_layout.addWidget(self.regenerate_button)
         self.new_control_panel_layout.addWidget(self.align_one_button)
         self.new_control_panel_layout.addWidget(self.align_forward_button)
         self.new_control_panel_layout.addWidget(self.align_all_button)
+        self.new_control_panel_layout.addWidget(self.scale_ctrl_label)
+        self.new_control_panel_layout.addLayout(self.scale_ctrl_layout)
         self.new_control_panel_layout.addStretch()
         self.new_control_panel.setLayout(self.new_control_panel_layout)
 
@@ -3480,15 +3480,12 @@ class MainWindow(QMainWindow):
         self.external_hyperlink.setMaximumHeight(24)
         self.external_hyperlink.setAcceptRichText(True)
         self.external_hyperlink.setOpenExternalLinks(True)
-        # self.external_hyperlink.hide()
 
         self.layer_view_container = QWidget(parent=self)
         self.layer_view_container_layout = QVBoxLayout()
         self.layer_view_container.setLayout(self.layer_view_container_layout)
-
         self.layer_view_widget = LayerViewWidget()
         self.layer_view_widget.setObjectName('layer_view_widget')
-
         self.layer_view_container_layout.addWidget(self.external_hyperlink)
         self.layer_view_container_layout.addWidget(self.layer_view_widget)
 
@@ -3640,10 +3637,7 @@ class MainWindow(QMainWindow):
         self.main_splitter.addWidget(self.main_tab_widget)
         self.main_splitter.addWidget(self.new_control_panel)
         self.main_splitter.addWidget(self.hud_and_plot_splitter)
-        # self.main_splitter.addWidget(self.hud)
-        # self.main_splitter.addWidget(self.snr_plot)
         self.main_splitter.addWidget(self.matchpoint_controls)
-        # self.main_splitter.addWidget(self.projectdata_treeview_widget)
         self.main_splitter.addWidget(self.python_console)
         self.main_splitter.setHandleWidth(0)
         self.main_splitter.setCollapsible(0, False)
@@ -3651,15 +3645,11 @@ class MainWindow(QMainWindow):
         self.main_splitter.setCollapsible(2, False)
         self.main_splitter.setCollapsible(3, False)
         self.main_splitter.setCollapsible(4, False)
-        # self.main_splitter.setCollapsible(5, False)
-        # self.main_splitter.setCollapsible(6, False)
         self.main_splitter.setStretchFactor(0,5)
         self.main_splitter.setStretchFactor(1,1)
         self.main_splitter.setStretchFactor(2,1)
         self.main_splitter.setStretchFactor(3,1)
         self.main_splitter.setStretchFactor(4,1)
-        # self.main_splitter.setStretchFactor(5,1)
-        # self.main_splitter.setStretchFactor(6,1)
 
         self.show_hide_main_features_widget = QWidget()
         self.show_hide_main_features_widget.setObjectName('show_hide_main_features_widget')
@@ -3919,8 +3909,6 @@ class MainWindow(QMainWindow):
         self.main_details_subwidgetB.setContentsMargins(0, 0, 0, 0)
         self.new_main_widget_vlayout.setContentsMargins(0, 0, 0, 0)
         self.show_hide_main_features_vlayout.setContentsMargins(0, 0, 0, 0)
-        # self.show_hide_main_features_vlayout.setContentsMargins(4, 4, 4, 10)
-        # self.show_hide_main_features_vlayout.setContentsMargins(2, 2, 2, 2)
         self.ng_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_panel_controls_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_browser_layout.setContentsMargins(0, 0, 0, 0)
@@ -3933,7 +3921,6 @@ class MainWindow(QMainWindow):
         self.full_window_controls_hlayout.setContentsMargins(4, 0, 4, 0)
         self.python_console.setContentsMargins(4, 2, 4, 2)
         self.low_low_gridlayout.setContentsMargins(4, 0, 4, 0)
-        # self.pbar_layout.setContentsMargins(0, 0, 0, 0)
         self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_scale_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_view_hlayout.setContentsMargins(4, 0, 4, 0)
@@ -3942,16 +3929,14 @@ class MainWindow(QMainWindow):
         self.layer_view_container_layout.setContentsMargins(0, 0, 0, 0)
         self.projectdata_treeview_layout.setContentsMargins(0, 0, 2, 0)
         self.hud.setContentsMargins(2, 0, 0, 0)
-
         self.show_hide_main_features_vlayout.setSpacing(0)
         self.show_hide_main_features_widget.setMaximumHeight(74)
         self.low_low_widget.setMaximumHeight(78)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        self.main_details_subwidgetA.setMinimumWidth(128)
-        self.main_details_subwidgetB.setMinimumWidth(128)
-        self.afm_widget.setMinimumWidth(128)
-        self.history_widget.setMinimumWidth(128)
-
+        self.main_details_subwidgetA.setMinimumWidth(148)
+        self.main_details_subwidgetB.setMinimumWidth(148)
+        self.afm_widget.setMinimumWidth(148)
+        self.history_widget.setMinimumWidth(148)
 
 
     #@timer

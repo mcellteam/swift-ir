@@ -212,15 +212,10 @@ class NgHost(QRunnable):
         is_aligned = is_arg_scale_aligned(self.scale)
 
         logger.info(f'scale factor  : {self.sf}')
-        logger.info(f'ref_l         : {self.ref_l}')
-        logger.info(f'base_l        : {self.base_l}')
-        logger.info(f'aligned_l     : {self.aligned_l}')
         logger.info(f'al_url        : {self.al_url}')
         logger.info(f'src_url       : {self.src_url}')
-        logger.info(f'zarr_addr     : {self.zarr_addr}')
-        logger.info(f'al_name       : {self.al_name}')
 
-        # FORCE
+        # Force
         if cfg.data.is_mendenhall():
             is_aligned = True
 
