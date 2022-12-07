@@ -168,14 +168,14 @@ class MainWindow(QMainWindow):
         # Performance with settings: Function 'initWebEngine' executed in 0.1939s
         # Without: Function 'initWebEngine' executed in 0.0001s
         logger.info('')
-        self.webengineview = QWebEngineView()
+        self.ng_browser = QWebEngineView()
         # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
         # if qtpy.PYSIDE6:
-        self.webengineview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.webengineview.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
     def initPrivateMembers(self):
