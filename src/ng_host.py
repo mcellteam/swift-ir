@@ -31,6 +31,8 @@ from math import floor
 from decimal import Decimal
 from math import floor
 import numpy as np
+import numcodecs
+numcodecs.blosc.use_threads = False
 
 import neuroglancer as ng
 import neuroglancer.webdriver
