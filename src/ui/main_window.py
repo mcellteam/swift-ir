@@ -1642,6 +1642,7 @@ class MainWindow(QMainWindow):
 
 
     def open_project(self):
+        #Todo check for Zarr files. Generate/Re-generate if necessary
         logger.critical('Opening Project...')
         filename = open_project_dialog()
         logger.info(f'Project File: {filename}')
@@ -1710,6 +1711,7 @@ class MainWindow(QMainWindow):
             else:
                 self.initNgServer(scales=[cfg.data.scale()])
         self.update_ng_hyperlink()
+        self.image_panel_stack_widget.setCurrentIndex(1)
         QApplication.processEvents()
 
 
@@ -2106,9 +2108,10 @@ class MainWindow(QMainWindow):
                     mp_mode = False
                 logger.info('Deleting Viewer for %s...' % s)
                 try:
-                    del self.ng_workers[s]
+                    if self.ng_workers[s]:
+                        del self.ng_workers[s]
                 except:
-                    pass
+                    print_exception()
                 time.sleep(1)
                 logger.debug('Launching NG Server for %s...' % s)
 

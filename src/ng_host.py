@@ -200,6 +200,15 @@ class NgHost(QRunnable):
         logger.info(f'Initializing Neuroglancer Client Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
+        logger.info(f'scale factor  : {self.sf}')
+        logger.info(f'ref_l         : {self.ref_l}')
+        logger.info(f'base_l        : {self.base_l}')
+        logger.info(f'aligned_l     : {self.aligned_l}')
+        logger.info(f'al_url        : {self.al_url}')
+        logger.info(f'src_url       : {self.src_url}')
+        logger.info(f'zarr_addr     : {self.zarr_addr}')
+        logger.info(f'al_name       : {self.al_name}')
+
         # FORCE
         if cfg.data.is_mendenhall():
             is_aligned = True
@@ -311,7 +320,11 @@ class NgHost(QRunnable):
                 #     dimensions=self.coordinate_space,
                 #     voxel_offset=[0, ] * 3,  # voxel offset of 1
                 # )
-                self.unal_dataset = get_zarr_tensor(self.unal_name).result()
+                try:
+                    self.unal_dataset = get_zarr_tensor(self.unal_name).result()
+                except:
+                    print_exception()
+                    logger.error(f'Unable To Get Zarr Tensor, Source, Scale {self.sf}')
                 self.json_unal_dataset = self.unal_dataset.spec().to_json()
                 # pprint.pprint(self.json_unal_dataset)
                 # logger.info(self.json_unal_dataset)
@@ -326,7 +339,11 @@ class NgHost(QRunnable):
                     voxel_offset=[0, x_nudge, y_nudge]
                 )
                 if is_aligned:
-                    self.al_dataset = get_zarr_tensor(self.al_name).result()
+                    try:
+                        self.al_dataset = get_zarr_tensor(self.al_name).result()
+                    except:
+                        print_exception()
+                        logger.error(f'Unable To Get Zarr Tensor, Aligned, Scale {self.sf}')
                     self.json_al_dataset = self.al_dataset.spec().to_json()
                     # pprint.pprint(self.json_al_dataset)
                     # logger.info(self.json_al_dataset)
