@@ -3137,7 +3137,7 @@ class MainWindow(QMainWindow):
         std_button_size = QSize(96, std_height)
         normal_button_size = QSize(64, 28)
         slim_button_size = QSize(64, std_height)
-        small_button_size = QSize(48, std_height)
+        small_button_size = QSize(54, std_height)
         std_combobox_size = QSize(52, 20)
 
         lower_controls_style = "border-style: solid;" \
@@ -3223,7 +3223,7 @@ class MainWindow(QMainWindow):
         self.apply_all_button.setStyleSheet("font-size: 10px;")
         self.apply_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.apply_all_button.clicked.connect(self.apply_all)
-        self.apply_all_button.setFixedSize(slim_button_size)
+        self.apply_all_button.setFixedSize(small_button_size)
 
         tip = 'Go To Next Scale.'
         self.next_scale_button = QPushButton()
