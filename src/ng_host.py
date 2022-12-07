@@ -104,8 +104,11 @@ class NgHost(QRunnable):
         self.mp_mode = False
 
     def __del__(self):
-        caller = inspect.stack()[1].function
-        logger.critical('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
+        try:
+            caller = inspect.stack()[1].function
+            logger.critical('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
+        except:
+            logger.warning('Unable to decipher who caller is')
         # client.loop.run_until_complete(payload(client))
         # for task in asyncio.Task.all_tasks(client.loop):
         #     task.cancel()
@@ -119,6 +122,9 @@ class NgHost(QRunnable):
 
     @Slot()
     def run(self):
+        self.viewer = ng.Viewer()
+        # launch_server(bind_address='127.0.0.1')
+
         # if cfg.USE_TORNADO:
         #     logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
         #     try:
@@ -127,7 +133,7 @@ class NgHost(QRunnable):
         #         self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
         #     except:
         #         print_exception()
-        pass
+
 
     def request_layer(self):
         return floor(self.viewer.state.position[0])
@@ -160,7 +166,7 @@ class NgHost(QRunnable):
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
-        self.viewer = ng.Viewer()
+        # self.viewer = ng.Viewer()
         self.viewer_url = str(self.viewer)
         image_size = cfg.data.image_size()
         widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
@@ -205,6 +211,7 @@ class NgHost(QRunnable):
 
         # self.viewer = ng.UnsynchronizedViewer()
         self.viewer = ng.Viewer()  # 1108+
+        ng.set_server_bind_address(bind_address='127.0.0.1')
 
         # tempdir = tempfile.mkdtemp()
         # self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
