@@ -63,7 +63,7 @@ class WorkerSignals(QObject):
 
 
 # class NgHost(QRunnable):
-class NgHost:
+class NgHost(QRunnable):
     # stateChanged = Signal(str)
 
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
@@ -122,16 +122,16 @@ class NgHost:
     def __repr__(self):
         return copy.deepcopy(self.viewers.state)
 
-    # @Slot()
-    # def run(self):
-    #     # Retrieve args/kwargs here; and fire processing using them
-    #     try:
-    #         self.viewer = ng.Viewer()
-    #         # result = self.fn(
-    #         #     *self.args, **self.kwargs
-    #         # )
-    #     except:
-    #         traceback.print_exc()
+    @Slot()
+    def run(self):
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            self.viewer = ng.Viewer()
+            # result = self.fn(
+            #     *self.args, **self.kwargs
+            # )
+        except:
+            traceback.print_exc()
 
 
         # self.viewer = ng.Viewer()
