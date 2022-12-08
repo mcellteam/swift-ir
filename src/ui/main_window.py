@@ -471,6 +471,7 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
         self.initNgServer(scales=[cfg.data.scale()]) #1203+
         # self.initNgViewer(scales=[cfg.data.scale()]) #1203+
+        self.app.processEvents()
 
 
 
