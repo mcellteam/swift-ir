@@ -306,8 +306,8 @@ class NgHost:
             adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
 
-            # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
 
             # In general the existing defaults are pretty reasonable and you
             # can't raise them too much without running into problems. -jbms
@@ -478,8 +478,8 @@ class NgHost:
                 else:
                     s.layout = ng.row_layout(grps)
 
-            self.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            # self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
+            # self.viewer.shared_state.add_changed_callback(self.on_state_changed)
+            self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
 
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
