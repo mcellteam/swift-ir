@@ -200,7 +200,12 @@ class NgHost:
 
         # self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
 
-    def initViewer(self, matchpoint=None, widget_size=None, show_ui_controls=True, show_panel_borders=False):
+    def initViewer(self,
+                   matchpoint=None,
+                   widget_size=None,
+                   show_ui_controls=True,
+                   show_panel_borders=False,
+                   show_scale_bar=False):
         if cfg.data.is_mendenhall() and cfg.MV:
             logger.warning('Transferring control to initViewerMendenhall...')
             self.initViewerMendenhall()
@@ -306,6 +311,8 @@ class NgHost:
             # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
 
             # adjustment = 1.04
+
+            s.show_scale_bar = show_scale_bar
 
             # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
 
@@ -498,15 +505,9 @@ class NgHost:
         with self.viewer.config_state.txn() as s:
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
-            if show_ui_controls:
-                s.show_ui_controls = True
-            else:
-                # s.show_ui_controls = cfg.SHOW_UI_CONTROLS
-                s.show_ui_controls = False
-            if show_panel_borders:
-                s.show_panel_borders = True
-            else:
-                s.show_panel_borders = False
+            s.show_ui_controls = show_ui_controls
+            s.show_panel_borders = show_panel_borders
+
 
         self._layer = self.request_layer()
 

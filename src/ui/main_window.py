@@ -1365,7 +1365,6 @@ class MainWindow(QMainWindow):
         logger.info(f'All Threads      : \n{threads}')
 
         self.hud.post(f'# Active Threads : {threading.active_count()}')
-        self.hud.post(f'# Active Threads : {threading.active_count()}')
         self.hud.post(f'Current Thread   : {threading.current_thread()}')
         self.hud.post(f'All Threads      : \n{threads}')
 
