@@ -37,7 +37,7 @@ CLEVEL = 5
 
 '''Other Defaults'''
 # IS_TACC = None
-DAEMON_THREADS = False
+DAEMON_THREADS = True
 PROFILER = False
 DUMMY = False
 USE_TENSORSTORE = True
