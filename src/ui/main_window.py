@@ -145,10 +145,9 @@ class MainWindow(QMainWindow):
 
 
     def initThreadpool(self, timeout=3000):
-        pass
-        # logger.info('')
-        # self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
-        # self.threadpool.setExpiryTimeout(timeout)  # ms
+        logger.info('')
+        self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
+        self.threadpool.setExpiryTimeout(timeout)  # ms
 
 
     def initImageAllocations(self):
@@ -2183,13 +2182,12 @@ class MainWindow(QMainWindow):
 
                 widget_size = self.image_panel_stack_widget.geometry().getRect()
 
-                # self.threadpool.waitForDone(500)
-                # # self.threadpool.releaseThread()
-
-                # self.ng_workers[s] = NgHost(parent=self, src=cfg.data.dest(), scale=s)
-                # self.threadpool.start(self.ng_workers[s])
-                # self.ng_workers[s].initViewer(widget_size=widget_size, matchpoint=mp_mode)
-                # self.ng_workers[s].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
+                self.threadpool.waitForDone(500)
+                # self.threadpool.releaseThread()
+                self.ng_workers[s] = NgHost(parent=self, src=cfg.data.dest(), scale=s)
+                self.threadpool.start(self.ng_workers[s])
+                self.ng_workers[s].initViewer(widget_size=widget_size, matchpoint=mp_mode)
+                self.ng_workers[s].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
 
                 self.ng_workers[s] = NgHost(parent=self, src=cfg.data.dest(), scale=s)
                 self.ng_workers[s].initViewer(widget_size=widget_size, matchpoint=mp_mode)
