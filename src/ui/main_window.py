@@ -399,9 +399,7 @@ class MainWindow(QMainWindow):
         #Todo This should check for existence of original source files before doing anything
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.hud.post('Generating TIFF Scale Hierarchy...')
-        if ng.is_server_running():
-            logger.info('Stopping Neuroglancer...')
-            ng.server.stop()
+        self.stopNgServer()
 
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -489,6 +487,8 @@ class MainWindow(QMainWindow):
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.hud.post(warning_msg, logging.WARNING)
             return
+
+        self.stopNgServer()
 
         logger.info('Aligning All...')
         if scale == None: scale = cfg.data.scale()
@@ -610,6 +610,8 @@ class MainWindow(QMainWindow):
             self.hud.post(warning_msg, logging.WARNING)
             return
 
+        self.stopNgServer()
+
         logger.info('Aligning Forward...')
         if scale == None: scale = cfg.data.scale()
         scale_val = get_scale_val(scale)
@@ -675,6 +677,8 @@ class MainWindow(QMainWindow):
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.hud.post(warning_msg, logging.WARNING)
             return
+
+        self.stopNgServer()
 
         logger.info('SNR Before: %s' % str(cfg.data.snr_report()))
         logger.info('Aligning Single Layer...')
@@ -746,6 +750,9 @@ class MainWindow(QMainWindow):
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING); return
         self.widgetsUpdateData()
+
+        self.stopNgServer()
+
         logger.info('Regenerate Aligned Images...')
         self.hud.post('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
