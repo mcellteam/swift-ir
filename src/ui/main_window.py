@@ -101,10 +101,11 @@ class MainWindow(QMainWindow):
         self.initSize(cfg.WIDTH, cfg.HEIGHT)
         self.initPos()
         self.initStyle()
-        self.initView()
+        # self.initView()
         self.initPrivateMembers()
         self.initShortcuts()
         self.initData()
+        self.initView()
 
         if is_tacc():
             cfg.USE_TORNADO = True
@@ -235,6 +236,7 @@ class MainWindow(QMainWindow):
         self.toolbar_scale_combobox.setEnabled(True)
         self.update_ng_hyperlink()
         cfg.SHADER = None
+        # self.updateEnabledButtons()
 
         if cfg.data:
             self._is_mp_mode = False
@@ -311,6 +313,7 @@ class MainWindow(QMainWindow):
             self.force_hide_snr_plot()
         elif caller == '__init__':
             self.force_hide_snr_plot()
+        # self.app.processEvents() # <-- weird bug, makes window smaller
 
 
     def show_hide_project_tree_callback(self):
@@ -467,6 +470,7 @@ class MainWindow(QMainWindow):
         self.showScoreboardWidegts()
         self.project_model.load(cfg.data.to_dict())
         self.initNgServer(scales=[cfg.data.scale()]) #1203+
+        # self.initNgViewer(scales=[cfg.data.scale()]) #1203+
 
 
 
