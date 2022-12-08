@@ -81,6 +81,7 @@ class NgHost:
         self.port = port
         self.scale = scale
         scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
+        logger.info(f'scales: {scales}')
         self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
         self.sf = get_scale_val(scale)  # s factor
         self.ref_l = 'ref_%d' % self.sf
@@ -304,8 +305,10 @@ class NgHost:
 
             adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
+
+            # s.gpu_memory_limit = -1
+            # s.system_memory_limit = -1
+
             # In general the existing defaults are pretty reasonable and you
             # can't raise them too much without running into problems. -jbms
 
