@@ -38,6 +38,7 @@ CLEVEL = 5
 '''Other Defaults'''
 # IS_TACC = None
 DAEMON_THREADS = True
+USE_EXTRA_THREADING = False
 DEBUG_MP = False
 PROFILER = False
 DUMMY = False
@@ -45,7 +46,6 @@ USE_TENSORSTORE = True
 USE_SIMPLEHTTPSERVER = True
 USE_JUPYTER = True
 USE_TORNADO = True
-USE_EXTRA_THREADING = False
 FAULT_HANDLER = True
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
