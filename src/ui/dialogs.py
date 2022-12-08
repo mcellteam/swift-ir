@@ -4,6 +4,7 @@ import os, sys, logging, textwrap, platform
 from os.path import expanduser
 from pathlib import Path
 import faulthandler
+import neuroglancer as ng
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton
@@ -237,6 +238,15 @@ class ConfigAppDialog(QDialog):
         headlessLayout.addWidget(QLabel('Enable Neuroglancer Headless Mode: '))
         headlessLayout.addWidget(self.headlessCheckbox, alignment=Qt.AlignRight)
 
+        ngdebugWidget = QWidget()
+        ngdebugLayout = QHBoxLayout()
+        ngdebugLayout.setContentsMargins(4, 2, 4, 2)
+        ngdebugWidget.setLayout(ngdebugLayout)
+        self.ngdebugCheckbox = QCheckBox()
+        self.ngdebugCheckbox.setChecked(cfg.DEBUG_NEUROGLANCER)
+        ngdebugLayout.addWidget(QLabel('Enable Neuroglancer Server Debugging: '))
+        ngdebugLayout.addWidget(self.ngdebugCheckbox, alignment=Qt.AlignRight)
+
         mpdebugWidget = QWidget()
         mpdebugLayout = QHBoxLayout()
         mpdebugLayout.setContentsMargins(4, 2, 4, 2)
@@ -284,6 +294,7 @@ class ConfigAppDialog(QDialog):
 
         layout.addWidget(tsWidget)
         layout.addWidget(headlessWidget)
+        layout.addWidget(ngdebugWidget)
         layout.addWidget(mpdebugWidget)
         layout.addWidget(useprofilerWidget)
         layout.addWidget(faultWidget)
@@ -303,6 +314,11 @@ class ConfigAppDialog(QDialog):
             else:
                 cfg.main_window.main_tab_widget.setTabVisible(0, True)
                 cfg.main_window.external_hyperlink.hide()
+            cfg.DEBUG_NEUROGLANCER = self.ngdebugCheckbox.isChecked()
+            if ng.is_server_running():
+                logger.info(f'Setting Neuroglancer Server Debugging: {cfg.DEBUG_NEUROGLANCER}')
+                ng.server.debug = cfg.DEBUG_NEUROGLANCER
+
             cfg.DEBUG_MP = self.mpdebugCheckbox.isChecked()
             cfg.PROFILER = self.useprofilerCheckbox.isChecked()
             if cfg.PROFILER:

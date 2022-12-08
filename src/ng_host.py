@@ -211,6 +211,9 @@ class NgHost:
             self.initViewerMendenhall()
             return
 
+
+        ng.server.debug = cfg.DEBUG_NEUROGLANCER
+
         if matchpoint != None:
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
