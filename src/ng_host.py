@@ -62,7 +62,8 @@ class WorkerSignals(QObject):
     mpUpdate = Signal()
 
 
-class NgHost(QRunnable):
+# class NgHost(QRunnable):
+class NgHost:
     # stateChanged = Signal(str)
 
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
@@ -121,16 +122,16 @@ class NgHost(QRunnable):
     def __repr__(self):
         return copy.deepcopy(self.viewers.state)
 
-    @Slot()
-    def run(self):
-        # Retrieve args/kwargs here; and fire processing using them
-        try:
-            self.viewer = ng.Viewer()
-            # result = self.fn(
-            #     *self.args, **self.kwargs
-            # )
-        except:
-            traceback.print_exc()
+    # @Slot()
+    # def run(self):
+    #     # Retrieve args/kwargs here; and fire processing using them
+    #     try:
+    #         self.viewer = ng.Viewer()
+    #         # result = self.fn(
+    #         #     *self.args, **self.kwargs
+    #         # )
+    #     except:
+    #         traceback.print_exc()
 
 
         # self.viewer = ng.Viewer()
@@ -177,7 +178,7 @@ class NgHost(QRunnable):
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
-        # self.viewer = ng.Viewer()
+        self.viewer = ng.Viewer()
         self.viewer_url = str(self.viewer)
         image_size = cfg.data.image_size()
         widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()

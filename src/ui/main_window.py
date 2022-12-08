@@ -9,6 +9,7 @@ import copy
 import time
 import glob
 import json
+import threading
 import asyncio
 import inspect
 import logging
@@ -144,9 +145,10 @@ class MainWindow(QMainWindow):
 
 
     def initThreadpool(self, timeout=3000):
-        logger.info('')
-        self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
-        self.threadpool.setExpiryTimeout(timeout)  # ms
+        pass
+        # logger.info('')
+        # self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
+        # self.threadpool.setExpiryTimeout(timeout)  # ms
 
 
     def initImageAllocations(self):
@@ -1091,7 +1093,7 @@ class MainWindow(QMainWindow):
         self.dataUpdateWidgets()
         self.updateHistoryListWidget(s=s)
         self.project_model.load(cfg.data.to_dict())
-        self.updateLowLowWidgetB()
+        self.updateSkipMatchWidget()
         self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
@@ -1165,10 +1167,8 @@ class MainWindow(QMainWindow):
             self.browser_overlay_widget.hide()
             self.browser_overlay_label.hide()
 
-        self.updateTextWidgetA()
-        self.updateAffineWidget()
+        self.setUIDetails()
 
-        # logger.info(f'Updating, Current Layer {cfg.data.layer()}...')
         try:     self.toggle_skip.setChecked(cfg.data.skipped())
         except:  logger.warning('Skip Toggle Widget Failed to Update')
         try:     self.toolbar_jump_input.setText(str(cfg.data.layer()))
@@ -1182,11 +1182,9 @@ class MainWindow(QMainWindow):
         try:     self.bias_bool_combo.setCurrentText(str(cfg.data.poly_order())) if cfg.data.null_cafm() else 'None'
         except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
 
-        # if self.main_tab_widget.currentIndex() == 1:
-        #     self.layer_view_widget.set_data()
 
 
-    def updateTextWidgetA(self, s=None, l=None):
+    def setUIDetails(self, s=None, l=None):
         if s == None: s = cfg.data.scale()
         if l == None: l = cfg.data.layer()
         name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
@@ -1205,40 +1203,53 @@ class MainWindow(QMainWindow):
                                                  f"{bb_dims}"
                                                  f"{snr}"
                                                  f"{completed}")
+            self.updateAffineWidget()
         else:
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"<em style='color: #FF0000;'>Not Aligned</em><br>"
                                                  f"{completed}")
+            self.clearAffineWidget()
+        self.main_details_subwidgetA.show()
 
 
-    def clearTextWidgetA(self):
-        self.main_details_subwidgetA.setText('')
-
-
-    def updateLowLowWidgetB(self):
+    def updateSkipMatchWidget(self):
         skips = '\n'.join(map(str,cfg.data.skips_list()))
         matchpoints = '\n'.join(map(str,cfg.data.find_layers_with_matchpoints()))
         self.main_details_subwidgetB.setText(f"<b>Skipped Layers:</b><br>"
                                              f"{skips}<br>"
                                              f"<b>Match Point Layers:</b><br>"
                                              f"{matchpoints}<br>")
-
-
-    def clearLowLowWidgetB(self):
-        self.main_details_subwidgetB.setText(f'<b>Skipped Layers:<br><br><b>Match Point Layers:</b>')
+        self.main_details_subwidgetB.show()
 
 
     def updateAffineWidget(self, s=None, l=None):
         if s == None: s = cfg.data.scale()
         if l == None: l = cfg.data.layer()
-        if is_cur_scale_aligned():
-            afm, cafm = cfg.data.afm(l=l), cfg.data.cafm(l=l)
-            self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
+        afm, cafm = cfg.data.afm(l=l), cfg.data.cafm(l=l)
+        self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
+        self.afm_widget.show()
+
+
+    def clearUIDetails(self):
+        self.clearTextWidgetA()
+        self.clearSkipMatchWidget()
+        self.clearAffineWidget()
+
+
+    def clearTextWidgetA(self):
+        self.main_details_subwidgetA.setText('')
+        # self.main_details_subwidgetA.hide()
+
+
+    def clearSkipMatchWidget(self):
+        self.main_details_subwidgetB.setText(f'<b>Skipped Layers:<br><br><b>Match Point Layers:</b>')
+        # self.main_details_subwidgetB.hide()
 
 
     def clearAffineWidget(self):
         afm = cafm = [[0] * 3, [0] * 3]
         self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
+        # self.afm_widget.hide()
 
 
     def updateHistoryListWidget(self, s=None):
@@ -1341,6 +1352,18 @@ class MainWindow(QMainWindow):
     def updateJumpValidator(self):
         self.jump_validator = QIntValidator(0, cfg.data.n_layers())
         self.toolbar_jump_input.setValidator(self.jump_validator)
+
+    def printActiveThreads(self):
+        threads = '\n'.join([thread.name for thread in threading.enumerate()])
+
+        logger.info(f'# Active Threads : {threading.active_count()}')
+        logger.info(f'Current Thread   : {threading.current_thread()}')
+        logger.info(f'All Threads      : \n{threads}')
+
+        self.hud.post(f'# Active Threads : {threading.active_count()}')
+        self.hud.post(f'Current Thread   : {threading.current_thread()}')
+        self.hud.post(f'All Threads      : \n{threads}')
+
 
 
     @Slot()
@@ -1595,9 +1618,7 @@ class MainWindow(QMainWindow):
         cfg.data = None #+
         self.initView()
         self.hud.clear_display()
-        self.clearTextWidgetA()
-        self.clearLowLowWidgetB()
-        self.clearAffineWidget()
+        self.clearUIDetails()
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.shutdownNeuroglancer()
         self.snr_plot.wipePlot()
@@ -1664,7 +1685,7 @@ class MainWindow(QMainWindow):
             self.hud.post("Selected Path Is A Directory.", logging.WARNING); return
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.shutdownNeuroglancer()
-        self.clearLowLowWidgetB()
+        self.clearUIDetails()
         try:
             with open(filename, 'r') as f:
                 project = DataModel(json.load(f))
@@ -1705,7 +1726,7 @@ class MainWindow(QMainWindow):
             self.snr_plot.initSnrPlot()
             self.force_show_snr_plot()
         self.showScoreboardWidegts()
-        self.updateLowLowWidgetB()
+        self.updateSkipMatchWidget()
         self.ng_workers = dict.fromkeys(cfg.data.scales())
         # self.initNgServer(scales=cfg.data.scales())
         self._scales_combobox_switch = 1
@@ -1741,7 +1762,7 @@ class MainWindow(QMainWindow):
         self.initView()
         self.shutdownNeuroglancer()
         self.snr_plot.wipePlot()
-        self.clearLowLowWidgetB()
+        self.clearUIDetails()
         path = cfg.data.dest()
         filenames = cfg.data.get_source_img_paths()
         scales = cfg.data.scales()
@@ -2160,13 +2181,20 @@ class MainWindow(QMainWindow):
                 #     # self.ng_browser_2.hide()
                 #     # QApplication.processEvents()
 
-                self.threadpool.waitForDone(500)
-                # self.threadpool.releaseThread()
                 widget_size = self.image_panel_stack_widget.geometry().getRect()
+
+                # self.threadpool.waitForDone(500)
+                # # self.threadpool.releaseThread()
+
+                # self.ng_workers[s] = NgHost(parent=self, src=cfg.data.dest(), scale=s)
+                # self.threadpool.start(self.ng_workers[s])
+                # self.ng_workers[s].initViewer(widget_size=widget_size, matchpoint=mp_mode)
+                # self.ng_workers[s].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
+
                 self.ng_workers[s] = NgHost(parent=self, src=cfg.data.dest(), scale=s)
-                self.threadpool.start(self.ng_workers[s])
                 self.ng_workers[s].initViewer(widget_size=widget_size, matchpoint=mp_mode)
-                self.ng_workers[s].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
+
+
                 self.refreshNeuroglancerURL(s=s)  # Important
             # self.refreshNeuroglancerURL() #Important
             self.toolbar_layout_combobox.setCurrentText('xy')
@@ -2372,15 +2400,10 @@ class MainWindow(QMainWindow):
                 self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
             cfg.data.link_all_stacks()
             self.dataUpdateWidgets()
-            self.updateLowLowWidgetB()
+            self.updateSkipMatchWidget()
             if self.main_tab_widget.currentIndex() == 1:
                 self.layer_view_widget.set_data()
             logger.info(f'new skip state: {skip_state}')
-
-    def updateOverview(self):
-        selected_indexes = self.layer_view_widget.table_view.selectedIndexes()
-        # self.layer_view_widget.table_view.set
-
 
 
     def skip_change_shortcut(self):
@@ -2415,40 +2438,44 @@ class MainWindow(QMainWindow):
                 self.toolbar_scale_combobox.setEnabled(True)
                 self.extra_header_text_label.setText('')
 
-                self.updateLowLowWidgetB()
+                self.updateSkipMatchWidget()
                 self.initView()
                 self.initNgViewer(matchpoint=False)
                 # self.initNgServer()
 
 
     def update_match_point_snr(self):
-        self.matchpoint_text_snr.setHtml(f'<h4>{cfg.data.snr_report()}</h4>')
+        if cfg.data:
+            self.matchpoint_text_snr.setHtml(f'<h4>{cfg.data.snr_report()}</h4>')
 
 
     def clear_match_points(self):
-        logger.info('Clearing Match Points...')
-        cfg.data.clear_match_points()
-        self.updateLowLowWidgetB()
+        if cfg.data:
+            logger.info('Clearing Match Points...')
+            cfg.data.clear_match_points()
+            self.updateSkipMatchWidget()
 
 
     def print_all_matchpoints(self):
-        cfg.data.print_all_matchpoints()
+        if cfg.data:
+            cfg.data.print_all_matchpoints()
 
 
     def show_all_matchpoints(self):
-        no_mps = True
-        for i, l in enumerate(cfg.data.alstack()):
-            r = l['images']['ref']['metadata']['match_points']
-            b = l['images']['base']['metadata']['match_points']
-            if r != []:
-                no_mps = False
-                self.hud.post(f'Layer: {i}, Ref, Match Points: {str(r)}')
-            if b != []:
-                no_mps = False
-                self.hud.post(f'Layer: {i}, Base, Match Points: {str(b)}')
-        if no_mps:
-            self.hud.post('This project has no match points.')
-        self.updateLowLowWidgetB()
+        if cfg.data:
+            no_mps = True
+            for i, l in enumerate(cfg.data.alstack()):
+                r = l['images']['ref']['metadata']['match_points']
+                b = l['images']['base']['metadata']['match_points']
+                if r != []:
+                    no_mps = False
+                    self.hud.post(f'Layer: {i}, Ref, Match Points: {str(r)}')
+                if b != []:
+                    no_mps = False
+                    self.hud.post(f'Layer: {i}, Base, Match Points: {str(b)}')
+            if no_mps:
+                self.hud.post('This project has no match points.')
+            self.updateSkipMatchWidget()
 
 
     def show_run_path(self) -> None:
@@ -2463,24 +2490,28 @@ class MainWindow(QMainWindow):
 
 
     def show_snr_list(self) -> None:
-        s = cfg.data.scale_val()
-        lst = ' | '.join(map(str, cfg.data.snr_list()))
-        self.hud.post('\n\nSNR List for Scale %d:\n%s\n' % (s, lst.split(' | ')))
+        if cfg.data:
+            s = cfg.data.scale_val()
+            lst = ' | '.join(map(str, cfg.data.snr_list()))
+            self.hud.post('\n\nSNR List for Scale %d:\n%s\n' % (s, lst.split(' | ')))
 
 
     def show_zarr_info(self) -> None:
-        z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
-        self.hud.post('\n' + str(z.tree()) + '\n' + str(z.info))
+        if cfg.data:
+            z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+            self.hud.post('\n' + str(z.tree()) + '\n' + str(z.info))
 
 
     def show_zarr_info_aligned(self) -> None:
-        z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
-        self.hud.post('\n' + str(z.info) + '\n' + str(z.tree()))
+        if cfg.data:
+            z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+            self.hud.post('\n' + str(z.info) + '\n' + str(z.tree()))
 
 
     def show_zarr_info_source(self) -> None:
-        z = zarr.open(os.path.join(cfg.data.dest(), 'img_src.zarr'))
-        self.hud.post('\n' + str(z.info) + '\n' + str(z.tree()))
+        if cfg.data:
+            z = zarr.open(os.path.join(cfg.data.dest(), 'img_src.zarr'))
+            self.hud.post('\n' + str(z.info) + '\n' + str(z.tree()))
 
 
     def show_memory_statistics(self):
@@ -3094,6 +3125,11 @@ class MainWindow(QMainWindow):
         self.anableAllControlsAction = QAction('Enable All Controls', self)
         self.anableAllControlsAction.triggered.connect(self.enableAllButtons)
         debugMenu.addAction(self.anableAllControlsAction)
+
+        self.printActiveThreadsAction = QAction('Show Active Threads', self)
+        self.printActiveThreadsAction.triggered.connect(self.printActiveThreads)
+        debugMenu.addAction(self.printActiveThreadsAction)
+
 
         helpMenu = self.menu.addMenu('Help')
 
