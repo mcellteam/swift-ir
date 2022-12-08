@@ -63,7 +63,8 @@ class WorkerSignals(QObject):
 
 
 # class NgHost(QRunnable):
-class NgHost(QRunnable):
+# class NgHost(QRunnable):
+class NgHost:
     # stateChanged = Signal(str)
 
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
