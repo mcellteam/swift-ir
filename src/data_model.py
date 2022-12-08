@@ -221,12 +221,12 @@ class DataModel:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
 
-    def snr_list(self, s=None):
+    def snr_list(self, s=None) -> list[float]:
         # logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale()
         # n should be 16 for layers except for index 0 which equals [0.0]
         try:
-            return [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
+            return [float(self.snr(s=s, l=i)) for i in range(0, self.n_layers())]
         except:
             print_exception()
 

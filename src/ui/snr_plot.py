@@ -131,9 +131,11 @@ class SnrPlot(QWidget):
             for i, scale in enumerate(cfg.data.scales()[::-1]):
                 if is_arg_scale_aligned(scale=scale):
                     if self._snr_checkboxes[scale].isChecked():
+                        logger.info(f'{scale} is aligned and checkbox is checked. Plotting its SNR data....')
                         self.plotSingleScale(scale=scale)
             max_snr = cfg.data.snr_max_all_scales()
-            # logger.info(f'max_snr: {max_snr}')
+            assert max_snr is not None
+            assert type(max_snr) is float
             self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
             # self.plot.autoRange()
 

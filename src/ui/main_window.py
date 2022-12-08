@@ -93,8 +93,8 @@ class MainWindow(QMainWindow):
         self.initOpenGlContext()
         self.initWebEngine()
         self.initPythonConsole()
-        self.initToolbar()
         self.initPbar()
+        self.initToolbar()
         self.initUI()
         self.initMenu()
         self.initWidgetSpacing()
@@ -2150,6 +2150,7 @@ class MainWindow(QMainWindow):
         # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
 
+
         # self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
@@ -2648,6 +2649,7 @@ class MainWindow(QMainWindow):
         self.toolbar_text_layout.addWidget(self.extra_header_text_label)
         self.toolbar_text_widget.setLayout(self.toolbar_text_layout)
         self.toolbar.addWidget(self.toolbar_text_widget)
+
 
         height = int(18) #was 22
 
