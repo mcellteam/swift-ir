@@ -38,6 +38,7 @@ CLEVEL = 5
 '''Other Defaults'''
 # IS_TACC = None
 DAEMON_THREADS = True
+DEBUG_MP = False
 PROFILER = False
 DUMMY = False
 USE_TENSORSTORE = True
@@ -51,7 +52,6 @@ HEADLESS = False
 # TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 120  # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
-DEBUG_MP = True
 USE_PYTHON = False
 NO_SPLASH = True
 SIMULTANEOUS_SERVERS = False
