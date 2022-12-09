@@ -153,17 +153,17 @@ class NgHost:
         return floor(cfg.viewer.state.position[0])
 
     def invalidateAlignedLayers(self):
-        self.alLV.invalidate()
+        cfg.alLV.invalidate()
 
     def invalidateAllLayers(self):
         if cfg.data.is_mendenhall():
             self.menLV.invalidate()
             return
 
-        self.refLV.invalidate()
-        self.baseLV.invalidate()
+        cfg.refLV.invalidate()
+        cfg.baseLV.invalidate()
         try:
-            self.alLV.invalidate()
+            cfg.alLV.invalidate()
         except:
             pass
 
@@ -236,13 +236,17 @@ class NgHost:
             self.clear_mp_buffer()
 
         # cfg.viewer = ng.UnsynchronizedViewer()
-        cfg.viewer = ng.Viewer()  # 1108+
+        # if not cfg.viewer:
+        #     cfg.viewer = ng.Viewer()  # 1108+
+        cfg.viewer = ng.Viewer()
+        # cfg.viewer.shared_state.
         ng.set_server_bind_address(bind_address='127.0.0.1')
 
         # tempdir = tempfile.mkdtemp()
         # self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
 
         self.url_viewer = str(cfg.viewer)
+
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
         # logger.info('Match Point Mode  : %s' % str(self.mp_mode))
@@ -327,51 +331,51 @@ class NgHost:
                 # if self.mp_mode:
                 # self.coordinate_space = ng.CoordinateSpace(names=['height', 'width', 'channel'], units='nm',
                 #                                            scales=[2, 2, 1])
-                # unal_dataset = get_zarr_tensor(self.unal_name).result()
+                # unal_tensor = get_zarr_tensor(self.unal_name).result()
                 # self.nglayout = 'yx'
                 # layer_base = cfg.data.layer()
                 # layer_ref = layer_base - 1
-                # self.refLV = ng.LocalVolume(
+                # cfg.refLV = ng.LocalVolume(
                 #     data=get_tensor_from_tiff(s='scale_1', l=layer_ref),
                 #     dimensions=self.coordinate_space,
                 #     voxel_offset=[0, ] * 3,  # voxel offset of 1
                 # )
-                # self.baseLV = ng.LocalVolume(
+                # cfg.baseLV = ng.LocalVolume(
                 #     data=get_tensor_from_tiff(s='scale_1', l=layer_base),
                 #     dimensions=self.coordinate_space,
                 #     voxel_offset=[0, ] * 3,  # voxel offset of 1
                 # )
                 try:
-                    self.unal_dataset = get_zarr_tensor(self.unal_name).result()
+                    cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
                 except:
                     print_exception()
                     logger.error(f'Unable To Get Zarr Tensor, Source, Scale {self.sf}')
-                self.json_unal_dataset = self.unal_dataset.spec().to_json()
+                self.json_unal_dataset = cfg.unal_tensor.spec().to_json()
                 pprint.pprint(self.json_unal_dataset)
                 logger.info(self.json_unal_dataset)
-                self.refLV = ng.LocalVolume(
-                    data=self.unal_dataset,
+                cfg.refLV = ng.LocalVolume(
+                    data=cfg.unal_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[1, x_nudge, y_nudge],
                 )
-                self.baseLV = ng.LocalVolume(
-                    data=self.unal_dataset,
+                cfg.baseLV = ng.LocalVolume(
+                    data=cfg.unal_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, x_nudge, y_nudge]
                 )
                 if is_aligned:
                     try:
-                        self.al_dataset = get_zarr_tensor(self.al_name).result()
+                        cfg.al_tensor = get_zarr_tensor(self.al_name).result()
                     except:
                         print_exception()
                         logger.error(f'Unable To Get Zarr Tensor, Aligned, Scale {self.sf}')
-                    self.json_al_dataset = self.al_dataset.spec().to_json()
+                    self.json_al_dataset = cfg.al_tensor.spec().to_json()
                     # pprint.pprint(self.json_al_dataset)
                     # logger.info(self.json_al_dataset)
-                    self.alLV = ng.LocalVolume(
-                        data=self.al_dataset,
+                    cfg.alLV = ng.LocalVolume(
+                        data=cfg.al_tensor,
                         volume_type='image',
                         dimensions=self.coordinate_space,
                         voxel_offset=[0, ] * 3,
@@ -379,19 +383,19 @@ class NgHost:
 
             else:
                 # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
-                self.refLV = self.baseLV = f'zarr://http://localhost:{self.port}/{self.src_url}'
-                if is_aligned:  self.alLV = f'zarr://http://localhost:{self.port}/{self.al_url}'
+                cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{self.src_url}'
+                if is_aligned:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_url}'
 
             if cfg.SHADER == None:
-                s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV)
-                s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV)
+                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV)
+                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV)
                 if is_aligned:
-                    s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV)
+                    s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV)
             else:
-                s.layers[self.ref_l] = ng.ImageLayer(source=self.refLV, shader=cfg.SHADER)
-                s.layers[self.base_l] = ng.ImageLayer(source=self.baseLV, shader=cfg.SHADER)
+                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER)
+                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER)
                 if is_aligned:
-                    s.layers[self.aligned_l] = ng.ImageLayer(source=self.alLV, shader=cfg.SHADER)
+                    s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER)
 
             s.layers['mp_ref'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
                                                          annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
@@ -517,11 +521,21 @@ class NgHost:
                 s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = show_ui_controls
             s.show_panel_borders = show_panel_borders
-
+            # s.viewer_size = [1000,1000]
 
         self._layer = self.request_layer()
 
-            # s.viewer_size = [1000,1000]
+        cfg.refLV.invalidate()
+        cfg.baseLV.invalidate()
+        if is_aligned:
+            cfg.alLV.invalidate()
+
+        cfg.url = str(cfg.viewer)
+        logger.critical(f'cfg.url: {cfg.url}')
+
+
+        if cfg.HEADLESS:
+            cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
 
         # cfg.main_window.hud.done()
 
@@ -616,8 +630,8 @@ class NgHost:
         cfg.data.set_selected_method(method="Match Point Align", l=layer)
         logger.critical('Selected Method (After Setting): %s' % str(cfg.data.selected_method()))
         self.clear_mp_buffer()
-        self.refLV.invalidate()
-        self.baseLV.invalidate()
+        cfg.refLV.invalidate()
+        cfg.baseLV.invalidate()
         cfg.data.print_all_match_points()
         cfg.main_window.hud.post('Match Points Saved!')
 
@@ -630,8 +644,8 @@ class NgHost:
         with cfg.viewer.txn() as s:
             s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
             s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
-        self.refLV.invalidate()
-        self.baseLV.invalidate()
+        cfg.refLV.invalidate()
+        cfg.baseLV.invalidate()
         cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
 
     def clear_mp_buffer(self):
@@ -640,8 +654,8 @@ class NgHost:
         self.ref_pts.clear()
         self.base_pts.clear()
         try:
-            self.refLV.invalidate()
-            self.baseLV.invalidate()
+            cfg.refLV.invalidate()
+            cfg.baseLV.invalidate()
         except:
             pass
 
@@ -726,11 +740,13 @@ class NgHost:
             logger.debug('Still looking for an open port...')
             if self.url_viewer is not None:
                 logger.debug('An Open Port Was Found')
-                return self.url_viewer
+                # return self.url_viewer
+                return cfg.url
 
     def get_viewer_url(self):
         '''From extend_segments example'''
-        return self.url_viewer
+        # return self.url_viewer
+        return cfg.url
         # return cfg.viewer.get_viewer_url()
         # return self.server_url
 
