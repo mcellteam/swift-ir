@@ -478,8 +478,8 @@ class NgHost:
                 else:
                     s.layout = ng.row_layout(grps)
 
-            # self.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
+            self.viewer.shared_state.add_changed_callback(self.on_state_changed)
+            # self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
 
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
