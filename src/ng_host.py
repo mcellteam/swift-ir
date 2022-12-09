@@ -158,7 +158,7 @@ class NgHost(QObject):
 
     def invalidateAllLayers(self):
         if cfg.data.is_mendenhall():
-            self.menLV.invalidate()
+            cfg.menLV.invalidate()
             return
 
         cfg.refLV.invalidate()
@@ -173,11 +173,11 @@ class NgHost(QObject):
         path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
         scales = [50, 2, 2]
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
-        self.mend_dataset = get_zarr_tensor(path).result()
-        self.json_unal_dataset = self.mend_dataset.spec().to_json()
+        cfg.men_tensor = get_zarr_tensor(path).result()
+        self.json_unal_dataset = cfg.men_tensor.spec().to_json()
         logger.info(self.json_unal_dataset)
-        self.menLV = ng.LocalVolume(
-            data=self.mend_dataset,
+        cfg.menLV = ng.LocalVolume(
+            data=cfg.men_tensor,
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
@@ -195,7 +195,7 @@ class NgHost(QObject):
         logger.info(f'cross_section_scale: {css}')
 
         with cfg.viewer.txn() as s:
-            s.layers['layer'] = ng.ImageLayer(source=self.menLV)
+            s.layers['layer'] = ng.ImageLayer(source=cfg.menLV)
             s.crossSectionBackgroundColor = '#808080'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1

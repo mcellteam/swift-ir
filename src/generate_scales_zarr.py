@@ -9,7 +9,7 @@ import argparse
 import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_img_filenames, print_exception, show_mp_queue_results, kill_task_queue, \
-    renew_directory
+    renew_directory, reorder_tasks
 from src.funcs_zarr import preallocate_zarr
 
 __all__ = ['generate_zarr_scales']
@@ -42,12 +42,28 @@ def generate_zarr_scales():
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Zarr Scale Arrays - %d Cores' % cpus)
     task_queue.start(cpus)
     script = 'src/job_convert_zarr.py'
-    for ID, img in enumerate(imgs):
-        for scale in cfg.data.scales():
+
+    # store = zarr.open(out, synchronizer=synchronizer)
+    task_list = []
+    for scale in cfg.data.scales():
+
+        for ID, img in enumerate(imgs):
+
             out = os.path.join(od, 's%d' % get_scale_val(scale))
-            #task_queue.add_task([sys.executable, script, str(ID), img, dest, path_out, s, ])
+            # out = os.path.join(od, 's%d' % get_scale_val(scale))
             fn = os.path.join(dest, scale, 'img_src', img)
-            task_queue.add_task([sys.executable, script, str(ID), fn, out ])
+            task_list.append([sys.executable, script, str(ID), fn, out ])
+            # task_queue.add_task([sys.executable, script, str(ID), fn, out ])
+            # task_queue.add_task([sys.executable, script, str(ID), fn, store ])
+    n_scales = len(cfg.data.scales())
+    chunkshape = cfg.data.chunkshape()
+    z_stride = n_scales * chunkshape[0]
+    task_list = reorder_tasks(task_list, z_stride=z_stride)
+    for task in task_list:
+        logger.info('Adding Layer %s Task' % task[2])
+        task_queue.add_task(task)
+
+
     dt = task_queue.collect_results()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)

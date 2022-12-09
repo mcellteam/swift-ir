@@ -51,7 +51,7 @@ from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
-from src.generate_zarr_scales import generate_zarr_scales
+from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import *
 from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, is_tacc, \
     create_project_structure_directories, get_aligned_scales, tracemalloc_start, tracemalloc_stop, \
@@ -1773,7 +1773,7 @@ class MainWindow(QMainWindow):
         dlg = AskContinueDialog(title='Confirm Rescale', msg='Warning: Rescaling resets project data.\n'
                                                              'Progress will be lost.  Continue?')
         if not dlg.exec(): logger.info('Rescale Canceled'); return
-        logger.info('Clobbering project JSON file...')
+        logger.info('Clobbering project JSON...')
         try:
             os.remove(cfg.data.dest() + '.proj')
         except OSError:

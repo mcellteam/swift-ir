@@ -16,8 +16,10 @@ viewer = None
 refLV = None
 baseLV = None
 alLV = None
+menLV = None
 al_tensor = None
 unal_tensor = None
+men_tensor = None
 url = None
 webdriver = None
 
@@ -38,7 +40,8 @@ DEFAULT_INITIAL_SCALE     = float(1.0000)
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
 
 '''Default Zarr Chunk Shape'''
-CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
+# CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 3
+CHUNK_X, CHUNK_Y, CHUNK_Z = 256, 256, 4
 # CHUNK_X, CHUNK_Y, CHUNK_Z = 64, 64, 64
 
 '''Default Compression Parameters'''
@@ -61,7 +64,7 @@ FAULT_HANDLER = True
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 122  # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True

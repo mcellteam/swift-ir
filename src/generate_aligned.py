@@ -108,12 +108,20 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
                            scale_val, cpus))
     task_queue.start(cpus)
     job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
+    task_list = []
     for ID, layer in enumerate(iter(alstack[start_layer:end_layer])):
         _ , fn = os.path.split(layer['images']['base']['filename'])
         al_name = os.path.join(dest, scale, 'img_aligned', fn)
         zarr_group = os.path.join(dest, 'img_aligned.zarr', 's%d' % scale_val)
         args = [sys.executable, job_script, str(ID), al_name, zarr_group]
-        task_queue.add_task(args)
+        task_list.append(args)
+        # task_queue.add_task(args)
+    chunkshape = cfg.data.chunkshape()
+    task_list = reorder_tasks(task_list, chunkshape[0])
+    for task in task_list:
+        logger.info('Adding Layer %s Task' % task[2])
+        task_queue.add_task(task)
+
     try:
         dt = task_queue.collect_results()
         show_mp_queue_results(task_queue=task_queue, dt=dt)
