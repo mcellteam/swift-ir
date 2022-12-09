@@ -260,7 +260,7 @@ class MainWindow(QMainWindow):
     def update_ng_hyperlink(self):
         if cfg.data:
             # url = cfg.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
-            url = cfg.get_viewer_url()
+            url = cfg.viewer.get_viewer_url()
             self.external_hyperlink.clear()
             self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
