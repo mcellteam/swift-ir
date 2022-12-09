@@ -444,7 +444,7 @@ class ConfigProjectDialog(QDialog):
         self.chunk_x_lineedit = QLineEdit(self)
         self.chunk_y_lineedit = QLineEdit(self)
         self.chunk_z_lineedit = QLineEdit(self)
-        self.chunk_z_lineedit.setEnabled(False)
+        # self.chunk_z_lineedit.setEnabled(False)
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
