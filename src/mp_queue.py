@@ -118,6 +118,7 @@ class TaskQueue(QObject):
 
         for i in range(self.n_workers):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
+            time.sleep(.1)
             try:
                 if cfg.DAEMON_THREADS:
                     p = self.ctx.Process(target=worker, daemon=True,

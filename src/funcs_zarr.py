@@ -230,9 +230,10 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     try:
         if overwrite and os.path.exists(out_path):
             remove_zarr(out_path)
-        arr = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
+        synchronizer = zarr.ThreadSynchronizer()
+        arr = zarr.group(store=zarr_path, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
+        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
     except:
