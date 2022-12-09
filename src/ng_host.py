@@ -116,7 +116,7 @@ class NgHost:
         # client.loop.run_until_complete(payload(client))
         # for task in asyncio.Task.all_tasks(client.loop):
         #     task.cancel()
-        del self.viewer
+        # del self.viewer
 
     def __str__(self):
         return obj_to_string(self)
