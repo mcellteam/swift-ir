@@ -73,8 +73,8 @@ class NgHost:
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
-        # self.viewer = ng.Viewer()
-        self.viewer_url = None
+        # cfg.viewer = ng.Viewer()
+        self.url_viewer = None
         self.ref_pts = []
         self.base_pts = []
         self.src = src
@@ -116,19 +116,19 @@ class NgHost:
         # client.loop.run_until_complete(payload(client))
         # for task in asyncio.Task.all_tasks(client.loop):
         #     task.cancel()
-        # del self.viewer
+        # del cfg.viewer
 
     def __str__(self):
         return obj_to_string(self)
 
     def __repr__(self):
-        return copy.deepcopy(self.viewers.state)
+        return copy.deepcopy(cfg.viewers.state)
 
     @Slot()
     def run(self):
         # Retrieve args/kwargs here; and fire processing using them
         try:
-            self.viewer = ng.Viewer()
+            cfg.viewer = ng.Viewer()
             # result = self.fn(
             #     *self.args, **self.kwargs
             # )
@@ -136,7 +136,7 @@ class NgHost:
             traceback.print_exc()
 
 
-        # self.viewer = ng.Viewer()
+        # cfg.viewer = ng.Viewer()
         # launch_server(bind_address='127.0.0.1')
 
         # if cfg.USE_TORNADO:
@@ -150,7 +150,7 @@ class NgHost:
 
 
     def request_layer(self):
-        return floor(self.viewer.state.position[0])
+        return floor(cfg.viewer.state.position[0])
 
     def invalidateAlignedLayers(self):
         self.alLV.invalidate()
@@ -180,8 +180,8 @@ class NgHost:
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
-        self.viewer = ng.Viewer()
-        self.viewer_url = str(self.viewer)
+        cfg.viewer = ng.Viewer()
+        self.url_viewer = str(cfg.viewer)
         image_size = cfg.data.image_size()
         widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
         widget_height = widget_size[3]
@@ -193,13 +193,13 @@ class NgHost:
         css = '%.2E' % Decimal(cross_section_scale)
         logger.info(f'cross_section_scale: {css}')
 
-        with self.viewer.txn() as s:
+        with cfg.viewer.txn() as s:
             s.layers['layer'] = ng.ImageLayer(source=self.menLV)
             s.crossSectionBackgroundColor = '#808080'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
-        # self.webdriver = neuroglancer.webdriver.Webdriver(self.viewer, headless=True)
+        # self.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=True)
 
     def initViewer(self,
                    matchpoint=None,
@@ -235,14 +235,14 @@ class NgHost:
         if self.mp_mode:
             self.clear_mp_buffer()
 
-        # self.viewer = ng.UnsynchronizedViewer()
-        self.viewer = ng.Viewer()  # 1108+
+        # cfg.viewer = ng.UnsynchronizedViewer()
+        cfg.viewer = ng.Viewer()  # 1108+
         ng.set_server_bind_address(bind_address='127.0.0.1')
 
         # tempdir = tempfile.mkdtemp()
         # self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
 
-        self.viewer_url = str(self.viewer)
+        self.url_viewer = str(cfg.viewer)
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
         # logger.info('Match Point Mode  : %s' % str(self.mp_mode))
@@ -294,7 +294,7 @@ class NgHost:
         # logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
         # logger.info('cross_section_scale=%.10f' % cross_section_scale)
 
-        with self.viewer.txn() as s:
+        with cfg.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
 
             # 276 pixels of widget
@@ -481,8 +481,8 @@ class NgHost:
                 else:
                     s.layout = ng.row_layout(grps)
 
-            self.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            # self.viewer.shared_state.add_changed_callback(lambda: self.viewer.defer_callback(self.on_state_changed))
+            cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
+            # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
@@ -506,13 +506,13 @@ class NgHost:
                 ['keys', 'save_matchpoints'],
                 ['keyc', 'clear_matchpoints'],
             ]
-            self.viewer.actions.add('add_matchpoint', self.add_matchpoint)
-            self.viewer.actions.add('save_matchpoints', self.save_matchpoints)
-            self.viewer.actions.add('clear_matchpoints', self.clear_matchpoints)
+            cfg.viewer.actions.add('add_matchpoint', self.add_matchpoint)
+            cfg.viewer.actions.add('save_matchpoints', self.save_matchpoints)
+            cfg.viewer.actions.add('clear_matchpoints', self.clear_matchpoints)
         else:
             mp_key_bindings = []
 
-        with self.viewer.config_state.txn() as s:
+        with cfg.viewer.config_state.txn() as s:
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = show_ui_controls
@@ -527,7 +527,7 @@ class NgHost:
 
     # def _toggle_fullscreen(self, s):
     #     self._is_fullscreen = not self._is_fullscreen
-    #     with self.viewer.config_state.txn() as s:
+    #     with cfg.viewer.config_state.txn() as s:
     #         if self._is_fullscreen:
     #             s.show_ui_controls = False
     #             s.show_panel_borders = False
@@ -541,7 +541,7 @@ class NgHost:
 
     def on_state_changed(self):
         try:
-            request_layer = floor(self.viewer.state.position[0])
+            request_layer = floor(cfg.viewer.state.position[0])
             if request_layer == self._layer:
                 logger.debug('State Changed, But Layer Is The Same -> Suppressing The Callback Signal')
                 return
@@ -577,14 +577,14 @@ class NgHost:
 
         except:
             print_exception()
-            # with self.viewer.txn() as s:
+            # with cfg.viewer.txn() as s:
             #     s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
             #     s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
             # logger.info('Zeroing matchpoint ticker')
             # return
         n_mp_pairs = floor(self.mp_count / 2)
         props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]
-        with self.viewer.txn() as s:
+        with cfg.viewer.txn() as s:
             if self.mp_count in range(0, 100, 2):
                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
                 s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
@@ -627,7 +627,7 @@ class NgHost:
         cfg.data.clear_match_points(s=self.scale, l=layer)  # Note
         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
         self.clear_mp_buffer()  # Note
-        with self.viewer.txn() as s:
+        with cfg.viewer.txn() as s:
             s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
             s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
         self.refLV.invalidate()
@@ -678,7 +678,7 @@ class NgHost:
     def take_screenshot(self, directory=None):
         if directory is None:
             directory = cfg.data.dest()
-        ss = ScreenshotSaver(viewer=self.viewer, directory=dir)
+        ss = ScreenshotSaver(viewer=cfg.viewer, directory=dir)
         ss.capture()
 
     # # Note: odd mapping of axes
@@ -724,23 +724,23 @@ class NgHost:
     def url(self):
         while True:
             logger.debug('Still looking for an open port...')
-            if self.viewer_url is not None:
+            if self.url_viewer is not None:
                 logger.debug('An Open Port Was Found')
-                return self.viewer_url
+                return self.url_viewer
 
     def get_viewer_url(self):
         '''From extend_segments example'''
-        return self.viewer_url
-        # return self.viewer.get_viewer_url()
+        return self.url_viewer
+        # return cfg.viewer.get_viewer_url()
         # return self.server_url
 
     def show_state(self):
-        cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(self.viewer.state))
+        cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))
 
     def print_viewer_info(self, s):
         logger.info(f'Selected Values:\n{s.selected_values}')
-        logger.info(f'Current Layer:\n{self.viewer.state.position[0]}')
-        logger.info(f'Viewer State:\n{self.viewer.state}')
+        logger.info(f'Current Layer:\n{cfg.viewer.state.position[0]}')
+        logger.info(f'Viewer State:\n{cfg.viewer.state}')
 
 
 
@@ -826,17 +826,17 @@ https://github.com/google/neuroglancer/issues/333
 Note tensorstore appears not to support multiscale metadata yet: However, we do have to deal with 
 issues of rounding. I have been looking into supporting this in tensorstore, but it is not yet ready.
 
-        # state = copy.deepcopy(self.viewer.state)
+        # state = copy.deepcopy(cfg.viewer.state)
         # state.position[0] = requested
-        # self.viewer.set_state(state)
+        # cfg.viewer.set_state(state)
 
-        # with self.viewer.state as s:
-        #     # state = copy.deepcopy(self.viewer.state)
-        #     # state = self.viewer.state
+        # with cfg.viewer.state as s:
+        #     # state = copy.deepcopy(cfg.viewer.state)
+        #     # state = cfg.viewer.state
         #     # state.position[0] += layer_delta
         #
         #     s.crossSectionScale = 15
-        #     # self.viewer.set_state(state)
+        #     # cfg.viewer.set_state(state)
 
         # If changes are made to a neuroglancer l through custom actions, the
         # l needs to be re-rendered for the changes to be visible in the
@@ -863,8 +863,8 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
 
         # cfg.main_window.ng_workers[cfg.data.s()].baseLV.invalidate()
         # cfg.main_window.ng_workers[cfg.data.s()].baseLV.info()
-        # self.viewer.shared_state.add_changed_callback(
-        #     lambda: self.viewer.defer_callback(self.on_state_changed))
+        # cfg.viewer.shared_state.add_changed_callback(
+        #     lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
 
 

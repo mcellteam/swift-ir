@@ -12,6 +12,7 @@ main_window = None
 opengllogger = None
 selected = None
 ng_worker = None
+viewer = None
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1180, 780
