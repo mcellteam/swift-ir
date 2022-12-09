@@ -2160,12 +2160,12 @@ class MainWindow(QMainWindow):
                 except:
                     mp_mode = False
 
-                # try: ##############------------
-                #     if self.ng_worker:
-                #         logger.info('Deleting Viewer for %s...' % s)
-                #         del self.ng_worker
-                # except:
-                #     print_exception()
+                try: ##############------------
+                    if self.ng_worker:
+                        logger.info('Deleting Viewer for %s...' % s)
+                        del self.ng_worker
+                except:
+                    print_exception()
 
                 # time.sleep(.5)
                 logger.debug('Launching NG Server for %s...' % s)
