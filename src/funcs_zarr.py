@@ -72,8 +72,8 @@ def get_zarr_tensor(zarr_path):
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            # 'data_copy_concurrency': {'limit': 96},
-            # 'file_io_concurrency': {'limit': 96},
+            'data_copy_concurrency': {'limit': 96},
+            'file_io_concurrency': {'limit': 96},
         },
         'recheck_cached_data': 'open',
     })
