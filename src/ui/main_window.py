@@ -260,7 +260,7 @@ class MainWindow(QMainWindow):
     def update_ng_hyperlink(self):
         if cfg.data:
             # url = cfg.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
-            url = cfg.ng_worker.viewer.get_viewer_url()
+            url = cfg.get_viewer_url()
             self.external_hyperlink.clear()
             self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
@@ -1389,10 +1389,10 @@ class MainWindow(QMainWindow):
                 return
             # logger.info('Jumping To Layer %d' % requested)
             # state = copy.deepcopy(cfg.ng_workers[cfg.data.scale()].viewer.state)
-            state = copy.deepcopy(cfg.ng_worker.viewer.state)
+            state = copy.deepcopy(cfg.viewer.state)
             state.position[0] = requested
             # cfg.ng_workers[cfg.data.scale()].viewer.set_state(state)
-            cfg.ng_worker.viewer.set_state(state)
+            cfg.viewer.set_state(state)
             self.dataUpdateWidgets()
             self.refreshNeuroglancerURL()
 
@@ -1406,10 +1406,10 @@ class MainWindow(QMainWindow):
                 return
             logger.info('Jumping To Layer %d' % requested)
             # state = copy.deepcopy(cfg.ng_workers[cfg.data.scale()].viewer.state)
-            state = copy.deepcopy(cfg.ng_worker.viewer.state)
+            state = copy.deepcopy(cfg.viewer.state)
             state.position[0] = requested
             # cfg.ng_workers[cfg.data.scale()].viewer.set_state(state)
-            cfg.ng_worker.viewer.set_state(state)
+            cfg.viewer.set_state(state)
             self.dataUpdateWidgets()
             self.refreshNeuroglancerURL()
 
@@ -2295,7 +2295,7 @@ class MainWindow(QMainWindow):
             if s == None: s = cfg.data.scale()
             if ng.is_server_running():
                 try:
-                    url = cfg.ng_worker.viewer.get_viewer_url()
+                    url = cfg.viewer.get_viewer_url()
                     # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
                     self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
                     logger.info(f"{cfg.data.scale_pretty(s=s)}\nURL:  {url}\n")
@@ -2318,7 +2318,7 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if ng.is_server_running():
                 # try:     self.hud.post('\nViewer State:\n%s' % str(cfg.ng_workers[cfg.data.scale()].viewer.state))
-                try:     self.hud.post('\nViewer State:\n%s' % str(cfg.ng_worker.viewer.state))
+                try:     self.hud.post('\nViewer State:\n%s' % str(cfg.viewer.state))
                 except:  print_exception()
             else:
                 self.hud.post('Neuroglancer is not running')
@@ -2329,7 +2329,7 @@ class MainWindow(QMainWindow):
             if ng.is_server_running():
                 try:
                     # self.hud.post('\nRaw State:\n%s' % str(cfg.ng_workers[cfg.data.scale()].config_state.raw_state))
-                    self.hud.post('\nRaw State:\n%s' % str(cfg.ng_worker.viewer.config_state.raw_state))
+                    self.hud.post('\nRaw State:\n%s' % str(cfg.viewer.config_state.raw_state))
                 except:
                     print_exception()
             else:
@@ -2349,7 +2349,7 @@ class MainWindow(QMainWindow):
                 logger.warning('Neuroglancer is not running')
                 return
             # v = cfg.ng_workers[cfg.data.s()].viewer
-            v = cfg.ng_worker.viewer
+            v = cfg.viewer
             self.hud.post("v.position: %s\n" % str(v.state.position))
             self.hud.post("v.config_state: %s\n" % str(v.config_state))
 
