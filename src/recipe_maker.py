@@ -26,9 +26,6 @@ import traceback
 import numpy as np
 import subprocess as sp
 
-try:     import src.config as cfg
-except:  import config as cfg
-
 try:     import src.swiftir as swiftir
 except:  import swiftir
 
@@ -38,6 +35,7 @@ except:  from funcs_image import ImageSize
 __all__ = ['run_json_project', 'alignment_process']
 
 logger = logging.getLogger(__name__)
+
 
 def run_json_project(project,
                      alignment_option='init_affine',
@@ -606,7 +604,7 @@ class align_recipe:
         self.im_sta_fn = im_sta_fn
         self.im_mov_fn = im_mov_fn
         self.afm = swiftir.identityAffine()
-        self.swiftir_mode = cfg.CODE_MODE
+        self.swiftir_mode = 'c'
         self.siz = ImageSize(self.im_sta_fn)
 
         logger.info('<<<< align_recipe (constructor)')
@@ -1048,6 +1046,8 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 if __name__ == '__main__':
     logger.info("Running " + __file__ + ".__main__()")
 
+    CODE_MODE = 'c'
+
     # "Tile_r1-c1_LM9R5CA1series_247.jpg",
     # "Tile_r1-c1_LM9R5CA1series_248.jpg",
 
@@ -1081,7 +1081,7 @@ if __name__ == '__main__':
         logger.info("Current args: " + str(args))
         if args[0] == '-c':
             logger.info("Running in 'c' mode")
-            global_swiftir_mode = cfg.CODE_MODE
+            global_swiftir_mode = 'c'
             args = args[1:]
         elif args[0] == '-xb':
             args = args[1:]
@@ -1151,7 +1151,7 @@ if __name__ == '__main__':
                                    layer_dict=layer_dict,
                                    cumulative_afm=cumulative_afm)
 
-    if cfg.CODE_MODE == 'c':
+    if CODE_MODE == 'c':
         logger.debug("Loading the images")
         if not (align_proc.recipe is None):
             if not (align_proc.recipe.ingredients is None):
