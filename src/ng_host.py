@@ -332,7 +332,8 @@ class NgHost(QObject):
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
             chunkshape = cfg.data.chunkshape()
-            s.relative_display_scales = {'z': 50,'y': 2,'x': 2} #Todo make this better
+            # s.relative_display_scales = {'z': 50,'y': 2,'x': 2} #Todo make this better
+            # s.relative_display_scales = 50
             # s.relative_display_scales = [32, 1, 1] #Todo make this better
 
             # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
