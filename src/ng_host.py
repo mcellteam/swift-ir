@@ -318,6 +318,7 @@ class NgHost(QObject):
 
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
+            s.concurrent_downloads = 256
 
             # In general the existing defaults are pretty reasonable and you
             # can't raise them too much without running into problems. -jbms
