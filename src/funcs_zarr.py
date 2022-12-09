@@ -59,7 +59,7 @@ def get_zarr_tensor(zarr_path):
     if '.tacc.utexas.edu' in node:
         # Lonestar6: 256 GB (3200 MT/s) DDR4
         # total_bytes_limit = 200_000_000_000
-        total_bytes_limit = 200_000_000_000_000
+        total_bytes_limit = 250_000_000_000 # just under 256 GB
     else:
         total_bytes_limit = 6_000_000_000_000
     # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
@@ -71,9 +71,9 @@ def get_zarr_tensor(zarr_path):
             'path': zarr_path
         },
         'context': {
-            # 'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            'data_copy_concurrency': {'limit': 96},
-            'file_io_concurrency': {'limit': 96},
+            'cache_pool': {'total_bytes_limit': total_bytes_limit},
+            # 'data_copy_concurrency': {'limit': 96},
+            # 'file_io_concurrency': {'limit': 96},
         },
         'recheck_cached_data': 'open',
     })
