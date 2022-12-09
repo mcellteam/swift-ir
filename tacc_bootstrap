@@ -158,6 +158,7 @@ echo ""
 echo "Launching AlignEM-SWiFT..."
 
 if [ "$DEBUG" = "1" ] ; then
+  module load valgrind
   PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind --leak-check=full --show-leak-kinds=all   -s swr -p 1 python3 $WORK/swift-ir/alignEM.py
 else
   swr -p 1 python3 $WORK/swift-ir/alignEM.py
