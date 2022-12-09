@@ -13,6 +13,13 @@ opengllogger = None
 selected = None
 ng_worker = None
 viewer = None
+refLV = None
+baseLV = None
+alLV = None
+al_tensor = None
+unal_tensor = None
+url = None
+webdriver = None
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1180, 780

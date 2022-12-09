@@ -1102,6 +1102,7 @@ class MainWindow(QMainWindow):
             self.initNgViewer(scales=[cfg.data.scale()])
         else:
             self.initNgServer(scales=[cfg.data.scale()])
+            # self.initNgViewer()
         self.jump_to(cfg.data.layer())
         self.dataUpdateWidgets()
         self.updateHistoryListWidget(s=s)
@@ -2148,6 +2149,7 @@ class MainWindow(QMainWindow):
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # cfg.ng_workers = {}
+
 
 
         # self.shutdownNeuroglancer() ###########---------

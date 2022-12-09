@@ -172,23 +172,23 @@ def get_snr_average(scale) -> float:
 
 
 def get_tensor_handle_unal():
-    return cfg.ng_worker.unal_dataset
-    # return cfg.main_window.ng_workers[cfg.data.scale()].unal_dataset
+    return cfg.ng_worker.unal_tensor
+    # return cfg.main_window.ng_workers[cfg.data.scale()].unal_tensor
 
 def get_tensor_handle_al():
-    return cfg.ng_worker.al_dataset
-    # return cfg.main_window.ng_workers[cfg.data.scale()].al_dataset
+    return cfg.ng_worker.al_tensor
+    # return cfg.main_window.ng_workers[cfg.data.scale()].al_tensor
 
 def get_refLV():
-    return cfg.ng_worker.refLV
+    return cfg.refLV
     # return cfg.main_window.ng_workers[cfg.data.scale()].refLV
 
 def get_baseLV():
-    return cfg.ng_worker.baseLV
+    return cfg.baseLV
     # return cfg.main_window.ng_workers[cfg.data.scale()].baseLV
 
 def get_alLV():
-    return cfg.ng_worker.baseLV
+    return cfg.baseLV
     # return cfg.main_window.ng_workers[cfg.data.scale()].baseLV
 
 def renew_directory(directory:str) -> None:
