@@ -2145,7 +2145,7 @@ class MainWindow(QMainWindow):
 
         # asyncio.set_event_loop(asyncio.new_event_loop())
 
-        logger.critical('Initializing Neuroglancer Servers For %s...' % ', '.join(scales))
+        logger.critical('Initializing Neuroglancer Server(s), %s...' % ', '.join(scales))
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # self.ng_workers = {}
@@ -2154,7 +2154,7 @@ class MainWindow(QMainWindow):
         # self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
-                self.hud.post(f'Starting Neuroglancer Worker, {cfg.data.scale_pretty(s=s)}...')
+                self.hud.post(f'Initializing Neuroglancer Server, {cfg.data.scale_pretty(s=s)}...')
                 try:
                     mp_mode = self.ng_worker.mp_mode
                 except:
@@ -2163,7 +2163,7 @@ class MainWindow(QMainWindow):
                 try: ##############------------
                     if self.ng_worker:
                         logger.info('Deleting Viewer for %s...' % s)
-                        del self.ng_worker
+                        # del self.ng_worker
                 except:
                     print_exception()
 
