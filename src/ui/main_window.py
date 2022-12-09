@@ -2152,7 +2152,7 @@ class MainWindow(QMainWindow):
 
 
 
-        # self.shutdownNeuroglancer() ###########---------
+        self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
                 self.hud.post(f'Initializing Neuroglancer Server, {cfg.data.scale_pretty(s=s)}...')
