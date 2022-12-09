@@ -18,13 +18,6 @@ try:
 except ImportError:
     from src.swiftir import affineImage, saveImage, loadImage
 
-try:
-    import config as cfg
-except ImportError:
-    import src.config as cfg
-
-
-
 logger = logging.getLogger(__name__)
 
 

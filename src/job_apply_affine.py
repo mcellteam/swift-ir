@@ -15,10 +15,10 @@ try:
     from helpers import get_bindir
 except ImportError:
     from src.helpers import get_bindir
-try:
-    import config as cfg
-except ImportError:
-    import src.config as cfg
+# try:
+#     import config as cfg
+# except ImportError:
+#     import src.config as cfg
 try:
     from swiftir import applyAffine, reptoshape
 except ImportError:
@@ -101,23 +101,23 @@ if (__name__ == '__main__'):
         i += 1  # Increment to get the next option
 
 
-    if not cfg.USE_PYTHON:
-        bb_x, bb_y = rect[2], rect[3]
-        p1 = applyAffine(afm, (0,0))  # Transform Origin To Output Space
-        p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
-        offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
-        a = afm_list[0];  c = afm_list[1];  e = afm_list[2] + offset_x
-        b = afm_list[3];  d = afm_list[4];  f = afm_list[5] + offset_y
-        mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
-        # Todo get exact median greyscale value for each image in list, for now just use 128
-        mir_script = \
-            'B %d %d 1\n' \
-            'Z %g\n' \
-            'F %s\n' \
-            'A %g %g %g %g %g %g\n' \
-            'RW %s\n' \
-            'E' % (bb_x, bb_y, 128, in_fn, a, c, e, b, d, f, out_fn)
-        o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+    # if not cfg.USE_PYTHON:
+    bb_x, bb_y = rect[2], rect[3]
+    p1 = applyAffine(afm, (0,0))  # Transform Origin To Output Space
+    p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
+    offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+    a = afm_list[0];  c = afm_list[1];  e = afm_list[2] + offset_x
+    b = afm_list[3];  d = afm_list[4];  f = afm_list[5] + offset_y
+    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
+    # Todo get exact median greyscale value for each image in list, for now just use 128
+    mir_script = \
+        'B %d %d 1\n' \
+        'Z %g\n' \
+        'F %s\n' \
+        'A %g %g %g %g %g %g\n' \
+        'RW %s\n' \
+        'E' % (bb_x, bb_y, 128, in_fn, a, c, e, b, d, f, out_fn)
+    o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
 
         # path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
         # with open(path, 'a+') as f:
