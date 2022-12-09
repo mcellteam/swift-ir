@@ -2211,9 +2211,6 @@ class MainWindow(QMainWindow):
                 widget_size = self.image_panel_stack_widget.geometry().getRect()
 
                 # self.threadpool.waitForDone(500)
-                if self.ng_worker:
-                    logger.info('Deleting self.ng_worker...')
-                    del self.ng_worker
                 self.ng_worker = NgHost(parent=self, src=cfg.data.dest(), scale=s)
                 # self.threadpool.start(self.ng_worker)
                 self.ng_worker.initViewer(widget_size=widget_size, matchpoint=mp_mode)
