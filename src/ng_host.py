@@ -347,15 +347,17 @@ class NgHost:
                     print_exception()
                     logger.error(f'Unable To Get Zarr Tensor, Source, Scale {self.sf}')
                 self.json_unal_dataset = self.unal_dataset.spec().to_json()
-                # pprint.pprint(self.json_unal_dataset)
-                # logger.info(self.json_unal_dataset)
+                pprint.pprint(self.json_unal_dataset)
+                logger.info(self.json_unal_dataset)
                 self.refLV = ng.LocalVolume(
                     data=self.unal_dataset,
+                    volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[1, x_nudge, y_nudge],
                 )
                 self.baseLV = ng.LocalVolume(
                     data=self.unal_dataset,
+                    volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, x_nudge, y_nudge]
                 )
@@ -370,6 +372,7 @@ class NgHost:
                     # logger.info(self.json_al_dataset)
                     self.alLV = ng.LocalVolume(
                         data=self.al_dataset,
+                        volume_type='image',
                         dimensions=self.coordinate_space,
                         voxel_offset=[0, ] * 3,
                     )
