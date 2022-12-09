@@ -207,7 +207,8 @@ class NgHost(QObject):
                    widget_size=None,
                    show_ui_controls=True,
                    show_panel_borders=False,
-                   show_scale_bar=False):
+                   show_scale_bar=False,
+                   show_axis_lines=False):
         if cfg.data.is_mendenhall() and cfg.MV:
             logger.warning('Transferring control to initViewerMendenhall...')
             self.initViewerMendenhall()
@@ -240,6 +241,7 @@ class NgHost(QObject):
         # if not cfg.viewer:
         #     cfg.viewer = ng.Viewer()  # 1108+
         cfg.viewer = ng.Viewer()
+        cfg.viewer.state
         # cfg.viewer.shared_state.
         ng.set_server_bind_address(bind_address='127.0.0.1')
 
@@ -324,6 +326,7 @@ class NgHost(QObject):
             # adjustment = 1.04
 
             s.show_scale_bar = show_scale_bar
+            s.show_axis_lines = show_axis_lines
 
             # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
 
