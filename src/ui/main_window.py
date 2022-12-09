@@ -192,8 +192,8 @@ class MainWindow(QMainWindow):
         self._jump_to_worst_ticker = 1  # begin iter at 1 b/c first image has no ref
         self._jump_to_best_ticker = 0
         self._snr_by_scale = dict() #Todo
-        # self.ng_workers = {}
-        self.ng_worker = None
+        # ng_workers = {}
+        ng_worker = None
 
 
     def initStyle(self):
@@ -260,8 +260,8 @@ class MainWindow(QMainWindow):
 
     def update_ng_hyperlink(self):
         if cfg.data:
-            # url = self.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
-            url = self.ng_worker.viewer.get_viewer_url()
+            # url = ng_workers[cfg.data.scale()].viewer.get_viewer_url()
+            url = ng_worker.viewer.get_viewer_url()
             self.external_hyperlink.clear()
             self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
@@ -1351,8 +1351,8 @@ class MainWindow(QMainWindow):
     def ng_layer(self):
         '''The idea behind this was to cache the current layer. Not Being Used Currently'''
         try:
-            # index = self.ng_workers[cfg.data.scale()].cur_index
-            index = self.ng_worker.cur_index
+            # index = ng_workers[cfg.data.scale()].cur_index
+            index = ng_worker.cur_index
             assert isinstance(index, int)
             return index
         except:
@@ -1361,8 +1361,8 @@ class MainWindow(QMainWindow):
 
     def request_ng_layer(self):
         '''Returns The Currently Shown Layer Index In Neuroglancer'''
-        # return self.ng_workers[cfg.data.scale()].request_layer()
-        return self.ng_worker.request_layer()
+        # return ng_workers[cfg.data.scale()].request_layer()
+        return ng_worker.request_layer()
 
 
     def updateJumpValidator(self):
@@ -1389,11 +1389,11 @@ class MainWindow(QMainWindow):
                 logger.warning('Requested layer is not a valid layer')
                 return
             # logger.info('Jumping To Layer %d' % requested)
-            # state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
-            state = copy.deepcopy(self.ng_worker.viewer.state)
+            # state = copy.deepcopy(ng_workers[cfg.data.scale()].viewer.state)
+            state = copy.deepcopy(ng_worker.viewer.state)
             state.position[0] = requested
-            # self.ng_workers[cfg.data.scale()].viewer.set_state(state)
-            self.ng_worker.viewer.set_state(state)
+            # ng_workers[cfg.data.scale()].viewer.set_state(state)
+            ng_worker.viewer.set_state(state)
             self.dataUpdateWidgets()
             self.refreshNeuroglancerURL()
 
@@ -1406,11 +1406,11 @@ class MainWindow(QMainWindow):
                 logger.warning('Requested layer is not a valid layer')
                 return
             logger.info('Jumping To Layer %d' % requested)
-            # state = copy.deepcopy(self.ng_workers[cfg.data.scale()].viewer.state)
-            state = copy.deepcopy(self.ng_worker.viewer.state)
+            # state = copy.deepcopy(ng_workers[cfg.data.scale()].viewer.state)
+            state = copy.deepcopy(ng_worker.viewer.state)
             state.position[0] = requested
-            # self.ng_workers[cfg.data.scale()].viewer.set_state(state)
-            self.ng_worker.viewer.set_state(state)
+            # ng_workers[cfg.data.scale()].viewer.set_state(state)
+            ng_worker.viewer.set_state(state)
             self.dataUpdateWidgets()
             self.refreshNeuroglancerURL()
 
@@ -1493,7 +1493,7 @@ class MainWindow(QMainWindow):
             # logger.warning('Canceling s change...')
             return
         # self.shutdownNeuroglancer()
-        # self.ng_workers[cfg.data.scale()] = {} #2203 adding this to scale_up/down
+        # ng_workers[cfg.data.scale()] = {} #2203 adding this to scale_up/down
         new_scale = self.toolbar_scale_combobox.currentText()
         # logger.info(f'Setting Scale: %s...' % new_scale)
         cfg.data.set_scale(new_scale)
@@ -1511,36 +1511,36 @@ class MainWindow(QMainWindow):
         s = cfg.data.scale()
         try:
             if self.toolbar_layout_combobox.currentText() == 'xy':
-                self.ng_worker.nglayout = 'yz'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = 'yz'
+                ng_worker.initViewer()
                 self.ngLayout1Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'yz':
-                self.ng_worker.nglayout = 'xy'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = 'xy'
+                ng_worker.initViewer()
                 self.ngLayout2Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'xz':
-                self.ng_worker.nglayout = 'xz'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = 'xz'
+                ng_worker.initViewer()
                 self.ngLayout3Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'xy-3d':
-                self.ng_worker.nglayout = 'yz-3d'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = 'yz-3d'
+                ng_worker.initViewer()
                 self.ngLayout4Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'yz-3d':
-                self.ng_worker.nglayout = 'xy-3d'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = 'xy-3d'
+                ng_worker.initViewer()
                 self.ngLayout5Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'xz-3d':
-                self.ng_worker.nglayout = 'xz-3d'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = 'xz-3d'
+                ng_worker.initViewer()
                 self.ngLayout6Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == '3d':
-                self.ng_worker.nglayout = '3d'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = '3d'
+                ng_worker.initViewer()
                 self.ngLayout7Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == '4panel':
-                self.ng_worker.nglayout = '4panel'
-                self.ng_worker.initViewer()
+                ng_worker.nglayout = '4panel'
+                ng_worker.initViewer()
                 self.ngLayout8Action.setChecked(True)
             self.refreshNeuroglancerURL()
         except:
@@ -1747,7 +1747,7 @@ class MainWindow(QMainWindow):
             self.force_show_snr_plot()
         self.showScoreboardWidegts()
         self.updateSkipMatchWidget()
-        # self.ng_workers = dict.fromkeys(cfg.data.scales()) #1207-
+        # ng_workers = dict.fromkeys(cfg.data.scales()) #1207-
         # self.initNgServer(scales=cfg.data.scales())
         self._scales_combobox_switch = 1
         # self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.count() - 1)
@@ -2095,8 +2095,8 @@ class MainWindow(QMainWindow):
             return
         if s == None: s = cfg.data.scale()
         if cfg.data.is_mendenhall():
-            # self.ng_workers['scale_1'].menLV.invalidate()
-            self.ng_worker.menLV.invalidate()
+            # ng_workers['scale_1'].menLV.invalidate()
+            ng_worker.menLV.invalidate()
             return
 
         refLV = get_refLV()
@@ -2114,7 +2114,7 @@ class MainWindow(QMainWindow):
             return
         if s == None: s = cfg.data.scale()
         if not cfg.HEADLESS:
-            self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
+            self.ng_browser.setUrl(QUrl(ng_worker.url()))
             self.ng_browser.setFocus()
 
     def stopNgServer(self):
@@ -2136,6 +2136,8 @@ class MainWindow(QMainWindow):
         if not cfg.data:
             logger.warning('Nothing To View'); return
 
+        global ng_worker
+
         if not scales:
             # scales = [cfg.data.s()]
             if cfg.SIMULTANEOUS_SERVERS:
@@ -2148,7 +2150,7 @@ class MainWindow(QMainWindow):
         logger.critical('Initializing Neuroglancer Server(s), %s...' % ', '.join(scales))
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
-        # self.ng_workers = {}
+        # ng_workers = {}
 
 
         # self.shutdownNeuroglancer() ###########---------
@@ -2156,14 +2158,14 @@ class MainWindow(QMainWindow):
             for s in scales:
                 self.hud.post(f'Initializing Neuroglancer Server, {cfg.data.scale_pretty(s=s)}...')
                 try:
-                    mp_mode = self.ng_worker.mp_mode
+                    mp_mode = ng_worker.mp_mode
                 except:
                     mp_mode = False
 
                 try: ##############------------
-                    if self.ng_worker:
-                        logger.info('Deleting Viewer for %s...' % s)
-                        # del self.ng_worker
+                    logger.info('Deleting Viewer for %s...' % s)
+                    ng_worker = None
+
                 except:
                     print_exception()
 
@@ -2176,7 +2178,7 @@ class MainWindow(QMainWindow):
                 # if is_aligned:
                 #     self.ng_browser_2.show()
                 #     QApplication.processEvents()
-                #     self.ng_worker = {}
+                #     ng_worker = {}
                 #     left_w = self.ng_splitter.sizes()[0]
                 #     left_h = self.ng_browser.size().height() / 2
                 #
@@ -2188,18 +2190,18 @@ class MainWindow(QMainWindow):
                 #     logger.info(f'right_w={right_w}')
                 #     logger.info(f'right_h={right_h}')
                 #
-                #     self.ng_worker['originals'] = NgHost(src=cfg.data.dest(), s=s)
-                #     self.threadpool.start(self.ng_worker['originals'])
-                #     self.ng_worker['originals'].initViewer(layout='column', views=['ref','base'], show_ui_controls=False, show_panel_borders=False, w=left_w, h=left_h)
+                #     ng_worker['originals'] = NgHost(src=cfg.data.dest(), s=s)
+                #     self.threadpool.start(ng_worker['originals'])
+                #     ng_worker['originals'].initViewer(layout='column', views=['ref','base'], show_ui_controls=False, show_panel_borders=False, w=left_w, h=left_h)
                 #
-                #     self.ng_worker['aligned'] = NgHost(src=cfg.data.dest(), s=s)
-                #     self.threadpool.start(self.ng_worker['aligned'])
-                #     self.ng_worker['aligned'].initViewer(layout='column', views=['aligned'], show_ui_controls=True, show_panel_borders=True, w=right_w, h=right_h)
+                #     ng_worker['aligned'] = NgHost(src=cfg.data.dest(), s=s)
+                #     self.threadpool.start(ng_worker['aligned'])
+                #     ng_worker['aligned'].initViewer(layout='column', views=['aligned'], show_ui_controls=True, show_panel_borders=True, w=right_w, h=right_h)
                 #
-                #     self.ng_worker['originals'].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
-                #     self.ng_worker['aligned'].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
-                #     self.ng_worker['originals'].signals.stateChanged.connect(lambda l: self.update_viewer_aligned(ng_layer=l))
-                #     self.ng_worker['aligned'].signals.stateChanged.connect(lambda l: self.update_viewer_originals(ng_layer=l))
+                #     ng_worker['originals'].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
+                #     ng_worker['aligned'].signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
+                #     ng_worker['originals'].signals.stateChanged.connect(lambda l: self.update_viewer_aligned(ng_layer=l))
+                #     ng_worker['aligned'].signals.stateChanged.connect(lambda l: self.update_viewer_originals(ng_layer=l))
                 #
                 #     self.ng_browser_2.setFocus()
                 # else:
@@ -2211,10 +2213,10 @@ class MainWindow(QMainWindow):
                 widget_size = self.image_panel_stack_widget.geometry().getRect()
 
                 # self.threadpool.waitForDone(500)
-                self.ng_worker = NgHost(parent=self, src=cfg.data.dest(), scale=s)
-                # self.threadpool.start(self.ng_worker)
-                self.ng_worker.initViewer(widget_size=widget_size, matchpoint=mp_mode)
-                self.ng_worker.signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
+                ng_worker = NgHost(parent=self, src=cfg.data.dest(), scale=s)
+                # self.threadpool.start(ng_worker)
+                ng_worker.initViewer(widget_size=widget_size, matchpoint=mp_mode)
+                ng_worker.signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
 
                 self.refreshNeuroglancerURL(s=s)  # Important
             # self.refreshNeuroglancerURL() #Important
@@ -2249,9 +2251,9 @@ class MainWindow(QMainWindow):
                 if scales == None: scales = [cfg.data.scale()]
                 for s in scales:
                     if matchpoint != None:
-                        self.ng_worker.initViewer(matchpoint=matchpoint)
+                        ng_worker.initViewer(matchpoint=matchpoint)
                     else:
-                        self.ng_worker.initViewer()
+                        ng_worker.initViewer()
                     self.refreshNeuroglancerURL(s=s)
                     self.display_actual_viewer_url(s=s)
             else:
@@ -2296,7 +2298,7 @@ class MainWindow(QMainWindow):
             if s == None: s = cfg.data.scale()
             if ng.is_server_running():
                 try:
-                    url = self.ng_worker.viewer.get_viewer_url()
+                    url = ng_worker.viewer.get_viewer_url()
                     # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
                     self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
                     logger.info(f"{cfg.data.scale_pretty(s=s)}\nURL:  {url}\n")
@@ -2308,8 +2310,8 @@ class MainWindow(QMainWindow):
     def print_ng_state_url(self):
         if cfg.data:
             if ng.is_server_running():
-                # try:     self.ng_workers[cfg.data.scale()].show_state()
-                try:     self.ng_worker.show_state()
+                # try:     ng_workers[cfg.data.scale()].show_state()
+                try:     ng_worker.show_state()
                 except:  print_exception()
             else:
                 self.hud.post('Neuroglancer is not running.')
@@ -2318,8 +2320,8 @@ class MainWindow(QMainWindow):
     def print_ng_state(self):
         if cfg.data:
             if ng.is_server_running():
-                # try:     self.hud.post('\nViewer State:\n%s' % str(self.ng_workers[cfg.data.scale()].viewer.state))
-                try:     self.hud.post('\nViewer State:\n%s' % str(self.ng_worker.viewer.state))
+                # try:     self.hud.post('\nViewer State:\n%s' % str(ng_workers[cfg.data.scale()].viewer.state))
+                try:     self.hud.post('\nViewer State:\n%s' % str(ng_worker.viewer.state))
                 except:  print_exception()
             else:
                 self.hud.post('Neuroglancer is not running')
@@ -2329,8 +2331,8 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if ng.is_server_running():
                 try:
-                    # self.hud.post('\nRaw State:\n%s' % str(self.ng_workers[cfg.data.scale()].config_state.raw_state))
-                    self.hud.post('\nRaw State:\n%s' % str(self.ng_worker.viewer.config_state.raw_state))
+                    # self.hud.post('\nRaw State:\n%s' % str(ng_workers[cfg.data.scale()].config_state.raw_state))
+                    self.hud.post('\nRaw State:\n%s' % str(ng_worker.viewer.config_state.raw_state))
                 except:
                     print_exception()
             else:
@@ -2349,8 +2351,8 @@ class MainWindow(QMainWindow):
             if not ng.is_server_running():
                 logger.warning('Neuroglancer is not running')
                 return
-            # v = self.ng_workers[cfg.data.s()].viewer
-            v = self.ng_worker.viewer
+            # v = ng_workers[cfg.data.s()].viewer
+            v = ng_worker.viewer
             self.hud.post("v.position: %s\n" % str(v.state.position))
             self.hud.post("v.config_state: %s\n" % str(v.config_state))
 
@@ -3906,10 +3908,10 @@ class MainWindow(QMainWindow):
     def set_viewer_layout_1(self):
         if cfg.data:
             # self._layout = 1
-            # self.ng_workers[cfg.data.scale()].arrangement = 1
-            # self.ng_workers[cfg.data.scale()].initViewer()
-            self.ng_worker.arrangement = 1
-            self.ng_worker.initViewer()
+            # ng_workers[cfg.data.scale()].arrangement = 1
+            # ng_workers[cfg.data.scale()].initViewer()
+            ng_worker.arrangement = 1
+            ng_worker.initViewer()
             self.refreshNeuroglancerURL()
             # self.refreshNeuroglancerURL()
             # self.initNgServer()
@@ -3918,10 +3920,10 @@ class MainWindow(QMainWindow):
     def set_viewer_layout_2(self):
         if cfg.data:
             # self._layout = 2
-            # self.ng_workers[cfg.data.scale()].arrangement = 2
-            # self.ng_workers[cfg.data.scale()].initViewer()
-            self.ng_worker.arrangement = 2
-            self.ng_worker.initViewer()
+            # ng_workers[cfg.data.scale()].arrangement = 2
+            # ng_workers[cfg.data.scale()].initViewer()
+            ng_worker.arrangement = 2
+            ng_worker.initViewer()
             self.refreshNeuroglancerURL()
             # self.refreshNeuroglancerURL()
             # self.initNgServer()
