@@ -83,7 +83,7 @@ class NgHost(QObject):
         self.scale = scale
         scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
         logger.info(f'scales: {scales}')
-        self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
+        self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
         self.sf = get_scale_val(scale)  # s factor
         self.ref_l = 'ref_%d' % self.sf
         self.base_l = 'base_%d' % self.sf
@@ -172,7 +172,7 @@ class NgHost(QObject):
         logger.critical('Initializing Neuroglancer viewer (Mendenhall)...')
         path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
         scales = [50, 2, 2]
-        coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, )
+        coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
         cfg.men_tensor = get_zarr_tensor(path).result()
         self.json_unal_dataset = cfg.men_tensor.spec().to_json()
         logger.info(self.json_unal_dataset)
