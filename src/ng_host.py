@@ -64,11 +64,12 @@ class WorkerSignals(QObject):
 
 # class NgHost(QRunnable):
 # class NgHost(QRunnable):
-class NgHost:
+class NgHost(QObject):
     # stateChanged = Signal(str)
 
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
-        super(NgHost, self).__init__()
+        # super(NgHost, self).__init__()
+        QObject.__init__(self)
         self.parent = parent
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()

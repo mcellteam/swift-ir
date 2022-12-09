@@ -1101,7 +1101,7 @@ class MainWindow(QMainWindow):
         if cfg.SIMULTANEOUS_SERVERS:
             self.initNgViewer(scales=[cfg.data.scale()])
         else:
-            self.initNgServer(scales=[cfg.data.scale()])
+            self.initNgServer()
             # self.initNgViewer()
         self.jump_to(cfg.data.layer())
         self.dataUpdateWidgets()
@@ -2161,12 +2161,12 @@ class MainWindow(QMainWindow):
                 except:
                     mp_mode = False
 
-                try: ##############------------
-                    logger.info('Deleting Viewer for %s...' % s)
-                    cfg.ng_worker = None
-
-                except:
-                    print_exception()
+                # try: ##############------------
+                #     logger.info('Deleting Viewer for %s...' % s)
+                #     cfg.ng_worker = None
+                #
+                # except:
+                #     print_exception()
 
                 # time.sleep(.5)
                 logger.debug('Launching NG Server for %s...' % s)
