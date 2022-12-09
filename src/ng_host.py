@@ -370,12 +370,14 @@ class NgHost(QObject):
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[1, x_nudge, y_nudge],
+                    downsampling=None
                 )
                 cfg.baseLV = ng.LocalVolume(
                     data=cfg.unal_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
-                    voxel_offset=[0, x_nudge, y_nudge]
+                    voxel_offset=[0, x_nudge, y_nudge],
+                    downsampling=None
                 )
                 if is_aligned:
                     try:
