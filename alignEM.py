@@ -39,18 +39,10 @@ To output a string of Mypy CLI args that will reflect the currently selected src
 $ qtpy mypy-args
 
 """
-import qtpy
-
-# os.environ['QT_API'] = 'pyqt5'
-# os.environ['QT_API'] = 'pyqt6'
-# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
-# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
-# os.environ['QT_API'] = 'pyqt5'
-# os.environ['QT_API'] = 'pyside6'
-# os.environ['QT_API'] = 'pyside2'
-# os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
-
 import os
+import qtpy
+# os.environ['QT_API'] = 'pyqt5'
+# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ["BLOSC_NOLOCK"] = "1"
 os.environ["BLOSC_NTHREADS"] = "1"
 # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
@@ -58,15 +50,13 @@ os.environ["BLOSC_NTHREADS"] = "1"
 # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 import sys, signal, logging, argparse
 import faulthandler
-from src.helpers import check_for_binaries
-import src.config as cfg
 
 from qtpy import QtCore,QtWebEngineCore
-from qtpy.QtCore import Qt, QCoreApplication
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-
+from src.helpers import check_for_binaries, is_tacc
+import src.config as cfg
 
 
 
@@ -91,6 +81,11 @@ class CustomFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
         return formatter.format(record)
 
+def start_profiler():
+    if cfg.PROFILER == True:
+        if not is_tacc():
+            from scalene import scalene_profiler
+            scalene_profiler.start()
 
 
 def main():
@@ -104,6 +99,7 @@ def main():
     logging.getLogger('init').versioncheck('QtCore.__version__ = %s' % QtCore.__version__)
     logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
     logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
+
 
     # logging.IMPORTANT
     # >>> logging.getLogger(__name__).setLevel("TRACE")
@@ -152,8 +148,8 @@ def main():
     if args.dummy: cfg.DUMMY = True
     if args.profile:
         cfg.PROFILER = True
-        from scalene import scalene_profiler
-        scalene_profiler.start()
+
+    start_profiler()
 
     if cfg.FAULT_HANDLER:
         faulthandler.enable(file=sys.stderr, all_threads=True)
