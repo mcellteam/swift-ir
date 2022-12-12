@@ -94,6 +94,8 @@ def main():
     # logging.propagate = False  # stops message propogation to the root handler
     # fh = logging.FileHandler('messages.log')
     # logger.addHandler(fh)
+    logger.info('Running ' + __file__ + '.__main__()')
+    check_for_binaries()
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
     logging.getLogger('init').versioncheck('QtCore.__version__ = %s' % QtCore.__version__)
@@ -101,16 +103,6 @@ def main():
     logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
 
 
-    # logging.IMPORTANT
-    # >>> logging.getLogger(__name__).setLevel("TRACE")
-    # >>> logging.getLogger(__name__).trace('that worked')
-    # >>> logging.trace('so did this')
-    # >>> logging.TRACE
-    # logging.IM
-
-    check_for_binaries()
-
-    logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')

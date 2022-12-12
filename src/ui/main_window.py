@@ -173,12 +173,12 @@ class MainWindow(QMainWindow):
         self.ng_browser = QWebEngineView()
         # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
         # if qtpy.PYSIDE6:
-        if is_tacc():
-            self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-            self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-            self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-            self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-            self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # if is_tacc():
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
     def initPrivateMembers(self):
