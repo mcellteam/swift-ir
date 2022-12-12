@@ -1658,7 +1658,7 @@ class MainWindow(QMainWindow):
             logger.info(f"Removing Extant Project Directory '{path_proj}'...")
             shutil.rmtree(path_proj)
             logger.info(f"Removing Extant Project File '{path_proj}'...")
-            shutil.rmtree(filename)
+            os.remove(filename)
 
         if cfg.data:
             logger.info("Overwriting Project Data In Memory With New Template")
