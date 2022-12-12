@@ -72,7 +72,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     print_debug(10, "  Running command: " + str(cmd_arg_list))
     print_debug(20, "   Passing Data\n==========================\n" + str(cmd_input) + "==========================\n")
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input) # time consuming command accoring to profiler
 
     # Note: decode bytes if universal_newlines=False in Popen
     # cmd_stdout = cmd_stdout.decode('utf-8')
