@@ -173,11 +173,12 @@ class MainWindow(QMainWindow):
         self.ng_browser = QWebEngineView()
         # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
         # if qtpy.PYSIDE6:
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        if is_tacc():
+            self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+            self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+            self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+            self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+            self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
     def initPrivateMembers(self):
@@ -2014,9 +2015,10 @@ class MainWindow(QMainWindow):
             else:
                 logger.info('Success')
 
-        if cfg.PROFILER == True:
-            from scalene import scalene_profiler
-            scalene_profiler.stop()
+        if not is_tacc():
+            if cfg.PROFILER == True:
+                from scalene import scalene_profiler
+                scalene_profiler.stop()
 
         logger.info('Quitting app...')
         # self.app.quit() #1130-
@@ -3387,6 +3389,7 @@ class MainWindow(QMainWindow):
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignLeft)
         self.toggle_bounding_rect.setEnabled(False)
 
+        logger.info('2')
         tip = "Recomputes the cumulative affine and generates new aligned images" \
               "based on the current Null Bias and Bounding Rectangle presets."
         self.regenerate_button = QPushButton('Regenerate')
@@ -3486,7 +3489,6 @@ class MainWindow(QMainWindow):
         self.ng_browser_container.setLayout(self.ng_browser_layout)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
         # self.ng_browser.installEventFilter(self)
-
         self.ng_panel = QWidget()  # goes into the stack widget
         self.ng_panel.setObjectName('ng_panel')  # goes into the stack widget
         self.ng_panel_layout = QVBoxLayout()
@@ -3634,10 +3636,8 @@ class MainWindow(QMainWindow):
 
         '''SNR Plot & Controls'''
         self.snr_plot = SnrPlot()
-
         self.hud_and_plot_splitter = QSplitter()
         self.hud_and_plot_splitter.setHandleWidth(0)
-
         self.hud_and_plot_splitter.addWidget(self.hud)
         self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
         self.hud_and_plot_splitter.addWidget(self.snr_plot)
@@ -3736,7 +3736,6 @@ class MainWindow(QMainWindow):
         self.main_details_subwidgetB.hide()
         self.afm_widget.hide()
         self.history_widget.hide()
-
         self.new_main_widget = QWidget()
         self.new_main_widget_vlayout = QVBoxLayout()
         self.new_main_widget_vlayout.addWidget(self.main_splitter)
@@ -3764,8 +3763,6 @@ class MainWindow(QMainWindow):
 
         '''Remote Neuroglancer Viewer'''
         self.browser_remote = QWebEngineView()
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-
         self.exit_remote_button = QPushButton('Back')
         self.exit_remote_button.setFixedSize(std_button_size)
         self.exit_remote_button.clicked.connect(self.exit_remote)
@@ -3784,6 +3781,8 @@ class MainWindow(QMainWindow):
         self.remote_viewer_panel_controls_layout.addSpacerItem(self.spacer_item_remote_panel)
         self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)
         self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)
+
+
 
         '''Demos Panel'''
         self.exit_demos_button = QPushButton('Back')
@@ -3818,7 +3817,6 @@ class MainWindow(QMainWindow):
 
         self.overview_tab_widget = QTabWidget()
         self.overview_tab_widget.addTab(self.overview_panel, 'Overview')
-
         self.overview_panel.setLayout(self.overview_layout)
         self.overview_panel_title = QLabel('<h1>Project Overview [ Under Construction :) ]</h1>')
         self.overview_back_button = QPushButton("Back")
