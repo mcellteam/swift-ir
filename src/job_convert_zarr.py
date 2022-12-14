@@ -26,8 +26,9 @@ if __name__ == '__main__':
     out          = sys.argv[3] #*
     # store          = sys.argv[3] #*
 
-    synchronizer = zarr.ThreadSynchronizer()
-    store = zarr.open(out, synchronizer=synchronizer)
+    # synchronizer = zarr.ThreadSynchronizer()
+    # store = zarr.open(out, synchronizer=synchronizer)
+    store = zarr.open(out)
     store[ID,:,:] = np.flip(Image.open(fn), axis=1)
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     sys.stdout.close()
