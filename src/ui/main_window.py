@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
 
 
     def initData(self):
-        # logger.info('')
+        logger.info('')
         cfg.data = None
         if cfg.DUMMY:
             with open('tests/example.proj', 'r') as f:
@@ -206,7 +206,8 @@ class MainWindow(QMainWindow):
         logger.info('')
         ## build an initial namespace for console commands to be executed in (this is optional;
         ## the user can always import these modules manually)
-        namespace = {'pg': pg, 'np': np, 'cfg': src.config}
+        namespace = {'pg': pg, 'np': np, 'cfg': src.config, 'main_window': src.config.main_window,
+                     'mw': src.config.main_window, 'viewer': cfg.viewer}
 
         ## initial text to display in the console
         text = """"""
@@ -2787,9 +2788,8 @@ class MainWindow(QMainWindow):
 
     #@timer
     def initMenu(self):
-        logger.info('')
         '''Initialize Menu'''
-        # logger.info('')
+        logger.info('')
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # Fix for non-native menubar on macOS
@@ -3820,7 +3820,7 @@ class MainWindow(QMainWindow):
         self.overview_panel.setLayout(self.overview_layout)
         self.overview_panel_title = QLabel('<h1>Project Overview [ Under Construction :) ]</h1>')
         self.overview_back_button = QPushButton("Back")
-        self.overview_back_button.setFixedSize(slim_button_size)
+        self.overview_back_button.setFixedSize(QSize(44, 20))
         self.overview_back_button.clicked.connect(self.back_callback)
         self.overview_layout.addWidget(self.overview_panel_title, 0, 0, 1, 3)
         self.overview_layout.addWidget(self.overview_back_button, 3, 0, 1, 1)
@@ -4007,7 +4007,6 @@ class MainWindow(QMainWindow):
     #@timer
     def initPbar(self):
         logger.info('')
-        # logger.info('')
         self.statusBar = self.statusBar()
         self.statusBar.setFixedHeight(20)
         # self.statusBar = QStatusBar()

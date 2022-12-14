@@ -181,6 +181,7 @@ class NgHost(QObject):
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
+        logger.info('Instantiating Viewer...')
         cfg.viewer = ng.Viewer()
         self.url_viewer = str(cfg.viewer)
         image_size = cfg.data.image_size()
@@ -238,8 +239,6 @@ class NgHost(QObject):
             self.clear_mp_buffer()
 
         # cfg.viewer = ng.UnsynchronizedViewer()
-        # if not cfg.viewer:
-        #     cfg.viewer = ng.Viewer()  # 1108+
         cfg.viewer = ng.Viewer()
 
         ######################
@@ -318,22 +317,20 @@ class NgHost(QObject):
 
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            s.concurrent_downloads = 256
+            s.concurrent_downloads = 512
 
             # In general the existing defaults are pretty reasonable and you
             # can't raise them too much without running into problems. -jbms
 
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
-            # logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
-
-            # adjustment = 1.04
+            logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
 
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
-            chunkshape = cfg.data.chunkshape()
-            # s.relative_display_scales = {'z': 50,'y': 2,'x': 2} #Todo make this better
-            # s.relative_display_scales = 50
+            # chunkshape = cfg.data.chunkshape()
+            # s.relative_display_scales = {'z': 50.0,'y': 2.0,'x': 2.0} #Todo make this better
+            # s.relative_display_scales = 25.0
             # s.relative_display_scales = [32, 1, 1] #Todo make this better
 
             # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
@@ -531,6 +528,7 @@ class NgHost(QObject):
             mp_key_bindings = []
 
         with cfg.viewer.config_state.txn() as s:
+
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = show_ui_controls
