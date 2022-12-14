@@ -44,7 +44,7 @@ def generate_zarr_scales():
     script = 'src/job_convert_zarr.py'
 
     # store = zarr.open(out, synchronizer=synchronizer)
-    task_list = []
+    # task_list = []
     for scale in cfg.data.scales():
 
         for ID, img in enumerate(imgs):
@@ -52,16 +52,19 @@ def generate_zarr_scales():
             out = os.path.join(od, 's%d' % get_scale_val(scale))
             # out = os.path.join(od, 's%d' % get_scale_val(scale))
             fn = os.path.join(dest, scale, 'img_src', img)
-            task_list.append([sys.executable, script, str(ID), fn, out ])
+            # task_list.append([sys.executable, script, str(ID), fn, out ])
+            task = [sys.executable, script, str(ID), fn, out ]
+            # print('\n'.join(task))
+            task_queue.add_task(task)
             # task_queue.add_task([sys.executable, script, str(ID), fn, out ])
             # task_queue.add_task([sys.executable, script, str(ID), fn, store ])
-    n_scales = len(cfg.data.scales())
-    chunkshape = cfg.data.chunkshape()
-    z_stride = n_scales * chunkshape[0]
-    task_list = reorder_tasks(task_list, z_stride=z_stride)
-    for task in task_list:
-        logger.info('Adding Layer %s Task' % task[2])
-        task_queue.add_task(task)
+    # n_scales = len(cfg.data.scales())
+    # chunkshape = cfg.data.chunkshape()
+    # z_stride = n_scales * chunkshape[0]
+    # task_list = reorder_tasks(task_list, z_stride=z_stride)
+    # for task in task_list:
+    #     logger.info('Adding Layer %s Task' % task[2])
+    #     task_queue.add_task(task)
 
 
     dt = task_queue.collect_results()
