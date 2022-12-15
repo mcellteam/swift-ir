@@ -215,9 +215,9 @@ class TaskQueue(QObject):
                 '''Restart Queue and Requeue failed tasks'''
                 n_pending = len(retry_list)
                 if (retries_tot < self.retries) and n_pending:
-                    logger.warning('Requeuing Failed Tasks...')
-                    logger.warning('  # Failed Tasks: %d' % n_pending)
-                    logger.warning('  Task IDs: %s' % str(retry_list))
+                    logger.info('Requeuing Failed Tasks...')
+                    logger.info('  # Failed Tasks: %d' % n_pending)
+                    logger.info('  Task IDs: %s' % str(retry_list))
                     self.restart()
                     for task_id in retry_list:
                         logger.debug('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
@@ -233,10 +233,10 @@ class TaskQueue(QObject):
                 logger.info('Retries           : %d' % (retries_tot - 1))
                 logger.info('══════ Complete ══════')
             else:
-                logger.error('Something Went Wrong')
-                logger.error('Failed Tasks     : %d' % n_pending)
-                logger.error('Retries          : %d' % (retries_tot - 1))
-                logger.error('══════ Complete ══════')
+                logger.info('Something Went Wrong')
+                logger.info('Failed Tasks     : %d' % n_pending)
+                logger.info('Retries          : %d' % (retries_tot - 1))
+                logger.info('══════ Complete ══════')
         except:
             print_exception()
         finally:

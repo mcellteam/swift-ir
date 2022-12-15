@@ -46,7 +46,7 @@ CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 
 '''Default Compression Parameters'''
 CNAME = 'zstd'
-CLEVEL = 5
+CLEVEL = 1
 
 '''Other Defaults'''
 # IS_TACC = None
@@ -59,7 +59,7 @@ DUMMY = False
 USE_TENSORSTORE = True
 USE_SIMPLEHTTPSERVER = True
 USE_TORNADO = True
-FAULT_HANDLER = True
+FAULT_HANDLER = False
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
