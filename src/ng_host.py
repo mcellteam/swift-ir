@@ -111,9 +111,9 @@ class NgHost(QObject):
     def __del__(self):
         try:
             caller = inspect.stack()[1].function
-            logger.critical('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
+            logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
         except:
-            logger.warning('Unable to decipher who caller is')
+            logger.info('Unable to decipher who caller is')
         # client.loop.run_until_complete(payload(client))
         # for task in asyncio.Task.all_tasks(client.loop):
         #     task.cancel()
@@ -292,16 +292,16 @@ class NgHost(QObject):
         string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
                  (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
         logger.info(string)
-        # logger.info('widget size  =%s' % str(widget_size))
-        # logger.info('arrangement  =%d' % self.arrangement)
-        # logger.info('is_aligned   =%s' % is_aligned)
-        # logger.info('has_bb       =%s' % has_bb)
-        # logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
-        # logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
-        # logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
-        # logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
-        # logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
-        # logger.info('cross_section_scale=%.10f' % cross_section_scale)
+        logger.info('widget size  =%s' % str(widget_size))
+        logger.info('arrangement  =%d' % self.arrangement)
+        logger.info('is_aligned   =%s' % is_aligned)
+        logger.info('has_bb       =%s' % has_bb)
+        logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
+        logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
+        logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
+        logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
+        logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
+        logger.info('cross_section_scale=%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
             # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)

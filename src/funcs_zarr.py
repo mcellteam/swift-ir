@@ -18,6 +18,7 @@ import tifffile
 # from PIL import Image
 import zarr
 from numcodecs import Blosc
+from numcodecs import Zstd
 import numcodecs
 numcodecs.blosc.use_threads = False
 
@@ -217,6 +218,9 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
 
+    # zarr.blosc.list_compressors()
+    # ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
+
     output_text = f'\nzarr root  : {zarr_path}' \
                   f'\ngroup         └ {group}({name})' \
                   f'\narray shape       = {str(shape)}' \
@@ -233,9 +237,19 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         # synchronizer = zarr.ThreadSynchronizer()
         # arr = zarr.group(store=zarr_path, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=zarr_path)
-        compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+        compressor = None
+        # compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+        if cname in ('zstd', 'zlib', 'gzip'):
+            compressor = Blosc(cname=cname, clevel=clevel)
+        # elif cname == 'zstd':
+        #     zarr.storage.default_compressor = Zstd(level=1)
+            # compressor = Zstd(level=clevel)
+        else:
+            compressor = None
 
-
+        # if cname == 'zstd':
+        #     arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, overwrite=overwrite)
+        # else:
         # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
         '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
