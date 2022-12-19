@@ -70,7 +70,7 @@ def generate_zarr_scales():
     dt = task_queue.collect_results()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
-    logger.info('<<<< Generate Zarr End <<<<')
+    logger.info('<<<< Generate Zarr Scales End <<<<')
 
 
 if __name__ == '__main__':

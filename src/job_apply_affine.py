@@ -7,7 +7,6 @@ import os
 import sys
 import logging
 import subprocess as sp
-from PIL import Image
 import numpy as np
 import zarr
 

@@ -93,6 +93,7 @@ class MainWindow(QMainWindow):
         self.initOpenGlContext()
         self.initWebEngine()
         self.initPythonConsole()
+        self.initStatusBar()
         self.initPbar()
         self.initToolbar()
         self.initUI()
@@ -3159,7 +3160,6 @@ class MainWindow(QMainWindow):
         self.printActiveThreadsAction.triggered.connect(self.printActiveThreads)
         debugMenu.addAction(self.printActiveThreadsAction)
 
-
         helpMenu = self.menu.addMenu('Help')
 
         self.documentationAction = QAction('Documentation', self)
@@ -3484,11 +3484,9 @@ class MainWindow(QMainWindow):
         self.ng_browser_layout.addWidget(self.browser_overlay_widget, 0, 0)
         self.browser_overlay_label = QLabel()
         self.browser_overlay_label.setObjectName('browser_overlay_label')
-        # self.ng_browser_layout.addWidget(self.browser_overlay_label, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_browser_layout.addWidget(self.browser_overlay_label, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_browser_container.setLayout(self.ng_browser_layout)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
-        # self.ng_browser.installEventFilter(self)
         self.ng_panel = QWidget()  # goes into the stack widget
         self.ng_panel.setObjectName('ng_panel')  # goes into the stack widget
         self.ng_panel_layout = QVBoxLayout()
@@ -3782,8 +3780,6 @@ class MainWindow(QMainWindow):
         self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)
         self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)
 
-
-
         '''Demos Panel'''
         self.exit_demos_button = QPushButton('Back')
         self.exit_demos_button.setFixedSize(std_button_size)
@@ -3794,11 +3790,6 @@ class MainWindow(QMainWindow):
         self.demos_panel_controls_layout.addWidget(self.exit_demos_button)
         self.demos_panel_layout.addLayout(self.demos_panel_controls_layout)
         self.demos_panel.setLayout(self.demos_panel_layout)
-
-        # self.pbar_container = QWidget()
-        # self.pbar_layout = QVBoxLayout()
-        # self.pbar_layout.addWidget(self.pbar)
-        # self.pbar_container.setLayout(self.pbar_layout)
 
         self.main_panel = QWidget()
         self.main_panel_layout = QGridLayout()
@@ -3904,26 +3895,16 @@ class MainWindow(QMainWindow):
 
     def set_viewer_layout_1(self):
         if cfg.data:
-            # self._layout = 1
-            # cfg.ng_workers[cfg.data.scale()].arrangement = 1
-            # cfg.ng_workers[cfg.data.scale()].initViewer()
             cfg.ng_worker.arrangement = 1
             cfg.ng_worker.initViewer()
             self.refreshNeuroglancerURL()
-            # self.refreshNeuroglancerURL()
-            # self.initNgServer()
 
 
     def set_viewer_layout_2(self):
         if cfg.data:
-            # self._layout = 2
-            # cfg.ng_workers[cfg.data.scale()].arrangement = 2
-            # cfg.ng_workers[cfg.data.scale()].initViewer()
             cfg.ng_worker.arrangement = 2
             cfg.ng_worker.initViewer()
             self.refreshNeuroglancerURL()
-            # self.refreshNeuroglancerURL()
-            # self.initNgServer()
 
 
     def expand_plot_size(self):
@@ -4004,11 +3985,13 @@ class MainWindow(QMainWindow):
         self.history_widget.setMinimumWidth(148)
 
 
-    #@timer
-    def initPbar(self):
+    def initStatusBar(self):
         logger.info('')
         self.statusBar = self.statusBar()
         self.statusBar.setFixedHeight(20)
+
+    #@timer
+    def initPbar(self):
         # self.statusBar = QStatusBar()
         # self.pbar = QProgressBar(self)
         self.pbar = QProgressBar()

@@ -17,8 +17,8 @@ refLV = None
 baseLV = None
 alLV = None
 menLV = None
-al_tensor = None
 unal_tensor = None
+al_tensor = None
 men_tensor = None
 url = None
 webdriver = None
@@ -50,7 +50,7 @@ CLEVEL = 1
 
 '''Other Defaults'''
 # IS_TACC = None
-DAEMON_THREADS = True
+DAEMON_THREADS = False
 USE_EXTRA_THREADING = False
 DEBUG_MP = False
 DEBUG_NEUROGLANCER = False

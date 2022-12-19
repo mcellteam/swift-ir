@@ -328,6 +328,7 @@ class NgHost(QObject):
 
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
+            # s.perspective_orientation =
             # chunkshape = cfg.data.chunkshape()
             # s.relative_display_scales = {'z': 50.0,'y': 2.0,'x': 2.0} #Todo make this better
             # s.relative_display_scales = 25.0
@@ -543,7 +544,7 @@ class NgHost(QObject):
             cfg.alLV.invalidate()
 
         cfg.url = str(cfg.viewer)
-        logger.critical(f'cfg.url: {cfg.url}')
+        # logger.info(f'cfg.url: {cfg.url}')
 
 
         if cfg.HEADLESS:

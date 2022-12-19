@@ -59,7 +59,6 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
 
 
 class TaskQueue(QObject):
-    # def __init__(self, n_tasks, start_method='forkserver', progress_callback=None):
     def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None, pbar_text=None):
         QObject.__init__(self)
         self.parent = parent
@@ -97,7 +96,7 @@ class TaskQueue(QObject):
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
             # sys.stderr.write('Starting Worker %d >>>>\n' % i)
-            logger.info('Starting Worker %d >>>>' % i)
+            logger.info('Starting Worker %d...' % i)
             try:
                 if cfg.DAEMON_THREADS:
                     p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -117,8 +116,8 @@ class TaskQueue(QObject):
         self.workers = []
 
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting Worker %d >>>>' % i)
-            time.sleep(.1)
+            sys.stderr.write('Restarting Worker %d...' % i)
+            # time.sleep(.1)
             try:
                 if cfg.DAEMON_THREADS:
                     p = self.ctx.Process(target=worker, daemon=True,

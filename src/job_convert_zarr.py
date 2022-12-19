@@ -8,15 +8,12 @@ at the image level. NGFF Spec: https://ngff.openmicroscopy.org/latest/
 Joel Yancey 2022-08-15
 '''
 
-import os
 import sys
 import zarr
-from PIL import Image
-import numpy as np
+from tifffile import tifffile
 import numcodecs
 numcodecs.blosc.use_threads = False
 
-Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
 if __name__ == '__main__':
 
@@ -24,12 +21,12 @@ if __name__ == '__main__':
     ID           = int(sys.argv[1]) #*
     fn           = sys.argv[2]
     out          = sys.argv[3] #*
-    # store          = sys.argv[3] #*
 
     # synchronizer = zarr.ThreadSynchronizer()
-    # store = zarr.open(out, synchronizer=synchronizer)
-    store = zarr.open(out)
-    store[ID,:,:] = np.flip(Image.open(fn), axis=1)
+    # store = zarr.open(out, synchronizer=synchronizer)\
+    store = zarr.open(out, write_empty_chunks=False)
+    img = tifffile.imread(fn)[:,::-1]
+    store[ID,:,:] = img # store: <zarr.core.Array (19, 1244, 1130) uint8>
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-    sys.stdout.close()
-    sys.stderr.close()
+
+
