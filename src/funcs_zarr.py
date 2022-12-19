@@ -73,10 +73,16 @@ def get_zarr_tensor(zarr_path):
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            'data_copy_concurrency': {'limit': 96},
-            'file_io_concurrency': {'limit': 96},
+            'data_copy_concurrency': {'limit': 128},
+            'file_io_concurrency': {'limit': 128},
         },
         'recheck_cached_data': 'open',
+        # 'transform': {
+        #     # 'input_inclusive_min': [-1, 0, 0],
+        #     'output': [
+        #         {'input_dimension': 0, 'offset': -1},
+        #     ],
+        # }
     })
     return arr
 
@@ -237,7 +243,6 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         # synchronizer = zarr.ThreadSynchronizer()
         # arr = zarr.group(store=zarr_path, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=zarr_path)
-        compressor = None
         # compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
         if cname in ('zstd', 'zlib', 'gzip'):
             compressor = Blosc(cname=cname, clevel=clevel)

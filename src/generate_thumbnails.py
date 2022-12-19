@@ -67,5 +67,5 @@ def generate_thumbnails():
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
 
-    logger.info('Thumbnail Generation Complete')
+    logger.info('<<<< Thumbnail Generation Complete <<<<')
 
