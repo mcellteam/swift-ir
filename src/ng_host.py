@@ -272,7 +272,8 @@ class NgHost(QObject):
 
         if widget_size is None:
             logger.info('Getting widget size from thread...')
-            widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
+            # widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
+            widget_size = cfg.main_window.ng_browser.geometry().getRect()
         widget_height = widget_size[3]  # pixels
 
         if self.arrangement == 1:
@@ -312,7 +313,8 @@ class NgHost(QObject):
             # trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            adjustment = 1.16
+            # adjustment = 1.16
+            adjustment = 1.14
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
 
             s.gpu_memory_limit = -1
