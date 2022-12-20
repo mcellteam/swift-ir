@@ -65,7 +65,6 @@ from src.ui.kimage_window import KImageWindow
 from src.ui.snr_plot import SnrPlot
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.models.json_tree import JsonModel
-from src.ui.models.preview import PreviewModel, PreviewDelegate
 from src.ui.layer_view_widget import LayerViewWidget
 from src.ui.ui_custom import VerticalLabel
 from src.mendenhall_protocol import Mendenhall
@@ -269,7 +268,9 @@ class MainWindow(QMainWindow):
             self.matchpoint_controls.hide()
             self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
         else:
-            self.image_panel_stack_widget.setCurrentIndex(2)
+            # self.image_panel_stack_widget.setCurrentIndex(2
+            self.image_panel_stack_widget.setCurrentIndex(1)
+            pass
 
         if cfg.HEADLESS:
             self.main_tab_widget.setTabVisible(0, False)
@@ -321,6 +322,7 @@ class MainWindow(QMainWindow):
 
     def force_hide_project_treeview(self):
         self.projectdata_treeview_widget.hide()
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
         self.show_hide_project_tree_button.setText('Tree View')
 
@@ -338,12 +340,16 @@ class MainWindow(QMainWindow):
 
     def show_hide_project_tree_callback(self):
 
-        if self.projectdata_treeview_widget.isHidden():
+        # if self.projectdata_treeview_widget.isHidden():
+        if self.main_tab_widget.currentIndex() != 2:
+            self.main_tab_widget.setCurrentIndex(2)
             self.dataUpdateWidgets()
             self.projectdata_treeview_widget.show()
             self.show_hide_project_tree_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_project_tree_button.setText('Hide Tree View')
         else:
+            # self.image_panel_stack_widget.setCurrentIndesx(1)
+            self.main_tab_widget.setCurrentIndex(0)
             self.projectdata_treeview_widget.hide()
             self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
             self.show_hide_project_tree_button.setText('Tree View')
@@ -417,7 +423,8 @@ class MainWindow(QMainWindow):
 
     def autoscale(self, make_thumbnails=True):
         #Todo This should check for existence of original source files before doing anything
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.image_panel_stack_widget.setCurrentIndex(2)
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.stopNgServer()
         self.hud.post('Generating TIFF Scale Hierarchy...')
         self.showZeroedPbar()
@@ -967,7 +974,8 @@ class MainWindow(QMainWindow):
 
 
     def updateJsonWidget(self):
-        self.project_model.load(cfg.data.to_dict())
+        if cfg.data:
+            self.project_model.load(cfg.data.to_dict())
 
 
     @Slot()
@@ -1678,7 +1686,8 @@ class MainWindow(QMainWindow):
         self.initView()
         self.hud.clear_display()
         self.clearUIDetails()
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.image_panel_stack_widget.setCurrentIndex(2)
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.shutdownNeuroglancer()
         self.snr_plot.wipePlot()
         self.hud.post('Creating A New Project...')
@@ -1747,7 +1756,8 @@ class MainWindow(QMainWindow):
             self.hud.post('No Project File Selected (.proj)', logging.WARNING); return
         if os.path.isdir(filename):
             self.hud.post("Selected Path Is A Directory.", logging.WARNING); return
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.image_panel_stack_widget.setCurrentIndex(2)
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.shutdownNeuroglancer()
         self.clearUIDetails()
         try:
@@ -1774,7 +1784,8 @@ class MainWindow(QMainWindow):
         cfg.data.nscales = len(cfg.data.scales())
         cfg.data.nlayers = cfg.data.n_layers()
         self._scales_combobox_switch = 0
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.image_panel_stack_widget.setCurrentIndex(2)
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.dataUpdateWidgets()
         self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
         self.updateStatusTips()
@@ -1800,6 +1811,7 @@ class MainWindow(QMainWindow):
         self.toolbar_layout_combobox.clear()
         self.toolbar_layout_combobox.addItems(ng_layouts)
         self.align_all_button.setText('Align All\n%s' % cfg.data.scale_pretty())
+        self.main_tab_widget.setCurrentIndex(0)
         if launch_servers:
             if cfg.SIMULTANEOUS_SERVERS:
                 self.initNgViewer(scales=cfg.data.scales())
@@ -2200,8 +2212,6 @@ class MainWindow(QMainWindow):
         # self.set_status('Starting Neuroglancer...')
         # cfg.ng_workers = {}
 
-
-
         self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
@@ -2297,18 +2307,18 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}')
         if cfg.data:
-            if ng.is_server_running():
-                if scales == None: scales = [cfg.data.scale()]
-                for s in scales:
-                    if matchpoint != None:
-                        cfg.ng_worker.initViewer(matchpoint=matchpoint)
-                    else:
-                        cfg.ng_worker.initViewer()
-                    self.refreshNeuroglancerURL(s=s)
-                    if caller != 'resizeEvent':
-                        self.display_actual_viewer_url(s=s)
-            else:
-                logger.warning('Neuroglancer is not running')
+            # if ng.is_server_running():
+            if scales == None: scales = [cfg.data.scale()]
+            for s in scales:
+                if matchpoint != None:
+                    cfg.ng_worker.initViewer(matchpoint=matchpoint)
+                else:
+                    cfg.ng_worker.initViewer()
+                self.refreshNeuroglancerURL(s=s)
+                if caller != 'resizeEvent':
+                    self.display_actual_viewer_url(s=s)
+            # else:
+            #     logger.warning('Neuroglancer is not running')
         else:
             logger.warning('Cannot initialize viewer. Data model is not initialized')
 
@@ -2704,7 +2714,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.toolbar_text_widget)
 
 
-        height = int(18) #was 22
+        height = int(22) #was 22
 
         tip = 'Jump To Image #'
         self.toolbar_layer_label = QLabel('Layer #: ')
@@ -2771,12 +2781,16 @@ class MainWindow(QMainWindow):
             'Align + Generate Layer %d,  Scale %d' % (cfg.data.layer(), get_scale_val(cfg.data.scale())))
 
 
-    def main_tab_changed(self, index:int):
+    def onTabChange(self, index:int):
         if index == 0:
             self.initNgViewer()
         if index == 1:
             if cfg.data:
                 self.layer_view_widget.set_data()
+        if index == 2:
+            # self.projectdata_treeview
+            self.updateJsonWidget()
+
         QApplication.processEvents()
         self.repaint()
 
@@ -2896,9 +2910,9 @@ class MainWindow(QMainWindow):
         self.expandPlotAction.triggered.connect(self.expand_plot_size)
         expandMenu.addAction(self.expandPlotAction)
 
-        self.expandTreeviewAction = QAction('Project Treeview', self)
-        self.expandTreeviewAction.triggered.connect(self.expand_treeview_size)
-        expandMenu.addAction(self.expandTreeviewAction)
+        # self.expandTreeviewAction = QAction('Project Treeview', self)
+        # self.expandTreeviewAction.triggered.connect(self.expand_treeview_size)
+        # expandMenu.addAction(self.expandTreeviewAction)
 
         themeMenu = viewMenu.addMenu("Theme")
 
@@ -3582,12 +3596,15 @@ class MainWindow(QMainWindow):
 
         self.browser = QWebEngineView()
         self.ng_browser_container = QWidget()
+        self.ng_browser_container.setObjectName('ng_browser_container')
         self.ng_browser = QWebEngineView()
         self.ng_browser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ng_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.ng_splitter.addWidget(self.ng_browser)
         self.ng_splitter.splitterMoved.connect(self.initNgViewer)
         self.ng_splitter.setSizes([300, 700])
+
+
 
         self.ng_browser_layout = QGridLayout()
         self.ng_browser_layout.addWidget(self.ng_splitter, 0, 0)
@@ -3599,6 +3616,17 @@ class MainWindow(QMainWindow):
         self.browser_overlay_label.setObjectName('browser_overlay_label')
         self.ng_browser_layout.addWidget(self.browser_overlay_label, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_browser_container.setLayout(self.ng_browser_layout)
+
+        self.vlabel_ng = VerticalLabel('Neuroglancer 3DEM')
+        self.vlabel_ng.setObjectName('vlabel_ng')
+        self.ng_browser_container_outer_layout = QHBoxLayout()
+        self.ng_browser_container_outer_layout.setContentsMargins(0,0,0,0)
+        self.ng_browser_container_outer_layout.addWidget(self.vlabel_ng)
+        self.ng_browser_container_outer_layout.addWidget(self.ng_browser_container)
+        self.ng_browser_container_outer = QWidget()
+        self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
+        self.ng_browser_container_outer.setLayout(self.ng_browser_container_outer_layout)
+
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
         self.ng_panel = QWidget()  # goes into the stack widget
         self.ng_panel.setObjectName('ng_panel')  # goes into the stack widget
@@ -3611,7 +3639,8 @@ class MainWindow(QMainWindow):
         self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.ng_panel_controls_layout.addSpacerItem(self.spacer_item_ng_panel)
         self.ng_panel_controls_widget.setLayout(self.ng_panel_controls_layout)
-        self.ng_panel_layout.addWidget(self.ng_browser_container)
+        # self.ng_panel_layout.addWidget(self.ng_browser_container)
+        self.ng_panel_layout.addWidget(self.ng_browser_container_outer)
         self.ng_panel_layout.addWidget(self.ng_panel_controls_widget)
         self.ng_panel.setLayout(self.ng_panel_layout)
 
@@ -3657,19 +3686,26 @@ class MainWindow(QMainWindow):
         self.external_hyperlink.setAcceptRichText(True)
         self.external_hyperlink.setOpenExternalLinks(True)
 
-        self.layer_view_container = QWidget(parent=self)
-        self.layer_view_container_layout = QVBoxLayout()
-        self.layer_view_container.setLayout(self.layer_view_container_layout)
+
+
         self.layer_view_widget = LayerViewWidget()
         self.layer_view_widget.setObjectName('layer_view_widget')
-        self.layer_view_container_layout.addWidget(self.external_hyperlink)
-        self.layer_view_container_layout.addWidget(self.layer_view_widget)
 
-        self.main_tab_widget = QTabWidget()
-        self.main_tab_widget.setObjectName('main_tab_widget')
-        self.main_tab_widget.addTab(self.image_panel_stack_widget, 'Neuroglancer')
-        self.main_tab_widget.addTab(self.layer_view_container, 'Overview')
-        self.main_tab_widget.currentChanged.connect(self.main_tab_changed)
+        self.layer_view_inner_layout = QVBoxLayout()
+        # self.layer_view_inner_layout.addWidget(self.external_hyperlink)
+        self.layer_view_inner_layout.addWidget(self.layer_view_widget)
+
+        self.vlabel_overview = VerticalLabel('Project Overview')
+        self.vlabel_overview.setObjectName('vlabel_overview')
+
+        self.layer_view_outter_layout = QHBoxLayout()
+        self.layer_view_outter_layout.addWidget(self.vlabel_overview)
+        self.layer_view_outter_layout.addLayout(self.layer_view_inner_layout)
+
+        self.layer_view_container = QWidget(parent=self)
+        self.layer_view_container.setLayout(self.layer_view_outter_layout)
+
+
 
         self.matchpoint_controls = QWidget()
         self.matchpoint_controls_hlayout = QHBoxLayout()
@@ -3748,6 +3784,13 @@ class MainWindow(QMainWindow):
         self.projectdata_treeview_layout.addWidget(self.projectdata_treeview)
         self.projectdata_treeview_widget.setLayout(self.projectdata_treeview_layout)
 
+        self.main_tab_widget = QTabWidget()
+        self.main_tab_widget.setObjectName('main_tab_widget')
+        self.main_tab_widget.addTab(self.image_panel_stack_widget, ' Neuroglancer ')
+        self.main_tab_widget.addTab(self.layer_view_container, ' Overview ')
+        self.main_tab_widget.addTab(self.projectdata_treeview_widget, ' Treeview ')
+        self.main_tab_widget.currentChanged.connect(self.onTabChange)
+
         self.vlabel_hud = VerticalLabel('Process Monitor')
         self.vlabel_hud.setObjectName('vlabel_hud')
         self.vlabel_plot = VerticalLabel('SNR Plot')
@@ -3759,7 +3802,7 @@ class MainWindow(QMainWindow):
         self.hud_and_plot_splitter.setHandleWidth(0)
         self.hud_and_plot_splitter.addWidget(self.vlabel_hud)
         self.hud_and_plot_splitter.addWidget(self.hud)
-        self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
+        # self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
         self.hud_and_plot_splitter.addWidget(self.vlabel_plot)
         self.hud_and_plot_splitter.addWidget(self.snr_plot)
 
@@ -3925,31 +3968,33 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget(self.full_window_controls, 2, 0, 1, 5)
         self.main_panel_layout.addWidget(self.pbar, 3, 0, 1, 5)
 
-        self.thumbnail_table = QTableView()
-        self.thumbnail_table.horizontalHeader().hide()
-        self.thumbnail_table.verticalHeader().hide()
-        self.thumbnail_table.setGridStyle(Qt.NoPen)
+        # self.thumbnail_table = QTableView()
+        # self.thumbnail_table.horizontalHeader().hide()
+        # self.thumbnail_table.verticalHeader().hide()
+        # self.thumbnail_table.setGridStyle(Qt.NoPen)
+        #
+        # self.overview_panel = QWidget()
+        # self.overview_tab_widget = QTabWidget()
+        # self.overview_tab_widget.addTab(self.overview_panel, 'Overview')
+        # self.vlabel_overview = VerticalLabel('Project Overview')
+        # self.vlabel_overview.setObjectName('vlabel_overview')
+        # self.overview_layout = QHBoxLayout()
+        # self.overview_layout.addWidget(self.vlabel_overview)
+        # self.overview_layout.addWidget(self.thumbnail_table)
+        # self.overview_panel.setLayout(self.overview_layout)
 
-        self.overview_panel = QWidget()
-        self.overview_layout = QGridLayout()
-        self.overview_layout.addWidget(self.thumbnail_table, 1, 0, 1, 3)
-
-        self.overview_tab_widget = QTabWidget()
-        self.overview_tab_widget.addTab(self.overview_panel, 'Overview')
-        self.overview_panel.setLayout(self.overview_layout)
-        self.overview_panel_title = QLabel('<h1>Project Overview [ Under Construction :) ]</h1>')
-        self.overview_back_button = QPushButton("Back")
-        self.overview_back_button.setFixedSize(QSize(44, 20))
-        self.overview_back_button.clicked.connect(self.back_callback)
-        self.overview_layout.addWidget(self.overview_panel_title, 0, 0, 1, 3)
-        self.overview_layout.addWidget(self.overview_back_button, 3, 0, 1, 1)
+        # self.overview_back_button = QPushButton("Back")
+        # self.overview_back_button.setFixedSize(QSize(44, 20))
+        # self.overview_back_button.clicked.connect(self.back_callback)
+        # self.overview_layout.addWidget(self.overview_back_button, 3, 0, 1, 1)
 
         self.main_stack_widget = QStackedWidget(self)
         self.main_stack_widget.addWidget(self.main_panel)           # (0) main_panel
         self.main_stack_widget.addWidget(self.docs_panel)           # (1) docs_panel
         self.main_stack_widget.addWidget(self.demos_panel)          # (2) demos_panel
         self.main_stack_widget.addWidget(self.remote_viewer_panel)  # (3) remote_viewer_panel
-        self.main_stack_widget.addWidget(self.overview_tab_widget)       # (4) overview_panel
+        # self.main_stack_widget.addWidget(self.overview_tab_widget)       # (4) overview_tab_widget
+        # self.main_stack_widget.addWidget(self.overview_panel)
 
         self.pageComboBox = QComboBox()
         self.pageComboBox.addItem('Main')
@@ -4013,11 +4058,14 @@ class MainWindow(QMainWindow):
             self.matchpoint_controls.hide()
             self.main_tab_widget.show()
             self.main_tab_widget.setCurrentIndex(0)
-            self.image_panel_stack_widget.setCurrentIndex(1)
-            self.main_stack_widget.setCurrentIndex(0)
+            # self.image_panel_stack_widget.setCurrentIndex(1)
+            # self.main_stack_widget.setCurrentIndex(0)
             self.force_hide_expandable_widgets()
             self.expandViewAction.setIcon(qta.icon('mdi.arrow-collapse-all', color=ICON_COLOR))
             self.expandViewAction.setStatusTip('Set Normal Viewer Size')
+
+        self.image_panel_stack_widget.setCurrentIndex(1)
+        self.main_stack_widget.setCurrentIndex(0)
 
         if cfg.data:
             self.initNgViewer()
@@ -4065,6 +4113,7 @@ class MainWindow(QMainWindow):
         self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
         self.projectdata_treeview_widget.show()
+        self.projectdata_treeview_widget.show()
 
 
     def expand_python_size(self):
@@ -4102,16 +4151,19 @@ class MainWindow(QMainWindow):
         self.align_buttons_hlayout.setContentsMargins(2, 0, 2, 0)
         self.new_control_panel_layout.setContentsMargins(4, 2, 4, 2)
         self.full_window_controls_hlayout.setContentsMargins(4, 0, 4, 0)
-        self.python_console.setContentsMargins(4, 2, 4, 2)
+        self.python_console.setContentsMargins(0, 0, 0, 0)
         self.low_low_gridlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_scale_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_view_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_text_layout.setContentsMargins(0, 0, 0, 0)
         self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
-        self.layer_view_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.layer_view_inner_layout.setContentsMargins(0, 0, 0, 0)
         self.projectdata_treeview_layout.setContentsMargins(0, 0, 2, 0)
         self.hud.setContentsMargins(2, 0, 0, 0)
+        self.layer_view_inner_layout.setContentsMargins(0,0,0,0)
+        self.layer_view_outter_layout.setContentsMargins(0,0,0,0)
+
         self.show_hide_main_features_vlayout.setSpacing(0)
         self.show_hide_main_features_widget.setMaximumHeight(74)
         self.low_low_widget.setMaximumHeight(78)

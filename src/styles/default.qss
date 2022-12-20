@@ -5,12 +5,118 @@ Colors:
 #DAEBFE - off-white blue
 */
 
+QTreeView {
+    show-decoration-selected: 1;
+}
+
+QTreeView::item {
+     border: 1px solid #d9d9d9;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+QTreeView::item:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e7effd, stop: 1 #cbdaf1);
+    border: 1px solid #bfcde4;
+}
+
+QTreeView::item:selected {
+    border: 1px solid #567dbc;
+}
+
+QTreeView::item:selected:active{
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6ea1f1, stop: 1 #567dbc);
+}
+
+QTreeView::item:selected:!active {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6b9be8, stop: 1 #577fbf);
+}
+
+
+QTreeView#projectdata_treeview {
+    /*background-color: #ffffff;*/
+    background: #e8f4fc;
+    alternate-background-color: #eaedf1;
+    color: #333;
+    /*border: 2px solid #555;*/
+    /*border-radius: 3px;*/
+    padding: 2px;
+    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+    min-width: 10px;
+}
+
+
+QTabWidget::pane { /* The tab widget frame */
+    border-top: 2px solid #DAEBFE;
+}
+
+QTabWidget::tab-bar {
+    left: 5px; /* move to the right by 5px */
+}
+
+QTabBar::tab {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+    border: 2px solid #C4C4C3;
+    border-bottom-color: #DAEBFE; /* same as the pane color */
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    min-width: 8ex;
+    padding: 2px;
+    height: 14px;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #fafafa, stop: 0.4 #f4f4f4,
+                                stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+}
+
+QTabBar::tab:selected {
+    border-color: #9B9B9B;
+    border-bottom-color: #DAEBFE; /* same as pane color */
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px; /* make non-selected tabs look smaller */
+}
+
+/* make use of negative margins for overlapping tabs */
+QTabBar::tab:selected {
+    /* expand/overlap to the left and right by 4px */
+    margin-left: -2px;
+    margin-right: -2px;
+}
+
+QTabBar::tab:first:selected {
+    margin-left: 0; /* the first selected tab has nothing to overlap with on the left */
+}
+
+QTabBar::tab:last:selected {
+    margin-right: 0; /* the last selected tab has nothing to overlap with on the right */
+}
+
+QTabBar::tab:only-one {
+    margin: 0; /* if there is only one tab, we don't want overlapping margins */
+}
+
+
+
+
 /*
 QLabel#vlabel_hud{color: #ffffff;}
 QLabel#vlabel_plot{color: #ffffff;}
 QLabel#vlabel_python_console{color: #ffffff;}
 */
 
+QWidget#ng_browser_container_outer{
+background-color: #DAEBFE;
+}
+
+QWidget#ng_browser_container{
+background-color: #DAEBFE;
+}
 
 QTableView::item:hover
 {
@@ -31,14 +137,29 @@ color: #1B1E23;
 }
 
 
-QTabBar::tab {
-	height: 20px;
+QTabWidget::pane {
+  border: 1px solid lightgray;
+  top:-1px;
+  background: #DAEBFE;
 }
 
-QTabWidget#main_tab_widget{
-    /*background-color: #ffed8a;*/
-    color: #1B1E23;
-    font-size: 12px;
+QTabBar::tab:selected,
+QTabBar::tab:hover
+{
+    border-top-color: #1D2A32;
+    border-color: #40494E;
+    color: black;
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #C1D8E8, stop: 1 #F0F5F8);
+}
+
+
+
+QTabBar::tab {
+	height: 14px;
+	background-color: #F3F6FB;
+    /*border: 1px solid #003B5C;*/
+    /*border-bottom-width: 0px;*/
+    padding: 1px;
 }
 
 
@@ -115,9 +236,8 @@ QLabel#extra_header_text_label { color: #1B1E23; }
 
 
 /* These should be the same */
-QStackedWidget#ImagePanel { background-color: #1B1E23;  }
-QWidget#ng_panel { background-color: #1B1E23; }
-/*QStackedWidget#ImagePanel { background-color: #ffffff;  }*/
+QStackedWidget#ImagePanel { background-color: #DAEBFE;  }
+/*QWidget#ng_panel { background-color: #1B1E23; }*/
 /*QWidget#ng_panel { background-color: #ffffff; }*/
 
 QCheckBox#toggle_skip {
@@ -193,16 +313,6 @@ QTextEdit#matchpoint_text_prompt {
 
 QTextEdit#matchpoint_text_snr {
 	background-color: transparent;
-}
-
-QTreeView#projectdata_treeview {
-    background-color: #ffffff;
-    color: #333;
-    /*border: 2px solid #555;*/
-    /*border-radius: 3px;*/
-    padding: 2px;
-    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
-    min-width: 10px;
 }
 
 

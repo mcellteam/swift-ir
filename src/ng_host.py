@@ -462,7 +462,7 @@ class NgHost(QObject):
             if is_aligned:
                 grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout))
 
-            if is_aligned:
+            if is_aligned and has_bb:
                 rect = cfg.data.bounding_rect(s=self.scale)
                 pos_x, pos_y = rect[3] / 2, rect[2] / 2
             else:
