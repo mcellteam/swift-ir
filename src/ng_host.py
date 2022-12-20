@@ -210,11 +210,15 @@ class NgHost(QObject):
                    show_panel_borders=False,
                    show_scale_bar=False,
                    show_axis_lines=False):
+
+        self.scale = cfg.data.scale()
+        self.sf = get_scale_val(self.scale)
+        self.src_size = cfg.data.image_size(s=self.scale)
+
         if cfg.data.is_mendenhall() and cfg.MV:
             logger.warning('Transferring control to initViewerMendenhall...')
             self.initViewerMendenhall()
             return
-
 
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
 
@@ -313,8 +317,7 @@ class NgHost(QObject):
             # trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            # adjustment = 1.16
-            adjustment = 1.14
+            adjustment = 1.16
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
 
             s.gpu_memory_limit = -1
@@ -469,6 +472,7 @@ class NgHost(QObject):
                 # img_x, img_y = self.src_size[1] / 2, self.src_size[0] / 2
                 pos_x, pos_y = self.src_size[1] / 2, self.src_size[0] / 2
 
+            # s.position = [cfg.data.layer(), pos_x, pos_y]
             s.position = [cfg.data.layer(), pos_x, pos_y]
 
             if self.arrangement == 1:
