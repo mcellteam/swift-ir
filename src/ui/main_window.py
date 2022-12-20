@@ -221,8 +221,7 @@ class MainWindow(QMainWindow):
 
         ## initial text to display in the console
         text = """
-        This is the AlignEM-SWiFT interactive Python console. Alias 'data' refers to the current DataModel.\n
-        Example: Enter len(data) to get the size of the number of images in the current project.
+        This is the AlignEM-SWiFT interactive Python console. Alias 'data' refers to the current DataModel.
         """
         self.python_console_ = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
         self.vlabel_python_console = VerticalLabel('Python Console')
@@ -2651,37 +2650,37 @@ class MainWindow(QMainWindow):
         self.action_new_project = QAction('New Project', self)
         self.action_new_project.setStatusTip('New Project')
         self.action_new_project.triggered.connect(self.new_project)
-        self.action_new_project.setIcon(qta.icon('fa.plus', color=ICON_COLOR))
+        self.action_new_project.setIcon(qta.icon('fa.plus', color='#1B1E23'))
         self.toolbar.addAction(self.action_new_project)
 
         self.action_open_project = QAction('Open Project', self)
         self.action_open_project.setStatusTip('Open Project')
         self.action_open_project.triggered.connect(self.open_project)
-        self.action_open_project.setIcon(qta.icon('fa.folder-open', color=ICON_COLOR))
+        self.action_open_project.setIcon(qta.icon('fa.folder-open', color='#1B1E23'))
         self.toolbar.addAction(self.action_open_project)
 
         self.action_save_project = QAction('Save Project', self)
         self.action_save_project.setStatusTip('Save Project')
         self.action_save_project.triggered.connect(self.save_project)
-        self.action_save_project.setIcon(qta.icon('mdi.content-save', color=ICON_COLOR))
+        self.action_save_project.setIcon(qta.icon('mdi.content-save', color='#1B1E23'))
         self.toolbar.addAction(self.action_save_project)
 
         self.layoutOneAction = QAction('Column Layout', self)
         self.layoutOneAction.setStatusTip('Column Layout')
         self.layoutOneAction.triggered.connect(self.set_viewer_layout_1)
-        self.layoutOneAction.setIcon(qta.icon('mdi.view-column-outline', color=ICON_COLOR))
+        self.layoutOneAction.setIcon(qta.icon('mdi.view-column-outline', color='#1B1E23'))
         self.toolbar.addAction(self.layoutOneAction)
 
         self.layoutTwoAction = QAction('Row Layout', self)
         self.layoutTwoAction.setStatusTip('Row Layout')
         self.layoutTwoAction.triggered.connect(self.set_viewer_layout_2)
-        self.layoutTwoAction.setIcon(qta.icon('mdi.view-stream-outline', color=ICON_COLOR))
+        self.layoutTwoAction.setIcon(qta.icon('mdi.view-stream-outline', color='#1B1E23'))
         self.toolbar.addAction(self.layoutTwoAction)
 
         self.expandViewAction = QAction('Expand Neuroglancer to Full Window', self)
         self.expandViewAction.setStatusTip('Expand')
         self.expandViewAction.triggered.connect(self.expand_viewer_size)
-        self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
+        self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color='#1B1E23'))
         self.toolbar.addAction(self.expandViewAction)
 
         '''Top Details/Labels Banner'''
