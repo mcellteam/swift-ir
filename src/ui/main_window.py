@@ -67,6 +67,7 @@ from src.ui.toggle_switch import ToggleSwitch
 from src.ui.models.json_tree import JsonModel
 from src.ui.models.preview import PreviewModel, PreviewDelegate
 from src.ui.layer_view_widget import LayerViewWidget
+from src.ui.ui_custom import VerticalLabel
 from src.mendenhall_protocol import Mendenhall
 import src.pairwise
 
@@ -207,14 +208,29 @@ class MainWindow(QMainWindow):
         logger.info('')
         ## build an initial namespace for console commands to be executed in (this is optional;
         ## the user can always import these modules manually)
-        namespace = {'pg': pg, 'np': np, 'cfg': src.config, 'main_window': src.config.main_window,
-                     'mw': src.config.main_window, 'viewer': cfg.viewer}
+        namespace = {
+            'pg': pg,
+            'np': np,
+            'cfg': src.config,
+            'data': src.config.data,
+            'main_window': src.config.main_window,
+            'mw': src.config.main_window,
+            'viewer': cfg.viewer
+        }
 
         ## initial text to display in the console
-        text = """"""
+        text = """
+        This is the AlignEM-SWiFT interactive Python console. Alias 'data' refers to the current DataModel.\n
+        Example: Enter len(data) to get the size of the number of images in the current project.
+        """
         self.python_console_ = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
+        self.vlabel_python_console = VerticalLabel('Python Console')
+        self.vlabel_python_console.setObjectName('vlabel_python_console')
+        # self.vlabel_python_console.setMaximumWidth(25)
+        # self.vlabel_python_console = pyqtgraph.VerticalLabel(text='Python Console')
         self.python_console = QWidget()
-        self.python_console_lay = QVBoxLayout()
+        self.python_console_lay = QHBoxLayout()
+        self.python_console_lay.addWidget(self.vlabel_python_console)
         self.python_console_lay.addWidget(self.python_console_)
         self.python_console.setLayout(self.python_console_lay)
 
@@ -289,12 +305,14 @@ class MainWindow(QMainWindow):
 
 
     def force_hide_snr_plot(self):
+        self.vlabel_plot.hide()
         self.snr_plot.hide()
         self.show_hide_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
         self.show_hide_snr_plot_button.setText('SNR Plot')
 
 
     def force_show_snr_plot(self):
+        self.vlabel_plot.show()
         self.snr_plot.show()
         self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
         self.show_hide_snr_plot_button.setText('Hide SNR Plot')
@@ -335,13 +353,9 @@ class MainWindow(QMainWindow):
 
     def show_hide_snr_plot_callback(self):
         if self.snr_plot.isHidden():
-            self.snr_plot.show()
-            self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
-            self.show_hide_snr_plot_button.setText('Hide SNR Plot')
+            self.force_show_snr_plot()
         else:
-            self.snr_plot.hide()
-            self.show_hide_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
-            self.show_hide_snr_plot_button.setText('SNR Plot')
+            self.force_hide_snr_plot()
 
 
     def show_hide_python_callback(self):
@@ -371,10 +385,12 @@ class MainWindow(QMainWindow):
 
     def show_hide_hud_callback(self):
         if self.hud.isHidden():
+            self.vlabel_hud.show()
             self.hud.show()
             self.show_hide_hud_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_hud_button.setText('Hide HUD')
         else:
+            self.vlabel_hud.hide()
             self.hud.hide()
             self.show_hide_hud_button.setIcon(qta.icon("fa.dashboard", color='#f3f6fb'))
             self.show_hide_hud_button.setText('HUD')
@@ -400,9 +416,9 @@ class MainWindow(QMainWindow):
     def autoscale(self, make_thumbnails=True):
         #Todo This should check for existence of original source files before doing anything
         self.image_panel_stack_widget.setCurrentIndex(2)
-        self.hud.post('Generating TIFF Scale Hierarchy...')
         self.stopNgServer()
-
+        self.hud.post('Generating TIFF Scale Hierarchy...')
+        self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_scales())
@@ -422,6 +438,7 @@ class MainWindow(QMainWindow):
 
         self.set_status('Copy-converting TIFFs...')
         self.hud.post('Copy-converting TIFFs to Zarr...')
+        self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_zarr_scales())
@@ -435,6 +452,7 @@ class MainWindow(QMainWindow):
         if make_thumbnails:
             self.set_status('Generating Thumbnails...')
             self.hud.post('Generating Thumbnails...')
+            self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(fn=generate_thumbnails())
@@ -448,17 +466,19 @@ class MainWindow(QMainWindow):
 
             finally:
                 # self.initNgServer()
+                cfg.data.nscales = len(cfg.data.scales())
+                cfg.data.set_scale(cfg.data.scales()[-1])
+                self.pbar.hide()
                 logger.info('Autoscaling Complete')
 
-        cfg.data.nscales = len(cfg.data.scales())
-        cfg.data.set_scale(cfg.data.scales()[-1])
+
 
 
     def onAlignmentEnd(self):
         s = cfg.data.scale()
         # self.initNgServer(scales=[s])
-        cfg.data.aligned_scales = get_aligned_scales()
-        cfg.data.naligned = len(cfg.data.aligned_scales)
+        cfg.data.scalesAligned = get_aligned_scales()
+        cfg.data.nScalesAligned = len(cfg.data.scalesAligned)
         # self.initNgViewer()
         # self.initNgServer() #1203-
         self.updateHistoryListWidget(s=s)
@@ -493,6 +513,7 @@ class MainWindow(QMainWindow):
         self.stopNgServer()
 
         logger.info('Aligning All...')
+        self.showZeroedPbar()
         if scale == None: scale = cfg.data.scale()
         scale_val = get_scale_val(scale)
         self.widgetsUpdateData()
@@ -537,6 +558,7 @@ class MainWindow(QMainWindow):
             self.set_idle()
             QApplication.processEvents()
 
+        self.showZeroedPbar()
         '''Compute SNR differences'''
         logger.info('Calculating SNR Delta Values...')
         if is_realign:
@@ -559,6 +581,7 @@ class MainWindow(QMainWindow):
             # self.hud.post('Layers whose SNR changed value: %s' % str(diff_indexes))
         self.hud.post('Generating Aligned Images...')
         self.set_status('Generating Alignment...')
+
         try:
                 if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(
@@ -590,6 +613,7 @@ class MainWindow(QMainWindow):
         finally:
             self.onAlignmentEnd()
             self.set_idle()
+            self.pbar.hide()
             QApplication.processEvents()
 
 
@@ -615,6 +639,7 @@ class MainWindow(QMainWindow):
         self.stopNgServer()
 
         logger.info('Aligning Forward...')
+        self.showZeroedPbar()
         if scale == None: scale = cfg.data.scale()
         scale_val = get_scale_val(scale)
         self.widgetsUpdateData()
@@ -638,6 +663,7 @@ class MainWindow(QMainWindow):
 
         self.hud.post('Generating Aligned Images From Layers %d -> End,  Scale  %d...' % (start_layer, scale_val))
         self.set_status('Generating Alignment...')
+        self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
@@ -658,6 +684,7 @@ class MainWindow(QMainWindow):
         finally:
             self.onAlignmentEnd()
             self.set_idle()
+            self.pbar.hide()
             QApplication.processEvents()
 
 
@@ -689,6 +716,7 @@ class MainWindow(QMainWindow):
         self.widgetsUpdateData()
         self.hud.post('Re-aligning The Current Layer,  Scale %d...' % scale_val)
         self.set_status('Aligning...')
+        self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
@@ -712,6 +740,7 @@ class MainWindow(QMainWindow):
         cur_layer = cfg.data.layer()
         self.hud.post('Generating Aligned Image For Layer %d Only...' % cur_layer)
         self.set_status('Generating Alignment...')
+        self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
@@ -730,8 +759,9 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()
         finally:
             self.onAlignmentEnd()
-            self.matchpoint_text_snr.setHtml(f'<p><b>{cfg.data.snr_report()}</b></p>')
+            self.update_match_point_snr()
             self.set_idle()
+            self.pbar.hide()
             QApplication.processEvents()
 
 
@@ -756,6 +786,7 @@ class MainWindow(QMainWindow):
         self.stopNgServer()
 
         logger.info('Regenerate Aligned Images...')
+        self.showZeroedPbar()
         self.hud.post('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -791,6 +822,7 @@ class MainWindow(QMainWindow):
             else:
                 self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning.', logging.ERROR)
             self.set_idle()
+            self.pbar.hide()
             QApplication.processEvents()
 
 
@@ -1207,7 +1239,7 @@ class MainWindow(QMainWindow):
         name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
         skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
         completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
-                    (cfg.data.naligned, cfg.data.nscales)
+                    (cfg.data.nScalesAligned, cfg.data.nscales)
         if is_cur_scale_aligned():
             if cfg.data.has_bb(s=s):
                 bb = cfg.data.bounding_rect(s=s)
@@ -1215,7 +1247,12 @@ class MainWindow(QMainWindow):
             else:
                 dims = cfg.data.image_size(s=s)
             bb_dims = "<b style='color: #212121;font-size:11px;'>Bounds: %dx%dpx</b><br>" % (dims[0], dims[1])
-            snr = "<b style='color:#212121; font-size:11px;'>%s</b><br>" % cfg.data.snr_report(s=s, l=l)
+            snr_report = cfg.data.snr_report(s=s, l=l)
+            snr_report = snr_report.replace('<', '&lt;')
+            snr_report = snr_report.replace('>', '&gt;')
+            snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
+            print(snr_report)
+            print(snr)
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
@@ -1679,7 +1716,12 @@ class MainWindow(QMainWindow):
                 return
 
             recipe_dialog = ConfigProjectDialog(parent=self)
-            recipe_dialog.exec()
+            if recipe_dialog.exec():
+                logger.info('ConfigProjectDialog - Passing...')
+                pass
+            else:
+                logger.info('ConfigProjectDialog - Returning...')
+                return
             try:
                 self.autoscale()
             except:
@@ -1728,8 +1770,8 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Project: %s (Mendenhall Protocol0" % os.path.basename(cfg.data.dest()))
             # self.expand_viewer_size()
             # return
-        cfg.data.aligned_scales = get_aligned_scales()
-        cfg.data.naligned = len(cfg.data.aligned_scales)
+        cfg.data.scalesAligned = get_aligned_scales()
+        cfg.data.nScalesAligned = len(cfg.data.scalesAligned)
         cfg.data.nscales = len(cfg.data.scales())
         cfg.data.nlayers = cfg.data.n_layers()
         self._scales_combobox_switch = 0
@@ -1815,7 +1857,12 @@ class MainWindow(QMainWindow):
             self.hud.done()
 
         recipe_dialog = ConfigProjectDialog(parent=self)
-        recipe_dialog.exec()
+        if recipe_dialog.exec():
+            logger.info('ConfigProjectDialog - Passing...')
+            pass
+        else:
+            logger.info('ConfigProjectDialog - Returning...')
+            return
         logger.info('Clobbering The Project Dictionary...')
         makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
         logger.info(str(filenames))
@@ -2476,7 +2523,10 @@ class MainWindow(QMainWindow):
 
     def update_match_point_snr(self):
         if cfg.data:
-            self.matchpoint_text_snr.setHtml(f'<h4>{cfg.data.snr_report()}</h4>')
+            snr_report = cfg.data.snr_report()
+            snr_report.replace('<', '&lt;')
+            snr_report.replace('>', '&gt;')
+            self.matchpoint_text_snr.setHtml(f'<h4>{snr_report}</h4>')
 
 
     def clear_match_points(self):
@@ -3632,12 +3682,19 @@ class MainWindow(QMainWindow):
         self.projectdata_treeview_layout.addWidget(self.projectdata_treeview)
         self.projectdata_treeview_widget.setLayout(self.projectdata_treeview_layout)
 
+        self.vlabel_hud = VerticalLabel('Process Monitor')
+        self.vlabel_hud.setObjectName('vlabel_hud')
+        self.vlabel_plot = VerticalLabel('SNR Plot')
+        self.vlabel_plot.setObjectName('vlabel_plot')
+
         '''SNR Plot & Controls'''
         self.snr_plot = SnrPlot()
         self.hud_and_plot_splitter = QSplitter()
         self.hud_and_plot_splitter.setHandleWidth(0)
+        self.hud_and_plot_splitter.addWidget(self.vlabel_hud)
         self.hud_and_plot_splitter.addWidget(self.hud)
         self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
+        self.hud_and_plot_splitter.addWidget(self.vlabel_plot)
         self.hud_and_plot_splitter.addWidget(self.snr_plot)
 
         '''Show/Hide Primary Tools Buttons'''
@@ -3843,23 +3900,25 @@ class MainWindow(QMainWindow):
 
     def show_hide_snr_plot(self):
         if self.snr_plot.isHidden():
-            self.snr_plot.setHidden(False)
+            self.snr_plot.show()
         else:
-            self.snr_plot.setHidden(True)
+            self.snr_plot.hide()
         self.dataUpdateWidgets()
 
     def show_hide_hud(self):
         if self.hud.isHidden():
-            self.hud.setHidden(False)
+            self.vlabel_hud.show()
+            self.hud.show()
         else:
-            self.hud.setHidden(True)
+            self.vlabel_hud.hide()
+            self.hud.hide()
         self.dataUpdateWidgets()
 
     def show_hide_python(self):
         if self.python_console.isHidden():
-            self.python_console.setHidden(False)
+            self.python_console.show()
         else:
-            self.python_console.setHidden(True)
+            self.python_console.hide()
         self.dataUpdateWidgets()
 
 
@@ -4020,6 +4079,11 @@ class MainWindow(QMainWindow):
 
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
+
+    def showZeroedPbar(self):
+        self.pbar.setValue(0)
+        self.setPbarText('Preparing Multiprocessing Tasks...')
+        self.pbar.show()
 
 
     @Slot()

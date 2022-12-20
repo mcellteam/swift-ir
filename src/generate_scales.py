@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 def generate_scales():
     logger.info('Generating Scales...')
+
     n_tasks = cfg.data.n_layers() * (cfg.data.n_scales() - 1)  #0901 #Refactor
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy - %d Cores' % cpus)

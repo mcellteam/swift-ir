@@ -340,8 +340,7 @@ class ConfigAppDialog(QDialog):
         except Exception as e:
             logger.warning(e)
         finally:
-            self.close()
-
+            self.accept()
 
     @Slot()
     def on_cancel(self):
@@ -403,7 +402,7 @@ class ConfigProjectDialog(QDialog):
         except Exception as e:
             logger.warning(e)
         finally:
-            self.close()
+            self.accept()
 
     @Slot()
     def on_cancel(self):

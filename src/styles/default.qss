@@ -5,6 +5,12 @@ Colors:
 #DAEBFE - off-white blue
 */
 
+/*
+QLabel#vlabel_hud{color: #ffffff;}
+QLabel#vlabel_plot{color: #ffffff;}
+QLabel#vlabel_python_console{color: #ffffff;}
+*/
+
 
 QTableView::item:hover
 {
