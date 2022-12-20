@@ -264,7 +264,7 @@ class TaskQueue(QObject):
             #     # self.work_queue.join()
             #     # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
             #     # logger.critical('# TASKS: %d... SUCCESS: %d | QUEUED: %d | FAILED: %d' % (self.n_tasks, n_success, n_queued, n_failed))
-                self.parent.pbar.hide()
+            #     self.parent.pbar.hide()
                 dt = time.time() - t0
                 # return (dt,n_success,n_queued, n_failed)
                 return (dt)

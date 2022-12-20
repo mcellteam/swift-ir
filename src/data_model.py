@@ -58,8 +58,8 @@ class DataModel:
 
         self._data['data']['mendenhall'] = mendenhall
 
-        self.aligned_scales = []
-        self.naligned = None
+        self.scalesAligned = []
+        self.nScalesAligned = None
         self.nscales = None
         self.nlayers = None
 
@@ -234,7 +234,7 @@ class DataModel:
     def snr_max_all_scales(self):
         #Todo refactor, store local copy, this is a bottleneck
         max_snr = []
-        for i, scale in enumerate(self.aligned_scales):
+        for i, scale in enumerate(self.scalesAligned):
             if is_arg_scale_aligned(scale=scale):
                 try:
                     max_snr.append(max(self.snr_list(s=scale)))
@@ -262,7 +262,6 @@ class DataModel:
                        ['align_to_ref_method']['method_results']['snr_report'])
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-
 
 
     def print_all_matchpoints(self):
@@ -877,7 +876,7 @@ class DataModel:
     #     return lst
 
     def not_aligned_list(self):
-        return set(self.scales()) - set(self.aligned_scales)
+        return set(self.scales()) - set(self.scalesAligned)
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''
