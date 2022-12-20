@@ -231,19 +231,19 @@ class DataModel:
             print_exception()
 
 
-    def snr_max_all_scales(self):
+    def snr_max_all_scales(self) -> float:
         #Todo refactor, store local copy, this is a bottleneck
         max_snr = []
-        for i, scale in enumerate(self.scalesAligned):
-            if is_arg_scale_aligned(scale=scale):
-                try:
-                    max_snr.append(max(self.snr_list(s=scale)))
-                except:
-                    logger.warning('Unable to append maximum SNR, none found')
-        if max_snr != []:
-            return max(max_snr)
-        else:
-            return None
+        logger.critical(f'self.scalesAligned: {self.scalesAligned}')
+        for scale in self.scalesAligned:
+            try:
+                m = max(self.snr_list(s=scale))
+                logger.critical(f'm: {m}')
+                max_snr.append(m)
+            except:
+                logger.warning('Unable to append maximum SNR, none found')
+        # logger.info(f'Returning Max SNR: {max(max_snr)}')
+        return max(max_snr)
 
 
     def snr_average(self, scale=None) -> float:

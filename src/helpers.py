@@ -357,16 +357,16 @@ def is_arg_scale_aligned(scale: str) -> bool:
     # logger.info('called by ', inspect.stack()[1].function)
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
     if not os.path.isdir(zarr_path):
-        logger.debug(f"Path Not Found: {zarr_path}")
+        logger.info(f"Path Not Found: {zarr_path}")
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
+        logger.info(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
+        logger.info(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
         return False
     if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+        logger.info(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
         return False
     return True
 
