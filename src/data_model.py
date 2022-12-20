@@ -1025,9 +1025,9 @@ class DataModel:
 
     def are_there_any_skips(self) -> bool:
         if len(cfg.data.skips_list()) > 0:
-            return False
-        else:
             return True
+        else:
+            return False
 
     def set_scales_from_string(self, scale_string: str):
         '''This is not pretty. Needs to be refactored ASAP.

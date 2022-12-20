@@ -251,6 +251,7 @@ class MainWindow(QMainWindow):
         self.force_hide_expandable_widgets()
         self.low_low_widget.show()
         self.hud.show()
+        self.hud_and_plot_splitter.show()
         self.new_control_panel.show()
         self.toolbar_scale_combobox.setEnabled(True)
         self.update_ng_hyperlink()
@@ -352,6 +353,7 @@ class MainWindow(QMainWindow):
     def show_hide_snr_plot_callback(self):
         if self.snr_plot.isHidden():
             self.force_show_snr_plot()
+            self.force_show_controls()
         else:
             self.force_hide_snr_plot()
 
@@ -366,20 +368,20 @@ class MainWindow(QMainWindow):
             self.show_hide_python_button.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
             self.show_hide_python_button.setText(' Python')
 
+    def force_show_controls(self):
+        self.dataUpdateWidgets()  # for short-circuiting speed-ups
+        self.new_control_panel.show()
+        self.hud_and_plot_splitter.show()
+        self.show_hide_controls_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
+        self.show_hide_controls_button.setText('Hide Controls')
+
 
     def show_hide_controls_callback(self):
         if self.new_control_panel.isHidden():
-            self.dataUpdateWidgets()  # for short-circuiting speed-ups
-            self.new_control_panel.show()
-            self.vlabel_hud.show()
-            self.hud.show()
-            self.show_hide_controls_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
-            self.show_hide_controls_button.setText('Hide Controls')
+            self.force_show_controls()
         else:
             self.new_control_panel.hide()
-            self.vlabel_hud.hide()
-            self.hud.hide()
-            self.force_hide_snr_plot()
+            self.hud_and_plot_splitter.hide()
             self.show_hide_controls_button.setIcon(qta.icon("ei.adjust-alt", color='#f3f6fb'))
             self.show_hide_controls_button.setText('Controls')
 
@@ -866,8 +868,7 @@ class MainWindow(QMainWindow):
         if cfg.data.are_there_any_skips():
             reply = QMessageBox.question(self,
                                          'Verify Reset Skips',
-                                         'Please verify your action to clear all skips. '
-                                         'This makes all images unskipped.',
+                                         'Clear all skips? This makes all layers unskipped.',
                                          QMessageBox.Cancel | QMessageBox.Ok)
             if reply == QMessageBox.Ok:
                 try:
@@ -3971,8 +3972,10 @@ class MainWindow(QMainWindow):
 
     def show_hide_snr_plot(self):
         if self.snr_plot.isHidden():
+            self.vlabel_plot.show()
             self.snr_plot.show()
         else:
+            self.vlabel_plot.hide()
             self.snr_plot.hide()
         self.dataUpdateWidgets()
 
@@ -4007,7 +4010,7 @@ class MainWindow(QMainWindow):
             # self.full_window_controls.show()
             self.new_control_panel.hide()
             self.low_low_widget.hide()
-            self.hud.hide()
+            self.hud_and_plot_splitter.hide()
             self.matchpoint_controls.hide()
             self.main_tab_widget.show()
             self.main_tab_widget.setCurrentIndex(0)
@@ -4044,6 +4047,7 @@ class MainWindow(QMainWindow):
         self.new_control_panel.hide()
         self.low_low_widget.hide()
         self.hud.hide()
+        self.vlabel_hud.hide()
         self.matchpoint_controls.hide()
         self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
@@ -4057,6 +4061,7 @@ class MainWindow(QMainWindow):
         self.new_control_panel.hide()
         self.low_low_widget.hide()
         self.hud.hide()
+        self.vlabel_hud.hide()
         self.matchpoint_controls.hide()
         self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
@@ -4071,6 +4076,7 @@ class MainWindow(QMainWindow):
         self.new_control_panel.hide()
         self.low_low_widget.hide()
         self.hud.hide()
+        self.vlabel_hud.hide()
         self.matchpoint_controls.hide()
         self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
