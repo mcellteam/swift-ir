@@ -1704,7 +1704,7 @@ class MainWindow(QMainWindow):
             logger.warning("The file '%s' already exists." % filename)
             path_proj = os.path.splitext(filename)[0]
             logger.info(f"Removing Extant Project Directory '{path_proj}'...")
-            shutil.rmtree(path_proj)
+            shutil.rmtree(path_proj, ignore_errors=True)
             logger.info(f"Removing Extant Project File '{path_proj}'...")
             os.remove(filename)
 
