@@ -89,7 +89,8 @@ QMainWindow#mainwindow{
 }
 
 QToolBar#toolbar {
-    background-color: #141414;
+    /*background-color: #141414;*/
+    background-color: #DAEBFE;
     margin: 1px 1px 1px 1px;
 }
 
@@ -98,13 +99,19 @@ QWidget#browser_overlay_widget {
 }
 
 
-
+/*
 QLabel#toolbar_layer_label { color: #F3F6FB; }
 QLabel#toolbar_layout_label { color: #F3F6FB; }
 QLabel#toolbar_scale_label { color: #F3F6FB; }
 QLabel#align_label_resolution { color: #F3F6FB; }
 QLabel#extra_header_text_label { color: #F3F6FB; }
+*/
 
+QLabel#toolbar_layer_label { color: #1B1E23; }
+QLabel#toolbar_layout_label { color: #1B1E23; }
+QLabel#toolbar_scale_label { color: #1B1E23; }
+QLabel#align_label_resolution { color: #1B1E23; }
+QLabel#extra_header_text_label { color: #1B1E23; }
 
 
 /* These should be the same */
