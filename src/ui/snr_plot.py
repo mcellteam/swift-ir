@@ -80,7 +80,7 @@ class SnrPlot(QWidget):
         self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout.setContentsMargins(4, 2, 4, 2)
         self.setLayout(self.layout)
-        self.setAutoFillBackground(False)
+        # self.setAutoFillBackground(False)
 
 
 
