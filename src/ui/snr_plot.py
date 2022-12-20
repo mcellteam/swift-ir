@@ -37,7 +37,7 @@ class SnrPlot(QWidget):
         # self.plot = pg.PlotWidget()
         # self.plot.setAntialiasing(False)
         # pg.setConfigOptions(antialias=True)
-        self._plot_colors = ['#FF007F', '#66FF00', '#08E8DE',
+        self._plot_colors = ['#66FF00', '#FF007F', '#08E8DE',
                              '#8c001a', '#2CBFF7', '#c7b286',
                              '#56768e', '#376d58', '#f46c60',
                              '#c9cbd0', '#fbd771', '#ff9a00'
@@ -88,7 +88,7 @@ class SnrPlot(QWidget):
         try:
             self.wipePlot()
             self._snr_checkboxes = dict()
-            for i, s in enumerate(cfg.data.scales()[::-1]):
+            for i, s in enumerate(cfg.data.scales()):
                 self._snr_checkboxes[s] = QCheckBox()
                 self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
                 self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
@@ -96,7 +96,7 @@ class SnrPlot(QWidget):
                 self._snr_checkboxes[s].setChecked(True)
                 self._snr_checkboxes[s].clicked.connect(self.plotData)
                 self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
-                color = self._plot_colors[cfg.data.scales().index(s)]
+                color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
                 self._snr_checkboxes[s].setStyleSheet('background-color: #F3F6FB;'
                                                       'border-color: %s; '
                                                       'border-width: 2px; '
@@ -144,7 +144,7 @@ class SnrPlot(QWidget):
         logger.info(f'plotSingleScale (scale: {scale}):')
         if scale == None: scale = cfg.data.scale()
         x_axis, y_axis = self.get_axis_data(s=scale)
-        brush = self._plot_brushes[cfg.data.scales().index(scale)]
+        brush = self._plot_brushes[cfg.data.scales()[::-1].index(scale)]
         self.snr_points[scale] = pg.ScatterPlotItem(
             size=7,
             pen=pg.mkPen(None),

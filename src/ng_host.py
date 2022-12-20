@@ -278,7 +278,7 @@ class NgHost(QObject):
             logger.info('Getting widget size from thread...')
             # widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
             widget_size = cfg.main_window.ng_browser.geometry().getRect()
-        widget_height = widget_size[3]  # pixels
+        widget_height = widget_size[3] - 36 # pixels. subtract height of Neuroglancer toolbar
 
         if self.arrangement == 1:
             if is_aligned:
@@ -303,6 +303,8 @@ class NgHost(QObject):
         logger.info('has_bb       =%s' % has_bb)
         logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
         logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
+        logger.info('src_width=%d, src_height=%d' % (src_width, src_height))
+        logger.info('x_nudge=%d, y_nudge=%d' % (x_nudge, y_nudge))
         logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
         logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
         logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
@@ -317,7 +319,7 @@ class NgHost(QObject):
             # trying to represent 1024 * 2 = 8192 nm of tissue
             # 8192/276 = 29.68 nm / pixel
 
-            adjustment = 1.16
+            adjustment = 1.04
             # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
 
             s.gpu_memory_limit = -1
@@ -372,14 +374,16 @@ class NgHost(QObject):
                     data=cfg.unal_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
-                    voxel_offset=[1, x_nudge, y_nudge],
+                    voxel_offset=[1, y_nudge, x_nudge],
+                    # voxel_offset=[1, 0, 0],
                     downsampling=None
                 )
                 cfg.baseLV = ng.LocalVolume(
                     data=cfg.unal_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
-                    voxel_offset=[0, x_nudge, y_nudge],
+                    voxel_offset=[0, y_nudge, x_nudge],
+                    # voxel_offset=[0, 0, 0],
                     downsampling=None
                 )
                 if is_aligned:

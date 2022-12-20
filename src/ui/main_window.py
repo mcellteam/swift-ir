@@ -484,6 +484,7 @@ class MainWindow(QMainWindow):
 
 
     def onAlignmentEnd(self):
+        logger.critical('Running post-alignment/regenerate tasks...')
         s = cfg.data.scale()
         # self.initNgServer(scales=[s])
         cfg.data.scalesAligned = get_aligned_scales()
@@ -491,9 +492,10 @@ class MainWindow(QMainWindow):
         # self.initNgViewer()
         # self.initNgServer() #1203-
         self.updateHistoryListWidget(s=s)
+        self.dataUpdateWidgets()
+        logger.info(f'aligned scales list: {cfg.data.scalesAligned}')
         self.snr_plot.initSnrPlot()
         self.force_show_snr_plot()
-        self.dataUpdateWidgets()
         self.updateBanner()
         self.updateEnabledButtons()
         self.showScoreboardWidegts()
@@ -563,7 +565,6 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
         finally:
-            self.onAlignmentEnd()
             self.set_idle()
             QApplication.processEvents()
 
@@ -616,8 +617,6 @@ class MainWindow(QMainWindow):
                           'Try Re-generating images.', logging.ERROR)
         else:
             self.hud.post('Alignment Complete')
-            self.snr_plot.initSnrPlot()
-            self.dataUpdateWidgets()
             self.save_project_to_file()
         finally:
             self.onAlignmentEnd()
@@ -687,8 +686,6 @@ class MainWindow(QMainWindow):
 
         else:
             self.hud.post('Alignment Complete')
-            self.snr_plot.initSnrPlot()
-            self.dataUpdateWidgets()
             self.save_project_to_file()
         finally:
             self.onAlignmentEnd()
@@ -763,8 +760,6 @@ class MainWindow(QMainWindow):
                           ' Try Re-generating images.', logging.ERROR)
         else:
             self.hud.post('Alignment Complete')
-            self.snr_plot.initSnrPlot()
-            self.dataUpdateWidgets()
             self.save_project_to_file()
         finally:
             self.onAlignmentEnd()
@@ -1703,8 +1698,10 @@ class MainWindow(QMainWindow):
         if os.path.exists(filename):
             logger.warning("The file '%s' already exists." % filename)
             path_proj = os.path.splitext(filename)[0]
+            self.hud.post(f"Removing Extant Project Directory '{path_proj}'...")
             logger.info(f"Removing Extant Project Directory '{path_proj}'...")
             shutil.rmtree(path_proj, ignore_errors=True)
+            self.hud.post(f"Removing Extant Project File '{path_proj}'...")
             logger.info(f"Removing Extant Project File '{path_proj}'...")
             os.remove(filename)
 
