@@ -130,7 +130,8 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         self.resized.emit()
         if cfg.data:
-            self.refreshNeuroglancerURL()
+            # self.refreshNeuroglancerURL()
+            self.initNgViewer()
         return super(MainWindow, self).resizeEvent(event)
 
 
@@ -319,7 +320,6 @@ class MainWindow(QMainWindow):
 
 
     def force_hide_project_treeview(self):
-        self.projectdata_treeview.hide()
         self.projectdata_treeview_widget.hide()
         self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
         self.show_hide_project_tree_button.setText('Tree View')
@@ -338,14 +338,12 @@ class MainWindow(QMainWindow):
 
     def show_hide_project_tree_callback(self):
 
-        if self.projectdata_treeview.isHidden():
+        if self.projectdata_treeview_widget.isHidden():
             self.dataUpdateWidgets()
-            self.projectdata_treeview.show()
             self.projectdata_treeview_widget.show()
             self.show_hide_project_tree_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_project_tree_button.setText('Hide Tree View')
         else:
-            self.projectdata_treeview.hide()
             self.projectdata_treeview_widget.hide()
             self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
             self.show_hide_project_tree_button.setText('Tree View')
@@ -373,12 +371,15 @@ class MainWindow(QMainWindow):
         if self.new_control_panel.isHidden():
             self.dataUpdateWidgets()  # for short-circuiting speed-ups
             self.new_control_panel.show()
+            self.vlabel_hud.show()
             self.hud.show()
             self.show_hide_controls_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_controls_button.setText('Hide Controls')
         else:
             self.new_control_panel.hide()
+            self.vlabel_hud.hide()
             self.hud.hide()
+            self.force_hide_snr_plot()
             self.show_hide_controls_button.setIcon(qta.icon("ei.adjust-alt", color='#f3f6fb'))
             self.show_hide_controls_button.setText('Controls')
 
@@ -1251,8 +1252,6 @@ class MainWindow(QMainWindow):
             snr_report = snr_report.replace('<', '&lt;')
             snr_report = snr_report.replace('>', '&gt;')
             snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
-            print(snr_report)
-            print(snr)
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
@@ -2295,7 +2294,8 @@ class MainWindow(QMainWindow):
 
 
     def initNgViewer(self, scales=None, matchpoint=None):
-        # logger.critical(f'caller: {inspect.stack()[1].function}')
+        caller = inspect.stack()[1].function
+        # logger.critical(f'caller: {caller}')
         if cfg.data:
             if ng.is_server_running():
                 if scales == None: scales = [cfg.data.scale()]
@@ -2305,7 +2305,8 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.ng_worker.initViewer()
                     self.refreshNeuroglancerURL(s=s)
-                    self.display_actual_viewer_url(s=s)
+                    if caller != 'resizeEvent':
+                        self.display_actual_viewer_url(s=s)
             else:
                 logger.warning('Neuroglancer is not running')
         else:
@@ -3283,6 +3284,7 @@ class MainWindow(QMainWindow):
         tip = 'Set Whether to Use or Reject the Current Layer'
         self.skip_label = QLabel("Toggle Image\nKeep/Reject:")
         self.skip_label.setStyleSheet("font-size: 11px;")
+        # self.skip_label.setAlignment(Qt.AlignRight)
         self.skip_label.setStatusTip(tip)
         self.toggle_skip = QCheckBox()
         self.toggle_skip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3293,13 +3295,16 @@ class MainWindow(QMainWindow):
         self.toggle_skip.setEnabled(False)
 
         self.skip_layout = QHBoxLayout()
-        self.skip_layout.addWidget(self.skip_label, alignment=Qt.AlignmentFlag.AlignRight)
-        self.skip_layout.addWidget(self.toggle_skip, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.skip_layout.addWidget(self.skip_label, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.skip_layout.addWidget(self.toggle_skip, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.skip_layout.addWidget(self.skip_label)
+        self.skip_layout.addWidget(self.toggle_skip)
         self.skip_layout.addWidget(self.clear_skips_button)
 
         tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
         self.whitening_label = QLabel("Whitening\nFactor:")
         self.whitening_label.setStyleSheet("font-size: 11px;")
+        # self.whitening_label.setAlignment(Qt.AlignRight)
         self.whitening_input = QLineEdit(self)
         self.whitening_input.textEdited.connect(self.has_unsaved_changes)
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3310,13 +3315,16 @@ class MainWindow(QMainWindow):
         self.whitening_label.setStatusTip(tip)
         self.whitening_input.setStatusTip(tip)
         self.whitening_grid = QGridLayout()
-        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        self.whitening_grid.addWidget(self.whitening_label, 0, 0)
+        self.whitening_grid.addWidget(self.whitening_input, 0, 1)
         self.whitening_input.setEnabled(False)
 
         tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
         self.swim_label = QLabel("SWIM Window\n(% size):")
         self.swim_label.setStyleSheet("font-size: 11px;")
+        # self.swim_label.setAlignment(Qt.AlignRight)
         self.swim_input = QLineEdit(self)
         self.swim_input.textEdited.connect(self.has_unsaved_changes)
         self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3327,8 +3335,10 @@ class MainWindow(QMainWindow):
         self.swim_label.setStatusTip(tip)
         self.swim_input.setStatusTip(tip)
         self.swim_grid = QGridLayout()
-        self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        self.swim_grid.addWidget(self.swim_label, 0, 0)
+        self.swim_grid.addWidget(self.swim_input, 0, 1)
         self.swim_input.setEnabled(False)
 
         # tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
@@ -3361,8 +3371,11 @@ class MainWindow(QMainWindow):
         self.prev_scale_button.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
 
         self.scale_ctrl_label = QLabel('Scale:')
+        # self.scale_ctrl_label.setAlignment(Qt.AlignRight)
         self.scale_ctrl_layout = QHBoxLayout()
         self.scale_ctrl_layout.setAlignment(Qt.AlignLeft)
+        # self.scale_ctrl_layout.addWidget(self.scale_ctrl_label, alignment=Qt.AlignmentFlag.AlignRight)
+        self.scale_ctrl_layout.addWidget(self.scale_ctrl_label)
         self.scale_ctrl_layout.addWidget(self.prev_scale_button)
         self.scale_ctrl_layout.addWidget(self.next_scale_button)
 
@@ -3395,6 +3408,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Automatically generate aligned images.'
         self.auto_generate_label = QLabel("Auto-generate Images:")
+        # self.auto_generate_label.setAlignment(Qt.AlignRight)
         self.toggle_auto_generate = ToggleSwitch()
         self.toggle_auto_generate.stateChanged.connect(self.has_unsaved_changes)
         self.auto_generate_label.setStatusTip(tip)
@@ -3410,6 +3424,7 @@ class MainWindow(QMainWindow):
               ' option is set at the coarsest s, in order to form a contiguous dataset.'
         self.null_bias_label = QLabel("Corrective\n(Poly) Bias:")
         self.null_bias_label.setStyleSheet("font-size: 11px;")
+        # self.null_bias_label.setAlignment(Qt.AlignRight)
         self.null_bias_label.setStatusTip(tip)
         self.bias_bool_combo = QComboBox(self)
         self.bias_bool_combo.setStyleSheet("font-size: 11px;")
@@ -3422,21 +3437,26 @@ class MainWindow(QMainWindow):
         self.bias_bool_combo.setEnabled(False)
 
         self.poly_order_hlayout = QHBoxLayout()
-        self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignmentFlag.AlignRight)
-        self.poly_order_hlayout.addWidget(self.bias_bool_combo, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.poly_order_hlayout.addWidget(self.bias_bool_combo, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.poly_order_hlayout.addWidget(self.null_bias_label)
+        self.poly_order_hlayout.addWidget(self.bias_bool_combo)
 
         tip = 'Bounding rectangle (default=ON). Caution: Turning this ON may ' \
               'significantly increase the size of your aligned images.'
         self.bounding_label = QLabel("Bounding\nRectangle:")
         self.bounding_label.setStyleSheet("font-size: 11px;")
+        # self.bounding_label.setAlignment(Qt.AlignRight)
         self.bounding_label.setStatusTip(tip)
         self.toggle_bounding_rect = ToggleSwitch()
         self.toggle_bounding_rect.setChecked(True)
         self.toggle_bounding_rect.setStatusTip(tip)
         self.toggle_bounding_rect.toggled.connect(self.bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
-        self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignRight)
-        self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.toggle_bounding_hlayout.addWidget(self.bounding_label)
+        self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect)
         self.toggle_bounding_rect.setEnabled(False)
 
         logger.info('2')
@@ -3449,24 +3469,67 @@ class MainWindow(QMainWindow):
         self.regenerate_button.setFixedSize(normal_button_size)
         self.regenerate_button.setStyleSheet("font-size: 10px;")
 
+        self.skip_widget = QWidget()
+        self.skip_widget.setLayout(self.skip_layout)
+
+        self.swim_widget = QWidget()
+        self.swim_widget.setLayout(self.swim_grid)
+
+        self.whitening_widget = QWidget()
+        self.whitening_widget.setLayout(self.whitening_grid)
+
+        self.poly_order_widget = QWidget()
+        self.poly_order_widget.setLayout(self.poly_order_hlayout)
+
+        self.bounding_widget = QWidget()
+        self.bounding_widget.setLayout(self.toggle_bounding_hlayout)
+
+        self.scale_ctrl_widget = QWidget()
+        self.scale_ctrl_widget.setLayout(self.scale_ctrl_layout)
+
+        self.align_buttons_widget = QWidget()
+        self.align_buttons_hlayout = QHBoxLayout()
+        self.align_buttons_hlayout.addWidget(self.regenerate_button)
+        self.align_buttons_hlayout.addWidget(self.align_one_button)
+        self.align_buttons_hlayout.addWidget(self.align_forward_button)
+        self.align_buttons_hlayout.addWidget(self.align_all_button)
+        self.align_buttons_widget.setLayout(self.align_buttons_hlayout)
+
         self.new_control_panel = QWidget()
         self.new_control_panel.setFixedHeight(36)
         self.new_control_panel_layout = QHBoxLayout()
-        self.new_control_panel_layout.addStretch()
-        self.new_control_panel_layout.addLayout(self.skip_layout)
-        self.new_control_panel_layout.addLayout(self.swim_grid)
-        self.new_control_panel_layout.addLayout(self.whitening_grid)
-        self.new_control_panel_layout.addWidget(self.apply_all_button)
-        self.new_control_panel_layout.addLayout(self.poly_order_hlayout)
-        self.new_control_panel_layout.addLayout(self.toggle_bounding_hlayout)
-        self.new_control_panel_layout.addWidget(self.regenerate_button)
-        self.new_control_panel_layout.addWidget(self.align_one_button)
-        self.new_control_panel_layout.addWidget(self.align_forward_button)
-        self.new_control_panel_layout.addWidget(self.align_all_button)
-        self.new_control_panel_layout.addWidget(self.scale_ctrl_label)
-        self.new_control_panel_layout.addLayout(self.scale_ctrl_layout)
-        self.new_control_panel_layout.addStretch()
+        self.new_control_panel_layout.addStretch(6)
+        self.new_control_panel_layout.addWidget(self.skip_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(1)
+        self.new_control_panel_layout.addWidget(self.swim_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(1)
+        self.new_control_panel_layout.addWidget(self.whitening_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(1)
+        self.new_control_panel_layout.addWidget(self.apply_all_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(1)
+        self.new_control_panel_layout.addWidget(self.poly_order_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(1)
+        self.new_control_panel_layout.addWidget(self.bounding_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(1)
+        self.new_control_panel_layout.addWidget(self.align_buttons_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(2)
+        self.new_control_panel_layout.addWidget(self.scale_ctrl_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.new_control_panel_layout.addStretch(6)
         self.new_control_panel.setLayout(self.new_control_panel_layout)
+
+        # self.new_control_panel_layout.addLayout(self.skip_layout)
+        # self.new_control_panel_layout.addLayout(self.swim_grid)
+        # self.new_control_panel_layout.addLayout(self.whitening_grid)
+        # self.new_control_panel_layout.addWidget(self.apply_all_button, alignment=)
+        # self.new_control_panel_layout.addLayout(self.poly_order_hlayout)
+        # self.new_control_panel_layout.addLayout(self.toggle_bounding_hlayout)
+        # self.new_control_panel_layout.addWidget(self.regenerate_button)
+        # self.new_control_panel_layout.addWidget(self.align_one_button)
+        # self.new_control_panel_layout.addWidget(self.align_forward_button)
+        # self.new_control_panel_layout.addWidget(self.align_all_button)
+        # self.new_control_panel_layout.addLayout(self.scale_ctrl_layout)
+        # # self.new_control_panel_layout.addStretch()
+        # self.new_control_panel.setLayout(self.new_control_panel_layout)
 
         self.main_details_subwidgetA = QTextEdit()
         self.main_details_subwidgetB = QTextEdit()
@@ -3679,6 +3742,9 @@ class MainWindow(QMainWindow):
         self.refresh_project_view_button.clicked.connect(self.updateJsonWidget)
         self.projectdata_treeview_widget = QWidget()
         self.projectdata_treeview_layout = QHBoxLayout()
+        self.vlabel_treeview = VerticalLabel('Project Data')
+        self.vlabel_treeview.setObjectName('vlabel_treeview')
+        self.projectdata_treeview_layout.addWidget(self.vlabel_treeview)
         self.projectdata_treeview_layout.addWidget(self.projectdata_treeview)
         self.projectdata_treeview_widget.setLayout(self.projectdata_treeview_layout)
 
@@ -3782,11 +3848,16 @@ class MainWindow(QMainWindow):
         self.low_low_widget = QWidget()
         self.low_low_gridlayout = QGridLayout()
         self.low_low_widget.setLayout(self.low_low_gridlayout)
-        self.low_low_gridlayout.addWidget(self.main_details_subwidgetA,0,0, alignment=Qt.AlignCenter)
-        self.low_low_gridlayout.addWidget(self.main_details_subwidgetB,0,1, alignment=Qt.AlignCenter)
-        self.low_low_gridlayout.addWidget(self.show_hide_main_features_widget,0,2, alignment=Qt.AlignCenter)
-        self.low_low_gridlayout.addWidget(self.afm_widget,0,3, alignment=Qt.AlignCenter)
-        self.low_low_gridlayout.addWidget(self.history_widget,0,4, alignment=Qt.AlignCenter)
+        # self.low_low_gridlayout.addWidget(self.main_details_subwidgetA,0,0, alignment=Qt.AlignCenter)
+        # self.low_low_gridlayout.addWidget(self.main_details_subwidgetB,0,1, alignment=Qt.AlignCenter)
+        # self.low_low_gridlayout.addWidget(self.show_hide_main_features_widget,0,2, alignment=Qt.AlignCenter)
+        # self.low_low_gridlayout.addWidget(self.afm_widget,0,3, alignment=Qt.AlignCenter)
+        # self.low_low_gridlayout.addWidget(self.history_widget,0,4, alignment=Qt.AlignCenter)
+        self.low_low_gridlayout.addWidget(self.main_details_subwidgetA,0,0)
+        self.low_low_gridlayout.addWidget(self.main_details_subwidgetB,0,1)
+        self.low_low_gridlayout.addWidget(self.show_hide_main_features_widget,0,2)
+        self.low_low_gridlayout.addWidget(self.afm_widget,0,3)
+        self.low_low_gridlayout.addWidget(self.history_widget,0,4)
         self.main_details_subwidgetA.hide()
         self.main_details_subwidgetB.hide()
         self.afm_widget.hide()
@@ -3989,7 +4060,6 @@ class MainWindow(QMainWindow):
         self.matchpoint_controls.hide()
         self.main_tab_widget.hide()
         self.force_hide_expandable_widgets()
-        self.projectdata_treeview.show()
         self.projectdata_treeview_widget.show()
 
 
@@ -4017,12 +4087,15 @@ class MainWindow(QMainWindow):
         self.ng_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_panel_controls_layout.setContentsMargins(0, 0, 0, 0)
         self.ng_browser_layout.setContentsMargins(0, 0, 0, 0)
-        self.whitening_grid.setContentsMargins(0, 0, 0, 0)
-        self.swim_grid.setContentsMargins(0, 0, 0, 0)
-        self.scale_ctrl_layout.setContentsMargins(0, 0, 0, 0)
         self.history_layout.setContentsMargins(0, 0, 0, 0)
-        self.toggle_bounding_hlayout.setContentsMargins(0, 0, 0, 0)
-        self.new_control_panel_layout.setContentsMargins(2, 2, 2, 2)
+        self.whitening_grid.setContentsMargins(2, 0, 2, 0)
+        self.swim_grid.setContentsMargins(2, 0, 2, 0)
+        self.scale_ctrl_layout.setContentsMargins(2, 0, 2, 0)
+        self.toggle_bounding_hlayout.setContentsMargins(2, 0, 2, 0)
+        self.skip_layout.setContentsMargins(2, 0, 2, 0)
+        self.poly_order_hlayout.setContentsMargins(2, 0, 2, 0)
+        self.align_buttons_hlayout.setContentsMargins(2, 0, 2, 0)
+        self.new_control_panel_layout.setContentsMargins(4, 2, 4, 2)
         self.full_window_controls_hlayout.setContentsMargins(4, 0, 4, 0)
         self.python_console.setContentsMargins(4, 2, 4, 2)
         self.low_low_gridlayout.setContentsMargins(4, 0, 4, 0)
@@ -4038,10 +4111,10 @@ class MainWindow(QMainWindow):
         self.show_hide_main_features_widget.setMaximumHeight(74)
         self.low_low_widget.setMaximumHeight(78)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        self.main_details_subwidgetA.setMinimumWidth(148)
-        self.main_details_subwidgetB.setMinimumWidth(148)
-        self.afm_widget.setMinimumWidth(148)
-        self.history_widget.setMinimumWidth(148)
+        # self.main_details_subwidgetA.setMinimumWidth(148)
+        # self.main_details_subwidgetB.setMinimumWidth(148)
+        # self.afm_widget.setMinimumWidth(148)
+        # self.history_widget.setMinimumWidth(148)
 
 
     def initStatusBar(self):
