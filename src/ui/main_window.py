@@ -1220,7 +1220,7 @@ class MainWindow(QMainWindow):
             self.browser_overlay_widget.hide()
             self.browser_overlay_label.hide()
 
-        self.setUIDetails()
+        self.updateTextWidgetA()
 
         try:     self.toggle_skip.setChecked(cfg.data.skipped())
         except:  logger.warning('Skip Toggle Widget Failed to Update')
@@ -1237,7 +1237,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def setUIDetails(self, s=None, l=None):
+    def updateTextWidgetA(self, s=None, l=None):
         if s == None: s = cfg.data.scale()
         if l == None: l = cfg.data.layer()
         name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
@@ -1255,6 +1255,10 @@ class MainWindow(QMainWindow):
             snr_report = snr_report.replace('<', '&lt;')
             snr_report = snr_report.replace('>', '&gt;')
             snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
+
+
+
+
             self.main_details_subwidgetA.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
@@ -1269,8 +1273,8 @@ class MainWindow(QMainWindow):
 
 
     def updateSkipMatchWidget(self):
-        skips = '\n'.join(map(str,cfg.data.skips_list()))
-        matchpoints = '\n'.join(map(str,cfg.data.find_layers_with_matchpoints()))
+        skips = '\n'.join(map(str, cfg.data.skips_list()))
+        matchpoints = '\n'.join(map(str, cfg.data.find_layers_with_matchpoints()))
         self.main_details_subwidgetB.setText(f"<b>Skipped Layers:</b><br>"
                                              f"{skips}<br>"
                                              f"<b>Match Point Layers:</b><br>"
@@ -2084,7 +2088,7 @@ class MainWindow(QMainWindow):
 
     def html_view(self):
         app_root = self.get_application_root()
-        html_f = os.path.join(app_root, 'src', 'resources', 'someHTML.html')
+        html_f = os.path.join(app_root, 'src', 'resources', 'remod.html')
         print(html_f)
         with open(html_f, 'r') as f:
             html = f.read()
@@ -3235,7 +3239,7 @@ class MainWindow(QMainWindow):
 
         swiftirMenu = helpMenu.addMenu('SWiFT-IR')
 
-        self.swiftirComponentsAction = QAction('SWiFT-IR Components', self)
+        self.swiftirComponentsAction = QAction('Remod Help', self)
         self.swiftirComponentsAction.triggered.connect(self.html_view)
         swiftirMenu.addAction(self.swiftirComponentsAction)
 
@@ -3692,7 +3696,7 @@ class MainWindow(QMainWindow):
         # self.layer_view_inner_layout.addWidget(self.external_hyperlink)
         self.layer_view_inner_layout.addWidget(self.layer_view_widget)
 
-        self.vlabel_overview = VerticalLabel('Project Overview')
+        self.vlabel_overview = VerticalLabel('Project Stackview')
         self.vlabel_overview.setObjectName('vlabel_overview')
 
         self.layer_view_outter_layout = QHBoxLayout()
@@ -3783,8 +3787,8 @@ class MainWindow(QMainWindow):
 
         self.main_tab_widget = QTabWidget()
         self.main_tab_widget.setObjectName('main_tab_widget')
-        self.main_tab_widget.addTab(self.image_panel_stack_widget, ' Neuroglancer ')
-        self.main_tab_widget.addTab(self.layer_view_container, ' Overview ')
+        self.main_tab_widget.addTab(self.image_panel_stack_widget, ' 3DEMview ')
+        self.main_tab_widget.addTab(self.layer_view_container, ' Stackview ')
         self.main_tab_widget.addTab(self.projectdata_treeview_widget, ' Treeview ')
         self.main_tab_widget.currentChanged.connect(self.onTabChange)
 
