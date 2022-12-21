@@ -176,7 +176,7 @@ class LayerViewWidget(QWidget):
             # logger.info(f'index.row: {index.row()}')
             index = self.table_view.currentIndex().row()
             cfg.data.set_layer(index)
-            cfg.main_window.setUIDetails()
+            cfg.main_window.updateTextWidgetA()
             QApplication.processEvents()
         cfg.main_window.dataUpdateWidgets()
 
