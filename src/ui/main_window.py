@@ -87,7 +87,6 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(QPixmap('src/resources/sims.png')))
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
-        # if cfg.USE_EXTRA_THREADING:
         self.initThreadpool(timeout=3000)
         self.initImageAllocations()
         self.initOpenGlContext()
@@ -102,7 +101,6 @@ class MainWindow(QMainWindow):
         self.initSize(cfg.WIDTH, cfg.HEIGHT)
         self.initPos()
         self.initStyle()
-        # self.initView()
         self.initPrivateMembers()
         self.initShortcuts()
         self.initData()
@@ -691,7 +689,6 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()
         finally:
             self.updateJsonWidget()
-            # self.initNgServer(scales=[cfg.data.s()])
             self.initNgViewer()
             if are_aligned_images_generated():
                 self.hud.post('Regenerate Succeeded')
@@ -1250,7 +1247,6 @@ class MainWindow(QMainWindow):
     def ng_layer(self):
         '''The idea behind this was to cache the current layer. Not Being Used Currently'''
         try:
-            # index = cfg.ng_workers[cfg.data.scale()].cur_index
             index = cfg.ng_worker.cur_index
             assert isinstance(index, int)
             return index
@@ -1625,7 +1621,6 @@ class MainWindow(QMainWindow):
         cfg.data.nscales = len(cfg.data.scales())
         cfg.data.nlayers = cfg.data.n_layers()
         self._scales_combobox_switch = 0
-        # self.image_panel_stack_widget.setCurrentIndex(2)
         self.image_panel_stack_widget.setCurrentIndex(1)
         self.dataUpdateWidgets()
         self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
@@ -1764,14 +1759,6 @@ class MainWindow(QMainWindow):
             # logger.info('new_dest = %s' % new_dest)
             self.save_project_to_file()
 
-    # def move_project(self):
-    #     self.set_status("Moving Project")
-    #     dir = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-    #     dest_orig = Path(cfg.data.dest())
-    #     filename = self.save_project_dialog()
-    #     dest_new = Path(filename).parents[0]
-    #     import shutil
-    #     dest = shutil.move(dest_orig, dest_new)
 
     def save_project_to_file(self, saveas=None):
         if saveas is not None:
@@ -1810,7 +1797,6 @@ class MainWindow(QMainWindow):
         else:
             cfg.SHOW_UI_CONTROLS = False
             self.ngShowUiControlsAction.setText('Hide UI Controls')
-        # self.initNgServer(scales=[cfg.data.s()])
         self.initNgViewer(scales=cfg.data.scales())
 
 
@@ -1849,7 +1835,7 @@ class MainWindow(QMainWindow):
             '''Todo save the image dimensions in project dictionary for quick lookup later'''
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
-        self.save_project_to_file() #1123+
+        self.save_project_to_file()
         logger.info('<<<< Import Images <<<<')
 
 
@@ -1922,8 +1908,7 @@ class MainWindow(QMainWindow):
                 scalene_profiler.stop()
 
         logger.info('Quitting app...')
-        # self.app.quit() #1130-
-        QApplication.quit() #1130+
+        QApplication.quit()
 
 
     def html_view(self):
@@ -1937,11 +1922,9 @@ class MainWindow(QMainWindow):
 
 
     def html_keyboard_commands(self):
-
         if self.main_stack_widget.currentIndex() == 1:
             self.main_stack_widget.setCurrentIndex(0)
             return
-
         app_root = self.get_application_root()
         html_f = os.path.join(app_root, 'src', 'resources', 'KeyboardCommands.html')
         print(html_f)
@@ -2135,8 +2118,6 @@ class MainWindow(QMainWindow):
 
     def initShortcuts(self):
         logger.info('')
-        '''Initialize Shortcuts'''
-        # logger.info('')
         events = (
             (QKeySequence.MoveToPreviousChar, self.scale_down),
             (QKeySequence.MoveToNextChar, self.scale_up)
@@ -3134,7 +3115,6 @@ class MainWindow(QMainWindow):
         tip = 'Set Whether to Use or Reject the Current Layer'
         self.skip_label = QLabel("Toggle Image\nKeep/Reject:")
         self.skip_label.setStyleSheet("font-size: 11px;")
-        # self.skip_label.setAlignment(Qt.AlignRight)
         self.skip_label.setStatusTip(tip)
         self.toggle_skip = QCheckBox()
         self.toggle_skip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3145,8 +3125,6 @@ class MainWindow(QMainWindow):
         self.toggle_skip.setEnabled(False)
 
         self.skip_layout = QHBoxLayout()
-        # self.skip_layout.addWidget(self.skip_label, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.skip_layout.addWidget(self.toggle_skip, alignment=Qt.AlignmentFlag.AlignLeft)
         self.skip_layout.addWidget(self.skip_label)
         self.skip_layout.addWidget(self.toggle_skip)
         self.skip_layout.addWidget(self.clear_skips_button)
@@ -3154,7 +3132,6 @@ class MainWindow(QMainWindow):
         tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
         self.whitening_label = QLabel("Whitening\nFactor:")
         self.whitening_label.setStyleSheet("font-size: 11px;")
-        # self.whitening_label.setAlignment(Qt.AlignRight)
         self.whitening_input = QLineEdit(self)
         self.whitening_input.textEdited.connect(self.has_unsaved_changes)
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3165,8 +3142,6 @@ class MainWindow(QMainWindow):
         self.whitening_label.setStatusTip(tip)
         self.whitening_input.setStatusTip(tip)
         self.whitening_grid = QGridLayout()
-        # self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.whitening_grid.addWidget(self.whitening_label, 0, 0)
         self.whitening_grid.addWidget(self.whitening_input, 0, 1)
         self.whitening_input.setEnabled(False)
@@ -3174,7 +3149,6 @@ class MainWindow(QMainWindow):
         tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
         self.swim_label = QLabel("SWIM Window\n(% size):")
         self.swim_label.setStyleSheet("font-size: 11px;")
-        # self.swim_label.setAlignment(Qt.AlignRight)
         self.swim_input = QLineEdit(self)
         self.swim_input.textEdited.connect(self.has_unsaved_changes)
         self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3185,8 +3159,6 @@ class MainWindow(QMainWindow):
         self.swim_label.setStatusTip(tip)
         self.swim_input.setStatusTip(tip)
         self.swim_grid = QGridLayout()
-        # self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.swim_grid.addWidget(self.swim_label, 0, 0)
         self.swim_grid.addWidget(self.swim_input, 0, 1)
         self.swim_input.setEnabled(False)
@@ -3221,10 +3193,8 @@ class MainWindow(QMainWindow):
         self.prev_scale_button.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
 
         self.scale_ctrl_label = QLabel('Scale:')
-        # self.scale_ctrl_label.setAlignment(Qt.AlignRight)
         self.scale_ctrl_layout = QHBoxLayout()
         self.scale_ctrl_layout.setAlignment(Qt.AlignLeft)
-        # self.scale_ctrl_layout.addWidget(self.scale_ctrl_label, alignment=Qt.AlignmentFlag.AlignRight)
         self.scale_ctrl_layout.addWidget(self.scale_ctrl_label)
         self.scale_ctrl_layout.addWidget(self.prev_scale_button)
         self.scale_ctrl_layout.addWidget(self.next_scale_button)
@@ -3258,7 +3228,6 @@ class MainWindow(QMainWindow):
 
         tip = 'Automatically generate aligned images.'
         self.auto_generate_label = QLabel("Auto-generate Images:")
-        # self.auto_generate_label.setAlignment(Qt.AlignRight)
         self.toggle_auto_generate = ToggleSwitch()
         self.toggle_auto_generate.stateChanged.connect(self.has_unsaved_changes)
         self.auto_generate_label.setStatusTip(tip)
@@ -3274,7 +3243,6 @@ class MainWindow(QMainWindow):
               ' option is set at the coarsest s, in order to form a contiguous dataset.'
         self.null_bias_label = QLabel("Corrective\n(Poly) Bias:")
         self.null_bias_label.setStyleSheet("font-size: 11px;")
-        # self.null_bias_label.setAlignment(Qt.AlignRight)
         self.null_bias_label.setStatusTip(tip)
         self.bias_bool_combo = QComboBox(self)
         self.bias_bool_combo.setStyleSheet("font-size: 11px;")
@@ -3287,8 +3255,6 @@ class MainWindow(QMainWindow):
         self.bias_bool_combo.setEnabled(False)
 
         self.poly_order_hlayout = QHBoxLayout()
-        # self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.poly_order_hlayout.addWidget(self.bias_bool_combo, alignment=Qt.AlignmentFlag.AlignLeft)
         self.poly_order_hlayout.addWidget(self.null_bias_label)
         self.poly_order_hlayout.addWidget(self.bias_bool_combo)
 
@@ -3296,15 +3262,12 @@ class MainWindow(QMainWindow):
               'significantly increase the size of your aligned images.'
         self.bounding_label = QLabel("Bounding\nRectangle:")
         self.bounding_label.setStyleSheet("font-size: 11px;")
-        # self.bounding_label.setAlignment(Qt.AlignRight)
         self.bounding_label.setStatusTip(tip)
         self.toggle_bounding_rect = ToggleSwitch()
         self.toggle_bounding_rect.setChecked(True)
         self.toggle_bounding_rect.setStatusTip(tip)
         self.toggle_bounding_rect.toggled.connect(self.bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
-        # self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignLeft)
         self.toggle_bounding_hlayout.addWidget(self.bounding_label)
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect)
         self.toggle_bounding_rect.setEnabled(False)
@@ -3321,19 +3284,14 @@ class MainWindow(QMainWindow):
 
         self.skip_widget = QWidget()
         self.skip_widget.setLayout(self.skip_layout)
-
         self.swim_widget = QWidget()
         self.swim_widget.setLayout(self.swim_grid)
-
         self.whitening_widget = QWidget()
         self.whitening_widget.setLayout(self.whitening_grid)
-
         self.poly_order_widget = QWidget()
         self.poly_order_widget.setLayout(self.poly_order_hlayout)
-
         self.bounding_widget = QWidget()
         self.bounding_widget.setLayout(self.toggle_bounding_hlayout)
-
         self.scale_ctrl_widget = QWidget()
         self.scale_ctrl_widget.setLayout(self.scale_ctrl_layout)
 
@@ -3366,20 +3324,6 @@ class MainWindow(QMainWindow):
         self.new_control_panel_layout.addWidget(self.scale_ctrl_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.new_control_panel_layout.addStretch(6)
         self.new_control_panel.setLayout(self.new_control_panel_layout)
-
-        # self.new_control_panel_layout.addLayout(self.skip_layout)
-        # self.new_control_panel_layout.addLayout(self.swim_grid)
-        # self.new_control_panel_layout.addLayout(self.whitening_grid)
-        # self.new_control_panel_layout.addWidget(self.apply_all_button, alignment=)
-        # self.new_control_panel_layout.addLayout(self.poly_order_hlayout)
-        # self.new_control_panel_layout.addLayout(self.toggle_bounding_hlayout)
-        # self.new_control_panel_layout.addWidget(self.regenerate_button)
-        # self.new_control_panel_layout.addWidget(self.align_one_button)
-        # self.new_control_panel_layout.addWidget(self.align_forward_button)
-        # self.new_control_panel_layout.addWidget(self.align_all_button)
-        # self.new_control_panel_layout.addLayout(self.scale_ctrl_layout)
-        # # self.new_control_panel_layout.addStretch()
-        # self.new_control_panel.setLayout(self.new_control_panel_layout)
 
         self.label_project_details = QLabel('Details')
         self.label_project_details.setStyleSheet('font-size: 10px;')
@@ -3652,8 +3596,8 @@ class MainWindow(QMainWindow):
         self.show_hide_main_features_widget = QWidget()
         self.show_hide_main_features_widget.setObjectName('show_hide_main_features_widget')
         self.show_hide_main_features_vlayout = QHBoxLayout()
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_controls_button, alignment=Qt.AlignHCenter)
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignHCenter)
+        self.show_hide_main_features_vlayout.addWidget(self.show_hide_controls_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self.show_hide_main_features_vlayout.addStretch()
         self.show_hide_main_features_widget.setLayout(self.show_hide_main_features_vlayout)
 
@@ -3664,7 +3608,6 @@ class MainWindow(QMainWindow):
         # self.label_y_axis.setStyleSheet("font-size: 12px;")
         self.label_y_axis.setFont(font)
         self.label_y_axis.setObjectName('label_y_axis')
-        # self.label_y_axis.setFixedWidth(10)
         self.snr_plot_and_ylabel = QHBoxLayout()
         self.snr_plot_and_ylabel.addWidget(self.label_y_axis)
         self.snr_plot_and_ylabel.addWidget(self.snr_plot)
@@ -3674,7 +3617,6 @@ class MainWindow(QMainWindow):
         self.label_x_axis.setStyleSheet("font-size: 11px;")
         self.label_x_axis.setFont(font)
         self.label_x_axis.setObjectName('label_x_axis')
-        # self.label_x_axis.setFixedWidth(40)
         self.snr_plot_widget.setLayout(self.snr_plot_layout)
         self.snr_plot_layout.addLayout(self.snr_plot_and_ylabel)
         self.snr_plot_layout.addWidget(self.label_x_axis, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -3789,36 +3731,12 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget(self.new_main_widget)
         self.main_panel_layout.addWidget(self.full_window_controls)
         self.main_panel_layout.addWidget(self.show_hide_main_features_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.main_panel_layout.addWidget(self.pbar)
-
-
-        # self.thumbnail_table = QTableView()
-        # self.thumbnail_table.horizontalHeader().hide()
-        # self.thumbnail_table.verticalHeader().hide()
-        # self.thumbnail_table.setGridStyle(Qt.NoPen)
-        #
-        # self.overview_panel = QWidget()
-        # self.overview_tab_widget = QTabWidget()
-        # self.overview_tab_widget.addTab(self.overview_panel, 'Overview')
-        # self.label_overview = VerticalLabel('Project Overview')
-        # self.label_overview.setObjectName('label_overview')
-        # self.overview_layout = QHBoxLayout()
-        # self.overview_layout.addWidget(self.label_overview)
-        # self.overview_layout.addWidget(self.thumbnail_table)
-        # self.overview_panel.setLayout(self.overview_layout)
-
-        # self.overview_back_button = QPushButton("Back")
-        # self.overview_back_button.setFixedSize(QSize(44, 20))
-        # self.overview_back_button.clicked.connect(self.back_callback)
-        # self.overview_layout.addWidget(self.overview_back_button, 3, 0, 1, 1)
 
         self.main_stack_widget = QStackedWidget(self)
         self.main_stack_widget.addWidget(self.main_panel)           # (0) main_panel
         self.main_stack_widget.addWidget(self.docs_panel)           # (1) docs_panel
         self.main_stack_widget.addWidget(self.demos_panel)          # (2) demos_panel
         self.main_stack_widget.addWidget(self.remote_viewer_panel)  # (3) remote_viewer_panel
-        # self.main_stack_widget.addWidget(self.overview_tab_widget)       # (4) overview_tab_widget
-        # self.main_stack_widget.addWidget(self.overview_panel)
 
         self.pageComboBox = QComboBox()
         self.pageComboBox.addItem('Main')
@@ -3834,6 +3752,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_stack_widget)
         self.toolbar.setCursor(QCursor(Qt.PointingHandCursor))
         self.main_stack_widget.setCurrentIndex(0)
+
 
     def get_application_root(self):
         return Path(__file__).parents[2]
@@ -3923,10 +3842,8 @@ class MainWindow(QMainWindow):
         self.hud_widget_layout.setContentsMargins(0, 0, 0, 0)
         self.layer_details.setContentsMargins(0, 0, 0, 0)
         self.layer_details_layout.setContentsMargins(0, 0, 0, 0)
-
         self.show_hide_main_features_widget.setMaximumHeight(24)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        # self.afm_widget.setMinimumWidth(148)
         self.history_widget.setMinimumWidth(148)
         self.afm_widget.setFixedWidth(240)
         self.layer_details.setMinimumWidth(190)
@@ -3937,34 +3854,26 @@ class MainWindow(QMainWindow):
         self.statusBar = self.statusBar()
         self.statusBar.setFixedHeight(20)
 
-    #@timer
+
     def initPbar(self):
         self.pbar = QProgressBar()
         self.pbar.setFont(QFont('Arial', 11))
         self.pbar.setFixedHeight(16)
-        # self.pbar.setFixedWidth(400)
         self.statusBar.addPermanentWidget(self.pbar)
-
-        # self.pbar_container = QWidget()
-        # self.pbar_layout = QHBoxLayout()
-        # self.pbar_layout.setContentsMargins(0, 0, 0, 0)
-        # self.pbar_layout.addStretch()
-        # self.pbar_layout.addWidget(self.pbar, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.pbar_container.setLayout(self.pbar_layout)
-        # self.statusBar.addPermanentWidget(self.pbar_container)
-
-        # self.pbar.setAlignment(Qt.AlignmentFlag.AlignRight)
-        # self.pbar.setGeometry(0, 0, 250, 50)
         self.pbar.hide()
+
 
     def pbar_max(self, x):
         self.pbar.setMaximum(x)
 
+
     def pbar_update(self, x):
         self.pbar.setValue(x)
 
+
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
+
 
     def showZeroedPbar(self):
         self.pbar.setValue(0)
