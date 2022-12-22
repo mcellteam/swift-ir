@@ -29,12 +29,10 @@ from math import floor
 import numpy as np
 import numcodecs
 numcodecs.blosc.use_threads = False
-
 import neuroglancer as ng
 import neuroglancer.webdriver
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
-
 import src.config as cfg
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
 from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string, track
@@ -44,18 +42,10 @@ __all__ = ['NgHost']
 
 logger = logging.getLogger(__name__)
 
-KEEP_RUNNING = True
-
-
-def keep_running():
-    return KEEP_RUNNING
-
-
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal(int)
     mpUpdate = Signal()
-
 
 class NgHost(QObject):
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
@@ -73,7 +63,7 @@ class NgHost(QObject):
         scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
         logger.info(f'scales: {scales}')
         self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
-        self.sf = get_scale_val(scale)  # s factor
+        self.sf = get_scale_val(scale)  # scale factor
         self.ref_l = 'ref_%d' % self.sf
         self.base_l = 'base_%d' % self.sf
         self.aligned_l = 'aligned_%d' % self.sf
@@ -102,10 +92,6 @@ class NgHost(QObject):
             logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
         except:
             logger.info('Unable to decipher who caller is')
-        # client.loop.run_until_complete(payload(client))
-        # for task in asyncio.Task.all_tasks(client.loop):
-        #     task.cancel()
-        # del cfg.viewer
 
     def __str__(self):
         return obj_to_string(self)
@@ -115,7 +101,6 @@ class NgHost(QObject):
 
     @Slot()
     def run(self):
-        # Retrieve args/kwargs here; and fire processing using them
         try:
             cfg.viewer = ng.Viewer()
         except:
@@ -196,7 +181,6 @@ class NgHost(QObject):
         if matchpoint != None:
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
-        # logger.info('Initializing Viewer, %s (%s, matchpoint: %s)...' % (cfg.data.scale_pretty(s=self.scale), caller, self.mp_mode))
         logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
@@ -222,9 +206,6 @@ class NgHost(QObject):
 
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
-        # logger.info('Match Point Mode  : %s' % str(self.mp_mode))
-        # logger.info('Shader            : %s' % str(cfg.SHADER))
-        # logger.info('Is Aligned        : %s' % str(is_aligned))
 
         src_size = cfg.data.image_size()
         src_width, src_height = src_size[0], src_size[1]
@@ -275,32 +256,17 @@ class NgHost(QObject):
         logger.info('cross_section_scale=%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
-            # NOTE: image_panel_stack_widget and ng_browser have same geometry (height)
-
-            # 276 pixels of widget
-            # 1024 pixel image, 8 nm/pixel
-            # --> X nm per pixel (i.e. 20 nm / pixel)
-            # trying to represent 1024 * 2 = 8192 nm of tissue
-            # 8192/276 = 29.68 nm / pixel
-
             adjustment = 1.04
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.concurrent_downloads = 512
-
-            # In general the existing defaults are pretty reasonable and you
-            # can't raise them too much without running into problems. -jbms
-
             s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
-
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
-            # s.perspective_orientation =
-            # chunkshape = cfg.data.chunkshape()
-            # s.relative_display_scales = [32, 1, 1] #Todo make this better
-            # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
+            # s.perspective_orientation
+            # s.relative_display_scales = [32, 1, 1] #Todo inspect this
 
             if cfg.USE_TENSORSTORE:
                 try:
@@ -416,17 +382,6 @@ class NgHost(QObject):
 
             if self.arrangement == 1:
                 s.layout = ng.row_layout(grps)
-                # if is_aligned:
-                #     ng.column_layout([
-                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
-                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
-                #         ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout)
-                #     ]),
-                # else:
-                #     ng.column_layout([
-                #         ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
-                #         ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
-                #     ]),
 
             if self.arrangement == 2:
                 if is_aligned:
@@ -477,7 +432,6 @@ class NgHost(QObject):
                 s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = show_ui_controls
             s.show_panel_borders = show_panel_borders
-            # s.viewer_size = [1000,1000]
 
         self._layer = self.request_layer()
 
@@ -721,70 +675,3 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     NgHost(args.source, args.bind, args.port)
-
-'''
-cfg.main_window.ng_workers['scale_4'].saved_mp_lst_ref[0].point.tolist()
-AlignEM [12]: [3.999997138977051, 157.12501525878906, 1012.6249389648438]
-
-cfg.main_window.ng_workers['scale_4'].saved_mp_lst_ref[0]
-AlignEM [8]: PointAnnotation({
-  "type": "point", 
-  "id": "array([   3.9999971,  157.12502  , 1012.62494  ], dtype=float32)", 
-  "point": [3.999997138977051, 157.12501525878906, 1012.6249389648438]})
-
-
-https://github.com/google/neuroglancer/issues/333
-Note tensorstore appears not to support multiscale metadata yet: However, we do have to deal with 
-issues of rounding. I have been looking into supporting this in tensorstore, but it is not yet ready.
-
-        # state = copy.deepcopy(cfg.viewer.state)
-        # state.position[0] = requested
-        # cfg.viewer.set_state(state)
-
-        # with cfg.viewer.state as s:
-        #     # state = copy.deepcopy(cfg.viewer.state)
-        #     # state = cfg.viewer.state
-        #     # state.position[0] += layer_delta
-        #
-        #     s.crossSectionScale = 15
-        #     # cfg.viewer.set_state(state)
-
-        # If changes are made to a neuroglancer l through custom actions, the
-        # l needs to be re-rendered for the changes to be visible in the
-        # viewports. To re-render a l simply call the invalidate() function on a
-        # LocalVolume object
-        #
-        # # assume a viewports with is already created
-        # mesh_volume = neuroglancer.LocalVolume(
-        #         data=data, dimensions=res)
-        # with viewports.txn() as s:
-        #     s.layers['mesh'] = neuroglancer.SegmentationLayer(
-        #     source=mesh_volume)
-        #
-        # # do something ...
-        #
-        # # re-renders the 'mesh' l in viewports
-        # mesh_volume.invalidate()
-        # https://connectomics.readthedocs.io/en/latest/external/neuroglancer.html
-
-        # Ref, Text annotations:
-        # https://github.com/google/neuroglancer/issues/199
-
-        # https://github.com/google/neuroglancer/blob/master/python/neuroglancer/local_volume.py
-
-        # cfg.main_window.ng_workers[cfg.data.s()].baseLV.invalidate()
-        # cfg.main_window.ng_workers[cfg.data.s()].baseLV.info()
-        # cfg.viewer.shared_state.add_changed_callback(
-        #     lambda: cfg.viewer.defer_callback(self.on_state_changed))
-
-        13:00:28 INFO [http_ng_server.initViewer:212] 
-        {'driver': 'zarr', 'dtype': 'uint8', 'kvstore': 
-        {'driver': 'file', 'path': '/Users/joelyancey/glanceem_swift/test_projects/test1/img_src.zarr/s4/'}, 
-        'metadata': {'chunks': [1, 512, 512], 'compressor': 
-        {'blocksize': 0, 'clevel': 5, 'cname': 'zstd', 'id': 'blosc', 'shuffle': 1}, 
-        'dimension_separator': '.', 'dtype': '|u1', 'fill_value': 0, 'filters': None, 'order': 'C', 
-        'shape': [100, 1024, 1024], 'zarr_format': 2}, 
-        'recheck_cached_data': 'open', 'transform': 
-        {'input_exclusive_max': [[100], [1024], [1024]], 'input_inclusive_min': [0, 0, 0]}}
-
-'''
