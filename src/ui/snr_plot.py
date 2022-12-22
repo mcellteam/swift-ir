@@ -53,13 +53,13 @@ class SnrPlot(QWidget):
         self.plot.hoverable = True
         self.plot.hoverSize = 11
         # self.plot.setFocusPolicy(Qt.NoFocus)
-        font = QFont()
-        font.setPixelSize(14)
-        self.plot.getAxis("bottom").tickFont = font
-        self.plot.getAxis("bottom").setStyle(tickFont=font)
-        self.plot.getAxis("bottom").setHeight(8)
-        self.plot.getAxis("left").setStyle(tickFont=font)
-        self.plot.getAxis("left").setWidth(8)
+        # font = QFont()
+        # font.setPixelSize(14)
+        # self.plot.getAxis("bottom").tickFont = font
+        # self.plot.getAxis("bottom").setStyle(tickFont=font)
+        # self.plot.getAxis("left").setStyle(tickFont=font)
+        # self.plot.getAxis("bottom").setHeight(12)
+        # self.plot.getAxis("left").setWidth(12)
         self.plot.getAxis("left").setStyle(tickTextOffset=2)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
         # self.plot.setLabel('left', 'SNR', **style)
@@ -140,7 +140,9 @@ class SnrPlot(QWidget):
             max_snr = cfg.data.snr_max_all_scales()
             assert max_snr is not None
             assert type(max_snr) is float
-            self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
+            # self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
+            self.plot.setXRange(0, cfg.data.n_layers(), padding=0)
+            self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
             # self.plot.autoRange()
 
 

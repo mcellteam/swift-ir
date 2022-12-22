@@ -232,7 +232,7 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.setCurrentIndex(0)
         self.tabs_main.setCurrentIndex(0)
         self.toolbar_scale_combobox.setEnabled(True)
-        self.update_ng_hyperlink()
+        # self.update_ng_hyperlink()
         cfg.SHADER = None
         self.image_panel_stack_widget.setCurrentIndex(1)
 
@@ -242,7 +242,7 @@ class MainWindow(QMainWindow):
             if is_cur_scale_aligned():
                 self.updateStatusTips()
             self.matchpoint_controls.hide()
-            self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
+            # self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
         else:
             # # self.image_panel_stack_widget.setCurrentIndex(2)
             # self.image_panel_stack_widget.setCurrentIndex(1)
@@ -1006,7 +1006,7 @@ class MainWindow(QMainWindow):
         self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
-        self.update_ng_hyperlink()
+        # self.update_ng_hyperlink()
         if self.tabs_main.currentIndex() == 1:
             self.layer_view_widget.set_data()
         self.dataUpdateWidgets()
@@ -1645,7 +1645,7 @@ class MainWindow(QMainWindow):
                 self.initNgViewer(scales=cfg.data.scales())
             else:
                 self.initNgServer(scales=[cfg.data.scale()])
-        self.update_ng_hyperlink()
+        # self.update_ng_hyperlink()
         QApplication.processEvents()
 
 
@@ -2176,7 +2176,8 @@ class MainWindow(QMainWindow):
             if s == None: s = cfg.data.scale()
             if ng.is_server_running():
                 try:
-                    url = cfg.viewer.url
+                    # url = cfg.viewer.url
+                    url = str(cfg.viewer)
                     # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
                     self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
                     logger.info(f"{cfg.data.scale_pretty(s=s)}\nURL:  {url}\n")
@@ -2608,7 +2609,7 @@ class MainWindow(QMainWindow):
         # if not ng.is_server_running():
         #     logger.warning('Neuroglancer is not running')
         #     return
-        cfg.data = None
+        # cfg.data = None
         self.browser_overlay_widget.hide()
         try:
             path = QFileDialog.getExistingDirectory(self, 'Select Zarr Directory')
@@ -2745,19 +2746,12 @@ class MainWindow(QMainWindow):
         self.normalizeViewAction.triggered.connect(self.initView)
         viewMenu.addAction(self.normalizeViewAction)
 
-        expandMenu = viewMenu.addMenu("Enlarge")
+        # expandMenu = viewMenu.addMenu("Enlarge")
+        #
+        # self.expandPythonAction = QAction('Python Console', self)
+        # self.expandPythonAction.triggered.connect(self.expand_python_size)
+        # expandMenu.addAction(self.expandPythonAction)
 
-        self.expandPythonAction = QAction('Python Console', self)
-        self.expandPythonAction.triggered.connect(self.expand_python_size)
-        expandMenu.addAction(self.expandPythonAction)
-
-        self.expandPlotAction = QAction('SNR Plot', self)
-        self.expandPlotAction.triggered.connect(self.expand_plot_size)
-        expandMenu.addAction(self.expandPlotAction)
-
-        # self.expandTreeviewAction = QAction('Project Treeview', self)
-        # self.expandTreeviewAction.triggered.connect(self.expand_treeview_size)
-        # expandMenu.addAction(self.expandTreeviewAction)
 
         themeMenu = viewMenu.addMenu("Theme")
 
@@ -2931,6 +2925,16 @@ class MainWindow(QMainWindow):
         self.ngRemoteAction.triggered.connect(self.remote_view)
         neuroglancerMenu.addAction(self.ngRemoteAction)
 
+        configMenu = self.menu.addMenu('Config')
+
+        self.projectConfigAction = QAction('Project', self)
+        self.projectConfigAction.triggered.connect(self.configure_project)
+        configMenu.addAction(self.projectConfigAction)
+
+        self.appConfigAction = QAction('Application', self)
+        self.appConfigAction.triggered.connect(self.configure_application)
+        configMenu.addAction(self.appConfigAction)
+
         toolsMenu = self.menu.addMenu('Tools')
 
         alignMenu = toolsMenu.addMenu('Align')
@@ -2974,16 +2978,6 @@ class MainWindow(QMainWindow):
         self.reinitSnrPlotAction.triggered.connect(self.snr_plot.initSnrPlot)
         toolsMenu.addAction(self.reinitSnrPlotAction)
 
-        configMenu = self.menu.addMenu('Config')
-
-        self.projectConfigAction = QAction('Project', self)
-        self.projectConfigAction.triggered.connect(self.configure_project)
-        configMenu.addAction(self.projectConfigAction)
-
-        self.appConfigAction = QAction('Application', self)
-        self.appConfigAction.triggered.connect(self.configure_application)
-        configMenu.addAction(self.appConfigAction)
-
         mendenhallMenu = toolsMenu.addMenu('Mendenhall Protocol')
 
         self.newMendenhallAction = QAction('New', self)
@@ -3018,15 +3012,15 @@ class MainWindow(QMainWindow):
         self.detailsZarrAlignedAction.triggered.connect(self.show_zarr_info_aligned)
         zarrMenu.addAction(self.detailsZarrAlignedAction)
 
-        self.moduleSearchPathAction = QAction('Print Module Search Path', self)
+        self.moduleSearchPathAction = QAction('Show Module Search Path', self)
         self.moduleSearchPathAction.triggered.connect(self.show_module_search_path)
         detailsMenu.addAction(self.moduleSearchPathAction)
 
-        self.runtimePathAction = QAction('Print Runtime Path', self)
+        self.runtimePathAction = QAction('Show Runtime Path', self)
         self.runtimePathAction.triggered.connect(self.show_run_path)
         detailsMenu.addAction(self.runtimePathAction)
 
-        self.showMatchpointsAction = QAction('Print Matchpoints', self)
+        self.showMatchpointsAction = QAction('Show Matchpoints', self)
         self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
         detailsMenu.addAction(self.showMatchpointsAction)
 
