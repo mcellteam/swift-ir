@@ -684,6 +684,11 @@ class align_ingredient:
         self.threshold = (3.5, 200, 200)
         self.ad=ad
 
+
+        #
+        # mir has a -v flag for more output
+        #
+
         # Configure platform-specific path to executables for C SWiFT-IR
         my_path = os.path.split(os.path.realpath(__file__))[0]
         logger.info('my_path = %s' % my_path)

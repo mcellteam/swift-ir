@@ -66,7 +66,7 @@ from src.ui.snr_plot import SnrPlot
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.models.json_tree import JsonModel
 from src.ui.layer_view_widget import LayerViewWidget
-from src.ui.ui_custom import VerticalLabel
+from src.ui.ui_custom import VerticalLabel, HorizontalLabel
 from src.mendenhall_protocol import Mendenhall
 import src.pairwise
 
@@ -212,70 +212,54 @@ class MainWindow(QMainWindow):
             'pg': pg,
             'np': np,
             'cfg': src.config,
-            'data': src.config.data,
-            'main_window': src.config.main_window,
             'mw': src.config.main_window,
             'viewer': cfg.viewer
         }
 
         ## initial text to display in the console
         text = """
-        This is the AlignEM-SWiFT interactive Python console. Alias 'data' refers to the current DataModel.
+        Caution - anything executed here is injected into the main event loop of AlignEM-SWiFT!
         """
         self.python_console_ = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
-        self.vlabel_python_console = VerticalLabel('Python Console')
-        self.vlabel_python_console.setObjectName('vlabel_python_console')
-        # self.vlabel_python_console.setMaximumWidth(25)
-        # self.vlabel_python_console = pyqtgraph.VerticalLabel(text='Python Console')
+        self.label_python_console = QLabel('Python Console')
+        self.label_python_console.setStyleSheet('font-size: 10px;')
         self.python_console = QWidget()
-        self.python_console_lay = QHBoxLayout()
-        self.python_console_lay.addWidget(self.vlabel_python_console)
+        self.python_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.python_console_lay = QVBoxLayout()
+        self.python_console_lay.addWidget(self.label_python_console)
         self.python_console_lay.addWidget(self.python_console_)
         self.python_console.setLayout(self.python_console_lay)
-
-        # self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
-        #                                                  'event loop of AlignEM-SWiFT - '
-        #                                                  'As they say, with great power...!\n\n')
         self.python_console.setObjectName('python_console')
-        # self.python_console.push_vars({'align_all':self.align_all})
+        self.python_console.hide()
 
 
     def initView(self):
         logger.info('')
-        self.main_tab_widget.show()
+        self.tabs_main.show()
         self.full_window_controls.hide()
         self.main_stack_widget.setCurrentIndex(0)
-        self.main_tab_widget.setCurrentIndex(0)
-        self.force_hide_expandable_widgets()
-        self.low_low_widget.show()
-        self.hud.show()
-        self.hud_and_plot_splitter.show()
-        self.new_control_panel.show()
+        self.tabs_main.setCurrentIndex(0)
         self.toolbar_scale_combobox.setEnabled(True)
         self.update_ng_hyperlink()
         cfg.SHADER = None
-        # self.updateEnabledButtons()
+        self.image_panel_stack_widget.setCurrentIndex(1)
 
         if cfg.data:
             self._is_mp_mode = False
-            self.image_panel_stack_widget.setCurrentIndex(1)
+            # self.image_panel_stack_widget.setCurrentIndex(1)
             if is_cur_scale_aligned():
-                self.force_show_snr_plot()
                 self.updateStatusTips()
-                self.showScoreboardWidegts()
-            else:
-                self.hideScoreboardWidgets()
             self.matchpoint_controls.hide()
             self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
         else:
-            # self.image_panel_stack_widget.setCurrentIndex(2
-            self.image_panel_stack_widget.setCurrentIndex(1)
+            # # self.image_panel_stack_widget.setCurrentIndex(2)
+            # self.image_panel_stack_widget.setCurrentIndex(1)
             pass
 
         if cfg.HEADLESS:
-            self.main_tab_widget.setTabVisible(0, False)
+            self.tabs_main.setTabVisible(0, False)
         else:
-            self.main_tab_widget.setTabVisible(0, True)
+            self.tabs_main.setTabVisible(0, True)
 
 
     def update_ng_hyperlink(self):
@@ -286,97 +270,23 @@ class MainWindow(QMainWindow):
             self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
 
-    def showScoreboardWidegts(self):
-        self.main_details_subwidgetA.show()
-        self.main_details_subwidgetB.show()
-        self.afm_widget.show()
-        self.history_widget.show()
-
-
-    def hideScoreboardWidgets(self):
-        self.main_details_subwidgetA.hide()
-        self.main_details_subwidgetB.hide()
-        self.afm_widget.hide()
-        self.history_widget.hide()
-
-
-    def force_hide_python_console(self):
-        self.python_console.hide()
-        self.show_hide_python_button.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
-        self.show_hide_python_button.setText(' Python')
-
-
-    def force_hide_snr_plot(self):
-        self.vlabel_plot.hide()
-        self.snr_plot.hide()
-        self.show_hide_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
-        self.show_hide_snr_plot_button.setText('SNR Plot')
-
-
-    def force_show_snr_plot(self):
-        self.vlabel_plot.show()
-        self.snr_plot.show()
-        self.show_hide_snr_plot_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
-        self.show_hide_snr_plot_button.setText('Hide SNR Plot')
-
-
-    def force_hide_project_treeview(self):
-        self.projectdata_treeview_widget.hide()
-        self.image_panel_stack_widget.setCurrentIndex(1)
-        self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
-        self.show_hide_project_tree_button.setText('Tree View')
-
-
-    def force_hide_expandable_widgets(self):
-        caller = inspect.stack()[1].function
-        self.force_hide_project_treeview()
-        self.force_hide_python_console()
-        if caller == 'expand_python_size':
-            self.force_hide_snr_plot()
-        elif caller == '__init__':
-            self.force_hide_snr_plot()
-        # self.app.processEvents() # <-- weird bug, makes window smaller
-
-
-    def show_hide_project_tree_callback(self):
-
-        # if self.projectdata_treeview_widget.isHidden():
-        if self.main_tab_widget.currentIndex() != 2:
-            self.main_tab_widget.setCurrentIndex(2)
-            self.dataUpdateWidgets()
-            self.projectdata_treeview_widget.show()
-            self.show_hide_project_tree_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
-            self.show_hide_project_tree_button.setText('Hide Tree View')
-        else:
-            # self.image_panel_stack_widget.setCurrentIndesx(1)
-            self.main_tab_widget.setCurrentIndex(0)
-            self.projectdata_treeview_widget.hide()
-            self.show_hide_project_tree_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
-            self.show_hide_project_tree_button.setText('Tree View')
-
-
-    def show_hide_snr_plot_callback(self):
-        if self.snr_plot.isHidden():
-            self.force_show_snr_plot()
-            self.force_show_controls()
-        else:
-            self.force_hide_snr_plot()
-
-
     def show_hide_python_callback(self):
         if self.python_console.isHidden():
             self.python_console.show()
+            self.initNgViewer()
             self.show_hide_python_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
             self.show_hide_python_button.setText('Hide Python')
         else:
             self.python_console.hide()
+            self.initNgViewer()
             self.show_hide_python_button.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
             self.show_hide_python_button.setText(' Python')
+
 
     def force_show_controls(self):
         self.dataUpdateWidgets()  # for short-circuiting speed-ups
         self.new_control_panel.show()
-        self.hud_and_plot_splitter.show()
+        self.splitter_bottom_horizontal.show()
         self.show_hide_controls_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
         self.show_hide_controls_button.setText('Hide Controls')
 
@@ -386,39 +296,9 @@ class MainWindow(QMainWindow):
             self.force_show_controls()
         else:
             self.new_control_panel.hide()
-            self.hud_and_plot_splitter.hide()
+            self.splitter_bottom_horizontal.hide()
             self.show_hide_controls_button.setIcon(qta.icon("ei.adjust-alt", color='#f3f6fb'))
             self.show_hide_controls_button.setText('Controls')
-
-
-    def show_hide_hud_callback(self):
-        if self.hud.isHidden():
-            self.vlabel_hud.show()
-            self.hud.show()
-            self.show_hide_hud_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
-            self.show_hide_hud_button.setText('Hide HUD')
-        else:
-            self.vlabel_hud.hide()
-            self.hud.hide()
-            self.show_hide_hud_button.setIcon(qta.icon("fa.dashboard", color='#f3f6fb'))
-            self.show_hide_hud_button.setText('HUD')
-
-
-    def go_to_overview_callback(self):
-        self.main_stack_widget.setCurrentIndex(4)
-        self.layer_view_widget.set_data()
-
-
-    # def write_paged_tiffs(self):
-    #     t0 = time.time()
-    #     dest = cfg.data.dest()
-    #     for s in cfg.data.aligned_list():
-    #         logger.info('Exporting Alignment for Scale %d to Multipage Tif...' % get_scale_val(s))
-    #         directory = os.path.join(dest, s, 'img_aligned')
-    #         out = os.path.join(dest, s + '_multi.tif')
-    #         tiffs2MultiTiff(directory=directory, out=out)
-    #     dt = time.time() - t0
-    #     logger.info('Exporting Tifs Took %g Seconds' % dt)
 
 
     def autoscale(self, make_thumbnails=True):
@@ -481,39 +361,30 @@ class MainWindow(QMainWindow):
                 logger.info('Autoscaling Complete')
 
 
-
-
     def onAlignmentEnd(self):
         logger.critical('Running post-alignment/regenerate tasks...')
         s = cfg.data.scale()
-        # self.initNgServer(scales=[s])
         cfg.data.scalesAligned = get_aligned_scales()
         cfg.data.nScalesAligned = len(cfg.data.scalesAligned)
-        # self.initNgViewer()
-        # self.initNgServer() #1203-
         self.updateHistoryListWidget(s=s)
         self.dataUpdateWidgets()
         logger.info(f'aligned scales list: {cfg.data.scalesAligned}')
         self.snr_plot.initSnrPlot()
-        self.force_show_snr_plot()
         self.updateBanner()
         self.updateEnabledButtons()
-        self.showScoreboardWidegts()
         self.project_model.load(cfg.data.to_dict())
         self.initNgServer(scales=[cfg.data.scale()]) #1203+
-        # self.initNgViewer(scales=[cfg.data.scale()]) #1203+
         self.app.processEvents()
-
 
 
     def align_all(self, scale=None) -> None:
 
         if not cfg.data:
-            self.hud.post('No data yet!', logging.WARNING);
+            self.hud.post('No data yet!', logging.WARNING)
             return
 
         if self._working == True:
-            self.hud.post('Another Process is Already Running', logging.WARNING);
+            self.hud.post('Another Process is Already Running', logging.WARNING)
             return
 
         if not cfg.data.is_alignable():
@@ -784,7 +655,8 @@ class MainWindow(QMainWindow):
             return
 
         if not is_cur_scale_aligned():
-            self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING); return
+            self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
+            return
         self.widgetsUpdateData()
 
         self.stopNgServer()
@@ -1071,11 +943,7 @@ class MainWindow(QMainWindow):
         with open(self.main_stylesheet, 'r') as f:
             self.setStyleSheet(f.read())
         pg.setConfigOption('background', '#1B1E23')
-        # self.python_console.set_color_none()
         self.hud.set_theme_default()
-        # self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
-        # if cfg.USE_JUPYTER:
-        #     self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         self.toolbar_scale_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
         if cfg.data:
             if inspect.stack()[1].function != 'initStyle':
@@ -1090,8 +958,6 @@ class MainWindow(QMainWindow):
         with open(self.main_stylesheet, 'r') as f:
             self.setStyleSheet(f.read())
         pg.setConfigOption('background', 'w')
-        # self.python_console.set_color_none()
-
         self.hud.set_theme_light()
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
         if cfg.data:
@@ -1146,12 +1012,11 @@ class MainWindow(QMainWindow):
         self.dataUpdateWidgets()
         self.updateHistoryListWidget(s=s)
         self.project_model.load(cfg.data.to_dict())
-        self.updateSkipMatchWidget()
         self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
         self.update_ng_hyperlink()
-        if self.main_tab_widget.currentIndex() == 1:
+        if self.tabs_main.currentIndex() == 1:
             self.layer_view_widget.set_data()
         self.dataUpdateWidgets()
 
@@ -1256,60 +1121,48 @@ class MainWindow(QMainWindow):
             snr_report = snr_report.replace('>', '&gt;')
             snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
 
+            skips = '\n'.join(map(str, cfg.data.skips_list()))
+            matchpoints = '\n'.join(map(str, cfg.data.find_layers_with_matchpoints()))
 
 
-
-            self.main_details_subwidgetA.setText(f"{name}{skip}"
+            self.layer_details.setText(f"{name}{skip}"
                                                  f"{bb_dims}"
                                                  f"{snr}"
-                                                 f"{completed}")
+                                                 f"{completed}"
+                                                 f"<b>Skipped Layers:</b> [{skips}]<br>"
+                                                 f"<b>Match Point Layers:</b> [{matchpoints}]"
+                                       )
             self.updateAffineWidget()
         else:
-            self.main_details_subwidgetA.setText(f"{name}{skip}"
+            self.layer_details.setText(f"{name}{skip}"
                                                  f"<em style='color: #FF0000;'>Not Aligned</em><br>"
-                                                 f"{completed}")
+                                                 f"{completed}"
+                                                 f"<b>Skipped Layers: []<br>"
+                                                 f"<b>Match Point Layers: []</b>"
+                                       )
             self.clearAffineWidget()
-        self.main_details_subwidgetA.show()
-
-
-    def updateSkipMatchWidget(self):
-        skips = '\n'.join(map(str, cfg.data.skips_list()))
-        matchpoints = '\n'.join(map(str, cfg.data.find_layers_with_matchpoints()))
-        self.main_details_subwidgetB.setText(f"<b>Skipped Layers:</b><br>"
-                                             f"{skips}<br>"
-                                             f"<b>Match Point Layers:</b><br>"
-                                             f"{matchpoints}<br>")
-        self.main_details_subwidgetB.show()
 
 
     def updateAffineWidget(self, s=None, l=None):
         if s == None: s = cfg.data.scale()
         if l == None: l = cfg.data.layer()
         afm, cafm = cfg.data.afm(l=l), cfg.data.cafm(l=l)
-        self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
-        self.afm_widget.show()
+        self.afm_widget_.setText(make_affine_widget_HTML(afm, cafm))
 
 
     def clearUIDetails(self):
         self.clearTextWidgetA()
-        self.clearSkipMatchWidget()
         self.clearAffineWidget()
 
 
     def clearTextWidgetA(self):
-        self.main_details_subwidgetA.setText('')
-        # self.main_details_subwidgetA.hide()
-
-
-    def clearSkipMatchWidget(self):
-        self.main_details_subwidgetB.setText(f'<b>Skipped Layers:<br><br><b>Match Point Layers:</b>')
-        # self.main_details_subwidgetB.hide()
+        self.layer_details.setText('')
+        # self.layer_details.hide()
 
 
     def clearAffineWidget(self):
         afm = cafm = [[0] * 3, [0] * 3]
-        self.afm_widget.setText(make_affine_widget_HTML(afm, cafm))
-        # self.afm_widget.hide()
+        self.afm_widget_.setText(make_affine_widget_HTML(afm, cafm))
 
 
     def updateHistoryListWidget(self, s=None):
@@ -1636,24 +1489,6 @@ class MainWindow(QMainWindow):
         self.hud.post('Cumulative AFMs exported successfully.')
 
 
-    # def rename_file_dialog(self):
-    #     self.setMinimumSize(QSize(320, 140))
-    #     self.setWindowTitle("PyQt Line Edit example (textfield) - pythonprogramminglanguage.com")
-    #
-    #     self.nameLabel = QLabel(self)
-    #     self.nameLabel.setText('Name:')
-    #     self.line = QLineEdit(self)
-    #
-    #     self.line.move(80, 20)
-    #     self.line.resize(200, 32)
-    #     self.nameLabel.move(20, 20)
-    #
-    #     pybutton = QPushButton('OK', self)
-    #     pybutton.clicked.connect(self.clickMethod)
-    #     pybutton.resize(200, 32)
-    #     pybutton.move(80, 60)
-
-
     def show_warning(self, title, text):
         QMessageBox.warning(None, title, text)
 
@@ -1752,11 +1587,14 @@ class MainWindow(QMainWindow):
         filename = open_project_dialog()
         logger.info(f'Project File: {filename}')
         if filename == '':
-            self.hud.post("No Project File Selected (.proj), dialog returned empty string...", logging.WARNING); return
+            self.hud.post("No Project File Selected (.proj), dialog returned empty string...", logging.WARNING)
+            return
         if filename == None:
-            self.hud.post('No Project File Selected (.proj)', logging.WARNING); return
+            self.hud.post('No Project File Selected (.proj)', logging.WARNING)
+            return
         if os.path.isdir(filename):
-            self.hud.post("Selected Path Is A Directory.", logging.WARNING); return
+            self.hud.post("Selected Path Is A Directory.", logging.WARNING)
+            return
         # self.image_panel_stack_widget.setCurrentIndex(2)
         self.image_panel_stack_widget.setCurrentIndex(1)
         self.shutdownNeuroglancer()
@@ -1776,10 +1614,12 @@ class MainWindow(QMainWindow):
     def onStartProject(self, launch_servers=True):
         '''Functions that only need to be run once per project
         Do not automatically save, there is nothing to save yet'''
+        self.layer_details_widget.show()
+        self.afm_widget.show()
+        self.history_widget.show()
+
         if cfg.data.is_mendenhall():
             self.setWindowTitle("Project: %s (Mendenhall Protocol0" % os.path.basename(cfg.data.dest()))
-            # self.expand_viewer_size()
-            # return
         cfg.data.scalesAligned = get_aligned_scales()
         cfg.data.nScalesAligned = len(cfg.data.scalesAligned)
         cfg.data.nscales = len(cfg.data.scales())
@@ -1798,11 +1638,9 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.data.to_dict())
         self.updateBanner()
         self.snr_plot.wipePlot()
-        if is_cur_scale_aligned():
-            self.snr_plot.initSnrPlot()
-            self.force_show_snr_plot()
-        self.showScoreboardWidegts()
-        self.updateSkipMatchWidget()
+        if cfg.data:
+            if is_cur_scale_aligned():
+                self.snr_plot.initSnrPlot()
         # cfg.ng_workers = dict.fromkeys(cfg.data.scales()) #1207-
         # self.initNgServer(scales=cfg.data.scales())
         self._scales_combobox_switch = 1
@@ -1812,7 +1650,7 @@ class MainWindow(QMainWindow):
         self.toolbar_layout_combobox.clear()
         self.toolbar_layout_combobox.addItems(ng_layouts)
         self.align_all_button.setText('Align All\n%s' % cfg.data.scale_pretty())
-        self.main_tab_widget.setCurrentIndex(0)
+        self.tabs_main.setCurrentIndex(0)
         if launch_servers:
             if cfg.SIMULTANEOUS_SERVERS:
                 self.initNgViewer(scales=cfg.data.scales())
@@ -1825,11 +1663,13 @@ class MainWindow(QMainWindow):
 
     def rescale(self):
         if not cfg.data:
-            self.hud.post('No data yet!', logging.WARNING);
+            self.hud.post('No data yet!', logging.WARNING)
             return
         dlg = AskContinueDialog(title='Confirm Rescale', msg='Warning: Rescaling resets project data.\n'
                                                              'Progress will be lost.  Continue?')
-        if not dlg.exec(): logger.info('Rescale Canceled'); return
+        if not dlg.exec():
+            logger.info('Rescale Canceled')
+            return
         logger.info('Clobbering project JSON...')
         try:
             os.remove(cfg.data.dest() + '.proj')
@@ -2197,7 +2037,8 @@ class MainWindow(QMainWindow):
     def initNgServer(self, scales=None):
         logger.info(f'caller: {inspect.stack()[1].function}')
         if not cfg.data:
-            logger.warning('Nothing To View'); return
+            logger.warning('Nothing To View')
+            return
 
         if not scales:
             # scales = [cfg.data.s()]
@@ -2489,8 +2330,7 @@ class MainWindow(QMainWindow):
                 self.hud.post("Flagged For Skip: %s" % cfg.data.name_base())
             cfg.data.link_all_stacks()
             self.dataUpdateWidgets()
-            self.updateSkipMatchWidget()
-            if self.main_tab_widget.currentIndex() == 1:
+            if self.tabs_main.currentIndex() == 1:
                 self.layer_view_widget.set_data()
             logger.info(f'new skip state: {skip_state}')
 
@@ -2512,8 +2352,6 @@ class MainWindow(QMainWindow):
                 self.toolbar_scale_combobox.setEnabled(False)
                 self.extra_header_text_label.setText('Match Point Mode')
                 self.new_control_panel.hide()
-                self.force_hide_expandable_widgets()
-                # self.low_low_widget.hide()
                 self.matchpoint_controls.show()
                 self.update_match_point_snr()
                 self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
@@ -2526,8 +2364,7 @@ class MainWindow(QMainWindow):
                 self._is_mp_mode = False
                 self.toolbar_scale_combobox.setEnabled(True)
                 self.extra_header_text_label.setText('')
-
-                self.updateSkipMatchWidget()
+                # self.updateSkipMatchWidget()
                 self.initView()
                 self.initNgViewer(matchpoint=False)
                 # self.initNgServer()
@@ -2545,7 +2382,7 @@ class MainWindow(QMainWindow):
         if cfg.data:
             logger.info('Clearing Match Points...')
             cfg.data.clear_match_points()
-            self.updateSkipMatchWidget()
+            self.dataUpdateWidgets()
 
 
     def print_all_matchpoints(self):
@@ -2567,7 +2404,7 @@ class MainWindow(QMainWindow):
                     self.hud.post(f'Layer: {i}, Base, Match Points: {str(b)}')
             if no_mps:
                 self.hud.post('This project has no match points.')
-            self.updateSkipMatchWidget()
+            self.dataUpdateWidgets()
 
 
     def show_run_path(self) -> None:
@@ -2688,12 +2525,6 @@ class MainWindow(QMainWindow):
         self.layoutTwoAction.setIcon(qta.icon('mdi.view-stream-outline', color='#1B1E23'))
         self.toolbar.addAction(self.layoutTwoAction)
 
-        self.expandViewAction = QAction('Expand Neuroglancer to Full Window', self)
-        self.expandViewAction.setStatusTip('Expand')
-        self.expandViewAction.triggered.connect(self.expand_viewer_size)
-        self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color='#1B1E23'))
-        self.toolbar.addAction(self.expandViewAction)
-
         '''Top Details/Labels Banner'''
         font = QFont()
         font.setBold(True)
@@ -2791,6 +2622,8 @@ class MainWindow(QMainWindow):
         if index == 2:
             # self.projectdata_treeview
             self.updateJsonWidget()
+        if index == 3:
+            self.snr_plot.initSnrPlot()
 
         QApplication.processEvents()
         self.repaint()
@@ -2898,10 +2731,6 @@ class MainWindow(QMainWindow):
         viewMenu.addAction(self.normalizeViewAction)
 
         expandMenu = viewMenu.addMenu("Enlarge")
-
-        self.expandViewerAction = QAction('Neuroglancer', self)
-        self.expandViewerAction.triggered.connect(self.expand_viewer_size)
-        expandMenu.addAction(self.expandViewerAction)
 
         self.expandPythonAction = QAction('Python Console', self)
         self.expandPythonAction.triggered.connect(self.expand_python_size)
@@ -3282,10 +3111,16 @@ class MainWindow(QMainWindow):
                                "font-size: 11px;"
 
         '''Headup Display'''
-
         self.hud = HeadupDisplay(self.app)
         self.hud.setObjectName('hud')
         self.hud.post('Welcome To AlignEM-SWiFT.')
+        self.hud_widget = QWidget()
+        self.label_hud = QLabel('Process Monitor')
+        self.label_hud.setStyleSheet('font-size: 10px;')
+        self.hud_widget_layout = QVBoxLayout()
+        self.hud_widget_layout.addWidget(self.label_hud)
+        self.hud_widget_layout.addWidget(self.hud)
+        self.hud_widget.setLayout(self.hud_widget_layout)
 
         tip = 'Use All Images (Reset)'
         self.clear_skips_button = QPushButton('Reset')
@@ -3546,23 +3381,29 @@ class MainWindow(QMainWindow):
         # # self.new_control_panel_layout.addStretch()
         # self.new_control_panel.setLayout(self.new_control_panel_layout)
 
-        self.main_details_subwidgetA = QTextEdit()
-        self.main_details_subwidgetB = QTextEdit()
-        self.main_details_subwidgetA.setReadOnly(True)
-        self.main_details_subwidgetB.setReadOnly(True)
-        self.main_details_subwidgetA.setObjectName('main_details_subwidgetA')
-        self.main_details_subwidgetB.setObjectName('main_details_subwidgetB')
+        self.label_project_details = QLabel('Details')
+        self.label_project_details.setStyleSheet('font-size: 10px;')
+        self.layer_details = QTextEdit()
+        self.layer_details.setObjectName('layer_details')
+        self.layer_details.setReadOnly(True)
+        self.layer_details_widget = QWidget()
+        self.layer_details_layout = QVBoxLayout()
+        self.layer_details_layout.addWidget(self.label_project_details)
+        self.layer_details_layout.addWidget(self.layer_details)
+        self.layer_details_widget.setLayout(self.layer_details_layout)
 
         self.history_widget = QWidget()
+        self.history_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.history_widget.setObjectName('history_widget')
         self.historyListWidget = QListWidget()
+        self.historyListWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.historyListWidget.setObjectName('historyListWidget')
         self.historyListWidget.installEventFilter(self)
         self.historyListWidget.itemClicked.connect(self.historyItemClicked)
+        self.label_history = QLabel('History')
+        self.label_history.setStyleSheet('font-size: 10px;')
         self.history_layout = QVBoxLayout()
-        self.history_label = QLabel('<b>Saved Alignments</b>')
-        self.history_label.setStyleSheet("font-size: 10px;")
-        self.history_layout.addWidget(self.history_label)
+        self.history_layout.addWidget(self.label_history)
         self.history_layout.addWidget(self.historyListWidget)
         self.history_widget.setLayout(self.history_layout)
 
@@ -3582,10 +3423,18 @@ class MainWindow(QMainWindow):
         self.historyview_widget = QWidget()
         self.historyview_widget.setLayout(self.projectview_history_layout)
 
-        self.afm_widget = QTextEdit()
-        self.afm_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.afm_widget.setObjectName('afm_widget')
-        self.afm_widget.setReadOnly(True)
+        '''AFM/CAFM Widget'''
+        self.label_afm = QLabel('Transformation')
+        self.label_afm.setStyleSheet('font-size: 10px')
+        self.label_afm.setObjectName('label_afm')
+        self.afm_widget_ = QTextEdit()
+        self.afm_widget_.setObjectName('afm_widget')
+        self.afm_widget_.setReadOnly(True)
+        self.afm_widget = QWidget()
+        self.afm_widget_layout = QVBoxLayout()
+        self.afm_widget_layout.addWidget(self.label_afm)
+        self.afm_widget_layout.addWidget(self.afm_widget_)
+        self.afm_widget.setLayout(self.afm_widget_layout)
 
         '''Neuroglancer Controls'''
         self.reload_ng_button = QPushButton("Reload")
@@ -3605,8 +3454,6 @@ class MainWindow(QMainWindow):
         self.ng_splitter.splitterMoved.connect(self.initNgViewer)
         self.ng_splitter.setSizes([300, 700])
 
-
-
         self.ng_browser_layout = QGridLayout()
         self.ng_browser_layout.addWidget(self.ng_splitter, 0, 0)
         self.browser_overlay_widget = QWidget()
@@ -3618,11 +3465,11 @@ class MainWindow(QMainWindow):
         self.ng_browser_layout.addWidget(self.browser_overlay_label, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_browser_container.setLayout(self.ng_browser_layout)
 
-        self.vlabel_ng = VerticalLabel('Neuroglancer 3DEM')
-        self.vlabel_ng.setObjectName('vlabel_ng')
+        self.label_ng = VerticalLabel('Neuroglancer 3DEM')
+        self.label_ng.setObjectName('label_ng')
         self.ng_browser_container_outer_layout = QHBoxLayout()
         self.ng_browser_container_outer_layout.setContentsMargins(0,0,0,0)
-        self.ng_browser_container_outer_layout.addWidget(self.vlabel_ng)
+        self.ng_browser_container_outer_layout.addWidget(self.label_ng)
         self.ng_browser_container_outer_layout.addWidget(self.ng_browser_container)
         self.ng_browser_container_outer = QWidget()
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
@@ -3687,26 +3534,19 @@ class MainWindow(QMainWindow):
         self.external_hyperlink.setAcceptRichText(True)
         self.external_hyperlink.setOpenExternalLinks(True)
 
-
-
+        '''Layer View Widget'''
         self.layer_view_widget = LayerViewWidget()
         self.layer_view_widget.setObjectName('layer_view_widget')
-
         self.layer_view_inner_layout = QVBoxLayout()
         # self.layer_view_inner_layout.addWidget(self.external_hyperlink)
         self.layer_view_inner_layout.addWidget(self.layer_view_widget)
-
-        self.vlabel_overview = VerticalLabel('Project Stackview')
-        self.vlabel_overview.setObjectName('vlabel_overview')
-
+        self.label_overview = VerticalLabel('Project Stackview')
+        self.label_overview.setObjectName('label_overview')
         self.layer_view_outter_layout = QHBoxLayout()
-        self.layer_view_outter_layout.addWidget(self.vlabel_overview)
+        self.layer_view_outter_layout.addWidget(self.label_overview)
         self.layer_view_outter_layout.addLayout(self.layer_view_inner_layout)
-
         self.layer_view_container = QWidget(parent=self)
         self.layer_view_container.setLayout(self.layer_view_outter_layout)
-
-
 
         self.matchpoint_controls = QWidget()
         self.matchpoint_controls_hlayout = QHBoxLayout()
@@ -3779,33 +3619,11 @@ class MainWindow(QMainWindow):
         self.refresh_project_view_button.clicked.connect(self.updateJsonWidget)
         self.projectdata_treeview_widget = QWidget()
         self.projectdata_treeview_layout = QHBoxLayout()
-        self.vlabel_treeview = VerticalLabel('Project Data')
-        self.vlabel_treeview.setObjectName('vlabel_treeview')
-        self.projectdata_treeview_layout.addWidget(self.vlabel_treeview)
+        self.label_treeview = VerticalLabel('Project Data')
+        self.label_treeview.setObjectName('label_treeview')
+        self.projectdata_treeview_layout.addWidget(self.label_treeview)
         self.projectdata_treeview_layout.addWidget(self.projectdata_treeview)
         self.projectdata_treeview_widget.setLayout(self.projectdata_treeview_layout)
-
-        self.main_tab_widget = QTabWidget()
-        self.main_tab_widget.setObjectName('main_tab_widget')
-        self.main_tab_widget.addTab(self.image_panel_stack_widget, ' 3DEMview ')
-        self.main_tab_widget.addTab(self.layer_view_container, ' Stackview ')
-        self.main_tab_widget.addTab(self.projectdata_treeview_widget, ' Treeview ')
-        self.main_tab_widget.currentChanged.connect(self.onTabChange)
-
-        self.vlabel_hud = VerticalLabel('Process Monitor')
-        self.vlabel_hud.setObjectName('vlabel_hud')
-        self.vlabel_plot = VerticalLabel('SNR Plot')
-        self.vlabel_plot.setObjectName('vlabel_plot')
-
-        '''SNR Plot & Controls'''
-        self.snr_plot = SnrPlot()
-        self.hud_and_plot_splitter = QSplitter()
-        self.hud_and_plot_splitter.setHandleWidth(0)
-        self.hud_and_plot_splitter.addWidget(self.vlabel_hud)
-        self.hud_and_plot_splitter.addWidget(self.hud)
-        # self.hud_and_plot_splitter.addWidget(self.projectdata_treeview_widget)
-        self.hud_and_plot_splitter.addWidget(self.vlabel_plot)
-        self.hud_and_plot_splitter.addWidget(self.snr_plot)
 
         '''Show/Hide Primary Tools Buttons'''
         show_hide_button_sizes = QSize(98, 18)
@@ -3820,51 +3638,82 @@ class MainWindow(QMainWindow):
         self.show_hide_controls_button.setFixedSize(show_hide_button_sizes)
         self.show_hide_controls_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
 
-        tip = 'Show/Hide SNR Plot'
-        self.show_hide_snr_plot_button = QPushButton('Hide SNR Plot')
-        self.show_hide_snr_plot_button.setObjectName('show_hide_snr_plot_button')
-        self.show_hide_snr_plot_button.setStyleSheet(lower_controls_style)
-        self.show_hide_snr_plot_button.setStatusTip(tip)
-        self.show_hide_snr_plot_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_hide_snr_plot_button.clicked.connect(self.show_hide_snr_plot_callback)
-        self.show_hide_snr_plot_button.setFixedSize(show_hide_button_sizes)
-        self.show_hide_snr_plot_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-
-        tip = 'Show/Hide Head-Up Display (HUD)'
-        self.show_hide_hud_button = QPushButton()
-        self.show_hide_hud_button.setObjectName('show_hide_hud_button')
-        self.show_hide_hud_button.setStyleSheet(lower_controls_style)
-        self.show_hide_hud_button.setStatusTip(tip)
-        self.show_hide_hud_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_hide_hud_button.clicked.connect(self.show_hide_hud_callback)
-        self.show_hide_hud_button.setFixedSize(show_hide_button_sizes)
-        self.show_hide_hud_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-
         tip = 'Show/Hide Python Console'
-        self.show_hide_python_button = QPushButton()
+        self.show_hide_python_button = QPushButton(' Python')
         self.show_hide_python_button.setObjectName('show_hide_python_button')
         self.show_hide_python_button.setStyleSheet(lower_controls_style)
         self.show_hide_python_button.setStatusTip(tip)
         self.show_hide_python_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.show_hide_python_button.clicked.connect(self.show_hide_python_callback)
         self.show_hide_python_button.setFixedSize(show_hide_button_sizes)
-        self.show_hide_python_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
+        # self.show_hide_python_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
+        self.show_hide_python_button.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
 
-        tip = 'Show/Hide Project Treeview'
-        self.show_hide_project_tree_button = QPushButton('Hide Tools')
-        self.show_hide_project_tree_button.setObjectName('show_hide_project_tree_button')
-        self.show_hide_project_tree_button.setStyleSheet(lower_controls_style)
-        self.show_hide_project_tree_button.setStatusTip(tip)
-        self.show_hide_project_tree_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_hide_project_tree_button.clicked.connect(self.show_hide_project_tree_callback)
-        self.show_hide_project_tree_button.setFixedSize(show_hide_button_sizes)
-        self.show_hide_project_tree_button.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
+        self.show_hide_main_features_widget = QWidget()
+        self.show_hide_main_features_widget.setObjectName('show_hide_main_features_widget')
+        self.show_hide_main_features_vlayout = QHBoxLayout()
+        self.show_hide_main_features_vlayout.addWidget(self.show_hide_controls_button, alignment=Qt.AlignHCenter)
+        self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignHCenter)
+        self.show_hide_main_features_vlayout.addStretch()
+        self.show_hide_main_features_widget.setLayout(self.show_hide_main_features_vlayout)
 
-        '''Main Splitter'''
+        font = QFont()
+        font.setBold(True)
+        self.snr_plot = SnrPlot()
+        self.label_y_axis = VerticalLabel('Signal-to-Noise Ratio')
+        # self.label_y_axis.setStyleSheet("font-size: 12px;")
+        self.label_y_axis.setFont(font)
+        self.label_y_axis.setObjectName('label_y_axis')
+        # self.label_y_axis.setFixedWidth(10)
+        self.snr_plot_and_ylabel = QHBoxLayout()
+        self.snr_plot_and_ylabel.addWidget(self.label_y_axis)
+        self.snr_plot_and_ylabel.addWidget(self.snr_plot)
+        self.snr_plot_layout = QVBoxLayout()
+        self.snr_plot_widget = QWidget()
+        self.label_x_axis = QLabel('Layer Number')
+        self.label_x_axis.setStyleSheet("font-size: 11px;")
+        self.label_x_axis.setFont(font)
+        self.label_x_axis.setObjectName('label_x_axis')
+        # self.label_x_axis.setFixedWidth(40)
+        self.snr_plot_widget.setLayout(self.snr_plot_layout)
+        self.snr_plot_layout.addLayout(self.snr_plot_and_ylabel)
+        self.snr_plot_layout.addWidget(self.label_x_axis, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        '''Tab Widget'''
+        self.tabs_main = QTabWidget()
+        self.tabs_main.setObjectName('tabs_main')
+        self.tabs_main.addTab(self.image_panel_stack_widget, ' 3DEMview ')
+        self.tabs_main.addTab(self.layer_view_container, ' Stackview ')
+        self.tabs_main.addTab(self.projectdata_treeview_widget, ' Treeview ')
+        self.tabs_main.addTab(self.snr_plot_widget, ' SNR Plot ')
+        self.tabs_main.currentChanged.connect(self.onTabChange)
+
+        '''Bottom Horizontal Splitter'''
+        self.splitter_bottom_horizontal = QSplitter()
+        self.splitter_bottom_horizontal.setMaximumHeight(90)
+        self.splitter_bottom_horizontal.setHandleWidth(0)
+        self.splitter_bottom_horizontal.addWidget(self.hud_widget)
+        self.splitter_bottom_horizontal.addWidget(self.layer_details_widget)
+        self.splitter_bottom_horizontal.addWidget(self.afm_widget)
+        self.splitter_bottom_horizontal.addWidget(self.history_widget)
+        self.splitter_bottom_horizontal.setCollapsible(0, False)
+        self.splitter_bottom_horizontal.setCollapsible(1, True)
+        self.splitter_bottom_horizontal.setCollapsible(2, False)
+        self.splitter_bottom_horizontal.setCollapsible(3, True)
+        self.splitter_bottom_horizontal.setCollapsible(4, False)
+        self.splitter_bottom_horizontal.setCollapsible(5, True)
+        self.splitter_bottom_horizontal.setCollapsible(6, False)
+        self.splitter_bottom_horizontal.setCollapsible(7, True)
+
+        self.layer_details_widget.hide()
+        self.afm_widget.hide()
+        self.history_widget.hide()
+
+        '''Main Vertical Splitter'''
         self.main_splitter = QSplitter(Qt.Orientation.Vertical)
-        self.main_splitter.addWidget(self.main_tab_widget)
+        self.main_splitter.addWidget(self.tabs_main)
         self.main_splitter.addWidget(self.new_control_panel)
-        self.main_splitter.addWidget(self.hud_and_plot_splitter)
+        self.main_splitter.addWidget(self.splitter_bottom_horizontal)
         self.main_splitter.addWidget(self.matchpoint_controls)
         self.main_splitter.addWidget(self.python_console)
         self.main_splitter.setHandleWidth(0)
@@ -3879,37 +3728,9 @@ class MainWindow(QMainWindow):
         self.main_splitter.setStretchFactor(3,1)
         self.main_splitter.setStretchFactor(4,1)
 
-        self.show_hide_main_features_widget = QWidget()
-        self.show_hide_main_features_widget.setObjectName('show_hide_main_features_widget')
-        self.show_hide_main_features_vlayout = QVBoxLayout()
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_controls_button, alignment=Qt.AlignHCenter)
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_snr_plot_button, alignment=Qt.AlignHCenter)
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_project_tree_button, alignment=Qt.AlignHCenter)
-        self.show_hide_main_features_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignHCenter)
-        # self.show_hide_main_features_vlayout.addWidget(self.show_hide_overview_button, alignment=Qt.AlignHCenter)
-        self.show_hide_main_features_widget.setLayout(self.show_hide_main_features_vlayout)
-
-        self.low_low_widget = QWidget()
-        self.low_low_gridlayout = QGridLayout()
-        self.low_low_widget.setLayout(self.low_low_gridlayout)
-        # self.low_low_gridlayout.addWidget(self.main_details_subwidgetA,0,0, alignment=Qt.AlignCenter)
-        # self.low_low_gridlayout.addWidget(self.main_details_subwidgetB,0,1, alignment=Qt.AlignCenter)
-        # self.low_low_gridlayout.addWidget(self.show_hide_main_features_widget,0,2, alignment=Qt.AlignCenter)
-        # self.low_low_gridlayout.addWidget(self.afm_widget,0,3, alignment=Qt.AlignCenter)
-        # self.low_low_gridlayout.addWidget(self.history_widget,0,4, alignment=Qt.AlignCenter)
-        self.low_low_gridlayout.addWidget(self.main_details_subwidgetA,0,0)
-        self.low_low_gridlayout.addWidget(self.main_details_subwidgetB,0,1)
-        self.low_low_gridlayout.addWidget(self.show_hide_main_features_widget,0,2)
-        self.low_low_gridlayout.addWidget(self.afm_widget,0,3)
-        self.low_low_gridlayout.addWidget(self.history_widget,0,4)
-        self.main_details_subwidgetA.hide()
-        self.main_details_subwidgetB.hide()
-        self.afm_widget.hide()
-        self.history_widget.hide()
         self.new_main_widget = QWidget()
         self.new_main_widget_vlayout = QVBoxLayout()
         self.new_main_widget_vlayout.addWidget(self.main_splitter)
-        self.new_main_widget_vlayout.addWidget(self.low_low_widget)
         self.new_main_widget.setLayout(self.new_main_widget_vlayout)
 
         '''Documentation Panel'''
@@ -3964,10 +3785,12 @@ class MainWindow(QMainWindow):
         self.demos_panel.setLayout(self.demos_panel_layout)
 
         self.main_panel = QWidget()
-        self.main_panel_layout = QGridLayout()
-        self.main_panel_layout.addWidget(self.new_main_widget, 1, 0, 1, 5)
-        self.main_panel_layout.addWidget(self.full_window_controls, 2, 0, 1, 5)
-        self.main_panel_layout.addWidget(self.pbar, 3, 0, 1, 5)
+        self.main_panel_layout = QVBoxLayout()
+        self.main_panel_layout.addWidget(self.new_main_widget)
+        self.main_panel_layout.addWidget(self.full_window_controls)
+        self.main_panel_layout.addWidget(self.show_hide_main_features_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.main_panel_layout.addWidget(self.pbar)
+
 
         # self.thumbnail_table = QTableView()
         # self.thumbnail_table.horizontalHeader().hide()
@@ -3977,10 +3800,10 @@ class MainWindow(QMainWindow):
         # self.overview_panel = QWidget()
         # self.overview_tab_widget = QTabWidget()
         # self.overview_tab_widget.addTab(self.overview_panel, 'Overview')
-        # self.vlabel_overview = VerticalLabel('Project Overview')
-        # self.vlabel_overview.setObjectName('vlabel_overview')
+        # self.label_overview = VerticalLabel('Project Overview')
+        # self.label_overview.setObjectName('label_overview')
         # self.overview_layout = QHBoxLayout()
-        # self.overview_layout.addWidget(self.vlabel_overview)
+        # self.overview_layout.addWidget(self.label_overview)
         # self.overview_layout.addWidget(self.thumbnail_table)
         # self.overview_panel.setLayout(self.overview_layout)
 
@@ -4015,64 +3838,6 @@ class MainWindow(QMainWindow):
     def get_application_root(self):
         return Path(__file__).parents[2]
 
-    def show_hide_snr_plot(self):
-        if self.snr_plot.isHidden():
-            self.vlabel_plot.show()
-            self.snr_plot.show()
-        else:
-            self.vlabel_plot.hide()
-            self.snr_plot.hide()
-        self.dataUpdateWidgets()
-
-    def show_hide_hud(self):
-        if self.hud.isHidden():
-            self.vlabel_hud.show()
-            self.hud.show()
-        else:
-            self.vlabel_hud.hide()
-            self.hud.hide()
-        self.dataUpdateWidgets()
-
-    def show_hide_python(self):
-        if self.python_console.isHidden():
-            self.python_console.show()
-        else:
-            self.python_console.hide()
-        self.dataUpdateWidgets()
-
-
-    def expand_viewer_size(self):
-        if self._is_viewer_expanded:
-            logger.info('Collapsing Viewer')
-            self._is_viewer_expanded = False
-            self.initView()
-            self.expandViewAction.setIcon(qta.icon('mdi.arrow-expand-all', color=ICON_COLOR))
-            self.expandViewAction.setStatusTip('Set Expanded Viewer Size')
-
-        else:
-            logger.info('Expanding Viewer')
-            self._is_viewer_expanded = True
-            # self.full_window_controls.show()
-            self.new_control_panel.hide()
-            self.low_low_widget.hide()
-            self.hud_and_plot_splitter.hide()
-            self.matchpoint_controls.hide()
-            self.main_tab_widget.show()
-            self.main_tab_widget.setCurrentIndex(0)
-            # self.image_panel_stack_widget.setCurrentIndex(1)
-            # self.main_stack_widget.setCurrentIndex(0)
-            self.force_hide_expandable_widgets()
-            self.expandViewAction.setIcon(qta.icon('mdi.arrow-collapse-all', color=ICON_COLOR))
-            self.expandViewAction.setStatusTip('Set Normal Viewer Size')
-
-        self.image_panel_stack_widget.setCurrentIndex(1)
-        self.main_stack_widget.setCurrentIndex(0)
-
-        if cfg.data:
-            self.initNgViewer()
-
-        logger.info('is viewer expanded? %s' % self._is_viewer_expanded)
-
 
     def set_viewer_layout_1(self):
         if cfg.data:
@@ -4093,13 +3858,10 @@ class MainWindow(QMainWindow):
         self.full_window_controls.show()
         self.main_stack_widget.setCurrentIndex(0)
         self.new_control_panel.hide()
-        self.low_low_widget.hide()
-        self.hud.hide()
-        self.vlabel_hud.hide()
+        self.hud_widget.hide()
         self.matchpoint_controls.hide()
-        self.main_tab_widget.hide()
-        self.force_hide_expandable_widgets()
-        self.snr_plot.show()
+        self.tabs_main.hide()
+        self.snr_plot_widget.show()
 
 
     def expand_treeview_size(self):
@@ -4107,12 +3869,9 @@ class MainWindow(QMainWindow):
         self.extra_header_text_label.setText('')
         self.main_stack_widget.setCurrentIndex(0)
         self.new_control_panel.hide()
-        self.low_low_widget.hide()
-        self.hud.hide()
-        self.vlabel_hud.hide()
+        self.hud_widget.hide()
         self.matchpoint_controls.hide()
-        self.main_tab_widget.hide()
-        self.force_hide_expandable_widgets()
+        self.tabs_main.hide()
         self.projectdata_treeview_widget.show()
         self.projectdata_treeview_widget.show()
 
@@ -4123,20 +3882,15 @@ class MainWindow(QMainWindow):
         self._is_mp_mode = False
         self.main_stack_widget.setCurrentIndex(0)
         self.new_control_panel.hide()
-        self.low_low_widget.hide()
-        self.hud.hide()
-        self.vlabel_hud.hide()
+        self.hud_widget.hide()
         self.matchpoint_controls.hide()
-        self.main_tab_widget.hide()
-        self.force_hide_expandable_widgets()
+        self.tabs_main.hide()
         self.python_console.show()
 
 
     def initWidgetSpacing(self):
         logger.info('')
         self.main_panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_details_subwidgetA.setContentsMargins(0, 0, 0, 0)
-        self.main_details_subwidgetB.setContentsMargins(0, 0, 0, 0)
         self.new_main_widget_vlayout.setContentsMargins(0, 0, 0, 0)
         self.show_hide_main_features_vlayout.setContentsMargins(0, 0, 0, 0)
         self.ng_panel_layout.setContentsMargins(0, 0, 0, 0)
@@ -4153,26 +3907,29 @@ class MainWindow(QMainWindow):
         self.new_control_panel_layout.setContentsMargins(4, 2, 4, 2)
         self.full_window_controls_hlayout.setContentsMargins(4, 0, 4, 0)
         self.python_console.setContentsMargins(0, 0, 0, 0)
-        self.low_low_gridlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_layer_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_scale_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_view_hlayout.setContentsMargins(4, 0, 4, 0)
         self.toolbar_text_layout.setContentsMargins(0, 0, 0, 0)
         self.external_hyperlink.setContentsMargins(8, 0, 0, 0)
         self.layer_view_inner_layout.setContentsMargins(0, 0, 0, 0)
-        self.projectdata_treeview_layout.setContentsMargins(0, 0, 2, 0)
-        self.hud.setContentsMargins(2, 0, 0, 0)
-        self.layer_view_inner_layout.setContentsMargins(0,0,0,0)
-        self.layer_view_outter_layout.setContentsMargins(0,0,0,0)
+        self.projectdata_treeview_layout.setContentsMargins(2, 0, 2, 0)
+        self.hud.setContentsMargins(2, 0, 2, 0)
+        self.layer_view_outter_layout.setContentsMargins(0, 0, 0, 0)
+        self.show_hide_main_features_widget.setContentsMargins(2, 0, 2, 0)
+        self.snr_plot_layout.setContentsMargins(0, 0, 0, 0)
+        self.snr_plot_and_ylabel.setContentsMargins(0, 0, 0, 0)
+        self.afm_widget_layout.setContentsMargins(0, 0, 0, 0)
+        self.hud_widget_layout.setContentsMargins(0, 0, 0, 0)
+        self.layer_details.setContentsMargins(0, 0, 0, 0)
+        self.layer_details_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.show_hide_main_features_vlayout.setSpacing(0)
-        self.show_hide_main_features_widget.setMaximumHeight(74)
-        self.low_low_widget.setMaximumHeight(78)
+        self.show_hide_main_features_widget.setMaximumHeight(24)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        # self.main_details_subwidgetA.setMinimumWidth(148)
-        # self.main_details_subwidgetB.setMinimumWidth(148)
         # self.afm_widget.setMinimumWidth(148)
-        # self.history_widget.setMinimumWidth(148)
+        self.history_widget.setMinimumWidth(148)
+        self.afm_widget.setFixedWidth(240)
+        self.layer_details.setMinimumWidth(190)
 
 
     def initStatusBar(self):
@@ -4182,13 +3939,11 @@ class MainWindow(QMainWindow):
 
     #@timer
     def initPbar(self):
-        # self.statusBar = QStatusBar()
-        # self.pbar = QProgressBar(self)
         self.pbar = QProgressBar()
-        # self.pbar.setFixedWidth(400)
-        self.pbar.setFixedHeight(16)
         self.pbar.setFont(QFont('Arial', 11))
-        # self.statusBar.addPermanentWidget(self.pbar)
+        self.pbar.setFixedHeight(16)
+        # self.pbar.setFixedWidth(400)
+        self.statusBar.addPermanentWidget(self.pbar)
 
         # self.pbar_container = QWidget()
         # self.pbar_layout = QHBoxLayout()
@@ -4234,8 +3989,8 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.setCurrentIndex(0)
         if cfg.data:
             self.image_panel_stack_widget.setCurrentIndex(1)
-        else:
-            self.image_panel_stack_widget.setCurrentIndex(2)
+        # else:
+        #     self.image_panel_stack_widget.setCurrentIndex(2)
 
 
     def eventFilter(self, source, event):

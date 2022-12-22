@@ -11,9 +11,13 @@
 #include <tiffio.h>
 #include <png.h>
 #include <unistd.h>
+#include <webp/types.h>
+#include <webp/encode.h>
+#include <webp/decode.h>
 
 #define uchar unsigned char
 #define ushort unsigned short
+#define uint16 unsigned short
 
 struct image {
 	unsigned char *pp;
@@ -124,14 +128,20 @@ close(fd);
 	return(0);
 }
 
+// XXX make a new extension function XXX
 struct image *read_img(char *fname) {
 	FILE *fp;
 	char tmptxt[256];
 	struct image *ip;
 	int bpp = 1, wid, ht, range, c, nr;
 	unsigned char *idata;
-	if(strstr(fname, ".raw") || strstr(fname, ".RAW")
-	    || strstr(fname, ".dat") || strstr(fname, ".DAT")) {
+	char *cp, *ep = NULL; // ep will point to the last dot before extension
+	for(cp = fname; *cp; cp++)
+		if(*cp == '.')
+			ep = cp;
+//fprintf(stderr, "cp %p  ep %p  %s\n", cp, ep, ep);
+	if(strstr(ep, ".raw") || strstr(ep, ".RAW")
+	    || strstr(ep, ".dat") || strstr(ep, ".DAT")) {
 		int fd;
 #define RWID	2560	// Davi temca2
 #define RHT	2160
@@ -153,7 +163,7 @@ fprintf(stderr, "raw fd %d\n", fd);
 		close(fd);
 		return(ip);
 	}
-	if(strstr(fname, ".tif") || strstr(fname, ".TIF")) { // hits tiff too
+	if(strstr(ep, ".tif") || strstr(ep, ".TIF")) { // hits tiff too
 //fprintf(stderr, "use ltiff\n");
 		if(ltiff_reader(fname, &wid, &ht, &bpp, &idata) < 0)
 			return(NULL);
@@ -174,8 +184,26 @@ fprintf(stderr, "raw fd %d\n", fd);
 	}
 //fprintf(stderr, "fileno %d\n", fileno(fp));
 	c = fgetc(fp);
+//fprintf(stderr, "c 0%o\n", c);
 	ungetc(c, fp);
+	if(c == 0122) {		// RIFF assume webp
+#define	WEBPSIZ 100000000 // AWW kludge tmp size to get started - fix later
+		int nr, wid, ht;;
+		char *imp, *tp = (char *)malloc(WEBPSIZ);
+		ip = (struct image *)malloc(sizeof(struct image));
+		nr = fread(tp, 1, WEBPSIZ, fp);
+fprintf(stderr, "webp nr %d\n", nr);
+		imp = WebPDecodeRGB(tp, nr, &wid, &ht);
+fprintf(stderr, "webp wh %d %d  %p\n", wid, ht, imp);
+		ip->pp = imp;
+		ip->wid = wid;
+		ip->ht = ht;
+		ip->ydelta = wid;
+		ip->bpp = 3;
+		free(tp);
+	} else
 	if(c == 0211) {		// assume its png
+// tests http://palmzlib.sourceforge.net/images/dir.html
 		int i, o, nr = 0, x, y, number_of_passes, rowbytes;
 		png_bytep *row_ptr;
 		uchar png_hdr[8];
@@ -185,7 +213,7 @@ fprintf(stderr, "raw fd %d\n", fd);
 //fprintf(stderr, "PNG\n");
 		nr += fread(png_hdr, 1, 8, fp);
 		if(png_sig_cmp(png_hdr, 0, 8))
-			exit(1);
+			return(NULL);
 		png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 //fprintf(stderr, "png_ptr %p\n", png_ptr);
 		png_set_sig_bytes(png_ptr, 8);
@@ -202,6 +230,12 @@ fprintf(stderr, "raw fd %d\n", fd);
 		ip->ht = png_get_image_height(png_ptr, info_ptr);
 		color_type = png_get_color_type(png_ptr, info_ptr);
 		bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+fprintf(stderr, "PNG color_type %d  bit_depth %d\n", color_type, bit_depth);
+fprintf(stderr, "PNG_COLOR_TYPE_PALETTE %d\n", PNG_COLOR_TYPE_PALETTE);
+fprintf(stderr, "PNG_COLOR_TYPE_GRAY %d\n", PNG_COLOR_TYPE_GRAY);
+fprintf(stderr, "PNG_COLOR_TYPE_GRAY_ALPHA %d\n", PNG_COLOR_TYPE_GRAY_ALPHA);
+fprintf(stderr, "PNG_COLOR_TYPE_RGB %d\n", PNG_COLOR_TYPE_RGB);
+fprintf(stderr, "PNG_COLOR_TYPE_RGB_ALPHA %d\n", PNG_COLOR_TYPE_RGB_ALPHA);
 		if(color_type == 0 && bit_depth == 8)
 			ip->bpp = 1;
 		else
@@ -236,7 +270,7 @@ fprintf(stderr, "raw fd %d\n", fd);
 					*out++ = *in++; // R
 					*out++ = *in++; // G
 					*out++ = *in++; // B
-					in++; // A
+					// in++; // A --- AWW removed Aug 2020
 				}
 			}
 			for(y = 0; y < ip->ht; y++)
@@ -410,17 +444,15 @@ ushort tiff_mfd[] = { 7,			// ntags
 };
 
 unsigned char palette[256][3];
-void write_img(char *fname, struct image *ip) {
-	char hdr[100];
+int write_img(char *fname, struct image *ip) {
+	char hdr[100], *ext; // buf for header and pointer to extension
 	int fd, nw, rowbytes, color_type = 2;
 	long qw, tqw = 0, want;
-	unlink(fname);
+//	unlink(fname); // AWW don't do if appending XXX
 	//fd = creat(fname, 0666);
-/*
-fprintf(stderr, "write_img %d %s  %d %d %d %d\n",
-fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
-*/
-	if(strstr(fname, "png") || strstr(fname, "PNG")) {
+// fprintf(stderr, "write_img %d %s  %d %d %d %d\n",
+// fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
+	if(strstr(fname, "png") || strstr(fname, "PNG")) { /// XXX must be end
 		int i;
 		//unsigned char transparent[] = { 56 };
 		//unsigned char transparent[256];
@@ -500,7 +532,7 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 		jpeg_create_compress(&cinfo);
 		if((outfile = fopen(fname, "wb")) == NULL) {
 			fprintf(stderr, "can't open %s\n", fname);
-			exit(1);
+			return(-1);
 		}
 		jpeg_stdio_dest(&cinfo, outfile);
 		cinfo.image_width = ip->wid;
@@ -523,8 +555,48 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 		jpeg_finish_compress(&cinfo);
 		fclose(outfile);
 		jpeg_destroy_compress(&cinfo);
+	} else if(ext = strstr(fname, "raw")) {
+fprintf(stderr, "+++++ write raw %s  ext %s  %d %d  %d\n",
+fname, ext-1, ip->wid, ip->ht, ip->bpp);
+		if(*(ext-1) == '-') {
+fprintf(stderr, "truncate fname %s\n", fname);
+if(*(ext-2) == '.')
+*(ext-2) = 0; // clobber the dot.
+else fprintf(stderr, "NO EXTENSION DOT???\n");
+// fprintf(stderr, "\tto  %s\n", fname);
+		}
+		while(*ext && *ext != '+')
+			ext++;
+// fprintf(stderr, "ext is at %s\n", ext);
+		if(*ext == '+') {
+			off_t spos;
+			fd = open(fname, O_RDWR);
+			//fd = open(fname, O_RDWR|O_APPEND);
+//fprintf(stderr, "fd %d appending to %s\n", fd, fname);
+			spos = lseek(fd, (off_t)0, SEEK_END);
+fprintf(stderr, "fd %d reopening %s at end %ld\n", fd, fname, spos);
+		}
+        	if(fd < 0) {
+//                	fd = open(fname, O_CREAT|O_RDWR|O_APPEND, 0666);
+                	fd = open(fname, O_CREAT|O_RDWR, 0666);
+fprintf(stderr, "created new %s %d\n", fname, fd);
+		}
+		if(*ext == '+') {
+			off_t seekpos = atoi(ext+1);
+// fprintf(stderr, "seekpos %d\n", seekpos);
+			if(seekpos > 0) {
+				seekpos = lseek(fd, (off_t)seekpos, 0);
+fprintf(stderr, "new seekpos %ld\n", seekpos);
+			}
+		}
+// fprintf(stderr, "Write raw0 %s %d\n", fname, fd);
+		goto raw_pgm; // NEW AWW
 	} else { // assume pgm
 		fd = creat(fname, 0666);
+		if(fd < 0) {
+			fprintf(stderr, "pgm_creat err %s\n", fname);
+			return(-1);
+		}
 		if(ip->bpp == 3)
 			sprintf(hdr, "P6\n%d %d\n255\n", ip->wid, ip->ht);
 		else if(ip->bpp == 2)
@@ -533,15 +605,19 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 			sprintf(hdr, "P5\n%d %d\n255\n", ip->wid, ip->ht);
 		nw = write(fd, hdr, strlen(hdr));
 		//write(fd, ip->pp, (ip->ht*ip->wid*ip->bpp+7)/8);
+raw_pgm:
 		want = ip->ht*(unsigned long)ip->wid*ip->bpp;
 		while(tqw < want) {
 			qw = write(fd, ip->pp+tqw, want-tqw);
 			if(qw <= 0) {
-				fprintf(stderr, "write_img exit\n");
-				exit(1);
+				fprintf(stderr, "write_img %d exit tqw %ld/%ld\n",
+					fd, qw, want);
+				return(-1);
 			}
 			tqw += qw;
 		}
+fprintf(stderr, "close %d\n", fd);
 		close(fd);
 	}
+	return(0);
 }
