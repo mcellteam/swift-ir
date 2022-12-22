@@ -234,11 +234,11 @@ class DataModel:
     def snr_max_all_scales(self) -> float:
         #Todo refactor, store local copy, this is a bottleneck
         max_snr = []
-        logger.critical(f'self.scalesAligned: {self.scalesAligned}')
+        # logger.critical(f'self.scalesAligned: {self.scalesAligned}')
         for scale in self.scalesAligned:
             try:
                 m = max(self.snr_list(s=scale))
-                logger.critical(f'm: {m}')
+                # logger.critical(f'm: {m}')
                 max_snr.append(m)
             except:
                 logger.warning('Unable to append maximum SNR, none found')

@@ -2,7 +2,7 @@
 // MIR: Multiple Image Rendering
 // playing with mir
 
-// gcc -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
+// gcc -O3 -o mir mir.c -ljpeg -ltiff -lpng -lwebp -lm
 // add transparency value
 // allow aritimetic in B
 // option for overlapping tiles with spacing and hex row offset by 1/2
@@ -53,7 +53,15 @@
 #include <math.h>
 #include "swimio.h"
 
-#include "debug.h"
+// #include "debug.h" // AWW did this come from Bob ? do this inline instead
+int print_args ( char *prefix, int argc, char* argv[] ) {
+  int i;
+  printf ( "%s\n", prefix );
+  for (i=0; i<argc; i++) {
+    printf ( "  Arg[%d] = %s\n", i, argv[i] );
+  }
+  return (0);
+}
 
 struct image *inimg, *outimg, outtile;
 
@@ -65,6 +73,8 @@ static __inline__ ticks getticks(void) {  // read CPU cycle counter
 }
 
 ticks t_ticks, hl_ticks, hr_ticks, tri_ticks, aff_ticks, r_ticks, w_ticks;
+ticks total_ticks, micros0, micros1;
+int total_pixels;
 
 #define	VL	4                   // vector len 6 can be x0,y0, x1, y1, bright, cont XXX 6 fail
 #define	NVERTS 60000
@@ -74,12 +84,16 @@ int oflag;                      // outline triangles
 int iflag = 0;                  // interpolation level nearest=0, linear=1, cubic=2
 int bflag = 0;                  // save overlap image for later intensity correction calculation
 int trival;
+int quadval;
 float vert[NVERTS][VL];
 int nverts;
 int oxmin = 1000000, oxmax, oymin = 1000000, oymax;
 #define	NTRI	20000
 int tri[NTRI][3];
 int ntris;
+#define	NQUAD	20000
+int quad[NQUAD][4];
+int nquads;
 int dotris;
 int doquads;
 /* float v0[] = { 18028, 17936, 18127, 19040 }; */
@@ -362,6 +376,142 @@ char fname[STRLENS];
 char fullname[STRLENS];
 char outname[STRLENS];
 char line[STRLENS];
+
+struct quad {
+        float x0, y0;
+        float x1, y1;
+        float x2, y2;
+        float x3, y3;
+};
+
+/* assumes regular orientation and integer rectangular output */
+// irregular in to rectangular out
+void qmap(struct image *ip0, struct quad *qp0, struct image *ip1, struct quad *qp1) {
+	unsigned char *op;
+	int i, j, sx, sy, x, y, nx, ny, v;
+	float fx, fy, fra, fry0, fry1, frx0, frx1;
+	micros0 = getticks();
+	ny = qp1->y2 - qp1->y0;
+	nx = qp1->x1 - qp1->x0;
+	//op = ip1->pp + qp1->y0*ip1->ydelta + qp1->x0; // NOT with floats!
+	sx = qp1->x0;	// integer start x
+	sy = qp1->y0;	// integer start y
+fprintf(stderr, "xy  %g %g ... %d %d\n", qp1->x0, qp1->y0, x, y);
+	op = ip1->pp + sy*ip1->ydelta + sx;
+fprintf(stderr, "qp0\n");
+fprintf(stderr, "  %g %g   \t", qp0->x0, qp0->y0);
+fprintf(stderr, "  %g %g\n", qp0->x1, qp0->y1);
+fprintf(stderr, "  %g %g   \t", qp0->x2, qp0->y2);
+fprintf(stderr, "  %g %g\n", qp0->x3, qp0->y3);
+fprintf(stderr, "qp1\n");
+fprintf(stderr, "  %g %g   \t", qp1->x0, qp1->y0);
+fprintf(stderr, "  %g %g\n", qp1->x1, qp1->y1);
+fprintf(stderr, "  %g %g   \t", qp1->x2, qp1->y2);
+fprintf(stderr, "  %g %g\n", qp1->x3, qp1->y3);
+fprintf(stderr, "y %d ny %d x %d nx %d\n", y, ny, x, nx);
+// test the assumption of a rectangular output region
+if(qp1->y0 != qp1->y1) fprintf(stderr, "Y0**** %g %g\n", qp1->y0, qp1->y0);
+if(qp1->y2 != qp1->y3) fprintf(stderr, "Y2**** %g %g\n", qp1->y2, qp1->y3);
+if(qp1->x0 != qp1->x2) fprintf(stderr, "X0**** %g %g\n", qp1->x0, qp1->x2);
+if(qp1->x1 != qp1->x3) fprintf(stderr, "X1**** %g %g\n", qp1->x1, qp1->x3);
+// the following are OK for warping
+if(qp0->y0 != qp0->y1) fprintf(stderr, "Y1**** %g %g\n", qp0->y0, qp0->y1);
+if(qp0->y2 != qp0->y3) fprintf(stderr, "Y3**** %g %g\n", qp0->y2, qp0->y3);
+if(qp0->x0 != qp0->x2) fprintf(stderr, "X2**** %g %g\n", qp0->x0, qp0->x2);
+if(qp0->x1 != qp0->x3) fprintf(stderr, "X3**** %g %g\n", qp0->x1, qp0->x3);
+fprintf(stderr, "diffs %g %g   %g %g  ratios  X  %g   Y %g\n",
+qp0->x1 - qp0->x0, qp1->x1 - qp1->x0, qp0->y2 - qp0->y0, qp1->y2 - qp1->y0, 
+(qp0->x1 - qp0->x0)/( qp1->x1 - qp1->x0), (qp0->y2 - qp0->y0)/( qp1->y2 - qp1->y0));
+	for(i = 0; i < ny; i++) {
+// fprintf(stderr, "tile %d oht %d sy %d i %d sum %d\n", ntile, oht, sy, i, sy+i);
+		if(sy+i >= oht) break;
+		fra = i / (float)ny;
+		fry0 = qp0->y0 + (qp0->y2 - qp0->y0) * fra;
+		fry1 = qp0->y1 + (qp0->y3 - qp0->y1) * fra;
+		frx0 = qp0->x0 + (qp0->x2 - qp0->x0) * fra;
+		frx1 = qp0->x1 + (qp0->x3 - qp0->x1) * fra;
+// fprintf(stderr, "i %3d %10g  frx %g %g  \tfry %g %g\n",
+// i, fra, frx0, frx1, fry0, fry1);
+		for(j = 0; j < nx; j++) {
+//fprintf(stderr, "tile %d owd %d sx %d  j %d  sum %d\n", ntile, owd, sx, j, sx+j);
+//if(sx+j >= owd) break;
+#define	BLIN	// bilinear
+#ifdef	BLIN
+			int v0, v1, v2, v3;
+			float xf, yf, f0, f1, f2, f3;
+#endif
+			//fy = fry0 + (fry1 - fry0) * j / (nx - 1);
+			//fx = frx0 + (frx1 - frx0) * j / (nx - 1);
+			fy = fry0 + (fry1 - fry0) * j / nx;
+			fx = frx0 + (frx1 - frx0) * j / nx;
+//fprintf(stderr, " fx  %g  fy %g\n", fx, fy);
+			y = fy;
+			x = fx;
+#ifdef	BLIN
+			yf = fy - y;
+			xf = fx - x;
+			f0 = (1-xf) * (1-yf);
+			f1 = xf * (1-yf);
+			f2 = (1-xf) * yf;
+			f3 = xf * yf;
+			v0 = ip0->pp[y*ip0->ydelta+x];
+			v1 = ip0->pp[y*ip0->ydelta+(x+1)];
+			v2 = ip0->pp[(y+1)*ip0->ydelta+x];
+			v3 = ip0->pp[(y+1)*ip0->ydelta+(x+1)];
+			v = f0*v0 + f1*v1 + f2*v2 + f3*v3 + 0.5;
+#else
+			v = ip0->pp[y*ip0->ydelta+x];	// near
+//if((j&7) == 0 || (i&7) == 0) ip0->pp[y*ip0->ydelta+x] = 255;
+#endif
+			op[j] = v;
+		}
+		op += ip1->ydelta;
+	}
+	micros1 = getticks();
+	total_ticks += (micros1-micros0);
+	i = (nx+1)*(ny+1);
+	total_pixels += i;
+fprintf(stderr, "%lld/%d = %g/pix\n", micros1-micros0, i,
+((double)micros1-micros0)/i);
+//if(++calls >= 3) exit(1);
+}
+
+void dquad(float *v0, float *v1, float *v2, float *v3) {
+	int x, y;
+	struct quad inq, outq;
+	unsigned char *p, *oip = obase + y * (long)owid * obpp;
+  fprintf(stderr, "dquad %d: %g %g  %g %g  %g %g  %g %g\n", quadval,
+  v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], v3[0], v3[1]);
+  fprintf(stderr, "\t%g %g  %g %g  %g %g  %g %g\n",
+  v0[2], v0[3], v1[2], v1[3], v2[2], v2[3], v3[2], v3[3]);
+	for(y = v0[1]; y < v2[1]; y++) {
+		char *oip = obase + y * (long)owid * obpp;
+		for(x = v0[0]; x < v1[0]; x++)
+			oip[x] = 128;
+	}
+
+// clockwise to morton order // why was there a # on this cmt ??? AWW
+                inq.x0 = v0[2];
+                inq.y0 = v0[3];
+                inq.x1 = v1[2];
+                inq.y1 = v1[3];
+                inq.x2 = v3[2];
+                inq.y2 = v3[3];
+                inq.x3 = v2[2];
+                inq.y3 = v2[3];
+
+                outq.x0 = v0[0];
+                outq.y0 = v0[1];
+                outq.x1 = v1[0];
+                outq.y1 = v1[1];
+                outq.x2 = v3[0];
+                outq.y2 = v3[1];
+                outq.x3 = v2[0];
+                outq.y3 = v2[1];
+
+	qmap(inimg, &inq, outimg, &outq);
+	quadval++;
+}
 
 void dtri(float *v0, float *v1, float *v2) {
   float *tp, x0, y0, x1, y1;
@@ -651,7 +801,7 @@ int prompt = 0;
 
 void main(int argc, char *argv[]) {
   FILE *fp;
-  int c, i, j, x, y, *trp, pushed, sv;
+  int c, i, j, x, y, *trp, *qup, pushed, sv;
   int box_xmin, box_ymin, box_xmax, box_ymax;
   float *vp, det, fx, fy;
   t_ticks -= getticks();
@@ -683,8 +833,7 @@ void main(int argc, char *argv[]) {
       case 'Z':
         {
           char *p = &argv[0][flagp];
-          // XXX why oscalex ???
-          Zval = atoi(p + 1) * oscalex;
+          Zval = atoi(p + 1);
           fprintf(stderr, "Zval %d  atoi %d  oscalex %g\n", Zval, atoi(p + 1), oscalex);
           while (argv[0][flagp])
             flagp++;
@@ -694,8 +843,7 @@ void main(int argc, char *argv[]) {
       case 'T':                // transparent input value
         {
           char *p = &argv[0][flagp];
-          // XXX why oscalex ???
-          skipval = atoi(p + 1) * oscalex;
+          skipval = atoi(p + 1);
           fprintf(stderr, "skipval %d  atoi %d  oscalex %g\n", skipval, atoi(p + 1), oscalex);
           while (argv[0][flagp])
             flagp++;
@@ -737,6 +885,9 @@ void main(int argc, char *argv[]) {
         break;
       case 'i':                // interpolation level
         iflag++;
+        break;
+      case 'v':                // enable verbose that Bom had extended // AWW
+        verbose = 1;
         break;
       case 'b':
         bflag++;                // save overwrite for intens corr.
@@ -915,7 +1066,8 @@ void main(int argc, char *argv[]) {
       }
       //twid *= oscalex; /// XXX leave it as unscaled output pixels
       //tht *= oscaley;
-      fprintf(stderr, "output dims %d x %d  %d bytes  tile %d %d\n", owid, oht, obpp, twid, tht);
+      fprintf(stderr, "output dims %d x %d  %d bytes  tile %d %d\n",
+		owid, oht, obpp, twid, tht);
       //outimg = newimage(owid, oht, obpp); // delay until 1st input
       //obase = outimg->pp;
       continue;
@@ -941,7 +1093,7 @@ void main(int argc, char *argv[]) {
         }
       strcpy(fullname, prefix);
       strcat(fullname, fname);
-      //fprintf(stderr, "fullname <%s>\n", fullname);
+      if(verbose) fprintf(stderr, "fullname <%s>\n", fullname);
       if (gflag < 2 /* && sflag == 0 */ ) {
         if (inimg) {
           free(inimg->pp);
@@ -1029,7 +1181,7 @@ void main(int argc, char *argv[]) {
       r_ticks += getticks();
       continue;
       // XXX AWW fix single point - or perhaps no point R with scale factors
-          case 'R':                  // fill bounding box rect from src file & current mf[][]
+	case 'R': // fill bounding box rect from src file & current mf[][]
       //fprintf(stderr, "R %d verts file %s - wh %d %d\n", nverts, fname, iwid, iht);
       // XXX 2 vect rot + scale
       // XXX rather than bounding box just split into 2 tris
@@ -1108,11 +1260,10 @@ void main(int argc, char *argv[]) {
 
       box_xmin = box_xmax = 0 * mi[0][0] + 0 * mi[0][1] + mi[0][2];
       box_ymin = box_ymax = 0 * mi[1][0] + 0 * mi[1][1] + mi[1][2];
-      fprintf(stderr, "corners  %d %d  ", box_xmin, box_ymin);
+      if(verbose) fprintf(stderr, "corners  %d %d  ", box_xmin, box_ymin);
       x = iwid * mi[0][0] + 0 * mi[0][1] + mi[0][2];
       y = iwid * mi[1][0] + 0 * mi[1][1] + mi[1][2];
-      //fprintf(stderr, "corn  %d %d\n", x, y);
-      fprintf(stderr, "%d %d  ", x, y);
+      fprintf(stderr, "exterior corns %d %d  ", x, y);
       if (x < box_xmin)
         box_xmin = x;
       if (y < box_ymin)
@@ -1123,7 +1274,6 @@ void main(int argc, char *argv[]) {
         box_ymax = y;
       x = iwid * mi[0][0] + iht * mi[0][1] + mi[0][2];
       y = iwid * mi[1][0] + iht * mi[1][1] + mi[1][2];
-      //fprintf(stderr, "corn  %d %d\n", x, y);
       fprintf(stderr, "%d %d  ", x, y);
       if (x < box_xmin)
         box_xmin = x;
@@ -1135,7 +1285,6 @@ void main(int argc, char *argv[]) {
         box_ymax = y;
       x = 0 * mi[0][0] + iht * mi[0][1] + mi[0][2];
       y = 0 * mi[1][0] + iht * mi[1][1] + mi[1][2];
-      //fprintf(stderr, "corn  %d %d\n", x, y);
       fprintf(stderr, "%d %d\n", x, y);
       if (x < box_xmin)
         box_xmin = x;
@@ -1195,11 +1344,11 @@ void main(int argc, char *argv[]) {
         unsigned char *tbuf, *ip, *op;
         if (pad > 255)
           pad = 255;
-        fprintf(stderr, "Zval %d  pad %d\n", Zval, pad);
+        if(verbose) fprintf(stderr, "Zval %d  pad %d\n", Zval, pad);
         for (p = outname; *p; p++)
           if (*p == '%')
             npct++;
-        fprintf(stderr, "npct %d\n", npct);
+        if(verbose) fprintf(stderr, "npct %d\n", npct);
         if (npct != 2)
           goto notile;
         outtile.ht = tht;
@@ -1211,11 +1360,11 @@ void main(int argc, char *argv[]) {
         outtile.pp = tbuf;
         ntx = (owid + (twid - 1)) / twid;
         nty = (oht + (tht - 1)) / tht;
-        // fprintf(stderr, "all %d %d tiles %d %d %d  %p\n",
-        // ntx, nty, outtile.ht, outtile.wid, outtile.bpp, outtile.pp);
+fprintf(stderr, "output %dx%d tiles size %dx%d %d from %p\n",
+   ntx, nty, outtile.ht, outtile.wid, outtile.bpp, outtile.pp);
         for (ty = 0; ty < nty; ty++) {
           for (tx = 0; tx < ntx; tx++) {
-            int thistht = tht, thistwid = twid;
+            int thistht = tht, thistwid = twid, rv;
             thistwid = outimg->wid - tx * twid;
             if (thistwid > twid)
               thistwid = twid;
@@ -1223,8 +1372,8 @@ void main(int argc, char *argv[]) {
             if (thistht > tht)
               thistht = tht;
             sprintf(tilename, outname, ty, tx);
-            // fprintf(stderr, "tx %d ty %d <%s>  src ydelta %d  %p  %d %d\n",
-            // tx, ty, tilename, outimg->ydelta, outimg->pp, thistwid, thistht);
+if(verbose) fprintf(stderr, "tx %d ty %d <%s>  src ydelta %d  %p  %d %d\n",
+tx, ty, tilename, outimg->ydelta, outimg->pp, thistwid, thistht);
             // XXX fix partial edge tile cases
             outtile.ht = thistht;
             outtile.wid = thistwid;
@@ -1256,7 +1405,9 @@ void main(int argc, char *argv[]) {
               while (i < (tht - y) * thistwid)
                 op[i++] = pad;
             }
-            write_img(tilename, &outtile);
+            rv = write_img(tilename, &outtile);
+		if(rv < 0)
+			fprintf(stderr, "write_img err %d %s\n", rv, tilename);
           }
         }
         free(tbuf);
@@ -1265,9 +1416,10 @@ void main(int argc, char *argv[]) {
         if (backp)
           fprintf(stderr, "Skip write %s\n", outname);
         else {
+	  int rv;
           outimg->trans = trans;
-          write_img(outname, outimg);
-          fprintf(stderr, "Wrote %s\n", outname);
+          rv = write_img(outname, outimg);
+          fprintf(stderr, "Wrote %s  rv %d\n", outname, rv);
         }
       }
       nwrite++;
@@ -1289,17 +1441,19 @@ void main(int argc, char *argv[]) {
       }
       ungetc(i, stdin);
       if (!isdigit(i) && i != '-' && i != '+') {
-		fprintf(stderr, "+++++++break nondig %c %d\n", i, i);
+//		fprintf(stderr, "+++++++break nondig %c %d\n", i, i);
+        dotris = doquads = 0;
 	if(i == 'T')
 		dotris++;
 	else if(i == 'Q')
 		doquads++;
-	else fprintf(stderr, "unknown mode char <%c>\n", i);
+	else if(i != '\n' && i != 'R')	// AWW silent skip newline and Rect
+		fprintf(stderr, "unknown mode char <%c>\n", i);
         break;
       }
       i = scanf("%s %s %s %s\n", str0, str1, str2, str3);
-      fprintf(stderr, "i %d <%s> <%s> <%s> <%s>\n",
-      i, str0, str1, str2, str3);
+      if(verbose) fprintf(stderr, "i %d <%s> <%s> <%s> <%s>\n",
+		i, str0, str1, str2, str3);
       if (exchange) {
         vp[2] = eval_expr(str0);
         vp[3] = eval_expr(str1);
@@ -1311,9 +1465,10 @@ void main(int argc, char *argv[]) {
         vp[2] = eval_expr(str2);
         vp[3] = eval_expr(str3);
       }
-      fprintf(stderr, "vp %f %f %f %f\n", vp[0], vp[1], vp[2], vp[3]);
+      if(verbose) fprintf(stderr, "vp %f %f %f %f\n",
+		vp[0], vp[1], vp[2], vp[3]);
       /*
-		      if(exchange)
+		      if(exchange) // XXX AWW revisit why I tried this
 			      i = scanf("%f %f %f %f\n", vp+2, vp+3, vp, vp+1);
 		      else
 			      i = scanf("%f %f %f %f\n", vp, vp+1, vp+2, vp+3);
@@ -1325,12 +1480,14 @@ void main(int argc, char *argv[]) {
       vp[1] += ooffy;
       vp[2] += ioffx;
       vp[3] += ioffy;
-      //fprintf(stderr, "iverts %g %g %g %g\n", vp[0], vp[1], vp[2], vp[3]); // XXX
+if(verbose) fprintf(stderr, "unscaled iverts %g %g %g %g\n",
+		vp[0], vp[1], vp[2], vp[3]);
       vp[0] *= oscalex;
       vp[1] *= oscaley;
       vp[2] *= iscalex;
       vp[3] *= iscaley;
-      //fprintf(stderr, "\t%g %g %g %g\n", vp[0], vp[1], vp[2], vp[3]);
+if(verbose) fprintf(stderr, "\tscaled %g %g %g %g\n",
+		vp[0], vp[1], vp[2], vp[3]);
       // global transform of destination points
       fx = vp[0] * mg[0][0] + vp[1] * mg[0][1] + mg[0][2];
       fy = vp[0] * mg[1][0] + vp[1] * mg[1][1] + mg[1][2];
@@ -1340,10 +1497,11 @@ void main(int argc, char *argv[]) {
       vp += 4;
       nverts++;
     }
-    //fprintf(stderr, "nverts %d\n", nverts);
+if(verbose) fprintf(stderr, "nverts %d\n", nverts);
     c = getchar();
     ungetc(c, stdin);
-    //fprintf(stderr, "pushback <%c> %d\n", c, c);
+if(verbose)
+	fprintf(stderr, "pushback <%c> %d\n", c, c); // supressed AWW
     if (c == 'R' || c == 'A')   // XXX A no longer works since R does dtri
       continue;
     while ((i = getchar()) != EOF && i != '\n') ;
@@ -1351,6 +1509,8 @@ void main(int argc, char *argv[]) {
     for (i = 0; i < nverts; i++)
       fprintf(stderr, "%d: %g %g %g %g\n", i, vert[i][0], vert[i][1], vert[i][2], vert[i][3]);
     /* */
+if(dotris) {
+fprintf(stderr, "in dotris\n");
     trp = &tri[0][0];
     ntris = 0;
     for (;;) {
@@ -1371,9 +1531,34 @@ void main(int argc, char *argv[]) {
       trp += 3;
       ntris++;
     }
-    //fprintf(stderr, "ntris %d\n", ntris);
+fprintf(stderr, "ntris %d\n", ntris);
+}
+if(doquads) {
+fprintf(stderr, "in doquads\n");
+    qup = &quad[0][0];
+    ntris = 0;
+    for (;;) {
+      //fprintf(stderr, "quadloop nquads %d\n", nquads);
+      i = getchar();
+      if (i == '#') {
+      //fprintf(stderr, "on cmt\n");
+        while ((i = getchar()) != EOF && i != '\n') ;
+        continue;
+      }
+      ungetc(i, stdin);
+      pushed = i;
+      //fprintf(stderr, "pushed <%c>\n", pushed);
+      i = scanf("%d %d %d %d\n", qup, qup + 1, qup + 2, qup + 3);
+      //fprintf(stderr, "scan %d\n", i);
+      if (i != 4)
+        break;
+      qup += 4;
+      nquads++;
+    }
+fprintf(stderr, "nquads %d\n", nquads);
+}
     for (i = 0; i < ntris; i++) {
-      //fprintf(stderr, "%d: %d %d %d\n", i, tri[i][0], tri[i][1], tri[i][2]);
+fprintf(stderr, "%d: %d %d %d\n", i, tri[i][0], tri[i][1], tri[i][2]);
       for (j = 0; j < 3; j++) {
         x = vert[tri[i][j]][0];
         y = vert[tri[i][j]][1];
@@ -1387,7 +1572,26 @@ void main(int argc, char *argv[]) {
           oymax = y;
       }
     }
-    //fprintf(stderr, "output bound %d %d  %d %d\n", oxmin, oymin, oxmax, oymax);
+oxmin = 1000000; oxmax = 0; oymin = 1000000; oymax = 0;
+    for (i = 0; i < nquads; i++) {
+fprintf(stderr, "q  %d: %d %d %d %d\n", i,
+quad[i][0], quad[i][1], quad[i][2], quad[i][3]);
+      for (j = 0; j < 4; j++) {
+        x = vert[quad[i][j]][0];
+        y = vert[quad[i][j]][1];
+fprintf(stderr, "qv %d,%d  %d %d\n", i, j, x, y);
+        if (x < oxmin)
+          oxmin = x;
+        if (y < oymin)
+          oymin = y;
+        if (x > oxmax)
+          oxmax = x;
+        if (y > oymax)
+          oymax = y;
+      }
+    }
+if(verbose) // usually supress this AWW
+fprintf(stderr, "q output bound %d %d  %d %d\n", oxmin, oymin, oxmax, oymax);
 #define	GRID 256
 #ifdef	GRID
     if (gflag) {
@@ -1400,13 +1604,20 @@ void main(int argc, char *argv[]) {
           idat[y * iwid + x] ^= 128;
     }
 #endif
-    //fprintf(stderr, "draw ntris %d\n", ntris);
+if(verbose) // usually supress this AWW
+fprintf(stderr, "draw ntris %d\n", ntris);
     for (i = 0; i < ntris; i++) {
       fprintf(stderr, "dtri %d %d %d\n", tri[i][0], tri[i][1], tri[i][2]);
       dtri(vert[tri[i][0]], vert[tri[i][1]], vert[tri[i][2]]);
     }
+if(verbose) fprintf(stderr, "draw nquads %d\n", nquads);
+    for (i = 0; i < nquads; i++) {
+      fprintf(stderr, "dquad %d %d %d %d\n",
+quad[i][0], quad[i][1], quad[i][2], quad[i][3]);
+dquad(vert[quad[i][0]], vert[quad[i][1]], vert[quad[i][2]], vert[quad[i][3]]);
+    }
     ndraw++;
-    //fprintf(stderr, "ndraw %d\n", ndraw);
+if(verbose) fprintf(stderr, "ndraw %d\n", ndraw);
   }                             // end main loop
   // default stdout is pgm to allow... "a.out < x.map | cjpeg > x.jpg"
   if (nwrite == 0 && ndraw > 0) {
@@ -1609,7 +1820,7 @@ fprintf(stderr, "ne %d  j %d  temp %d  aug %g\n", neqn, j, i, aug[temp][j]);
 
 void affine_inverse(float *mi, float *mf) {
   float det = mf[0] * mf[3 + 1] - mf[1] * mf[3 + 0];
-  fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1 / det));
+  if(verbose) fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1 / det));
   mi[0] = mf[3 + 1] / det;
   mi[1] = -mf[1] / det;
   mi[2] = -mf[2] * mi[0] - mf[3 + 2] * mi[1];

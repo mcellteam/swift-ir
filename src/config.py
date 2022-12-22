@@ -47,7 +47,7 @@ CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 
 '''Default Compression Parameters'''
 CNAME = 'zstd'
-CLEVEL = 1
+CLEVEL = 5
 
 '''Other Defaults'''
 # IS_TACC = None

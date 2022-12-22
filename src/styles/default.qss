@@ -10,7 +10,7 @@ QTreeView {
 }
 
 QTreeView::item {
-     border: 1px solid #d9d9d9;
+    border: 1px solid #d9d9d9;
     border-top-color: transparent;
     border-bottom-color: transparent;
 }
@@ -102,6 +102,11 @@ QTabBar::tab:only-one {
 }
 
 
+QTextEdit#afm_widget {
+    background-color: #f3f6fb;
+    font-size: 11px;
+    border: none;
+}
 
 
 /*
@@ -297,13 +302,6 @@ QWidget#history_widget {
 QListWidget#historyListWidget {
     background-color: #f3f6fb;
     /*font-size: 11px;*/
-}
-
-QTextEdit#afm_widget {
-    /*background: transparent;*/
-    background-color: #f3f6fb;
-    font-size: 11px;
-    border-width: 0px;
 }
 
 
