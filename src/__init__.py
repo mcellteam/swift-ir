@@ -38,6 +38,17 @@ from . import mp_queue
 from .mp_queue import *
 __all__.extend(mp_queue.__all__)
 
+from . import ng_host
+from .ng_host import *
+__all__.extend(ng_host.__all__)
+
+from . import ng_host_slim
+from .ng_host_slim import *
+__all__.extend(ng_host_slim.__all__)
+
+from . import ng_host_slim
+from .ng_host_slim import *
+
 from . import save_bias_analysis
 from .save_bias_analysis import *
 

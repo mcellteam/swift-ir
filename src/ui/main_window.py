@@ -6,28 +6,21 @@ import os
 import shutil
 import sys
 import copy
-import time
-import glob
 import json
 import threading
-import asyncio
 import inspect
 import logging
 import operator
-import platform
+import pprint
 import textwrap
 import tracemalloc
 from pathlib import Path
-import psutil
 import zarr
 import dis
 from collections import namedtuple
-
 import numpy as np
-import pyqtgraph as pg
 import pyqtgraph.console
 import neuroglancer as ng
-import neuroglancer.server
 import pyqtgraph as pg
 import qtawesome as qta
 import qtpy
@@ -57,6 +50,7 @@ from src.helpers import natural_sort, get_snr_average, make_affine_widget_HTML, 
     create_project_structure_directories, get_aligned_scales, tracemalloc_start, tracemalloc_stop, \
     tracemalloc_compare, tracemalloc_clear
 from src.ng_host import NgHost
+from src.ng_host_slim import NgHostSlim
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 # from src.napari_test import napari_test
@@ -263,7 +257,7 @@ class MainWindow(QMainWindow):
     def update_ng_hyperlink(self):
         if cfg.data:
             # url = cfg.ng_workers[cfg.data.scale()].viewer.get_viewer_url()
-            url = cfg.viewer.get_viewer_url()
+            url = cfg.viewer.url
             self.external_hyperlink.clear()
             self.external_hyperlink.append(f"<a href='{url}'>Open In Browser</a>")
 
@@ -2182,7 +2176,7 @@ class MainWindow(QMainWindow):
             if s == None: s = cfg.data.scale()
             if ng.is_server_running():
                 try:
-                    url = cfg.viewer.get_viewer_url()
+                    url = cfg.viewer.url
                     # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
                     self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
                     logger.info(f"{cfg.data.scale_pretty(s=s)}\nURL:  {url}\n")
@@ -2610,6 +2604,42 @@ class MainWindow(QMainWindow):
         self.repaint()
 
 
+    def openArbitraryZarr(self):
+        # if not ng.is_server_running():
+        #     logger.warning('Neuroglancer is not running')
+        #     return
+        cfg.data = None
+        self.browser_overlay_widget.hide()
+        try:
+            path = QFileDialog.getExistingDirectory(self, 'Select Zarr Directory')
+        except:
+            print_exception()
+            return
+
+        try:
+            with open(os.path.join(path, '.zarray')) as j:
+                self.zarray = json.load(j)
+        except:
+            logger.warning("'.zarray' Not Found. Invalid Path.")
+            self.hud.post("'.zarray' Not Found. Invalid Path.")
+            return
+        pprint.pprint(self.zarray)
+        shape = self.zarray['shape']
+        chunks = self.zarray['chunks']
+        logger.info(f'Shape  : {shape}')
+        logger.info(f'Chunks : {chunks}')
+        cfg.ng_worker = NgHostSlim(parent=self,
+                            path=path,
+                            shape=shape,
+                            )
+        cfg.ng_worker.initViewer()
+        self.toolbar_layout_combobox.setCurrentText('xy')
+        # self.toolbar_layout_combobox.currentTextChanged.connect(self.fn_ng_layout_combobox)
+        self.ng_browser.setUrl(QUrl(str(cfg.viewer)))
+        self.ng_browser.setFocus()
+
+
+
     def new_mendenhall_protocol(self):
         self.new_project(mendenhall=True)
         cfg.data['data']['cname'] = 'zstd'
@@ -2682,10 +2712,14 @@ class MainWindow(QMainWindow):
         self.newAction.setShortcut('Ctrl+N')
         fileMenu.addAction(self.newAction)
 
-        self.openAction = QAction('&Open...', self)
+        self.openAction = QAction('&Open Project...', self)
         self.openAction.triggered.connect(self.open_project)
         self.openAction.setShortcut('Ctrl+O')
         fileMenu.addAction(self.openAction)
+
+        self.openArbitraryZarrAction = QAction('Open Zarr...', self)
+        self.openArbitraryZarrAction.triggered.connect(self.openArbitraryZarr)
+        fileMenu.addAction(self.openArbitraryZarrAction)
 
         self.saveAction = QAction('&Save', self)
         self.saveAction.triggered.connect(self.save_project)
@@ -3638,14 +3672,10 @@ class MainWindow(QMainWindow):
         self.splitter_bottom_horizontal.addWidget(self.layer_details_widget)
         self.splitter_bottom_horizontal.addWidget(self.afm_widget)
         self.splitter_bottom_horizontal.addWidget(self.history_widget)
-        self.splitter_bottom_horizontal.setCollapsible(0, False)
+        self.splitter_bottom_horizontal.setCollapsible(0, True)
         self.splitter_bottom_horizontal.setCollapsible(1, True)
-        self.splitter_bottom_horizontal.setCollapsible(2, False)
+        self.splitter_bottom_horizontal.setCollapsible(2, True)
         self.splitter_bottom_horizontal.setCollapsible(3, True)
-        self.splitter_bottom_horizontal.setCollapsible(4, False)
-        self.splitter_bottom_horizontal.setCollapsible(5, True)
-        self.splitter_bottom_horizontal.setCollapsible(6, False)
-        self.splitter_bottom_horizontal.setCollapsible(7, True)
 
         self.layer_details_widget.hide()
         self.afm_widget.hide()
