@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 
-"""WARNING: Because this web server permits cross-origin requests, it exposes any
+'''WARNING: Because this web server permits cross-origin requests, it exposes any
 data in the directory that is served to any web page running on a machine that
-can connect to the web server"""
-'''
-old app:
-type(match_point_data) = <class 'list'>
-match_point_data = [584.021484375, 696.3277343750001]
+can connect to the web server'''
 
-cfg.main_window.ng_workers['scale_4'].refLV.info()
-
-'''
 
 import os
 import copy
@@ -20,10 +13,6 @@ import logging
 import datetime
 import argparse
 import traceback
-import asyncio
-import tornado
-import concurrent
-import threading
 from decimal import Decimal
 from math import floor
 import numpy as np
@@ -35,7 +24,7 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
-from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string, track
+from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string
 from src.shaders import ann_shader
 
 __all__ = ['NgHost']
@@ -58,6 +47,7 @@ class NgHost(QObject):
         self.ref_pts = []
         self.base_pts = []
         self.src = src
+        self.bind = bind
         self.port = port
         self.scale = scale
         scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
@@ -97,7 +87,7 @@ class NgHost(QObject):
         return obj_to_string(self)
 
     def __repr__(self):
-        return copy.deepcopy(cfg.viewers.state)
+        return copy.deepcopy(cfg.viewer.state)
 
     @Slot()
     def run(self):
@@ -198,10 +188,8 @@ class NgHost(QObject):
 
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
-        ng.set_server_bind_address(bind_address='127.0.0.1')
+        ng.set_server_bind_address(bind_address=self.bind)
 
-        # tempdir = tempfile.mkdtemp()
-        # self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
         self.url_viewer = str(cfg.viewer)
 
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
@@ -221,15 +209,11 @@ class NgHost(QObject):
 
         if widget_size is None:
             logger.info('Getting widget size from thread...')
-            # widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
             widget_size = cfg.main_window.ng_browser.geometry().getRect()
-        widget_height = widget_size[3] - 36 # pixels. subtract height of Neuroglancer toolbar
+        widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
 
         if self.arrangement == 1:
-            if is_aligned:
-                widget_width = widget_size[2] / 3
-            else:
-                widget_width = widget_size[2] / 2
+            widget_width = widget_size[2] / 3 if is_aligned else widget_size[2] / 2
         else:
             widget_width = widget_size[2] / 2
 
@@ -239,9 +223,9 @@ class NgHost(QObject):
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
         css = '%.2E' % Decimal(cross_section_scale)
-        string = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
+        text = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
                  (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
-        logger.info(string)
+        logger.info(text)
         logger.info('widget size  =%s' % str(widget_size))
         logger.info('arrangement  =%d' % self.arrangement)
         logger.info('is_aligned   =%s' % is_aligned)
@@ -260,7 +244,6 @@ class NgHost(QObject):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.concurrent_downloads = 512
-            s.title = 'Test'
             s.cross_section_scale = cross_section_scale * adjustment
             logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
             s.show_scale_bar = show_scale_bar
@@ -403,16 +386,11 @@ class NgHost(QObject):
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            if cfg.THEME == 0:
-                s.crossSectionBackgroundColor = '#808080'
-            elif cfg.THEME == 1:
-                s.crossSectionBackgroundColor = '#FFFFE0'
-            elif cfg.THEME == 2:
-                s.crossSectionBackgroundColor = '#808080'  # 128 grey
-            elif cfg.THEME == 3:
-                s.crossSectionBackgroundColor = '#0C0C0C'
-            else:
-                s.crossSectionBackgroundColor = '#004060'
+            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
+            elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
+            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080'  # 128 grey
+            elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
+            else:                 s.crossSectionBackgroundColor = '#004060'
 
         if self.mp_mode:
             mp_key_bindings = [
@@ -437,27 +415,12 @@ class NgHost(QObject):
 
         cfg.refLV.invalidate()
         cfg.baseLV.invalidate()
-        if is_aligned:
-            cfg.alLV.invalidate()
+        if is_aligned: cfg.alLV.invalidate()
 
         cfg.url = str(cfg.viewer)
 
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
-
-    # def _toggle_fullscreen(self, s):
-    #     self._is_fullscreen = not self._is_fullscreen
-    #     with cfg.viewer.config_state.txn() as s:
-    #         if self._is_fullscreen:
-    #             s.show_ui_controls = False
-    #             s.show_panel_borders = False
-    #             s.viewer_size = [self.fullscreen_width, self.fullscreen_height]
-    #             s.scale_bar_options.scale_factor = self.fullscreen_scale_bar_scale
-    #         else:
-    #             s.show_ui_controls = True
-    #             s.show_panel_borders = True
-    #             s.viewer_size = None
-    #             s.scale_bar_options.scale_factor = 1
 
     def on_state_changed(self):
         try:
@@ -467,8 +430,6 @@ class NgHost(QObject):
                 return
             else:
                 self._layer = request_layer
-            # if not -1 < request_layer < cfg.data.n_layers():
-            #     logger.warning(f'Bad layer index requested ({request_layer}) - Canceling Signal!')
             self.signals.stateChanged.emit(request_layer)
             if self.mp_mode:
                 self.clear_mp_buffer()
@@ -595,14 +556,6 @@ class NgHost(QObject):
         ss.capture()
 
     def url(self):
-        while True:
-            logger.debug('Still looking for an open port...')
-            if self.url_viewer is not None:
-                logger.debug('An Open Port Was Found')
-                # return self.url_viewer
-                return cfg.url
-
-    def get_viewer_url(self):
         return cfg.url
 
     def show_state(self):
@@ -612,59 +565,6 @@ class NgHost(QObject):
         logger.info(f'Selected Values:\n{s.selected_values}')
         logger.info(f'Current Layer:\n{cfg.viewer.state.position[0]}')
         logger.info(f'Viewer State:\n{cfg.viewer.state}')
-
-
-class CorsStaticFileHandler(tornado.web.StaticFileHandler):
-
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
-
-
-def _start_server(bind_address: str, output_dir: str) -> int:
-
-    token = neuroglancer.random_token.make_random_token()
-    handlers = [
-        (fr'/{token}/(.*)', CorsStaticFileHandler, {
-            'path': output_dir
-        }),
-    ]
-    settings = {}
-    app = tornado.web.Application(handlers, settings=settings)
-
-    http_server = tornado.httpserver.HTTPServer(app)
-    sockets = tornado.netutil.bind_sockets(port=0, address=bind_address)
-    http_server.add_sockets(sockets)
-    actual_port = sockets[0].getsockname()[1]
-    url = neuroglancer.server._get_server_url(bind_address, actual_port)
-    return f'{url}/{token}'
-
-
-def launch_server(bind_address: str, output_dir: str) -> int:
-    server_url_future = concurrent.futures.Future()
-
-    def run_server():
-        try:
-            ioloop = tornado.platform.asyncio.AsyncIOLoop()
-            ioloop.make_current()
-            asyncio.set_event_loop(ioloop.asyncio_loop)
-            server_url_future.set_result(_start_server(bind_address, output_dir))
-        except Exception as e:
-            logger.warning('LAUNCH SERVER EXCEPTION')
-            server_url_future.set_exception(e)
-            return
-        ioloop.start()
-        ioloop.close()
-
-    thread = threading.Thread(target=run_server)
-    thread.daemon = True
-    thread.start()
-    return server_url_future.result()
 
 
 if __name__ == '__main__':
