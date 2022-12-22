@@ -13,22 +13,17 @@ cfg.main_window.ng_workers['scale_4'].refLV.info()
 '''
 
 import os
-import sys
 import copy
 import pprint
-import shutil
-import atexit
 import inspect
 import logging
 import datetime
 import argparse
 import traceback
-import tempfile
 import asyncio
 import tornado
 import concurrent
 import threading
-from math import floor
 from decimal import Decimal
 from math import floor
 import numpy as np
@@ -62,19 +57,13 @@ class WorkerSignals(QObject):
     mpUpdate = Signal()
 
 
-# class NgHost(QRunnable):
-# class NgHost(QRunnable):
 class NgHost(QObject):
-    # stateChanged = Signal(str)
-
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
-        # super(NgHost, self).__init__()
         QObject.__init__(self)
         self.parent = parent
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
-        # cfg.viewer = ng.Viewer()
         self.url_viewer = None
         self.ref_pts = []
         self.base_pts = []
@@ -98,7 +87,6 @@ class NgHost(QObject):
         else:
             self.unal_name = os.path.join(src, self.src_url)
         self.src_size = cfg.data.image_size(s=self.scale)
-        # self.mp_colors = ['#0072b2'] * 2 + ['#f0e442'] * 2 + ['#FF0000'] * 2
         self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
@@ -130,25 +118,8 @@ class NgHost(QObject):
         # Retrieve args/kwargs here; and fire processing using them
         try:
             cfg.viewer = ng.Viewer()
-            # result = self.fn(
-            #     *self.args, **self.kwargs
-            # )
         except:
             traceback.print_exc()
-
-
-        # cfg.viewer = ng.Viewer()
-        # launch_server(bind_address='127.0.0.1')
-
-        # if cfg.USE_TORNADO:
-        #     logger.info('Launching Tornado HTTP Server for Scale %d...' % self.sf)
-        #     try:
-        #         tempdir = tempfile.mkdtemp()
-        #         atexit.register(shutil.rmtree, tempdir)
-        #         self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-        #     except:
-        #         print_exception()
-
 
     def request_layer(self):
         return floor(cfg.viewer.state.position[0])
@@ -233,8 +204,7 @@ class NgHost(QObject):
         logger.info(f'al_url        : {self.al_url}')
         logger.info(f'src_url       : {self.src_url}')
 
-        # Force
-        if cfg.data.is_mendenhall():
+        if cfg.data.is_mendenhall():  # Force
             is_aligned = True
 
         has_bb = cfg.data.has_bb(s=self.scale)
@@ -244,16 +214,10 @@ class NgHost(QObject):
 
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
-
-        ######################
-        # cfg.viewer.volume_manager.register_volume()
-        ######################
-
         ng.set_server_bind_address(bind_address='127.0.0.1')
 
         # tempdir = tempfile.mkdtemp()
         # self.server_url = launch_server(bind_address='127.0.0.1', output_dir=tempdir)
-
         self.url_viewer = str(cfg.viewer)
 
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
@@ -320,8 +284,6 @@ class NgHost(QObject):
             # 8192/276 = 29.68 nm / pixel
 
             adjustment = 1.04
-            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
-
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.concurrent_downloads = 512
@@ -337,31 +299,10 @@ class NgHost(QObject):
             s.show_axis_lines = show_axis_lines
             # s.perspective_orientation =
             # chunkshape = cfg.data.chunkshape()
-            # s.relative_display_scales = {'z': 50.0,'y': 2.0,'x': 2.0} #Todo make this better
-            # s.relative_display_scales = 25.0
             # s.relative_display_scales = [32, 1, 1] #Todo make this better
-
             # s.dimensions = self.coordinate_space # ? causes s to bug out, why?
 
             if cfg.USE_TENSORSTORE:
-                # Experimental Match Point Mode Code
-                # if self.mp_mode:
-                # self.coordinate_space = ng.CoordinateSpace(names=['height', 'width', 'channel'], units='nm',
-                #                                            scales=[2, 2, 1])
-                # unal_tensor = get_zarr_tensor(self.unal_name).result()
-                # self.nglayout = 'yx'
-                # layer_base = cfg.data.layer()
-                # layer_ref = layer_base - 1
-                # cfg.refLV = ng.LocalVolume(
-                #     data=get_tensor_from_tiff(s='scale_1', l=layer_ref),
-                #     dimensions=self.coordinate_space,
-                #     voxel_offset=[0, ] * 3,  # voxel offset of 1
-                # )
-                # cfg.baseLV = ng.LocalVolume(
-                #     data=get_tensor_from_tiff(s='scale_1', l=layer_base),
-                #     dimensions=self.coordinate_space,
-                #     voxel_offset=[0, ] * 3,  # voxel offset of 1
-                # )
                 try:
                     cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
                 except:
@@ -375,7 +316,6 @@ class NgHost(QObject):
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[1, y_nudge, x_nudge],
-                    # voxel_offset=[1, 0, 0],
                     downsampling=None
                 )
                 cfg.baseLV = ng.LocalVolume(
@@ -383,7 +323,6 @@ class NgHost(QObject):
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, y_nudge, x_nudge],
-                    # voxel_offset=[0, 0, 0],
                     downsampling=None
                 )
                 if is_aligned:
@@ -393,8 +332,6 @@ class NgHost(QObject):
                         print_exception()
                         logger.error(f'Unable To Get Zarr Tensor, Aligned, Scale {self.sf}')
                     self.json_al_dataset = cfg.al_tensor.spec().to_json()
-                    # pprint.pprint(self.json_al_dataset)
-                    # logger.info(self.json_al_dataset)
                     cfg.alLV = ng.LocalVolume(
                         data=cfg.al_tensor,
                         volume_type='image',
@@ -473,10 +410,8 @@ class NgHost(QObject):
                 rect = cfg.data.bounding_rect(s=self.scale)
                 pos_x, pos_y = rect[3] / 2, rect[2] / 2
             else:
-                # img_x, img_y = self.src_size[1] / 2, self.src_size[0] / 2
                 pos_x, pos_y = self.src_size[1] / 2, self.src_size[0] / 2
 
-            # s.position = [cfg.data.layer(), pos_x, pos_y]
             s.position = [cfg.data.layer(), pos_x, pos_y]
 
             if self.arrangement == 1:
@@ -513,12 +448,10 @@ class NgHost(QObject):
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            # if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#1B1E23'
             if cfg.THEME == 0:
                 s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 1:
                 s.crossSectionBackgroundColor = '#FFFFE0'
-            # elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#6D7D77'
             elif cfg.THEME == 2:
                 s.crossSectionBackgroundColor = '#808080'  # 128 grey
             elif cfg.THEME == 3:
@@ -554,13 +487,9 @@ class NgHost(QObject):
             cfg.alLV.invalidate()
 
         cfg.url = str(cfg.viewer)
-        # logger.info(f'cfg.url: {cfg.url}')
-
 
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
-
-        # cfg.main_window.hud.done()
 
     # def _toggle_fullscreen(self, s):
     #     self._is_fullscreen = not self._is_fullscreen
@@ -584,11 +513,8 @@ class NgHost(QObject):
                 return
             else:
                 self._layer = request_layer
-
-            # logger.info(f'\nState changed, request_layer: {request_layer}, cfg.data.layer(): {cfg.data.layer()}')
             # if not -1 < request_layer < cfg.data.n_layers():
             #     logger.warning(f'Bad layer index requested ({request_layer}) - Canceling Signal!')
-
             self.signals.stateChanged.emit(request_layer)
             if self.mp_mode:
                 self.clear_mp_buffer()
@@ -614,11 +540,7 @@ class NgHost(QObject):
 
         except:
             print_exception()
-            # with cfg.viewer.txn() as s:
-            #     s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
-            #     s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
-            # logger.info('Zeroing matchpoint ticker')
-            # return
+
         n_mp_pairs = floor(self.mp_count / 2)
         props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]
         with cfg.viewer.txn() as s:
@@ -718,46 +640,6 @@ class NgHost(QObject):
         ss = ScreenshotSaver(viewer=cfg.viewer, directory=dir)
         ss.capture()
 
-    # # Note: odd mapping of axes
-    # def set_layout_yz(self):
-    #     self.nglayout = 'xy'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_xy(self):
-    #     self.nglayout = 'yz'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_xz(self):
-    #     self.nglayout = 'xz'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_xy_3d(self):
-    #     self.nglayout = 'yz-3d'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_yz_3d(self):
-    #     self.nglayout = 'xy-3d'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_xz_3d(self):
-    #     self.nglayout = 'xz-3d'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_3d(self):
-    #     self.nglayout = '3d'
-    #     self.initViewer()
-    #
-    #
-    # def set_layout_4panel(self):
-    #     self.nglayout = '4panel'
-    #     self.initViewer()
-
     def url(self):
         while True:
             logger.debug('Still looking for an open port...')
@@ -767,11 +649,7 @@ class NgHost(QObject):
                 return cfg.url
 
     def get_viewer_url(self):
-        '''From extend_segments example'''
-        # return self.url_viewer
         return cfg.url
-        # return cfg.viewer.get_viewer_url()
-        # return self.server_url
 
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))
@@ -780,7 +658,6 @@ class NgHost(QObject):
         logger.info(f'Selected Values:\n{s.selected_values}')
         logger.info(f'Current Layer:\n{cfg.viewer.state.position[0]}')
         logger.info(f'Viewer State:\n{cfg.viewer.state}')
-
 
 
 class CorsStaticFileHandler(tornado.web.StaticFileHandler):
@@ -834,11 +711,6 @@ def launch_server(bind_address: str, output_dir: str) -> int:
     thread.daemon = True
     thread.start()
     return server_url_future.result()
-
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -905,9 +777,6 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
         # cfg.viewer.shared_state.add_changed_callback(
         #     lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
-
-
-
         13:00:28 INFO [http_ng_server.initViewer:212] 
         {'driver': 'zarr', 'dtype': 'uint8', 'kvstore': 
         {'driver': 'file', 'path': '/Users/joelyancey/glanceem_swift/test_projects/test1/img_src.zarr/s4/'}, 
@@ -918,27 +787,4 @@ issues of rounding. I have been looking into supporting this in tensorstore, but
         'recheck_cached_data': 'open', 'transform': 
         {'input_exclusive_max': [[100], [1024], [1024]], 'input_inclusive_min': [0, 0, 0]}}
 
-'''
-
-'''
-
-All signs point to your system being out of resources it needs to launch a thread (probably memory, 
-but you could be leaking threads or other resources). You could use OS system monitoring tools (top 
-for Linux, Resource Monitor for windows) to look at the number of threads and memory usage to track 
-this down, but I would recommend you just use an easier, more efficient programming pattern.
-
-While not a perfect comparison, you generally are seeing the C10K problem and it states that blocking 
-threads waiting for results do not s well and can be prone to leaking errors like this. The 
-solution was to implement Async IO patterns (one blocking thread that launches other workers) and 
-this is pretty straight forward to do in Web Servers.
-
-A framework like pythons aiohttp should be a good fit for what you want. You just need a handler 
-that can get the ID of the remote code and the result. The framework should hopefully take care of 
-the scaling for you.
-
-So in your case you can keep your launching code, but after it starts the process on the remote machine, 
-kill the thread. Have the remote code then send an HTTP message to your server with 1) its ID and 2) 
-its result. Throw in a little extra code to ask it to try again if it does not get a 200 'OK' Status 
-code and you should be in much better shape.
-https://stackoverflow.com/questions/63532917/python-cant-start-new-thread-multiprocessing
 '''
