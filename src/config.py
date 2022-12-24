@@ -12,6 +12,7 @@ main_window = None
 opengllogger = None
 selected = None
 ng_worker = None
+extra_ng_workers = []
 viewer = None
 refLV = None
 baseLV = None

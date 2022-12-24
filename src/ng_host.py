@@ -256,7 +256,9 @@ class NgHost(QObject):
                     cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
                 except:
                     print_exception()
-                    logger.error(f'Unable To Get Zarr Tensor, Source, Scale {self.sf}')
+                    logger.error(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}')
+                    cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}',
+                                             logging.ERROR)
                 self.json_unal_dataset = cfg.unal_tensor.spec().to_json()
                 pprint.pprint(self.json_unal_dataset)
                 logger.info(self.json_unal_dataset)
@@ -279,7 +281,9 @@ class NgHost(QObject):
                         cfg.al_tensor = get_zarr_tensor(self.al_name).result()
                     except:
                         print_exception()
-                        logger.error(f'Unable To Get Zarr Tensor, Aligned, Scale {self.sf}')
+                        logger.error(f'Invalid Zarr. Unable To Create Tensor, Aligned Zarr, Scale {self.sf}')
+                        cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Aligned Zarr, Scale {self.sf}',
+                                                 logging.ERROR)
                     self.json_al_dataset = cfg.al_tensor.spec().to_json()
                     cfg.alLV = ng.LocalVolume(
                         data=cfg.al_tensor,

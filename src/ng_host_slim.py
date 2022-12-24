@@ -163,7 +163,11 @@ class NgHostSlim(QObject):
                 print('TensorStore Object Created Successfully!')
             except Exception as e:
                 print(e)
-                print('Unable To Get Zarr Tensor')
+                try:
+                    logger.error('Invalid Zarr. Unable To Create Tensor for Zarr Array', logging.ERROR)
+                    cfg.main_window.hud.post('Invalid Zarr. Unable To Create Tensor for Zarr Array', logging.ERROR)
+                except:
+                    pass
             # pprint.pprint(cfg.tensor.spec().to_json())
             cfg.LV = ng.LocalVolume(
                 data=cfg.tensor,

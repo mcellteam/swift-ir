@@ -31,7 +31,7 @@ from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-    QShortcut, QGraphicsOpacityEffect, QDialog, QStyle, QCheckBox, QSpinBox, \
+    QShortcut, QGraphicsOpacityEffect, QDialog, QStyle, QCheckBox, QSpinBox, QTabBar, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser
 
 import src.config as cfg
@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
         self.initThreadpool(timeout=3000)
         self.initImageAllocations()
         self.initOpenGlContext()
-        self.initWebEngine()
+        self.initNgWebEngine()
         self.initPythonConsole()
         self.initStatusBar()
         self.initPbar()
@@ -160,9 +160,9 @@ class MainWindow(QMainWindow):
         self.context.setFormat(QSurfaceFormat())
 
 
-    def initWebEngine(self):
-        # Performance with settings: Function 'initWebEngine' executed in 0.1939s
-        # Without: Function 'initWebEngine' executed in 0.0001s
+    def initNgWebEngine(self):
+        # Performance with settings: Function 'initNgWebEngine' executed in 0.1939s
+        # Without: Function 'initNgWebEngine' executed in 0.0001s
         logger.info('')
         self.ng_browser = QWebEngineView()
         # self.browser.setPage(CustomWebEnginePage(self)) # open links in new window
@@ -173,6 +173,14 @@ class MainWindow(QMainWindow):
         self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+
+    def initWebEngine(self, webengine):
+        logger.info('')
+        webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
     def initPrivateMembers(self):
@@ -188,6 +196,9 @@ class MainWindow(QMainWindow):
         self._jump_to_best_ticker = 0
         self._snr_by_scale = dict() #Todo
         # cfg.ng_workers = {}
+        self._extra_browsers = []
+        self._n_base_tabs = 4
+        self._n_extra_tabs = 0
 
 
     def initStyle(self):
@@ -247,11 +258,11 @@ class MainWindow(QMainWindow):
             # # self.image_panel_stack_widget.setCurrentIndex(2)
             # self.image_panel_stack_widget.setCurrentIndex(1)
             pass
-
-        if cfg.HEADLESS:
-            self.tabs_main.setTabVisible(0, False)
-        else:
-            self.tabs_main.setTabVisible(0, True)
+        #
+        # if cfg.HEADLESS:
+        #     self.tabs_main.setTabVisible(0, False)
+        # else:
+        #     self.tabs_main.setTabVisible(0, True)
 
 
     def update_ng_hyperlink(self):
@@ -365,7 +376,7 @@ class MainWindow(QMainWindow):
         self.updateBanner()
         self.updateEnabledButtons()
         self.project_model.load(cfg.data.to_dict())
-        self.initNgServer(scales=[cfg.data.scale()]) #1203+
+        self.initNgServer(scales=[cfg.data.scale()])
         self.app.processEvents()
 
 
@@ -990,15 +1001,11 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         s = cfg.data.scale()
-        # self.shutdownNeuroglancer() #1203+
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
-        # self.initNgServer(scales=[s])
-        # self.refreshNeuroglancerURL(s=cfg.data.s())
         if cfg.SIMULTANEOUS_SERVERS:
             self.initNgViewer(scales=[cfg.data.scale()])
         else:
             self.initNgServer()
-            # self.initNgViewer()
         self.jump_to(cfg.data.layer())
         self.dataUpdateWidgets()
         self.updateHistoryListWidget(s=s)
@@ -1006,11 +1013,9 @@ class MainWindow(QMainWindow):
         self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
-        # self.update_ng_hyperlink()
         if self.tabs_main.currentIndex() == 1:
             self.layer_view_widget.set_data()
         self.dataUpdateWidgets()
-
 
 
     @Slot()
@@ -1397,39 +1402,50 @@ class MainWindow(QMainWindow):
         if not cfg.data:
             logger.info('Cant change layout, no data is loaded')
             return
+        cur_tab_index = self.tabs_main.currentIndex()
+        if cur_tab_index == 0:
+            _ng_worker = cfg.ng_worker
+        elif self.tabs_main.currentIndex() >= self._n_base_tabs:
+            cur_extra_tab_index = cur_tab_index - self._n_base_tabs
+            _ng_worker = cfg.extra_ng_workers[cur_extra_tab_index]
+        else:
+            logger.warning('Not on a Neuroglancer tab, nothing to do - Returning...')
+            #Todo: prevent changing of NG layout when not on an NG tab
+            return
+
         s = cfg.data.scale()
         try:
             if self.toolbar_layout_combobox.currentText() == 'xy':
-                cfg.ng_worker.nglayout = 'yz'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = 'yz'
+                _ng_worker.initViewer()
                 self.ngLayout1Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'yz':
-                cfg.ng_worker.nglayout = 'xy'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = 'xy'
+                _ng_worker.initViewer()
                 self.ngLayout2Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'xz':
-                cfg.ng_worker.nglayout = 'xz'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = 'xz'
+                _ng_worker.initViewer()
                 self.ngLayout3Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'xy-3d':
-                cfg.ng_worker.nglayout = 'yz-3d'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = 'yz-3d'
+                _ng_worker.initViewer()
                 self.ngLayout4Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'yz-3d':
-                cfg.ng_worker.nglayout = 'xy-3d'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = 'xy-3d'
+                _ng_worker.initViewer()
                 self.ngLayout5Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == 'xz-3d':
-                cfg.ng_worker.nglayout = 'xz-3d'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = 'xz-3d'
+                _ng_worker.initViewer()
                 self.ngLayout6Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == '3d':
-                cfg.ng_worker.nglayout = '3d'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = '3d'
+                _ng_worker.initViewer()
                 self.ngLayout7Action.setChecked(True)
             elif self.toolbar_layout_combobox.currentText() == '4panel':
-                cfg.ng_worker.nglayout = '4panel'
-                cfg.ng_worker.initViewer()
+                _ng_worker.nglayout = '4panel'
+                _ng_worker.initViewer()
                 self.ngLayout8Action.setChecked(True)
             self.refreshNeuroglancerURL()
         except:
@@ -1723,7 +1739,7 @@ class MainWindow(QMainWindow):
 
     def save_project(self):
         if not cfg.data:
-            self.hud.post('Nothing To Save')
+            self.hud.post('Nothing To Save', logging.WARNING)
             return
         self.set_status('Saving...')
         self.hud.post('Saving Project...')
@@ -2097,9 +2113,9 @@ class MainWindow(QMainWindow):
                 cfg.ng_worker.signals.stateChanged.connect(lambda l: self.dataUpdateWidgets(ng_layer=l))
 
                 self.refreshNeuroglancerURL(s=s)  # Important
+                self.tabs_main.setCurrentIndex(0)
             # self.refreshNeuroglancerURL() #Important
             self.toolbar_layout_combobox.setCurrentText('xy')
-            self.toolbar_layout_combobox.currentTextChanged.connect(self.fn_ng_layout_combobox)
         except:
             print_exception()
 
@@ -2545,6 +2561,7 @@ class MainWindow(QMainWindow):
         self.toolbar_layout_combobox = QComboBox()
         self.toolbar_layout_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.toolbar_layout_combobox.setFixedSize(QSize(68, height))
+        self.toolbar_layout_combobox.currentTextChanged.connect(self.fn_ng_layout_combobox)
         self.toolbar_view_hlayout = QHBoxLayout()
         self.toolbar_view_hlayout.addWidget(self.toolbar_layout_label, alignment=Qt.AlignmentFlag.AlignRight)
         self.toolbar_view_hlayout.addWidget(self.toolbar_layout_combobox)
@@ -2606,39 +2623,72 @@ class MainWindow(QMainWindow):
 
 
     def openArbitraryZarr(self):
-        # if not ng.is_server_running():
-        #     logger.warning('Neuroglancer is not running')
-        #     return
-        # cfg.data = None
         self.browser_overlay_widget.hide()
         try:
             path = QFileDialog.getExistingDirectory(self, 'Select Zarr Directory')
         except:
             print_exception()
             return
+        logger.info(f'path: {path}')
 
         try:
             with open(os.path.join(path, '.zarray')) as j:
                 self.zarray = json.load(j)
         except:
             logger.warning("'.zarray' Not Found. Invalid Path.")
-            self.hud.post("'.zarray' Not Found. Invalid Path.")
+            self.hud.post("'.zarray' Not Found. Invalid Path.", logging.WARNING)
             return
         pprint.pprint(self.zarray)
         shape = self.zarray['shape']
         chunks = self.zarray['chunks']
         logger.info(f'Shape  : {shape}')
         logger.info(f'Chunks : {chunks}')
-        cfg.ng_worker = NgHostSlim(parent=self,
-                            path=path,
-                            shape=shape,
-                            )
-        cfg.ng_worker.initViewer()
+
+        logger.info(f'self._n_extra_tabs = {self._n_extra_tabs}')
+        logger.info(f'len(self._extra_browsers) = {len(self._extra_browsers)}')
+        logger.info(f'len(cfg.extra_ng_workers) = {len(cfg.extra_ng_workers)}')
+
+        assert self._n_extra_tabs == len(self._extra_browsers)
+        assert self._n_extra_tabs == len(cfg.extra_ng_workers)
+
+        # self.tabs_main.addTab(self.image_panel_stack_widget, ' 3DEMview ')
+        self._extra_browsers.append(QWebEngineView())
+        self.initWebEngine(self._extra_browsers[self._n_extra_tabs])
+        # tab_name = ' ' + os.path.basename(path) + ' '
+        tab_name = ' ' + os.path.basename(path) + ' '
+        self.tabs_main.addTab(self._extra_browsers[self._n_extra_tabs], tab_name)
+
+        _ng_worker = NgHostSlim(parent=self,
+                                path=path,
+                                shape=shape,
+                                )
+        cfg.extra_ng_workers.append(_ng_worker)
+        # cfg.ng_worker = NgHostSlim(parent=self,
+        #                     path=path,
+        #                     shape=shape,
+        #                     )
+        _ng_worker.initViewer()
         self.toolbar_layout_combobox.setCurrentText('xy')
         # self.toolbar_layout_combobox.currentTextChanged.connect(self.fn_ng_layout_combobox)
-        self.ng_browser.setUrl(QUrl(str(cfg.viewer)))
-        self.ng_browser.setFocus()
+        self._extra_browsers[self._n_extra_tabs].setUrl(QUrl(str(cfg.viewer)))
+        self.tabs_main.setCurrentIndex(self._n_base_tabs + self._n_extra_tabs)
+        self._extra_browsers[self._n_extra_tabs].setFocus()
 
+        self._n_extra_tabs += 1
+
+    def closeTab(self, currentIndex):
+        # currentQWidget = self.widget(currentIndex)
+        # currentQWidget.deleteLater()
+        extra_tab_index = currentIndex - self._n_base_tabs
+        logger.info(f'extra_tab_index     : {extra_tab_index}')
+        logger.info(f'Removing tab index  : {currentIndex}...')
+        self.tabs_main.removeTab(currentIndex)
+        logger.info(f'Closing/Deleting extra browser index: {extra_tab_index}...')
+        self._extra_browsers[extra_tab_index].close()
+        del self._extra_browsers[extra_tab_index]
+        logger.info(f'Deleting cfg.extra_ng_worker, index: {extra_tab_index}')
+        del cfg.extra_ng_workers[extra_tab_index]
+        self._n_extra_tabs -= 1
 
 
     def new_mendenhall_protocol(self):
@@ -2696,9 +2746,9 @@ class MainWindow(QMainWindow):
         # for i, layer in enumerate(cfg.data.alstack()):
         #     [1]['images']['ref']['filename']
         self.save_project_to_file()
+        self.save_project_to_file()
 
 
-    #@timer
     def initMenu(self):
         '''Initialize Menu'''
         logger.info('')
@@ -2718,8 +2768,9 @@ class MainWindow(QMainWindow):
         self.openAction.setShortcut('Ctrl+O')
         fileMenu.addAction(self.openAction)
 
-        self.openArbitraryZarrAction = QAction('Open Zarr...', self)
+        self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
         self.openArbitraryZarrAction.triggered.connect(self.openArbitraryZarr)
+        self.openArbitraryZarrAction.setShortcut('Ctrl+Z')
         fileMenu.addAction(self.openArbitraryZarrAction)
 
         self.saveAction = QAction('&Save', self)
@@ -2796,7 +2847,6 @@ class MainWindow(QMainWindow):
         self.ngStopAction = QAction('Stop', self)
         self.ngStopAction.triggered.connect(self.stopNgServer)
         neuroglancerMenu.addAction(self.ngStopAction)
-
 
         ngLayoutMenu = neuroglancerMenu.addMenu("Layout")
 
@@ -3300,7 +3350,6 @@ class MainWindow(QMainWindow):
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect)
         self.toggle_bounding_rect.setEnabled(False)
 
-        logger.info('2')
         tip = "Recomputes the cumulative affine and generates new aligned images" \
               "based on the current Null Bias and Bounding Rectangle presets."
         self.regenerate_button = QPushButton('Regenerate')
@@ -3651,11 +3700,17 @@ class MainWindow(QMainWindow):
 
         '''Tab Widget'''
         self.tabs_main = QTabWidget()
+        self.tabs_main.setTabsClosable(True)
         self.tabs_main.setObjectName('tabs_main')
         self.tabs_main.addTab(self.image_panel_stack_widget, ' 3DEMview ')
         self.tabs_main.addTab(self.layer_view_container, ' Stackview ')
         self.tabs_main.addTab(self.projectdata_treeview_widget, ' Treeview ')
         self.tabs_main.addTab(self.snr_plot_widget, ' SNR Plot ')
+        self.tabs_main.tabBar().setTabButton(0, QTabBar.RightSide,None)
+        self.tabs_main.tabBar().setTabButton(1, QTabBar.RightSide,None)
+        self.tabs_main.tabBar().setTabButton(2, QTabBar.RightSide,None)
+        self.tabs_main.tabBar().setTabButton(3, QTabBar.RightSide,None)
+        self.tabs_main.tabCloseRequested.connect(self.closeTab)
         self.tabs_main.currentChanged.connect(self.onTabChange)
 
         '''Bottom Horizontal Splitter'''
@@ -3921,9 +3976,7 @@ class MainWindow(QMainWindow):
         logger.info("Returning Home...")
         self.main_stack_widget.setCurrentIndex(0)
         if cfg.data:
-            self.image_panel_stack_widget.setCurrentIndex(1)
-        # else:
-        #     self.image_panel_stack_widget.setCurrentIndex(2)
+            self.image_panel_stack_widget.setCurrentIndex(1) # was 2
 
 
     def eventFilter(self, source, event):
