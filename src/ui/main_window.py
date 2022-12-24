@@ -1040,6 +1040,10 @@ class MainWindow(QMainWindow):
             logger.warning('No need to update the interface')
             return
 
+        if self.tabs_main.currentIndex() >= self._n_base_tabs:
+            logger.info('Viewing arbitrary Zarr - Canceling dataUpdateWidgets...')
+            return
+
         # if cfg.data.is_mendenhall():
         #     self.browser_overlay_widget.hide()
         #     return
@@ -1101,6 +1105,7 @@ class MainWindow(QMainWindow):
     def updateTextWidgetA(self, s=None, l=None):
         if s == None: s = cfg.data.scale()
         if l == None: l = cfg.data.layer()
+
         name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
         skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
         completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
