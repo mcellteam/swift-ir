@@ -2062,7 +2062,7 @@ class MainWindow(QMainWindow):
         # self.set_status('Starting Neuroglancer...')
         # cfg.ng_workers = {}
 
-        self.shutdownNeuroglancer() ###########---------
+        # self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
                 self.hud.post(f'Loading Viewer {cfg.data.scale_pretty(s=s)}...')
