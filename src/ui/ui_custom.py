@@ -11,7 +11,7 @@ class VerticalLabel(QLabel):
         QLabel.__init__(self, text, *args)
 
         self.text = text
-        self.setStyleSheet("font-size: 10px;")
+        self.setStyleSheet("font-size: 12px;")
         font = QFont()
         font.setBold(True)
         self.setFont(font)

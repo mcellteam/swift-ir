@@ -1,6 +1,7 @@
 #1B1E23 - Duron Black of Night (https://encycolorpedia.com/1b1e23)
 #141414 - Chinese Black (darker than Duron)
 #F3F6FB - New Snow White (https://www.color-name.com/snow-white.color)
+#004060 - drafting blue
 #808080 - #128 grey
 #2e2e2e - 18% grey
 #2774AE - UCLA Blue
