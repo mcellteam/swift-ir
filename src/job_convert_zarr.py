@@ -10,7 +10,7 @@ Joel Yancey 2022-08-15
 
 import sys
 import zarr
-from tifffile import tifffile
+# from tifffile import tifffile
 import numcodecs
 numcodecs.blosc.use_threads = False
 from libtiff import TIFF, TIFFfile, TIFFimage
