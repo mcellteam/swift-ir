@@ -1532,7 +1532,7 @@ class MainWindow(QMainWindow):
 
         cfg.data = None #+
         self.initView()
-        self.hud.clear_display()
+        # self.hud.clear_display()
         self.clearUIDetails()
         # self.image_panel_stack_widget.setCurrentIndex(2)
         self.image_panel_stack_widget.setCurrentIndex(1)
