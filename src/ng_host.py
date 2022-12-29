@@ -51,7 +51,7 @@ class NgHost(QObject):
         self.port = port
         self.scale = scale
         scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
-        logger.info(f'scales: {scales}')
+        logger.info(f'voxel size: {scales}')
         self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
         self.sf = get_scale_val(scale)  # scale factor
         self.ref_l = 'ref_%d' % self.sf
