@@ -233,7 +233,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     output_text = f'Creating Zarr...' \
                   f'\n{path_relative}' \
                   f'\n └ {group}({name}) {dtype} {cname}/{clevel}' \
-                  f'\n shape={str(shape)} chunks={chunkshape}' \
+                  f'\n   shape={str(shape)} chunks={chunkshape}' \
                   # f'\nchunk shape       = {chunkshape}' \
                   # f'\ndata type         = {dtype}' \
                   # f'\ncompression/level = {cname}/{clevel}'

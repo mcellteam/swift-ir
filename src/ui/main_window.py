@@ -3949,11 +3949,7 @@ class MainWindow(QMainWindow):
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.history_widget.setMinimumWidth(148)
         self.afm_widget.setFixedWidth(240)
-        # self.afm_widget.setMaximumWidth(240)
-        # self.afm_widget.setMinimumWidth(210)
-        # self.layer_details.setMinimumWidth(190)
         self.layer_details.setMinimumWidth(190)
-        # self.layer_details.setMaximumWidth(260)
 
 
     def initStatusBar(self):
@@ -3967,22 +3963,13 @@ class MainWindow(QMainWindow):
         self.pbar.setFont(QFont('Arial', 11))
         self.pbar.setFixedHeight(16)
         self.pbar.setFixedWidth(400)
-        # self.statusBar.addPermanentWidget(self.pbar)
-        # self.pbar.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
         self.pbar_widget = QWidget(self)
-        # self.pbar_widget.setMinimumWidth(600)
         self.status_bar_layout = QHBoxLayout()
         self.status_bar_layout.setContentsMargins(0, 0, 0, 0)
         self.pbar_widget.setLayout(self.status_bar_layout)
-        # self.status_bar_layout.addStretch()
         self.status_bar_layout.addWidget(QLabel('Progress: '), alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)
-        # self.status_bar_layout.addStretch()
         self.statusBar.addPermanentWidget(self.pbar_widget)
-
-        # self.statusBar.addPermanentWidget(self.pbar)
-
         self.pbar_widget.hide()
 
 
