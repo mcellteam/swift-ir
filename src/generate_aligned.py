@@ -104,7 +104,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     # cfg.main_window.set_status('Copy-converting TIFFs...')
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
-                           pbar_text='Copy-converting Scale %d Alignment Results To Zarr...' % (
+                           pbar_text='Copy-converting Scale %d Alignment To Zarr...' % (
                            scale_val))
     task_queue.start(cpus)
     job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')

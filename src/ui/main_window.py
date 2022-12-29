@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
                 # self.initNgServer()
                 cfg.data.nscales = len(cfg.data.scales())
                 cfg.data.set_scale(cfg.data.scales()[-1])
-                self.pbar.hide()
+                self.pbar_widget.hide()
                 logger.info('Autoscaling Complete')
 
 
@@ -496,7 +496,7 @@ class MainWindow(QMainWindow):
         finally:
             self.onAlignmentEnd()
             self.set_idle()
-            self.pbar.hide()
+            self.pbar_widget.hide()
             QApplication.processEvents()
 
 
@@ -565,7 +565,7 @@ class MainWindow(QMainWindow):
         finally:
             self.onAlignmentEnd()
             self.set_idle()
-            self.pbar.hide()
+            self.pbar_widget.hide()
             QApplication.processEvents()
 
 
@@ -640,7 +640,7 @@ class MainWindow(QMainWindow):
             self.onAlignmentEnd()
             self.update_match_point_snr()
             self.set_idle()
-            self.pbar.hide()
+            self.pbar_widget.hide()
             QApplication.processEvents()
 
 
@@ -701,7 +701,7 @@ class MainWindow(QMainWindow):
             else:
                 self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning.', logging.ERROR)
             self.set_idle()
-            self.pbar.hide()
+            self.pbar_widget.hide()
             QApplication.processEvents()
 
 
@@ -3966,8 +3966,24 @@ class MainWindow(QMainWindow):
         self.pbar = QProgressBar()
         self.pbar.setFont(QFont('Arial', 11))
         self.pbar.setFixedHeight(16)
-        self.statusBar.addPermanentWidget(self.pbar)
-        self.pbar.hide()
+        self.pbar.setFixedWidth(400)
+        # self.statusBar.addPermanentWidget(self.pbar)
+        # self.pbar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.pbar_widget = QWidget(self)
+        # self.pbar_widget.setMinimumWidth(600)
+        self.status_bar_layout = QHBoxLayout()
+        self.status_bar_layout.setContentsMargins(0, 0, 0, 0)
+        self.pbar_widget.setLayout(self.status_bar_layout)
+        # self.status_bar_layout.addStretch()
+        self.status_bar_layout.addWidget(QLabel('Progress: '), alignment=Qt.AlignmentFlag.AlignRight)
+        self.status_bar_layout.addWidget(self.pbar)
+        # self.status_bar_layout.addStretch()
+        self.statusBar.addPermanentWidget(self.pbar_widget)
+
+        # self.statusBar.addPermanentWidget(self.pbar)
+
+        self.pbar_widget.hide()
 
 
     def pbar_max(self, x):
@@ -3985,7 +4001,7 @@ class MainWindow(QMainWindow):
     def showZeroedPbar(self):
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
-        self.pbar.show()
+        self.pbar_widget.show()
 
 
     @Slot()
