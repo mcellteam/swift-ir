@@ -160,7 +160,7 @@ QTabBar::tab:hover
 
 
 QTabBar::tab {
-	height: 14px;
+	height: 12px;
 	background-color: #F3F6FB;
     /*border: 1px solid #003B5C;*/
     /*border-bottom-width: 0px;*/

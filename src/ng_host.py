@@ -430,7 +430,7 @@ class NgHost(QObject):
         try:
             request_layer = floor(cfg.viewer.state.position[0])
             if request_layer == self._layer:
-                logger.debug('State Changed, But Layer Is The Same -> Suppressing The Callback Signal')
+                logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
                 return
             else:
                 self._layer = request_layer

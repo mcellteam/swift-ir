@@ -84,7 +84,7 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
-                           pbar_text='Generating Alignment w/ MIR - Scale %d - %d Cores' % (scale_val, cpus))
+                           pbar_text='Generating Scale %d Alignment w/ MIR...' % (scale_val))
     task_queue.start(cpus)
     for task in args_list:
         task_queue.add_task(task)
@@ -104,8 +104,8 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     # cfg.main_window.set_status('Copy-converting TIFFs...')
     task_queue = TaskQueue(n_tasks=len(args_list),
                            parent=cfg.main_window,
-                           pbar_text='Copy-converting Alignment Results To Zarr - Scale %d - %d Cores' % (
-                           scale_val, cpus))
+                           pbar_text='Copy-converting Scale %d Alignment Results To Zarr...' % (
+                           scale_val))
     task_queue.start(cpus)
     job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
     task_list = []
