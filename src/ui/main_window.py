@@ -3948,7 +3948,7 @@ class MainWindow(QMainWindow):
         self.show_hide_main_features_widget.setMaximumHeight(24)
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.history_widget.setMinimumWidth(148)
-        self.afm_widget.setFixedWidth(240)
+        self.afm_widget.setFixedWidth(248)
         self.layer_details.setMinimumWidth(190)
 
 
