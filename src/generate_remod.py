@@ -5,7 +5,7 @@ import os
 import glob
 import swiftir
 
-if (__name__ == '__main__'):
+if ( __name__ == '__main__'):
 
     if (len(sys.argv) < 3):
         sys.stderr.write('\nUsage: %s halfwidth image_file_glob output_dir \n' % (sys.argv[0]))

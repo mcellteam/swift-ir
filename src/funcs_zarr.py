@@ -216,10 +216,10 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     cfg.main_window.hud.post('Preallocating Zarr Group: %s...' % group)
     cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
-    zarr_path = os.path.join(src, name)
-    out_path = os.path.join(zarr_path, group)
+    path_zarr = os.path.join(src, name)
+    path_out = os.path.join(path_zarr, group)
 
-    if os.path.exists(out_path) and (overwrite == False):
+    if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
@@ -227,22 +227,26 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     # zarr.blosc.list_compressors()
     # ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
 
-    output_text = f'\nzarr root  : {zarr_path}' \
-                  f'\ngroup         └ {group}({name})' \
-                  f'\narray shape       = {str(shape)}' \
-                  f'\nchunk shape       = {chunkshape}' \
-                  f'\ndata type         = {dtype}' \
-                  f'\ncompression/level = {cname}/{clevel}'
+    path_base = os.path.basename(src)
+    path_relative = os.path.join(path_base, name)
+
+    output_text = f'Creating Zarr...' \
+                  f'\n{path_relative}' \
+                  f'\n └ {group}({name}) {dtype} {cname}/{clevel}' \
+                  f'\n shape={str(shape)} chunks={chunkshape}' \
+                  # f'\nchunk shape       = {chunkshape}' \
+                  # f'\ndata type         = {dtype}' \
+                  # f'\ncompression/level = {cname}/{clevel}'
 
 
     logger.info(output_text)
 
     try:
-        if overwrite and os.path.exists(out_path):
-            remove_zarr(out_path)
+        if overwrite and os.path.exists(path_out):
+            remove_zarr(path_out)
         # synchronizer = zarr.ThreadSynchronizer()
-        # arr = zarr.group(store=zarr_path, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
-        arr = zarr.group(store=zarr_path)
+        # arr = zarr.group(store=path_zarr, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
+        arr = zarr.group(store=path_zarr)
         # compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
         if cname in ('zstd', 'zlib', 'gzip'):
             compressor = Blosc(cname=cname, clevel=clevel)

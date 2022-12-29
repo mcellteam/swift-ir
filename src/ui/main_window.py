@@ -414,9 +414,9 @@ class MainWindow(QMainWindow):
                 is_realign = False
 
         if cfg.data.al_option(s=scale) == 'init_affine':
-            self.hud.post("Computing Initial Affine Transforms,  Scale %d..." % scale_val)
+            self.hud.post("Initializing Affine Transforms (Scale %d)..." % scale_val)
         else:
-            self.hud.post("Computing Refinement of Affine Transforms,  Scale %d..." % scale_val)
+            self.hud.post("Refining Affine Transforms (Scale %d)..." % scale_val)
         self.set_status('Aligning...')
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -490,8 +490,9 @@ class MainWindow(QMainWindow):
             self.hud.post('Alignment Succeeded But Image Generation Failed Unexpectedly. '
                           'Try Re-generating images.', logging.ERROR)
         else:
-            self.hud.post('Alignment Complete')
-            self.save_project_to_file()
+            if is_cur_scale_aligned():
+                self.hud.post('Alignment Succeeded')
+                self.save_project_to_file()
         finally:
             self.onAlignmentEnd()
             self.set_idle()
@@ -888,7 +889,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def scale_up(self) -> None:
         '''Callback function for the Next Scale button.'''
-        cur_layer = self.request_ng_layer()
+        # cur_layer = self.request_ng_layer()
         if not self.next_scale_button.isEnabled():
             return
         if self._working:
@@ -896,9 +897,9 @@ class MainWindow(QMainWindow):
             return
         try:
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() - 1)  # Changes Scale
-            cfg.data.set_layer(cur_layer)
-            # if not cfg.data.is_alignable():
-            #     self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
+            # cfg.data.set_layer(cur_layer)
+            if not cfg.data.is_alignable():
+                self.hud.post('Lower scales have not been aligned yet', logging.WARNING)
         except:
             print_exception()
 
@@ -906,8 +907,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
-        cur_layer = self.request_ng_layer()
-        assert isinstance(cur_layer, int)
+        # cur_layer = self.request_ng_layer()
+        # assert isinstance(cur_layer, int)
         if not self.prev_scale_button.isEnabled():
             return
         if self._working:
@@ -915,7 +916,7 @@ class MainWindow(QMainWindow):
             return
         try:
             self.toolbar_scale_combobox.setCurrentIndex(self.toolbar_scale_combobox.currentIndex() + 1)  # Changes Scale
-            cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
+            # cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
             # if not cfg.data.is_alignable():
             #     self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
         except:
@@ -1261,7 +1262,9 @@ class MainWindow(QMainWindow):
     def request_ng_layer(self):
         '''Returns The Currently Shown Layer Index In Neuroglancer'''
         # return cfg.ng_workers[cfg.data.scale()].request_layer()
-        return cfg.ng_worker.request_layer()
+        layer = cfg.ng_worker.request_layer()
+        logger.info(f'Layer Requested From NG Worker Thread: {layer}')
+        return layer
 
 
     def updateJumpValidator(self):
@@ -1593,8 +1596,9 @@ class MainWindow(QMainWindow):
 
 
     def open_project(self):
-        #Todo check for Zarr files. Generate/Re-generate if necessary
+        #Todo check for Zarr. Generate/Re-generate if necessary
         logger.critical('Opening Project...')
+        self.hud.post('Opening Alignment Project...')
         filename = open_project_dialog()
         logger.info(f'Project File: {filename}')
         if filename == '':
@@ -1606,9 +1610,16 @@ class MainWindow(QMainWindow):
         if os.path.isdir(filename):
             self.hud.post("Selected Path Is A Directory.", logging.WARNING)
             return
-        # self.image_panel_stack_widget.setCurrentIndex(2)
         self.image_panel_stack_widget.setCurrentIndex(1)
-        self.shutdownNeuroglancer()
+        if ng.is_server_running():
+            logger.info('Shutting Down Neuroglancer...')
+            self.hud.post('Shutting Down Neuroglancer...')
+            try:
+                self.shutdownNeuroglancer()
+            except:
+                print_exception()
+            finally:
+                self.hud.done()
         self.clearUIDetails()
         try:
             with open(filename, 'r') as f:
@@ -2047,15 +2058,15 @@ class MainWindow(QMainWindow):
 
         # asyncio.set_event_loop(asyncio.new_event_loop())
 
-        logger.critical('Initializing Neuroglancer Server(s), %s...' % ', '.join(scales))
+        logger.critical('Starting Neuroglancer, %s...' % ', '.join(scales))
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # cfg.ng_workers = {}
 
-        self.shutdownNeuroglancer() ###########---------
+        # self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
-                self.hud.post(f'Initializing Neuroglancer Server, {cfg.data.scale_pretty(s=s)}...')
+                self.hud.post(f'Loading Viewer {cfg.data.scale_pretty(s=s)}...')
                 try:
                     mp_mode = cfg.ng_worker.mp_mode
                 except:
@@ -2200,8 +2211,10 @@ class MainWindow(QMainWindow):
                     # url = cfg.viewer.url
                     url = str(cfg.viewer)
                     # self.hud.post(f"\n\nScale {cfg.data.scale_pretty(s=s)} URL:\n<a href='{url}'>{url}</a>\n")
-                    self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
+                    # self.hud.textedit.appendHtml(f"<span style='color: #F3F6FB'>URL:</span>\n<a href='{url}'>{url}</a>\n")
+                    self.hud.textedit.appendHtml(f"<a href='\n{url}'>{url}</a>\n")
                     logger.info(f"{cfg.data.scale_pretty(s=s)}\nURL:  {url}\n")
+                    # logger.info(f"{cfg.data.scale_pretty(s=s)}\n{url}\n")
                 except:
                     logger.warning('No URL to show')
             else:
@@ -2301,10 +2314,10 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if inspect.stack()[1].function == 'dataUpdateWidgets': return
             if state:
-                self.hud.post('Bounding Box is ON. Warning: Image dimensions may grow large.')
+                self.hud.post('Bounding Box is ON. Warning: Output dimensions may grow large.', logging.WARNING)
                 cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
             else:
-                self.hud.post('Bounding Box is OFF. Image dimensions will not change.')
+                self.hud.post('Bounding Box is OFF. Output dimensions will match source.')
                 cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
 
 
@@ -2791,7 +2804,7 @@ class MainWindow(QMainWindow):
         self.exportCafmAction.triggered.connect(self.export_cafms)
         fileMenu.addAction(self.exportCafmAction)
 
-        self.exitAppAction = QAction('Exit', self)
+        self.exitAppAction = QAction('&Quit', self)
         self.exitAppAction.triggered.connect(self.exit_app)
         self.exitAppAction.setShortcut('Ctrl+Q')
         fileMenu.addAction(self.exitAppAction)
@@ -3177,7 +3190,13 @@ class MainWindow(QMainWindow):
         '''Headup Display'''
         self.hud = HeadupDisplay(self.app)
         self.hud.setObjectName('hud')
-        self.hud.post('Welcome To AlignEM-SWiFT.')
+        # self.hud.post('Welcome To AlignEM-SWiFT.')
+        path = 'src/resources/KeyboardCommands1.html'
+        with open(path) as f:
+            contents = f.read()
+        self.hud.textedit.appendHtml(contents)
+        # self.hud.post('Welcome To AlignEM-SWiFT.')
+
         self.hud_widget = QWidget()
         self.label_hud = QLabel('Process Monitor')
         self.label_hud.setStyleSheet('font-size: 10px;')
@@ -3930,7 +3949,11 @@ class MainWindow(QMainWindow):
         self.matchpoint_text_snr.setMaximumHeight(20)
         self.history_widget.setMinimumWidth(148)
         self.afm_widget.setFixedWidth(240)
+        # self.afm_widget.setMaximumWidth(240)
+        # self.afm_widget.setMinimumWidth(210)
+        # self.layer_details.setMinimumWidth(190)
         self.layer_details.setMinimumWidth(190)
+        # self.layer_details.setMaximumWidth(260)
 
 
     def initStatusBar(self):

@@ -204,7 +204,8 @@ class HeadupDisplay(QWidget):
         #     width = int(cfg.main_window.width() / 2)
         # else:
         #     width = int(cfg.WIDTH / 2)
-        width = 300
+        # width = 300
+        width = 420
         return QSize(width, 100)
 
 

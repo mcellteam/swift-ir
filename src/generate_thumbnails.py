@@ -36,7 +36,7 @@ def generate_thumbnails():
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=cfg.data.n_layers(),
                            parent=cfg.main_window,
-                           pbar_text='Generating Thumbnails - %d Cores' % cpus)
+                           pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
     od = os.path.join(cfg.data.dest(), 'thumbnails')

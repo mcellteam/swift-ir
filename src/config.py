@@ -27,9 +27,8 @@ url = None
 webdriver = None
 
 '''Default Window Size'''
-# WIDTH, HEIGHT = 1180, 780
-# WIDTH, HEIGHT = 1180, 720
-WIDTH, HEIGHT = 1160, 680
+# WIDTH, HEIGHT = 1160, 680
+WIDTH, HEIGHT = 1200, 680
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)

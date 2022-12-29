@@ -195,7 +195,8 @@ def get_alLV():
 def renew_directory(directory:str) -> None:
     '''Remove and re-create a directory, if it exists.'''
     if os.path.exists(directory):
-        cfg.main_window.hud.post("Renewing Directory '%s'..." % directory)
+        d = os.path.basename(directory)
+        cfg.main_window.hud.post("Regenerating Directory '%s'..." % directory)
         try:     shutil.rmtree(directory)
         except:  print_exception()
         try:     os.makedirs(directory, exist_ok=True)
@@ -235,16 +236,19 @@ def show_mp_queue_results(task_queue, dt):
             logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
             n_failed += 1
 
-    cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
+    # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
 
     if n_failed > 0:
-        cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
-        cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
-        cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
+        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
+        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
+        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
+        cfg.main_window.hud.post('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt),
+                                 logging.WARNING)
     else:
-        cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
-        cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
-        cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
+        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
+        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
+        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
+        cfg.main_window.hud.post('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt), logging.INFO)
 
 # def load():
 #     try:

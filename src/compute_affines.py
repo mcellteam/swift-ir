@@ -39,7 +39,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     logger.info('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
 
     if are_aligned_images_generated():
-        cfg.main_window.hud.post(f'Removing Aligned Images for Scale Level {scale_val}')
+        cfg.main_window.hud.post(f'Removing Aligned for Scale {scale_val}...')
         remove_aligned(use_scale=scale, start_layer=start_layer) #0903 Moved into conditional
         cfg.main_window.hud.done()
 
@@ -66,7 +66,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=n_tasks,
                            parent=cfg.main_window,
-                           pbar_text='Computing Alignments w/ SWIM - Scale %d - %d Cores' % (scale_val, cpus))
+                           pbar_text='Computing Scale %d Transforms w/ SWIM...' % (scale_val))
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
     for layer in substack:

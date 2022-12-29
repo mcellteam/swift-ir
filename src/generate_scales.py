@@ -21,7 +21,7 @@ def generate_scales():
 
     n_tasks = cfg.data.n_layers() * (cfg.data.n_scales() - 1)  #0901 #Refactor
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy - %d Cores' % cpus)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     for s in cfg.data.scales():
         create_project_structure_directories(s)

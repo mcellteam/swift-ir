@@ -39,7 +39,7 @@ def generate_zarr_scales():
     n_tasks = len(cfg.data) * cfg.data.n_scales()
     cfg.main_window.hud('# Tasks: %d' % n_tasks)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Zarr Scale Arrays - %d Cores' % cpus)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Zarr Scale Arrays (%d Cores)...' % cpus)
     task_queue.start(cpus)
     script = 'src/job_convert_zarr.py'
 

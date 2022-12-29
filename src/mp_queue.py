@@ -89,7 +89,7 @@ class TaskQueue(QObject):
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
         logger.critical(f'Starting Task Queue: {self.pbar_text}...')
-        cfg.main_window.hud.post(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks: {self.pbar_text}')
+        cfg.main_window.hud.post(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores: {self.pbar_text}')
         logger.info(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks...')
         logger.info(f'start method: {self.ctx.get_start_method()}')
 
