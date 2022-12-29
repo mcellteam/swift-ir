@@ -54,7 +54,7 @@ def generate_zarr_scales():
             fn = os.path.join(dest, scale, 'img_src', img)
             # task_list.append([sys.executable, script, str(ID), fn, out ])
             task = [sys.executable, script, str(ID), fn, out ]
-            # print('\n'.join(task))
+            print('\n'.join(task))
             task_queue.add_task(task)
             # task_queue.add_task([sys.executable, script, str(ID), fn, out ])
             # task_queue.add_task([sys.executable, script, str(ID), fn, store ])
