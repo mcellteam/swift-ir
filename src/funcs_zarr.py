@@ -262,7 +262,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
         '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
-        # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
+        # write_metadata_zarr_multiscale() # thon3 al   write single multiscale zarr for all aligned s
     except:
         print_exception()
     else:
