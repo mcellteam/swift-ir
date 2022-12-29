@@ -2613,7 +2613,7 @@ class MainWindow(QMainWindow):
 
 
     def updateStatusTips(self):
-        self.regenerate_button.setStatusTip('Generate All Layers,  Scale %d (alters Corrective Bias '
+        self.regenerate_button.setStatusTip('Generate All Layers,  Scale %d (affects Corrective Polynomial Bias '
                                             'and Bounding Rectangle)' % get_scale_val(cfg.data.scale()))
         self.align_forward_button.setStatusTip(
             'Align + Generate Layers %d -> End,  Scale %d' % (cfg.data.layer(), get_scale_val(cfg.data.scale())))
@@ -3247,7 +3247,7 @@ class MainWindow(QMainWindow):
         self.whitening_input.setEnabled(False)
 
         tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
-        self.swim_label = QLabel("SWIM Window\n(% size):")
+        self.swim_label = QLabel("SWIM\nWindow (%):")
         self.swim_label.setStyleSheet("font-size: 11px;")
         self.swim_input = QLineEdit(self)
         self.swim_input.textEdited.connect(self.has_unsaved_changes)
@@ -3341,7 +3341,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Polynomial bias (default=None). Affects aligned images including their pixel dimension. This' \
               ' option is set at the coarsest s, in order to form a contiguous dataset.'
-        self.null_bias_label = QLabel("Corrective\n(Poly) Bias:")
+        self.null_bias_label = QLabel("Corrective\nPolynomial:")
         self.null_bias_label.setStyleSheet("font-size: 11px;")
         self.null_bias_label.setStatusTip(tip)
         self.bias_bool_combo = QComboBox(self)
@@ -3360,7 +3360,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Bounding rectangle (default=ON). Caution: Turning this ON may ' \
               'significantly increase the size of your aligned images.'
-        self.bounding_label = QLabel("Bounding\nRectangle:")
+        self.bounding_label = QLabel("Bounding\nBox:")
         self.bounding_label.setStyleSheet("font-size: 11px;")
         self.bounding_label.setStatusTip(tip)
         self.toggle_bounding_rect = ToggleSwitch()
@@ -3713,7 +3713,8 @@ class MainWindow(QMainWindow):
         self.snr_plot_layout = QVBoxLayout()
         self.snr_plot_widget = QWidget()
         self.label_x_axis = QLabel('Layer Number')
-        self.label_x_axis.setStyleSheet("font-size: 11px;")
+        self.label_x_axis.setContentsMargins(0, 0, 0, 4)
+        self.label_x_axis.setStyleSheet("font-size: 12px;")
         self.label_x_axis.setFont(font)
         self.label_x_axis.setObjectName('label_x_axis')
         self.snr_plot_widget.setLayout(self.snr_plot_layout)

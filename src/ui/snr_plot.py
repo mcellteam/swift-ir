@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBo
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
 
-from src.helpers import print_exception, is_arg_scale_aligned, get_scale_val
+from src.helpers import print_exception, is_cur_scale_aligned, is_arg_scale_aligned, get_scale_val
 
 import src.config as cfg
 
@@ -29,13 +29,12 @@ class SnrPlot(QWidget):
 
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
+        # self.view.setBackground('#ffffff')
+        self.view.setBackground('#004060')
         self.plot = self.view.addPlot()
 
-        self.spw = pg.ScatterPlotWidget()
-        # self.spw.
+        # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
 
-        # self.plot = pg.PlotWidget()
-        # self.plot.setAntialiasing(False)
         # pg.setConfigOptions(antialias=True)
         self._plot_colors = ['#66FF00', '#FF007F', '#08E8DE',
                              '#8c001a', '#2CBFF7', '#c7b286',
@@ -62,8 +61,6 @@ class SnrPlot(QWidget):
         # self.plot.getAxis("left").setWidth(12)
         self.plot.getAxis("left").setStyle(tickTextOffset=2)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
-        # self.plot.setLabel('left', 'SNR', **style)
-        # self.plot.setLabel('bottom', 'Layer #', **style)
 
         self.plot.setCursor(Qt.CrossCursor)
 
@@ -75,18 +72,19 @@ class SnrPlot(QWidget):
         self.checkboxes_widget.setLayout(self.checkboxes_hlayout)
 
         self.layout = QGridLayout()
-        # self.layout.addWidget(self.plot, 0, 0, 1, 5)
         self.layout.addWidget(self.view, 0, 0, 1, 5)
         self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.layout.setContentsMargins(4, 2, 4, 2)
         self.setLayout(self.layout)
-        # self.setAutoFillBackground(False)
 
 
 
     def initSnrPlot(self, s=None):
         if not cfg.data:
             logger.warning('initSnrPlot was called but data does not exist.')
+            return
+        if not is_cur_scale_aligned():
+            logger.warning('Current scale is not aligned, canceling...')
             return
 
         try:
@@ -194,7 +192,7 @@ class SnrPlot(QWidget):
         logger.info('onSnrClick:')
         index = int(points[0].pos()[0])
         snr = float(points[0].pos()[1])
-        cfg.main_window.hud.post(f'Layer: {index}, SNR: {snr}')
+        cfg.main_window.hud.post(f'Jumping to Layer: {index}, SNR: {snr}')
         clickedPen = pg.mkPen({'color': "#FF0000", 'width': 1})
         for p in self.last_snr_click:
             p.resetPen()

@@ -174,9 +174,7 @@ class NgHost(QObject):
         logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
-        logger.info(f'scale factor  : {self.sf}')
-        logger.info(f'al_url        : {self.al_url}')
-        logger.info(f'src_url       : {self.src_url}')
+        logger.info(f'scale : {self.sf}  al_url : {self.al_url}  src_url : {self.src_url}')
 
         if cfg.data.is_mendenhall():  # Force
             is_aligned = True
