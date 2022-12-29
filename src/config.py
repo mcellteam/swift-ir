@@ -35,7 +35,7 @@ DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
 DEFAULT_POLY_ORDER        = int(0)
 DEFAULT_NULL_BIAS         = bool(True)
-DEFAULT_BOUNDING_BOX      = bool(True)
+DEFAULT_BOUNDING_BOX      = bool(False)
 DEFAULT_INITIAL_ROTATION  = float(0.0000)
 DEFAULT_INITIAL_SCALE     = float(1.0000)
 
@@ -66,7 +66,7 @@ FAULT_HANDLER = False
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 116 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
