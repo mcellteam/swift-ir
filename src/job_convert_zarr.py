@@ -13,6 +13,7 @@ import zarr
 from tifffile import tifffile
 import numcodecs
 numcodecs.blosc.use_threads = False
+from libtiff import TIFF, TIFFfile, TIFFimage
 
 
 if __name__ == '__main__':
@@ -25,8 +26,20 @@ if __name__ == '__main__':
     # synchronizer = zarr.ThreadSynchronizer()
     # store = zarr.open(out, synchronizer=synchronizer)\
     store = zarr.open(out, write_empty_chunks=False)
-    img = tifffile.imread(fn)[:,::-1]
+
+    # TIFFFILE
+    # img = tifffile.imread(fn)[:,::-1]
+    #
+    # PYLIBTIFF (libtiff wrapper)
+    tif = TIFF.open(fn)  # libtiff. open in read mode
+    img = tif.read_image()[:,::-1] # numpy array
+
+    # LIBTIFF (pure Python module)
+    # img = TIFFfile(fn)  # pylibtiff
+
     store[ID,:,:] = img # store: <zarr.core.Array (19, 1244, 1130) uint8>
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+
+    del img #flush data in memory
 
 
