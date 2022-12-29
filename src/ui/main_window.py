@@ -2057,11 +2057,10 @@ class MainWindow(QMainWindow):
 
         # asyncio.set_event_loop(asyncio.new_event_loop())
 
-        logger.critical('Starting Neuroglancer, %s...' % ', '.join(scales))
+
         # self.hud.post('Starting Neuroglancer Worker(s)...')
         # self.set_status('Starting Neuroglancer...')
         # cfg.ng_workers = {}
-
         # self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
@@ -2079,7 +2078,7 @@ class MainWindow(QMainWindow):
                 #     print_exception()
 
                 # time.sleep(.5)
-                logger.debug('Launching NG Server for %s...' % s)
+                logger.critical('Loading Viewer %s...' % s)
 
                 # is_aligned = is_arg_scale_aligned(s)
 
