@@ -1611,15 +1611,7 @@ class MainWindow(QMainWindow):
             self.hud.post("Selected Path Is A Directory.", logging.WARNING)
             return
         self.image_panel_stack_widget.setCurrentIndex(1)
-        if ng.is_server_running():
-            logger.info('Shutting Down Neuroglancer...')
-            self.hud.post('Shutting Down Neuroglancer...')
-            try:
-                self.shutdownNeuroglancer()
-            except:
-                print_exception()
-            finally:
-                self.hud.done()
+        self.shutdownNeuroglancer()
         self.clearUIDetails()
         try:
             with open(filename, 'r') as f:
@@ -1998,7 +1990,14 @@ class MainWindow(QMainWindow):
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
             logger.info('Stopping Neuroglancer...')
-            ng.server.stop()
+            self.hud.post('Stopping Neuroglancer...')
+            try:
+                ng.server.stop()
+            except:
+                print_exception()
+            finally:
+                self.hud.done()
+
 
 
     def invalidate_all(self, s=None):
@@ -2063,7 +2062,7 @@ class MainWindow(QMainWindow):
         # self.set_status('Starting Neuroglancer...')
         # cfg.ng_workers = {}
 
-        # self.shutdownNeuroglancer() ###########---------
+        self.shutdownNeuroglancer() ###########---------
         try:
             for s in scales:
                 self.hud.post(f'Loading Viewer {cfg.data.scale_pretty(s=s)}...')
