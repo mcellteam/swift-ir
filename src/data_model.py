@@ -230,12 +230,12 @@ class DataModel:
         try:
             for i in range(1, self.n_layers()):
                 x = float(self.snr(s=s, l=i))
-                if not x:
+                if not isinstance(x, float):
                     logger.error(f'No SNR Found For Layer {i}...')
                     logger.error(f'  Base : {self.name_base(s=s, l=i)}')
                     logger.error(f'  Ref  : {self.name_ref(s=s, l=i)}')
                     logger.error(f'  Returning 0.00')
-                    x = float(0)
+                    x = 0.0
                 lst.append(x)
         except:
             print_exception()
