@@ -213,34 +213,33 @@ class DataModel:
         '''TODO This probably shouldn't return a string'''
         if s == None: s = self.scale()
         if l == None: l = self.layer()
+        if l == 0:
+            return 0.0
         try:
             conv_float = map(float, self._data['data']['scales'][s]['alignment_stack'][l]
                                                ['align_to_ref_method']['method_results']['snr'])
             return statistics.fmean(conv_float)
         except:
-            logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
+            # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
+            logger.error(f'No SNR Data Was Found For Layer {i}...')
+            logger.error(f'  Base : {self.name_base(s=s, l=i)}')
+            logger.error(f'  Ref  : {self.name_ref(s=s, l=i)}')
+            logger.error(f'  Returning 0.00')
+            return 0.0
 
 
     def snr_list(self, s=None) -> list[float]:
         logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale()
         # n should be 16 for layers except for index 0 which equals [0.0]
-        lst = []
-        lst.append(float(0)) # append 0 for first layer, which does not have a reference.
         try:
-            for i in range(1, self.n_layers()):
-                x = float(self.snr(s=s, l=i))
-                if not isinstance(x, float):
-                    logger.error(f'No SNR Found For Layer {i}...')
-                    logger.error(f'  Base : {self.name_base(s=s, l=i)}')
-                    logger.error(f'  Ref  : {self.name_ref(s=s, l=i)}')
-                    logger.error(f'  Returning 0.00')
-                    x = 0.0
-                lst.append(x)
+            lst = [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
+            return lst
         except:
             print_exception()
-        finally:
-            return lst
+            logger.error('Unable To Determine SNR List')
+            return []
+
 
 
     def snr_max_all_scales(self) -> float:
