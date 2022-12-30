@@ -13,6 +13,9 @@ import logging
 import statistics
 from copy import deepcopy
 from dataclasses import dataclass
+
+import numpy as np
+
 import src.config as cfg
 from src.data_structs import data_struct
 from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
@@ -209,6 +212,26 @@ class DataModel:
     #     return snr_lst
 
 
+
+    def snr_errorbar_size(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        if l == 0:
+            return 0.0
+        report = self.snr_report(s=s, l=l)
+        if not isinstance(report, str):
+            logger.error(f'No SNR Report Available For Layer {l}, Returning 0.0...')
+            return 0.0
+        substr = '+-'
+        return float(report[report.index(substr) + 2: report.index(substr) + 5])
+
+
+    def snr_errorbars(self, s=None):
+        '''Note Length Of Return Array has size cfg.data.n_layers() - 1 (!)'''
+        if s == None: s = self.scale()
+        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(1, self.n_layers())])
+
+
     def snr(self, s=None, l=None) -> float:
         '''TODO This probably shouldn't return a string'''
         if s == None: s = self.scale()
@@ -221,7 +244,7 @@ class DataModel:
             return statistics.fmean(conv_float)
         except:
             # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            logger.error(f'No SNR Data Was Found For Layer {l}...')
+            logger.error(f'No SNR Data Available For Layer {l}...')
             logger.error(f'  Base : {self.name_base(s=s, l=l)}')
             logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
             logger.error(f'  Returning 0.00')

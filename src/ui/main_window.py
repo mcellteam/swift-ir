@@ -1003,9 +1003,7 @@ class MainWindow(QMainWindow):
     def onScaleChange(self):
         s = cfg.data.scale()
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
-        if cfg.SIMULTANEOUS_SERVERS:
-            self.initNgViewer(scales=[cfg.data.scale()])
-        else:
+        if self.tabs_main.currentIndex() == 0:
             self.initNgServer()
         self.jump_to(cfg.data.layer())
         self.dataUpdateWidgets()
@@ -1016,7 +1014,7 @@ class MainWindow(QMainWindow):
         self.updateStatusTips()
         if self.tabs_main.currentIndex() == 1:
             self.layer_view_widget.set_data()
-        self.dataUpdateWidgets()
+        # self.dataUpdateWidgets()
 
 
     @Slot()
@@ -1667,10 +1665,7 @@ class MainWindow(QMainWindow):
         self.align_all_button.setText('Align All\n%s' % cfg.data.scale_pretty())
         self.tabs_main.setCurrentIndex(0)
         if launch_servers:
-            if cfg.SIMULTANEOUS_SERVERS:
-                self.initNgViewer(scales=cfg.data.scales())
-            else:
-                self.initNgServer(scales=[cfg.data.scale()])
+            self.initNgServer(scales=[cfg.data.scale()])
         # self.update_ng_hyperlink()
         QApplication.processEvents()
 
@@ -2052,10 +2047,7 @@ class MainWindow(QMainWindow):
 
         if not scales:
             # scales = [cfg.data.s()]
-            if cfg.SIMULTANEOUS_SERVERS:
-                scales = cfg.data.scales()
-            else:
-                scales = [cfg.data.scale()]
+            scales = [cfg.data.scale()]
 
         # asyncio.set_event_loop(asyncio.new_event_loop())
 
@@ -3714,7 +3706,7 @@ class MainWindow(QMainWindow):
         self.snr_plot_and_ylabel.addWidget(self.snr_plot)
         self.snr_plot_layout = QVBoxLayout()
         self.snr_plot_widget = QWidget()
-        self.label_x_axis = QLabel('Layer Number')
+        self.label_x_axis = QLabel('Section #')
         self.label_x_axis.setContentsMargins(0, 0, 0, 4)
         self.label_x_axis.setStyleSheet("font-size: 12px;")
         self.label_x_axis.setFont(font)

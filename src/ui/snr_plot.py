@@ -9,6 +9,8 @@ import os
 import sys
 from math import ceil
 import logging
+from functools import partial
+import numpy as np
 
 import pyqtgraph as pg
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
@@ -32,13 +34,19 @@ class SnrPlot(QWidget):
         # self.view.setBackground('#ffffff')
         self.view.setBackground('#004060')
         self.plot = self.view.addPlot()
+        self.vb = CustomViewBox()
+
+        pg.setConfigOption('foreground', 'k')
+
 
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
 
         # pg.setConfigOptions(antialias=True)
-        self._plot_colors = ['#66FF00', '#FF007F', '#08E8DE',
-                             '#8c001a', '#2CBFF7', '#c7b286',
-                             '#56768e', '#376d58', '#f46c60',
+        self._plot_colors = ['#FEFE62', '#40B0A6', '#D41159',
+                             '#E66100', '#1AFF1A', '#FFC20A',
+                             '#66FF00', '#8c001a', '#08E8DE',
+                             '#56768e', '#2CBFF7', '#c7b286',
+                             '#FF007F', '#376d58', '#f46c60',
                              '#c9cbd0', '#fbd771', '#ff9a00'
                              ]
 
@@ -63,8 +71,11 @@ class SnrPlot(QWidget):
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
 
         self.plot.setCursor(Qt.CrossCursor)
+        # self.plot.setAspectLocked()
 
         self.snr_points = {}
+        self.snr_errors = {}
+        self.selected_scale = None
 
         self.checkboxes_widget = QWidget()
         self.checkboxes_hlayout = QHBoxLayout()
@@ -130,42 +141,84 @@ class SnrPlot(QWidget):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         if cfg.data:
             self.plot.clear()
-            for i, scale in enumerate(cfg.data.scales()[::-1]):
-                if is_arg_scale_aligned(scale=scale):
-                    if self._snr_checkboxes[scale].isChecked():
-                        logger.info(f'{scale} is aligned and checkbox is checked. Plotting its SNR data....')
-                        self.plotSingleScale(scale=scale)
+            for s in cfg.data.scales()[::-1]:
+                if is_arg_scale_aligned(scale=s):
+                    if self._snr_checkboxes[s].isChecked():
+                        logger.info(f'{s} is aligned and checkbox is checked. Plotting its SNR data....')
+                        self.plotSingleScale(s=s)
+
             max_snr = cfg.data.snr_max_all_scales()
             assert max_snr is not None
             assert type(max_snr) is float
             # self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
-            self.plot.setXRange(0, cfg.data.n_layers(), padding=0)
-            self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
+            # self.plot.setXRange(0, cfg.data.n_layers(), padding=0)
+            # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
+            # self.plot.setRange(xRange=[0, cfg.data.n_layers() + 0.5])
+            # self.plot.setRange(yRange=[0, ceil(max_snr)])
+            xmax = cfg.data.nlayers + 1
+            ymax = ceil(max_snr) + 5
+            self.plot.setLimits(
+                minXRange=1,
+                xMin=0,
+                xMax=xmax,
+                maxXRange=xmax,
+                yMin=0,
+                yMax=ymax,
+                minYRange=ymax,
+                maxYRange=ymax,
+            )
+            ax = self.plot.getAxis('bottom')  # This is the trick
+            dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
+            ax.setTicks([dx, []])
+
+
+
             # self.plot.autoRange()
 
 
-    def plotSingleScale(self, scale=None):
-        logger.info(f'plotSingleScale (scale: {scale}):')
-        if scale == None: scale = cfg.data.scale()
-        x_axis, y_axis = self.get_axis_data(s=scale)
-        brush = self._plot_brushes[cfg.data.scales()[::-1].index(scale)]
-        self.snr_points[scale] = pg.ScatterPlotItem(
-            size=7,
+    def plotSingleScale(self, s=None):
+        logger.info(f'plotSingleScale (scale: {s}):')
+        if s == None: scale = cfg.data.scale()
+        x_axis, y_axis = self.get_axis_data(s=s)
+        offset = cfg.data.scales()[::-1].index(s) * (.5/cfg.data.nscales)
+        x_axis = [x+offset for x in x_axis]
+
+        brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
+        self.snr_points[s] = pg.ScatterPlotItem(
+            size=11,
             pen=pg.mkPen(None),
             brush=brush,
             hoverable=True,
             # hoverSymbol='s',
-            hoverSize=11,
+            hoverSize=14,
             # hoverPen=pg.mkPen('r', width=2),
             hoverBrush=pg.mkBrush('#ffffff'),
             # pxMode=False # points transform with zoom
         )
-        self.snr_points[scale].addPoints(x_axis[1:], y_axis[1:])
+        self.snr_points[s].addPoints(x_axis[1:], y_axis[1:])
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
-        self.last_snr_click = []
-        self.plot.addItem(self.snr_points[scale])
-        self.snr_points[scale].sigClicked.connect(self.onSnrClick)
+        self.last_snr_click = None
+        self.plot.addItem(self.snr_points[s])
+        self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
+        self.snr_points[s].sigClicked.connect(self.onSnrClick)
+
+        errbars = cfg.data.snr_errorbars(s=s)
+        n = cfg.data.nlayers - 1
+        deltas = np.zeros(n)
+        y = np.zeros(n)
+        x = np.arange(1, n + 1) + offset
+
+        for i in range(0, n):
+            deltas[i] = errbars[i]
+            y[i]      = cfg.data.snr(s=s, l=i + 1)
+
+        logger.info('Configuring Error Bars...')
+        self.plot.addItem(pg.ErrorBarItem(x=x, y=y,
+                                          top=deltas,
+                                          bottom=deltas,
+                                          beam=0.10,
+                                          pen={'color': '#ff0000', 'width': 4}))
 
 
     def wipePlot(self):
@@ -187,20 +240,35 @@ class SnrPlot(QWidget):
         pos_click = int(mouseClickEvent.pos()[0])
         print('Position Clicked: %d' % pos_click)
 
+    def onSnrClick2(self, scale):
+        logger.info('onSnrClick2:')
+        print(f'scale: {scale}')
+        self.selected_scale = scale
+        cfg.main_window.toolbar_scale_combobox.setCurrentText(scale)
 
-    def onSnrClick(self, plot, points):
+
+    def onSnrClick(self, plot, points, scale):
         logger.info('onSnrClick:')
+        logger.info(f'plot: {plot}')
+        logger.info(f'scale: {scale}')
         index = int(points[0].pos()[0])
         snr = float(points[0].pos()[1])
-        cfg.main_window.hud.post(f'Jumping to Layer: {index}, SNR: {snr}')
-        clickedPen = pg.mkPen({'color': "#FF0000", 'width': 1})
-        for p in self.last_snr_click:
-            p.resetPen()
-            p.resetBrush()
-        for p in points:
-            p.setBrush(pg.mkBrush('#ffffff'))
-            p.setPen(clickedPen)
-        self.last_snr_click = points
+        pt = points[0] # just allow one point clicked
+        cfg.main_window.hud.post('Jumping to Layer: %d, SNR: %.3f' % (index, snr))
+        clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
+        # for p in self.last_snr_click:
+        #     p.resetPen()
+        #     p.resetBrush()
+        # for p in points:
+        #     p.setBrush(pg.mkBrush('#ffffff'))
+        #     p.setPen(clickedPen)
+        if self.last_snr_click:
+            self.last_snr_click.resetPen()
+            self.last_snr_click.resetBrush()
+        pt.setBrush(pg.mkBrush('#ffffff'))
+        pt.setPen(clickedPen)
+        # self.last_snr_click = points
+        self.last_snr_click = pt
         cfg.main_window.jump_to(index)
 
     def sizeHint(self):
@@ -211,10 +279,32 @@ class SnrPlot(QWidget):
         return QSize(width, 100)
 
 
+class CustomViewBox(pg.ViewBox):
+    def __init__(self, *args, **kwds):
+        kwds['enableMenu'] = False
+        pg.ViewBox.__init__(self, *args, **kwds)
+        self.setMouseMode(self.RectMode)
+
+    ## reimplement right-click to zoom out
+    def mouseClickEvent(self, ev):
+        if ev.button() == Qt.MouseButton.RightButton:
+            self.autoRange()
+
+    ## reimplement mouseDragEvent to disable continuous axis zoom
+    def mouseDragEvent(self, ev, axis=None):
+        if axis is not None and ev.button() == Qt.MouseButton.RightButton:
+            ev.ignore()
+        else:
+            pg.ViewBox.mouseDragEvent(self, ev, axis=axis)
+
+
 '''
 >>> import pyqtgraph.examples
 >>> 
 >>> pyqtgraph.examples.run()
+
+app = pg.mkQApp("Crosshair Example")
+
 
 '''
 
