@@ -118,8 +118,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         # task_queue.add_task(args)
     chunkshape = cfg.data.chunkshape()
     # task_list = reorder_tasks(task_list, chunkshape[0])
+    logger.info('Adding Tasks To Multiprocessing Queue...')
     for task in task_list:
-        logger.info('Adding Layer %s Task' % task[2])
+        # logger.info('Adding Layer %s Task' % task[2])
         task_queue.add_task(task)
 
     try:
