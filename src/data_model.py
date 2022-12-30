@@ -222,13 +222,25 @@ class DataModel:
 
 
     def snr_list(self, s=None) -> list[float]:
-        # logger.info('Caller: %s' % inspect.stack()[1].function)
+        logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale()
         # n should be 16 for layers except for index 0 which equals [0.0]
+        lst = []
+        lst.append(float(0)) # append 0 for first layer, which does not have a reference.
         try:
-            return [float(self.snr(s=s, l=i)) for i in range(0, self.n_layers())]
+            for i in range(1, self.n_layers()):
+                x = float(self.snr(s=s, l=i))
+                if not x:
+                    logger.error(f'No SNR Found For Layer {i}...')
+                    logger.error(f'  Base : {self.name_base(s=s, l=i)}')
+                    logger.error(f'  Ref  : {self.name_ref(s=s, l=i)}')
+                    logger.error(f'  Returning 0.00')
+                    x = float(0)
+                lst.append(x)
         except:
             print_exception()
+        finally:
+            return lst
 
 
     def snr_max_all_scales(self) -> float:
@@ -697,6 +709,14 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+        except:
+            return ''
+
+    def name_ref(self, s=None, l=None) -> str:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        try:
+            return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename'])
         except:
             return ''
 

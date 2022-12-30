@@ -1298,6 +1298,7 @@ class MainWindow(QMainWindow):
             cfg.viewer.set_state(state)
             self.dataUpdateWidgets()
             self.refreshNeuroglancerURL()
+            self.app.processEvents()
 
 
     @Slot()
@@ -1315,6 +1316,7 @@ class MainWindow(QMainWindow):
             cfg.viewer.set_state(state)
             self.dataUpdateWidgets()
             self.refreshNeuroglancerURL()
+            self.app.processEvents()
 
 
     def jump_to_worst_snr(self) -> None:
