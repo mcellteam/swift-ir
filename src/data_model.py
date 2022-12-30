@@ -221,9 +221,9 @@ class DataModel:
             return statistics.fmean(conv_float)
         except:
             # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            logger.error(f'No SNR Data Was Found For Layer {i}...')
-            logger.error(f'  Base : {self.name_base(s=s, l=i)}')
-            logger.error(f'  Ref  : {self.name_ref(s=s, l=i)}')
+            logger.error(f'No SNR Data Was Found For Layer {l}...')
+            logger.error(f'  Base : {self.name_base(s=s, l=l)}')
+            logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
             logger.error(f'  Returning 0.00')
             return 0.0
 
