@@ -8,17 +8,15 @@ https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/Scat
 import os
 import sys
 from math import ceil
+import inspect
 import logging
 from functools import partial
 import numpy as np
-
 import pyqtgraph as pg
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
-
 from src.helpers import print_exception, is_cur_scale_aligned, is_arg_scale_aligned, get_scale_val
-
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -92,7 +90,7 @@ class SnrPlot(QWidget):
 
     def initSnrPlot(self, s=None):
         if not cfg.data:
-            logger.warning('initSnrPlot was called but data does not exist.')
+            logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
             return
         if not is_cur_scale_aligned():
             logger.warning('Current scale is not aligned, canceling...')
