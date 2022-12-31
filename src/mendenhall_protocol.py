@@ -3,7 +3,7 @@
 import os
 import logging
 import numpy as np
-from PIL import Image
+from libtiff import TIFF
 import zarr
 from qtpy.QtCore import QObject, QFileSystemWatcher
 from src.ui.dialogs import mendenhall_dialog
@@ -11,8 +11,6 @@ from src.funcs_image import ImageSize
 from src.funcs_zarr import preallocate_zarr
 from src.helpers import renew_directory
 import src.config as cfg
-
-Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +97,10 @@ class Mendenhall(QObject):
 
     def img_to_zarr(self, ID, fn):
         cfg.main_window.hud.post(f"Converting Image ID ({ID}) '{os.path.basename(fn)}' To Zarr...")
+        tif = TIFF.open(fn)
+        img = tif.read_image()[:, ::-1]  # numpy array
         store = zarr.open(self.zarr_path)
-        store[ID, :, :] = np.flip(Image.open(fn), axis=1)
+        store[ID, :, :] = img
         store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
 
     def preallocate(self):

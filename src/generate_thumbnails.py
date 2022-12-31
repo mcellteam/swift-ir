@@ -62,7 +62,6 @@ def generate_thumbnails():
         # if i in [0, 1]:
         #     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 
-    cfg.main_window.hud.post('Generating Thumbnails...')
     dt = task_queue.collect_results()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)

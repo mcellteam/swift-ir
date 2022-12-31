@@ -76,11 +76,13 @@ def mendenhall_dialog() -> str:
     dialog.setLabelText('Set Microscope Sink')
     lineEdit = dialog.findChild(QLineEdit)
     lineEdit.setPlaceholderText(home)
+    cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec_():
         path = dialog.textValue()
         logger.info(f'Selected Path: {path}')
         if os.path.exists(path):
             cfg.main_window.hud.post('Path Already Exists', logging.WARNING)
+            cfg.main_window.set_idle()
             return
         else:
             try:
@@ -91,6 +93,7 @@ def mendenhall_dialog() -> str:
             else:
                 logger.info(f"Directory Created: {path}")
                 cfg.main_window.hud.post(f"Directory Created: {path}")
+                cfg.main_window.set_idle()
                 return path
 
 
@@ -102,8 +105,10 @@ def export_affines_dialog() -> str:
     dialog.setNameFilter("Text Files (*.csv)")
     dialog.setViewMode(QFileDialog.Detail)
     dialog.setAcceptMode(QFileDialog.AcceptSave)
+    cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
         cfg.main_window.hud.post('Exported: %s' % dialog.selectedFiles()[0])
+        cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
 
@@ -119,9 +124,10 @@ def open_project_dialog() -> str:
         urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
         urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
     dialog.setSidebarUrls(urls)
-
+    cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
         # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
+        cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
 
@@ -140,11 +146,14 @@ def import_images_dialog():
     dialog.setSidebarUrls(urls)
     logger.debug('Selected Files:\n%s' % str(dialog.selectedFiles()))
     logger.info('Dialog Return Code: %s' % dialog.Accepted)
+    cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec_() == QDialog.Accepted:
         # self.set_mainwindow_project_view()
+        cfg.main_window.set_idle()
         return dialog.selectedFiles()
     else:
         logger.warning('Import Images dialog did not return an image list')
+        cfg.main_window.set_idle()
         return
 
 
@@ -162,8 +171,10 @@ def new_project_dialog() -> str:
         urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
         urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
     dialog.setSidebarUrls(urls)
+    cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
         logger.info('Save File Path: %s' % dialog.selectedFiles()[0])
+        cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
 
@@ -215,6 +226,7 @@ class ConfigAppDialog(QDialog):
         self.parent = parent
         logger.info('Showing Application Configuration Dialog:')
         self.initUI()
+        cfg.main_window.set_status('Awaiting User Input...')
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -302,6 +314,7 @@ class ConfigAppDialog(QDialog):
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(0)
 
+
     @Slot()
     def on_apply(self):
         try:
@@ -341,6 +354,7 @@ class ConfigAppDialog(QDialog):
             logger.warning(e)
         finally:
             self.accept()
+            cfg.main_window.set_idle()
 
     @Slot()
     def on_cancel(self):
@@ -379,7 +393,9 @@ class ConfigProjectDialog(QDialog):
         self.main_layout.addWidget(self.buttonWidget)
         self.setLayout(self.main_layout)
         self.setWindowTitle("Project Configuration")
+        cfg.main_window.hud('Set Scales and Configure:')
         self.show()
+        cfg.main_window.set_status('Awaiting User Input...')
 
     @Slot()
     def on_apply(self):
@@ -403,7 +419,10 @@ class ConfigProjectDialog(QDialog):
         except Exception as e:
             logger.warning(e)
         finally:
+            cfg.main_window.hud.done()
             self.accept()
+            cfg.main_window.set_idle()
+
 
     @Slot()
     def on_cancel(self):

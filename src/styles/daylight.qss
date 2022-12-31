@@ -35,8 +35,8 @@ QWidget#details_banner {
 }
 
 /* These should be the same */
-QStackedWidget#ImagePanel { background-color: #004060;  }
-QWidget#ng_panel { background-color: #004060; }
+QStackedWidget#viewer_stack_widget { background-color: #004060;  }
+QWidget#ng_widget { background-color: #004060; }
 
 
 QCheckBox#toggle_skip {
@@ -114,7 +114,7 @@ QTextEdit#matchpoint_text_snr {
 	color: #003B5C;
 }
 
-QTreeView#projectdata_treeview {
+QTreeView#treeview {
     background-color: #ffffff;
     /*color: #333;*/
     color: #FF0000;

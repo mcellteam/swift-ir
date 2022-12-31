@@ -83,7 +83,8 @@ class SnrPlot(QWidget):
         self.layout = QGridLayout()
         self.layout.addWidget(self.view, 0, 0, 1, 5)
         self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
-        self.layout.setContentsMargins(4, 2, 4, 2)
+        # self.layout.setContentsMargins(4, 2, 4, 2)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
 
@@ -123,7 +124,7 @@ class SnrPlot(QWidget):
 
 
     def get_axis_data(self, s=None) -> tuple:
-        if s == None: s = cfg.data.scale()
+        if s == None: s = cfg.data.curScale
         x_axis, y_axis = [], []
         for layer, snr in enumerate(cfg.data.snr_list(s=s)):
             if cfg.data.skipped(s=s, l=layer):
@@ -216,7 +217,7 @@ class SnrPlot(QWidget):
                                           top=deltas,
                                           bottom=deltas,
                                           beam=0.10,
-                                          pen={'color': '#ff0000', 'width': 4}))
+                                          pen={'color': '#ff0000', 'width': 3}))
 
 
     def wipePlot(self):
@@ -252,7 +253,7 @@ class SnrPlot(QWidget):
         index = int(points[0].pos()[0])
         snr = float(points[0].pos()[1])
         pt = points[0] # just allow one point clicked
-        cfg.main_window.hud.post('Jumping to Layer: %d, SNR: %.3f' % (index, snr))
+        cfg.main_window.hud.post('Jumping to Section #%d, SNR: %.3f' % (index, snr))
         clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
         # for p in self.last_snr_click:
         #     p.resetPen()

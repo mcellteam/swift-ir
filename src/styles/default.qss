@@ -33,9 +33,10 @@ QTreeView::item:selected:!active {
 }
 
 
-QTreeView#projectdata_treeview {
+QTreeView#treeview {
     /*background-color: #ffffff;*/
-    background: #e8f4fc;
+    /*background: #e8f4fc;*/
+    background-color: #009e73;
     alternate-background-color: #eaedf1;
     color: #333;
     /*border: 2px solid #555;*/
@@ -114,14 +115,6 @@ QLabel#vlabel_hud{color: #ffffff;}
 QLabel#vlabel_plot{color: #ffffff;}
 QLabel#vlabel_python_console{color: #ffffff;}
 */
-
-QWidget#ng_browser_container_outer{
-background-color: #DAEBFE;
-}
-
-QWidget#ng_browser_container{
-background-color: #DAEBFE;
-}
 
 QTableView::item:hover
 {
@@ -239,17 +232,30 @@ QLabel#toolbar_scale_label { color: #1B1E23; }
 QLabel#align_label_resolution { color: #1B1E23; }
 QLabel#extra_header_text_label { color: #1B1E23; }
 
+QWidget#ng_browser_container_outer { background-color: #eeee90  }
+QWidget#ng_browser_container { background-color: #ffffff  }
+QWidget#ng_widget { background-color: yellow;  }
+QWidget#viewer_stack_widget { background-color: blue;  }
+QWidget#layer_view_container { background-color: #daebfe;  }
+QWidget#treeview_widget { background-color: #90ee90  }
+QWidget#snr_plot_widget { background-color: #004060  }
+
+
 
 /* These should be the same */
-QStackedWidget#ImagePanel { background-color: #DAEBFE;  }
-/*QWidget#ng_panel { background-color: #1B1E23; }*/
-/*QWidget#ng_panel { background-color: #ffffff; }*/
+/*QStackedWidget#viewer_stack_widget { background-color: #ffe135;  }*/
+/*QWidget#ng_widget { background-color: #ffe135;  }*/
+QWidget#splash_widget { background-color: #ffe135;  }
+QWidget#landing_widget { background-color: #ffe135;  }
+/*QWidget#historyview_widget { background-color: #ffffff;  }*/
+/*QWidget#ng_widget { background-color: #1B1E23; }*/
+/*QWidget#ng_widget { background-color: #ffffff; }*/
 
 QCheckBox#toggle_skip {
 	spacing: 5px;
 	outline: none;
 	/*color: #f3f6fb;*/
-	color: #000000;
+	color: #141414;
 	/*margin-bottom: 2px;*/
 	font-size: 10px;
 }
@@ -300,7 +306,7 @@ QWidget#history_widget {
 }
 
 QListWidget#historyListWidget {
-    background-color: #f3f6fb;
+    background-color: #ffffff;
     /*font-size: 11px;*/
 }
 
@@ -358,7 +364,7 @@ QMenu::indicator {
 
 QScrollArea {
 	color: #FFFFFF;
-	background-color:#000000;
+	background-color:#ff0000;
 }
 QScrollBar:vertical {
     border: none;
@@ -409,7 +415,7 @@ QSlider::sub-page:vertical {
 QDialog QLabel {
 	/*color: #151a1e;*/
 	/*color: #f3f6fb;*/
-	color: #000000;
+	color: #141414;
 }
 
 #####
@@ -453,7 +459,7 @@ QMainWindow {
 
 QToolTip {
     background-color: #8ad4ff;
-    color: #000000;
+    color: #141414;
     border: #8ad4ff solid 1px;
     }
 
@@ -597,7 +603,8 @@ QLCDNumber {
 
 QTabWidget {
 	color:rgb(0,0,0);
-	background-color:#000000;
+	/*background-color:#141414;*/
+	background-color:#ff0000;
 }
 QTabWidget::pane {
 		border-color: #050a0e;

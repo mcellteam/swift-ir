@@ -25,8 +25,8 @@ QWidget#browser_overlay_widget {
 }
 
 /* These should be the same */
-QStackedWidget#ImagePanel { background-color: #004060;  }
-QWidget#ng_panel { background-color: #004060; }
+QStackedWidget#viewer_stack_widget { background-color: #004060;  }
+QWidget#ng_widget { background-color: #004060; }
 
 QLabel#browser_overlay_label {
     color: #FF0000;
@@ -61,7 +61,7 @@ QTextEdit#matchpoint_text_snr {
 	background-color: #6D7D77;
 }
 
-QTreeView#projectdata_treeview {
+QTreeView#treeview {
     background-color: #4b4b4b;
     color: #333;
     border: 2px solid #555;

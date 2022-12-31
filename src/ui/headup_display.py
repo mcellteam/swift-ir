@@ -42,7 +42,7 @@ class HudWorker(QObject):
     @Slot()
     def start(self):
         extra = {'qThreadName': ctname()}
-        logger.debug('Started work', extra=extra)
+        logger.info('Started work', extra=extra)
         i = 1
         # Let the thread run until interrupted. This allows reasonably clean thread termination.
         while not QThread.currentThread().isInterruptionRequested():
@@ -55,7 +55,7 @@ class HudWorker(QObject):
 class HeadupDisplay(QWidget):
 
     COLORS = {
-        logging.DEBUG: 'black',
+        logging.DEBUG: '#F3F6FB',
         logging.INFO: '#41FF00',
         logging.WARNING: 'yellow',
         logging.ERROR: '#FD001B',
@@ -90,9 +90,8 @@ class HeadupDisplay(QWidget):
         layout.addWidget(te)
         self.start_thread()
 
-    def __call__(self, message, level=cfg.LOG_LEVEL):
-        extra = {'qThreadName': ctname()}
-        logger.log(level, message, extra=extra)
+    def __call__(self, message, level=logging.INFO):
+        logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 
@@ -116,8 +115,6 @@ class HeadupDisplay(QWidget):
         if self.hud_worker_thread.isRunning():
             self.kill_thread()
 
-
-
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
         color = self.COLORS.get(record.levelno, 'black')
@@ -135,6 +132,12 @@ class HeadupDisplay(QWidget):
         # extra = {'qThreadName': ctname()}
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
+        self.textedit.moveCursor(QTextCursor.End)
+        QApplication.processEvents()
+
+    @Slot()
+    def warn(self, message):
+        logger.log(logging.WARNING, message)
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 

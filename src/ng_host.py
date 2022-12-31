@@ -29,6 +29,21 @@ from src.shaders import ann_shader
 
 __all__ = ['NgHost']
 
+import sys
+import logging
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stream=sys.stdout)
+logger.addHandler(handler)
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = handle_exception
+
 logger = logging.getLogger(__name__)
 
 class WorkerSignals(QObject):
@@ -36,7 +51,8 @@ class WorkerSignals(QObject):
     stateChanged = Signal(int)
     mpUpdate = Signal()
 
-class NgHost(QObject):
+# class NgHost(QObject):
+class NgHost(QRunnable):
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
         QObject.__init__(self)
         self.parent = parent
@@ -50,22 +66,7 @@ class NgHost(QObject):
         self.bind = bind
         self.port = port
         self.scale = scale
-        scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
-        logger.info(f'voxel size: {scales}')
-        self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
-        self.sf = get_scale_val(scale)  # scale factor
-        self.ref_l = 'ref_%d' % self.sf
-        self.base_l = 'base_%d' % self.sf
-        self.aligned_l = 'aligned_%d' % self.sf
-        self.nglayout = 'yz'  # maps to 'xy'
-        self.al_url = os.path.join('img_aligned.zarr', 's' + str(self.sf))
-        self.src_url = os.path.join('img_src.zarr', 's' + str(self.sf))
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
-        self.al_name = os.path.join(src, self.al_url)
-        if cfg.data.is_mendenhall():
-            self.unal_name = os.path.join(src, 'mendenhall.zarr', 'grp')
-        else:
-            self.unal_name = os.path.join(src, self.src_url)
         self.src_size = cfg.data.image_size(s=self.scale)
         self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74',
@@ -79,9 +80,10 @@ class NgHost(QObject):
     def __del__(self):
         try:
             caller = inspect.stack()[1].function
-            logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.sf, self.created))
+            logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.scale, self.created))
         except:
-            logger.info('Unable to decipher who caller is')
+            logger.warning('Lost Track Of Caller')
+
 
     def __str__(self):
         return obj_to_string(self)
@@ -89,12 +91,14 @@ class NgHost(QObject):
     def __repr__(self):
         return copy.deepcopy(cfg.viewer.state)
 
-    @Slot()
-    def run(self):
+    # @Slot()
+    async def run(self):
+        logger.info('\nrun:\n')
         try:
             cfg.viewer = ng.Viewer()
         except:
-            traceback.print_exc()
+            # traceback.print_exc()
+            logger.error('ERROR')
 
     def request_layer(self):
         return floor(cfg.viewer.state.position[0])
@@ -121,7 +125,7 @@ class NgHost(QObject):
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
         cfg.men_tensor = get_zarr_tensor(path).result()
         self.json_unal_dataset = cfg.men_tensor.spec().to_json()
-        logger.info(self.json_unal_dataset)
+        logger.debug(self.json_unal_dataset)
         cfg.menLV = ng.LocalVolume(
             data=cfg.men_tensor,
             dimensions=coordinate_space,
@@ -131,7 +135,7 @@ class NgHost(QObject):
         cfg.viewer = ng.Viewer()
         self.url_viewer = str(cfg.viewer)
         image_size = cfg.data.image_size()
-        widget_size = cfg.main_window.image_panel_stack_widget.geometry().getRect()
+        widget_size = cfg.main_window.viewer_stack_widget.geometry().getRect()
         widget_height = widget_size[3]
         tissue_height = 2 * image_size[1]  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
@@ -139,7 +143,7 @@ class NgHost(QObject):
         cross_section_width = (tissue_width / image_size[0]) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
         css = '%.2E' % Decimal(cross_section_scale)
-        logger.info(f'cross_section_scale: {css}')
+        # logger.info(f'cross_section_scale: {css}')
 
         with cfg.viewer.txn() as s:
             s.layers['layer'] = ng.ImageLayer(source=cfg.menLV)
@@ -155,11 +159,41 @@ class NgHost(QObject):
                    show_ui_controls=True,
                    show_panel_borders=False,
                    show_scale_bar=False,
-                   show_axis_lines=False):
-
-        self.scale = cfg.data.scale()
+                   show_axis_lines=False,
+                   scale=None):
+        if scale:
+            self.scale=scale
+        else:
+            self.scale = cfg.data.scale()
         self.sf = get_scale_val(self.scale)
+        self.ref_l = 'ref_%d' % self.sf
+        self.base_l = 'base_%d' % self.sf
+        self.aligned_l = 'aligned_%d' % self.sf
+        if cfg.main_window.toolbar_layout_combobox.currentText() == '':
+            cfg.main_window.toolbar_layout_combobox.setCurrentText('xy')
+            self.nglayout = 'xy'
+        else:
+            self.nglayout = cfg.main_window.toolbar_layout_combobox.currentText()
+        sw = {'xy': 'yz',
+              'yz': 'xy',
+              'xz': 'xz',
+              'xy-3d': 'yz-3d',
+              'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d',
+              '4panel': '4panel',
+              '3d': '3d'}
+        self.nglayout = sw[self.nglayout]
+
+        self.al_url = os.path.join('img_aligned.zarr', 's' + str(self.sf))
+        self.src_url = os.path.join('img_src.zarr', 's' + str(self.sf))
         self.src_size = cfg.data.image_size(s=self.scale)
+        self.al_name = os.path.join(self.src, self.al_url)
+        if cfg.data.is_mendenhall():
+            self.unal_name = os.path.join(self.src, 'mendenhall.zarr', 'grp')
+        else:
+            self.unal_name = os.path.join(self.src, self.src_url)
+        coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
+        self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=coord_space, )
 
         if cfg.data.is_mendenhall() and cfg.MV:
             logger.warning('Transferring control to initViewerMendenhall...')
@@ -174,8 +208,6 @@ class NgHost(QObject):
         logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
-        logger.info(f'scale : {self.sf}  al_url : {self.al_url}  src_url : {self.src_url}')
-
         if cfg.data.is_mendenhall():  # Force
             is_aligned = True
 
@@ -186,7 +218,7 @@ class NgHost(QObject):
 
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
-        ng.set_server_bind_address(bind_address=self.bind)
+        # ng.set_server_bind_address(bind_address=self.bind)
 
         self.url_viewer = str(cfg.viewer)
 
@@ -206,7 +238,6 @@ class NgHost(QObject):
             x_nudge, y_nudge = 0, 0
 
         if widget_size is None:
-            logger.info('Getting widget size from thread...')
             widget_size = cfg.main_window.ng_browser.geometry().getRect()
         widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
 
@@ -243,7 +274,6 @@ class NgHost(QObject):
             s.system_memory_limit = -1
             s.concurrent_downloads = 512
             s.cross_section_scale = cross_section_scale * adjustment
-            logger.info('Tissue Dimensions: %d | Widget Height: %d | Cross Section Scale: %.10f' % (tissue_height, widget_height, cross_section_scale))
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
             # s.perspective_orientation
@@ -253,13 +283,13 @@ class NgHost(QObject):
                 try:
                     cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
                 except:
-                    print_exception()
+                    # print_exception()
+                    logger.error('ERROR')
                     logger.error(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}')
                     cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}',
                                              logging.ERROR)
                 self.json_unal_dataset = cfg.unal_tensor.spec().to_json()
-                pprint.pprint(self.json_unal_dataset)
-                logger.info(self.json_unal_dataset)
+                logger.debug(self.json_unal_dataset)
                 cfg.refLV = ng.LocalVolume(
                     data=cfg.unal_tensor,
                     volume_type='image',
@@ -278,7 +308,6 @@ class NgHost(QObject):
                     try:
                         cfg.al_tensor = get_zarr_tensor(self.al_name).result()
                     except:
-                        print_exception()
                         logger.error(f'Invalid Zarr. Unable To Create Tensor, Aligned Zarr, Scale {self.sf}')
                         cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Aligned Zarr, Scale {self.sf}',
                                                  logging.ERROR)
@@ -382,8 +411,12 @@ class NgHost(QObject):
                 else:
                     s.layout = ng.row_layout(grps)
 
-            cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+            # cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
+            try:
+                cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+            except:
+                logger.warning('WARNING')
+
 
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
@@ -407,14 +440,12 @@ class NgHost(QObject):
             mp_key_bindings = []
 
         with cfg.viewer.config_state.txn() as s:
-
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = show_ui_controls
             s.show_panel_borders = show_panel_borders
 
         self._layer = self.request_layer()
-
         cfg.refLV.invalidate()
         cfg.baseLV.invalidate()
         if is_aligned: cfg.alLV.invalidate()
@@ -423,6 +454,8 @@ class NgHost(QObject):
 
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
+        # else:
+        #     cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=True, browser='chrome')
 
     def on_state_changed(self):
         try:
@@ -436,7 +469,8 @@ class NgHost(QObject):
             if self.mp_mode:
                 self.clear_mp_buffer()
         except:
-            print_exception()
+            # print_exception()
+            logger.error('ERROR')
 
     def add_matchpoint(self, s):
         logger.info('add_matchpoint:')
@@ -456,7 +490,8 @@ class NgHost(QObject):
                                % (coords[1], coords[2], bounds[0], bounds[1]))
 
         except:
-            print_exception()
+            # print_exception()
+            logger.error('ERROR')
 
         n_mp_pairs = floor(self.mp_count / 2)
         props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]

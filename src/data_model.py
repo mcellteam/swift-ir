@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import src.config as cfg
-from src.data_structs import data_struct
+from src.data_structs import data_template
 from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
     get_scale_val
 from src.funcs_image import ComputeBoundingRect, ImageSize
@@ -46,31 +46,25 @@ class ScaleIterator:
 class DataModel:
     """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
 
-    def __init__(self, data=None, name='', mendenhall=False):
+    def __init__(self, data=None, name=None, mendenhall=False):
         logger.info('Constructing Data Model...')
-        self._current_version = 0.40
-
+        self._current_version = 0.50
         if data:
             self._data = data
+            # self.scalesAligned = get_aligned_scales()
         else:
-            self._data = data_struct
+            self._data = data_template
+        if name:
             self._data['data']['destination_path'] = name
-
-        if self.layer() == None:
-            self.set_layer(0)
-
         self._data['data']['mendenhall'] = mendenhall
-
+        if not self.layer():
+            self.set_layer(0)
         self.scalesAligned = []
         self.nScalesAligned = None
         self.nscales = None
         self.nlayers = None
-
-        self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
-        self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
-        self._data['data'].setdefault('cname', cfg.CNAME)
-        self._data['data'].setdefault('clevel', cfg.CLEVEL)
-        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+        self.curScale = None
+        self.set_defaults()
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -101,8 +95,15 @@ class DataModel:
         except:
             logger.warning('No Images Found')
 
+    def set_defaults(self):
+        self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
+        self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
+        self._data['data'].setdefault('cname', cfg.CNAME)
+        self._data['data'].setdefault('clevel', cfg.CLEVEL)
+        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+
     def sl(self):
-        return (self.scale(), self.layer())
+        return (self.curScale, self.layer())
 
     def to_json(self):
         return json.dumps(self._data)
@@ -117,7 +118,7 @@ class DataModel:
         return os.path.split(cfg.data.dest())[-1]
 
     def base_image_name(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
@@ -161,7 +162,7 @@ class DataModel:
         return self._data['data']['mendenhall']
 
     def get_iter(self, s=None):
-        if s == None: s = cfg.data.scale()
+        if s == None: s = self.curScale
         return ScaleIterator(self._data['data']['scales'][s]['alignment_stack'])
 
     def layer(self) -> int:
@@ -200,7 +201,7 @@ class DataModel:
     #         logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
     #
     # def snr_list(self, s=None):
-    #     if s == None: s = self.scale()
+    #     if s == None: s = self.curScale
     #     snr_lst = []
     #     for layer in self._data['data']['scales'][s]['alignment_stack']:
     #         try:
@@ -214,7 +215,7 @@ class DataModel:
 
 
     def snr_errorbar_size(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         if l == 0:
             return 0.0
@@ -228,13 +229,13 @@ class DataModel:
 
     def snr_errorbars(self, s=None):
         '''Note Length Of Return Array has size cfg.data.n_layers() - 1 (!)'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(1, self.n_layers())])
 
 
     def snr(self, s=None, l=None) -> float:
         '''TODO This probably shouldn't return a string'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         if l == 0:
             return 0.0
@@ -253,7 +254,7 @@ class DataModel:
 
     def snr_list(self, s=None) -> list[float]:
         logger.info('Caller: %s' % inspect.stack()[1].function)
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         # n should be 16 for layers except for index 0 which equals [0.0]
         try:
             lst = [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
@@ -270,6 +271,7 @@ class DataModel:
         max_snr = []
         # logger.critical(f'self.scalesAligned: {self.scalesAligned}')
         for scale in self.scalesAligned:
+            logger.info(f'scale={scale}')
             try:
                 m = max(self.snr_list(s=scale))
                 # logger.critical(f'm: {m}')
@@ -282,14 +284,14 @@ class DataModel:
 
     def snr_average(self, scale=None) -> float:
         logger.info('caller: %s...' % inspect.stack()[1].function)
-        if scale == None: scale = cfg.data.scale()
+        if scale == None: scale = self.curScale
         # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
         return statistics.fmean(self.snr_list(s=scale)[1:])
 
 
     def snr_report(self, s=None, l=None) -> str:
         '''TODO This probably shouldn't return a string'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             return str(self._data['data']['scales'][s]['alignment_stack'][l]
@@ -322,14 +324,14 @@ class DataModel:
         assert isinstance(self._data['data']['current_scale'], str)
         if self._data['data']['current_scale'] == '':
             logger.warning('WARNING: Scale Was An Empty String')
-            self._data['data']['current_scale'] = cfg.data.scales()[-1]
+            self._data['data']['current_scale'] = self.curScales()[-1]
         return self._data['data']['current_scale']
 
     def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
         '''Example Usage:
              cfg.data.add_matchpoint(coordinates=(100, 200), role='base')
         '''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
@@ -337,7 +339,7 @@ class DataModel:
         )
 
     def match_points(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
         r = layer['images']['ref']['metadata']['match_points']
@@ -349,7 +351,7 @@ class DataModel:
 
     def find_layers_with_matchpoints(self, s=None) -> list:
         '''Returns the list of layers that have match points'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.alstack()):
@@ -373,7 +375,7 @@ class DataModel:
         return lst
 
     def print_all_match_points(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         for i,layer in enumerate(self.alstack()):
             r = layer['images']['ref']['metadata']['match_points']
@@ -384,17 +386,17 @@ class DataModel:
 
 
     def match_points_ref(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['metadata']['match_points']
 
     def match_points_base(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['metadata']['match_points']
 
     def all_match_points_ref(self, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         lst = []
         for i, layer in enumerate(self.alstack(s=s)):
             mp = layer['images']['ref']['metadata']['match_points']
@@ -404,7 +406,7 @@ class DataModel:
         return lst
 
     def all_match_points_base(self, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         lst = []
         for i, layer in enumerate(self.alstack(s=s)):
             mp = layer['images']['base']['metadata']['match_points']
@@ -414,7 +416,7 @@ class DataModel:
         return lst
 
     def get_mps(self, role, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         lst = []
         for i, layer in enumerate(self.alstack(s=s)):
             mp = layer['images'][role]['metadata']['match_points']
@@ -424,7 +426,7 @@ class DataModel:
         return lst
 
     def annotations(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
         r = layer['images']['ref']['metadata']['annotations']
@@ -437,7 +439,7 @@ class DataModel:
         return combined
 
     def clear_match_points(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
         for role in layer['images'].keys():
@@ -454,14 +456,14 @@ class DataModel:
 
     def clear_annotations(self):
         logger.info("Removing all match points for this l")
-        s, l = self.scale(), self.layer()
+        s, l = self.curScale, self.layer()
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
         for role in layer['images'].keys():
             if 'metadata' in layer['images'][role]:
                 layer['images'][role]['metadata']['annotations'] = []
 
     def set_match_points(self, role, matchpoints, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         logger.info("Writing match point to project dictionary")
         if role not in ('ref', 'base', 'aligned'):
@@ -470,7 +472,7 @@ class DataModel:
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'] = matchpoints
 
     def afm(self, s=None, l=None) -> list:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
@@ -479,7 +481,7 @@ class DataModel:
             return [[0, 0, 0], [0, 0, 0]]
 
     def cafm(self, s=None, l=None) -> list:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
@@ -488,19 +490,19 @@ class DataModel:
             return [[0, 0, 0], [0, 0, 0]]
 
     def afm_list(self, s=None, l=None) -> list:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         lst = [l['align_to_ref_method']['method_results']['affine_matrix'] for l in self.alstack()]
         return lst
 
     def cafm_list(self, s=None, l=None) -> list:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
         return lst
 
     def bias_data_path(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return os.path.join(cfg.data.dest(), s, 'bias_data')
 
@@ -511,7 +513,7 @@ class DataModel:
         cfg.main_window.hud('\ncafm = %s\n' % ' '.join(map(str, self.cafm())))
 
     def res_x(self, s=None) -> int:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if 'resolution_x' in self._data['data']['scales'][s]:
             return int(self._data['data']['scales'][s]['resolution_x'])
         else:
@@ -519,7 +521,7 @@ class DataModel:
             # return int(2)
 
     def res_y(self, s=None) -> int:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if 'resolution_y' in self._data['data']['scales'][s]:
             return int(self._data['data']['scales'][s]['resolution_y'])
         else:
@@ -527,7 +529,7 @@ class DataModel:
             # return int(2)
 
     def res_z(self, s=None) -> int:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if 'resolution_z' in self._data['data']['scales'][s]:
             return int(self._data['data']['scales'][s]['resolution_z'])
         else:
@@ -559,11 +561,11 @@ class DataModel:
         return (self.cname(), self.clevel(), self.chunkshape())
 
     def scale_pretty(self, s=None) -> str:
-        if s == None: s = cfg.data.scale()
+        if s == None: s = self.curScale
         return 'Scale %d' % self.scale_val(s=s)
 
     def scale_val(self, s=None) -> int:
-        if s == None: s = cfg.data.scale()
+        if s == None: s = self.curScale
         while s.startswith('scale_'):
             s = s[len('scale_'):]
         return int(s)
@@ -608,9 +610,11 @@ class DataModel:
         return lst
 
     def skipped(self, s=None, l=None) -> bool:
+        '''Called by get_axis_data'''
         # logger.info('skipped (called By %s)' % inspect.stack()[1].function)
+
         # print('Before Defaults: s = %s, l = %s' % (str(s), str(l))) # Before Defaults: s = None, l = None
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         # print('After Defaults: s = %s, l = %s' % (str(s), str(l))) # After Defaults: s = scale_4, l = 0
         assert isinstance(s, str)
@@ -626,7 +630,7 @@ class DataModel:
 
     def skips_list(self, s=None) -> list:
         '''Returns the list of skipped images for a s'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.alstack(s=s)):
@@ -641,7 +645,7 @@ class DataModel:
 
     def skips_by_name(self, s=None) -> list[str]:
         '''Returns the list of skipped images for a s'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         lst = []
         try:
             for i in range(self.n_layers()):
@@ -656,21 +660,21 @@ class DataModel:
 
     def whitening(self) -> float:
         '''Returns the Whitening Factor for the Current Layer.'''
-        return float(self._data['data']['scales'][self.scale()]['alignment_stack'][
+        return float(self._data['data']['scales'][self.curScale]['alignment_stack'][
                          self.layer()]['align_to_ref_method']['method_data']['whitening_factor'])
 
     def swim_window(self) -> float:
         '''Returns the SWIM Window for the Current Layer.'''
-        return float(self._data['data']['scales'][self.scale()]['alignment_stack'][
+        return float(self._data['data']['scales'][self.curScale]['alignment_stack'][
                          self.layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
 
     def has_bb(self, s=None) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         return bool(self._data['data']['scales'][s]['use_bounding_rect'])
 
     def bounding_rect(self, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         try:
             return self._data['data']['scales'][s]['bounding_rect']
         except:
@@ -682,14 +686,14 @@ class DataModel:
                 return None
 
     def image_size(self, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
             logger.info("No key 'image_src_size' found. Adding it now...")
             try:
-                self.set_image_size(scale=s)
+                self.set_image_size(s=s)
                 return self._data['data']['scales'][s]['image_src_size']
             except:
                 print_exception()
@@ -698,26 +702,26 @@ class DataModel:
 
     def poly_order(self, s=None) -> int:
         '''Returns the Polynomial Order for the Current Scale.'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         return int(self._data['data']['scales'][s]['poly_order'])
 
     def null_cafm(self, s=None) -> bool:
         '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         return bool(self._data['data']['scales'][s]['null_cafm_trends'])
 
     def al_option(self, s=None) -> str:
         '''Gets the Alignment Option for the Current Scale.'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         return self._data['data']['scales'][s]['method_data']['alignment_option']
 
     def path_ref(self, s=None, l=None) -> str:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename']
 
     def path_base(self, s=None, l=None) -> str:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         # Todo -- Refactor!
         try:
@@ -727,7 +731,7 @@ class DataModel:
             print_exception()
 
     def name_base(self, s=None, l=None) -> str:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
@@ -735,7 +739,7 @@ class DataModel:
             return ''
 
     def name_ref(self, s=None, l=None) -> str:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename'])
@@ -743,7 +747,7 @@ class DataModel:
             return ''
 
     def path_aligned(self, s=None, l=None) -> str:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return os.path.join(self.dest(), s, 'img_aligned', self.name_base(l=l))
 
@@ -755,36 +759,37 @@ class DataModel:
         return l
 
     def roles(self):
-        l, s = self.layer(), self.scale()
+        l, s = self.layer(), self.curScale
         return self._data['data']['scales'][s]['alignment_stack'][l]['images'].keys()
 
     def set_destination(self, s):
         self._data['data']['destination_path'] = s
 
-    def set_scale(self, x:str) -> None:
+    def set_scale(self, s:str) -> None:
         '''Sets the Current Scale.'''
-        self._data['data']['current_scale'] = x
+        self._data['data']['current_scale'] = s
+        self.curScale = s
 
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
         assert isinstance(index, int)
-        logger.info(f'setting layer to {index}')
+        logger.info(f'Viewing Section #{index}')
         self._data['data']['current_layer'] = index
 
     def set_skip(self, b: bool, s=None, l=None) -> None:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['data']['scales'][s]['alignment_stack'][l]['skipped'] = b
 
     def set_whitening(self, f: float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
-        self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
+        self._data['data']['scales'][self.curScale]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['whitening_factor'] = f
 
     def set_swim_window(self, f: float) -> None:
         '''Sets the SWIM Window for the Current Layer.'''
-        self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
+        self._data['data']['scales'][self.curScale]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['win_scale_factor'] = f
 
     def set_use_bounding_rect(self, b: bool, s=None) -> None:
@@ -796,37 +801,38 @@ class DataModel:
             self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
 
     def set_bounding_rect(self, bounding_rect: list, s=None) -> None:
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         self._data['data']['scales'][s]['bounding_rect'] = bounding_rect
 
     def set_calculate_bounding_rect(self, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
         return self.bounding_rect()
 
-    def set_image_size(self, scale) -> None:
-        self._data['data']['scales'][scale]['image_src_size'] = ImageSize(self.path_base(s=scale))
-        logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=scale)}: {self.image_size(s=scale)}')
+    def set_image_size(self, s=None) -> None:
+        if s == None: s = self.curScale
+        self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+        logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
 
     def set_image_size_directly(self, size, s=None):
-        if s == None: s = cfg.data.scale()
+        if s == None: s = self.curScale
         logger.info(f"Setting Image Sizes Directly, {s}, ImageSize: {size}")
         self._data['data']['scales'][s]['image_src_size'] = size
 
     def set_poly_order(self, x: int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
-        self._data['data']['scales'][self.scale()]['poly_order'] = int(x)
+        self._data['data']['scales'][self.curScale]['poly_order'] = int(x)
 
     def set_use_poly_order(self, b: bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.scale()]['null_cafm_trends'] = bool(b)
+        self._data['data']['scales'][self.curScale]['null_cafm_trends'] = bool(b)
 
     # def make_absolute(file_path, proj_path):
     #     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
     #     return abs_path
 
     def set_al_dict(self, aldict, s=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         try:
             self._data['data']['scales'][s]['alignment_stack'] = aldict
         except:
@@ -834,7 +840,7 @@ class DataModel:
 
     def set_afm(self, afm: list, s=None, l=None) -> None:
         '''set afm as list of lists of floats'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             self._data['data']['scales'][s]['alignment_stack'][l][
@@ -844,7 +850,7 @@ class DataModel:
 
     def set_cafm(self, cafm: list, s=None, l=None) -> None:
         '''set cafm as list of lists of floats'''
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
             self._data['data']['scales'][s]['alignment_stack'][l][
@@ -853,12 +859,12 @@ class DataModel:
             print_exception()
 
     def selected_method(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method']
 
     def set_selected_method(self, method, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
         self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method'] = method
 
@@ -926,9 +932,9 @@ class DataModel:
 
     def next_coarsest_scale_key(self) -> str:
         if self.n_scales() == 1:
-            return self.scale()
+            return self.curScale
         scales_dict = self._data['data']['scales']
-        cur_scale_key = self.scale()
+        cur_scale_key = self.curScale
         coarsest_scale = list(scales_dict.keys())[-1]
         if cur_scale_key == coarsest_scale:
             return cur_scale_key
@@ -952,7 +958,7 @@ class DataModel:
                              "not are_images_imported() is True")
                 return False
             scales_list = self.scales()
-            cur_scale_key = self.scale()
+            cur_scale_key = self.curScale
             coarsest_scale = scales_list[-1]
             if cur_scale_key == coarsest_scale:
                 logger.debug("is_alignable returning True because: "
@@ -993,7 +999,7 @@ class DataModel:
 
     def append_image(self, image_file_name, role_name='base'):
         logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
-        scale = cfg.data.scale()
+        scale = self.scale()
         used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
         if False in used_for_this_role:
             layer_index = used_for_this_role.index(False)
@@ -1009,7 +1015,7 @@ class DataModel:
 
     def append_empty(self, role_name):
         logger.debug('MainWindow.append_empty:')
-        scale = cfg.data.scale()
+        scale = self.curScale
         used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
         layer_index = -1
         if False in used_for_this_role:
@@ -1025,7 +1031,7 @@ class DataModel:
         )
 
     def add_img(self, scale_key, layer_index, role, filename=''):
-        logger.info('Adding Image scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))
+        logger.debug('Adding Image scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))
         self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
             {
                 "filename": filename,
@@ -1041,7 +1047,7 @@ class DataModel:
         logger.info('Updating Data Model...')
         # Load the alignment stack after the alignment has completed
         aln_image_stack = []
-        scale = self.scale()
+        scale = self.curScale
         for layer in self.alstack():
             image_name = None
             if 'base' in layer['images'].keys():

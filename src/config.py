@@ -2,6 +2,8 @@
 
 '''This file is for initializing global config and 'data' the dictionary data state in memory.'''
 
+import platform
+
 __all__ = []
 
 LOG_LEVEL = 1
@@ -12,7 +14,7 @@ main_window = None
 opengllogger = None
 selected = None
 ng_worker = None
-extra_ng_workers = []
+extra_ng_workers = {}
 viewer = None
 refLV = None
 baseLV = None
@@ -25,6 +27,8 @@ al_tensor = None
 men_tensor = None
 url = None
 webdriver = None
+results = None
+dt = None
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1160, 680
@@ -52,7 +56,12 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
-# IS_TACC = None
+IS_TACC = None
+if 'Joels-' in platform.node():
+    DEVELOPER_MODE = True
+else:
+    DEVELOPER_MODE = False
+AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = False
 DEBUG_MP = False

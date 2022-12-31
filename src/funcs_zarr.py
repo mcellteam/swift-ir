@@ -15,7 +15,6 @@ from pathlib import Path
 
 import tensorstore as ts
 import tifffile
-# from PIL import Image
 import zarr
 from numcodecs import Blosc
 from numcodecs import Zstd
@@ -77,12 +76,6 @@ def get_zarr_tensor(zarr_path):
             'file_io_concurrency': {'limit': 128},
         },
         'recheck_cached_data': 'open',
-        # 'transform': {
-        #     # 'input_inclusive_min': [-1, 0, 0],
-        #     'output': [
-        #         {'input_dimension': 0, 'offset': -1},
-        #     ],
-        # }
     })
     return arr
 
@@ -100,12 +93,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
             'dtype': '<f4',
             'shape': [cfg.data.res_z(), cfg.data.res_y(), cfg.data.res_x()],
             'chunks': list(cfg.data.chunkshape()),
-            # 'shape': [4, 32, 32],
-            # 'chunks': [1, 16, 16],
             'order': 'C',
-            # 'compressor': None,
-            # 'filters': None,
-            # 'fill_value': None,
         },
     }, create=True).result()
     # arr[1] = 42  # Overwrites, just like numpy/zarr library
@@ -130,8 +118,6 @@ def get_tensor_from_tiff(dir=None, s=None, l=None):
         },
     }, create=True).result()
     return arr
-
-
 
 
 def get_zarr_tensor_layer(zarr_path:str, layer:int):
@@ -167,9 +153,9 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
     # return arr[layer, :, :]
     return slice
 
+
 def loadTiffsMp(directory:str):
     '''
-
     :param directory: Directory containing TIF images.
     :type directory: str
     :return: image_arrays
@@ -185,6 +171,7 @@ def loadTiffsMp(directory:str):
 
     return image_arrays
 
+
 # def tiffs2MultiTiff(directory:str, out:str, n_frames:int, width:int, height:int):
 def tiffs2MultiTiff(directory:str, out:str):
     # tifs = list(pathlib.Path(directory).glob('*.tif'))
@@ -199,8 +186,8 @@ def tiffs2MultiTiff(directory:str, out:str):
     #     imlist.append(Image.fromarray(m))
     # imlist[0].save("test.tif", compression="tiff_deflate", save_all=True, append_images=imlist[1:])
 
+
 def remove_zarr(path) -> None:
-    # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
         logger.info('Removing Extant Zarr Located at %s' % path)
         try:
@@ -212,34 +199,24 @@ def remove_zarr(path) -> None:
 
 
 def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
-    logger.critical('Preallocating Zarr Array...')
-    cfg.main_window.hud.post('Preallocating Zarr Group: %s...' % group)
+    '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
     src = os.path.abspath(cfg.data.dest())
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
-
+    path_base = os.path.basename(src)
+    path_relative = os.path.join(path_base, name)
+    logger.info('Preallocating Zarr Array...')
+    cfg.main_window.hud(f'Preallocating {path_base}/{group}...')
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
 
-    # zarr.blosc.list_compressors()
-    # ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
-
-    path_base = os.path.basename(src)
-    path_relative = os.path.join(path_base, name)
-
-    output_text = f'Creating Zarr...' \
-                  f'\n{path_relative}' \
-                  f'\n └ {group}({name}) {dtype} {cname}/{clevel}' \
-                  f'\n   shape={str(shape)} chunks={chunkshape}' \
-                  # f'\nchunk shape       = {chunkshape}' \
-                  # f'\ndata type         = {dtype}' \
-                  # f'\ncompression/level = {cname}/{clevel}'
-
-
-    logger.info(output_text)
+    output_text = f'\n  Zarr root : {path_relative}' \
+                  f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
+                  f'\n      shape : {str(shape)} ' \
+                  f'\n      chunk : {chunkshape}'
 
     try:
         if overwrite and os.path.exists(path_out):
@@ -265,78 +242,11 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         # write_metadata_zarr_multiscale() # thon3 al   write single multiscale zarr for all aligned s
     except:
         print_exception()
+        cfg.main_window.warn('Zarr Preallocation Encountered A Problem')
     else:
         cfg.main_window.hud.done()
-        cfg.main_window.hud.post(output_text)
-
-
-# def preallocate_zarr_src():
-#     cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
-#     logger.info('Preallocating Zarr scales...')
-#     try:
-#         zarr_path = os.path.join(cfg.data.dest(), 'img_src.zarr')
-#         logger.info('Zarr Root: %s' % zarr_path)
-#         if os.path.exists(zarr_path):
-#             cfg.main_window.hud.post('Zarr source arrays already exist - Removing them...')
-#             remove_zarr(zarr_path)
-#
-#         root = zarr.group(store=zarr_path, overwrite=True)
-#         # synchronizer = zarr.ThreadSynchronizer()
-#         # root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
-#
-#         cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
-#
-#         for s in cfg.data.scales():
-#             dimx, dimy = cfg.data.image_size(s=s)
-#             name = 's' + str(get_scale_val(s))
-#             shape = (cfg.data.n_layers(), dimy, dimx)
-#             logger.info('Preallocating Zarr Source - Scale: %d, Shape: %s...' % (get_scale_val(s), str(shape)))
-#             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-#             root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
-#             # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
-#     except:
-#         print_exception()
-#     else:
-#         cfg.main_window.hud.done()
-#
-# def preallocate_zarr_aligned(scales=None):
-#     logger.info('Preallocating Aligned Zarr Array...')
-#     try:
-#         if scales == None: scales = [cfg.data.s()]
-#         src = os.path.abspath(cfg.data.dest())
-#         zarr_path = os.path.join(src, 'img_aligned.zarr')
-#         logger.info('Zarring these scales: %s' % str(scales))
-#         logger.info('Zarr Root: %s' % zarr_path)
-#         cname = cfg.data.cname()
-#         clevel = cfg.data.clevel()
-#         chunkshape = cfg.data.chunkshape()
-#
-#         for s in scales:
-#             out_path = os.path.join(zarr_path, 's' + str(get_scale_val(s)))
-#             if os.path.exists(out_path):
-#                 remove_zarr(out_path)
-#             group = zarr.group(store=zarr_path) # overwrite cannot be set to True here, will overwrite entire Zarr
-#             rect = cfg.data.bounding_rect(s=s)
-#             # shape = (cfg.data.n_layers(), rect[2], rect[3])
-#             shape = (cfg.data.n_layers(), rect[3], rect[2])
-#
-#             logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (s, str(shape)))
-#
-#             name = 's' + str(get_scale_val(s))
-#             compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-#             group.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
-#             # group.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
-#             '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
-#
-#         # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
-#
-#         # if cfg.data.s() == 'scale_1':
-#         #     write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
-#     except:
-#         print_exception()
-#     else:
-#         cfg.main_window.hud.done()
-#
+        # cfg.main_window.hud(output_text)
+        logger.info(output_text)
 
 
 def write_metadata_zarr_multiscale(path):
@@ -367,6 +277,7 @@ def write_metadata_zarr_multiscale(path):
             "type": "gaussian",
         }
     ]
+
 
 def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     zarr_path = os.path.join(cfg.data.dest(), name)
@@ -461,12 +372,6 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
         # parser.add_argument("cname", type=str, help="Compression type name")
         # parser.add_argument("clevel", type=int, help="Compression level (0-9)")
         # args = parser.parse_args()
-        #
-        #
-        #
-        # # os.makedirs(os.path.dirname('out.zarr'), exist_ok=True)
-        # # os.makedirs(os.path.dirname('img_aligned_zarr'), exist_ok=True)
-        # Path(args.dir_out).mkdir(parents=True, exist_ok=True)
 
         of = 'out.zarr'
         shutil.rmtree(of)

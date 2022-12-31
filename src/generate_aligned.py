@@ -89,7 +89,6 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
     for task in args_list:
         task_queue.add_task(task)
     try:
-        # cfg.main_window.hud.done()
         dt = task_queue.collect_results()
         show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
@@ -155,8 +154,7 @@ def makeTasksList(iter, job_script, scale, rect, zarr_group):
                 str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name,
                 zarr_group, str(ID)]
         if ID in [0,1,2]:
-            logger.info('\nExample Arguments (ID: %d):\n%s' % (ID, str(args)))
-            logger.info('cafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
+            logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
         # NOTE - previously had conditional here for 'if use_bounding_rect' then don't pass -rect args
         args_list.append(args)
     return args_list

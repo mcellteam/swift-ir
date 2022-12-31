@@ -34,8 +34,7 @@ def generate_scales():
 
     for s in cfg.data.downscales():  # value string '1 2 4'
         scale_val = get_scale_val(s)
-        logger.info('Scale %d:' % scale_val)
-        cfg.main_window.hud.post("Preparing to Downsample Scale %d..." % scale_val)
+        logger.info("Queuing Downsample Tasks For Scale %d..." % scale_val)
         for i, layer in enumerate(cfg.data.get_iter(s)):
             base       = cfg.data.base_image_name(s=s, l=i)
             if_arg     = os.path.join(src, base)
@@ -49,12 +48,15 @@ def generate_scales():
             #     task_queue.add_task(cmd=sys.executable,
             #                         args=['src/job_single_scale.py', str(s), str(fn), str(ofn)], wd='.')
             layer['images']['base']['filename'] = ofn
-        cfg.main_window.hud.done()
-    cfg.main_window.hud.post('Generating Scale Image Hierarchy...')
     dt = task_queue.collect_results()
-    show_mp_queue_results(task_queue=task_queue, dt=dt)
+    results = task_queue.get_status_of_tasks()
+    # show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
     logger.info('<<<< Generate Scales End <<<<')
+    print(f'results : {results}')
+    print(f'dt      : {dt}')
+    cfg.results = results
+    cfg.dt = dt
 
     '''
     ____task_queue Parameters (Example)____
