@@ -39,9 +39,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     logger.info('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
 
     if are_aligned_images_generated():
-        cfg.main_window.hud.post(f'Removing Aligned for Scale {scale_val}...')
         remove_aligned(use_scale=scale, start_layer=start_layer) #0903 Moved into conditional
-        cfg.main_window.hud.done()
 
     cfg.data.clear_method_results(scale=scale, start=start_layer, end=last_layer) #1109 Should this be on the copy?
     if rename_switch:
@@ -93,7 +91,6 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     # task_queue.work_q.join()
     # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
     dt = task_queue.collect_results()
-    # cfg.main_window.hud.done()
     show_mp_queue_results(task_queue=task_queue, dt=dt)
 
     # Sort the tasks by layers rather than by process IDs

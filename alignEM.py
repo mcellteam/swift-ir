@@ -52,6 +52,7 @@ import sys, signal, logging, argparse
 import faulthandler
 
 from qtpy import QtCore,QtWebEngineCore
+from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
@@ -139,7 +140,12 @@ def main():
     if args.profile:
         cfg.PROFILER = True
 
-    start_profiler()
+    # start_profiler()
+
+    # https://doc.qt.io/qtforpython-5/PySide2/QtCore/Qt.html
+    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+    # Forces the usage of OpenGL ES 2.0 or higher on platforms that
+    # use dynamic loading of the OpenGL implementation.
 
     if cfg.FAULT_HANDLER:
         faulthandler.enable(file=sys.stderr, all_threads=True)

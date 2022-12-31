@@ -35,8 +35,8 @@ QWidget#details_banner {
 }
 
 /* These should be the same */
-QStackedWidget#ImagePanel { background-color: #6D7D77;  }
-QWidget#ng_panel { background-color: #6D7D77; }
+QStackedWidget#viewer_stack_widget { background-color: #6D7D77;  }
+QWidget#ng_widget { background-color: #6D7D77; }
 
 QLabel#toolbar_layer_label { background-color: transparent; }
 QLabel#toolbar_layout_label { background-color: transparent; }
@@ -80,7 +80,7 @@ QTextEdit#matchpoint_text_snr {
 	background-color: transparent;
 }
 
-QTreeView#treeview_widget {
+QTreeView#treeview {
     background-color: #ffffff;
     color: #333;
     border: 2px solid #555;

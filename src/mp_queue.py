@@ -89,7 +89,8 @@ class TaskQueue(QObject):
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
         logger.critical(f'Starting Task Queue: {self.pbar_text}...')
-        cfg.main_window.hud.post(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores: {self.pbar_text}')
+        cfg.main_window.hud(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores...')
+        # cfg.main_window.hud(f'{self.pbar_text}')
         logger.info(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks...')
         logger.info(f'start method: {self.ctx.get_start_method()}')
 
@@ -157,6 +158,7 @@ class TaskQueue(QObject):
         self.work_queue.put((self.task_id, task)) # <-- one-by-one calls to 'TaskQueue.add_task' adds each task to the queue
         self.task_id += 1
 
+
     def requeue_task(self, task_id) -> None:
         logger.warning("Requeing Task (ID: %d)..." % task_id)
         task = []
@@ -170,9 +172,22 @@ class TaskQueue(QObject):
         self.work_queue.put((task_id, task))
         logger.debug("<<<<  TaskQueue.requeue <<<<")
 
+
     def clear_tasks(self) -> None:
         self.task_dict = {}
         self.task_id = 0
+
+
+    def get_status_of_tasks(self) -> tuple:
+        n_success, n_queued, n_failed = 0, 0, 0
+        for k in self.task_dict.keys():
+            if self.task_dict[k]['statusBar'] == 'completed':
+                n_success += 1
+            elif self.task_dict[k]['statusBar'] == 'queued':
+                n_queued += 1
+            elif self.task_dict[k]['statusBar'] == 'task_error':
+                n_failed += 1
+        return n_success, n_queued, n_failed
 
 
     def collect_results(self):
@@ -189,7 +204,8 @@ class TaskQueue(QObject):
                 self.parent.setPbarText(text=self.pbar_text)
             self.parent.pbar_widget.show()
         except:
-            print_exception()
+            # print_exception()
+            logger.error('ERROR')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
                 logger.info('# Tasks Pending   : %d' % n_pending)
@@ -197,8 +213,13 @@ class TaskQueue(QObject):
                 for j in range(n_pending):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
                     # logger.info(task_str)
-                    try:     self.parent.pbar_update(self.n_tasks - realtime)
-                    except:  print_exception()
+                    try:
+                        self.parent.pbar_update(self.n_tasks - realtime)
+                        QApplication.processEvents()
+                    except:
+                        # print_exception()
+                        logger.error('ERROR')
+                        pass
                     task_id, outs, errs, rc, dt = self.result_queue.get()
                     # logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
                     # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
@@ -237,7 +258,8 @@ class TaskQueue(QObject):
                 logger.info('Retries          : %d' % (retries_tot - 1))
                 logger.info('══════ Complete ══════')
         except:
-            print_exception()
+            logger.error('ERROR')
+            # print_exception()
         finally:
             # logger.info('Checking Status of Tasks...')
             # n_success, n_queued, n_failed = 0, 0, 0

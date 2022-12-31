@@ -45,13 +45,12 @@ def generate_multiscale_zarr(src, out):
                      str(task[4]),          # s str
                      ]
         task_queue.add_task(task_args)
-    cfg.main_window.hud.post('Generating NGFF-Compliant Multiscale Zarr...')
+    cfg.main_window.tell('Copy-converting TIFFs to NGFF-Compliant Multiscale Zarr...')
     t0 = time.time()
     task_queue.collect_results()
     dt = time.time() - t0
     show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
-    # cfg.main_window.hud.done()
     logger.info('<<<< Generate Zarr End <<<<')
 
 

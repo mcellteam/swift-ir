@@ -2,12 +2,10 @@
 '''
 Performance:
 Function 'initPythonConsole' executed in 0.5900s
-
-
 '''
 
 import qtconsole
-from IPython.lib import guisupport
+# from IPython.lib import guisupport
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication
@@ -49,7 +47,7 @@ class PythonConsole(RichJupyterWidget):
         def stop():
             self.kernel_client.stop_channels()
             self.kernel_manager.shutdown_kernel()
-            guisupport.get_app_qt().exit()
+            # guisupport.get_app_qt().exit()
 
         self.exit_requested.connect(stop)
 

@@ -41,7 +41,7 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'get_img_filenames', 'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok',
            'print_project_tree','verify_image_file', 'is_arg_scale_aligned', 'print_snr_list',
            'is_any_scale_aligned_and_generated', 'get_tensor_handle_unal', 'get_tensor_handle_al', 'get_refLV',
-           'get_baseLV', 'get_alLV'
+           'get_baseLV', 'get_alLV', 'get_aligned_scales'
            ]
 
 logger = logging.getLogger(__name__)
@@ -210,6 +210,32 @@ def kill_task_queue(task_queue):
     task_queue.stop()
     del task_queue
 
+def show_status_report(results, dt):
+    if results[2] > 0:
+        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
+        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
+        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
+        # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
+        # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+        cfg.main_window.hud(f'  Succeeded    = {results[0]}')
+        if results[1] > 0:
+            cfg.main_window.warning(f'  Queued       = {results[1]}')
+        else:
+            cfg.main_window.hud(f'  Queued       = {results[1]}')
+        cfg.main_window.error(f'  Failed       = {results[2]}')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+    else:
+        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
+        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
+        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
+        # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
+        # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+        cfg.main_window.hud(f'  Succeeded    = {results[0]}')
+        cfg.main_window.hud(f'  Queued       = {results[1]}')
+        cfg.main_window.hud(f'  Failed       = {results[2]}')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+
+
 def show_mp_queue_results(task_queue, dt):
 
     logger.info('Checking Status of Tasks...')
@@ -242,13 +268,25 @@ def show_mp_queue_results(task_queue, dt):
         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
-        cfg.main_window.hud.post('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt),
-                                 logging.WARNING)
+        # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
+        # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+        cfg.main_window.hud(f'  Succeeded    = {n_success}')
+        if n_queued > 0:
+            cfg.main_window.warning(f'  Queued       = {n_queued}')
+        else:
+            cfg.main_window.hud(f'  Queued       = {n_queued}')
+        cfg.main_window.error(f'  Failed       = {n_failed}')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
     else:
         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
-        cfg.main_window.hud.post('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt), logging.INFO)
+        # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
+        # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+        cfg.main_window.hud(f'  Succeeded    = {n_success}')
+        cfg.main_window.hud(f'  Queued       = {n_queued}')
+        cfg.main_window.hud(f'  Failed       = {n_failed}')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
 
 # def load():
 #     try:
@@ -361,16 +399,16 @@ def is_arg_scale_aligned(scale: str) -> bool:
     # logger.info('called by ', inspect.stack()[1].function)
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
     if not os.path.isdir(zarr_path):
-        logger.info(f"Path Not Found: {zarr_path}")
+        logger.debug(f"Path Not Found: {zarr_path}")
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.info(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
+        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.info(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
+        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
         return False
     if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.info(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
         return False
     return True
 
@@ -575,16 +613,24 @@ def remove_aligned(use_scale, start_layer=0):
     :param start_layer: The starting l index from which to remove all aligned images, defaults to 0.
     :type start_layer: int
     '''
+    cfg.main_window.hud.post(f'Removing Aligned for Scale {get_scale_val(use_scale)}...')
+    try:
+        for layer in cfg.data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
+            ifn = layer['images'].get('filename', None)
+            layer['images'].pop('aligned', None)
+            if ifn != None:
+                try:
+                    os.remove(ifn)
+                except:
+                    print_exception()
+                    logger.warning("os.remove(%s) Triggered An Exception" % ifn)
+    except:
+        print_exception()
+        cfg.main_window.warn('An Exception Was Raisied While Removing Previous Alignment...')
+    else:
+        cfg.main_window.hud.done()
 
-    for layer in cfg.data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
-        ifn = layer['images'].get('filename', None)
-        layer['images'].pop('aligned', None)
-        if ifn != None:
-            try:
-                os.remove(ifn)
-            except:
-                print_exception()
-                logger.warning("os.remove(%s) Triggered An Exception" % ifn)
+
 
 
 def verify_image_file(path: str) -> str:
@@ -642,7 +688,7 @@ def create_scale_one_symlinks(src, dest, imgs):
 
 def create_project_structure_directories(scale_key:str) -> None:
     subdir_path = os.path.join(cfg.data.dest(), scale_key)
-    cfg.main_window.hud.post('Creating Project Directory Structure for Scale %s...' % get_scale_val(scale_key))
+    cfg.main_window.hud('Creating Directory for Scale %s...' % get_scale_val(scale_key))
     src_path = os.path.join(subdir_path, 'img_src')
     aligned_path = os.path.join(subdir_path, 'img_aligned')
     bias_data_path = os.path.join(subdir_path, 'bias_data')

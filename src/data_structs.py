@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import src.config as cfg
 
-data_struct = \
+data_template = \
     {
-        "version": 0.31,
+        "version": 0.50,
         "method": "None",
         "user_settings": {
             "max_image_file_size": 100000000,

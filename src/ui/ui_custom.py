@@ -7,7 +7,7 @@ from qtpy.QtCore import Qt, QSize, QRect
 
 class VerticalLabel(QLabel):
 
-    def __init__(self, text, *args):
+    def __init__(self, text, bg_color=None, font_color=None, font_size=None, *args):
         QLabel.__init__(self, text, *args)
 
         self.text = text
@@ -15,6 +15,15 @@ class VerticalLabel(QLabel):
         font = QFont()
         font.setBold(True)
         self.setFont(font)
+        style = ''
+        if bg_color:
+            style += f'background-color: {bg_color};'
+        if font_color:
+            style += f'color: {font_color};'
+        if font_size:
+            style += f'font-size: {str(font_size)};'
+        if style != '':
+            self.setStyleSheet(style)
 
     def paintEvent(self, event):
         p = QPainter(self)
@@ -58,7 +67,7 @@ class HorizontalLabel(QLabel):
         p = QPainter(self)
         # p.rotate(-90)
         rgn = QRect(-self.height(), 0, self.height(), self.width())
-        # align  = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignHCenter
+        align  = Qt.AlignmentFlag.AlignRight
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.hint = p.drawText(rgn, align, self.text)

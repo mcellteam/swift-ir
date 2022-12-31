@@ -28,17 +28,8 @@ if __name__ == '__main__':
         start_layer = int(sys.argv[5].strip())
         num_layers = int(sys.argv[6].strip())
         use_file_io = (int(sys.argv[7].strip()) != 0)
-        # logger.info("Inside single_alignment_job with: " +
-        #             str(project_name) + ', ' +
-        #             str(alignment_option) + ', ' +
-        #             str(use_scale) + ', ' +
-        #             str(swiftir_code_mode) + ', ' +
-        #             str(start_layer) + ', ' +
-        #             str(num_layers))
-
         with open(project_name, 'r') as f:
             project_dict = json.load(f)
-
         updated_model, need_to_write_json = run_json_project(
                 project=project_dict,
                 alignment_option=alignment_option,
@@ -46,7 +37,6 @@ if __name__ == '__main__':
                 swiftir_code_mode=swiftir_code_mode,
                 start_layer=start_layer,
                 num_layers=num_layers)
-
         # Send the updated data previewmodel and need_to_write_json back to the data runner via stdout
         jde = json.JSONEncoder(indent=1, separators=(",", ": "), sort_keys=True)
         run_output_json = jde.encode({'data_model': updated_model, 'need_to_write_json': need_to_write_json})
@@ -63,7 +53,5 @@ if __name__ == '__main__':
             print(run_output_json)
             print("---JSON-DELIMITER---")
 
-        # logger.info ( "\n\n\n JSON data MODEL:\n" + str(proj_json) + "\n\n" )
-        # flush()
         sys.stdout.close()
         sys.stderr.close()
