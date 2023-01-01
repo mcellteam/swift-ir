@@ -11,7 +11,7 @@ from collections import namedtuple
 from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex, Signal, QEvent
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTabWidget, QGridLayout, \
     QHBoxLayout, QFileDialog, QTableView, QErrorMessage, QGroupBox, QTextEdit, QSplitter, QStatusBar, \
-    QAbstractItemView, QStyledItemDelegate, QItemDelegate, QSlider, QLabel
+    QAbstractItemView, QStyledItemDelegate, QItemDelegate, QSlider, QLabel, QAbstractScrollArea
 from qtpy.QtGui import QImage, QFont
 
 from src.data_model import DataModel
@@ -23,16 +23,17 @@ logger = logging.getLogger(__name__)
 
 class LayerViewWidget(QWidget):
     def __init__(self, parent=None, *args, **kwargs):
-        super(LayerViewWidget, self).__init__(*args, **kwargs)
+        super(QWidget, self).__init__(*args, **kwargs)
         self.parent = parent
         self.layout = QGridLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
         self._dataframe = None # path to a file on disk
         self._selected_rows = []
-        self.INITIAL_ROW_HEIGHT = 50
-        self.INITIAL_FONT_SIZE = 14
+        self.INITIAL_ROW_HEIGHT = 30 # was 50
+        self.INITIAL_FONT_SIZE = 13
         self.table_view = QTableView()
+        self.table_view.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         self.table_view.setFont(QFont('Arial', self.INITIAL_FONT_SIZE))
 
         self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -42,18 +43,17 @@ class LayerViewWidget(QWidget):
         self.table_view.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.table_view.setSelectionBehavior(QTableView.SelectRows)
 
-        self.row_height_slider = Slider(min=4, max=100)
+        self.row_height_slider = Slider(min=4, max=80)
         self.row_height_slider.setMaximumWidth(100)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateRowHeight)
         self.row_height_widget = QWidget()
         self.row_height_hlayout = QHBoxLayout()
-        self.row_height_hlayout.setContentsMargins(2, 0, 2, 2)
+        self.row_height_hlayout.setContentsMargins(2, 0, 2, 0)
         self.row_height_widget.setLayout(self.row_height_hlayout)
         self.row_height_hlayout.addWidget(QLabel('Row Height:'))
         self.row_height_hlayout.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
         # self.row_height_hlayout.addStretch()
-
 
         self.font_size_slider = Slider(min=4, max=26)
         self.font_size_slider.setMaximumWidth(100)
@@ -61,14 +61,17 @@ class LayerViewWidget(QWidget):
         self.font_size_slider.valueChanged.connect(self.updateFontSize)
         self.font_size_widget = QWidget()
         self.font_size_hlayout = QHBoxLayout()
-        self.font_size_hlayout.setContentsMargins(2, 0, 2, 2)
+        self.font_size_hlayout.setContentsMargins(2, 0, 2, 0)
         self.font_size_widget.setLayout(self.font_size_hlayout)
         self.font_size_hlayout.addWidget(QLabel('Font Size:'))
         self.font_size_hlayout.addWidget(self.font_size_slider, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.controls = QWidget()
+        self.controls.setObjectName('controls')
+
         self.controls_hlayout = QHBoxLayout()
-        self.controls_hlayout.setContentsMargins(2, 2, 2, 2)
+        # self.controls_hlayout.setContentsMargins(2, 2, 2, 2)
+        self.controls_hlayout.setContentsMargins(0, 0, 0, 0)
         self.controls_hlayout.addWidget(self.row_height_widget)
         self.controls_hlayout.addWidget(self.font_size_widget)
         self.controls_hlayout.addStretch()
@@ -81,10 +84,12 @@ class LayerViewWidget(QWidget):
         # self.table_view.resizeColumnsToContents()
         # self.table_view.setColumnWidth(0, 68)
         # self.table_view.verticalHeader().setDefaultSectionSize(60)
-        self.table_view.setColumnWidth(0, self.INITIAL_ROW_HEIGHT)
-        self.table_view.setColumnWidth(2, 74)
-        self.table_view.setColumnWidth(3, 48)
-        self.table_view.setColumnWidth(4, 190)
+
+        # self.table_view.setColumnWidth(0, self.INITIAL_ROW_HEIGHT)
+        # self.table_view.setColumnWidth(2, 200)
+        self.table_view.setColumnWidth(3, 380)
+        self.table_view.setColumnWidth(4, 20)
+        # self.table_view.setRowHeight()
 
         # cfg.main_window.layer_view_widget.table_view.setColumnWidth(0,
         #                                                             cfg.main_window.layer_view_widget.table_view.rowHeight(
@@ -140,6 +145,11 @@ class LayerViewWidget(QWidget):
         # self.table_view.setItemDelegateForColumn(3, ButtonDelegate())
         # self.button_delegate = PushButtonDelegate(view=self.table_view)
         # self.table_view.setItemDelegateForColumn(3, self.button_delegate)
+
+        self.table_view.setColumnWidth(1, 160)
+        self.table_view.setColumnWidth(2, 80)
+        self.table_view.setColumnWidth(3, 40)
+        self.table_view.setColumnWidth(4, 176)
         QApplication.processEvents()
 
     def set_selected_row(self, row):
@@ -164,12 +174,9 @@ class LayerViewWidget(QWidget):
 
 
     def selectionChanged(self):
-        # logger.info('selection_changed:')
+        logger.info('selection_changed:')
         caller = inspect.stack()[1].function
         if caller != 'clear_selection':
-
-            # logger.info('Selection Changed!')
-            # indexes = self.table_view.selectedIndexes()
             selection = self.table_view.selectedIndexes()
             self._selected_rows = list(set([row.row() for row in selection]))
             # print(str(self._selected_rows))
@@ -180,6 +187,7 @@ class LayerViewWidget(QWidget):
             QApplication.processEvents()
         cfg.main_window.dataUpdateWidgets()
 
+
     def updateRowHeight(self, h):
         parentVerticalHeader = self.table_view.verticalHeader()
         # parentVerticalHeader.setMinimumSectionSize(rowHeight)
@@ -189,11 +197,13 @@ class LayerViewWidget(QWidget):
             parentVerticalHeader.resizeSection(section, h)
         self.table_view.setColumnWidth(0, h)
 
+
     def updateFontSize(self, s):
         # self.table_view.setFont(QFont('Arial', s))
         fnt = self.table_view.font()
         fnt.setPointSize(s)
         self.table_view.setFont(fnt)
+
 
     def flags(self, index):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsUserCheckable

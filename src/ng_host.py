@@ -54,7 +54,7 @@ class WorkerSignals(QObject):
 # class NgHost(QObject):
 class NgHost(QRunnable):
     def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
-        QObject.__init__(self)
+        QRunnable.__init__(self)
         self.parent = parent
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
@@ -251,10 +251,10 @@ class NgHost(QRunnable):
         tissue_width = cfg.data.res_x(s=self.scale) * max_width  # nm
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
-        css = '%.2E' % Decimal(cross_section_scale)
-        text = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
-                 (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
-        logger.info(text)
+        # css = '%.2E' % Decimal(cross_section_scale)
+        # text = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
+        #          (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
+        # logger.info(text)
         # logger.info('widget size  =%s' % str(widget_size))
         # logger.info('arrangement  =%d' % self.arrangement)
         # logger.info('is_aligned   =%s' % is_aligned)

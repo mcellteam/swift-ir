@@ -114,6 +114,9 @@ def generate_aligned(scale, start_layer=0, num_layers=-1, preallocate=True):
         zarr_group = os.path.join(dest, 'img_aligned.zarr', 's%d' % scale_val)
         args = [sys.executable, job_script, str(ID), al_name, zarr_group]
         task_list.append(args)
+        if cfg.PRINT_EXAMPLE_ARGS:
+            if ID in [0,1,2]:
+                logger.info('generate_aligned/job_convert_zarr Example Arguments (ID: %d):\n%s' % (ID, str(args)))
         # task_queue.add_task(args)
     chunkshape = cfg.data.chunkshape()
     # task_list = reorder_tasks(task_list, chunkshape[0])
@@ -153,8 +156,9 @@ def makeTasksList(iter, job_script, scale, rect, zarr_group):
                 str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
                 str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name,
                 zarr_group, str(ID)]
-        if ID in [0,1,2]:
-            logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
+        if cfg.PRINT_EXAMPLE_ARGS:
+            if ID in [0,1,2]:
+                logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
         # NOTE - previously had conditional here for 'if use_bounding_rect' then don't pass -rect args
         args_list.append(args)
     return args_list

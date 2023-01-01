@@ -84,9 +84,10 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
                          str(cfg.USE_FILE_IO)  # Use File IO instead of Pipe
                          ]
             task_queue.add_task(task_args)
-            if index in range(start_layer, start_layer + 3):
-                e = [str(p) for p in task_args] # example
-                logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
+            if cfg.PRINT_EXAMPLE_ARGS:
+                if index in range(start_layer, start_layer + 3):
+                    e = [str(p) for p in task_args] # example
+                    logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
 
     # task_queue.work_q.join()
     # cfg.main_window.hud.post('Computing Alignment Using SWIM...')

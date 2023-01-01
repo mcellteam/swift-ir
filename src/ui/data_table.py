@@ -30,7 +30,7 @@ import sys
 import inspect
 import argparse
 import pandas as pd
-# from python_console import PythonConsole
+# from _py_console import PythonConsole
 
 from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTabWidget, QGridLayout, \
@@ -182,8 +182,8 @@ class DataTable(QMainWindow):
         self.results_widget = QTextEdit('Results')
         self.results_widget.setReadOnly(True)
 
-        # self.python_console = PythonConsole()
-        # tab3_layout.addWidget(self.python_console,0, 0)
+        # self._py_console = PythonConsole()
+        # tab3_layout.addWidget(self._py_console,0, 0)
 
         self.splitter = QSplitter(Qt.Vertical)
         self.splitter.addWidget(self.table_widget)

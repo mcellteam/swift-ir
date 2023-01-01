@@ -57,14 +57,14 @@ class DataModel:
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
-        if not self.layer():
-            self.set_layer(0)
         self.scalesAligned = []
         self.nScalesAligned = None
         self.nscales = None
         self.nlayers = None
         self.curScale = None
         self.set_defaults()
+        if not self.layer():
+            self.set_layer(0)
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -294,8 +294,7 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
-            return str(self._data['data']['scales'][s]['alignment_stack'][l]
-                       ['align_to_ref_method']['method_results']['snr_report'])
+            return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']['snr_report']
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
@@ -773,7 +772,7 @@ class DataModel:
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
         assert isinstance(index, int)
-        logger.info(f'Viewing Section #{index}')
+        logger.info(f'Viewing #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index
 
     def set_skip(self, b: bool, s=None, l=None) -> None:
@@ -1146,7 +1145,7 @@ class DataModel:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
     def link_all_stacks(self):
-        '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
+        '''Called by the functions '_callbk_skipChanged' and 'import_images'  '''
         # logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
         self.ensure_proper_data_structure()  # 0712 #0802 #original
         for scale_key in self.scales():

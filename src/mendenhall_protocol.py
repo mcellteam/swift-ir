@@ -42,7 +42,7 @@ class Mendenhall(QObject):
     def set_directory(self):
         self.sink = mendenhall_dialog()
         cfg.data.set_source_path(self.sink)
-        cfg.main_window.save_project_to_file()
+        cfg.main_window._proj_saveToFile()
 
     def start_watching(self):
         self.watchmen = QFileSystemWatcher() # files(), directories()
