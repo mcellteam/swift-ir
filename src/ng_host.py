@@ -169,11 +169,11 @@ class NgHost(QRunnable):
         self.ref_l = 'ref_%d' % self.sf
         self.base_l = 'base_%d' % self.sf
         self.aligned_l = 'aligned_%d' % self.sf
-        if cfg.main_window.toolbar_layout_combobox.currentText() == '':
-            cfg.main_window.toolbar_layout_combobox.setCurrentText('xy')
+        if cfg.main_window._cmbo_ngLayout.currentText() == '':
+            cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
             self.nglayout = 'xy'
         else:
-            self.nglayout = cfg.main_window.toolbar_layout_combobox.currentText()
+            self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
         sw = {'xy': 'yz',
               'yz': 'xy',
               'xz': 'xz',

@@ -20,18 +20,18 @@ QToolBar#toolbar {
     background-color: #141414;
 }
 
-QWidget#browser_overlay_widget {
+QWidget#_overlayRect {
     background-color: rgba(0, 0, 0, 0.5);
+}
+QLabel#_overlayLab {
+    color: #FF0000;
+    font-size: 28px;
 }
 
 /* These should be the same */
 QStackedWidget#viewer_stack_widget { background-color: #004060;  }
 QWidget#ng_widget { background-color: #004060; }
 
-QLabel#browser_overlay_label {
-    color: #FF0000;
-    font-size: 28px;
-}
 
 QTextEdit#matchpoint_text_prompt {
 	background-color: #6D7D77;
