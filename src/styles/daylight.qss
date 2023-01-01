@@ -24,8 +24,12 @@ border-width: 0px;
 
 }
 
-QWidget#browser_overlay_widget {
+QWidget#_overlayRect {
     background-color: rgba(0, 0, 0, 0.5);
+}
+QLabel#_overlayLab {
+    color: #FF0000;
+    font-size: 28px;
 }
 
 QWidget#details_banner {
@@ -63,12 +67,6 @@ QCheckBox {
 	border-radius: 2px;
 	border-style: outset;
 	font-size: 10px;
-}
-
-
-QLabel#browser_overlay_label {
-    color: #FF0000;
-    font-size: 28px;
 }
 
 QTextEdit#main_details_subwidgetA {

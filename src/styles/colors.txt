@@ -9,3 +9,5 @@
 #daebfe - UCLA Lightest Blue
 #003b5c - UCLA Darkest Blue
 (https://brand.ucla.edu/identity/colors)
+
+#ebecf0 - "bright" grey

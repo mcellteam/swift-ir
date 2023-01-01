@@ -30,7 +30,8 @@ class SnrPlot(QWidget):
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
         # self.view.setBackground('#ffffff')
-        self.view.setBackground('#004060')
+        drafting_blue = '#004060'
+        self.view.setBackground(drafting_blue)
         self.plot = self.view.addPlot()
         self.vb = CustomViewBox()
 
@@ -56,7 +57,7 @@ class SnrPlot(QWidget):
         self.plot.showGrid(x=True, y=True, alpha=220)  # alpha: 0-255
         # self.plot.getPlotItem().enableAutoRange()
         self.plot.hoverable = True
-        self.plot.hoverSize = 11
+        self.plot.hoverSize = 12
         # self.plot.setFocusPolicy(Qt.NoFocus)
         # font = QFont()
         # font.setPixelSize(14)
@@ -65,7 +66,7 @@ class SnrPlot(QWidget):
         # self.plot.getAxis("left").setStyle(tickFont=font)
         # self.plot.getAxis("bottom").setHeight(12)
         # self.plot.getAxis("left").setWidth(12)
-        self.plot.getAxis("left").setStyle(tickTextOffset=2)
+        self.plot.getAxis("left").setStyle(tickTextOffset=21)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
 
         self.plot.setCursor(Qt.CrossCursor)
@@ -80,9 +81,16 @@ class SnrPlot(QWidget):
         self.checkboxes_hlayout.setContentsMargins(0, 0, 0, 0)
         self.checkboxes_widget.setLayout(self.checkboxes_hlayout)
 
+        # self.layout = QGridLayout()
+        # self.layout.addWidget(self.view, 0, 0, 1, 5)
+        # self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        # # self.layout.setContentsMargins(4, 2, 4, 2)
+        # self.layout.setContentsMargins(0, 0, 0, 0)
+        # self.setLayout(self.layout)
+
         self.layout = QGridLayout()
-        self.layout.addWidget(self.view, 0, 0, 1, 5)
-        self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout.addWidget(self.view, 0, 0, 0, 0)
+        self.layout.addWidget(self.checkboxes_widget, 0, 0, 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
         # self.layout.setContentsMargins(4, 2, 4, 2)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
@@ -248,7 +256,7 @@ class SnrPlot(QWidget):
     def onSnrClick2(self, scale):
         logger.info(f'onSnrClick2 ({scale}):')
         self.selected_scale = scale
-        cfg.main_window.toolbar_scale_combobox.setCurrentText(scale)
+        cfg.main_window._cmbo_setScale.setCurrentText(scale)
 
 
     def onSnrClick(self, plot, points, scale):

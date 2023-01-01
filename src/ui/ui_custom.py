@@ -29,8 +29,8 @@ class VerticalLabel(QLabel):
         p = QPainter(self)
         p.rotate(-90)
         rgn = QRect(-self.height(), 0, self.height(), self.width())
-        # align  = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignHCenter
-        align  = Qt.AlignmentFlag.AlignHCenter
+        align  = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignHCenter
+        # align  = Qt.AlignmentFlag.AlignCenter
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.hint = p.drawText(rgn, align, self.text)
