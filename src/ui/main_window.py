@@ -1386,6 +1386,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def jump_to(self, requested) -> None:
+        logger.info('jumpt_to:')
         if cfg.data:
             if requested not in range(cfg.data.n_layers()):
                 logger.warning('Requested layer is not a valid layer')
@@ -1405,6 +1406,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def jump_to_layer(self) -> None:
+        logger.info('jumpt_to_layer:')
         if cfg.data:
             requested = int(self._inp_jumpTo.text())
             if requested not in range(cfg.data.n_layers()):
