@@ -50,7 +50,7 @@ class SnrPlot(QWidget):
 
         self._plot_brushes = [pg.mkBrush(c) for c in self._plot_colors]
 
-        self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
+        # self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
         # self.plot.setAspectLocked(True)
         self.plot.showGrid(x=True, y=True, alpha=220)  # alpha: 0-255
@@ -96,31 +96,36 @@ class SnrPlot(QWidget):
         if not is_cur_scale_aligned():
             logger.warning('Current scale is not aligned, canceling...')
             return
-
+        self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
         try:
             self.wipePlot()
             self._snr_checkboxes = dict()
             for i, s in enumerate(cfg.data.scales()):
                 self._snr_checkboxes[s] = QCheckBox()
-                self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
+
+                # self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
+                self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
                 self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
                                                   alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                 self._snr_checkboxes[s].setChecked(True)
                 self._snr_checkboxes[s].clicked.connect(self.plotData)
                 self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
                 color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
-                self._snr_checkboxes[s].setStyleSheet('background-color: #F3F6FB;'
-                                                      'border-color: %s; '
-                                                      'border-width: 2px; '
-                                                      'border-style: outset;' % color)
+                self._snr_checkboxes[s].setStyleSheet(f'background-color:{color};'
+                                                      # f'background-color: #F3F6FB;'
+                                                      f'border-color: {color}; '
+                                                      f'border-width: 2px; '
+                                                      f'border-style: outset;')
                 if is_arg_scale_aligned(scale=s):
                     self._snr_checkboxes[s].show()
                 else:
                     self._snr_checkboxes[s].hide()
             self.checkboxes_hlayout.addStretch()
-            self.plotData()
+
         except:
             print_exception()
+        try:    self.plotData()
+        except:  print_exception()
 
 
     def get_axis_data(self, s=None) -> tuple:
@@ -199,7 +204,7 @@ class SnrPlot(QWidget):
         # value = self.snr_points.setToolTip('Test')
         self.last_snr_click = None
         self.plot.addItem(self.snr_points[s])
-        self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
+        # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
 
         errbars = cfg.data.snr_errorbars(s=s)
@@ -234,22 +239,20 @@ class SnrPlot(QWidget):
 
 
     def mouse_clicked(self, mouseClickEvent):
-        # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
-        print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
-        pos_click = int(mouseClickEvent.pos()[0])
-        print('Position Clicked: %d' % pos_click)
+        if cfg.data:
+            # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
+            print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
+            pos_click = int(mouseClickEvent.pos()[0])
+            print('Position Clicked: %d' % pos_click)
 
     def onSnrClick2(self, scale):
-        logger.info('onSnrClick2:')
-        print(f'scale: {scale}')
+        logger.info(f'onSnrClick2 ({scale}):')
         self.selected_scale = scale
         cfg.main_window.toolbar_scale_combobox.setCurrentText(scale)
 
 
     def onSnrClick(self, plot, points, scale):
-        logger.info('onSnrClick:')
-        logger.info(f'plot: {plot}')
-        logger.info(f'scale: {scale}')
+        logger.info(f'onSnrClick ({scale}):')
         index = int(points[0].pos()[0])
         snr = float(points[0].pos()[1])
         pt = points[0] # just allow one point clicked

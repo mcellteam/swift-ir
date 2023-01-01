@@ -5,23 +5,16 @@ Solid implementation of a thread-safe background GUI logger.
 Adapted from:
 https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 '''
-
-import logging
-import random
 import time
-
-from qtpy.QtCore import QObject, QThread, Qt
-from qtpy.QtCore import Signal, Slot, QSize
+import random
+import logging
 from qtpy.QtGui import QFont, QTextCursor
+from qtpy.QtCore import QObject, QThread, Qt, Signal, Slot, QSize
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 
-import src.config as cfg
-
-# __all__ = ['HeadupDisplay', 'HudWorker']
 
 logger = logging.getLogger("hud")
-logger.propagate = False # Prevents Message Propagation To The Root Handler
-
+logger.propagate = False # attempt to disable propogation to the root handler
 
 class Signaller(QObject):
     signal = Signal(str, logging.LogRecord)
@@ -57,7 +50,7 @@ class HeadupDisplay(QWidget):
     COLORS = {
         logging.DEBUG: '#F3F6FB',
         logging.INFO: '#41FF00',
-        logging.WARNING: 'yellow',
+        logging.WARNING: '#ffe135',
         logging.ERROR: '#FD001B',
         logging.CRITICAL: '#decfbe',
     }
@@ -66,7 +59,7 @@ class HeadupDisplay(QWidget):
         super(HeadupDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
-        self.setMinimumHeight(94)
+        self.setMinimumHeight(64)
         self.textedit = te = QPlainTextEdit(self)
         f = QFont()
         f.setStyleHint(QFont.Monospace)
@@ -77,14 +70,6 @@ class HeadupDisplay(QWidget):
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
         h.setFormatter(formatter)
         logger.addHandler(h)
-
-        # self.setStyleSheet("""QToolTip {
-        #                                         background-color: #8ad4ff;
-        #                                         /*color: white;*/
-        #                                         color: #000000;
-        #                                         border: #8ad4ff solid 1px;
-        #                                         }""")
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.addWidget(te)
@@ -208,8 +193,8 @@ class HeadupDisplay(QWidget):
         # else:
         #     width = int(cfg.WIDTH / 2)
         # width = 300
-        width = 420
-        return QSize(width, 100)
+        width = 430
+        return QSize(width, 120)
 
 
 

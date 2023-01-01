@@ -322,10 +322,10 @@ class ConfigAppDialog(QDialog):
             cfg.USE_TENCSORSTORE = self.tsCheckbox.isChecked()
             cfg.HEADLESS = self.headlessCheckbox.isChecked()
             if cfg.HEADLESS:
-                cfg.main_window.tabs_main.setTabVisible(0, False)
+                cfg.main_window._tabs.setTabVisible(0, False)
                 cfg.main_window.external_hyperlink.show()
             else:
-                cfg.main_window.tabs_main.setTabVisible(0, True)
+                cfg.main_window._tabs.setTabVisible(0, True)
                 cfg.main_window.external_hyperlink.hide()
             cfg.DEBUG_NEUROGLANCER = self.ngdebugCheckbox.isChecked()
             if ng.is_server_running():

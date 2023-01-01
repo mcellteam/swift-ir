@@ -29,10 +29,11 @@ url = None
 webdriver = None
 results = None
 dt = None
+py_console = None
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1160, 680
-WIDTH, HEIGHT = 1200, 680
+WIDTH, HEIGHT = 1180, 680
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
@@ -56,11 +57,12 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
-IS_TACC = None
+
+PRINT_EXAMPLE_ARGS = False
 if 'Joels-' in platform.node():
-    DEVELOPER_MODE = True
+    DEV_MODE = True
 else:
-    DEVELOPER_MODE = False
+    DEV_MODE = False
 AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = False
