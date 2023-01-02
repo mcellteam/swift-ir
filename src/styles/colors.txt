@@ -11,3 +11,4 @@
 (https://brand.ucla.edu/identity/colors)
 
 #ebecf0 - "bright" grey
+#ffcccb - very light red

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import warnings
-from qtpy.QtWidgets import QLabel
+from qtpy.QtWidgets import QWidget, QGroupBox, QFormLayout, QLabel, QScrollArea, QMessageBox, QVBoxLayout, \
+    QSizePolicy
 from qtpy.QtGui import QPainter, QFont
 from qtpy.QtCore import Qt, QSize, QRect
+
+
 
 class VerticalLabel(QLabel):
 

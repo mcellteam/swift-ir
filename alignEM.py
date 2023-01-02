@@ -177,7 +177,7 @@ def main():
 
 
     app = QApplication([])
-    app.setStyle('Fusion')
+    # app.setStyle('Fusion')
     cfg.main_window = MainWindow()
     logger.info('Showing AlignEM-SWiFT...')
     cfg.main_window.show()
