@@ -95,16 +95,14 @@ class SnrPlot(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
+        self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
+
 
 
     def initSnrPlot(self, s=None):
         if not cfg.data:
             logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
             return
-        if not is_cur_scale_aligned():
-            logger.warning('Current scale is not aligned, canceling...')
-            return
-        self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
         try:
             self.wipePlot()
             self._snr_checkboxes = dict()
@@ -119,11 +117,11 @@ class SnrPlot(QWidget):
                 self._snr_checkboxes[s].clicked.connect(self.plotData)
                 self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
                 color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
-                self._snr_checkboxes[s].setStyleSheet(f'background-color:{color};'
-                                                      # f'background-color: #F3F6FB;'
-                                                      f'border-color: {color}; '
-                                                      f'border-width: 2px; '
-                                                      f'border-style: outset;')
+                self._snr_checkboxes[s].setStyleSheet(
+                    f'background-color: #F3F6FB;'
+                    f'border-color: {color}; '
+                    f'border-width: 3px; '
+                    f'border-style: outset;')
                 if is_arg_scale_aligned(scale=s):
                     self._snr_checkboxes[s].show()
                 else:
@@ -237,6 +235,7 @@ class SnrPlot(QWidget):
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
+            del self._snr_checkboxes
             self.plot.clear()
             # try:
             #     del self._snr_checkboxes
@@ -264,7 +263,7 @@ class SnrPlot(QWidget):
         index = int(points[0].pos()[0])
         snr = float(points[0].pos()[1])
         pt = points[0] # just allow one point clicked
-        cfg.main_window.hud.post('Jumping to Section #%d, SNR: %.3f' % (index, snr))
+        cfg.main_window.hud.post('Jump to Section #%d (SNR: %.3f)' % (index, snr))
         clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
         # for p in self.last_snr_click:
         #     p.resetPen()

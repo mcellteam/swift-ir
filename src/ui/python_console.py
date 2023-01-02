@@ -38,6 +38,9 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('import os, sys, zarr, neuroglancer')
             self.execute_command('from qtpy.QtCore import QUrl, Qt')
             self.execute_command('from qtpy import QtCore, QtGui, QtWidgets')
+            self.execute_command('from qtpy.QtWidgets import *')
+            self.execute_command('from qtpy.QtCore import *')
+            self.execute_command('from qtpy.QtGui import *')
             self.execute('clear')
             # self.out_prompt = 'AlignEM [<span class="out-prompt-number">%i</span>]: '
 
