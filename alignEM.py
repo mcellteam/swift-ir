@@ -113,7 +113,7 @@ def main():
     parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
     parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
-    parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
+    parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy projectTab')
     parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy

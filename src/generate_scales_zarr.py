@@ -45,14 +45,16 @@ def generate_zarr_scales():
     # store = zarr.open(out, synchronizer=synchronizer)
     # task_list = []
     for scale in cfg.data.scales():
-
         for ID, img in enumerate(imgs):
-
             out = os.path.join(od, 's%d' % get_scale_val(scale))
-            # out = os.path.join(od, 's%d' % get_scale_val(scale))
             fn = os.path.join(dest, scale, 'img_src', img)
             # task_list.append([sys.executable, script, str(ID), fn, out ])
             task = [sys.executable, script, str(ID), fn, out ]
+            if cfg.PRINT_EXAMPLE_ARGS:
+                if ID in [0, 1, 2]:
+                    print('Example Arguments (ID %d):' % (ID))
+                    print(task, sep='\n')
+
             # print('\n'.join(task))
             task_queue.add_task(task)
             # task_queue.add_task([sys.executable, script, str(ID), fn, out ])

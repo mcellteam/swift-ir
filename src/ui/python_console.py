@@ -9,7 +9,7 @@ import qtconsole
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QSize
 
 from src.helpers import is_tacc
 
@@ -78,6 +78,9 @@ class PythonConsole(RichJupyterWidget):
     def set_color_linux(self):
         """Set linux color scheme"""
         self.set_default_style(colors='linux')
+
+    def sizeHint(self):
+        return QSize(600, 100)
 
 
 if __name__ == '__main__':

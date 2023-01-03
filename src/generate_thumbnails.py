@@ -58,10 +58,11 @@ def generate_thumbnails():
         scale_arg = '+%d' % scale_val
         of_arg = 'of=%s' % ofn
         if_arg = '%s' % fn
-        task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
+        task = [iscale2_c, scale_arg, of_arg, if_arg]
+        task_queue.add_task(task)
         if cfg.PRINT_EXAMPLE_ARGS:
             if i in [0, 1, 2]:
-                logger.info('generate_thumbnails/job_convert_zarr Example Arguments (ID: %d):\n%s' % (i, str(scale_arg)))
+                logger.info('Example Arguments (ID: %d):\n%s' % (i, str(task)))
         # if i in [0, 1]:
         #     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 

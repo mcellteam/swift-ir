@@ -11,6 +11,7 @@ LOG_LEVEL = 1
 '''Main Objects'''
 data = None
 main_window = None
+project_tab = None
 opengllogger = None
 selected = None
 ng_worker = None
@@ -58,11 +59,13 @@ CLEVEL = 5
 
 '''Other Defaults'''
 
-PRINT_EXAMPLE_ARGS = False
+
 if 'Joels-' in platform.node():
     DEV_MODE = True
 else:
     DEV_MODE = False
+# DEV_MODE = False
+PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = False
@@ -71,8 +74,6 @@ DEBUG_NEUROGLANCER = False
 PROFILER = False
 DUMMY = False
 USE_TENSORSTORE = True
-USE_SIMPLEHTTPSERVER = True
-USE_TORNADO = True
 FAULT_HANDLER = False
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
@@ -81,7 +82,6 @@ TACC_MAX_CPUS = 116 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
-SIMULTANEOUS_SERVERS = False
 SHADER = None
 THEME = 0
 SHOW_UI_CONTROLS = True

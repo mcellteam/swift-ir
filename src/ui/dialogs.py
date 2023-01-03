@@ -116,7 +116,7 @@ def open_project_dialog() -> str:
     '''Dialog for opening a data. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('* Open Project *')
+    dialog.setWindowTitle('* Open ProjectTab *')
     dialog.setNameFilter("Text Files (*.proj *.json)")
     dialog.setViewMode(QFileDialog.Detail)
     urls = dialog.sidebarUrls()
@@ -126,7 +126,7 @@ def open_project_dialog() -> str:
     dialog.setSidebarUrls(urls)
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
-        # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
+        # self.hud.post("Loading ProjectTab '%s'" % os.path.basename(dialog.selectedFiles()[0]))
         cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
@@ -161,7 +161,7 @@ def new_project_dialog() -> str:
     '''Dialog for saving a data. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('* New Project *')
+    dialog.setWindowTitle('* New ProjectTab *')
     dialog.setNameFilter("Text Files (*.proj *.json)")
     dialog.setLabelText(QFileDialog.Accept, "Create")
     dialog.setViewMode(QFileDialog.Detail)
@@ -216,7 +216,7 @@ class AskContinueDialog(QDialog):
 #         self.le.move(130, 22)
 #
 #         self.setGeometry(300, 150, 450, 350)
-#         self.setWindowTitle('Rename Project')
+#         self.setWindowTitle('Rename ProjectTab')
 #         self.show()
 
 
@@ -367,7 +367,7 @@ class ConfigProjectDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         super(ConfigProjectDialog, self).__init__()
         self.parent = parent
-        logger.info('Showing Project Configuration Dialog:')
+        logger.info('Showing ProjectTab Configuration Dialog:')
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)
@@ -392,7 +392,7 @@ class ConfigProjectDialog(QDialog):
         self.main_layout.addWidget(self.tab_widget)
         self.main_layout.addWidget(self.buttonWidget)
         self.setLayout(self.main_layout)
-        self.setWindowTitle("Project Configuration")
+        self.setWindowTitle("ProjectTab Configuration")
         cfg.main_window.hud('Set Scales and Configure:')
         self.show()
         cfg.main_window.set_status('Awaiting User Input...')
@@ -400,7 +400,7 @@ class ConfigProjectDialog(QDialog):
     @Slot()
     def on_apply(self):
         try:
-            cfg.main_window.hud('Applying Project Settings...')
+            cfg.main_window.hud('Applying ProjectTab Settings...')
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
             cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())

@@ -45,9 +45,6 @@ def generate_scales():
             if cfg.PRINT_EXAMPLE_ARGS:
                 if i in [0, 1, 2]:
                     logger.info('generate_scales/iscale2 TQ Params (Example ID %d):\n%s' % (i, str([iscale2_c, scale_arg, of_arg, if_arg])))
-            if cfg.PRINT_EXAMPLE_ARGS:
-                if i in [0, 1, 2]:
-                    logger.info('\ngenerate_scales/iscale2 TQ Params (Example ID%d):\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
             # if cfg.CODE_MODE == 'python':
             #     task_queue.add_task(cmd=sys.executable,
             #                         args=['src/job_single_scale.py', str(s), str(fn), str(ofn)], wd='.')

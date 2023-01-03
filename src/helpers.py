@@ -160,18 +160,6 @@ def snr_list(self, scale=None):
     if scale == None: scale = self.scale()
 
 
-def get_snr_average(scale) -> float:
-    snr_lst = []
-    for layer in scale['alignment_stack']:
-        try:
-            snr_vals = layer['align_to_ref_method']['method_results']['snr_report']
-            mean_snr = sum(snr_vals) / len(snr_vals)
-            snr_lst.append(mean_snr)
-        except:
-            print_exception()
-    return statistics.fmean(snr_lst)
-
-
 def get_tensor_handle_unal():
     return cfg.ng_worker.unal_tensor
     # return cfg.main_window.ng_workers[cfg.data.scale()].unal_tensor
@@ -222,7 +210,7 @@ def show_status_report(results, dt):
             cfg.main_window.warning(f'  Queued       = {results[1]}')
         else:
             cfg.main_window.hud(f'  Queued       = {results[1]}')
-        cfg.main_window.error(f'  Failed       = {results[2]}')
+        cfg.main_window.err(f'  Failed       = {results[2]}')
         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
     else:
         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
@@ -256,10 +244,10 @@ def show_mp_queue_results(task_queue, dt):
             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
             n_queued += 1
         elif task_item['statusBar'] == 'task_error':
-            logger.error('\nTask Error:')
-            logger.error('   CMD:    %s' % (str(task_item['cmd'])))
-            logger.error('   ARGS:   %s' % (str(task_item['args'])))
-            logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
+            logger.warning('\nTask Error:')
+            logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+            logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+            logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
             n_failed += 1
 
     # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
@@ -275,7 +263,7 @@ def show_mp_queue_results(task_queue, dt):
             cfg.main_window.warning(f'  Queued       = {n_queued}')
         else:
             cfg.main_window.hud(f'  Queued       = {n_queued}')
-        cfg.main_window.error(f'  Failed       = {n_failed}')
+        cfg.main_window.err(f'  Failed       = {n_failed}')
         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
     else:
         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
@@ -329,7 +317,7 @@ def get_bindir() -> str:
     elif is_mac():    bindir = 'bin_darwin'
     elif is_linux():  bindir = 'bin_linux'
     else:
-        logger.error(error)
+        logger.warning(error)
         cfg.main_window.hud.post(error, logging.ERROR)
     assert len(bindir) > 0
     return bindir
@@ -387,6 +375,7 @@ def do_scales_exist() -> bool:
 
 
 def get_aligned_scales() -> list:
+    logger.info('get_aligned_scales:')
     l = []
     for s in cfg.data.scales():
         if is_arg_scale_aligned(s):
@@ -396,21 +385,23 @@ def get_aligned_scales() -> list:
 
 def is_arg_scale_aligned(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
-    # logger.info('called by ', inspect.stack()[1].function)
+    # logger.info('called by %s' % inspect.stack()[1].function)
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
     if not os.path.isdir(zarr_path):
         logger.debug(f"Path Not Found: {zarr_path}")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
+        result = False
+    elif not os.path.exists(os.path.join(zarr_path, '.zattrs')):
         logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '.zarray')):
+        result = False
+    elif not os.path.exists(os.path.join(zarr_path, '.zarray')):
         logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
+        result = False
+    elif not os.path.exists(os.path.join(zarr_path, '0.0.0')):
         logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
-        return False
-    return True
+        result = False
+    else:
+        result = True
+    return result
 
 
 def is_cur_scale_aligned() -> bool:
@@ -714,7 +705,7 @@ def printProjectDetails(project_data: dict) -> None:
     logger.info("  data['method']                           :", project_data['method'])
     logger.info("  Destination Set Status    :", is_destination_set())
     logger.info("  Images Imported Status    :", are_images_imported())
-    logger.info("  Project Scaled Status     :", do_scales_exist())
+    logger.info("  ProjectTab Scaled Status     :", do_scales_exist())
     logger.info("  Any Scale Aligned Status  :", is_any_scale_aligned_and_generated())
     logger.info("  Cur Scale Aligned         :", are_aligned_images_generated())
     logger.info("  Any Exported Status       :", is_any_alignment_exported())
@@ -802,7 +793,7 @@ def print_sanity_check():
     except:
         pass
     print("  Current s                                    :", cur_scale)
-    print("  Project Method                                   :", cfg.data['method'])
+    print("  ProjectTab Method                                   :", cfg.data['method'])
     print("  Current l                                    :", cfg.data['data']['current_layer'])
     try:
         print("  Alignment Option                                 :",
