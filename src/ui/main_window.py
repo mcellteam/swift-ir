@@ -1826,14 +1826,17 @@ class MainWindow(QMainWindow):
         self._extra_browser_indexes.append(index)
         self._extra_browsers[index] = (QWebEngineView())
         self._extra_browsers[index].hide()
-        w = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self._extra_browsers[index])
-        vbl.addWidget(self.fb)
-        w.setLayout(vbl)
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(self._extra_browsers[index])
+        splitter.addWidget(self.fb)
+        splitter.setSizes([1000,200])
+        # w = QWidget()
+        # vbl = QVBoxLayout()
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # vbl.addWidget(splitter)
+        # w.setLayout(vbl)
 
-        self._tabsGlob.addTab(w, 'Open Zarr...')
+        self._tabsGlob.addTab(splitter, 'Open Zarr...')
         self.set_status('Select Zarr...')
 
         self.initWebEngine(self._extra_browsers[index])
@@ -2671,7 +2674,7 @@ class MainWindow(QMainWindow):
         self._cmbo_ngLayout = QComboBox()
 
         self._cmbo_ngLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._cmbo_ngLayout.setFixedSize(QSize(94, height))
+        self._cmbo_ngLayout.setFixedSize(QSize(80, height))
         self._cmbo_ngLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -3755,7 +3758,7 @@ class MainWindow(QMainWindow):
 
 
         '''Bottom Horizontal Splitter'''
-        self._tools_splitter = QSplitter()
+        self._tools_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._tools_splitter.setContentsMargins(4, 0, 4, 0)
         # self._tools_splitter.setMaximumHeight(90)
         # self._tools_splitter.setMaximumHeight(110)
