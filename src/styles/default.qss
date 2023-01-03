@@ -9,9 +9,7 @@ QHeaderView
     color: #141414;
 }
 
-QTabBar::tab {
-	height: 10px;
-}
+/*QTabBar::tab {height: 10px;}*/
 
 QTableWidget {
     background-color: #373b3f; /*#232629;*/
