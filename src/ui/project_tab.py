@@ -173,7 +173,7 @@ class ProjectTab(QWidget):
     def initUI_tab_widget(self):
         '''Tab Widget'''
         self._tabs = QTabWidget()
-        self._tabs.setStyleSheet('QTabBar::tab { height: 30px; width: 70px; }')
+        self._tabs.setStyleSheet('QTabBar::tab { height: 24px; width: 84px; }')
         self._tabs.setDocumentMode(True)
         self._tabs.setTabsClosable(True)
         self._tabs.setObjectName('project_tabs')
