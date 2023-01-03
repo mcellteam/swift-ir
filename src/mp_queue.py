@@ -202,8 +202,8 @@ class TaskQueue(QObject):
         try:
             self.parent.pbar_max(self.n_tasks)
             if self.pbar_text != None:
-                # self.parent.setPbarText(text=self.pbar_text)
-                self.parent.statusBar.showMessage(self.pbar_text)
+                self.parent.setPbarText(text=self.pbar_text)
+                # self.parent.statusBar.showMessage(self.pbar_text)
             self.parent.pbar_widget.show()
         except:
             # print_exception()
