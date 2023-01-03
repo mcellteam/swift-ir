@@ -53,6 +53,15 @@ class ProjectTab(QWidget):
         return self.ng_browser.geometry().getRect()
 
 
+    def _addTab(self, widget, name):
+        self._tabs.addTab(widget, name)
+
+
+    def updateJsonWidget(self):
+        if cfg.data:
+            self._treeview_model.load(cfg.data.to_dict())
+
+
     def initUI_Neuroglancer(self):
         '''NG Browser'''
         self.ng_browser = QWebEngineView()
@@ -186,30 +195,20 @@ class ProjectTab(QWidget):
         self.setLayout(vbl)
 
 
-
-
-    def _addTab(self, widget, name):
-        self._tabs.addTab(widget, name)
-
     def _onTabChange(self, index=None):
+        logger.info(f'TAB index={index}')
         if index == None: index = self._tabs.currentIndex()
+        logger.info(f'TAB index={index}')
 
         if cfg.data:
-            if index == 0:
-                # self.initNgViewer()
-                pass
-            if index == 1:
-                self.layer_view_widget.set_data()
-            if index == 2:
-                self.updateJsonWidget()
-            if index == 3:
-                self.snr_plot.plotData()
+            if index == 0:  pass
+            if index == 1:  self.layer_view_widget.set_data()
+            if index == 2:  self.updateJsonWidget()
+            if index == 3:  self.snr_plot.plotData()
             QApplication.processEvents()
             self.repaint()
 
-    def updateJsonWidget(self):
-        if cfg.data:
-            self._treeview_model.load(cfg.data.to_dict())
+
 
     def paintEvent(self, pe):
         '''Enables widget to be style-ized'''
