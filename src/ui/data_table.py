@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Simple interface for loading and computing averages of tabular spinehead data.
-Demo GUI script for Mohammad spinehead volume project.
+Demo GUI script for Mohammad spinehead volume projectTab.
 2022-10-23 - CNL - Joel Yancey.
 
 Demonstrates:

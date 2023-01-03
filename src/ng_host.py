@@ -93,7 +93,7 @@ class NgHost(QRunnable):
 
     # @Slot()
     async def run(self):
-        logger.info('\nrun:\n')
+        print('\nrun:\n')
         try:
             cfg.viewer = ng.Viewer()
         except:
@@ -131,11 +131,13 @@ class NgHost(QRunnable):
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
-        logger.info('Instantiating Viewer...')
+        print('Instantiating Viewer...')
         cfg.viewer = ng.Viewer()
         self.url_viewer = str(cfg.viewer)
         image_size = cfg.data.image_size()
-        widget_size = cfg.main_window.viewer_stack_widget.geometry().getRect()
+        widget_size = cfg.project_tab.getBrowserSize()
+        print(f'\nwidget_size = {widget_size}\n')
+
         widget_height = widget_size[3]
         tissue_height = 2 * image_size[1]  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
@@ -205,7 +207,7 @@ class NgHost(QRunnable):
         if matchpoint != None:
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
-        logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
+        print(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = is_arg_scale_aligned(self.scale)
 
         if cfg.data.is_mendenhall():  # Force
@@ -523,9 +525,7 @@ class NgHost(QRunnable):
         base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
         cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)
         cfg.data.set_match_points(role='base', matchpoints=base_mps, l=layer)
-        logger.critical('Selected Method (Before Setting): %s' % str(cfg.data.selected_method()))
         cfg.data.set_selected_method(method="Match Point Align", l=layer)
-        logger.critical('Selected Method (After Setting): %s' % str(cfg.data.selected_method()))
         self.clear_mp_buffer()
         cfg.refLV.invalidate()
         cfg.baseLV.invalidate()
@@ -533,7 +533,7 @@ class NgHost(QRunnable):
         cfg.main_window.hud.post('Match Points Saved!')
 
     def clear_matchpoints(self, s):
-        logger.info('Clearing match points in project dict...')
+        logger.info('Clearing match points in projectTab dict...')
         layer = self.request_layer()
         cfg.data.clear_match_points(s=self.scale, l=layer)  # Note
         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)

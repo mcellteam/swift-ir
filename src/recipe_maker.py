@@ -63,7 +63,7 @@ def run_json_project(project,
     logger.info("alone = %s" % str(alone))
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    # Evaluate Status of Project and set appropriate flags here:
+    # Evaluate Status of ProjectTab and set appropriate flags here:
     proj_status = evaluate_project_status(project)
     finest_scale_done = proj_status['finest_scale_done']
     allow_scale_climb = False
@@ -280,7 +280,7 @@ def run_json_project(project,
 
 
 def evaluate_project_status(project):
-    logger.info('Evaluating Project Status >>>>')
+    logger.info('Evaluating ProjectTab Status >>>>')
     # Get int values for scales in a way compatible with old ('1') and new ('scale_1') style for keys
     scales = sorted([int(s.split('scale_')[-1]) for s in project['data']['scales'].keys()])
     proj_status = {'defined_scales': scales,
@@ -304,7 +304,7 @@ def evaluate_project_status(project):
         else:
             proj_status['scales'][scale_key]['all_aligned'] = False
             proj_status['scale_tbd'] = scale  # this will always be the coarsest s not done
-    logger.info('<<<< Returning Project Status Dict')
+    logger.info('<<<< Returning ProjectTab Status Dict')
     return proj_status
 
 def run_command(cmd, arg_list=None, cmd_input=None):

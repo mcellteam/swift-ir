@@ -30,10 +30,10 @@ class FileBrowser(QWidget):
         self.treeview.setModel(self.fileSystemModel)
         root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
         self.treeview.setRootIndex(root)
-        self.setSizePolicy(
-            QSizePolicy.MinimumExpanding,
-            QSizePolicy.MinimumExpanding
-        )
+        # self.setSizePolicy(
+        #     QSizePolicy.MinimumExpanding,
+        #     QSizePolicy.MinimumExpanding
+        # )
         self.treeview.setColumnWidth(0, 600)
         self.initUI()
         self.treeview.selectionModel().selectionChanged.connect(self.selectionChanged)
@@ -42,24 +42,26 @@ class FileBrowser(QWidget):
         with open('src/styles/controls.qss', 'r') as f:
             style = f.read()
         self._btn_open = QPushButton('Open')
-        self._btn_open.setFixedSize(102, 18)
+        self._btn_open.setFixedSize(86, 18)
         self._btn_open.setStyleSheet(style)
 
-        self._btn_showFileBrowser = QPushButton('File Browser')
-        self._btn_showFileBrowser.setFixedSize(102, 18)
+        self._btn_showFileBrowser = QPushButton('Hide Files')
+        self._btn_showFileBrowser.setFixedSize(86, 18)
         self._btn_showFileBrowser.setStyleSheet(style)
         self._btn_showFileBrowser.hide()
+        self._btn_showFileBrowser.clicked.connect(self._showHideFb)
 
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
-        hbl.addWidget(self._btn_open)
+        hbl.setContentsMargins(4, 2, 4, 2)
+        hbl.addStretch()
         hbl.addWidget(self._btn_showFileBrowser)
+        hbl.addWidget(self._btn_open)
         controls = QWidget()
         controls.setFixedHeight(24)
         controls.setLayout(hbl)
 
         vbl = QVBoxLayout(self)
-        vbl.setContentsMargins(0, 0, 0, 6)
+        vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.treeview)
         vbl.addWidget(controls, alignment=Qt.AlignmentFlag.AlignLeft)
         self.setLayout(vbl)
@@ -83,11 +85,14 @@ class FileBrowser(QWidget):
             logger.warning('Is Any File Selected?')
 
     def getSelectionPath(self):
-        index = self.treeview.selectedIndexes()[0]
-        info  = self.treeview.model().fileInfo(index)
-        path  = info.absoluteFilePath()
-        print(f'getSelectionPath: {path}')
-        return path
+        try:
+            index = self.treeview.selectedIndexes()[0]
+            info  = self.treeview.model().fileInfo(index)
+            path  = info.absoluteFilePath()
+            print(f'getSelectionPath: {path}')
+            return path
+        except:
+            logger.warning('No Path Selected.')
 
     def getOpenButton(self):
         return self._btn_open

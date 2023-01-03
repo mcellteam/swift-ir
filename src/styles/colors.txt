@@ -12,3 +12,5 @@
 
 #ebecf0 - "bright" grey
 #ffcccb - very light red
+#ede9e8 - my dirty white
+#708090 - (light) slate grey

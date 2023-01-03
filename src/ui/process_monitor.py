@@ -59,11 +59,11 @@ class HeadupDisplay(QWidget):
         super(HeadupDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
-        self.setMinimumHeight(64)
+        # self.setMinimumHeight(64)
         self.textedit = te = QPlainTextEdit(self)
-        f = QFont()
-        f.setStyleHint(QFont.Monospace)
-        te.setFont(f)
+        # f = QFont()
+        # f.setStyleHint(QFont.Monospace)
+        # te.setFont(f)
         te.setReadOnly(True)
         self.handler = h = QtHandler(self.update_status)
         fs = '%(asctime)s [%(levelname)s] %(message)s'
@@ -193,8 +193,7 @@ class HeadupDisplay(QWidget):
         # else:
         #     width = int(cfg.WIDTH / 2)
         # width = 300
-        width = 430
-        return QSize(width, 120)
+        return QSize(800, 400)
 
 
 

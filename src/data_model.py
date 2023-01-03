@@ -118,8 +118,9 @@ class DataModel:
         return os.path.split(cfg.data.dest())[-1]
 
     def base_image_name(self, s=None, l=None):
-        if s == None: s = self.curScale
+        if s == None: s = self.scale()
         if l == None: l = self.layer()
+        logger.debug(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
     def filenames(self):
@@ -267,19 +268,22 @@ class DataModel:
 
 
     def snr_max_all_scales(self) -> float:
-        #Todo refactor, store local copy, this is a bottleneck
-        max_snr = []
-        # logger.critical(f'self.scalesAligned: {self.scalesAligned}')
-        for scale in self.scalesAligned:
-            logger.info(f'scale={scale}')
-            try:
-                m = max(self.snr_list(s=scale))
-                # logger.critical(f'm: {m}')
-                max_snr.append(m)
-            except:
-                logger.warning('Unable to append maximum SNR, none found')
-        # logger.info(f'Returning Max SNR: {max(max_snr)}')
-        return max(max_snr)
+        try:
+            #Todo refactor, store local copy, this is a bottleneck
+            max_snr = []
+            # logger.critical(f'self.scalesAligned: {self.scalesAligned}')
+            for scale in self.scalesAligned:
+                logger.info(f'scale={scale}')
+                try:
+                    m = max(self.snr_list(s=scale))
+                    # logger.critical(f'm: {m}')
+                    max_snr.append(m)
+                except:
+                    logger.warning('Unable to append maximum SNR, none found')
+            # logger.info(f'Returning Max SNR: {max(max_snr)}')
+            return max(max_snr)
+        except:
+            print_exception()
 
 
     def snr_average(self, scale=None) -> float:
@@ -464,7 +468,7 @@ class DataModel:
     def set_match_points(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.info("Writing match point to project dictionary")
+        logger.info("Writing match point to projectTab dictionary")
         if role not in ('ref', 'base', 'aligned'):
             logger.warning('Invalid Role Argument- Returning')
             return
@@ -686,14 +690,16 @@ class DataModel:
 
     def image_size(self, s=None):
         if s == None: s = self.curScale
-        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        logger.debug('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
-            logger.info("No key 'image_src_size' found. Adding it now...")
+            logger.warning(f"No key 'image_src_size' found (scale:{s}). Adding it now...")
             try:
                 self.set_image_size(s=s)
-                return self._data['data']['scales'][s]['image_src_size']
+                answer = self._data['data']['scales'][s]['image_src_size']
+                logger.debug(f'Returning {answer}')
+                return answer
             except:
                 print_exception()
                 logger.warning('Unable to return the image size (s=%s)' % s)
@@ -808,9 +814,10 @@ class DataModel:
         self.set_bounding_rect(ComputeBoundingRect(self.alstack(s=s)))
         return self.bounding_rect()
 
-    def set_image_size(self, s=None) -> None:
-        if s == None: s = self.curScale
+    def set_image_size(self, s) -> None:
         self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+        val = self._data['data']['scales'][s]['image_src_size']
+        # logger.info(f'Just Set {s} image size to {val}')
         logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
 
     def set_image_size_directly(self, size, s=None):
@@ -873,10 +880,10 @@ class DataModel:
         self.set_destination(os.path.join(head, self.dest()))
 
     def set_paths_absolute(self, filename):
-        logger.info(f'Setting Absolute File Paths - Destination: {filename}')
-        # returns path to project file minus extension (should be the project directory)
+        logger.info(f'Setting Absolute File Paths - Destination: {filename}...')
+        # returns path to projectTab file minus extension (should be the projectTab directory)
         self.set_destination(os.path.splitext(filename)[0])
-        logger.debug(f'Setting absolute project dest/head: {self.dest()}')
+        logger.debug(f'Setting absolute projectTab dest/head: {self.dest()}...')
         try:
             head = self.dest() # returns parent directory
             for s in self.scales():
@@ -902,7 +909,7 @@ class DataModel:
     def aligned_list(self) -> list[str]:
         '''Deprecate this
 
-        Get aligned scales list. Check project data and aligned Zarr group presence.'''
+        Get aligned scales list. Check projectTab data and aligned Zarr group presence.'''
         lst = []
         for s in self.scales():
             r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']

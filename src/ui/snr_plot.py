@@ -104,7 +104,7 @@ class SnrPlot(QWidget):
             logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
             return
         try:
-            self.wipePlot()
+            # self.wipePlot()
             self._snr_checkboxes = dict()
             for i, s in enumerate(cfg.data.scales()):
                 self._snr_checkboxes[s] = QCheckBox()
@@ -122,7 +122,7 @@ class SnrPlot(QWidget):
                     f'border-color: {color}; '
                     f'border-width: 3px; '
                     f'border-style: outset;')
-                if is_arg_scale_aligned(scale=s):
+                if s in cfg.data.scalesAligned:
                     self._snr_checkboxes[s].show()
                 else:
                     self._snr_checkboxes[s].hide()
@@ -151,39 +151,38 @@ class SnrPlot(QWidget):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         if cfg.data:
             self.plot.clear()
+
             for s in cfg.data.scales()[::-1]:
                 if is_arg_scale_aligned(scale=s):
                     if self._snr_checkboxes[s].isChecked():
                         logger.info(f'{s} is aligned and checkbox is checked. Plotting its SNR data....')
                         self.plotSingleScale(s=s)
+            if cfg.data.nScalesAligned > 0:
+                max_snr = cfg.data.snr_max_all_scales()
+                assert max_snr is not None
+                assert type(max_snr) is float
+                # self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
+                # self.plot.setXRange(0, cfg.data.n_layers(), padding=0)
+                # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
+                # self.plot.setRange(xRange=[0, cfg.data.n_layers() + 0.5])
+                # self.plot.setRange(yRange=[0, ceil(max_snr)])
+                xmax = cfg.data.nlayers + 1
+                ymax = ceil(max_snr) + 5
+                self.plot.setLimits(
+                    minXRange=1,
+                    xMin=0,
+                    xMax=xmax,
+                    maxXRange=xmax,
+                    yMin=0,
+                    yMax=ymax,
+                    minYRange=ymax,
+                    maxYRange=ymax,
+                )
+                ax = self.plot.getAxis('bottom')  # This is the trick
+                dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
+                ax.setTicks([dx, []])
 
-            max_snr = cfg.data.snr_max_all_scales()
-            assert max_snr is not None
-            assert type(max_snr) is float
-            # self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
-            # self.plot.setXRange(0, cfg.data.n_layers(), padding=0)
-            # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
-            # self.plot.setRange(xRange=[0, cfg.data.n_layers() + 0.5])
-            # self.plot.setRange(yRange=[0, ceil(max_snr)])
-            xmax = cfg.data.nlayers + 1
-            ymax = ceil(max_snr) + 5
-            self.plot.setLimits(
-                minXRange=1,
-                xMin=0,
-                xMax=xmax,
-                maxXRange=xmax,
-                yMin=0,
-                yMax=ymax,
-                minYRange=ymax,
-                maxYRange=ymax,
-            )
-            ax = self.plot.getAxis('bottom')  # This is the trick
-            dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
-            ax.setTicks([dx, []])
-
-
-
-            # self.plot.autoRange()
+            self.plot.autoRange() # !!!
 
 
     def plotSingleScale(self, s=None):
@@ -227,8 +226,8 @@ class SnrPlot(QWidget):
         self.plot.addItem(pg.ErrorBarItem(x=x, y=y,
                                           top=deltas,
                                           bottom=deltas,
-                                          beam=0.10,
-                                          pen={'color': '#ff0000', 'width': 3}))
+                                          beam=0.15,
+                                          pen={'color': '#ff0000', 'width': 2}))
 
 
     def wipePlot(self):
@@ -247,10 +246,13 @@ class SnrPlot(QWidget):
 
     def mouse_clicked(self, mouseClickEvent):
         if cfg.data:
-            # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
-            print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
-            pos_click = int(mouseClickEvent.pos()[0])
-            print('Position Clicked: %d' % pos_click)
+            try:
+                # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
+                print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
+                pos_click = int(mouseClickEvent.pos()[0])
+                print('Position Clicked: %d' % pos_click)
+            except:
+                pass
 
     def onSnrClick2(self, scale):
         logger.info(f'onSnrClick2 ({scale}):')

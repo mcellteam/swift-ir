@@ -91,6 +91,7 @@ class TaskQueue(QObject):
         logger.critical(f'Starting Task Queue: {self.pbar_text}...')
         cfg.main_window.hud(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores...')
         # cfg.main_window.hud(f'{self.pbar_text}')
+        logger.critical(f'{self.pbar_text}')
         logger.info(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks...')
         logger.info(f'start method: {self.ctx.get_start_method()}')
 
@@ -201,7 +202,8 @@ class TaskQueue(QObject):
         try:
             self.parent.pbar_max(self.n_tasks)
             if self.pbar_text != None:
-                self.parent.setPbarText(text=self.pbar_text)
+                # self.parent.setPbarText(text=self.pbar_text)
+                self.parent.statusBar.showMessage(self.pbar_text)
             self.parent.pbar_widget.show()
         except:
             # print_exception()

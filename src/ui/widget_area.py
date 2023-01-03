@@ -19,20 +19,23 @@ class WidgetArea(QWidget):
         self.parent=parent
         self.name = name
         self.setObjectName(('defaultWidgetArea', name)[isinstance(name, str)])
-        self._title = QLabel(('Widget Area', title)[isinstance(title, str)])
-        self._title.setObjectName('cp_title')
-        self._title.setStyleSheet('font-size: 10px; font-weight: 750;')
+        if title:
+            self._title = QLabel(('Widget Area', title)[isinstance(title, str)])
+            self._title.setObjectName('cp_title')
+            self._title.setStyleSheet('font-size: 10px; font-weight: 500;')
+        else:
+            self._title = None
 
         self._labels = list(labels)
         self._style = ''
-        self.addStyle(f'QLabel#title{{font-size: 10px; font-weight: 750;}}')
+        # self.addStyle(f'QLabel#title{{font-size: 10px; font-weight: 750;}}')
         self.updateLayout()
         self.updateStyle()
 
-        self.setSizePolicy(
-            QSizePolicy.MinimumExpanding,
-            QSizePolicy.MinimumExpanding
-        )
+        # self.setSizePolicy(
+        #     QSizePolicy.MinimumExpanding,
+        #     QSizePolicy.MinimumExpanding
+        # )
 
     def addLabels(self, items):
         for item in items:
@@ -49,15 +52,18 @@ class WidgetArea(QWidget):
     def updateLayout(self):
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(1)
+        self._layout.setSpacing(0)
         self._form = QFormLayout()
         # self._gb = QGroupBox('AlignEM-SWiFT')
         self._gb = QGroupBox()
+        self._gb.setContentsMargins(0, 0, 0, 0)
         self._gb.setLayout(self._form)
         self._scroll = QScrollArea()
+        self._scroll.setContentsMargins(0, 0, 0, 0)
         self._scroll.setWidget(self._gb)
         self._scroll.setWidgetResizable(True)
-        self._layout.addWidget(self._title)
+        if self._title:
+            self._layout.addWidget(self._title)
         self._layout.addWidget(self._scroll)
         for lb in self._labels:
             self._form.addRow(lb)

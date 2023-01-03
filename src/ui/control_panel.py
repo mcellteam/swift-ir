@@ -48,17 +48,18 @@ class ControlPanel(QWidget):
 
     def updateLayout(self):
         self._layout = QVBoxLayout()
-        self._layout.setContentsMargins(4, 4, 4, 4)
-        self._layout.setSpacing(4)
+        self._layout.setContentsMargins(4, 0, 4, 0)
+        # self._layout.setSpacing(2)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
+        self.setFixedHeight(40)
         hbl.addStretch()
         for item in self._items:
             hbl.addWidget(item)
         hbl.addStretch()
         self._controls = QWidget()
         self._controls.setLayout(hbl)
-        self._layout.addWidget(self._title)
+        # self._layout.addWidget(self._title)
         self._layout.addWidget(self._controls)
         self.setLayout(self._layout)
 

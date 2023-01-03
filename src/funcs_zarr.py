@@ -7,6 +7,7 @@ import os
 import platform
 import psutil
 import shutil
+import inspect
 import sys
 import time
 import numpy as np
@@ -206,7 +207,9 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
     path_relative = os.path.join(path_base, name)
-    logger.info('Preallocating Zarr Array...')
+    logger.critical(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
+                    f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
+
     cfg.main_window.hud(f'Preallocating {path_base}/{group}...')
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')

@@ -75,11 +75,11 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
         else:
             task_args = [sys.executable,
                          align_job,            # Python program to run (single_alignment_job)
-                         temp_file,            # Temp project file name
+                         temp_file,            # Temp projectTab file name
                          alignment_option,     # Init, Refine, or Apply
                          str(scale_val),       # Scale to use or 0
                          str(cfg.CODE_MODE),   # Python or C mode
-                         str(index),           # First l number to run from Project file #ATTN!
+                         str(index),           # First l number to run from ProjectTab file #ATTN!
                          str(1),               # Number of layers to run                 #ATTN!
                          str(cfg.USE_FILE_IO)  # Use File IO instead of Pipe
                          ]
