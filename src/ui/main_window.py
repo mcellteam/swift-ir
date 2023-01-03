@@ -1448,6 +1448,7 @@ class MainWindow(QMainWindow):
                 # cfg.ng_workers[cfg.data.curScale].viewer.set_state(state)
                 cfg.viewer.set_state(state)
                 self.dataUpdateWidgets()
+            cfg.project_tab.initNgViewer()
             self.dataUpdateWidgets()
             self.app.processEvents()
 
@@ -1467,7 +1468,7 @@ class MainWindow(QMainWindow):
                 state.position[0] = requested
                 # cfg.ng_workers[cfg.data.curScale].viewer.set_state(state)
                 cfg.viewer.set_state(state)
-                cfg.project_tab.initNgViewerL()
+            cfg.project_tab.initNgViewer()
             self.dataUpdateWidgets()
             self.app.processEvents()
 
@@ -3987,3 +3988,6 @@ class MainWindow(QMainWindow):
         return super().eventFilter(source, event)
 
 
+
+# NOTES
+# jumpt to section 0 from SNR plot
