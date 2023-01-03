@@ -1467,7 +1467,7 @@ class MainWindow(QMainWindow):
                 state.position[0] = requested
                 # cfg.ng_workers[cfg.data.curScale].viewer.set_state(state)
                 cfg.viewer.set_state(state)
-                cfg.project_tab.refreshNeuroglancerURL()
+                cfg.project_tab.initNgViewerL()
             self.dataUpdateWidgets()
             self.app.processEvents()
 
@@ -3881,14 +3881,14 @@ class MainWindow(QMainWindow):
         if cfg.data:
             cfg.ng_worker.arrangement = 1
             cfg.ng_worker.initViewer()
-            cfg.project_tab.refreshNeuroglancerURL()
+            cfg.project_tab.initNgViewer()
 
 
     def set_viewer_layout_2(self):
         if cfg.data:
             cfg.ng_worker.arrangement = 2
             cfg.ng_worker.initViewer()
-            cfg.project_tab.refreshNeuroglancerURL()
+            cfg.project_tab.initNgViewer()
 
 
     def initWidgetSpacing(self):
