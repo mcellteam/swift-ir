@@ -149,7 +149,7 @@ class NgHostSlim(QRunnable):
         cfg.viewer = ng.Viewer()
         ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
 
-        if self.project:
+        if cfg.project_tab:
             if exist_aligned_zarr_cur_scale(): zd = 'img_aligned.zarr'
             else:                              zd = 'img_src.zarr'
             self.path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
@@ -180,8 +180,9 @@ class NgHostSlim(QRunnable):
             except Exception as e:
                 print(e)
                 try:
-                    logger.error('Invalid Zarr. Unable To Create Tensor for Zarr Array', logging.ERROR)
-                    cfg.main_window.hud.post('Invalid Zarr. Unable To Create Tensor for Zarr Array', logging.ERROR)
+                    logger.error(f'Invalid Zarr. Unable To Create Tensor for Zarr Array\n'
+                                 f'Tensor Path: {self.path}')
+                    cfg.main_window.err('Invalid Zarr. Unable To Create Tensor for Zarr Array')
                 except:
                     pass
             # pprint.pprint(cfg.tensor.spec().to_json())
