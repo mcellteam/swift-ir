@@ -142,7 +142,7 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         self.resized.emit()
         if cfg.project_tab:
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
         return super(MainWindow, self).resizeEvent(event)
 
 
@@ -367,7 +367,7 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_console.setText(label)
         if cfg.project_tab:
             if cfg.project_tab._tabs.currentIndex() == 0:
-                cfg.project_tab.openViewZarr()
+                cfg.project_tab.updateNeuroglancer()
 
 
     def _forceShowControls(self):
@@ -499,7 +499,6 @@ class MainWindow(QMainWindow):
         finally:
             self._enableAllTabs()
             self._autosave()
-            cfg.project_tab.openViewZarr()
 
 
     def align_all(self, scale=None) -> None:
@@ -842,7 +841,6 @@ class MainWindow(QMainWindow):
             self._autosave()
         finally:
             # self.updateJsonWidget()
-            cfg.project_tab.openViewZarr()
 
             dir = cfg.data.dest()
             scale = cfg.data.scale()
@@ -1156,7 +1154,7 @@ class MainWindow(QMainWindow):
         self._ctl_panel.setStyleSheet(style)
         self.hud.set_theme_default()
         if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.openViewZarr()
+            ccfg.project_tab.updateNeuroglancer()
 
 
     def apply_daylight_style(self):
@@ -1168,7 +1166,7 @@ class MainWindow(QMainWindow):
         pg.setConfigOption('background', 'w')
         self.hud.set_theme_light()
         if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
 
 
     def apply_moonlit_style(self):
@@ -1179,7 +1177,7 @@ class MainWindow(QMainWindow):
             self.setStyleSheet(f.read())
         self.hud.set_theme_default()
         if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
 
 
     def apply_sagittarius_style(self):
@@ -1190,7 +1188,7 @@ class MainWindow(QMainWindow):
             self.setStyleSheet(f.read())
         self.hud.set_theme_default()
         if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
 
 
     def reset_groupbox_styles(self):
@@ -1208,10 +1206,11 @@ class MainWindow(QMainWindow):
         # self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
-        if cfg.project_tab._tabs.currentIndex() == 1:
-            cfg.project_tab.layer_view_widget.set_data()
+        if self._isProjectTab():
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                cfg.project_tab.layer_view_widget.set_data()
         # self.dataUpdateWidgets()
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     @Slot()
@@ -1234,6 +1233,13 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+
+        if cfg.zarr_tab:
+            self._sectionSlider.setValue(ng_layer)
+            self._jumpToLineedit.setText(str(cfg.data.layer()))
+            return
+        elif not cfg.project_tab:
+            return
 
         if not cfg.data:
             logger.warning('No need to update the interface')
@@ -1508,7 +1514,7 @@ class MainWindow(QMainWindow):
                 # cfg.ng_workers[cfg.data.curScale].viewer.set_state(state)
                 cfg.viewer.set_state(state)
                 # self.dataUpdateWidgets() #0106-
-            cfg.project_tab.openViewZarr() #0106
+            cfg.project_tab.updateNeuroglancer() #0106
             self.dataUpdateWidgets()
             # self.app.processEvents()
 
@@ -1536,7 +1542,10 @@ class MainWindow(QMainWindow):
 
 
     def jump_to_slider(self):
-        # logger.info(f'caller:{inspect.stack()[1].function}')
+        caller = inspect.stack()[1].function
+        if caller == 'dataUpdateWidgets':
+            return
+        # logger.info(f'caller:{caller}')
         requested = self._sectionSlider.value()
         cfg.ng_worker._layer = requested
         # logger.info(f'slider, requested: {requested}')
@@ -1709,7 +1718,7 @@ class MainWindow(QMainWindow):
             }
             layout_actions[choice].setChecked(True)
             # self.refreshNeuroglancerURL()
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
         except:
             logger.error('Unable To Change Neuroglancer Layout')
 
@@ -1909,9 +1918,6 @@ class MainWindow(QMainWindow):
         self._setLastTab()
         # self.onStartProject()
         # cfg.project_tab.openViewZarr()
-
-        cfg.project_tab.initNeuroglancer()
-
         # cfg.project_tab.snr_plot.initSnrPlot()  # !!!
         # self._forceHideControls()
         # self._forceHidePython()
@@ -2049,7 +2055,7 @@ class MainWindow(QMainWindow):
         else:
             cfg.SHOW_UI_CONTROLS = False
             self.ngShowUiControlsAction.setText('Hide UI Controls')
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     def import_multiple_images(self, clear_role=False):
@@ -2526,7 +2532,7 @@ class MainWindow(QMainWindow):
                 self.update_match_point_snr()
                 self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
                 self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
-                cfg.project_tab.openViewZarr(matchpoint=True)
+
             else:
                 logger.info('\nExiting Match Point Mode...')
                 self.tell('Exiting Match Point Mode...')
@@ -2535,7 +2541,7 @@ class MainWindow(QMainWindow):
                 self.extra_header_text_label.setText('')
                 # self.updateSkipMatchWidget()
                 self.initView()
-                cfg.project_tab.openViewZarr(matchpoint=False)
+            cfg.project_tab.updateNeuroglancer()
 
 
     def update_match_point_snr(self):
@@ -2626,13 +2632,13 @@ class MainWindow(QMainWindow):
     def set_mp_marker_lineweight(self):
         cfg.data['user_settings']['mp_marker_lineweight'] = self.mp_marker_lineweight_spinbox.value()
         if inspect.stack()[1].function != 'enterExitMatchPointMode':
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
 
 
     def set_mp_marker_size(self):
         cfg.data['user_settings']['mp_marker_size'] = self.mp_marker_size_spinbox.value()
         if inspect.stack()[1].function != 'enterExitMatchPointMode':
-            cfg.project_tab.openViewZarr()
+            cfg.project_tab.updateNeuroglancer()
 
 
     def set_opacity(self, obj, val):
@@ -2644,22 +2650,22 @@ class MainWindow(QMainWindow):
 
     def set_shader_none(self):
         cfg.SHADER = None
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     def set_shader_colormapJet(self):
         cfg.SHADER = src.shaders.colormapJet
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     def set_shader_test1(self):
         cfg.SHADER = src.shaders.shader_test1
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     def set_shader_test2(self):
         cfg.SHADER = src.shaders.shader_test2
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
     def update(self):
         # get the radio button the send the signal
@@ -2882,7 +2888,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_paths_absolute(filename=filename) #+
         self.mendenhall = Mendenhall(parent=self, data=cfg.data)
         self.mendenhall.start_watching()
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     def stop_mendenhall_protocol(self):
@@ -2892,7 +2898,7 @@ class MainWindow(QMainWindow):
     def aligned_mendenhall_protocol(self):
         cfg.MV = not cfg.MV
         logger.info(f'cfg.MA: {cfg.MV}')
-        cfg.project_tab.openViewZarr()
+        cfg.project_tab.updateNeuroglancer()
 
 
     def import_mendenhall_protocol(self):
@@ -3993,9 +3999,9 @@ class MainWindow(QMainWindow):
         self.hud.setContentsMargins(2, 0, 2, 0)
         self.layer_details.setContentsMargins(0, 0, 0, 0)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        self._tool_hstry.setMinimumWidth(148)
+        self._tool_hstry.setMinimumWidth(200)
         self._tool_afmCafm.setFixedWidth(248)
-        self.layer_details.setMinimumWidth(190)
+        self.layer_details.setMinimumWidth(220)
 
 
     def initStatusBar(self):
