@@ -25,7 +25,7 @@ def generate_thumbnails(dm):
 
     # Todo: If the smallest s happens to be less that thumbnail size, just copy smallest s for thumbnails
 
-    target_thumbnail_size = 400
+    target_thumbnail_size = 720
     smallest_scale_key = natural_sort(dm['data']['scales'].keys())[-1]
     scale_val = get_scale_val(smallest_scale_key)
     size = dm.image_size(s=smallest_scale_key)
