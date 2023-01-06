@@ -142,7 +142,9 @@ class NgHostSlim(QRunnable):
                    show_scale_bar=True,
                    show_axis_lines=True,
                    matchpoint=None):
-        print(f'Initializing Neuroglancer Viewer...')
+        caller = inspect.stack()[1].function
+        logger.info(f'Initializing Neuroglancer Viewer (caller: {caller})...')
+
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         cfg.viewer = ng.Viewer()
         ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)

@@ -52,7 +52,6 @@ class ZarrTab(QWidget):
 
 
     def initNeuroglancer(self):
-        logger.info('')
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(parent=self, project=False)
 

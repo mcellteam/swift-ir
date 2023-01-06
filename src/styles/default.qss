@@ -16,6 +16,10 @@ QTableWidget {
     gridline-color: yellow; /*#31363b;*/
 }
 
+QProgressBar {
+	font-size: 10px;
+}
+
 QTableWidget::item {
 	outline-style: none;
 	color: #eff0f1;
