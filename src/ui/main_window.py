@@ -476,15 +476,16 @@ class MainWindow(QMainWindow):
         self._enableAllTabs()
         logger.info('<<<< autoscale <<<<')
 
-    def _runSNRcheck(self):
+    def _runSNRcheck(self, s=None):
+        if s == None: s = cfg.data.scale()
         failed = cfg.data.check_snr_status()
         if len(failed) == cfg.data.nSections:
-            self.error(f'No SNR Data Available For This Alignment')
+            self.warn(f'No SNR Data Available For This Alignment')
         elif failed:
-            unzipped = zip(*failed)
-            self.warn(f'No SNR Data Available For Layers {", ".join(map(str, list(unzipped[0])))}...')
-            for i in failed:
-                self.warn(f'  Section: {cfg.data.name_base(s=s, l=i)}')
+            indexes, names = zip(*failed)
+            self.warn(f'No SNR Data Available For Layers {", ".join(map(str, indexes))}...')
+            for name in names:
+                self.warn(f'  Section: {name}')
 
 
     def onAlignmentEnd(self):
