@@ -222,13 +222,20 @@ class TaskQueue(QObject):
                         logger.error('ERROR')
                         pass
                     task_id, outs, errs, rc, dt = self.result_queue.get()
-                    # logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
                     # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
                     self.task_dict[task_id]['stdout'] = outs
                     self.task_dict[task_id]['stderr'] = errs
                     self.task_dict[task_id]['rc'] = rc
-                    self.task_dict[task_id]['statusBar'] = 'completed' if rc == 0 else 'task_error'
-                    if rc != 0:  retry_list.append(task_id)
+                    if rc == 0:
+                        self.task_dict[task_id]['statusBar'] = 'completed'
+                    else:
+                        self.task_dict[task_id]['statusBar'] = 'task_error'
+                        retry_list.append(task_id)
+                        logger.warning(f'task_id  : {task_id}\n'
+                                       f'outs     : {outs}\n'
+                                       f'errs     : {errs}\n'
+                                       f'rc       : {rc}\n'
+                                       f'dt       : {dt}\n')  # *** lots of output for alignment
                     self.task_dict[task_id]['dt'] = dt
 
                     realtime -= 1
@@ -241,11 +248,12 @@ class TaskQueue(QObject):
                     logger.info('  Task IDs: %s' % str(retry_list))
                     self.restart()
                     for task_id in retry_list:
-                        logger.debug('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
-                        logger.debug('                    Task: %s' % (str(self.task_dict[task_id])))
+                        logger.warning('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
+                        logger.warning('                    Task: %s' % (str(self.task_dict[task_id])))
                         # [logger.info(key,':',value) for key, value in self.task_dict[task_id].items()]
                         self.requeue_task(task_id)
                 retries_tot += 1
+
             logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
             logger.debug('    Failed Tasks: %d\n' % (n_pending))
             logger.debug('    Retries: %d\n\n' % (retries_tot - 1))

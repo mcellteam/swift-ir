@@ -3385,7 +3385,7 @@ class MainWindow(QMainWindow):
         ]
         f = QFont()
         f.setFamily('Courier')
-        f.setPointSize(11)
+        f.setPointSize(10)
         list(map(lambda x: x.setFont(f), keyboard_commands))
         list(map(lambda x: x.setContentsMargins(0,0,0,0), keyboard_commands))
         list(map(lambda x: x.setMargin(0), keyboard_commands))
@@ -3999,9 +3999,9 @@ class MainWindow(QMainWindow):
         self.hud.setContentsMargins(2, 0, 2, 0)
         self.layer_details.setContentsMargins(0, 0, 0, 0)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        self._tool_hstry.setMinimumWidth(200)
+        self._tool_hstry.setMinimumWidth(230)
         self._tool_afmCafm.setFixedWidth(248)
-        self.layer_details.setMinimumWidth(220)
+        self.layer_details.setMinimumWidth(230)
 
 
     def initStatusBar(self):
