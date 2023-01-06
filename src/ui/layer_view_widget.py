@@ -121,7 +121,10 @@ class LayerViewWidget(QWidget):
                 m = 'Automatic SWIM Alignment'
             method.append(m)
             if is_aligned:
-                snr_report.append(l['align_to_ref_method']['method_results']['snr_report'])
+                try:
+                    snr_report.append(l['align_to_ref_method']['method_results']['snr_report'])
+                except:
+                    snr_report.append('<No SNR Report>')
 
         # buttons = ['buttons'] * cfg.datamodel.nSections
         if is_aligned:
