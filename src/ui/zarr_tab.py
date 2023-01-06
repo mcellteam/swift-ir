@@ -74,7 +74,7 @@ class ZarrTab(QWidget):
         self.shape = self.zarray['shape']
         self.chunkshape = self.zarray['chunks']
         self.nSections = self.shape[0]
-        cfg.main_window._sectionSlider.setRange(0, self.nSection - 1)
+        cfg.main_window._sectionSlider.setRange(0, self.nSections - 1)
         logger.info(f'array shape: {self.shape}, chunk shape: {self.chunkshape} ')
         cfg.ng_worker.initViewer()
         cur_index = cfg.main_window._tabsGlob.currentIndex()
