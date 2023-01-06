@@ -346,6 +346,7 @@ class MainWindow(QMainWindow):
         # self._tool_textInfo_NEW.show()
         self._tool_afmCafm.show()
         self._tool_hstry.show()
+        self._tool_keyBindings.hide()
 
 
     def _callbk_showHidePython(self):
@@ -481,7 +482,6 @@ class MainWindow(QMainWindow):
         try:
             logger.info('hiding keyboard bindings widget area...')
 
-            self._tool_keyBindings.hide()
             self._showToolWidgets()
             cfg.project_tab._onTabChange()
             # cfg.project_tab.snr_plot.initSnrPlot()
@@ -1945,7 +1945,7 @@ class MainWindow(QMainWindow):
         self._cmbo_ngLayout.addItems(ng_layouts) # only doing this here so combo is empty on application open
 
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
-        # self._showToolWidgets()
+        self._showToolWidgets()
         # self.initNgServer() #0103-
         # cfg.project_tab.openViewZarr()
         QApplication.processEvents()
