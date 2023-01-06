@@ -476,6 +476,16 @@ class MainWindow(QMainWindow):
         self._enableAllTabs()
         logger.info('<<<< autoscale <<<<')
 
+    def _runSNRcheck(self):
+        failed = cfg.data.check_snr_status()
+        if len(failed) == cfg.data.nSections:
+            self.error(f'No SNR Data Available For This Alignment')
+        elif failed:
+            unzipped = zip(*failed)
+            self.warn(f'No SNR Data Available For Layers {", ".join(map(str, list(unzipped[0])))}...')
+            for i in failed:
+                self.warn(f'  Section: {cfg.data.name_base(s=s, l=i)}')
+
 
     def onAlignmentEnd(self):
         logger.critical('Running Post- Alignment Tasks...')
@@ -493,15 +503,7 @@ class MainWindow(QMainWindow):
             logger.info(f'aligned scales list: {cfg.data.scalesAligned}')
             self.updateEnabledButtons()
 
-            failed = cfg.data.check_snr_status()
-
-            if len(failed) == cfg.data.nSections:
-                self.error(f'No SNR Data Available For This Alignment')
-            elif failed:
-                unzipped = zip(*failed)
-                self.warn(f'No SNR Data Available For Layers {", ".join(map(str, list(unzipped[0])))}...')
-                for i in failed:
-                    self.warn(f'  Section: {cfg.data.name_base(s=s, l=i)}')
+            self._runSNRcheck()
 
             self.app.processEvents()
 
@@ -1221,6 +1223,9 @@ class MainWindow(QMainWindow):
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.layer_view_widget.set_data()
         # self.dataUpdateWidgets()
+        if exist_aligned_zarr_cur_scale():
+            self.updateStatusTips()
+            self._runSNRcheck()
         cfg.project_tab.updateNeuroglancer()
 
 
@@ -1935,6 +1940,7 @@ class MainWindow(QMainWindow):
 
         if exist_aligned_zarr_cur_scale():
             self.updateStatusTips()
+            self._runSNRcheck()
 
 
     def onStartProject(self):
