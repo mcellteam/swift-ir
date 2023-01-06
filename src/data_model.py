@@ -257,17 +257,30 @@ class DataModel:
         if l == None: l = self.layer()
         if l == 0:
             return 0.0
+
         try:
             conv_float = map(float, self._data['data']['scales'][s]['alignment_stack'][l]
                                                ['align_to_ref_method']['method_results']['snr'])
             return statistics.fmean(conv_float)
-        except:
+        except KeyError:
             # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
             logger.error(f'No SNR Data Available For Layer {l}...')
             logger.error(f'  Base : {self.name_base(s=s, l=l)}')
             logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
-            logger.error(f'  Returning 0.00')
+            # cfg.main_window.warn(f'No SNR Data Available For Layer {", ".join(map(str, unavailable))}...')
+            # cfg.main_window.warn(f' Name : {self.name_base(s=s, l=i)}')
+            # cfg.main_window.warn(f'No SNR Data Available For Layer {l}...')
+            # cfg.main_window.warn(f' Name : {self.name_base(s=s, l=l)}')
             return 0.0
+
+
+    def check_snr_status(self, s=None) -> list:
+        if s == None: s = self.curScale
+        unavailable = []
+        for i,l in enumerate(self.alstack(s=s)):
+            if not 'snr' in l['align_to_ref_method']['method_results']:
+                unavailable.append((i, self.name_base(s=s, l=i)))
+        return unavailable
 
 
     def snr_list(self, s=None) -> list[float]:
