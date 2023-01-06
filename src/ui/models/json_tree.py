@@ -82,8 +82,8 @@ class TreeItem:
 
         Examples:
             with open("file.json") as file:
-                data = json.dump(file)
-                root = TreeItem.load(data)
+                datamodel = json.dump(file)
+                root = TreeItem.load(datamodel)
 
         This method is a recursive function that calls itself.
 
@@ -117,7 +117,7 @@ class TreeItem:
 
 
 class JsonModel(QAbstractItemModel):
-    """ An editable previewmodel of Json data """
+    """ An editable previewmodel of Json datamodel """
 
     def __init__(self, parent: QObject = None):
         super().__init__(parent)
@@ -126,7 +126,7 @@ class JsonModel(QAbstractItemModel):
         self._headers = ("key", "value")
 
     def clear(self):
-        """ Clear data from the previewmodel """
+        """ Clear datamodel from the previewmodel """
         self.load({})
 
     def load(self, document: dict):
@@ -142,11 +142,11 @@ class JsonModel(QAbstractItemModel):
         self.endResetModel()
         return True
 
-    # def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
+    # def datamodel(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
     def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
         """Override from QAbstractItemModel
 
-        Return data from a json item according index and role
+        Return datamodel from a json item according index and role
 
         """
         # role = Qt.DisplayRole  # 0718+
@@ -193,7 +193,7 @@ class JsonModel(QAbstractItemModel):
     def headerData(self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole):
         """Override from QAbstractItemModel
 
-        For the JsonModel, it returns only data for columns (orientation = Horizontal)
+        For the JsonModel, it returns only datamodel for columns (orientation = Horizontal)
 
         """
 

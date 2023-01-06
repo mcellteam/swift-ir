@@ -45,12 +45,12 @@ def run_json_project(project,
                      num_layers=-1,
                      alone=False):
     '''Align one s - either the one specified in "s" or the coarsest without an AFM.
-    :param project: All data data as a JSON dictionary
+    :param project: All datamodel datamodel as a JSON dictionary
     :param alignment_option: This the alignment operation which can be one of three values: 'init_affine' (initializes
     the python_swiftir, normally it is run only on the coarsest s), 'refine_affine' (refines the python_swiftir, normally is run on
     all remaining scales), and 'apply_affine' (usually never run, it forces the current python_swiftir onto any s including
     the full s images), defaults to 'init_affine'
-    :param use_scale: The s value to run the json data at
+    :param use_scale: The s value to run the json datamodel at
     :param swiftir_code_mode: This can be either 'c' or 'python', defaults to python
     :param start_layer: Layer index number to start at, defaults to 0.
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
@@ -63,7 +63,7 @@ def run_json_project(project,
     logger.info("alone = %s" % str(alone))
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    # Evaluate Status of ProjectTab and set appropriate flags here:
+    # Evaluate Status of Project and set appropriate flags here:
     proj_status = evaluate_project_status(project)
     finest_scale_done = proj_status['finest_scale_done']
     allow_scale_climb = False
@@ -112,7 +112,7 @@ def run_json_project(project,
 
         if next_scale:
             # Copy settings from next coarsest completed s to tbd:
-            #      s_done = data['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
+            #      s_done = datamodel['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
             s_done = project['data']['scales']['scale_' + str(next_scale)]['alignment_stack']
             common_length = min(len(s_tbd), len(s_done))
             # Copy from coarser to finer
@@ -123,7 +123,7 @@ def run_json_project(project,
                 s_tbd[start_layer + i]['align_to_ref_method']['method_results'] = copy.deepcopy(
                     s_done[start_layer + i]['align_to_ref_method']['method_results'])
 
-            # data['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+            # datamodel['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
 
         actual_num_layers = num_layers
         if actual_num_layers < 0:
@@ -280,7 +280,7 @@ def run_json_project(project,
 
 
 def evaluate_project_status(project):
-    logger.info('Evaluating ProjectTab Status >>>>')
+    logger.info('Evaluating Project Status >>>>')
     # Get int values for scales in a way compatible with old ('1') and new ('scale_1') style for keys
     scales = sorted([int(s.split('scale_')[-1]) for s in project['data']['scales'].keys()])
     proj_status = {'defined_scales': scales,
@@ -304,7 +304,7 @@ def evaluate_project_status(project):
         else:
             proj_status['scales'][scale_key]['all_aligned'] = False
             proj_status['scale_tbd'] = scale  # this will always be the coarsest s not done
-    logger.info('<<<< Returning ProjectTab Status Dict')
+    logger.info('<<<< Returning Project Status Dict')
     return proj_status
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -776,7 +776,7 @@ class align_ingredient:
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
         # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img.JPG')
-        dir = os.path.join(os.path.dirname(os.path.dirname(self.ad))) #dir is the data directory (I think)
+        dir = os.path.join(os.path.dirname(os.path.dirname(self.ad))) #dir is the datamodel directory (I think)
         kip = 'keep.JPG'
         # ' -k  ' + kip + \
         # logger.critical('kip = ' + kip)
@@ -1174,7 +1174,7 @@ if __name__ == '__main__':
 '''run_json_project is called by:
 single_scale_job.py
     updated_model, need_to_write_json =  run_json_project(
-                                         data = project_dict,
+                                         datamodel = project_dict,
                                          alignment_option = alignment_option,
                                          s = s,
                                          code_mode = code_mode,
@@ -1183,7 +1183,7 @@ single_scale_job.py
 
 single_alignment_job.py
    updated_model, need_to_write_json =  run_json_project(
-                                         data = project_dict,
+                                         datamodel = project_dict,
                                          alignment_option = alignment_option,
                                          s = s,
                                          code_mode = code_mode,
@@ -1192,13 +1192,13 @@ single_alignment_job.py
 
 project_runner.py
             self.updated_model, self.need_to_write_json = run_json_project(
-                    data=self.data,
+                    datamodel=self.datamodel,
                     alignment_option=self.alignment_option,
                     s=self.s,
                     code_mode=self.code_mode,
                     start_layer=self.start_layer,
                     num_layers=self.num_layers)
-            self.data = self.updated_model
+            self.datamodel = self.updated_model
 
 
 swiftir.py functions:

@@ -6,7 +6,6 @@ data_template = \
         "version": 0.50,
         "method": "None",
         "user_settings": {
-            "max_image_file_size": 100000000,
             "use_c_version": True
         },
         "data": {
@@ -30,5 +29,26 @@ data_template = \
                     "alignment_stack": []
                 }
             }
+        }
+    }
+
+layer_template = \
+    {
+        "align_to_ref_method": {
+            "method_data": {},
+            "method_options": {},
+            "selected_method": "Auto Swim Align",
+            "method_results": {}
+        },
+        "images": {},
+        "skipped": False
+    }
+
+image_template = \
+    {
+        "filename": None,
+        "metadata": {
+            "annotations": [],
+            "match_points": []
         }
     }

@@ -16,29 +16,30 @@ __all__ = ['generate_scales']
 logger = logging.getLogger(__name__)
 
 
-def generate_scales():
-    logger.info('Generating Scales...')
+def generate_scales(dm):
+    logger.info('>>>> generate_scales >>>>')
 
-    n_tasks = cfg.data.n_layers() * (cfg.data.n_scales() - 1)  #0901 #Refactor
+    n_tasks = dm.n_layers() * (dm.n_scales() - 1)  #0901 #Refactor
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    # task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy (%d Cores)...' % cpus)
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-    for s in cfg.data.scales():
-        create_project_structure_directories(s)
+    create_project_structure_directories(dm.dest(), dm.scales())
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
-    task_queue.start(cpus)
-    src = cfg.data.source_path()
-    dest = cfg.data.dest()
-    imgs = cfg.data.basefilenames()
-    create_scale_one_symlinks(src=src, dest=dest, imgs=imgs)
 
-    for s in cfg.data.downscales():  # value string '1 2 4'
+    src = dm.source_path()
+    imgs = dm.basefilenames()
+    create_scale_one_symlinks(src=src, dest=dm.dest(), imgs=imgs)
+
+    task_queue.start(cpus)
+    for s in dm.downscales():  # value string '1 2 4'
         scale_val = get_scale_val(s)
         logger.info("Queuing Downsample Tasks For Scale %d..." % scale_val)
-        for i, layer in enumerate(cfg.data.get_iter(s)):
-            base       = cfg.data.base_image_name(s=s, l=i)
+        # for i, layer in enumerate(datamodel.get_iter(s)):
+        for i, layer in enumerate(dm['data']['scales'][s]['alignment_stack']):
+            base       = dm.base_image_name(s=s, l=i)
             if_arg     = os.path.join(src, base)
-            ofn        = os.path.join(cfg.data.dest(), s, 'img_src', os.path.split(if_arg)[1])
+            ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
             of_arg     = 'of=%s' % ofn
             scale_arg  = '+%d' % scale_val
             task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
@@ -53,11 +54,13 @@ def generate_scales():
     results = task_queue.get_status_of_tasks()
     # show_mp_queue_results(task_queue=task_queue, dt=dt)
     kill_task_queue(task_queue=task_queue)
-    logger.info('<<<< Generate Scales End <<<<')
     print(f'results : {results}')
     print(f'dt      : {dt}')
     cfg.results = results
     cfg.dt = dt
+    logger.info('<<<< generate_scales <<<<')
+
+
 
     '''
     ____task_queue Parameters (Example)____

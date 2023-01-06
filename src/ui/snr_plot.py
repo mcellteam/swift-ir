@@ -16,7 +16,7 @@ import pyqtgraph as pg
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
-from src.helpers import print_exception, is_cur_scale_aligned, is_arg_scale_aligned, get_scale_val
+from src.helpers import print_exception, exist_aligned_zarr_cur_scale, exist_aligned_zarr, get_scale_val
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -27,16 +27,16 @@ class SnrPlot(QWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # cfg.data = None
+
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
         # self.view.setBackground('#ffffff')
         drafting_blue = '#004060'
         self.view.setBackground(drafting_blue)
+        pg.setConfigOption('foreground', '#f3f6fb')
         self.plot = self.view.addPlot()
         self.vb = CustomViewBox()
-
-        pg.setConfigOption('foreground', 'k')
-
 
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
 
@@ -54,10 +54,10 @@ class SnrPlot(QWidget):
         # self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
         # self.plot.setAspectLocked(True)
-        self.plot.showGrid(x=True, y=True, alpha=220)  # alpha: 0-255
+        self.plot.showGrid(x=False, y=True, alpha=120)  # alpha: 0-255
         # self.plot.getPlotItem().enableAutoRange()
         self.plot.hoverable = True
-        self.plot.hoverSize = 12
+        self.plot.hoverSize = 15
         # self.plot.setFocusPolicy(Qt.NoFocus)
         # font = QFont()
         # font.setPixelSize(14)
@@ -66,7 +66,7 @@ class SnrPlot(QWidget):
         # self.plot.getAxis("left").setStyle(tickFont=font)
         # self.plot.getAxis("bottom").setHeight(12)
         # self.plot.getAxis("left").setWidth(12)
-        self.plot.getAxis("left").setStyle(tickTextOffset=21)
+        self.plot.getAxis("left").setStyle(tickTextOffset=4)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
 
         self.plot.setCursor(Qt.CrossCursor)
@@ -98,18 +98,19 @@ class SnrPlot(QWidget):
         self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
 
+    # def setData(self, data):
+    #     self.data = data
+
 
     def initSnrPlot(self, s=None):
         if not cfg.data:
             logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
             return
         try:
-            # self.wipePlot()
+            self.wipePlot()
             self._snr_checkboxes = dict()
             for i, s in enumerate(cfg.data.scales()):
                 self._snr_checkboxes[s] = QCheckBox()
-
-                # self._snr_checkboxes[s].setText('s' + str(get_scale_val(s)))
                 self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
                 self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
                                                   alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
@@ -130,8 +131,10 @@ class SnrPlot(QWidget):
 
         except:
             print_exception()
-        try:    self.plotData()
-        except:  print_exception()
+        try:
+            self.plotData()
+        except:
+            print_exception()
 
 
     def get_axis_data(self, s=None) -> tuple:
@@ -153,34 +156,35 @@ class SnrPlot(QWidget):
             self.plot.clear()
 
             for s in cfg.data.scales()[::-1]:
-                if is_arg_scale_aligned(scale=s):
+                if exist_aligned_zarr(scale=s):
                     if self._snr_checkboxes[s].isChecked():
                         logger.info(f'{s} is aligned and checkbox is checked. Plotting its SNR data....')
                         self.plotSingleScale(s=s)
-            if cfg.data.nScalesAligned > 0:
-                max_snr = cfg.data.snr_max_all_scales()
-                assert max_snr is not None
-                assert type(max_snr) is float
-                # self.plot.setLimits(xMin=0, xMax=cfg.data.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
-                # self.plot.setXRange(0, cfg.data.n_layers(), padding=0)
-                # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
-                # self.plot.setRange(xRange=[0, cfg.data.n_layers() + 0.5])
-                # self.plot.setRange(yRange=[0, ceil(max_snr)])
-                xmax = cfg.data.nlayers + 1
-                ymax = ceil(max_snr) + 5
-                self.plot.setLimits(
-                    minXRange=1,
-                    xMin=0,
-                    xMax=xmax,
-                    maxXRange=xmax,
-                    yMin=0,
-                    yMax=ymax,
-                    minYRange=ymax,
-                    maxYRange=ymax,
-                )
-                ax = self.plot.getAxis('bottom')  # This is the trick
-                dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
-                ax.setTicks([dx, []])
+            if cfg.data.nScalesAligned:
+                if cfg.data.nScalesAligned > 0:
+                    max_snr = cfg.data.snr_max_all_scales()
+                    assert max_snr is not None
+                    assert type(max_snr) is float
+                    # self.plot.setLimits(xMin=0, xMax=cfg.datamodel.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
+                    # self.plot.setXRange(0, cfg.datamodel.n_layers(), padding=0)
+                    # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
+                    # self.plot.setRange(xRange=[0, cfg.datamodel.n_layers() + 0.5])
+                    # self.plot.setRange(yRange=[0, ceil(max_snr)])
+                    xmax = cfg.data.nlayers + 1
+                    ymax = ceil(max_snr) + 5
+                    self.plot.setLimits(
+                        minXRange=1,
+                        xMin=0,
+                        xMax=xmax,
+                        maxXRange=xmax,
+                        yMin=0,
+                        yMax=ymax,
+                        minYRange=ymax,
+                        maxYRange=ymax,
+                    )
+                    ax = self.plot.getAxis('bottom')  # This is the trick
+                    dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
+                    ax.setTicks([dx, []])
 
             self.plot.autoRange() # !!!
 
@@ -226,7 +230,7 @@ class SnrPlot(QWidget):
         self.plot.addItem(pg.ErrorBarItem(x=x, y=y,
                                           top=deltas,
                                           bottom=deltas,
-                                          beam=0.15,
+                                          beam=0.20,
                                           pen={'color': '#ff0000', 'width': 2}))
 
 

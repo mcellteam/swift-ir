@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 '''
-Simple interface for loading and computing averages of tabular spinehead data.
-Demo GUI script for Mohammad spinehead volume projectTab.
+Simple interface for loading and computing averages of tabular spinehead datamodel.
+Demo GUI script for Mohammad spinehead volume project.
 2022-10-23 - CNL - Joel Yancey.
 
 Demonstrates:
-- Loading data from CSV file via cli and open file dialog
-- Displaying data in pretty table
-- Selecting table data and returning pandas dataframe
-- Performing some analysis on arbitrary user data
+- Loading datamodel from CSV file via cli and open file dialog
+- Displaying datamodel in pretty table
+- Selecting table datamodel and returning pandas dataframe
+- Performing some analysis on arbitrary user datamodel
 - Using classes from Qt documentation ('PandasModel')
 - QApplication, QMainWindow, QWidget,  QFileDialog, QTableView, QPushButton, QTabWidget, QGridLayout, QHBoxLayout,
   QErrorMessage, QGroupBox, QTextEdit, QSplitter, QStatusBar
@@ -55,7 +55,7 @@ class DataTable(QMainWindow):
 
     def import_data(self, path):
         '''Import Data From CSV File Into Pandas Dataframe'''
-        print('Reading CSV data into pandas dataframe...')
+        print('Reading CSV datamodel into pandas dataframe...')
         self._dataframe = pd.read_csv(path)
 
     def load_dataframe(self):
@@ -70,7 +70,7 @@ class DataTable(QMainWindow):
             self.selection_model.selectionChanged.connect(self.selected_rows_changed)
         else:
             error_dialog = QErrorMessage()
-            error_dialog.showMessage('No data loaded!')
+            error_dialog.showMessage('No datamodel loaded!')
 
     def selection(self):
         '''Return Pandas Dataframe From Selection'''
@@ -213,7 +213,7 @@ class PandasModel(QAbstractTableModel):
         #     return str(self._dataframe.iloc[index.row(), index.column()])
 
         if role == Qt.DisplayRole:
-            return data   # Pass the data to our delegate to draw.
+            return data   # Pass the datamodel to our delegate to draw.
         if role == Qt.ToolTipRole:
             return data.title
 
@@ -229,7 +229,7 @@ if __name__== "__main__":
     options.add_argument("-f", "--file", type=str, required=False)
     args = options.parse_args()
 
-    '''Allow GUI to be launched with data file already loaded (use cli argument --file or -f)'''
+    '''Allow GUI to be launched with datamodel file already loaded (use cli argument --file or -f)'''
     if args.file != None:
         window = DataTable(file=args.file)
     else:

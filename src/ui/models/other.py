@@ -11,7 +11,7 @@ class TableModel(QAbstractTableModel):
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
-            # See below for the nested-list data structure.
+            # See below for the nested-list datamodel structure.
             # .row() indexes into the outer list,
             # .column() indexes into the sub-list
             return self._data[index.row()][index.column()]
@@ -37,22 +37,22 @@ class GeneralTableModel(QAbstractTableModel):
         self._data = data
         self.previews = []
 
-    # def data(self, index, role):
+    # def datamodel(self, index, role):
     #     if role == Qt.DisplayRole:
-    #         # See below for the nested-list data structure.
+    #         # See below for the nested-list datamodel structure.
     #         # .row() indexes into the outer list,
     #         # .column() indexes into the sub-list
     #         return self._data[index.row()][index.column()]
 
     def data(self, index, role):
         try:
-            # data = self.previews[index.row() * 4 + index.column() ]
+            # datamodel = self.previews[index.row() * 4 + index.column() ]
             data = self.previews[index.row()]
         except IndexError:
             # Incomplete last row.
             return
         if role == Qt.DisplayRole:
-            return data   # Pass the data to our delegate to draw.
+            return data   # Pass the datamodel to our delegate to draw.
         if role == Qt.ToolTipRole:
             return data.title
 
@@ -120,10 +120,10 @@ class CustomTableModel(QAbstractTableModel):
 # # EXAMPLE FROM QT DOCUMENTATION
 # class Widget(QWidget):
 #
-#     def __init__(self, data):
+#     def __init__(self, datamodel):
 #
 #         QWidget.__init__(self)
-#         self.model = CustomTableModel(data)   # <-- get the model
+#         self.model = CustomTableModel(datamodel)   # <-- get the model
 #         self.table_view = QTableView()        # <-- create QTableView()
 #         self.table_view.setModel(self.model)
 #         self.horizontal_header = self.table_view.horizontalHeader()

@@ -11,6 +11,7 @@ try:
 except:
     caller = None
     pass
+import os
 import copy
 import pprint
 import logging
@@ -24,9 +25,10 @@ numcodecs.blosc.use_threads = False
 import tensorstore as ts
 import neuroglancer as ng
 import neuroglancer.webdriver
-from qtpy.QtCore import QObject, Slot, Signal
+from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 if caller != None:
     import src.config as cfg
+from src.helpers import exist_aligned_zarr_cur_scale
 
 __all__ = ['NgHostSlim']
 
@@ -87,24 +89,23 @@ class WorkerSignals(QObject):
     stateChanged = Signal(int)
     mpUpdate = Signal()
 
-class NgHostSlim(QObject):
-    def __init__(self, parent, path, shape, resolution=None):
-        QObject.__init__(self)
+# class NgHostSlim(QObject):
+# class NgHostSlim(QRunnable):
+class NgHostSlim(QRunnable):
+    def __init__(self, parent, resolution=None, project=False):
+        # QObject.__init__(self)
+        QRunnable.__init__(self)
         self.parent = parent
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
         self.bind = '127.0.0.1'
         self.port = 9000
-        self.path = path
-        self.shape = shape
+        self.project = project
+        # self.shape = shape
         if resolution == None:
             self.resolution = (50, 2, 2)
-        self.coordinate_space = ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
-            units=['nm','nm','nm'],
-            scales=self.resolution,
-        )
+        self.signals = WorkerSignals()
 
     def __del__(self):
         try:
@@ -119,12 +120,18 @@ class NgHostSlim(QObject):
     def __repr__(self):
         return copy.deepcopy(cfg.viewer.state)
 
-    @Slot()
-    def run(self):
-        try:
-            cfg.viewer = ng.Viewer()
-        except:
-            traceback.print_exc()
+    # @Slot()
+    # def run(self):
+    #     try:
+    #         cfg.viewer = ng.Viewer()
+    #     except:
+    #         traceback.print_exc()
+
+    def get_loading_progress(self):
+        return neuroglancer.webdriver.driver.execute_script('''
+    const userLayer = viewer.layerManager.getLayerByName("segmentation").layer;
+    return userLayer.renderLayers.map(x => x.layerChunkProgressInfo)
+     ''')
 
     def request_layer(self):
         return floor(cfg.viewer.state.position[0])
@@ -133,21 +140,28 @@ class NgHostSlim(QObject):
                    show_ui_controls=True,
                    show_panel_borders=False,
                    show_scale_bar=True,
-                   show_axis_lines=True):
+                   show_axis_lines=True,
+                   matchpoint=None):
         print(f'Initializing Neuroglancer Viewer...')
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         cfg.viewer = ng.Viewer()
-        ng.set_server_bind_address(bind_address=self.bind)
-        # src_width, src_height = self.size[0], self.size[1]
-        # max_width, max_height = src_width, src_height
-        # widget_size = cfg.main_window.ng_browser.geometry().getRect()
-        # widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
-        # widget_width = widget_size[2]
-        # tissue_height = self.resolution[1] * max_height  # nm
-        # cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-        # tissue_width = self.resolution[2] * max_width  # nm
-        # cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
-        # cross_section_scale = max(cross_section_height, cross_section_width)
+        ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
+
+        if self.project:
+            if exist_aligned_zarr_cur_scale(): zd = 'img_aligned.zarr'
+            else:                              zd = 'img_src.zarr'
+            self.path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
+            scale = cfg.data.scale()
+            coord_space = [cfg.data.res_z(s=scale),
+                           cfg.data.res_y(s=scale),
+                           cfg.data.res_x(s=scale)]
+        else:
+            coord_space = self.resolution
+
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=coord_space, )
 
         with cfg.viewer.txn() as s:
             adjustment = 1.04
@@ -174,11 +188,9 @@ class NgHostSlim(QObject):
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, 0, 0],
-                downsampling=None
+                # downsampling=None
             )
             s.layers['layer'] = ng.ImageLayer(source=cfg.LV)
-            # pos_x, pos_y = self.shape[2] / 2, self.size[1] / 2
-            # s.position = [0, pos_x, pos_y]
 
         with cfg.viewer.config_state.txn() as s:
             s.show_ui_controls = show_ui_controls
@@ -191,6 +203,22 @@ class NgHostSlim(QObject):
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
 
+    def url(self):
+        return cfg.url
+
+    def on_state_changed(self):
+        try:
+            request_layer = floor(cfg.viewer.state.position[0])
+            if request_layer == self._layer:
+                logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
+                return
+            else:
+                self._layer = request_layer
+            self.signals.stateChanged.emit(request_layer)
+        except:
+            # print_exception()
+            logger.error('ERROR')
+
 
 def obj_to_string(obj, extra='    '):
     return str(obj.__class__) + '\n' + '\n'.join(
@@ -202,15 +230,12 @@ def obj_to_string(obj, extra='    '):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('-p', '--path', type=str, default='.', help='Path to data')
-    ap.add_argument('-s', '--size', type=tuple, default=(4096,4096), help='Size of images in 2D')
+    ap.add_argument('-p', '--path', type=str, default='.', help='Path To Zarr')
     args = ap.parse_args()
 
     cfg = Config()
     # nghost = NgHostSlim(parent=None, path=args.path, size=args.size)
-    nghost = NgHostSlim(parent=None,
-                        path='.',
-                        shape=(4096,4096)
-                        )
+    nghost = NgHostSlim(parent=None, project=False)
+    nghost.path = args.path
     nghost.initViewer()
 
