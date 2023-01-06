@@ -53,10 +53,11 @@ class ControlPanel(QWidget):
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         self.setFixedHeight(40)
-        hbl.addStretch()
+        hbl.addStretch(5)
         for item in self._items:
             hbl.addWidget(item)
-        hbl.addStretch()
+            hbl.addStretch(1)
+        hbl.addStretch(5)
         self._controls = QWidget()
         self._controls.setLayout(hbl)
         # self._layout.addWidget(self._title)
