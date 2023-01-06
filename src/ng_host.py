@@ -293,9 +293,9 @@ class NgHost(QRunnable):
                     cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
                 except:
                     # print_exception()
-                    logger.error(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}')
-                    cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}',
-                                             logging.ERROR)
+                    logger.error(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}\n'
+                                 f'Tensor Path: {self.path}')
+                    cfg.main_window.err(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}')
                 self.json_unal_dataset = cfg.unal_tensor.spec().to_json()
                 logger.debug(self.json_unal_dataset)
                 cfg.refLV = ng.LocalVolume(

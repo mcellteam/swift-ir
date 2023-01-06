@@ -332,7 +332,7 @@ class MainWindow(QMainWindow):
         # self._tabs.show()
         self._enableAllTabs()
         self.main_stack_widget.setCurrentIndex(0)
-        self._cmbo_setScale.setEnabled(True)
+        self._changeScaleCombo.setEnabled(True)
         cfg.SHADER = None
         self.viewer_stack_widget.setCurrentIndex(0)
         if cfg.project_tab:
@@ -1068,7 +1068,7 @@ class MainWindow(QMainWindow):
             self._btn_alignAll.setEnabled(True)
             self._btn_regenerate.setEnabled(True)
         else:
-            cur_index = self._cmbo_setScale.currentIndex()
+            cur_index = self._changeScaleCombo.currentIndex()
             if cur_index == 0:
                 self._scaleDownButton.setEnabled(True)
                 self._scaleUpButton.setEnabled(False)
@@ -1126,7 +1126,7 @@ class MainWindow(QMainWindow):
             self.warn('Changing scales during CPU-bound processes is not currently supported.')
             return
         try:
-            self._cmbo_setScale.setCurrentIndex(self._cmbo_setScale.currentIndex() - 1)  # Changes Scale
+            self._changeScaleCombo.setCurrentIndex(self._changeScaleCombo.currentIndex() - 1)  # Changes Scale
             if not cfg.data.is_alignable():
                 self.warn('Lower scales have not been aligned yet')
         except:
@@ -1141,7 +1141,7 @@ class MainWindow(QMainWindow):
             self.warn('Changing scales during CPU-bound processes is not currently supported.')
             return
         try:
-            self._cmbo_setScale.setCurrentIndex(self._cmbo_setScale.currentIndex() + 1)  # Changes Scale
+            self._changeScaleCombo.setCurrentIndex(self._changeScaleCombo.currentIndex() + 1)  # Changes Scale
             # cfg.data.set_layer(cur_layer) # Set layer to layer last visited at previous s
         except:
             print_exception()
@@ -1252,11 +1252,14 @@ class MainWindow(QMainWindow):
     @Slot()
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
 
         if cfg.zarr_tab:
-            self._sectionSlider.setValue(ng_layer)
+            if ng_layer:
+                self._sectionSlider.setValue(ng_layer)
+            else:
+                self._sectionSlider.setValue(0)
             self._jumpToLineedit.setText(str(cfg.data.layer()))
             return
         elif not cfg.project_tab:
@@ -1502,7 +1505,7 @@ class MainWindow(QMainWindow):
 
 
     def _updateJumpToValidator(self):
-        logger.info('Setting validators...')
+        # logger.info('Setting validators...')
         if self._isProjectTab():
             self._jumpToLineedit.setValidator(QIntValidator(0, cfg.data.nSections - 1))
             self._sectionSlider.setRange(0, cfg.data.nSections - 1)
@@ -1659,11 +1662,11 @@ class MainWindow(QMainWindow):
     def reload_scales_combobox(self) -> None:
         # logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
         self._scales_combobox_switch = 0
-        self._cmbo_setScale.clear()
-        self._cmbo_setScale.addItems(cfg.data.scales())
-        index = self._cmbo_setScale.findText(cfg.data.curScale, Qt.MatchFixedString)
+        self._changeScaleCombo.clear()
+        self._changeScaleCombo.addItems(cfg.data.scales())
+        index = self._changeScaleCombo.findText(cfg.data.curScale, Qt.MatchFixedString)
         if index >= 0:
-            self._cmbo_setScale.setCurrentIndex(index)
+            self._changeScaleCombo.setCurrentIndex(index)
         self._scales_combobox_switch = 1
 
     def fn_scales_combobox(self) -> None:
@@ -1679,7 +1682,7 @@ class MainWindow(QMainWindow):
                 logger.info('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
             return
 
-        new_scale = self._cmbo_setScale.currentText()
+        new_scale = self._changeScaleCombo.currentText()
         cfg.data.set_scale(new_scale)
         self.onScaleChange()
 
@@ -1959,7 +1962,7 @@ class MainWindow(QMainWindow):
 
         self._scales_combobox_switch = 0
         self.reload_scales_combobox()
-        self._cmbo_setScale.setCurrentText(cfg.data.curScale)
+        self._changeScaleCombo.setCurrentText(cfg.data.curScale)
         self._cmbo_ngLayout.setCurrentText(cfg.project_tab.ng_layout)
         self._scales_combobox_switch = 1
 
@@ -2547,7 +2550,7 @@ class MainWindow(QMainWindow):
                 logger.info('\nEntering Match Point Mode...')
                 self.tell('Entering Match Point Mode...')
                 self._is_mp_mode = True
-                self._cmbo_setScale.setEnabled(False)
+                self._changeScaleCombo.setEnabled(False)
                 self.extra_header_text_label.setText('Match Point Mode')
                 self._ctl_panel.hide()
                 self._matchpt_ctls.show()
@@ -2559,7 +2562,7 @@ class MainWindow(QMainWindow):
                 logger.info('\nExiting Match Point Mode...')
                 self.tell('Exiting Match Point Mode...')
                 self._is_mp_mode = False
-                self._cmbo_setScale.setEnabled(True)
+                self._changeScaleCombo.setEnabled(True)
                 self.extra_header_text_label.setText('')
                 # self.updateSkipMatchWidget()
                 self.initView()
@@ -2773,15 +2776,15 @@ class MainWindow(QMainWindow):
         '''scale combobox'''
         self._ngLayoutWidget = QWidget()
         self._ngLayoutWidget.setLayout(hbl)
-        self._cmbo_setScale = QComboBox(self)
-        self._cmbo_setScale.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._cmbo_setScale.setFixedSize(QSize(90, height))
-        self._cmbo_setScale.currentTextChanged.connect(self.fn_scales_combobox)
+        self._changeScaleCombo = QComboBox(self)
+        self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._changeScaleCombo.setFixedSize(QSize(90, height))
+        self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
-        hbl.addWidget(self._cmbo_setScale, alignment=Qt.AlignmentFlag.AlignRight)
-        self._changeScaleCombobox = QWidget()
-        self._changeScaleCombobox.setLayout(hbl)
+        hbl.addWidget(self._changeScaleCombo, alignment=Qt.AlignmentFlag.AlignRight)
+        self._changeScaleWidget = QWidget()
+        self._changeScaleWidget.setLayout(hbl)
 
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -2796,7 +2799,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self._jumpToSectionWidget)
         self.toolbar.addWidget(self._sectionSlider)
         self.toolbar.addWidget(self._ngLayoutWidget)
-        self.toolbar.addWidget(self._changeScaleCombobox)
+        self.toolbar.addWidget(self._changeScaleWidget)
         # self.toolbar.addWidget(self.info_button)
         self.toolbar.addWidget(self.info_button_buffer_label)
 
@@ -2845,30 +2848,33 @@ class MainWindow(QMainWindow):
 
     def _onGlobTabChange(self):
         caller = inspect.stack()[1].function
-        logger.info(f'Tab Changed! (caller: {caller})')
+        logger.debug(f'Tab Changed (caller: {caller})')
         if self._tabsGlob.count() == 0:
             return
         if caller != 'new_project':
             if caller != 'open_project':
                 if self._isProjectTab():
-                    logger.info('New Project Tab...')
+                    logger.info('Loading Project Tab...')
                     cfg.data = self._tabsGlob.currentWidget().datamodel
                     cfg.project_tab = self._tabsGlob.currentWidget()
                     cfg.zarr_tab = None
                     self._ID = id(cfg.project_tab.datamodel)
                     self._key = cfg.project_tab.key
                     self._path = cfg.project_tab.path
+                    self.reload_scales_combobox()
                     cfg.project_tab.initNeuroglancer()
                 else:
-                    logger.info('New Zarr Tab...')
+                    logger.info('Loading Zarr Tab...')
                     cfg.data = None
                     cfg.project_tab = None
                     cfg.zarr_tab = self._tabsGlob.currentWidget()
                     self._ID = None
                     self._key = None
                     self._path = None
+                    self._changeScaleCombo.clear()
                     cfg.zarr_tab.initNeuroglancer()
                 if self._isZarrTab():
+
                     logger.info(f'Switched to a Zarr tab...')
 
                 self._updateJumpToValidator()
