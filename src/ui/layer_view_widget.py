@@ -110,7 +110,7 @@ class LayerViewWidget(QWidget):
         selection = self._selected_rows
         # logger.info(f'selection: {selection}')
         is_aligned = exist_aligned_zarr_cur_scale()
-        scale = [cfg.data.scale_pretty()] * cfg.data.nlayers
+        scale = [cfg.data.scale_pretty()] * cfg.data.nSections
 
         skips, ref, base, method, snr_report = [], [], [], [], []
         for l in cfg.data.alstack():
@@ -123,7 +123,7 @@ class LayerViewWidget(QWidget):
             if is_aligned:
                 snr_report.append(l['align_to_ref_method']['method_results']['snr_report'])
 
-        # buttons = ['buttons'] * cfg.datamodel.nlayers
+        # buttons = ['buttons'] * cfg.datamodel.nSections
         if is_aligned:
             zipped = list(zip(cfg.data.thumbnails(), ref, scale, skips, method, snr_report))
             self._dataframe = pd.DataFrame(zipped, columns=['Img', 'Reference', 'Scale',

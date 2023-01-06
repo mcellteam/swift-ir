@@ -213,7 +213,7 @@ class NgHost(QRunnable):
 
         if matchpoint != None:
             self.mp_mode = matchpoint
-        caller = inspect.stack()[1].function
+
         print(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = exist_aligned_zarr(self.scale)
 
@@ -424,6 +424,7 @@ class NgHost(QRunnable):
                 cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
             except:
                 logger.warning('WARNING')
+
 
 
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='ref'))

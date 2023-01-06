@@ -170,7 +170,7 @@ class SnrPlot(QWidget):
                     # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
                     # self.plot.setRange(xRange=[0, cfg.datamodel.n_layers() + 0.5])
                     # self.plot.setRange(yRange=[0, ceil(max_snr)])
-                    xmax = cfg.data.nlayers + 1
+                    xmax = cfg.data.nSections + 1
                     ymax = ceil(max_snr) + 5
                     self.plot.setLimits(
                         minXRange=1,
@@ -217,7 +217,7 @@ class SnrPlot(QWidget):
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
 
         errbars = cfg.data.snr_errorbars(s=s)
-        n = cfg.data.nlayers - 1
+        n = cfg.data.nSections - 1
         deltas = np.zeros(n)
         y = np.zeros(n)
         x = np.arange(1, n + 1) + offset

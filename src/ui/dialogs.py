@@ -620,7 +620,7 @@ class ConfigProjectDialog(QDialog):
         self.bounding_rectangle_label = QLabel("Bounding Box:")
         self.bounding_rectangle_checkbox = QCheckBox()
         # self.bounding_rectangle_checkbox.setChecked(cfg.DEFAULT_BOUNDING_BOX)
-        self.bounding_rectangle_checkbox.setChecked(cfg.main_window._toggle_bb.isChecked())
+        self.bounding_rectangle_checkbox.setChecked(cfg.main_window._bbToggle.isChecked())
         # ^ after much thought, may be best to init this from a default when the application is opened,
         # then let it always represent its true value regardless if new projects are opened, etc. Most intuitive (?).
         self.bounding_rectangle_layout = QHBoxLayout()
