@@ -492,6 +492,17 @@ class MainWindow(QMainWindow):
             self.dataUpdateWidgets()
             logger.info(f'aligned scales list: {cfg.data.scalesAligned}')
             self.updateEnabledButtons()
+
+            failed = cfg.data.check_snr_status()
+
+            if len(failed) == cfg.data.nSections:
+                self.error(f'No SNR Data Available For This Alignment')
+            elif failed:
+                unzipped = zip(*failed)
+                self.warn(f'No SNR Data Available For Layers {", ".join(map(str, list(unzipped[0])))}...')
+                for i in failed:
+                    self.warn(f'  Section: {cfg.data.name_base(s=s, l=i)}')
+
             self.app.processEvents()
 
         except:
@@ -3999,9 +4010,9 @@ class MainWindow(QMainWindow):
         self.hud.setContentsMargins(2, 0, 2, 0)
         self.layer_details.setContentsMargins(0, 0, 0, 0)
         self.matchpoint_text_snr.setMaximumHeight(20)
-        self._tool_hstry.setMinimumWidth(230)
+        self._tool_hstry.setMinimumWidth(248)
         self._tool_afmCafm.setFixedWidth(248)
-        self.layer_details.setMinimumWidth(230)
+        self.layer_details.setMinimumWidth(248)
 
 
     def initStatusBar(self):
