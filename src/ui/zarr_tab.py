@@ -73,12 +73,15 @@ class ZarrTab(QWidget):
         self.shape = self.zarray['shape']
         self.chunkshape = self.zarray['chunks']
         self.nSections = self.shape[0]
-        cfg.main_window._sectionSlider.setRange(0, self.nSections - 1)
         logger.info(f'array shape: {self.shape}, chunk shape: {self.chunkshape} ')
+
+        cfg.main_window._sectionSlider.setRange(0, self.nSections - 1)
+
         cfg.ng_worker.initViewer()
         cur_index = cfg.main_window._tabsGlob.currentIndex()
         cfg.main_window._tabsGlob.setTabText(cur_index, 'Zarr: ' + os.path.basename(path))
         cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
+        cfg.main_window._jumpToLineedit.setText('0')
         self._webEngine.setUrl(QUrl(str(cfg.viewer)))
         self._webEngine.show()
         self._webEngine.setFocus()

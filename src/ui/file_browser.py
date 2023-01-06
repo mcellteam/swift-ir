@@ -57,14 +57,15 @@ class FileBrowser(QWidget):
         hbl.addStretch()
         hbl.addWidget(self._btn_showFileBrowser)
         hbl.addWidget(self._btn_open)
-        controls = QWidget()
-        controls.setFixedHeight(24)
-        controls.setLayout(hbl)
+        self.controls = QWidget()
+        self.controls.setFixedHeight(24)
+        self.controls.setLayout(hbl)
 
         vbl = QVBoxLayout(self)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.treeview)
-        vbl.addWidget(controls, alignment=Qt.AlignmentFlag.AlignLeft)
+        vbl.addWidget(self.controls, alignment=Qt.AlignmentFlag.AlignLeft)
+        vbl.setStretch(1,0)
         self.setLayout(vbl)
 
     def selectionChanged(self):

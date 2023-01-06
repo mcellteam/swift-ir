@@ -150,18 +150,21 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             cfg.project_tab.arrangement = 0
             cfg.project_tab.initNeuroglancer()
+            cfg.project_tab._tabs.setCurrentIndex(0)
 
 
     def set_viewer_layout_1(self):
         if cfg.project_tab:
             cfg.project_tab.arrangement = 1
             cfg.project_tab.initNeuroglancer()
+            cfg.project_tab._tabs.setCurrentIndex(0)
 
 
     def set_viewer_layout_2(self):
         if cfg.project_tab:
             cfg.project_tab.arrangement = 2
             cfg.project_tab.initNeuroglancer()
+            cfg.project_tab._tabs.setCurrentIndex(0)
 
 
     # def initData(self):
@@ -1252,8 +1255,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
 
         if cfg.zarr_tab:
             if ng_layer:
@@ -1570,6 +1573,11 @@ class MainWindow(QMainWindow):
         if caller == 'dataUpdateWidgets':
             return
         # logger.info(f'caller:{caller}')
+        if not cfg.project_tab:
+            return
+        if not cfg.zarr_tab:
+            return
+
         requested = self._sectionSlider.value()
         cfg.ng_worker._layer = requested
         # logger.info(f'slider, requested: {requested}')
@@ -2472,6 +2480,19 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.setCurrentIndex(0)
         self.splashmovie.start()
 
+        # self.splash_widget = QWidget()  # Todo refactor this it is not in use
+        # self.splash_widget.setObjectName('splash_widget')
+        # self.splashmovie = QMovie('src/resources/alignem_animation.gif')
+        # self.splashlabel = QLabel()
+        # self.splashlabel.setMovie(self.splashmovie)
+        # self.splashlabel.setMinimumSize(QSize(100, 100))
+        # gl = QGridLayout()
+        # gl.addWidget(self.splashlabel, 1, 1, 1, 1)
+        # self.splash_widget.setLayout(gl)
+        # self.splash_widget.setGraphicsEffect(QGraphicsOpacityEffect().setOpacity(0.7))
+        # self.splashmovie.finished.connect(lambda: self.runaftersplash())
+
+
 
     def runaftersplash(self):
         self.viewer_stack_widget.setCurrentIndex(self.temp_img_panel_index)
@@ -2710,29 +2731,30 @@ class MainWindow(QMainWindow):
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
-        rb0 = QRadioButton('Stack')
-        rb0.setChecked(True)
-        rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        rb0.toggled.connect(self.set_viewer_layout_0)
+        self.rb0 = QRadioButton('Stack')
+        self.rb0.setChecked(True)
+        self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rb0.toggled.connect(self.set_viewer_layout_0)
 
-        rb1 = QRadioButton('Ref|Base|Aligned, Column')
-        rb1.setChecked(False)
-        rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        rb1.toggled.connect(self.set_viewer_layout_1)
+        self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
+        self.rb1.setChecked(False)
+        self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rb1.toggled.connect(self.set_viewer_layout_1)
 
-        rb2 = QRadioButton('Ref|Base|Aligned, Row')
-        rb2.setChecked(False)
-        rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        rb2.toggled.connect(self.set_viewer_layout_2)
+        self.rb2 = QRadioButton('Ref|Base|Aligned, Row')
+        self.rb2.setChecked(False)
+        self.rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rb2.toggled.connect(self.set_viewer_layout_2)
 
         self._arrangeRadio = QWidget()
         hbl = QHBoxLayout()
-        hbl.addWidget(rb0)
-        hbl.addWidget(rb1)
-        hbl.addWidget(rb2)
+        hbl.addWidget(self.rb0)
+        hbl.addWidget(self.rb1)
+        hbl.addWidget(self.rb2)
         self._arrangeRadio.setLayout(hbl)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
+        self._sectionSlider.setFixedWidth(192)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
 
         tip = 'Show Neuroglancer key bindings'
@@ -2862,6 +2884,9 @@ class MainWindow(QMainWindow):
                     self._key = cfg.project_tab.key
                     self._path = cfg.project_tab.path
                     self.reload_scales_combobox()
+                    self.rb0.show()
+                    self.rb1.show()
+                    self.rb2.show()
                     cfg.project_tab.initNeuroglancer()
                 else:
                     logger.info('Loading Zarr Tab...')
@@ -2871,10 +2896,14 @@ class MainWindow(QMainWindow):
                     self._ID = None
                     self._key = None
                     self._path = None
+                    self.rb0.hide()
+                    self.rb1.hide()
+                    self.rb2.hide()
                     self._changeScaleCombo.clear()
+                   # self._jumpToLineedit.set
                     cfg.zarr_tab.initNeuroglancer()
-                if self._isZarrTab():
 
+                if self._isZarrTab():
                     logger.info(f'Switched to a Zarr tab...')
 
                 self._updateJumpToValidator()

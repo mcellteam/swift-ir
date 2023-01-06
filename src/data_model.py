@@ -264,9 +264,8 @@ class DataModel:
             return statistics.fmean(conv_float)
         except KeyError:
             # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            logger.error(f'No SNR Data Available For Layer {l}...')
-            logger.error(f'  Base : {self.name_base(s=s, l=l)}')
-            logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
+            logger.error(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
+            # logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
             # cfg.main_window.warn(f'No SNR Data Available For Layer {", ".join(map(str, unavailable))}...')
             # cfg.main_window.warn(f' Name : {self.name_base(s=s, l=i)}')
             # cfg.main_window.warn(f'No SNR Data Available For Layer {l}...')
@@ -329,8 +328,9 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']['snr_report']
-        except:
-            logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
+        except KeyError:
+            logger.debug('An Exception Was Raised Trying To Get SNR of The Current Layer')
+            pass
 
 
     def print_all_matchpoints(self):

@@ -118,7 +118,7 @@ class LayerViewWidget(QWidget):
             skips.append(l['skipped'])
             m = l['align_to_ref_method']['selected_method']
             if m == 'Auto Swim Align':
-                m = 'Automatic SWIM Alignment'
+                m = 'SWIM Automated Alignment'
             method.append(m)
             if is_aligned:
                 try:
