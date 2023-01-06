@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 def save_bias_analysis(layers, bias_path):
     """
-    Saves bias analysis results to separate '.dat' files in the data directory. Called by 'compute_affines'.
-    :param layers: Iterator over the alignment layer data to be saved
+    Saves bias analysis results to separate '.dat' files in the datamodel directory. Called by 'compute_affines'.
+    :param layers: Iterator over the alignment layer datamodel to be saved
     :type layers: ScaleIterator
-    :param bias_path: Path to where the bias data will be saved.
+    :param bias_path: Path to where the bias datamodel will be saved.
     :type bias_path: str
     """
 

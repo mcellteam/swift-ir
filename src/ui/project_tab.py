@@ -22,14 +22,18 @@ logger = logging.getLogger(__name__)
 class ProjectTab(QWidget):
 
     def __init__(self,
+                 key,
                  parent=None,
                  path=None,
+                 datamodel=None,
                  *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
-        logger.info('')
+        logger.info(f'Unique Key: {key}, ID(datamodel): {id(datamodel)}, Path: {path}')
+        self.key = key
         self.parent = parent
         self.path = path
-        self.layout = 'xy'
+        self.datamodel = datamodel
+        self.ng_layout = 'xy'
         self.initUI_Neuroglancer()
         self.initUI_details()
         self.initUI_JSON()
@@ -38,15 +42,29 @@ class ProjectTab(QWidget):
         self._tabs.currentChanged.connect(self._onTabChange)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
+        self.arrangement = 1
 
-
-    def initNgViewer(self, matchpoint=None, scale=None):
-        if matchpoint != None:
-            cfg.ng_worker.initViewer(scale=cfg.data.curScale, matchpoint=matchpoint)
+    def initNeuroglancer(self):
+        if self.arrangement == 0:
+            cfg.ng_worker = NgHostSlim(parent=self, project=True)
         else:
-            cfg.ng_worker.initViewer(scale=cfg.data.curScale)
+            cfg.ng_worker = NgHost(parent=self)
+            if self.arrangement == 1:
+                cfg.ng_worker.arrangement = 1
+            elif self.arrangement == 2:
+                cfg.ng_worker.arrangement = 2
+        cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        self.updateNeuroglancer()
+
+
+    def updateNeuroglancer(self, matchpoint=None):
+        if matchpoint != None:
+            cfg.ng_worker.initViewer(matchpoint=matchpoint)
+        else:
+            cfg.ng_worker.initViewer()
         self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
         self.ng_browser.setFocus()
+
 
 
     def getBrowserSize(self):
@@ -58,8 +76,7 @@ class ProjectTab(QWidget):
 
 
     def updateJsonWidget(self):
-        if cfg.data:
-            self._treeview_model.load(cfg.data.to_dict())
+        self._treeview_model.load(self.datamodel.to_dict())
 
 
     def initUI_Neuroglancer(self):
@@ -77,7 +94,7 @@ class ProjectTab(QWidget):
         self._overlayLab = QLabel()
         self._overlayLab.setObjectName('_overlayLab')
         self._overlayLab.hide()
-        # self._overlayNotification = QLabel('No data. ')
+        # self._overlayNotification = QLabel('No datamodel. ')
         # font = QFont()
         # font.setFamily("Monaco")
         # self._overlayNotification.setFont(font)
@@ -109,7 +126,7 @@ class ProjectTab(QWidget):
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.layer_view_widget)
-        self.label_overview = VerticalLabel('ProjectTab Data Table View')
+        self.label_overview = VerticalLabel('Project Data Table View')
         self.label_overview.setObjectName('label_overview')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
@@ -121,7 +138,7 @@ class ProjectTab(QWidget):
 
 
     def initUI_JSON(self):
-        '''JSON ProjectTab View'''
+        '''JSON Project View'''
         self._treeview = QTreeView()
         # self._treeview.setStyleSheet('background-color: #ffffff;')
         self._treeview_model = JsonModel()
@@ -132,7 +149,7 @@ class ProjectTab(QWidget):
         self._wdg_treeview.setObjectName('_wdg_treeview')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(2, 0, 2, 0)
-        lab = VerticalLabel('ProjectTab Dictionary/JSON Tree View')
+        lab = VerticalLabel('Project Dictionary/JSON Tree View')
         lab.setObjectName('label_treeview')
         hbl.addWidget(lab)
         hbl.addWidget(self._treeview)
@@ -169,6 +186,8 @@ class ProjectTab(QWidget):
         vbl.addWidget(self._plot_Xaxis, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.snr_plot_widget.setLayout(vbl)
 
+        self.snr_plot.initSnrPlot() #To set up some basic plot characteristics
+
 
     def initUI_tab_widget(self):
         '''Tab Widget'''
@@ -196,17 +215,16 @@ class ProjectTab(QWidget):
 
 
     def _onTabChange(self, index=None):
-        logger.info(f'TAB index={index}')
         if index == None: index = self._tabs.currentIndex()
-        logger.info(f'TAB index={index}')
-
-        if cfg.data:
-            if index == 0:  pass
-            if index == 1:  self.layer_view_widget.set_data()
-            if index == 2:  self.updateJsonWidget()
-            if index == 3:  self.snr_plot.plotData()
-            QApplication.processEvents()
-            self.repaint()
+        if index == 0:  pass
+        if index == 1:  self.layer_view_widget.set_data()
+        if index == 2:  self.updateJsonWidget()
+        if index == 3:
+            self.snr_plot.data = self.datamodel
+            # self.snr_plot.plotData()
+            self.snr_plot.initSnrPlot()
+        QApplication.processEvents()
+        self.repaint()
 
 
 
@@ -225,12 +243,7 @@ class ProjectTab(QWidget):
 if __name__ == '__main__':
     app = QApplication([])
     main_window = QMainWindow()
-    w = [
-        QPushButton("Demo 1"),
-        QComboBox(),
-        QSpinBox()
-    ]
-    w = ProjectTab(items=w)
-    main_window.setCentralWidget(w)
+    pt = ProjectTab()
+    main_window.setCentralWidget(pt)
     main_window.show()
     sys.exit(app.exec_())

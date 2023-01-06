@@ -20,10 +20,6 @@ import tifffile
 import numpy as np
 from shutil import rmtree
 import psutil
-# import numcodecs
-# numcodecs.blosc.use_threads = False #may need
-# blosc.set_nthreads(8)
-# from PIL import Image
 
 try: import src.config as cfg
 except: import config as cfg
@@ -34,14 +30,11 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'remove_aligned',
-           'is_destination_set','do_scales_exist', 'make_relative', 'make_absolute','is_cur_scale_aligned',
-           'get_num_aligned', 'are_aligned_images_generated', 'print_alignment_layer', 'print_dat_files',
-           'print_sanity_check', 'are_images_imported', 'is_cur_scale_exported',
-           'get_img_filenames', 'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok',
-           'print_project_tree','verify_image_file', 'is_arg_scale_aligned', 'print_snr_list',
-           'is_any_scale_aligned_and_generated', 'get_tensor_handle_unal', 'get_tensor_handle_al', 'get_refLV',
-           'get_baseLV', 'get_alLV', 'get_aligned_scales'
+__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries',
+           'is_destination_set','do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
+           'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
+           'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
+           'get_aligned_scales'
            ]
 
 logger = logging.getLogger(__name__)
@@ -156,29 +149,6 @@ def track(func):
         return result
     return wrapper
 
-def snr_list(self, scale=None):
-    if scale == None: scale = self.scale()
-
-
-def get_tensor_handle_unal():
-    return cfg.ng_worker.unal_tensor
-    # return cfg.main_window.ng_workers[cfg.data.scale()].unal_tensor
-
-def get_tensor_handle_al():
-    return cfg.ng_worker.al_tensor
-    # return cfg.main_window.ng_workers[cfg.data.scale()].al_tensor
-
-def get_refLV():
-    return cfg.refLV
-    # return cfg.main_window.ng_workers[cfg.data.scale()].refLV
-
-def get_baseLV():
-    return cfg.baseLV
-    # return cfg.main_window.ng_workers[cfg.data.scale()].baseLV
-
-def get_alLV():
-    return cfg.alLV
-    # return cfg.main_window.ng_workers[cfg.data.scale()].baseLV
 
 def renew_directory(directory:str) -> None:
     '''Remove and re-create a directory, if it exists.'''
@@ -278,7 +248,7 @@ def show_mp_queue_results(task_queue, dt):
 
 # def load():
 #     try:
-#         with open('data.json', 'r') as f:
+#         with open('datamodel.json', 'r') as f:
 #             self.previewmodel.todos = json.load(f)
 #     except Exception:
 #         pass
@@ -324,20 +294,13 @@ def get_bindir() -> str:
 
 
 def is_destination_set() -> bool:
-    '''Checks if there is a data open'''
+    '''Checks if there is a datamodel open'''
     if cfg.data['data']['destination_path']:
         return True
     else:
         return False
 
 
-def are_images_imported() -> bool:
-    '''Checks if any images have been imported.'''
-    n_imgs = len(cfg.data['data']['scales']['scale_1']['alignment_stack'])
-    if n_imgs > 0:
-        return True
-    else:
-        return False
 
 
 def get_scale_key(scale_val) -> str:
@@ -374,16 +337,16 @@ def do_scales_exist() -> bool:
         pass
 
 
-def get_aligned_scales() -> list:
+def get_aligned_scales(scales) -> list:
     logger.info('get_aligned_scales:')
     l = []
-    for s in cfg.data.scales():
-        if is_arg_scale_aligned(s):
+    for s in scales:
+        if exist_aligned_zarr(s):
             l.append(s)
     return l
 
 
-def is_arg_scale_aligned(scale: str) -> bool:
+def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
     # logger.info('called by %s' % inspect.stack()[1].function)
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
@@ -404,20 +367,17 @@ def is_arg_scale_aligned(scale: str) -> bool:
     return result
 
 
-def is_cur_scale_aligned() -> bool:
+def exist_aligned_zarr_cur_scale(dest=None) -> bool:
     '''Checks if there exists an alignment stack for the current s
 
     #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
-    functions even for a data that does not need scales.'''
+    functions even for a datamodel that does not need scales.'''
     # logger.info('Called by %s' % inspect.stack()[1].function)
 
-    if cfg.data is None:
-        logger.warning('No data to check')
-        return False
-
-    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
+    if dest == None: dest = cfg.data.dest()
+    zarr_path = os.path.join(dest, 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
     # logger.info('zarr_path = %s' % zarr_path)
     if not os.path.isdir(zarr_path):
         logger.debug('Returning False due to os.path.isdir(zarr_path)')
@@ -433,44 +393,11 @@ def is_cur_scale_aligned() -> bool:
         return False
     return True
 
-def get_num_aligned() -> int:
-    '''Returns the count aligned and generated images for the current s.'''
-
-    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'img_aligned')
-    # logger.info('get_num_aligned | path=', path)
-    try:
-        n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
-    except:
-        print_exception()
-    # logger.info('get_num_aligned() | returning:', n_aligned)
-    return n_aligned
-
-def is_any_scale_aligned_and_generated() -> bool:
-    '''Checks if there exists a set of aligned images at the current s
-    Todo: Sometimes aligned images are generated but do get rendered'''
-    files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
-    if len(files) > 0:
-        return True
-    else:
-        return False
-
-def return_aligned_imgs() -> list:
-    '''Returns the list of paths for aligned images at the current s, if any exist.'''
-
-    try:
-        files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
-    except:
-        logger.warning('Something went wrong. Check data dictionary - Returning None')
-        return []
-
-    logger.debug('# aligned images found: %d' % len(files))
-    logger.debug('List of aligned imgs: %s' % str(files))
-    return files
 
 
-def are_aligned_images_generated() ->bool:
+def are_aligned_images_generated(dir, scale) -> bool:
     '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
-    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'img_aligned')
+    path = os.path.join(dir, scale, 'img_aligned')
     files = glob(path + '/*.tif')
     if len(files) < 1:
         logger.debug('Zero aligned TIFs were found at this s - Returning False')
@@ -478,22 +405,6 @@ def are_aligned_images_generated() ->bool:
     else:
         logger.debug('One or more aligned TIFs were found at this s - Returning True')
         return True
-
-
-def is_any_alignment_exported() -> bool:
-    '''Checks if there exists an exported alignment'''
-    return os.path.isdir(os.path.join(cfg.data['data']['destination_path'], 'img_aligned.zarr'))
-
-
-def is_cur_scale_exported() -> bool:
-    '''Checks if there exists an exported alignment'''
-    path = os.path.join(cfg.data['data']['destination_path'], 'img_aligned.zarr')
-    answer = os.path.isdir(path)
-    logger.debug("path: %s" % path)
-    logger.debug("response: %s" % str(answer))
-    return answer
-
-
 
 
 
@@ -581,7 +492,7 @@ def get_img_filenames(path) -> list[str]:
 
 def rename_layers(use_scale, al_dict):
     logger.info('rename_layers:')
-    source_dir = os.path.join(cfg.data['data']['destination_path'], use_scale, "img_src")
+    source_dir = os.path.join(cfg.data.dest(), use_scale, "img_src")
     for layer in al_dict:
         image_name = None
         if 'base' in layer['images'].keys():
@@ -593,34 +504,6 @@ def rename_layers(use_scale, al_dict):
             except:
                 logger.warning('Something went wrong with renaming the alignment layers')
                 pass
-
-def remove_aligned(use_scale, start_layer=0):
-    '''
-    Removes previously generated aligned images for the current s, starting at l 'start_layer'.
-
-    :param use_scale: The s to remove aligned images from.
-    :type use_scale: str
-
-    :param start_layer: The starting l index from which to remove all aligned images, defaults to 0.
-    :type start_layer: int
-    '''
-    cfg.main_window.hud.post(f'Removing Aligned for Scale {get_scale_val(use_scale)}...')
-    try:
-        for layer in cfg.data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
-            ifn = layer['images'].get('filename', None)
-            layer['images'].pop('aligned', None)
-            if ifn != None:
-                try:
-                    os.remove(ifn)
-                except:
-                    print_exception()
-                    logger.warning("os.remove(%s) Triggered An Exception" % ifn)
-    except:
-        print_exception()
-        cfg.main_window.warn('An Exception Was Raisied While Removing Previous Alignment...')
-    else:
-        cfg.main_window.hud.done()
-
 
 
 
@@ -677,40 +560,25 @@ def create_scale_one_symlinks(src, dest, imgs):
 
 
 
-def create_project_structure_directories(scale_key:str) -> None:
-    subdir_path = os.path.join(cfg.data.dest(), scale_key)
-    cfg.main_window.hud('Creating Directory for Scale %s...' % get_scale_val(scale_key))
-    src_path = os.path.join(subdir_path, 'img_src')
-    aligned_path = os.path.join(subdir_path, 'img_aligned')
-    bias_data_path = os.path.join(subdir_path, 'bias_data')
-    history_path = os.path.join(subdir_path, 'history')
-    try:
-        os.makedirs(subdir_path)
-        os.makedirs(src_path)
-        os.makedirs(aligned_path)
-        os.makedirs(bias_data_path)
-        os.makedirs(history_path)
-    except:
-        print_exception()
-        logger.warning('There Was A Problem Creating Directory Structure')
-    cfg.main_window.hud.done()
+def create_project_structure_directories(destination, scales) -> None:
+    for scale in scales:
+        subdir_path = os.path.join(destination, scale)
+        cfg.main_window.hud('Creating directories for %s...')
+        src_path = os.path.join(subdir_path, 'img_src')
+        aligned_path = os.path.join(subdir_path, 'img_aligned')
+        bias_data_path = os.path.join(subdir_path, 'bias_data')
+        history_path = os.path.join(subdir_path, 'history')
+        try:
+            os.makedirs(subdir_path)
+            os.makedirs(src_path)
+            os.makedirs(aligned_path)
+            os.makedirs(bias_data_path)
+            os.makedirs(history_path)
+        except:
+            print_exception()
+            logger.warning('There Was A Problem Creating Directory Structure')
+        cfg.main_window.hud.done()
 
-
-def printProjectDetails(project_data: dict) -> None:
-    logger.info('In Memory:')
-    logger.info("  data['data']['destination_path']         :", project_data['data']['destination_path'])
-    logger.info("  data['data']['source_path']              :", project_data['data']['source_path'])
-    logger.info("  data['data']['current_scale']            :", project_data['data']['current_scale'])
-    logger.info("  data['data']['current_layer']            :", project_data['data']['current_layer'])
-    logger.info("  data['method']                           :", project_data['method'])
-    logger.info("  Destination Set Status    :", is_destination_set())
-    logger.info("  Images Imported Status    :", are_images_imported())
-    logger.info("  ProjectTab Scaled Status     :", do_scales_exist())
-    logger.info("  Any Scale Aligned Status  :", is_any_scale_aligned_and_generated())
-    logger.info("  Cur Scale Aligned         :", are_aligned_images_generated())
-    logger.info("  Any Exported Status       :", is_any_alignment_exported())
-    logger.info("  # Imported Images         :", cfg.data.n_layers())
-    logger.info("  Current Layer SNR         :", cfg.data.snr_report())
 
 
 def is_not_hidden(path):
@@ -718,159 +586,57 @@ def is_not_hidden(path):
 
 
 def print_project_tree() -> None:
-    '''Recursive function that lists data directory contents as a tree.'''
+    '''Recursive function that lists datamodel directory contents as a tree.'''
     paths = Treeview.make_tree(Path(cfg.data['data']['destination_path']))
     for path in paths:
         print(path.displayable())
 
 
-def print_alignment_layer() -> None:
-    '''Prints a single alignment l (the last l) for the current s from the data dictionary.'''
-    try:
-        al_layer = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][-1]
-        print(json.dumps(al_layer, indent=2))
-    except:
-        print('No Alignment Layers Found for the Current Scale')
+
+#
+# def print_dat_files() -> None:
+#     '''Prints the .dat files for the current s, if they exist .'''
+#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale(), 'bias_data')
+#     if are_images_imported():
+#         logger.info('Printing .dat Files')
+#         try:
+#             logger.info("_____________________BIAS DATA_____________________")
+#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale()))
+#             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
+#                 snr_1 = f.read()
+#                 logger.info('snr_1               : %s' % snr_1)
+#             with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
+#                 bias_x_1 = f.read()
+#                 logger.info('bias_x_1            : %s' % bias_x_1)
+#             with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
+#                 bias_y_1 = f.read()
+#                 logger.info('bias_y_1            : %s' % bias_y_1)
+#             with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
+#                 bias_rot_1 = f.read()
+#                 logger.info('bias_rot_1          : %s' % bias_rot_1)
+#             with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
+#                 bias_scale_x_1 = f.read()
+#                 logger.info('bias_scale_x_1      : %s' % bias_scale_x_1)
+#             with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
+#                 bias_scale_y_1 = f.read()
+#                 logger.info('bias_scale_y_1      : %s' % bias_scale_y_1)
+#             with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
+#                 bias_skew_x_1 = f.read()
+#                 logger.info('bias_skew_x_1       : %s' % bias_skew_x_1)
+#             with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
+#                 bias_det_1 = f.read()
+#                 logger.info('bias_det_1          : %s' % bias_det_1)
+#             with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
+#                 afm_1 = f.read()
+#                 logger.info('afm_1               : %s' % afm_1)
+#             with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
+#                 c_afm_1 = f.read()
+#                 logger.info('c_afm_1             : %s' % c_afm_1)
+#         except:
+#             logger.info('Is this s aligned? No .dat files were found at this s.')
+#             pass
 
 
-def print_dat_files() -> None:
-    '''Prints the .dat files for the current s, if they exist .'''
-    bias_data_path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'bias_data')
-    if are_images_imported():
-        logger.info('Printing .dat Files')
-        try:
-            logger.info("_____________________BIAS DATA_____________________")
-            logger.info("Scale %d____________________________________________" % get_scale_val(cfg.data.scale()))
-            with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
-                snr_1 = f.read()
-                logger.info('snr_1               : %s' % snr_1)
-            with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
-                bias_x_1 = f.read()
-                logger.info('bias_x_1            : %s' % bias_x_1)
-            with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
-                bias_y_1 = f.read()
-                logger.info('bias_y_1            : %s' % bias_y_1)
-            with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
-                bias_rot_1 = f.read()
-                logger.info('bias_rot_1          : %s' % bias_rot_1)
-            with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
-                bias_scale_x_1 = f.read()
-                logger.info('bias_scale_x_1      : %s' % bias_scale_x_1)
-            with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
-                bias_scale_y_1 = f.read()
-                logger.info('bias_scale_y_1      : %s' % bias_scale_y_1)
-            with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
-                bias_skew_x_1 = f.read()
-                logger.info('bias_skew_x_1       : %s' % bias_skew_x_1)
-            with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
-                bias_det_1 = f.read()
-                logger.info('bias_det_1          : %s' % bias_det_1)
-            with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
-                afm_1 = f.read()
-                logger.info('afm_1               : %s' % afm_1)
-            with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
-                c_afm_1 = f.read()
-                logger.info('c_afm_1             : %s' % c_afm_1)
-        except:
-            logger.info('Is this s aligned? No .dat files were found at this s.')
-            pass
-
-
-def print_sanity_check():
-    logger.info("___________________SANITY CHECK____________________")
-    logger.info("Project____________________________________________")
-    if cfg.data['data']['source_path']:
-        print("  Source path                                      :", cfg.data['data']['source_path'])
-    else:
-        print("  Source path                                      : n/a")
-    if cfg.data['data']['destination_path']:
-        print("  Destination path                                 :", cfg.data['data']['destination_path'])
-    else:
-        print("  Destination path                                 : n/a")
-    cur_scale = cfg.data['data']['current_scale']
-    try:
-        scale = cfg.data.scale()  # logger.info(s) returns massive wall of text
-    except:
-        pass
-    print("  Current s                                    :", cur_scale)
-    print("  ProjectTab Method                                   :", cfg.data['method'])
-    print("  Current l                                    :", cfg.data['data']['current_layer'])
-    try:
-        print("  Alignment Option                                 :",
-              scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
-                  'alignment_option'])
-    except:
-        print("  Alignment Option                                 : n/a")
-    print("Data Selection & Scaling___________________________")
-    print("  Are images imported?                             :", are_images_imported())
-    print("  How many images?                                 :", cfg.data.n_layers())
-    # skips = cfg.data.skips_list()
-    # if skips != []:
-    #     print("  Skip list                                        :", skips)
-    # else:
-    #     print("  Skip list                                        : n/a")
-    print("  Is dataset scaled?                               :", do_scales_exist())
-    if do_scales_exist():
-        print("  How many scales?                                 :", cfg.data.n_scales())
-    else:
-        print("  How many scales?                                 : n/a")
-    print("  Which scales?                                    :", cfg.data.scales())
-
-    print("Alignment__________________________________________")
-    print("  Is any s aligned+generated?                  :", is_any_scale_aligned_and_generated())
-    print("  Is this s aligned?                           :", is_cur_scale_aligned())
-    print("  Is this s ready to be aligned?               :", cfg.data.is_alignable())
-    try:
-        
-        print("  How many aligned at this s?                  :", get_num_aligned())
-    except:
-        print("  How many aligned at this s?                  : n/a")
-    try:
-        al_scales = cfg.data.aligned_list()
-        if al_scales == []:
-            print("  Which scales are aligned?                        : n/a")
-        else:
-            print("  Which scales are aligned?                        :", str(al_scales))
-    except:
-        print("  Which scales are aligned?                        : n/a")
-
-    print("  alignment_option                                 :",
-          cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option'])
-    try:
-        print("  whitening factor (current l)                 :",
-              scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
-                  'whitening_factor'])
-    except:
-        print("  whitening factor (current l)                 : n/a")
-    try:
-        print("  SWIM window (current l)                      :",
-              scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
-                  'win_scale_factor'])
-    except:
-        print("  SWIM window (current l)                      : n/a")
-    try:
-        print("  SNR (current l)                              :", cfg.data.snr_report())
-    except:
-        print("  SNR (current l)                              : n/a")
-
-
-    print("Post-alignment_____________________________________")
-    try:
-        poly_order = cfg.data['data']['scales'][cfg.data.scale()]['poly_order']
-        print("  poly_order (all layers)                          :", poly_order)
-    except:
-        print("  poly_order (all layers)                          : n/a")
-        pass
-    try:
-        use_bounding_rect = cfg.data['data']['scales'][cfg.data['data']['current_scale']][
-            'use_bounding_rect']
-        print("  use_bounding_rect (all layers)                   :", use_bounding_rect)
-    except:
-        print("  use_bounding_rect (all layers)                   : n/a")
-
-    print("Export & View______________________________________")
-    print("  Is any alignment exported?                       :", is_any_alignment_exported())
-    print("  Is current s exported?                       :", is_cur_scale_exported())
 
 
 def module_debug() -> None:
@@ -904,19 +670,19 @@ def show_process_diagnostics():
     cfg.main_window.hud.post('\n\nmain_window.threadpool Active thread count: %d' % nthreadpool)
 
 
-def print_snr_list() -> None:
-    try:
-        snr_list = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][cfg.data.layer()][
-            'align_to_ref_method']['method_results']['snr_report']
-        logger.debug('snr_list:  %s' % str(snr_list))
-        mean_snr = sum(snr_list) / len(snr_list)
-        logger.debug('mean(snr_list):  %s' % mean_snr)
-        snr_report = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][cfg.data.layer()][
-            'align_to_ref_method']['method_results']['snr_report']
-        logger.info('snr_report:  %s' % str(snr_report))
-        logger.debug('All Mean SNRs for current s:  %s' % str(cfg.data.snr_list()))
-    except:
-        logger.info('An Exception Was Raised trying to Print the SNR List')
+# def print_snr_list() -> None:
+#     try:
+#         snr_list = cfg.datamodel['data']['scales'][cfg.datamodel.scale()]['alignment_stack'][cfg.datamodel.layer()][
+#             'align_to_ref_method']['method_results']['snr_report']
+#         logger.debug('snr_list:  %s' % str(snr_list))
+#         mean_snr = sum(snr_list) / len(snr_list)
+#         logger.debug('mean(snr_list):  %s' % mean_snr)
+#         snr_report = cfg.datamodel['data']['scales'][cfg.datamodel.scale()]['alignment_stack'][cfg.datamodel.layer()][
+#             'align_to_ref_method']['method_results']['snr_report']
+#         logger.info('snr_report:  %s' % str(snr_report))
+#         logger.debug('All Mean SNRs for current s:  %s' % str(cfg.datamodel.snr_list()))
+#     except:
+#         logger.info('An Exception Was Raised trying to Print the SNR List')
 
 def print_scratch(msg):
     with open('~/Logs/scratchlog', "w") as f:

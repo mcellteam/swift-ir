@@ -442,7 +442,7 @@ def SetStackCafm(scale, null_biases=False, poly_order=None):
             c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
             # if i in [0,1,2,n,n-1]:
             # logger.info('c_afm: %s' % format_cafm(c_afm))
-            # cfg.data.set_cafm(c_afm.tolist(), l=align_idx)
+            # cfg.datamodel.set_cafm(c_afm.tolist(), l=align_idx)
 
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs)
@@ -543,7 +543,7 @@ def ComputeBoundingRect(al_stack, scale=None):
 
     To get result for current s, in the main process, use:
     from src.image_funcs import ComputeBoundingRect, ImageSize
-    ComputeBoundingRect(cfg.data.alstack())
+    ComputeBoundingRect(cfg.datamodel.alstack())
 
     model_bounds example:
 AlignEM [29]:
@@ -579,7 +579,7 @@ array([[   0,    0],
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
         # model_bounds = None
-        # al_stack = cfg.data.alstack()
+        # al_stack = cfg.datamodel.alstack()
         model_bounds = [[0,0]] #Todo initialize this better
         siz = cfg.data.image_size(s=scale)
         for item in al_stack:
@@ -860,14 +860,14 @@ class StripNullFields:
 #             palette = ctypes.c_void_p(palette)
 #             if not palette:
 #                 raise RuntimeError('Could not get image palette')
-#             ctypes.memmove(palette, _GREY_PALETTE.ctypes.data, 1024)
+#             ctypes.memmove(palette, _GREY_PALETTE.ctypes.datamodel, 1024)
 #         return bitmap, fi_type
 #     except:
 #         _FI.FreeImage_Unload(bitmap)
 #         raise
 #
 # def _wrap_bitmap_bits_in_array(bitmap, shape, dtype):
-#     """Return an ndarray webengineview on the data in a FreeImage bitmap. Only
+#     """Return an ndarray webengineview on the datamodel in a FreeImage bitmap. Only
 #     valid for as long as the bitmap is loaded (if single page) / locked
 #     in memory (if multipage).
 #     """

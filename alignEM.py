@@ -70,12 +70,13 @@ class CustomFormatter(logging.Formatter):
     # blue = "\x1b[1;34m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
+    format2 = '%(asctime)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     FORMATS = {
         logging.DEBUG: grey + format + reset,
         logging.INFO: grey + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset,
+        logging.CRITICAL: bold_red + format2 + reset,
     }
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
@@ -113,7 +114,7 @@ def main():
     parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
     parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
-    parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy projectTab')
+    parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
     parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy

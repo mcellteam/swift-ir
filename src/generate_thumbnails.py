@@ -19,27 +19,27 @@ __all__ = ['generate_thumbnails']
 logger = logging.getLogger(__name__)
 
 
-def generate_thumbnails():
+def generate_thumbnails(dm):
     logger.info('Generating Thumbnails...')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
     # Todo: If the smallest s happens to be less that thumbnail size, just copy smallest s for thumbnails
 
     target_thumbnail_size = 200 # 200x200
-    smallest_scale_key = natural_sort(cfg.data['data']['scales'].keys())[-1]
+    smallest_scale_key = natural_sort(dm['data']['scales'].keys())[-1]
     scale_val = get_scale_val(smallest_scale_key)
-    size = cfg.data.image_size(s=smallest_scale_key)
+    size = dm.image_size(s=smallest_scale_key)
     siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
     scale_factor = int(siz_start/target_thumbnail_size)
     logger.info("Thumbnail Scaling Factor : %s" % str(scale_factor))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=cfg.data.n_layers(),
+    task_queue = TaskQueue(n_tasks=dm.n_layers(),
                            parent=cfg.main_window,
                            pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
-    od = os.path.join(cfg.data.dest(), 'thumbnails')
+    od = os.path.join(dm.dest(), 'thumbnails')
     if os.path.exists(od):
         try:
             shutil.rmtree(od)
@@ -50,11 +50,11 @@ def generate_thumbnails():
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
     task_queue.start(cpus)
 
-    it = cfg.data.get_iter(s=smallest_scale_key)
+    it = dm.get_iter(s=smallest_scale_key)
     for i, layer in enumerate(it):
         fn = os.path.abspath(layer['images']['base']['filename'])
         ofn = os.path.join(od, os.path.split(fn)[1])
-        cfg.data['data']['thumbnails'].append(ofn)
+        dm['data']['thumbnails'].append(ofn)
         scale_arg = '+%d' % scale_val
         of_arg = 'of=%s' % ofn
         if_arg = '%s' % fn

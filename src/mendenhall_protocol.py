@@ -83,7 +83,7 @@ class Mendenhall(QObject):
         cfg.data.set_image_size_directly(size=self.image_size)
         cfg.main_window.hud.post(f'Expecting Images Of Size: {self.image_size}')
         self.preallocate()
-        cfg.project_tab.initNgViewer()
+        cfg.project_tab.updateNeuroglancer()
 
     def add_image(self, img):
         cfg.main_window.hud.post(f"Adding Image Layer '{os.path.basename(img)}'...")
@@ -93,7 +93,7 @@ class Mendenhall(QObject):
         self._index += 1
         # cfg.main_window.initNgServer()
         # cfg.main_window.ng_workers['scale_1'].invalidateAllLayers()
-        cfg.project_tab.initNgViewer()
+        cfg.project_tab.updateNeuroglancer()
 
     def img_to_zarr(self, ID, fn):
         cfg.main_window.hud.post(f"Converting Image ID ({ID}) '{os.path.basename(fn)}' To Zarr...")

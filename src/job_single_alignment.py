@@ -37,7 +37,7 @@ if __name__ == '__main__':
                 swiftir_code_mode=swiftir_code_mode,
                 start_layer=start_layer,
                 num_layers=num_layers)
-        # Send the updated data previewmodel and need_to_write_json back to the data runner via stdout
+        # Send the updated datamodel previewmodel and need_to_write_json back to the datamodel runner via stdout
         jde = json.JSONEncoder(indent=1, separators=(",", ": "), sort_keys=True)
         run_output_json = jde.encode({'data_model': updated_model, 'need_to_write_json': need_to_write_json})
 

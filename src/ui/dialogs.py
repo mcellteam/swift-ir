@@ -98,7 +98,7 @@ def mendenhall_dialog() -> str:
 
 
 def export_affines_dialog() -> str:
-    '''Dialog for saving a data. Returns 'filename'.'''
+    '''Dialog for saving a datamodel. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
     dialog.setWindowTitle('Export Affine Data as .csv')
@@ -113,10 +113,10 @@ def export_affines_dialog() -> str:
 
 
 def open_project_dialog() -> str:
-    '''Dialog for opening a data. Returns 'filename'.'''
+    '''Dialog for opening a datamodel. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('* Open ProjectTab *')
+    dialog.setWindowTitle('* Open Project *')
     dialog.setNameFilter("Text Files (*.proj *.json)")
     dialog.setViewMode(QFileDialog.Detail)
     urls = dialog.sidebarUrls()
@@ -126,7 +126,7 @@ def open_project_dialog() -> str:
     dialog.setSidebarUrls(urls)
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
-        # self.hud.post("Loading ProjectTab '%s'" % os.path.basename(dialog.selectedFiles()[0]))
+        # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
         cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
@@ -135,17 +135,17 @@ def import_images_dialog():
     '''Dialog for importing images. Returns list of filenames.'''
     dialog = QFileDialogPreview()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('Import Images - %s' % cfg.data.name())
+    # dialog.setWindowTitle('Import Images - %s' % cfg.datamodel.name())
+    dialog.setWindowTitle('Import Images...')
     dialog.setNameFilter('Images (*.tif *.tiff)')
     dialog.setFileMode(QFileDialog.ExistingFiles)
+    dialog.setModal(True)
     urls = dialog.sidebarUrls()
     urls.append(QUrl.fromLocalFile(QDir.homePath()))
     if '.tacc.utexas.edu' in platform.node():
         urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
         urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
     dialog.setSidebarUrls(urls)
-    logger.debug('Selected Files:\n%s' % str(dialog.selectedFiles()))
-    logger.info('Dialog Return Code: %s' % dialog.Accepted)
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec_() == QDialog.Accepted:
         # self.set_mainwindow_project_view()
@@ -158,14 +158,15 @@ def import_images_dialog():
 
 
 def new_project_dialog() -> str:
-    '''Dialog for saving a data. Returns 'filename'.'''
+    '''Dialog for saving a datamodel. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('* New ProjectTab *')
+    dialog.setWindowTitle('* New Project *')
     dialog.setNameFilter("Text Files (*.proj *.json)")
     dialog.setLabelText(QFileDialog.Accept, "Create")
     dialog.setViewMode(QFileDialog.Detail)
     dialog.setAcceptMode(QFileDialog.AcceptSave)
+    dialog.setModal(True)
     urls = dialog.sidebarUrls()
     if '.tacc.utexas.edu' in platform.node():
         urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
@@ -367,7 +368,8 @@ class ConfigProjectDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         super(ConfigProjectDialog, self).__init__()
         self.parent = parent
-        logger.info('Showing ProjectTab Configuration Dialog:')
+        self.setModal(True)
+        logger.info('Showing Project Configuration Dialog:')
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)
@@ -392,7 +394,7 @@ class ConfigProjectDialog(QDialog):
         self.main_layout.addWidget(self.tab_widget)
         self.main_layout.addWidget(self.buttonWidget)
         self.setLayout(self.main_layout)
-        self.setWindowTitle("ProjectTab Configuration")
+        self.setWindowTitle("Project Configuration")
         cfg.main_window.hud('Set Scales and Configure:')
         self.show()
         cfg.main_window.set_status('Awaiting User Input...')
@@ -400,7 +402,7 @@ class ConfigProjectDialog(QDialog):
     @Slot()
     def on_apply(self):
         try:
-            cfg.main_window.hud('Applying ProjectTab Settings...')
+            cfg.main_window.hud('Applying Project Settings...')
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
             cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
@@ -494,7 +496,7 @@ class ConfigProjectDialog(QDialog):
         self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
 
         txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for rapid viewing of " \
-              "volumetric data in Neuroglancer. These settings determine the way volumetric data is " \
+              "volumetric datamodel in Neuroglancer. These settings determine the way volumetric datamodel is " \
               "stored and retrieved from disk storage."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
@@ -510,38 +512,38 @@ class ConfigProjectDialog(QDialog):
 
     def initUI_tab1(self):
         '''Scales Field'''
-        if not cfg.data.is_mendenhall():
+        # if not cfg.datamodel.is_mendenhall(): #0103-
 
-            if do_scales_exist():
-                scales_lst = [str(v) for v in
-                                  sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
+        if do_scales_exist():
+            scales_lst = [str(v) for v in
+                              sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
+        else:
+            width, height = cfg.data.image_size(s='scale_1')
+            if (width*height) > 400_000_000:
+                scales_lst = ['24 6 2 1']
+            elif (width*height) > 200_000_000:
+                scales_lst = ['16 6 2 1']
+            elif (width * height) > 100_000_000:
+                scales_lst = ['8 2 1']
+            elif (width * height) > 10_000_000:
+                scales_lst = ['4 2 1']
             else:
-                width, height = cfg.data.image_size(s='scale_1')
-                if (width*height) > 400_000_000:
-                    scales_lst = ['24 6 2 1']
-                elif (width*height) > 200_000_000:
-                    scales_lst = ['16 6 2 1']
-                elif (width * height) > 100_000_000:
-                    scales_lst = ['8 2 1']
-                elif (width * height) > 10_000_000:
-                    scales_lst = ['4 2 1']
-                else:
-                    scales_lst = ['4 1']
+                scales_lst = ['4 1']
 
-            scales_str = ' '.join(scales_lst)
-            self.scales_label = QLabel("Scale Factors:")
-            self.scales_input = QLineEdit(self)
-            self.scales_input.setFixedWidth(130)
-            self.scales_input.setText(scales_str)
-            self.scales_input.setAlignment(Qt.AlignCenter)
-            tip = "Scale factors, separated by spaces.\n(example) To generate 4x 2x and 1x/full scales, type: 4 2 1"
-            self.scale_instructions_label = QLabel(tip)
-            self.scale_instructions_label.setStyleSheet("font-size: 11px;")
-            self.scales_label.setToolTip(tip)
-            self.scales_input.setToolTip(tip)
-            self.scales_layout = QHBoxLayout()
-            self.scales_layout.addWidget(self.scales_label, alignment=Qt.AlignLeft)
-            self.scales_layout.addWidget(self.scales_input, alignment=Qt.AlignRight)
+        scales_str = ' '.join(scales_lst)
+        self.scales_label = QLabel("Scale Factors:")
+        self.scales_input = QLineEdit(self)
+        self.scales_input.setFixedWidth(130)
+        self.scales_input.setText(scales_str)
+        self.scales_input.setAlignment(Qt.AlignCenter)
+        tip = "Scale factors, separated by spaces.\n(example) To generate 4x 2x and 1x/full scales, type: 4 2 1"
+        self.scale_instructions_label = QLabel(tip)
+        self.scale_instructions_label.setStyleSheet("font-size: 11px;")
+        self.scales_label.setToolTip(tip)
+        self.scales_input.setToolTip(tip)
+        self.scales_layout = QHBoxLayout()
+        self.scales_layout.addWidget(self.scales_label, alignment=Qt.AlignLeft)
+        self.scales_layout.addWidget(self.scales_input, alignment=Qt.AlignRight)
 
         '''Resolution Fields'''
         tip = "Resolution or size of each voxel (nm)"
@@ -559,9 +561,9 @@ class ConfigProjectDialog(QDialog):
         self.res_x_lineedit.setFixedWidth(40)
         self.res_y_lineedit.setFixedWidth(40)
         self.res_z_lineedit.setFixedWidth(40)
-        # self.res_x_lineedit.setText(str(cfg.data['data']['resolution_x']))
-        # self.res_y_lineedit.setText(str(cfg.data['data']['resolution_y']))
-        # self.res_z_lineedit.setText(str(cfg.data['data']['resolution_z']))
+        # self.res_x_lineedit.setText(str(cfg.datamodel['data']['resolution_x']))
+        # self.res_y_lineedit.setText(str(cfg.datamodel['data']['resolution_y']))
+        # self.res_z_lineedit.setText(str(cfg.datamodel['data']['resolution_z']))
         self.res_x_lineedit.setText(str(cfg.DEFAULT_RESX))
         self.res_y_lineedit.setText(str(cfg.DEFAULT_RESY))
         self.res_z_lineedit.setText(str(cfg.DEFAULT_RESZ))

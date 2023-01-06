@@ -3,7 +3,7 @@
 
 import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
-    QPushButton, QSizePolicy
+    QPushButton, QSizePolicy, QAbstractItemView
 from qtpy.QtCore import Slot, Qt, QSize
 
 try:
@@ -25,6 +25,7 @@ class FileBrowser(QWidget):
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
         self.treeview.setAlternatingRowColors(True)
+        self.treeview.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.fileSystemModel = QFileSystemModel(self.treeview)
         self.fileSystemModel.setReadOnly(False)
         self.treeview.setModel(self.fileSystemModel)

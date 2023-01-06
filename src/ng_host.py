@@ -4,7 +4,6 @@
 data in the directory that is served to any web page running on a machine that
 can connect to the web server'''
 
-
 import os
 import copy
 import pprint
@@ -24,7 +23,7 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
-from src.helpers import print_exception, get_scale_val, is_arg_scale_aligned, obj_to_string
+from src.helpers import print_exception, get_scale_val, exist_aligned_zarr, obj_to_string
 from src.shaders import ann_shader
 
 __all__ = ['NgHost']
@@ -53,7 +52,9 @@ class WorkerSignals(QObject):
 
 # class NgHost(QObject):
 class NgHost(QRunnable):
-    def __init__(self, parent, src, scale, bind='127.0.0.1', port=9000):
+# class NgHost:
+    # def __init__(self, parent, src, scale, src, scale, bind='127.0.0.1', port=9000):
+    def __init__(self, parent, bind='127.0.0.1', port=9000):
         QRunnable.__init__(self)
         self.parent = parent
         self.signals = WorkerSignals()
@@ -62,12 +63,12 @@ class NgHost(QRunnable):
         self.url_viewer = None
         self.ref_pts = []
         self.base_pts = []
-        self.src = src
         self.bind = bind
         self.port = port
-        self.scale = scale
+        self.scale = None
+        self.src = None
+        self.src_size = None
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
-        self.src_size = cfg.data.image_size(s=self.scale)
         self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
@@ -80,7 +81,7 @@ class NgHost(QRunnable):
     def __del__(self):
         try:
             caller = inspect.stack()[1].function
-            logger.info('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.scale, self.created))
+            logger.warning('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.scale, self.created))
         except:
             logger.warning('Lost Track Of Caller')
 
@@ -99,6 +100,12 @@ class NgHost(QRunnable):
         except:
             # traceback.print_exc()
             logger.error('ERROR')
+
+    def get_loading_progress(self):
+        return neuroglancer.webdriver.driver.execute_script('''
+    const userLayer = viewer.layerManager.getLayerByName("segmentation").layer;
+    return userLayer.renderLayers.map(x => x.layerChunkProgressInfo)
+     ''')
 
     def request_layer(self):
         return floor(cfg.viewer.state.position[0])
@@ -161,12 +168,12 @@ class NgHost(QRunnable):
                    show_ui_controls=True,
                    show_panel_borders=False,
                    show_scale_bar=False,
-                   show_axis_lines=False,
-                   scale=None):
-        if scale:
-            self.scale=scale
-        else:
-            self.scale = cfg.data.scale()
+                   show_axis_lines=False
+                   ):
+
+        self.src = cfg.data.dest()
+        self.src_size = cfg.data.image_size(s=self.scale)
+        self.scale = cfg.data.scale()
         self.sf = get_scale_val(self.scale)
         self.ref_l = 'ref_%d' % self.sf
         self.base_l = 'base_%d' % self.sf
@@ -208,7 +215,7 @@ class NgHost(QRunnable):
             self.mp_mode = matchpoint
         caller = inspect.stack()[1].function
         print(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
-        is_aligned = is_arg_scale_aligned(self.scale)
+        is_aligned = exist_aligned_zarr(self.scale)
 
         if cfg.data.is_mendenhall():  # Force
             is_aligned = True
@@ -286,7 +293,6 @@ class NgHost(QRunnable):
                     cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
                 except:
                     # print_exception()
-                    logger.error('ERROR')
                     logger.error(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}')
                     cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}',
                                              logging.ERROR)
@@ -297,14 +303,14 @@ class NgHost(QRunnable):
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[1, y_nudge, x_nudge],
-                    downsampling=None
+                    # downsampling=None
                 )
                 cfg.baseLV = ng.LocalVolume(
                     data=cfg.unal_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, y_nudge, x_nudge],
-                    downsampling=None
+                    # downsampling=None
                 )
                 if is_aligned:
                     try:
@@ -420,8 +426,8 @@ class NgHost(QRunnable):
                 logger.warning('WARNING')
 
 
-            # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
-            # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
+            # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='ref'))
+            # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='base'))
 
             if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
@@ -448,9 +454,10 @@ class NgHost(QRunnable):
             s.show_panel_borders = show_panel_borders
 
         self._layer = self.request_layer()
-        cfg.refLV.invalidate()
-        cfg.baseLV.invalidate()
-        if is_aligned: cfg.alLV.invalidate()
+        # cfg.refLV.invalidate()
+        # cfg.baseLV.invalidate()
+        # if is_aligned:
+        #     cfg.alLV.invalidate()
 
         cfg.url = str(cfg.viewer)
 
@@ -510,7 +517,7 @@ class NgHost(QRunnable):
 
     def save_matchpoints(self, s):
         layer = self.request_layer()
-        logger.info('Saving Match Points for Layer %d\nBase Name: %s' % (layer, cfg.data.base_image_name()))
+        logger.info('Saving Match Points for Layer %d\nBase Name: %s' % (layer, cfg.data.base_image_name(l=layer)))
         n_ref, n_base = len(self.ref_pts), len(self.base_pts)
         if n_ref != n_base:
             cfg.main_window.hud.post(f'Each image must have the same # points\n'
@@ -533,7 +540,7 @@ class NgHost(QRunnable):
         cfg.main_window.hud.post('Match Points Saved!')
 
     def clear_matchpoints(self, s):
-        logger.info('Clearing match points in projectTab dict...')
+        logger.info('Clearing Match Points...')
         layer = self.request_layer()
         cfg.data.clear_match_points(s=self.scale, l=layer)  # Note
         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
@@ -593,6 +600,7 @@ class NgHost(QRunnable):
         ss.capture()
 
     def url(self):
+        # str(cfg.viewer)
         return cfg.url
 
     def show_state(self):

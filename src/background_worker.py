@@ -17,9 +17,9 @@ class WorkerSignals(QObject):
     Defines the signals available from a running worker thread.
     Supported signals are:
 
-    finished - No data
+    finished - No datamodel
     error - tuple (exctype, value, traceback.format_exc() )
-    result - object data returned from processing, anything
+    result - object datamodel returned from processing, anything
     progress - int indicating % progress
     '''
 

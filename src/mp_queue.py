@@ -88,7 +88,7 @@ class TaskQueue(QObject):
         self.task_id = 0
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
-        logger.critical(f'Starting Task Queue: {self.pbar_text}...')
+        logger.info(f'Starting Task Queue: {self.pbar_text}...')
         cfg.main_window.hud(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores...')
         # cfg.main_window.hud(f'{self.pbar_text}')
         logger.critical(f'{self.pbar_text}')
@@ -194,11 +194,10 @@ class TaskQueue(QObject):
     def collect_results(self):
         t0 = time.time()
         '''Run All Tasks and Collect Results'''
-        logger.info('Running Multiprocessing Tasks...')
+        logger.info(f'Running Multiprocessing Tasks ({self.retries} retries allowed)...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
         retries_tot = 0
-        logger.info('# Retries Allowed : %s' % self.retries)
         try:
             self.parent.pbar_max(self.n_tasks)
             if self.pbar_text != None:

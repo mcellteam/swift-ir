@@ -30,7 +30,7 @@ from src.helpers import get_scale_val, time_limit, print_exception
 
 '''
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
-processing of large datasets in neuroscience, such as peta-s 3d electron microscopy data and “4d” videos of 
+processing of large datasets in neuroscience, such as peta-s 3d electron microscopy datamodel and “4d” videos of 
 neuronal activity). TensorStore has also been used in the creation of large-s machine learning models such as 
 PaLM by addressing the problem of managing previewmodel parameters (checkpoints) during distributed training.
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
@@ -207,7 +207,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
     path_relative = os.path.join(path_base, name)
-    logger.critical(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
+    logger.info(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
                     f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
 
     cfg.main_window.hud(f'Preallocating {path_base}/{group}...')
@@ -286,7 +286,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     zarr_path = os.path.join(cfg.data.dest(), name)
     root = zarr.group(store=zarr_path)
     datasets = []
-    # scale_factor = scale_val(cfg.data.s())
+    # scale_factor = scale_val(cfg.datamodel.s())
     scale_factor = cfg.data.scale_val()
     name = 's' + str(scale_factor)
     metadata = {
@@ -316,10 +316,10 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 
 # def generate_zarr_scales_da():
 #     logger.info('generate_zarr_scales_da:')
-#     dest = cfg.data.dest()
-#     logger.info('scales() = %s' % str(cfg.data.scales()))
+#     dest = cfg.datamodel.dest()
+#     logger.info('scales() = %s' % str(cfg.datamodel.scales()))
 #
-#     for s in cfg.data.scales():
+#     for s in cfg.datamodel.scales():
 #         logger.info('Working On %s' % s)
 #         tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
 #         # zarrurl = os.path.join(dest, s + '.zarr')
@@ -333,7 +333,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 #     # write_metadata_zarr_multiscale(path=zarr_path)
 #     write_metadata_zarr_aligned(name='img_src.zarr')
 #
-#     # scale_factor = cfg.data.scale_val()
+#     # scale_factor = cfg.datamodel.scale_val()
 #
 #     # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
 #     # z.attrs['offset'] = [ "0", "0", "0" ]
@@ -354,8 +354,8 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     #
     #     def imread(filename):
     #         with open(filename, 'rb') as fh:
-    #             data = fh.read()
-    #         return imagecodecs.tiff_decode(data) # return first image in TIFF file as numpy array
+    #             datamodel = fh.read()
+    #         return imagecodecs.tiff_decode(datamodel) # return first image in TIFF file as numpy array
     #     try:
     #         with tifffile.FileSequence(imread, tif_files) as tifs:
     #             with tifs.aszarr() as store:

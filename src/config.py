@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 
-'''This file is for initializing global config and 'data' the dictionary data state in memory.'''
+'''This file is for initializing global config and 'data' the dictionary datamodel state in memory.'''
 
 import platform
 
-__all__ = []
+__all__ = ['data']
 
 LOG_LEVEL = 1
 
 '''Main Objects'''
+# datamodel = None
 data = None
+increasing_tab_counter = 0
 main_window = None
 project_tab = None
+zarr_tab = None
 opengllogger = None
 selected = None
 ng_worker = None
-extra_ng_workers = {}
+dms = {}
 viewer = None
 refLV = None
 baseLV = None

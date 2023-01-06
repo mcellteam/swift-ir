@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTab
 from qtpy.QtGui import QImage, QFont
 
 from src.data_model import DataModel
-from src.helpers import is_cur_scale_aligned
+from src.helpers import exist_aligned_zarr_cur_scale
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ class LayerViewWidget(QWidget):
         # logger.info('Setting Table Data..')
         selection = self._selected_rows
         # logger.info(f'selection: {selection}')
-        is_aligned = is_cur_scale_aligned()
+        is_aligned = exist_aligned_zarr_cur_scale()
         scale = [cfg.data.scale_pretty()] * cfg.data.nlayers
 
         skips, ref, base, method, snr_report = [], [], [], [], []
@@ -123,7 +123,7 @@ class LayerViewWidget(QWidget):
             if is_aligned:
                 snr_report.append(l['align_to_ref_method']['method_results']['snr_report'])
 
-        # buttons = ['buttons'] * cfg.data.nlayers
+        # buttons = ['buttons'] * cfg.datamodel.nlayers
         if is_aligned:
             zipped = list(zip(cfg.data.thumbnails(), ref, scale, skips, method, snr_report))
             self._dataframe = pd.DataFrame(zipped, columns=['Img', 'Reference', 'Scale',
@@ -168,7 +168,7 @@ class LayerViewWidget(QWidget):
             self.selection_model.selectionChanged.connect(self.selectionChanged)
         else:
             error_dialog = QErrorMessage()
-            error_dialog.showMessage('No data loaded!')
+            error_dialog.showMessage('No datamodel loaded!')
 
         self.updateRowHeight(self.INITIAL_ROW_HEIGHT)
 
@@ -236,7 +236,7 @@ class CheckBoxDelegate(QItemDelegate):
         self.drawCheck(painter, option, option.rect, Qt.Unchecked if index.data() == False else Qt.Checked)
 
     def editorEvent(self, event, model, option, index):
-        '''Change the data in the model and the state of the checkbox if the user presses
+        '''Change the datamodel in the model and the state of the checkbox if the user presses
         the left mousebutton and this cell is editable. Otherwise do nothing.'''
         logger.info(f'index.row()={index.row()}')
         # event  = <PyQt5.QtGui.QMouseEvent object at 0x1cd5eb310>
@@ -278,7 +278,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         # ThumbnailDelegate, height: 29
 
         # option.rect holds the painting area (table cell)
-        # scaled = data.image.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio, )
+        # scaled = datamodel.image.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio, )
         scaled = thumbnail.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio, )
         # print(f'ThumbnailDelegate, scaled.width(): {scaled.width()}')
         # print(f'ThumbnailDelegate, scaled.height(): {scaled.height()}')
@@ -316,7 +316,7 @@ class PandasModel(QAbstractTableModel):
             return len(self._dataframe.columns)
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole):
-        '''The data method works by receiving an index and role and responding with
+        '''The datamodel method works by receiving an index and role and responding with
         instructions for the view to perform. The index says where and the role says what.'''
         # logger.info(f'QModelIndex: {QModelIndex}, role: {role}')
         if not index.isValid():
@@ -328,7 +328,7 @@ class PandasModel(QAbstractTableModel):
                 return str(self._dataframe.iloc[index.row(), index.column()])
         if role == Qt.CheckStateRole:
             if index.column() == 3:
-                # print(">>> data() row,col = %d, %d" % (index.row(), index.column()))
+                # print(">>> datamodel() row,col = %d, %d" % (index.row(), index.column()))
                 if self._dataframe.iloc[index.row(), index.column()] == True:
                     return Qt.Checked
                 else:
@@ -353,11 +353,11 @@ class PandasModel(QAbstractTableModel):
 class PushButtonDelegate(QStyledItemDelegate):
     """
     A delegate containing a clickable push button.  The button name will be
-    taken from the Qt.DisplayRole data.  Then clicked, this delegate will emit
+    taken from the Qt.DisplayRole datamodel.  Then clicked, this delegate will emit
     a `clicked` signal with either:
 
     - If `role` is None, a `QtCore.QModelIndex` for the cell that was clicked.
-    - Otherwise, the `role` data for the cell that was clicked.
+    - Otherwise, the `role` datamodel for the cell that was clicked.
     """
 
     clicked = Signal(object)
@@ -368,7 +368,7 @@ class PushButtonDelegate(QStyledItemDelegate):
             mouse tracking will be enabled in the view.
         :type view: `QtWidgets.QTableView`
 
-        :param role: The role to emit data for when a button is clicked.  If not
+        :param role: The role to emit datamodel for when a button is clicked.  If not
             given, the index that was clicked will be emitted instead.  This value
             may be specified after instantiation using `setRole`.
         :type role: int or NoneType

@@ -6,20 +6,23 @@ AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
 import os
+import copy
 import json
 import glob
 import inspect
 import logging
+import itertools
 import statistics
 from copy import deepcopy
 from dataclasses import dataclass
+from qtpy.QtCore import QObject
 
 import numpy as np
 
 import src.config as cfg
-from src.data_structs import data_template
-from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
-    get_scale_val
+from src.data_structs import data_template, layer_template, image_template
+from src.helpers import print_exception, natural_sort, exist_aligned_zarr, get_scale_key, \
+    get_scale_val, get_aligned_scales
 from src.funcs_image import ComputeBoundingRect, ImageSize
 
 __all__ = ['DataModel']
@@ -44,24 +47,26 @@ class ScaleIterator:
 
 
 class DataModel:
-    """ Encapsulate data previewmodel dictionary and wrap with methods for convenience """
-
+    """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, mendenhall=False):
         logger.info('Constructing Data Model...')
         self._current_version = 0.50
-        if data:
-            self._data = data
-            # self.scalesAligned = get_aligned_scales()
-        else:
-            self._data = data_template
-        if name:
-            self._data['data']['destination_path'] = name
-        self._data['data']['mendenhall'] = mendenhall
         self.scalesAligned = []
         self.nScalesAligned = None
         self.nscales = None
         self.nlayers = None
         self.curScale = None
+
+        if data:
+            self._data = data
+            self.update_cache()
+        else:
+            self._data = copy.deepcopy(data_template)
+
+        if name:
+            self._data['data']['destination_path'] = name
+        self._data['data']['mendenhall'] = mendenhall
+
         self.set_defaults()
         if not self.layer():
             self.set_layer(0)
@@ -95,6 +100,17 @@ class DataModel:
         except:
             logger.warning('No Images Found')
 
+    def update_cache(self):
+        self.curScale = self.scale()
+        try:
+            self.scalesAligned = get_aligned_scales(self.scales())
+            self.nScalesAligned = len(self.scalesAligned)
+        except:
+            pass
+        self.scalesList = self.scales()
+        self.nscales = len(self.scalesList)
+        self.nlayers = self.n_layers()
+
     def set_defaults(self):
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
         self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
@@ -115,12 +131,13 @@ class DataModel:
         return self._data['data']['destination_path']
 
     def name(self) -> str:
-        return os.path.split(cfg.data.dest())[-1]
+        return os.path.split(self.dest())[-1]
+
 
     def base_image_name(self, s=None, l=None):
-        if s == None: s = self.scale()
+        if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.debug(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
+        # logger.info(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
 
     def filenames(self):
@@ -229,7 +246,7 @@ class DataModel:
 
 
     def snr_errorbars(self, s=None):
-        '''Note Length Of Return Array has size cfg.data.n_layers() - 1 (!)'''
+        '''Note Length Of Return Array has size self.n_layers() - 1 (!)'''
         if s == None: s = self.curScale
         return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(1, self.n_layers())])
 
@@ -254,7 +271,7 @@ class DataModel:
 
 
     def snr_list(self, s=None) -> list[float]:
-        logger.info('Caller: %s' % inspect.stack()[1].function)
+        # logger.info('Caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.curScale
         # n should be 16 for layers except for index 0 which equals [0.0]
         try:
@@ -327,12 +344,12 @@ class DataModel:
         assert isinstance(self._data['data']['current_scale'], str)
         if self._data['data']['current_scale'] == '':
             logger.warning('WARNING: Scale Was An Empty String')
-            self._data['data']['current_scale'] = self.curScales()[-1]
+            self._data['data']['current_scale'] = self.scales()[-1]
         return self._data['data']['current_scale']
 
     def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
         '''Example Usage:
-             cfg.data.add_matchpoint(coordinates=(100, 200), role='base')
+             self.add_matchpoint(coordinates=(100, 200), role='base')
         '''
         if s == None: s = self.curScale
         if l == None: l = self.layer()
@@ -366,7 +383,7 @@ class DataModel:
             return list(zip(indexes, names))
         except:
             print_exception()
-            logger.warning('Unable to To Return List of Match Point Layers');
+            logger.warning('Unable to To Return List of Match Point Layers')
             return []
 
         lst = []
@@ -468,7 +485,7 @@ class DataModel:
     def set_match_points(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.info("Writing match point to projectTab dictionary")
+        logger.info("Writing match point to project dictionary")
         if role not in ('ref', 'base', 'aligned'):
             logger.warning('Invalid Role Argument- Returning')
             return
@@ -507,13 +524,13 @@ class DataModel:
     def bias_data_path(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        return os.path.join(cfg.data.dest(), s, 'bias_data')
+        return os.path.join(self.dest(), s, 'bias_data')
 
     def show_afm(self):
-        cfg.main_window.hud('\nafm = %s\n' % ' '.join(map(str, self.afm())))
+        logger.info('\nafm = %s\n' % ' '.join(map(str, self.afm())))
 
     def show_cafm(self):
-        cfg.main_window.hud('\ncafm = %s\n' % ' '.join(map(str, self.cafm())))
+        logger.info('\ncafm = %s\n' % ' '.join(map(str, self.cafm())))
 
     def res_x(self, s=None) -> int:
         if s == None: s = self.curScale
@@ -643,7 +660,7 @@ class DataModel:
             return list(zip(indexes, names))
         except:
             print_exception()
-            logger.warning('Unable to To Return Skips List');
+            logger.warning('Unable to To Return Skips List')
             return []
 
     def skips_by_name(self, s=None) -> list[str]:
@@ -658,7 +675,7 @@ class DataModel:
                     lst.append(f)
             return lst
         except:
-            logger.warning('Unable to To Return Skips By Name List');
+            logger.warning('Unable to To Return Skips By Name List')
             return []
 
     def whitening(self) -> float:
@@ -694,7 +711,7 @@ class DataModel:
         try:
             return self._data['data']['scales'][s]['image_src_size']
         except:
-            logger.warning(f"No key 'image_src_size' found (scale:{s}). Adding it now...")
+            logger.info(f"No key 'image_src_size' found (scale:{s}). Adding it now...")
             try:
                 self.set_image_size(s=s)
                 answer = self._data['data']['scales'][s]['image_src_size']
@@ -778,7 +795,7 @@ class DataModel:
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
         assert isinstance(index, int)
-        logger.info(f'Viewing #{index}, {self.curScale}')
+        # logger.info(f'Viewing #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index
 
     def set_skip(self, b: bool, s=None, l=None) -> None:
@@ -844,6 +861,29 @@ class DataModel:
         except:
             logger.warning('Unable to set alignment dict')
 
+    def remove_aligned(self, scale, start_layer):
+        '''
+        Removes previously generated aligned images for the current s, starting at l 'start_layer'.
+        :param use_scale: The s to remove aligned images from.
+        :type use_scale: str
+
+        :param start_layer: The starting l index from which to remove all aligned images, defaults to 0.
+        :type start_layer: int
+        '''
+        cfg.main_window.hud.post(f'Removing Aligned for Current Scale...')
+        try:
+            for layer in self._data['data']['scales'][scale]['alignment_stack'][start_layer:]:
+                ifn = layer['images'].get('filename', None)
+                layer['images'].pop('aligned', None)
+                if ifn != None:
+                    try:     os.remove(ifn)
+                    except:  logger.warning(f'os.remove({ifn}) Raised An Exception')
+        except:
+            print_exception()
+            cfg.main_window.warn('An Exception Was Raisied While Removing Previous Alignment...')
+        else:
+            cfg.main_window.hud.done()
+
     def set_afm(self, afm: list, s=None, l=None) -> None:
         '''set afm as list of lists of floats'''
         if s == None: s = self.curScale
@@ -880,10 +920,10 @@ class DataModel:
         self.set_destination(os.path.join(head, self.dest()))
 
     def set_paths_absolute(self, filename):
-        logger.info(f'Setting Absolute File Paths - Destination: {filename}...')
-        # returns path to projectTab file minus extension (should be the projectTab directory)
+        logger.info(f'Setting Absolute File Paths...')
+        # returns path to project file minus extension (should be the project directory)
         self.set_destination(os.path.splitext(filename)[0])
-        logger.debug(f'Setting absolute projectTab dest/head: {self.dest()}...')
+        logger.debug(f'Setting absolute project dest/head: {self.dest()}...')
         try:
             head = self.dest() # returns parent directory
             for s in self.scales():
@@ -909,14 +949,14 @@ class DataModel:
     def aligned_list(self) -> list[str]:
         '''Deprecate this
 
-        Get aligned scales list. Check projectTab data and aligned Zarr group presence.'''
+        Get aligned scales list. Check project datamodel and aligned Zarr group presence.'''
         lst = []
         for s in self.scales():
             r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
             if r != {}:
                 lst.append(s)
         for s in lst:
-            if not is_arg_scale_aligned(s):
+            if not exist_aligned_zarr(s):
                 lst.remove(s)
         return lst
 
@@ -924,7 +964,7 @@ class DataModel:
     #     '''Get not aligned scales list.'''
     #     lst = []
     #     for s in self.scales():
-    #         if not is_arg_scale_aligned(s):
+    #         if not exist_aligned_zarr(s):
     #             lst.append(s)
     #     logger.debug('Not Aligned Scales List: %s ' % str(lst))
     #     return lst
@@ -954,14 +994,8 @@ class DataModel:
     def is_alignable(self) -> bool:
         '''Checks if the current s is able to be aligned'''
         try:
-            if cfg.data.dest() in ('', None):
-                logger.debug("is_alignable returning False because: "
-                             "cfg.data.dest() in ('', None) is True")
-                return False
-
-            if not are_images_imported():
-                logger.debug("is_alignable returning False because: "
-                             "not are_images_imported() is True")
+            if self.nlayers < 1:
+                logger.debug("Returning False because self.nlayers < 1")
                 return False
             scales_list = self.scales()
             cur_scale_key = self.curScale
@@ -972,9 +1006,9 @@ class DataModel:
                 return True
             cur_scale_index = scales_list.index(cur_scale_key)
             next_coarsest_scale_key = scales_list[cur_scale_index + 1]
-            if not is_arg_scale_aligned(next_coarsest_scale_key):
+            if not exist_aligned_zarr(next_coarsest_scale_key):
                 logger.debug("is_alignable returning False because: "
-                             "not is_arg_scale_aligned(next_coarsest_scale_key) is True")
+                             "not exist_aligned_zarr(next_coarsest_scale_key) is True")
                 return False
             else:
                 logger.debug('Returning True')
@@ -989,35 +1023,51 @@ class DataModel:
             for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
                 layer['skipped'] = False
 
-    def append_layer(self, scale_key):
-        self._data['data']['scales'][scale_key]['alignment_stack'].append(
-            {
-                "align_to_ref_method": {
-                    "method_data": {},
-                    "method_options": {},
-                    "selected_method": "Auto Swim Align",
-                    "method_results": {}
-                },
-                "images": {},
-                "skipped": False
-            })
-        pass
+    def append_layer(self, scale):
+        logger.debug(f'Appending Layer ({scale})...')
+        self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
 
-    def append_image(self, image_file_name, role_name='base'):
-        logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
+        # self._data['data']['scales'][scale_key]['alignment_stack'].append(
+        #     {
+        #         "align_to_ref_method": {
+        #             "method_data": {},
+        #             "method_options": {},
+        #             "selected_method": "Auto Swim Align",
+        #             "method_results": {}
+        #         },
+        #         "images": {},
+        #         "skipped": False
+        #     })
+
+    def append_image(self, file, role_name='base'):
+        logger.debug("Adding Image %s to Role '%s'..." % (file, role_name))
         scale = self.scale()
         used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
         if False in used_for_this_role:
             layer_index = used_for_this_role.index(False)
         else:
-            cfg.data.append_layer(scale_key=scale)
+            self.append_layer(scale=scale)
             layer_index = self.n_layers() - 1
         self.add_img(
-            scale_key=scale,
-            layer_index=layer_index,
+            scale=scale,
+            layer=layer_index,
             role=role_name,
-            filename=image_file_name
+            filename=file
         )
+
+    def add_img(self, scale, layer, role, filename=''):
+        logger.debug(f'Adding Image ({scale}, {layer}, {role}): {filename}...')
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['images'][role] = \
+            copy.deepcopy(image_template)
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['images'][role]['filename'] = filename
+        # self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
+        #     {
+        #         "filename": filename,
+        #         "metadata": {
+        #             "annotations": [],
+        #             "match_points": []
+        #         }
+        #     }
 
     def append_empty(self, role_name):
         logger.debug('MainWindow.append_empty:')
@@ -1027,25 +1077,14 @@ class DataModel:
         if False in used_for_this_role:
             layer_index = used_for_this_role.index(False)
         else:
-            cfg.data.append_layer(scale_key=scale)
-            layer_index_for_new_role = len(cfg.data['data']['scales'][scale]['alignment_stack']) - 1
-        cfg.data.add_img(
-            scale_key=scale,
-            layer_index=layer_index,
+            self.append_layer(scale=scale)
+            layer_index_for_new_role = len(self['data']['scales'][scale]['alignment_stack']) - 1
+        self.add_img(
+            scale=scale,
+            layer=layer_index,
             role=role_name,
-            filename=None
+            filename=''
         )
-
-    def add_img(self, scale_key, layer_index, role, filename=''):
-        logger.debug('Adding Image scale_key=%s, layer_index=%s, role=%s, filename=%s' % (scale_key, str(layer_index), role, filename))
-        self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
-            {
-                "filename": filename,
-                "metadata": {
-                    "annotations": [],
-                    "match_points": []
-                }
-            }
 
     def update_datamodel(self, updated_model):
         '''This function is called by align_layers and regenerate_aligned. It is called when
@@ -1078,7 +1117,7 @@ class DataModel:
             print_exception()
 
     def are_there_any_skips(self) -> bool:
-        if len(cfg.data.skips_list()) > 0:
+        if len(self.skips_list()) > 0:
             return True
         else:
             return False
@@ -1152,7 +1191,7 @@ class DataModel:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
     def link_all_stacks(self):
-        '''Called by the functions '_callbk_skipChanged' and 'import_images'  '''
+        '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'  '''
         # logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
         self.ensure_proper_data_structure()  # 0712 #0802 #original
         for scale_key in self.scales():
@@ -1166,11 +1205,11 @@ class DataModel:
                 base_layer = self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]
                 if layer_index == 0:
                     if 'ref' not in base_layer['images'].keys():
-                        self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename='')
+                        self.add_img(scale=scale_key, layer=layer_index, role='ref', filename='')
                 elif layer_index in skip_list:
                     # No ref for skipped l
                     if 'ref' not in base_layer['images'].keys():
-                        self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename='')
+                        self.add_img(scale=scale_key, layer=layer_index, role='ref', filename='')
 
                 else:
                     # Find nearest previous non-skipped l
@@ -1185,7 +1224,7 @@ class DataModel:
                         if 'base' in ref_layer['images'].keys():
                             ref_fn = ref_layer['images']['base']['filename']
                         if 'ref' not in base_layer['images'].keys():
-                            self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename=ref_fn)
+                            self.add_img(scale=scale_key, layer=layer_index, role='ref', filename=ref_fn)
                         else:
                             base_layer['images']['ref']['filename'] = ref_fn
 
@@ -1197,8 +1236,8 @@ class DataModel:
             # Begin the upgrade process:
 
             if self._data['version'] <= 0.26:
-                logger.info("Upgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.27))
-                # Need to modify the data previewmodel from 0.26 or lower up to 0.27
+                logger.info("Upgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.27))
+                # Need to modify the datamodel previewmodel from 0.26 or lower up to 0.27
                 # The "alignment_option" had been in the method_data at each l
                 # This new version defines it only at the s level
                 # So loop through each s and move the alignment_option from the l to the s
@@ -1226,18 +1265,18 @@ class DataModel:
                             scale_option = max(set(current_alignment_options), key=current_alignment_options.count)
                     # At this point "scale_option" should be the one to use
                     if not ('method_data' in scale):
-                        # Ensure that there's some method data
+                        # Ensure that there's some method datamodel
                         scale['method_data'] = {}
                     # Finally set the value
                     scale['method_data']["alignment_option"] = scale_option
-                # Now the data previewmodel is at 0.27, so give it the appropriate version
+                # Now the datamodel previewmodel is at 0.27, so give it the appropriate version
                 self._data['version'] = 0.27
 
             if self._data['version'] == 0.27:
-                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.28))
-                # Need to modify the data previewmodel from 0.27 up to 0.28
+                print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.28))
+                # Need to modify the datamodel previewmodel from 0.27 up to 0.28
                 # The "alignment_option" had been left in the method_data at each l
-                # This new version removes that option from the l method data
+                # This new version removes that option from the l method datamodel
                 # So loop through each s and remove the alignment_option from the l
                 for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
@@ -1249,30 +1288,30 @@ class DataModel:
                             if 'method_data' in align_method:
                                 if 'alignment_option' in align_method['method_data']:
                                     align_method['method_data'].pop('alignment_option')
-                # Now the data previewmodel is at 0.28, so give it the appropriate version
+                # Now the datamodel previewmodel is at 0.28, so give it the appropriate version
                 self._data['version'] = 0.28
 
             if self._data['version'] == 0.28:
-                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.29))
-                # Need to modify the data previewmodel from 0.28 up to 0.29
+                print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.29))
+                # Need to modify the datamodel previewmodel from 0.28 up to 0.29
                 # The "use_c_version" was added to the "user_settings" dictionary
                 self._data['user_settings']['use_c_version'] = True
-                # Now the data previewmodel is at 0.29, so give it the appropriate version
+                # Now the datamodel previewmodel is at 0.29, so give it the appropriate version
                 self._data['version'] = 0.29
 
             if self._data['version'] == 0.29:
-                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.30))
-                # Need to modify the data previewmodel from 0.29 up to 0.30
+                print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.30))
+                # Need to modify the datamodel previewmodel from 0.29 up to 0.30
                 # The "poly_order" was added to the "scales" dictionary
                 for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
                     scale['poly_order'] = 4
-                # Now the data previewmodel is at 0.30, so give it the appropriate version
+                # Now the datamodel previewmodel is at 0.30, so give it the appropriate version
                 self._data['version'] = 0.30
 
             if self._data['version'] == 0.30:
-                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.31))
-                # Need to modify the data previewmodel from 0.30 up to 0.31
+                print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.31))
+                # Need to modify the datamodel previewmodel from 0.30 up to 0.31
                 # The "skipped(1)" annotation is currently unused (now hard-coded in alignem.py)
                 # Remove alll "skipped(1)" annotations since they can not otherwise be removed
                 for scale_key in self.scales():
@@ -1288,11 +1327,11 @@ class DataModel:
                                 if 'annotations' in m.keys():
                                     print("Removing any \"skipped()\" annotations ... ")
                                     m['annotations'] = [a for a in m['annotations'] if not a.startswith('skipped')]
-                # Now the data previewmodel is at 0.31, so give it the appropriate version
+                # Now the datamodel previewmodel is at 0.31, so give it the appropriate version
                 self._data['version'] = 0.31
             if self._data['version'] == 0.31:
-                print("\n\nUpgrading data previewmodel from " + str(self._data['version']) + " to " + str(0.32))
-                # Need to modify the data previewmodel from 0.31 up to 0.32
+                print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.32))
+                # Need to modify the datamodel previewmodel from 0.31 up to 0.32
                 #   1) change name of method_results key "affine_matrix" to "afm"
                 #   2) change name of method_results key "cumulative_afm" to "cafm"
                 #   3) add new method_results key, "aim" and compute/store this value
@@ -1310,12 +1349,12 @@ class DataModel:
                 #
 
                 # FIXME: leave this commented out until we have finished 1-8 above
-                # Now the data previewmodel is at 0.32, so give it the appropriate version
+                # Now the datamodel previewmodel is at 0.32, so give it the appropriate version
                 # data_model ['version'] = 0.32
 
             # Make the final test
             if self._data['version'] != self._current_version:
-                # The data previewmodel could not be upgraded, so return a string with the error
+                # The datamodel previewmodel could not be upgraded, so return a string with the error
                 data_model = 'Version mismatch. Expected "' + str(
                     self._current_version) + '" but found ' + str(
                     self._data['version'])
