@@ -483,9 +483,12 @@ class MainWindow(QMainWindow):
             self.warn(f'No SNR Data Available For This Alignment')
         elif failed:
             indexes, names = zip(*failed)
-            self.warn(f'No SNR Data Available For Layers {", ".join(map(str, indexes))}...')
+            lst_names = ''
             for name in names:
-                self.warn(f'  Section: {name}')
+                lst_names + f'\n  Section: {name}'
+            self.warn(f'No SNR Data Available For Layers {", ".join(map(str, indexes))}...{lst_names}')
+
+
 
 
     def onAlignmentEnd(self):
