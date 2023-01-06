@@ -2742,7 +2742,7 @@ class MainWindow(QMainWindow):
         '''NG arrangement/layout combobox'''
         self._cmbo_ngLayout = QComboBox()
         self._cmbo_ngLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._cmbo_ngLayout.setFixedSize(QSize(80, height))
+        self._cmbo_ngLayout.setFixedSize(QSize(64, height))
         self._cmbo_ngLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -2753,7 +2753,7 @@ class MainWindow(QMainWindow):
         self._ngLayoutWidget.setLayout(hbl)
         self._cmbo_setScale = QComboBox(self)
         self._cmbo_setScale.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._cmbo_setScale.setFixedSize(QSize(94, height))
+        self._cmbo_setScale.setFixedSize(QSize(74, height))
         self._cmbo_setScale.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -2824,7 +2824,7 @@ class MainWindow(QMainWindow):
     def _onGlobTabChange(self):
         caller = inspect.stack()[1].function
         logger.info(f'Tab Changed! (caller: {caller})')
-        if self._tabsGlob.count == 0:
+        if self._tabsGlob.count() == 0:
             return
         if caller != 'new_project':
             if caller != 'open_project':
