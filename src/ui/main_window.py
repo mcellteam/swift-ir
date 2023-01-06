@@ -485,7 +485,7 @@ class MainWindow(QMainWindow):
             indexes, names = zip(*failed)
             lst_names = ''
             for name in names:
-                lst_names + f'\n  Section: {name}'
+                lst_names += f'\n  Section: {name}'
             self.warn(f'No SNR Data Available For Layers {", ".join(map(str, indexes))}...{lst_names}')
 
 
