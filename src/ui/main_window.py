@@ -2753,7 +2753,7 @@ class MainWindow(QMainWindow):
         self._ngLayoutWidget.setLayout(hbl)
         self._cmbo_setScale = QComboBox(self)
         self._cmbo_setScale.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._cmbo_setScale.setFixedSize(QSize(74, height))
+        self._cmbo_setScale.setFixedSize(QSize(90, height))
         self._cmbo_setScale.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
