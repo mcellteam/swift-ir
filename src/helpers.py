@@ -983,7 +983,7 @@ def create_paged_tiff():
 # def notyet():
 #     logger.info('notyet() was called')
 #     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skipped.value)) #skipped
-#     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window._chbx_skip.isChecked())
+#     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window._skipCheckbox.isChecked())
 
 # def crop_mode_callback():
 #     return

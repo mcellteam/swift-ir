@@ -200,11 +200,18 @@ class NgHostSlim(QRunnable):
         cfg.url = str(cfg.viewer)
         print(f'url: {cfg.url}')
 
+        try:
+            cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+        except:
+            logger.warning('WARNING')
+
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
 
+
     def url(self):
         return cfg.url
+
 
     def on_state_changed(self):
         try:

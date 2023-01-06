@@ -54,7 +54,7 @@ class DataModel:
         self.scalesAligned = []
         self.nScalesAligned = None
         self.nscales = None
-        self.nlayers = None
+        self.nSections = None
         self.curScale = None
 
         if data:
@@ -109,7 +109,7 @@ class DataModel:
             pass
         self.scalesList = self.scales()
         self.nscales = len(self.scalesList)
-        self.nlayers = self.n_layers()
+        self.nSections = self.n_layers()
 
     def set_defaults(self):
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
@@ -994,8 +994,8 @@ class DataModel:
     def is_alignable(self) -> bool:
         '''Checks if the current s is able to be aligned'''
         try:
-            if self.nlayers < 1:
-                logger.debug("Returning False because self.nlayers < 1")
+            if self.nSections < 1:
+                logger.debug("Returning False because self.nSections < 1")
                 return False
             scales_list = self.scales()
             cur_scale_key = self.curScale

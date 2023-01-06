@@ -22,16 +22,19 @@ class ZarrTab(QWidget):
     def __init__(self,
                  key,
                  parent=None,
-                 path=None,
                  *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
         logger.info('')
         self.key = key
         self.parent = parent
-        self.path = path
+        self.path = None
+        self.zarray = None
+        self.shape = None
+        self.nSections = None
+        self.chunkshape = None
         self.ng_layout = 'xy'
         self.initUI()
-        self._fb.getOpenButton().clicked.connect(self.updateNeuroglancer)
+        self._fb.getOpenButton().clicked.connect(self.openViewZarr)
 
 
     def initUI(self):
@@ -49,15 +52,15 @@ class ZarrTab(QWidget):
 
 
     def initNeuroglancer(self):
+        logger.info('')
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(parent=self, project=False)
-        self.updateNeuroglancer()
 
 
-    def updateNeuroglancer(self):
+    def openViewZarr(self):
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.main_window.set_status('Opening Zarr...')
-        logger.info('(updateNeuroglancer) Going To Open Zarr...')
+        logger.info('(openViewZarr) Going To Open Zarr...')
         path = self._fb.getSelectionPath()
         logger.info(f'path: {path}')
         cfg.ng_worker.path = path
@@ -68,9 +71,11 @@ class ZarrTab(QWidget):
             logger.warning("'.zarray' Not Found. Invalid Path.")
             cfg.main_window.warn("'.zarray' Not Found. Invalid Path.")
             return
-        shape = self.zarray['shape']
-        chunks = self.zarray['chunks']
-        logger.info(f'array shape: {shape}, chunk shape: {chunks} ')
+        self.shape = self.zarray['shape']
+        self.chunkshape = self.zarray['chunks']
+        self.nSections = self.shape[0]
+        cfg.main_window._sectionSlider.setRange(0, self.nSection - 1)
+        logger.info(f'array shape: {self.shape}, chunk shape: {self.chunkshape} ')
         cfg.ng_worker.initViewer()
         cur_index = cfg.main_window._tabsGlob.currentIndex()
         cfg.main_window._tabsGlob.setTabText(cur_index, 'Zarr: ' + os.path.basename(path))

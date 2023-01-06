@@ -42,9 +42,10 @@ class ProjectTab(QWidget):
         self._tabs.currentChanged.connect(self._onTabChange)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
-        self.arrangement = 1
+        self.arrangement = 0
 
     def initNeuroglancer(self):
+        logger.info('')
         if self.arrangement == 0:
             cfg.ng_worker = NgHostSlim(parent=self, project=True)
         else:
@@ -58,6 +59,7 @@ class ProjectTab(QWidget):
 
 
     def updateNeuroglancer(self, matchpoint=None):
+        logger.info('')
         if matchpoint != None:
             cfg.ng_worker.initViewer(matchpoint=matchpoint)
         else:
@@ -81,6 +83,7 @@ class ProjectTab(QWidget):
 
     def initUI_Neuroglancer(self):
         '''NG Browser'''
+        logger.info('')
         self.ng_browser = QWebEngineView()
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
@@ -121,6 +124,7 @@ class ProjectTab(QWidget):
 
     def initUI_details(self):
         '''Layer View Widget'''
+        logger.info('')
         self.layer_view_widget = LayerViewWidget()
         self.layer_view_widget.setObjectName('layer_view_widget')
         vbl = QVBoxLayout()
@@ -139,6 +143,7 @@ class ProjectTab(QWidget):
 
     def initUI_JSON(self):
         '''JSON Project View'''
+        logger.info('')
         self._treeview = QTreeView()
         # self._treeview.setStyleSheet('background-color: #ffffff;')
         self._treeview_model = JsonModel()
@@ -158,6 +163,7 @@ class ProjectTab(QWidget):
 
     def initUI_plot(self):
         '''SNR Plot Widget'''
+        logger.info('')
         font = QFont()
         font.setBold(True)
         self.snr_plot = SnrPlot()
@@ -191,6 +197,7 @@ class ProjectTab(QWidget):
 
     def initUI_tab_widget(self):
         '''Tab Widget'''
+        logger.info('')
         self._tabs = QTabWidget()
         self._tabs.setStyleSheet('QTabBar::tab { height: 22px; width: 84px; }')
         self._tabs.setDocumentMode(True)
