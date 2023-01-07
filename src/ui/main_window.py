@@ -1572,12 +1572,6 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         if caller == 'dataUpdateWidgets':
             return
-        # logger.info(f'caller:{caller}')
-        if not cfg.project_tab:
-            return
-        if not cfg.zarr_tab:
-            return
-
         requested = self._sectionSlider.value()
         cfg.ng_worker._layer = requested
         # logger.info(f'slider, requested: {requested}')
