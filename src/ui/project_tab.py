@@ -50,8 +50,8 @@ class ProjectTab(QWidget):
         self.arrangement = 0
 
     def initNeuroglancer(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if self.arrangement == 0:
             cfg.ng_worker = NgHostSlim(parent=self, project=True)
         else:
