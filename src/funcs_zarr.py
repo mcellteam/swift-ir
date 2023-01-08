@@ -148,9 +148,7 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
         'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
         'recheck_cached_data': 'open',
     }, dtype=ts.uint32,)
-
     slice = np.array(arr[layer,:, :])
-
     # return arr[layer, :, :]
     return slice
 

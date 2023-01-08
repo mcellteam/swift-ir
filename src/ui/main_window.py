@@ -505,7 +505,7 @@ class MainWindow(QMainWindow):
                 lst_names += f'\n  Section: {name}'
             self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...'
                       f'{lst_names}\n'
-                      f'Try skipping these layers...')
+                      f'  (try skipping these layers...)')
 
 
     def onAlignmentEnd(self):
@@ -1143,7 +1143,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_status(self, msg: str) -> None:
-        self.statusBar.showMessage(msg)
+        # self.statusBar.showMessage(msg)
         pass
 
 
@@ -1231,6 +1231,8 @@ class MainWindow(QMainWindow):
 
 
     def _set_align_status_label_visibility(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         logger.info('')
         if cfg.project_tab:
             if cfg.data.scale() in cfg.data.scalesAligned:
@@ -1708,11 +1710,11 @@ class MainWindow(QMainWindow):
 
 
     def fn_ng_layout_combobox(self) -> None:
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-
         if self._ng_layout_switch == 0:
             return
+
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
 
         if caller == 'onStartProject':
             return
@@ -1950,6 +1952,7 @@ class MainWindow(QMainWindow):
 
     def open_zarr(self):
         logger.info('')
+        self.label_toolbar_resolution.setText('[dims]')
         key = cfg.increasing_tab_counter + 1
         cfg.zarr_tab = ZarrTab(key=key)
         self._tabsGlob.addTab(cfg.zarr_tab, 'Open Zarr...')
@@ -2751,21 +2754,22 @@ class MainWindow(QMainWindow):
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.toggled.connect(self.set_viewer_layout_0)
 
-        self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
+        self.rb1 = QRadioButton('Ref|Base|Aligned')
+        # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
         self.rb1.setChecked(False)
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb1.toggled.connect(self.set_viewer_layout_1)
 
-        self.rb2 = QRadioButton('Ref|Base|Aligned, Row')
-        self.rb2.setChecked(False)
-        self.rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb2.toggled.connect(self.set_viewer_layout_2)
+        # self.rb2 = QRadioButton('Ref|Base|Aligned, Row')
+        # self.rb2.setChecked(False)
+        # self.rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rb2.toggled.connect(self.set_viewer_layout_2)
 
         self._arrangeRadio = QWidget()
         hbl = QHBoxLayout()
         hbl.addWidget(self.rb0)
         hbl.addWidget(self.rb1)
-        hbl.addWidget(self.rb2)
+        # hbl.addWidget(self.rb2)
         self._arrangeRadio.setLayout(hbl)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
@@ -2925,7 +2929,7 @@ class MainWindow(QMainWindow):
                 self._path = cfg.project_tab.path
                 self.rb0.show()
                 self.rb1.show()
-                self.rb2.show()
+                # self.rb2.show()
                 self.label_toolbar_resolution.show()
                 self.dataUpdateWidgets()
                 self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)  # must be before initNeuroglancer
@@ -2939,7 +2943,7 @@ class MainWindow(QMainWindow):
                 self._path = None
                 self.rb0.hide()
                 self.rb1.hide()
-                self.rb2.hide()
+                # self.rb2.hide()
                 self._changeScaleCombo.hide()
                 self.aligned_label.hide()
                 self.unaligned_label.hide()
@@ -4117,7 +4121,9 @@ class MainWindow(QMainWindow):
     def initPbar(self):
         self.pbar = QProgressBar()
         self.pbar.setTextVisible(True)
-        self.pbar.setFont(QFont('Arial', 11))
+        font = QFont('Arial', 11)
+        font.setBold(True)
+        self.pbar.setFont(font)
         self.pbar.setFixedHeight(18)
         self.pbar.setFixedWidth(500)
         self.pbar_widget = QWidget(self)
@@ -4150,8 +4156,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_idle(self) -> None:
-        if self._working == False:
-            self.statusBar.showMessage('Idle')
+        # if self._working == False:
+        #     self.statusBar.showMessage('Idle')
         pass
 
 

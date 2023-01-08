@@ -5,16 +5,18 @@ QLabel#label_toolbar_resolution{
     font-weight: 550;
     background-color: #f3f6fb;
     border-radius: 5px;
-    border: 1px solid #1b1e23;
+    border: 1px solid #808080;
 }
 
 QLabel#aligned_label{
     font-size: 11px;
-    color: #39ff14;
+    /*color: #39ff14;*/
+    color: #00BF00;
     font-weight: 550;
     background-color: #f3f6fb;
     border-radius: 5px;
-    border: 1px solid #808080;
+    /*border: 1px solid #39ff14;*/
+    border: 1px solid #00BF00;
 }
 
 QLabel#unaligned_label{
