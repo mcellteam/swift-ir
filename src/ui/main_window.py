@@ -1208,6 +1208,8 @@ class MainWindow(QMainWindow):
 
 
     def onScaleChange(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         s = cfg.data.curScale
         cfg.data.curScale = s
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
@@ -1862,7 +1864,6 @@ class MainWindow(QMainWindow):
         cfg.project_tab = ProjectTab(key=unique_key, path=path, datamodel=cfg.data)
         self._tabsGlob.addTab(cfg.project_tab, os.path.basename(path) + '.proj')
         cfg.increasing_tab_counter += 1  # increment after successful tab creation
-        self._setLastTab()
         makedirs_exist_ok(path, exist_ok=True)
 
         if not mendenhall:
@@ -1888,20 +1889,10 @@ class MainWindow(QMainWindow):
         else:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
         self.onStartProject()
-        cfg.project_tab.initNeuroglancer()
-        self._autosave()
+        # cfg.project_tab.initNeuroglancer()
 
-
-    def open_zarr(self):
-        logger.info('')
-        key = cfg.increasing_tab_counter + 1
-        cfg.zarr_tab = ZarrTab(key=key)
-        self._tabsGlob.addTab(cfg.zarr_tab, 'Open Zarr...')
-        cfg.increasing_tab_counter += 1  # increment after successful tab creation
-        self.set_status('Select Zarr...')
-        self._forceHideControls()
-        self._forceHidePython()
         self._setLastTab()
+        self._autosave()
 
 
     def open_project(self):
@@ -1942,9 +1933,8 @@ class MainWindow(QMainWindow):
         tab_name = os.path.basename(cfg.data.dest() + '.proj')
         self._tabsGlob.addTab(cfg.project_tab, tab_name)
         cfg.increasing_tab_counter += 1  # increment after successful tab creation
-        cfg.project_tab.initNeuroglancer()
-        self._setLastTab()
-        # self.onStartProject()
+        # cfg.project_tab.initNeuroglancer()
+
         # cfg.project_tab.openViewZarr()
         # cfg.project_tab.snr_plot.initSnrPlot()  # !!!
         # self._forceHideControls()
@@ -1954,6 +1944,20 @@ class MainWindow(QMainWindow):
         if exist_aligned_zarr_cur_scale():
             self.updateStatusTips()
             self._runSNRcheck()
+
+        self._setLastTab()
+
+
+    def open_zarr(self):
+        logger.info('')
+        key = cfg.increasing_tab_counter + 1
+        cfg.zarr_tab = ZarrTab(key=key)
+        self._tabsGlob.addTab(cfg.zarr_tab, 'Open Zarr...')
+        cfg.increasing_tab_counter += 1  # increment after successful tab creation
+        self.set_status('Select Zarr...')
+        self._forceHideControls()
+        self._forceHidePython()
+        self._setLastTab()
 
 
     def updateToolbar(self):
@@ -2904,52 +2908,52 @@ class MainWindow(QMainWindow):
 
     def _onGlobTabChange(self):
         caller = inspect.stack()[1].function
-        logger.debug(f'Tab Changed (caller: {caller})')
+        logger.info(f'Tab Changed (caller: {caller})')
         if self._tabsGlob.count() == 0:
             return
         if caller != 'new_project':
-            if caller != 'open_project':
-                if self._isProjectTab():
-                    logger.info('Loading Project Tab...')
-                    cfg.data = self._tabsGlob.currentWidget().datamodel
-                    cfg.project_tab = self._tabsGlob.currentWidget()
-                    cfg.zarr_tab = None
-                    self._changeScaleCombo.show()
-                    self.reload_scales_combobox()
-                    self._ID = id(cfg.project_tab.datamodel)
-                    self._key = cfg.project_tab.key
-                    self._path = cfg.project_tab.path
-                    self.rb0.show()
-                    self.rb1.show()
-                    self.rb2.show()
-                    self.label_toolbar_resolution.show()
-                    self.dataUpdateWidgets()
-                    self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)  # must be before initNeuroglancer
-                    cfg.project_tab.initNeuroglancer()
-                    self._set_align_status_label_visibility()
-                else:
-                    cfg.data = None
-                    cfg.project_tab = None
-                    self._ID = None
-                    self._key = None
-                    self._path = None
-                    self.rb0.hide()
-                    self.rb1.hide()
-                    self.rb2.hide()
-                    self._changeScaleCombo.hide()
-                    self.aligned_label.hide()
-                    self.unaligned_label.hide()
-                    self._changeScaleCombo.clear()
+            # if caller != 'open_project':
+            if self._isProjectTab():
+                logger.info('Loading Project Tab...')
+                cfg.data = self._tabsGlob.currentWidget().datamodel
+                cfg.project_tab = self._tabsGlob.currentWidget()
+                cfg.zarr_tab = None
+                self._changeScaleCombo.show()
+                self.reload_scales_combobox()
+                self._ID = id(cfg.project_tab.datamodel)
+                self._key = cfg.project_tab.key
+                self._path = cfg.project_tab.path
+                self.rb0.show()
+                self.rb1.show()
+                self.rb2.show()
+                self.label_toolbar_resolution.show()
+                self.dataUpdateWidgets()
+                self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)  # must be before initNeuroglancer
+                cfg.project_tab.initNeuroglancer()
+                self._set_align_status_label_visibility()
+            else:
+                cfg.data = None
+                cfg.project_tab = None
+                self._ID = None
+                self._key = None
+                self._path = None
+                self.rb0.hide()
+                self.rb1.hide()
+                self.rb2.hide()
+                self._changeScaleCombo.hide()
+                self.aligned_label.hide()
+                self.unaligned_label.hide()
+                self._changeScaleCombo.clear()
 
-                if self._isZarrTab():
-                    logger.info('Loading Zarr Tab...')
-                    cfg.zarr_tab = self._tabsGlob.currentWidget()
-                    self.set_nglayout_combo_text(layout=cfg.zarr_tab.ng_layout)  # must be before initNeuroglancer
-                    cfg.zarr_tab.initNeuroglancer()
-                    self.label_toolbar_resolution.show()
+            if self._isZarrTab():
+                logger.info('Loading Zarr Tab...')
+                cfg.zarr_tab = self._tabsGlob.currentWidget()
+                self.set_nglayout_combo_text(layout=cfg.zarr_tab.ng_layout)  # must be before initNeuroglancer
+                cfg.zarr_tab.initNeuroglancer()
+                self.label_toolbar_resolution.show()
 
-                # self.updateToolbar()
-                self._updateJumpToValidator()
+            # self.updateToolbar()
+            self._updateJumpToValidator()
         self.set_idle()
         self._cur_tab_index = self._tabsGlob.currentIndex()
 
