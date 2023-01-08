@@ -17,3 +17,4 @@
 #ede9e8 - my dirty white
 #708090 - (light) slate grey
 #39ff14 - neon green
+#00BF00 - pure green
