@@ -9,7 +9,7 @@ import time
 import psutil
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QApplication
-
+import neuroglancer as ng
 import src.config as cfg
 from src.helpers import print_exception
 
@@ -81,6 +81,8 @@ class TaskQueue(QObject):
             mpl.setLevel(logging.DEBUG)
         # else:
         #     mpl.setLevel(logging.INFO)
+
+        cfg.main_window.shutdownNeuroglancer()
 
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
