@@ -1,5 +1,34 @@
 
 
+
+
+QLabel#label_toolbar_resolution{
+    font-size: 11px;
+    color: #1b1e23;
+    font-weight: 550;
+    background-color: #f3f6fb;
+    border-radius: 5px;
+    border: 1px solid #808080;
+}
+
+QLabel#aligned_label{
+    font-size: 11px;
+    color: #39ff14;
+    font-weight: 550;
+    background-color: #f3f6fb;
+    border-radius: 5px;
+    border: 1px solid #39ff14;
+}
+
+QLabel#unaligned_label{
+    font-size: 11px;
+    color: #ff0000;
+    font-weight: 550;
+    background-color: #f3f6fb;
+    border-radius: 5px;
+    border: 1px solid #ff0000;
+}
+
 QTabWidget#project_tabs{
     height: 10px;
 }
@@ -101,17 +130,11 @@ QTreeView#treeview {
 
 
 
-
-
-
 QTextEdit#_tool_afmCafm {
     background-color: #f3f6fb;
     font-size: 11px;
     border: none;
 }
-
-
-
 
 
 QMainWindow#mainwindow{

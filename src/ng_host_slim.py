@@ -13,6 +13,7 @@ except:
     pass
 import os
 import copy
+import json
 import pprint
 import logging
 import datetime
@@ -149,6 +150,11 @@ class NgHostSlim(QRunnable):
         cfg.viewer = ng.Viewer()
         ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
 
+        self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
+        sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        self.nglayout = sw[self.nglayout]
+
         if cfg.project_tab:
             if exist_aligned_zarr_cur_scale(): zd = 'img_aligned.zarr'
             else:                              zd = 'img_src.zarr'
@@ -165,7 +171,25 @@ class NgHostSlim(QRunnable):
             units=['nm', 'nm', 'nm'],
             scales=coord_space, )
 
+        try:
+            cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
+            cfg.main_window.updateToolbar()
+            print('TensorStore Object Created Successfully!')
+        except Exception as e:
+            print(e)
+            try:
+                logger.error(f'Invalid Zarr For Tensor,\nTensor Path: {self.path}')
+                cfg.main_window.err('Invalid Zarr. Unable To Create Tensor for Zarr Array')
+            except:
+                pass
+
+
+        with open(os.path.join(self.path, '.zarray')) as j:
+            self.zarray = json.load(j)
+        shape = self.zarray['shape']
+
         with cfg.viewer.txn() as s:
+            s.layout.type = self.nglayout
             adjustment = 1.04
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
@@ -173,40 +197,34 @@ class NgHostSlim(QRunnable):
             # s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
-            s.crossSectionBackgroundColor = '#808080'  # 128 grey
-            try:
-                cfg.tensor = get_zarr_tensor(self.path).result()
-                print('TensorStore Object Created Successfully!')
-            except Exception as e:
-                print(e)
-                try:
-                    logger.error(f'Invalid Zarr. Unable To Create Tensor for Zarr Array\n'
-                                 f'Tensor Path: {self.path}')
-                    cfg.main_window.err('Invalid Zarr. Unable To Create Tensor for Zarr Array')
-                except:
-                    pass
-            # pprint.pprint(cfg.tensor.spec().to_json())
+
             cfg.LV = ng.LocalVolume(
                 data=cfg.tensor,
                 volume_type='image',
                 dimensions=self.coordinate_space,
+                # voxel_offset=[0, 0, 0],
                 voxel_offset=[0, 0, 0],
                 # downsampling=None
             )
+
+            s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=cfg.LV)
+
+            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
+            elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
+            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080'  # 128 grey
+            elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
+            else:                 s.crossSectionBackgroundColor = '#004060'
 
         with cfg.viewer.config_state.txn() as s:
             s.show_ui_controls = show_ui_controls
             s.show_panel_borders = show_panel_borders
 
-        # self._layer = self.request_layer()
+        self._layer = self.request_layer()
         cfg.url = str(cfg.viewer)
         print(f'url: {cfg.url}')
 
-        try:
-            cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
-        except:
-            logger.warning('WARNING')
+        cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
@@ -224,6 +242,7 @@ class NgHostSlim(QRunnable):
                 return
             else:
                 self._layer = request_layer
+            logger.info(f'emitting request_layer: {request_layer}')
             self.signals.stateChanged.emit(request_layer)
         except:
             # print_exception()

@@ -6,6 +6,7 @@ can connect to the web server'''
 
 import os
 import copy
+import json
 import pprint
 import inspect
 import logging
@@ -17,6 +18,7 @@ from math import floor
 import numpy as np
 import numcodecs
 numcodecs.blosc.use_threads = False
+import zarr
 import neuroglancer as ng
 import neuroglancer.webdriver
 from neuroglancer import ScreenshotSaver
@@ -66,8 +68,6 @@ class NgHost(QRunnable):
         self.bind = bind
         self.port = port
         self.scale = None
-        self.src = None
-        self.src_size = None
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
         self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74',
@@ -170,112 +170,86 @@ class NgHost(QRunnable):
                    show_scale_bar=False,
                    show_axis_lines=False
                    ):
-
-        self.src = cfg.data.dest()
-        self.src_size = cfg.data.image_size(s=self.scale)
-        self.scale = cfg.data.scale()
-        self.sf = get_scale_val(self.scale)
-        self.ref_l = 'ref_%d' % self.sf
-        self.base_l = 'base_%d' % self.sf
-        self.aligned_l = 'aligned_%d' % self.sf
-        if cfg.main_window._cmbo_ngLayout.currentText() == '':
-            cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
-            self.nglayout = 'xy'
-        else:
-            self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
-        sw = {'xy': 'yz',
-              'yz': 'xy',
-              'xz': 'xz',
-              'xy-3d': 'yz-3d',
-              'yz-3d': 'xy-3d',
-              'xz-3d': 'xz-3d',
-              '4panel': '4panel',
-              '3d': '3d'}
-        self.nglayout = sw[self.nglayout]
-
-        self.al_url = os.path.join('img_aligned.zarr', 's' + str(self.sf))
-        self.src_url = os.path.join('img_src.zarr', 's' + str(self.sf))
-        self.src_size = cfg.data.image_size(s=self.scale)
-        self.al_name = os.path.join(self.src, self.al_url)
-        if cfg.data.is_mendenhall():
-            self.unal_name = os.path.join(self.src, 'mendenhall.zarr', 'grp')
-        else:
-            self.unal_name = os.path.join(self.src, self.src_url)
-        coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
-        self.coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=coord_space, )
-
-        if cfg.data.is_mendenhall() and cfg.MV:
-            logger.warning('Transferring control to initViewerMendenhall...')
-            self.initViewerMendenhall()
-            return
-
+        caller = inspect.stack()[1].function
+        if matchpoint: self.mp_mode = matchpoint
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
-
-        if matchpoint != None:
-            self.mp_mode = matchpoint
-
+        self.scale = cfg.data.scale()
         print(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = exist_aligned_zarr(self.scale)
+        sf = get_scale_val(self.scale)
+        self.ref_l, self.base_l, self.aligned_l  = 'ref_%d'%sf, 'base_%d'%sf, 'aligned_%d'%sf
 
-        if cfg.data.is_mendenhall():  # Force
-            is_aligned = True
+        mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        self.nglayout = mapping[cfg.main_window._cmbo_ngLayout.currentText()]
+        self.al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+        self.unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
-        has_bb = cfg.data.has_bb(s=self.scale)
+        try:    cfg.unal_tensor = get_zarr_tensor(self.unal_path).result()
+        except: cfg.main_window.err(f'Invalid Zarr For Tensor, Unaligned, Scale {sf}'); print_exception()
+        cfg.main_window.updateToolbar()
+        if is_aligned:
+            try:    cfg.al_tensor = get_zarr_tensor(self.al_path).result()
+            except: cfg.main_window.err(f'Invalid Zarr For Tensor, Aligned, Scale {sf}'); print_exception()
 
-        if self.mp_mode:
-            self.clear_mp_buffer()
+        if cfg.data.is_mendenhall():
+            self.unal_path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
+            is_aligned = True  # Force, was below the conditional
+            if cfg.MV:
+                logger.warning('Transferring control to initViewerMendenhall...')
+                self.initViewerMendenhall()
+                return
+
+        coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm','nm','nm'],
+            scales=coord_space,
+        )
 
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
-        # ng.set_server_bind_address(bind_address=self.bind)
-
         self.url_viewer = str(cfg.viewer)
-
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
 
-        src_size = cfg.data.image_size()
-        src_width, src_height = src_size[0], src_size[1]
-
-        if is_aligned and has_bb:
-            bb = cfg.data.bounding_rect(s=self.scale)
-            max_width, max_height = bb[2], bb[3]
-            x_nudge = (max_width - src_width) / 2
-            y_nudge = (max_height - src_height) / 2
+        if is_aligned:
+            frame = cfg.al_tensor.shape[1:] # [height, width]
+            x_nudge = (frame[1] - cfg.unal_tensor.shape[2]) / 2
+            y_nudge = (frame[0] - cfg.unal_tensor.shape[1]) / 2
         else:
-            max_width, max_height = src_width, src_height
+            frame = cfg.unal_tensor.shape[1:]
             x_nudge, y_nudge = 0, 0
 
         if widget_size is None:
-            widget_size = cfg.main_window.ng_browser.geometry().getRect()
-        widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
+            widget_size = cfg.project_tab.geometry().getRect()
+        # widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
+        widget_height = widget_size[3] - 40 # subtract pixel height of Neuroglancer toolbar
 
         if self.arrangement == 1:
-            widget_width = widget_size[2] / 3 if is_aligned else widget_size[2] / 2
+            if is_aligned: widget_width = widget_size[2] / 3
+            else:          widget_width = widget_size[2] / 2
         else:
             widget_width = widget_size[2] / 2
 
-        tissue_height = cfg.data.res_y(s=self.scale) * max_height  # nm
+        tissue_height = cfg.data.res_y(s=self.scale) * frame[0]  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-        tissue_width = cfg.data.res_x(s=self.scale) * max_width  # nm
+        tissue_width = cfg.data.res_x(s=self.scale) * frame[1]  # nm
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
-        # css = '%.2E' % Decimal(cross_section_scale)
-        # text = 'Initializing Neuroglancer Client - Scale %d - %s - Display Size %dx%d caller: %s...' % \
-        #          (self.sf, ('Unaligned', 'Aligned')[is_aligned], max_width, max_height, caller)
-        # logger.info(text)
-        # logger.info('widget size  =%s' % str(widget_size))
-        # logger.info('arrangement  =%d' % self.arrangement)
-        # logger.info('is_aligned   =%s' % is_aligned)
-        # logger.info('has_bb       =%s' % has_bb)
-        # logger.info('nudge_x=%d, nudge_y=%d' % (x_nudge, y_nudge))
-        # logger.info('max_width=%d, max_height=%d' % (max_width, max_height))
-        # logger.info('src_width=%d, src_height=%d' % (src_width, src_height))
-        # logger.info('x_nudge=%d, y_nudge=%d' % (x_nudge, y_nudge))
-        # logger.info('widget width=%d, widget height=%d' % (widget_width, widget_height))
-        # logger.info('tissue width=%d, tissue height=%d' % (tissue_width, tissue_height))
-        # logger.info('cross_section width=%.10f, height=%.10f' % (cross_section_width, cross_section_height))
-        # logger.info('cross_section_scale=%.10f' % cross_section_scale)
+
+        # print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
+        # print('widget size                  =%s' % str(widget_size))
+        # print('arrangement                  =%d' % self.arrangement)
+        # print('is aligned                   =%s' % is_aligned)
+        # print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
+        # print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
+        # print('frame width,height           =%d,%d' % (frame[1], frame[0]))
+        # print('x_nudge,y_nudge              =%d,%d' % (x_nudge, y_nudge))
+        # print('widget width,height          =%d,%d' % (widget_width, widget_height))
+        # print('tissue width,height          =%d,%d' % (tissue_width, tissue_height))
+        # print('cross_section width,height   =%.10f,%.10f' % (cross_section_width, cross_section_height))
+        # print('cross_section_scale          =%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
             adjustment = 1.04
@@ -288,105 +262,56 @@ class NgHost(QRunnable):
             # s.perspective_orientation
             # s.relative_display_scales = [32, 1, 1] #Todo inspect this
 
-            if cfg.USE_TENSORSTORE:
-                try:
-                    cfg.unal_tensor = get_zarr_tensor(self.unal_name).result()
-                except:
-                    # print_exception()
-                    logger.error(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}\n'
-                                 f'Tensor Path: {self.path}')
-                    cfg.main_window.err(f'Invalid Zarr. Unable To Create Tensor, Source Zarr, Scale {self.sf}')
-                self.json_unal_dataset = cfg.unal_tensor.spec().to_json()
-                logger.debug(self.json_unal_dataset)
-                cfg.refLV = ng.LocalVolume(
-                    data=cfg.unal_tensor,
+            cfg.refLV = ng.LocalVolume(
+                data=cfg.unal_tensor,
+                volume_type='image',
+                dimensions=self.coordinate_space,
+                voxel_offset=[1, y_nudge, x_nudge],
+            )
+            cfg.baseLV = ng.LocalVolume(
+                data=cfg.unal_tensor,
+                volume_type='image',
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, y_nudge, x_nudge],
+            )
+            if is_aligned:
+                cfg.alLV = ng.LocalVolume(
+                    data=cfg.al_tensor,
                     volume_type='image',
                     dimensions=self.coordinate_space,
-                    voxel_offset=[1, y_nudge, x_nudge],
-                    # downsampling=None
+                    voxel_offset=[0, ] * 3,
                 )
-                cfg.baseLV = ng.LocalVolume(
-                    data=cfg.unal_tensor,
-                    volume_type='image',
-                    dimensions=self.coordinate_space,
-                    voxel_offset=[0, y_nudge, x_nudge],
-                    # downsampling=None
-                )
-                if is_aligned:
-                    try:
-                        cfg.al_tensor = get_zarr_tensor(self.al_name).result()
-                    except:
-                        logger.error(f'Invalid Zarr. Unable To Create Tensor, Aligned Zarr, Scale {self.sf}')
-                        cfg.main_window.hud.post(f'Invalid Zarr. Unable To Create Tensor, Aligned Zarr, Scale {self.sf}',
-                                                 logging.ERROR)
-                    self.json_al_dataset = cfg.al_tensor.spec().to_json()
-                    cfg.alLV = ng.LocalVolume(
-                        data=cfg.al_tensor,
-                        volume_type='image',
-                        dimensions=self.coordinate_space,
-                        voxel_offset=[0, ] * 3,
-                    )
 
-            else:
-                # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
-                cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{self.src_url}'
-                if is_aligned:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_url}'
+            # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
+            # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{self.unal_path}'
+            # if is_aligned:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_path}'
 
-            if cfg.SHADER == None:
-                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV)
-                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV)
-                if is_aligned:
-                    s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV)
-            else:
-                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER)
-                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER)
-                if is_aligned:
-                    s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER)
+            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER)
+            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER)
+            if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER)
 
-            s.layers['mp_ref'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
-                                                         annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
-                                                         annotation_properties=[
-                                                             ng.AnnotationPropertySpec(
-                                                                 id='ptColor',
-                                                                 type='rgb',
-                                                                 default='white',
-                                                             ),
-                                                             ng.AnnotationPropertySpec(
-                                                                 id='ptWidth',
-                                                                 type='float32',
-                                                                 default=3
-                                                             ),
-                                                             ng.AnnotationPropertySpec(
-                                                                 id='size',
-                                                                 type='float32',
-                                                                 default=7
-                                                             )
-                                                         ],
-                                                         shader=ann_shader,
-                                                         )
+            s.layers['mp_ref'] = ng.LocalAnnotationLayer(
+                dimensions=self.coordinate_space,
+                annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white',),
+                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=7)
+                ],
+                shader=ann_shader,
+            )
 
-            s.layers['mp_base'] = ng.LocalAnnotationLayer(dimensions=self.coordinate_space,
-                                                          annotations=self.pt2ann(
-                                                              points=cfg.data.get_mps(role='base')) + self.base_pts,
-                                                          annotation_properties=[
-                                                              ng.AnnotationPropertySpec(
-                                                                  id='ptColor',
-                                                                  type='rgb',
-                                                                  default='white',
-                                                              ),
-                                                              ng.AnnotationPropertySpec(
-                                                                  id='ptWidth',
-                                                                  type='float32',
-                                                                  default=3
-                                                              ),
-                                                              ng.AnnotationPropertySpec(
-                                                                  id='size',
-                                                                  type='float32',
-                                                                  default=7
-                                                              )
-                                                          ],
-                                                          shader=ann_shader,
-                                                          )
+            s.layers['mp_base'] = ng.LocalAnnotationLayer(
+                dimensions=self.coordinate_space,
+                annotations=self.pt2ann(
+                    points=cfg.data.get_mps(role='base')) + self.base_pts,
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
+                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=7)
+                ],
+                shader=ann_shader,
+            )
 
             grps = []
             grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout))
@@ -394,13 +319,7 @@ class NgHost(QRunnable):
             if is_aligned:
                 grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout))
 
-            if is_aligned and has_bb:
-                rect = cfg.data.bounding_rect(s=self.scale)
-                pos_x, pos_y = rect[3] / 2, rect[2] / 2
-            else:
-                pos_x, pos_y = self.src_size[1] / 2, self.src_size[0] / 2
-
-            s.position = [cfg.data.layer(), pos_x, pos_y]
+            s.position = [cfg.data.layer(), frame[0]/2, frame[1]/2]
 
             if self.arrangement == 1:
                 s.layout = ng.row_layout(grps)
@@ -420,12 +339,7 @@ class NgHost(QRunnable):
                     s.layout = ng.row_layout(grps)
 
             # cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            try:
-                cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
-            except:
-                logger.warning('WARNING')
-
-
+            cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
             # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='ref'))
             # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='base'))
@@ -455,17 +369,11 @@ class NgHost(QRunnable):
             s.show_panel_borders = show_panel_borders
 
         self._layer = self.request_layer()
-        # cfg.refLV.invalidate()
-        # cfg.baseLV.invalidate()
-        # if is_aligned:
-        #     cfg.alLV.invalidate()
-
+        self.clear_mp_buffer()
         cfg.url = str(cfg.viewer)
-
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
-        # else:
-        #     cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=True, browser='chrome')
+
 
     def on_state_changed(self):
         try:
@@ -482,6 +390,7 @@ class NgHost(QRunnable):
             # print_exception()
             logger.error('ERROR')
 
+
     def add_matchpoint(self, s):
         logger.info('add_matchpoint:')
         assert self.mp_mode == True
@@ -490,7 +399,7 @@ class NgHost(QRunnable):
             logger.warning('Coordinates are dimensionless!')
             return
         try:
-            bounds = self.src_size
+            bounds = cfg.unal_tensor.shape[1:]
             if (coords[1] < 0) or (coords[2] < 0):
                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
                                % (coords[1], coords[2], bounds[0], bounds[1]))
@@ -498,7 +407,6 @@ class NgHost(QRunnable):
             if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
                                % (coords[1], coords[2], bounds[0], bounds[1]))
-
         except:
             # print_exception()
             logger.error('ERROR')
@@ -515,6 +423,7 @@ class NgHost(QRunnable):
                 s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base')) + self.base_pts
                 logger.info(f"Base Match Point Added: {coords}")
         self.mp_count += 1
+
 
     def save_matchpoints(self, s):
         layer = self.request_layer()
@@ -540,6 +449,7 @@ class NgHost(QRunnable):
         cfg.data.print_all_match_points()
         cfg.main_window.hud.post('Match Points Saved!')
 
+
     def clear_matchpoints(self, s):
         logger.info('Clearing Match Points...')
         layer = self.request_layer()
@@ -553,16 +463,19 @@ class NgHost(QRunnable):
         cfg.baseLV.invalidate()
         cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
 
+
     def clear_mp_buffer(self):
-        logger.info('Clearing match point buffer')
-        self.mp_count = 0
-        self.ref_pts.clear()
-        self.base_pts.clear()
-        try:
-            cfg.refLV.invalidate()
-            cfg.baseLV.invalidate()
-        except:
-            pass
+        if self.mp_mode:
+            logger.info('Clearing match point buffer')
+            self.mp_count = 0
+            self.ref_pts.clear()
+            self.base_pts.clear()
+            try:
+                cfg.refLV.invalidate()
+                cfg.baseLV.invalidate()
+            except:
+                pass
+
 
     def count_saved_points_ref(self):
         layer = self.request_layer()
@@ -573,6 +486,7 @@ class NgHost(QRunnable):
             if p[0] == layer:
                 count += 1
         return count
+
 
     def count_saved_points_base(self):
         layer = self.request_layer()
@@ -594,18 +508,22 @@ class NgHost(QRunnable):
                                                          self.mp_marker_lineweight]))
         return annotations
 
+
     def take_screenshot(self, directory=None):
         if directory is None:
             directory = cfg.data.dest()
         ss = ScreenshotSaver(viewer=cfg.viewer, directory=dir)
         ss.capture()
 
+
     def url(self):
         # str(cfg.viewer)
         return cfg.url
 
+
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))
+
 
     def print_viewer_info(self, s):
         logger.info(f'Selected Values:\n{s.selected_values}')

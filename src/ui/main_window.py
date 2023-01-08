@@ -148,23 +148,33 @@ class MainWindow(QMainWindow):
 
     def set_viewer_layout_0(self):
         if cfg.project_tab:
+            self._ng_layout_switch = 0
+            cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
+            self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 0
-            cfg.project_tab.initNeuroglancer()
             cfg.project_tab._tabs.setCurrentIndex(0)
+            cfg.project_tab.initNeuroglancer()
 
 
     def set_viewer_layout_1(self):
         if cfg.project_tab:
+            self._ng_layout_switch = 0
+            cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
+            self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 1
-            cfg.project_tab.initNeuroglancer()
             cfg.project_tab._tabs.setCurrentIndex(0)
+            cfg.project_tab.initNeuroglancer()
 
 
     def set_viewer_layout_2(self):
         if cfg.project_tab:
+            self._ng_layout_switch = 0
+            cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
+            self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 2
-            cfg.project_tab.initNeuroglancer()
             cfg.project_tab._tabs.setCurrentIndex(0)
+            cfg.project_tab.initNeuroglancer()
+
 
 
     # def initData(self):
@@ -285,6 +295,7 @@ class MainWindow(QMainWindow):
         self._is_viewer_expanded = False
         self._layout = 1
         self._scales_combobox_switch = 0 #1125
+        self._ng_layout_switch = 1 #1125
         self._jump_to_worst_ticker = 1  # begin iter at 1 b/c first image has no ref
         self._jump_to_best_ticker = 0
         self._snr_by_scale = dict() #Todo
@@ -336,7 +347,9 @@ class MainWindow(QMainWindow):
         self._enableAllTabs()
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
-        cfg.SHADER = None
+        cfg.SHADER = ''
+        cfg.project_tab._overlayRect.hide()
+        cfg.project_tab._overlayLab.hide()
         self.viewer_stack_widget.setCurrentIndex(0)
         if cfg.project_tab:
             self._is_mp_mode = False
@@ -510,6 +523,7 @@ class MainWindow(QMainWindow):
             self.dataUpdateWidgets()
             logger.info(f'aligned scales list: {cfg.data.scalesAligned}')
             self.updateEnabledButtons()
+            self._set_align_status_label_visibility()
 
             self._runSNRcheck()
 
@@ -1089,29 +1103,6 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def updateBanner(self, s=None) -> None:
-        '''Update alignment details in the Alignment control panel group box.'''
-        # logger.info('updateBanner... called By %s' % inspect.stack()[1].function)
-        # self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
-        if s == None: s = cfg.data.curScale
-
-        # if exist_aligned_zarr_cur_scale():
-        #     self.alignment_status_label.setText("Aligned")
-        #     self.alignment_status_label.setStyleSheet('color: #41FF00;')
-        # else:
-        #     self.alignment_status_label.setText("Not Aligned")
-        #     self.alignment_status_label.setStyleSheet('color: #FF0000;')
-        try:
-            img_size = cfg.data.image_size(s=s)
-            self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
-        except:
-            self.align_label_resolution.setText('')
-            logger.warning('Unable To Determine Image Size.')
-        # Todo fix renaming bug where files are not relinked
-        # self.align_label_affine.setText(method_str)
-
-
-    @Slot()
     def toggle_auto_generate_callback(self) -> None:
         logger.info('toggle_auto_generate_callback:')
         '''Update HUD with new toggle state. Not data-driven.'''
@@ -1175,7 +1166,7 @@ class MainWindow(QMainWindow):
         self._ctl_panel.setStyleSheet(style)
         self.hud.set_theme_default()
         if inspect.stack()[1].function != 'initStyle':
-            ccfg.project_tab.updateNeuroglancer()
+            cfg.project_tab.updateNeuroglancer()
 
 
     def apply_daylight_style(self):
@@ -1220,21 +1211,34 @@ class MainWindow(QMainWindow):
         s = cfg.data.curScale
         cfg.data.curScale = s
         logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
-        self.jump_to(cfg.data.layer())
+        # self.jump_to(cfg.data.layer())
         self.dataUpdateWidgets()
         self.updateHistoryListWidget(s=s)
         # self._treeview_model.load(cfg.data.to_dict())
-        # self.updateBanner(s=s)
         self.updateEnabledButtons()
         self.updateStatusTips()
-        if self._isProjectTab():
-            if cfg.project_tab._tabs.currentIndex() == 1:
-                cfg.project_tab.layer_view_widget.set_data()
+        if cfg.project_tab._tabs.currentIndex() == 1:
+            cfg.project_tab.layer_view_widget.set_data()
         # self.dataUpdateWidgets()
+        self._set_align_status_label_visibility()
         if exist_aligned_zarr_cur_scale():
             self.updateStatusTips()
             self._runSNRcheck()
         cfg.project_tab.updateNeuroglancer()
+        # self.updateToolbar()
+
+
+    def _set_align_status_label_visibility(self):
+        logger.info('')
+        if cfg.project_tab:
+            if cfg.data.scale() in cfg.data.scalesAligned:
+                self.aligned_label.show()
+                self.unaligned_label.hide()
+            else:
+                self.aligned_label.hide()
+                self.unaligned_label.show()
+
+
 
 
     @Slot()
@@ -1255,7 +1259,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        # caller = inspect.stack()[1].function
+        caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
 
         if cfg.zarr_tab:
@@ -1287,7 +1291,7 @@ class MainWindow(QMainWindow):
         if isinstance(ng_layer, int):
             try:
                 if 0 <= ng_layer < cfg.data.n_layers():
-                    logger.info(f'Setting Layer: {ng_layer}')
+                    # logger.info(f'Setting Layer: {ng_layer}')
                     cfg.data.set_layer(ng_layer)
                     self._sectionSlider.setValue(ng_layer)
                     cfg.project_tab._overlayRect.hide()
@@ -1527,7 +1531,7 @@ class MainWindow(QMainWindow):
     @Slot()
     # def jump_to(self, requested) -> None:
     def jump_to(self, requested) -> None:
-        logger.info('jumpt_to:')
+        logger.info('jump_to:')
         if cfg.project_tab:
             if requested not in range(cfg.data.n_layers()):
                 logger.warning('Requested layer is not a valid layer')
@@ -1556,13 +1560,10 @@ class MainWindow(QMainWindow):
                 return
             if cfg.project_tab._tabs.currentIndex() == 0:
                 # logger.info('Jumping To Section #%d' % requested)
-                # state = copy.deepcopy(cfg.ng_workers[cfg.data.curScale].viewer.state)
                 state = copy.deepcopy(cfg.viewer.state)
                 state.position[0] = requested
-                # cfg.ng_workers[cfg.data.curScale].viewer.set_state(state)
                 cfg.viewer.set_state(state)
                 # self.refreshNeuroglancerURL()
-
             # cfg.project_tab.openViewZarr()
             # self.dataUpdateWidgets() #0106-
             # self.app.processEvents()
@@ -1570,24 +1571,24 @@ class MainWindow(QMainWindow):
 
     def jump_to_slider(self):
         caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         if caller == 'dataUpdateWidgets':
             return
+        if not cfg.project_tab:
+            if not cfg.zarr_tab:
+                return
         requested = self._sectionSlider.value()
+        cfg.data.set_layer(requested)
         cfg.ng_worker._layer = requested
         # logger.info(f'slider, requested: {requested}')
 
         if cfg.project_tab:
-
-            if requested not in range(cfg.data.n_layers()):
-                logger.warning('Requested layer is not a valid layer')
-                return
-            if cfg.project_tab._tabs.currentIndex() == 0:
-                logger.info('Jumping To Section #%d' % requested)
-                # state = copy.deepcopy(cfg.ng_workers[cfg.data.curScale].viewer.state)
-                state = copy.deepcopy(cfg.viewer.state)
-                state.position[0] = requested
-                # cfg.ng_workers[cfg.data.curScale].viewer.set_state(state)
-                cfg.viewer.set_state(state)
+            if requested in range(cfg.data.n_layers()):
+                if cfg.project_tab._tabs.currentIndex() == 0:
+                    logger.info('Jumping To Section #%d' % requested)
+                    state = copy.deepcopy(cfg.viewer.state)
+                    state.position[0] = requested
+                    cfg.viewer.set_state(state)
 
         if cfg.zarr_tab:
             state = copy.deepcopy(cfg.viewer.state)
@@ -1596,19 +1597,6 @@ class MainWindow(QMainWindow):
 
         try:     self._jumpToLineedit.setText(str(requested))
         except:  logger.warning('Current Layer Widget Failed to Update')
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def jump_to_worst_snr(self) -> None:
@@ -1672,21 +1660,22 @@ class MainWindow(QMainWindow):
         self._scales_combobox_switch = 1
 
     def fn_scales_combobox(self) -> None:
-        caller = inspect.stack()[1].function
-        if caller == 'onStartProject':
-            logger.warning('Canceling scale change trigger!')
-            return
-        if self._is_mp_mode == True:
-            return
-        # logger.info('caller: %s' % caller)
-        if self._scales_combobox_switch == 0:
-            if inspect.stack()[1].function != 'reload_scales_combobox':
-                logger.info('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
-            return
+        if cfg.project_tab:
+            caller = inspect.stack()[1].function
+            if caller == 'onStartProject':
+                logger.warning('Canceling scale change trigger!')
+                return
+            if self._is_mp_mode == True:
+                return
+            # logger.info('caller: %s' % caller)
+            if self._scales_combobox_switch == 0:
+                if inspect.stack()[1].function != 'reload_scales_combobox':
+                    logger.info('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
+                return
 
-        new_scale = self._changeScaleCombo.currentText()
-        cfg.data.set_scale(new_scale)
-        self.onScaleChange()
+            new_scale = self._changeScaleCombo.currentText()
+            cfg.data.set_scale(new_scale)
+            self.onScaleChange()
 
     # def ng_layout_switch(self, key):
     #     caller = inspect.stack()[1].function
@@ -1718,20 +1707,29 @@ class MainWindow(QMainWindow):
 
     def fn_ng_layout_combobox(self) -> None:
         caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
+
+        if self._ng_layout_switch == 0:
+            return
+
         if caller == 'onStartProject':
             return
         if not cfg.data:
-            logger.info('Cant change layout, no data is loaded')
-            return
+            if not cfg.project_tab:
+                if not cfg.zarr_tab:
+                    logger.info('Cant change layout, no data is loaded')
+                    return
 
-        if cfg.project_tab._tabs.currentIndex() != 0:
-            return
+        choice = self._cmbo_ngLayout.currentText()
+
+        if cfg.project_tab:
+            cfg.project_tab.ng_layout = choice
+
+        if cfg.zarr_tab:
+            cfg.zarr_tab.ng_layout = choice
 
         try:
-            choice = self._cmbo_ngLayout.currentText()
-            cfg.project_tab.ng_layout = choice
             self.hud("Setting Neuroglancer Layout ['%s']... " % choice)
-
             layout_actions = {
                 'xy': self.ngLayout1Action,
                 'yz': self.ngLayout2Action,
@@ -1743,9 +1741,18 @@ class MainWindow(QMainWindow):
                 '4panel': self.ngLayout8Action
             }
             layout_actions[choice].setChecked(True)
-            # self.refreshNeuroglancerURL()
-            cfg.project_tab.updateNeuroglancer()
+
+            if cfg.project_tab:
+                cfg.project_tab.initNeuroglancer()
+            elif cfg.zarr_tab:
+                # cfg.ng_worker.initViewer()
+                cfg.zarr_tab.initNeuroglancer()
+
+            # if cfg.project_tab:
+            #     cfg.project_tab.updateNeuroglancer()
+                # cfg.project_tab.refreshNeuroglancerURL()
         except:
+            print_exception()
             logger.error('Unable To Change Neuroglancer Layout')
 
 
@@ -1880,13 +1887,8 @@ class MainWindow(QMainWindow):
                 print_exception()
         else:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
-
-
         self.onStartProject()
-        # cfg.project_tab.openViewZarr()
-
         cfg.project_tab.initNeuroglancer()
-
         self._autosave()
 
 
@@ -1948,9 +1950,27 @@ class MainWindow(QMainWindow):
         # self._forceHideControls()
         # self._forceHidePython()
 
+        self._set_align_status_label_visibility()
         if exist_aligned_zarr_cur_scale():
             self.updateStatusTips()
             self._runSNRcheck()
+
+
+    def updateToolbar(self):
+        self.label_toolbar_resolution.show()
+        if cfg.project_tab:
+            # img_size = cfg.data.image_size(s=cfg.data.curScale)
+            # self.label_toolbar_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
+            self.label_toolbar_resolution.setText(f'{cfg.unal_tensor.shape}')
+        elif cfg.zarr_tab:
+            self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
+
+
+
+    def set_nglayout_combo_text(self, layout:str):
+        cfg.main_window._ng_layout_switch = 0
+        cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
+        cfg.main_window._ng_layout_switch = 1
 
 
     def onStartProject(self):
@@ -1960,23 +1980,20 @@ class MainWindow(QMainWindow):
 
         cfg.data.update_cache()
         self._sectionSlider.setRange(0, cfg.data.nSections - 1)
-
-
         self._scales_combobox_switch = 0
+        self._changeScaleCombo.show()
         self.reload_scales_combobox()
         self._changeScaleCombo.setCurrentText(cfg.data.curScale)
-        self._cmbo_ngLayout.setCurrentText(cfg.project_tab.ng_layout)
         self._scales_combobox_switch = 1
-
+        self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)
         self.dataUpdateWidgets()
         self.updateStatusTips()
         self.updateHistoryListWidget()
         self.updateEnabledButtons()
         self.enableGlobalButtons()
         self._updateJumpToValidator()  # future changes to import_multiple_images will require refactoring this
-        ng_layouts = ['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
+        ng_layouts = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         self._cmbo_ngLayout.addItems(ng_layouts) # only doing this here so combo is empty on application open
-
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
         self._showToolWidgets()
         # self.initNgServer() #0103-
@@ -2689,7 +2706,7 @@ class MainWindow(QMainWindow):
 
 
     def set_shader_none(self):
-        cfg.SHADER = None
+        cfg.SHADER = ''
         cfg.project_tab.updateNeuroglancer()
 
 
@@ -2783,7 +2800,7 @@ class MainWindow(QMainWindow):
         '''NG arrangement/layout combobox'''
         self._cmbo_ngLayout = QComboBox()
         self._cmbo_ngLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._cmbo_ngLayout.setFixedSize(QSize(64, height))
+        self._cmbo_ngLayout.setFixedSize(QSize(76, height))
         self._cmbo_ngLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -2805,12 +2822,35 @@ class MainWindow(QMainWindow):
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
+        self.label_toolbar_resolution = QLabel('[dims]')
+        self.label_toolbar_resolution.setObjectName('label_toolbar_resolution')
+        self.label_toolbar_resolution.setFixedHeight(20)
+        self.label_toolbar_resolution.hide()
+
+        self.aligned_label = QLabel(' Aligned ')
+        self.aligned_label.setObjectName('aligned_label')
+        self.aligned_label.setFixedHeight(20)
+        self.aligned_label.hide()
+
+        self.unaligned_label = QLabel(' Not Aligned ')
+        self.unaligned_label.setObjectName('unaligned_label')
+        self.unaligned_label.setFixedHeight(20)
+        self.unaligned_label.hide()
+        self._al_unal_label_widget = QWidget()
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self.label_toolbar_resolution)
+        hbl.addWidget(self.aligned_label)
+        hbl.addWidget(self.unaligned_label)
+        self._al_unal_label_widget.setLayout(hbl)
+
+
         # self.toolbar.addWidget(self._btn_view0)
         # self.toolbar.addWidget(self._btn_view1)
         # self.toolbar.addWidget(self._btn_view2)
 
         self.toolbar.addWidget(self._arrangeRadio)
-        # self.toolbar.addWidget(self._sectionSlider)
+        self.toolbar.addWidget(self._al_unal_label_widget)
         self.toolbar.addWidget(w)
         self.toolbar.addWidget(self._jumpToSectionWidget)
         self.toolbar.addWidget(self._sectionSlider)
@@ -2874,32 +2914,41 @@ class MainWindow(QMainWindow):
                     cfg.data = self._tabsGlob.currentWidget().datamodel
                     cfg.project_tab = self._tabsGlob.currentWidget()
                     cfg.zarr_tab = None
+                    self._changeScaleCombo.show()
+                    self.reload_scales_combobox()
                     self._ID = id(cfg.project_tab.datamodel)
                     self._key = cfg.project_tab.key
                     self._path = cfg.project_tab.path
-                    self.reload_scales_combobox()
                     self.rb0.show()
                     self.rb1.show()
                     self.rb2.show()
+                    self.label_toolbar_resolution.show()
+                    self.dataUpdateWidgets()
+                    self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)  # must be before initNeuroglancer
                     cfg.project_tab.initNeuroglancer()
+                    self._set_align_status_label_visibility()
                 else:
-                    logger.info('Loading Zarr Tab...')
                     cfg.data = None
                     cfg.project_tab = None
-                    cfg.zarr_tab = self._tabsGlob.currentWidget()
                     self._ID = None
                     self._key = None
                     self._path = None
                     self.rb0.hide()
                     self.rb1.hide()
                     self.rb2.hide()
+                    self._changeScaleCombo.hide()
+                    self.aligned_label.hide()
+                    self.unaligned_label.hide()
                     self._changeScaleCombo.clear()
-                   # self._jumpToLineedit.set
-                    cfg.zarr_tab.initNeuroglancer()
 
                 if self._isZarrTab():
-                    logger.info(f'Switched to a Zarr tab...')
+                    logger.info('Loading Zarr Tab...')
+                    cfg.zarr_tab = self._tabsGlob.currentWidget()
+                    self.set_nglayout_combo_text(layout=cfg.zarr_tab.ng_layout)  # must be before initNeuroglancer
+                    cfg.zarr_tab.initNeuroglancer()
+                    self.label_toolbar_resolution.show()
 
+                # self.updateToolbar()
                 self._updateJumpToValidator()
         self.set_idle()
         self._cur_tab_index = self._tabsGlob.currentIndex()
