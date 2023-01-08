@@ -2337,10 +2337,6 @@ class MainWindow(QMainWindow):
 
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
-            logger.info('Deleting Viewer...')
-            # self.tell('Deleting Viewer...')
-            # del cfg.viewer
-
             logger.info('Stopping Neuroglancer...')
             self.tell('Stopping Neuroglancer...')
             try:
