@@ -490,6 +490,7 @@ def get_img_filenames(path) -> list[str]:
     logger.debug('Returning: %s' % str(imgs))
     return natural_sort(imgs)
 
+
 def rename_layers(use_scale, al_dict):
     logger.info('rename_layers:')
     source_dir = os.path.join(cfg.data.dest(), use_scale, "img_src")
@@ -504,7 +505,6 @@ def rename_layers(use_scale, al_dict):
             except:
                 logger.warning('Something went wrong with renaming the alignment layers')
                 pass
-
 
 
 def verify_image_file(path: str) -> str:

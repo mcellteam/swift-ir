@@ -233,14 +233,14 @@ class ConfigAppDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        tsWidget = QWidget()
-        tsLayout = QHBoxLayout()
-        tsLayout.setContentsMargins(4, 2, 4, 2)
-        tsWidget.setLayout(tsLayout)
-        self.tsCheckbox = QCheckBox()
-        self.tsCheckbox.setChecked(cfg.USE_TENSORSTORE)
-        tsLayout.addWidget(QLabel('Enable Tensorstore Backend: '))
-        tsLayout.addWidget(self.tsCheckbox, alignment=Qt.AlignRight)
+        # tsWidget = QWidget()
+        # tsLayout = QHBoxLayout()
+        # tsLayout.setContentsMargins(4, 2, 4, 2)
+        # tsWidget.setLayout(tsLayout)
+        # self.tsCheckbox = QCheckBox()
+        # self.tsCheckbox.setChecked(cfg.USE_TENSORSTORE)
+        # tsLayout.addWidget(QLabel('Enable Tensorstore Backend: '))
+        # tsLayout.addWidget(self.tsCheckbox, alignment=Qt.AlignRight)
 
         headlessWidget = QWidget()
         headlessLayout = QHBoxLayout()
@@ -305,7 +305,7 @@ class ConfigAppDialog(QDialog):
             layout.addWidget(environLabel)
 
 
-        layout.addWidget(tsWidget)
+        # layout.addWidget(tsWidget)
         layout.addWidget(headlessWidget)
         layout.addWidget(ngdebugWidget)
         layout.addWidget(mpdebugWidget)

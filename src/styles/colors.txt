@@ -3,14 +3,17 @@
 #f3f6fb - New Snow White (https://www.color-name.com/snow-white.color)
 #004060 - drafting blue
 #808080 - #128 grey
-#2774ae - UCLA Blue
-#ffd100 - UCLA Gold
-#8bb8e8 - UCLA Lighter Blue
-#daebfe - UCLA Lightest Blue
-#003b5c - UCLA Darkest Blue
+
+#2774ae - Blue
+#ffd100 - Gold
+#8bb8e8 - Lighter Blue
+#daebfe - Lightest Blue
+#003b5c - Darkest Blue
+
 (https://brand.ucla.edu/identity/colors)
 
 #ebecf0 - "bright" grey
 #ffcccb - very light red
 #ede9e8 - my dirty white
 #708090 - (light) slate grey
+#39ff14 - neon green

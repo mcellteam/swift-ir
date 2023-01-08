@@ -32,7 +32,10 @@ class ZarrTab(QWidget):
         self.shape = None
         self.nSections = None
         self.chunkshape = None
-        self.ng_layout = 'xy'
+        self.ng_layout = '4panel'
+        cfg.main_window._ng_layout_switch = 0
+        cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
+        cfg.main_window._ng_layout_switch = 1
         self.initUI()
         self._fb.getOpenButton().clicked.connect(self.openViewZarr)
 

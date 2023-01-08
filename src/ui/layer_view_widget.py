@@ -44,7 +44,7 @@ class LayerViewWidget(QWidget):
         self.table_view.setSelectionBehavior(QTableView.SelectRows)
 
         self.row_height_slider = Slider(min=4, max=120)
-        self.row_height_slider.setMaximumWidth(100)
+        self.row_height_slider.setMaximumWidth(128)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateRowHeight)
         self.row_height_widget = QWidget()

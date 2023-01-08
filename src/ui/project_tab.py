@@ -33,7 +33,12 @@ class ProjectTab(QWidget):
         self.parent = parent
         self.path = path
         self.datamodel = datamodel
-        self.ng_layout = 'xy'
+        # self.ng_layout = 'xy'
+        self.ng_layout = '4panel'
+        cfg.main_window._ng_layout_switch = 0
+        cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
+        cfg.main_window._ng_layout_switch = 1
+
         self.initUI_Neuroglancer()
         self.initUI_details()
         self.initUI_JSON()
@@ -86,6 +91,7 @@ class ProjectTab(QWidget):
     def initUI_Neuroglancer(self):
         '''NG Browser'''
         logger.info('')
+
         self.ng_browser = QWebEngineView()
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
