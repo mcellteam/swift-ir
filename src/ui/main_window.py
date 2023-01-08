@@ -296,6 +296,7 @@ class MainWindow(QMainWindow):
         self._layout = 1
         self._scales_combobox_switch = 0 #1125
         self._ng_layout_switch = 1 #1125
+        self._section_slider_switch = 1
         self._jump_to_worst_ticker = 1  # begin iter at 1 b/c first image has no ref
         self._jump_to_best_ticker = 0
         self._snr_by_scale = dict() #Todo
@@ -1515,11 +1516,21 @@ class MainWindow(QMainWindow):
         return layer
 
 
-    def _updateJumpToValidator(self):
+    def _resetSliderAndJumpInput(self):
         # logger.info('Setting validators...')
-        if self._isProjectTab():
+        if cfg.project_tab:
             self._jumpToLineedit.setValidator(QIntValidator(0, cfg.data.nSections - 1))
             self._sectionSlider.setRange(0, cfg.data.nSections - 1)
+            self._section_slider_switch = 0
+            self._sectionSlider.setValue(cfg.data.nSections)
+            self._section_slider_switch = 1
+        if cfg.zarr_tab:
+            self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
+            self._jumpToLineedit.setText(str(0))
+            self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
+            self._section_slider_switch = 0
+            self._sectionSlider.setValue(0)
+            self._section_slider_switch = 1
 
 
     def printActiveThreads(self):
@@ -1574,33 +1585,34 @@ class MainWindow(QMainWindow):
 
 
     def jump_to_slider(self):
-        caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        if caller == 'dataUpdateWidgets':
-            return
-        if not cfg.project_tab:
-            if not cfg.zarr_tab:
+        if self._section_slider_switch:
+            caller = inspect.stack()[1].function
+            if caller == 'dataUpdateWidgets':
                 return
-        requested = self._sectionSlider.value()
-        cfg.data.set_layer(requested)
-        cfg.ng_worker._layer = requested
-        # logger.info(f'slider, requested: {requested}')
+            if not cfg.project_tab:
+                if not cfg.zarr_tab:
+                    return
+            # logger.info(f'caller: {caller}')
+            requested = self._sectionSlider.value()
+            cfg.data.set_layer(requested)
+            cfg.ng_worker._layer = requested
+            # logger.info(f'slider, requested: {requested}')
 
-        if cfg.project_tab:
-            if requested in range(cfg.data.n_layers()):
-                if cfg.project_tab._tabs.currentIndex() == 0:
-                    logger.info('Jumping To Section #%d' % requested)
-                    state = copy.deepcopy(cfg.viewer.state)
-                    state.position[0] = requested
-                    cfg.viewer.set_state(state)
+            if cfg.project_tab:
+                if requested in range(cfg.data.n_layers()):
+                    if cfg.project_tab._tabs.currentIndex() == 0:
+                        logger.info('Jumping To Section #%d' % requested)
+                        state = copy.deepcopy(cfg.viewer.state)
+                        state.position[0] = requested
+                        cfg.viewer.set_state(state)
 
-        if cfg.zarr_tab:
-            state = copy.deepcopy(cfg.viewer.state)
-            state.position[0] = requested
-            cfg.viewer.set_state(state)
+            if cfg.zarr_tab:
+                state = copy.deepcopy(cfg.viewer.state)
+                state.position[0] = requested
+                cfg.viewer.set_state(state)
 
-        try:     self._jumpToLineedit.setText(str(requested))
-        except:  logger.warning('Current Layer Widget Failed to Update')
+            try:     self._jumpToLineedit.setText(str(requested))
+            except:  logger.warning('Current Layer Widget Failed to Update')
 
 
     def jump_to_worst_snr(self) -> None:
@@ -1816,6 +1828,7 @@ class MainWindow(QMainWindow):
 
     def new_project(self, mendenhall=False):
         logger.critical('Starting A New Project...')
+        self.tell('Starting A New Project...')
         if cfg.project_tab:
             logger.info('Data is not None. Asking user to confirm new data...')
             msg = QMessageBox(QMessageBox.Warning,
@@ -1900,7 +1913,7 @@ class MainWindow(QMainWindow):
     def open_project(self):
         #Todo check for Zarr. Generate/Re-generate if necessary
         logger.critical('Opening A Project...')
-        self.tell('Open Project Path:')
+        self.tell('Opening A Project...')
         # self.shutdownNeuroglancer()
         cfg.main_window.set_status('Awaiting User Input...')
         filename = open_project_dialog()
@@ -1915,8 +1928,9 @@ class MainWindow(QMainWindow):
             with open(filename, 'r') as f:
                 cfg.data = DataModel(data=json.load(f))
         except:
+            self.tell(f'No Such File Found: {filename}')
+            logger.warning(f'No Such File Found: {filename}')
             cfg.main_window.set_idle()
-            print_exception()
             return
         else:
             logger.info(f'Project Opened! Unique Key: {unique_key}')
@@ -1933,6 +1947,8 @@ class MainWindow(QMainWindow):
         self.onStartProject()
 
         tab_name = os.path.basename(cfg.data.dest() + '.proj')
+        # mic_icon = qta.icon('ph.microphone-fill')
+        # self._tabsGlob.addTab(cfg.project_tab, mic_icon, tab_name) # <-- this works
         self._tabsGlob.addTab(cfg.project_tab, tab_name)
         cfg.increasing_tab_counter += 1  # increment after successful tab creation
         # cfg.project_tab.initNeuroglancer()
@@ -1942,6 +1958,10 @@ class MainWindow(QMainWindow):
         # self._forceHideControls()
         # self._forceHidePython()
 
+        self._section_slider_switch = 0
+        self._sectionSlider.setValue(cfg.data.layer())
+        self._section_slider_switch = 1
+        self._jumpToLineedit.setText(str(cfg.data.layer()))
         self._set_align_status_label_visibility()
         if exist_aligned_zarr_cur_scale():
             self.updateStatusTips()
@@ -1987,6 +2007,8 @@ class MainWindow(QMainWindow):
 
         cfg.data.update_cache()
         self._sectionSlider.setRange(0, cfg.data.nSections - 1)
+
+
         self._scales_combobox_switch = 0
         self._changeScaleCombo.show()
         self.reload_scales_combobox()
@@ -1998,7 +2020,7 @@ class MainWindow(QMainWindow):
         self.updateHistoryListWidget()
         self.updateEnabledButtons()
         self.enableGlobalButtons()
-        self._updateJumpToValidator()  # future changes to import_multiple_images will require refactoring this
+        self._resetSliderAndJumpInput()  # future changes to import_multiple_images will require refactoring this
         ng_layouts = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         self._cmbo_ngLayout.addItems(ng_layouts) # only doing this here so combo is empty on application open
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
@@ -2953,7 +2975,7 @@ class MainWindow(QMainWindow):
                 self.label_toolbar_resolution.show()
 
             # self.updateToolbar()
-            self._updateJumpToValidator()
+            self._resetSliderAndJumpInput()
         self.set_idle()
         self._cur_tab_index = self._tabsGlob.currentIndex()
 
@@ -3966,6 +3988,13 @@ class MainWindow(QMainWindow):
 
         '''Tabs Global Widget'''
         self._tabsGlob = QTabWidget()
+        # mic_icon = qta.icon('ph.microphone-fill')
+        # self._tabsGlob.setStyleSheet('''QTabBar::close-button {
+        #      image: %s
+        #  }''' % mic_icon)
+        # self._tabsGlob.setTabIcon(mic_icon)
+        # self._tabsGlob.setCornerWidget(QLabel('test'))
+
         self._tabsGlob.setDocumentMode(True)
         self._tabsGlob.setTabsClosable(True)
         self._tabsGlob.setObjectName('_tabsGlob')
@@ -4117,7 +4146,7 @@ class MainWindow(QMainWindow):
     def initPbar(self):
         self.pbar = QProgressBar()
         self.pbar.setTextVisible(True)
-        font = QFont('Arial', 11)
+        font = QFont('Arial', 12)
         font.setBold(True)
         self.pbar.setFont(font)
         self.pbar.setFixedHeight(18)

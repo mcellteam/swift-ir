@@ -1,6 +1,20 @@
 
 
+QTabBar::tab {
+    height: 24px;
+}
 
+
+ QTabBar::close-button {
+     image: url(src/resources/close-tab.png);
+     subcontrol-position: left;
+     height: 13px;
+     width: 13px;
+ }
+
+ QTabBar::close-button:hover {
+     image: url(src/resources/close-tab-hover.png)
+ }
 
 QLabel#label_toolbar_resolution{
     font-size: 11px;
@@ -39,8 +53,6 @@ QHeaderView
 {
     color: #141414;
 }
-
-QTabBar::tab {height: 24px;}
 
 QTableWidget {
     background-color: #373b3f; /*#232629;*/

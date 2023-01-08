@@ -253,9 +253,9 @@ class NgHost(QRunnable):
 
         with cfg.viewer.txn() as s:
             adjustment = 1.04
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            s.concurrent_downloads = 512
+            # s.gpu_memory_limit = -1
+            # s.system_memory_limit = -1
+            # s.concurrent_downloads = 512
             s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines

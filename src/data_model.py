@@ -264,7 +264,7 @@ class DataModel:
             return statistics.fmean(conv_float)
         except KeyError:
             # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            logger.error(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
+            logger.warning(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
             # logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
             # cfg.main_window.warn(f'No SNR Data Available For Layer {", ".join(map(str, unavailable))}...')
             # cfg.main_window.warn(f' Name : {self.name_base(s=s, l=i)}')
