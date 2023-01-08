@@ -183,17 +183,14 @@ class NgHostSlim(QRunnable):
             except:
                 pass
 
-
-        with open(os.path.join(self.path, '.zarray')) as j:
-            self.zarray = json.load(j)
-        shape = self.zarray['shape']
+        shape = cfg.tensor.shape
 
         with cfg.viewer.txn() as s:
             s.layout.type = self.nglayout
             adjustment = 1.04
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            s.concurrent_downloads = 512
+            # s.gpu_memory_limit = -1
+            # s.system_memory_limit = -1
+            # s.concurrent_downloads = 512
             # s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = show_scale_bar
             s.show_axis_lines = show_axis_lines
@@ -207,7 +204,11 @@ class NgHostSlim(QRunnable):
                 # downsampling=None
             )
 
-            s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
+            if cfg.project_tab:
+                s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
+            else:
+                s.position = [0, shape[1] / 2, shape[2] / 2]
+
             s.layers['layer'] = ng.ImageLayer(source=cfg.LV)
 
             if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'

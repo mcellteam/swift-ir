@@ -30,8 +30,8 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries',
-           'is_destination_set','do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
+__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'is_destination_set',
+           'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
            'get_aligned_scales'
@@ -170,11 +170,6 @@ def kill_task_queue(task_queue):
 
 def show_status_report(results, dt):
     if results[2] > 0:
-        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
-        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
-        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
-        # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
-        # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
         cfg.main_window.hud(f'  Succeeded    = {results[0]}')
         if results[1] > 0:
             cfg.main_window.warning(f'  Queued       = {results[1]}')
@@ -183,11 +178,6 @@ def show_status_report(results, dt):
         cfg.main_window.err(f'  Failed       = {results[2]}')
         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
     else:
-        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
-        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
-        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
-        # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
-        # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
         cfg.main_window.hud(f'  Succeeded    = {results[0]}')
         cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.hud(f'  Failed       = {results[2]}')
@@ -460,10 +450,8 @@ class TimeoutException(Exception): pass
 
 def print_exception():
     exi = sys.exc_info()
-    logger.warning("  Exception type = " + str(exi[0]))
-    logger.warning("  Exception value = " + str(exi[1]))
-    logger.warning("  Exception trace = " + str(exi[2]))
-    logger.warning("  Exception traceback:")
+    logger.warning("  Error Type  : " + str(exi[0]))
+    logger.warning("  Error Value : " + str(exi[1]))
     logger.warning(traceback.format_exc())
     '''Pipe these into a logs directory - but where?'''
 
@@ -555,9 +543,6 @@ def create_scale_one_symlinks(src, dest, imgs):
                     shutil.copy(fn, ofn)
                 except:
                     logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-
-
-
 
 
 def create_project_structure_directories(destination, scales) -> None:
@@ -761,117 +746,7 @@ class SwiftirException:
 ZARR_AXES_3D = ["z", "y", "x"]
 DEFAULT_ZARR_STORE = zarr.NestedDirectoryStore
 
-#
-# def get_arrays(obj: Any) -> Tuple[zarr.core.Array]:
-#     result = ()
-#     if isinstance(obj, zarr.core.Array):
-#         result = (obj,)
-#     elif isinstance(obj, zarr.hierarchy.Group):
-#         if len(tuple(obj.arrays())) > 1:
-#             names, arrays = zip(*obj.arrays())
-#             result = tuple(concat(map(get_arrays, arrays)))
-#     return result
-#
-# def access_zarr(store: Union[str, Path], path: Union[str, Path], **kwargs) -> Any:
-#     if isinstance(store, Path):
-#         store = str(store)
-#
-#     if isinstance(store, str) and kwargs.get("mode") == "w":
-#         store = DEFAULT_ZARR_STORE(store)
-#
-#     if isinstance(path, Path):
-#         path = str(path)
-#
-#     attrs = kwargs.pop("attrs", {})
-#
-#     # zarr is extremely slow to delete existing directories, so we do it ourselves
-#     if kwargs.get("mode") == "w":
-#         tmp_kwargs = kwargs.copy()
-#         tmp_kwargs["mode"] = "a"
-#         tmp = zarr.open(store, path=path, **tmp_kwargs)
-#         # todo: move this logic to methods on the stores themselves
-#         if isinstance(
-#             tmp.store, (zarr.N5Store, zarr.DirectoryStore, zarr.NestedDirectoryStore)
-#         ):
-#             logger.info(f"Beginning parallel rmdir of {tmp.path}...")
-#             pre = time.time()
-#             delete_zbranch(tmp)
-#             post = time.time()
-#             logger.info(f"Completed parallel rmdir of {tmp.path} in {post - pre}s.")
-#     array_or_group = zarr.open(store, path=path, **kwargs)
-#     if kwargs.get("mode") != "r" and len(attrs) > 0:
-#         array_or_group.attrs.update(attrs)
-#     return array_or_group
-#
-# def delete_zbranch(
-#     branch: Union[zarr.hierarchy.Group, zarr.core.Array], compute: bool = True
-# ):
-#     """
-#     Delete a branch (group or array) from a zarr container
-#     """
-#     if isinstance(branch, zarr.hierarchy.Group):
-#         return delete_zgroup(branch, compute=compute)
-#     elif isinstance(branch, zarr.core.Array):
-#         return delete_zarray(branch, compute=compute)
-#     else:
-#         raise TypeError(
-#             f"The first argument to this function my be a zarr group or array, not {type(branch)}"
-#         )
-#
-# def delete_zgroup(zgroup: zarr.hierarchy.Group, compute: bool = True):
-#     """
-#     Delete all arrays in a zarr group
-#     """
-#     if not isinstance(zgroup, zarr.hierarchy.Group):
-#         raise TypeError(
-#             f"Cannot use the delete_zgroup function on object of type {type(zgroup)}"
-#         )
-#
-#     arrays = get_arrays(zgroup)
-#     to_delete = delayed([delete_zarray(arr, compute=False) for arr in arrays])
-#
-#     if compute:
-#         return to_delete.compute()
-#     else:
-#         return to_delete
-#
-#
-# def delete_zarray(arr: zarr.core.Array, compute: bool = True):
-#     """
-#     Delete a zarr array.
-#     """
-#
-#     if not isinstance(arr, zarr.core.Array):
-#         raise TypeError(
-#             f"Cannot use the delete_zarray function on object of type {type(arr)}"
-#         )
-#
-#     keys = map(lambda v: os.path.join(arr.chunk_store.path, v), arr.chunk_store.keys())
-#     key_bag = bag.from_sequence(keys)
-#     delete_op = key_bag.map_partitions(lambda v: [os.remove(f) for f in v])
-#     if compute:
-#         return delete_op.compute()
-#     else:
-#         return delete_op
-#
-# def zarr_array_from_dask(arr: Any) -> Any:
-#     """
-#     Return the zarr array that was used to create a dask array using `da.from_array(zarr_array)`
-#     """
-#     keys = tuple(arr.dask.keys())
-#     return arr.dask[keys[-1]]
 
-# def zarr_to_dask(urlpath: str, chunks: Union[str, Sequence[int]], **kwargs):
-#     store_path, key, _ = split_by_suffix(urlpath, (".zarr",))
-#     arr = access_zarr(store_path, key, mode="r", **kwargs)
-#     if not hasattr(arr, "shape"):
-#         raise ValueError(f"{store_path}/{key} is not a zarr array")
-#     if chunks == "original":
-#         _chunks = arr.chunks
-#     else:
-#         _chunks = chunks
-#     darr = da.from_array(arr, chunks=_chunks, inline_array=True)
-#     return darr
 
 def create_paged_tiff():
     dest = cfg.data.dest()
@@ -884,6 +759,8 @@ def create_paged_tiff():
     image_sequence.shape
     Out[29]: (34, 4096, 4096)
     '''
+
+
 #
 # # @delayed
 # def _rmtree_after_delete_files(path: str, dependency: Any):

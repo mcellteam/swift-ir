@@ -199,8 +199,10 @@ class ProjectTab(QWidget):
         vbl.addLayout(hbl)
         vbl.addWidget(self._plot_Xaxis, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.snr_plot_widget.setLayout(vbl)
-
-        self.snr_plot.initSnrPlot() #To set up some basic plot characteristics
+        try:
+            self.snr_plot.initSnrPlot() #To set up some basic plot characteristics
+        except:
+            pass
 
 
     def initUI_tab_widget(self):

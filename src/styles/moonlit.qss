@@ -36,7 +36,7 @@ QLabel#unaligned_label{
 }
 
 QTabBar::tab {
-	height: 20px;
+	height: 22px;
 }
 
 QTabWidget#main_tab_widget{
