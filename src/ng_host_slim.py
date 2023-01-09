@@ -106,6 +106,7 @@ class NgHostSlim(QRunnable):
         if resolution == None:
             self.resolution = (50, 2, 2)
         self.signals = WorkerSignals()
+        self.mp_mode = False
 
     def __del__(self):
         try:

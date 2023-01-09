@@ -8,16 +8,23 @@ QWidget#self._tool_keyBindings{
     font-size: 11px;
 }
 
-
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);
      subcontrol-position: left;
      height: 13px;
      width: 13px;
  }
-
  QTabBar::close-button:hover {
      image: url(src/resources/close-tab-hover.png)
+ }
+
+ QLabel#extra_header_text_label{
+     font-size: 11px;
+     color: #1b1e23;
+     font-weight: 550;
+     background-color: #f3f6fb;
+     border-radius: 5px;
+     border: 1px solid #808080;
  }
 
 QLabel#label_toolbar_resolution{

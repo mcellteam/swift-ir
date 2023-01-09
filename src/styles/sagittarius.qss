@@ -1,4 +1,7 @@
 
+QWidget#self._tool_keyBindings{
+    font-size: 11px;
+}
 QLabel#label_toolbar_resolution{
     font-size: 11px;
     color: #1b1e23;

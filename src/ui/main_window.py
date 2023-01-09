@@ -966,6 +966,7 @@ class MainWindow(QMainWindow):
             self._autosave()
             self.tell('Rescaling Successful')
         finally:
+            self.pbar_widget.hide()
             self._enableAllTabs()
             self.onStartProject()
             self.set_idle()
@@ -2021,6 +2022,11 @@ class MainWindow(QMainWindow):
         elif cfg.zarr_tab:
             self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
 
+        # if cfg.ng_worker.mp_mode:
+        #     self.extra_header_text_label.show()
+        # else:
+        #     self.extra_header_text_label.hide()
+
 
 
     def set_nglayout_combo_text(self, layout:str):
@@ -2643,18 +2649,30 @@ class MainWindow(QMainWindow):
                 self._ctl_panel.hide()
                 self._matchpt_ctls.show()
                 self.update_match_point_snr()
+                self.extra_header_text_label.show()
                 self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
                 self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
+                self.set_nglayout_combo_text(layout='xy')
+                self.set_nglayout_combo_text(layout='xy')
+                self.rb1.setChecked(True)
+                self.rb0.setEnabled(False)
+                self.extra_header_text_label.show()
+                cfg.project_tab.updateNeuroglancer(matchpoint=True)
 
             else:
                 logger.info('\nExiting Match Point Mode...')
                 self.tell('Exiting Match Point Mode...')
                 self._is_mp_mode = False
                 self._changeScaleCombo.setEnabled(True)
-                self.extra_header_text_label.setText('')
-                # self.updateSkipMatchWidget()
+                # self.extra_header_text_label.setText('')
+                self.extra_header_text_label.hide()
+                self.rb0.setEnabled(True)
+                # self.updateSkipMatchWidget()s
                 self.initView()
-            cfg.project_tab.updateNeuroglancer()
+                cfg.project_tab.updateNeuroglancer(matchpoint=False)
+
+            self.updateToolbar()
+            # cfg.project_tab.updateNeuroglancer()
 
 
     def update_match_point_snr(self):
@@ -2901,12 +2919,20 @@ class MainWindow(QMainWindow):
         self.unaligned_label.setObjectName('unaligned_label')
         self.unaligned_label.setFixedHeight(20)
         self.unaligned_label.hide()
+
+
+        self.extra_header_text_label = QLabel('Match Point Mode')
+        self.extra_header_text_label.setObjectName('extra_header_text_label')
+        self.extra_header_text_label.setFixedHeight(20)
+        self.extra_header_text_label.hide()
+
         self._al_unal_label_widget = QWidget()
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.label_toolbar_resolution)
         hbl.addWidget(self.aligned_label)
         hbl.addWidget(self.unaligned_label)
+        hbl.addWidget(self.extra_header_text_label)
         self._al_unal_label_widget.setLayout(hbl)
 
 
@@ -3008,6 +3034,7 @@ class MainWindow(QMainWindow):
                 self.aligned_label.hide()
                 self.unaligned_label.hide()
                 self._changeScaleCombo.clear()
+                self.extra_header_text_label.hide()
 
             if self._isZarrTab():
                 logger.info('Loading Zarr Tab...')

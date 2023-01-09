@@ -10,6 +10,20 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
+QWidget#self._tool_keyBindings{
+    font-size: 11px;
+}
+
+ QTabBar::close-button {
+     image: url(src/resources/close-tab.png);
+     subcontrol-position: left;
+     height: 13px;
+     width: 13px;
+ }
+ QTabBar::close-button:hover {
+     image: url(src/resources/close-tab-hover.png)
+ }
+
 QLabel#label_toolbar_resolution{
     font-size: 11px;
     color: #1b1e23;
