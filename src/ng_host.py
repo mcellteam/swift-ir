@@ -224,7 +224,7 @@ class NgHost(QRunnable):
         if widget_size is None:
             widget_size = cfg.project_tab.geometry().getRect()
         # widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
-        widget_height = widget_size[3] - 40 # subtract pixel height of Neuroglancer toolbar
+        widget_height = widget_size[3] - 54 # subtract pixel height of Neuroglancer toolbar
 
         if self.arrangement == 1:
             if is_aligned: widget_width = widget_size[2] / 3
@@ -407,6 +407,7 @@ class NgHost(QRunnable):
             if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
                                % (coords[1], coords[2], bounds[0], bounds[1]))
+                return
         except:
             # print_exception()
             logger.error('ERROR')
