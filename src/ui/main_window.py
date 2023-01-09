@@ -148,9 +148,9 @@ class MainWindow(QMainWindow):
 
     def set_viewer_layout_0(self):
         if cfg.project_tab:
-            self._ng_layout_switch = 0
+            # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('4panel')
-            self._ng_layout_switch = 1
+            # self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 0
             cfg.project_tab._tabs.setCurrentIndex(0)
             cfg.project_tab.initNeuroglancer()
@@ -158,9 +158,9 @@ class MainWindow(QMainWindow):
 
     def set_viewer_layout_1(self):
         if cfg.project_tab:
-            self._ng_layout_switch = 0
+            # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('xy')
-            self._ng_layout_switch = 1
+            # self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 1
             cfg.project_tab._tabs.setCurrentIndex(0)
             cfg.project_tab.initNeuroglancer()
@@ -168,9 +168,9 @@ class MainWindow(QMainWindow):
 
     def set_viewer_layout_2(self):
         if cfg.project_tab:
-            self._ng_layout_switch = 0
+            # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('xy')
-            self._ng_layout_switch = 1
+            # self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 2
             cfg.project_tab._tabs.setCurrentIndex(0)
             cfg.project_tab.initNeuroglancer()
@@ -1751,55 +1751,57 @@ class MainWindow(QMainWindow):
 
 
     def fn_ng_layout_combobox(self) -> None:
-        if self._ng_layout_switch == 0:
-            return
 
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
 
-        if caller == 'onStartProject':
+        if self._ng_layout_switch == 0:
             return
-        if not cfg.data:
-            if not cfg.project_tab:
-                if not cfg.zarr_tab:
-                    logger.info('Cant change layout, no data is loaded')
-                    return
+        if caller == 'main':
 
-        choice = self._cmbo_ngLayout.currentText()
+            if caller == 'onStartProject':
+                return
+            if not cfg.data:
+                if not cfg.project_tab:
+                    if not cfg.zarr_tab:
+                        logger.info('Cant change layout, no data is loaded')
+                        return
 
-        if cfg.project_tab:
-            cfg.project_tab.ng_layout = choice
-
-        if cfg.zarr_tab:
-            cfg.zarr_tab.ng_layout = choice
-
-        try:
-            self.hud("Setting Neuroglancer Layout ['%s']... " % choice)
-            layout_actions = {
-                'xy': self.ngLayout1Action,
-                'yz': self.ngLayout2Action,
-                'xz': self.ngLayout3Action,
-                'xy-3d': self.ngLayout4Action,
-                'yz-3d': self.ngLayout5Action,
-                'xz-3d': self.ngLayout6Action,
-                '3d': self.ngLayout7Action,
-                '4panel': self.ngLayout8Action
-            }
-            layout_actions[choice].setChecked(True)
+            choice = self._cmbo_ngLayout.currentText()
 
             if cfg.project_tab:
-                # cfg.project_tab.initNeuroglancer()
-                cfg.project_tab.updateNeuroglancer()
-            elif cfg.zarr_tab:
-                # cfg.ng_worker.initViewer()
-                cfg.zarr_tab.updateNeuroglancer()
+                cfg.project_tab.ng_layout = choice
 
-            # if cfg.project_tab:
-            #     cfg.project_tab.updateNeuroglancer()
-                # cfg.project_tab.refreshNeuroglancerURL()
-        except:
-            print_exception()
-            logger.error('Unable To Change Neuroglancer Layout')
+            if cfg.zarr_tab:
+                cfg.zarr_tab.ng_layout = choice
+
+            try:
+                self.hud("Setting Neuroglancer Layout ['%s']... " % choice)
+                layout_actions = {
+                    'xy': self.ngLayout1Action,
+                    'yz': self.ngLayout2Action,
+                    'xz': self.ngLayout3Action,
+                    'xy-3d': self.ngLayout4Action,
+                    'yz-3d': self.ngLayout5Action,
+                    'xz-3d': self.ngLayout6Action,
+                    '3d': self.ngLayout7Action,
+                    '4panel': self.ngLayout8Action
+                }
+                layout_actions[choice].setChecked(True)
+
+                if cfg.project_tab:
+                    # cfg.project_tab.initNeuroglancer()
+                    cfg.project_tab.updateNeuroglancer()
+                elif cfg.zarr_tab:
+                    # cfg.ng_worker.initViewer()
+                    cfg.zarr_tab.updateNeuroglancer()
+
+                # if cfg.project_tab:
+                #     cfg.project_tab.updateNeuroglancer()
+                    # cfg.project_tab.refreshNeuroglancerURL()
+            except:
+                print_exception()
+                logger.error('Unable To Change Neuroglancer Layout')
 
 
 
@@ -1915,8 +1917,8 @@ class MainWindow(QMainWindow):
             try:
                 self.import_multiple_images()
             except:
-                print_exception()
                 logger.warning('Import Images Dialog Was Canceled - Returning')
+                self.warn('Canceling New Project')
                 return
 
             recipe_dialog = ConfigProjectDialog(parent=self)
@@ -2014,13 +2016,23 @@ class MainWindow(QMainWindow):
 
 
     def updateToolbar(self):
-        self.label_toolbar_resolution.show()
+        caller = inspect.stack()[1].function
+
+
         if cfg.project_tab:
             # img_size = cfg.data.image_size(s=cfg.data.curScale)
             # self.label_toolbar_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
             self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
+            self.label_toolbar_resolution.show()
+            if cfg.data.is_aligned():
+                self.rb1.setText('Ref | Base | Aligned')
+            else:
+                self.rb1.setText('Ref | Base')
         elif cfg.zarr_tab:
             self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
+            self.label_toolbar_resolution.show()
+        else:
+            self.label_toolbar_resolution.hide()
 
         # if cfg.ng_worker.mp_mode:
         #     self.extra_header_text_label.show()
@@ -2173,6 +2185,11 @@ class MainWindow(QMainWindow):
         role = 'base'
 
         filenames = natural_sort(import_images_dialog())
+
+        if not filenames:
+            logger.warning('No Images Were Selected')
+            self.warn('No Images Were Selected')
+            return 1
 
         cfg.data.set_source_path(os.path.dirname(filenames[0])) #Critical!
         if clear_role:
@@ -2639,6 +2656,13 @@ class MainWindow(QMainWindow):
 
     def enterExitMatchPointMode(self):
         logger.info('enterExitMatchPointMode:')
+        if not cfg.data:
+            return
+        if not cfg.data.is_aligned():
+            logger.warning('Cannot enter match point mode until the series is aligned.')
+            self.warn('Cannot enter match point mode until the series is aligned.')
+            return
+
         if cfg.project_tab:
             if self._is_mp_mode == False:
                 logger.info('\nEntering Match Point Mode...')
@@ -2648,17 +2672,18 @@ class MainWindow(QMainWindow):
                 self.extra_header_text_label.setText('Match Point Mode')
                 self._ctl_panel.hide()
                 self._matchpt_ctls.show()
-                self.update_match_point_snr()
+                if cfg.data.is_aligned():
+                    self.update_match_point_snr()
                 self.extra_header_text_label.show()
                 self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
                 self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
-                self.set_nglayout_combo_text(layout='xy')
-                self.set_nglayout_combo_text(layout='xy')
                 self.rb1.setChecked(True)
                 self.rb0.setEnabled(False)
                 self.extra_header_text_label.show()
-                cfg.project_tab.updateNeuroglancer(matchpoint=True)
-
+                # cfg.project_tab.ng_layout = 'xy'
+                cfg.project_tab.arrangement = 1
+                cfg.project_tab.updateNeuroglancer(matchpoint=True, layout='xy')
+                # self.set_viewer_layout_1()
             else:
                 logger.info('\nExiting Match Point Mode...')
                 self.tell('Exiting Match Point Mode...')
@@ -2666,10 +2691,17 @@ class MainWindow(QMainWindow):
                 self._changeScaleCombo.setEnabled(True)
                 # self.extra_header_text_label.setText('')
                 self.extra_header_text_label.hide()
+                self._ctl_panel.show()
                 self.rb0.setEnabled(True)
                 # self.updateSkipMatchWidget()s
                 self.initView()
-                cfg.project_tab.updateNeuroglancer(matchpoint=False)
+                cfg.project_tab.ng_layout = '4panel'
+                cfg.project_tab.arrangement = 0
+                self.rb0.setChecked(True)
+                # cfg.project_tab.updateNeuroglancer(matchpoint=False, layout='4panel')
+                cfg.project_tab.initNeuroglancer(layout='4panel', matchpoint=False)
+                # self.set_viewer_layout_0()
+
 
             self.updateToolbar()
             # cfg.project_tab.updateNeuroglancer()
@@ -2817,8 +2849,6 @@ class MainWindow(QMainWindow):
         self._btn_refreshNg.clicked.connect(self.restartNg)
         self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
 
-
-
         self.toolbar = QToolBar()
         self.toolbar.setFixedHeight(40)
         self.toolbar.setObjectName('toolbar')
@@ -2829,7 +2859,7 @@ class MainWindow(QMainWindow):
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.toggled.connect(self.set_viewer_layout_0)
 
-        self.rb1 = QRadioButton('Ref|Base|Aligned')
+        self.rb1 = QRadioButton('Ref | Base')
         # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
         self.rb1.setChecked(False)
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3043,7 +3073,7 @@ class MainWindow(QMainWindow):
                 cfg.zarr_tab.initNeuroglancer()
                 self.label_toolbar_resolution.show()
 
-            # self.updateToolbar()
+            self.updateToolbar()
             self._resetSliderAndJumpInput()
         self.set_idle()
         self._cur_tab_index = self._tabsGlob.currentIndex()
@@ -3518,9 +3548,9 @@ class MainWindow(QMainWindow):
         self.swiftirExamplesAction.triggered.connect(self.view_swiftir_examples)
         swiftirMenu.addAction(self.swiftirExamplesAction)
 
-        self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
-        self.reloadBrowserAction.triggered.connect(self.browser_reload)
-        helpMenu.addAction(self.reloadBrowserAction)
+        # self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
+        # self.reloadBrowserAction.triggered.connect(self.browser_reload)
+        # helpMenu.addAction(self.reloadBrowserAction)
 
         self.googleAction = QAction('Google', self)
         self.googleAction.triggered.connect(self.google)
@@ -3995,11 +4025,13 @@ class MainWindow(QMainWindow):
         self.mp_marker_lineweight_spinbox.valueChanged.connect(self.set_mp_marker_lineweight)
 
         self.exit_matchpoint_button = QPushButton('Exit')
+        self.exit_matchpoint_button.setStatusTip('Exit Match Point Mode')
         self.exit_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.exit_matchpoint_button.clicked.connect(self.enterExitMatchPointMode)
         self.exit_matchpoint_button.setFixedSize(normal_button_size)
 
-        self.realign_matchpoint_button = QPushButton('Realign\nLayer')
+        self.realign_matchpoint_button = QPushButton('Realign')
+        self.realign_matchpoint_button.setStatusTip('Realign The Current Layer')
         self.realign_matchpoint_button.setStyleSheet("font-size: 11px;")
         self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.realign_matchpoint_button.clicked.connect(lambda: self.align_one(scale=cfg.data.curScale))

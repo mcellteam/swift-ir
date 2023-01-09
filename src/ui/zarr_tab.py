@@ -54,8 +54,9 @@ class ZarrTab(QWidget):
         self.setLayout(vbl)
 
 
-    def initNeuroglancer(self):
-        cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
+    def initNeuroglancer(self, layout='4panel'):
+        cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
+        # cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(parent=self, project=False)
         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))

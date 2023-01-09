@@ -64,11 +64,13 @@ class ProjectTab(QWidget):
         QApplication.processEvents()
         self.repaint()
 
-    def initNeuroglancer(self):
+    def initNeuroglancer(self, layout=None, matchpoint=None):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
 
-        cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
+        if layout:
+            cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
+        # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
 
         if self.arrangement == 0:
             cfg.ng_worker = NgHostSlim(parent=self, project=True)
@@ -79,12 +81,14 @@ class ProjectTab(QWidget):
             elif self.arrangement == 2:
                 cfg.ng_worker.arrangement = 2
         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-        self.updateNeuroglancer()
+        self.updateNeuroglancer(matchpoint=matchpoint)
 
 
-    def updateNeuroglancer(self, matchpoint=None):
+    def updateNeuroglancer(self, matchpoint=None, layout=None):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+        if layout:
+            cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
         if matchpoint != None:
             cfg.ng_worker.initViewer(matchpoint=matchpoint)
         else:
