@@ -5,7 +5,7 @@ QTabBar::tab {
 }
 
 QWidget#self._tool_keyBindings{
-    font-size: 10px;
+    font-size: 11px;
 }
 
 
