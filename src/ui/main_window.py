@@ -3565,6 +3565,7 @@ class MainWindow(QMainWindow):
 
         # self._tool_keyBindings = WidgetArea(parent=self, title='Keyboard Commands', labels=keyboard_commands)
         self._tool_keyBindings = WidgetArea(parent=self, labels=keyboard_commands)
+        self._tool_keyBindings.setObjectName('_tool_keyBindings')
 
 
         baseline = Qt.AlignmentFlag.AlignBaseline

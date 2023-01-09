@@ -4,6 +4,10 @@ QTabBar::tab {
     height: 24px;
 }
 
+QWidget#self._tool_keyBindings{
+    font-size: 10px;
+}
+
 
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);
