@@ -3525,7 +3525,7 @@ class MainWindow(QMainWindow):
             # QLabel(' ← - Scale Down    → - Scale Up      ^A - Align All'),
             QLabel('^N - New Project    ^O - Open Project    ^Z - Open Zarr'),
             QLabel('^S - Save                 ^Q - Quit                  ^↕ - Zoom'),
-            QLabel('  , - Prev (comma)         . - Next (period)    ^K - Skip'),
+            QLabel('   ,  - Prev (comma)      .  - Next (period)   ^K - Skip'),
             QLabel(' ← - Scale Down       → - Scale Up           ^A - Align All'),
         ]
         f = QFont()
