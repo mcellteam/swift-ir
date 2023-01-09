@@ -55,15 +55,18 @@ class ZarrTab(QWidget):
 
 
     def initNeuroglancer(self):
-        cfg.main_window._ng_layout_switch = 0
-        cfg.main_window._cmbo_ngLayout.clear()
-        ng_layouts = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
-        cfg.main_window._cmbo_ngLayout.addItems(ng_layouts)  # only doing this here so combo is empty on application open
-        cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
-        cfg.main_window._ng_layout_switch = 1
+        cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(parent=self, project=False)
         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+
+    def updateNeuroglancer(self, matchpoint=None):
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
+        cfg.ng_worker.initViewer()
+        self._webEngine.setUrl(QUrl(cfg.ng_worker.url()))
+        self._webEngine.setFocus()
+
 
 
     def openViewZarr(self):
