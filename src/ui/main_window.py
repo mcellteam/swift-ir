@@ -204,7 +204,10 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
         if cfg.zarr_tab:
-            cfg.zarr_tab.openViewZarr()
+            try:
+                cfg.zarr_tab.initNeuroglancer()
+            except:
+                print_exception()
 
 
     def tell(self, message):
@@ -491,6 +494,7 @@ class MainWindow(QMainWindow):
                 self.set_idle()
 
         self._enableAllTabs()
+        cfg.project_tab.initNeuroglancer()
         logger.info('<<<< autoscale <<<<')
 
 
@@ -527,6 +531,7 @@ class MainWindow(QMainWindow):
             self._set_align_status_label_visibility()
 
             self._runSNRcheck()
+            cfg.project_tab.initNeuroglancer()
 
             self.app.processEvents()
 
@@ -1733,6 +1738,16 @@ class MainWindow(QMainWindow):
     #     func = layout_switcher.get(key, lambda: print_exception)
     #     return func()
 
+    def reload_ng_layout_combobox(self, initial_layout=None):
+        if initial_layout == None: initial_layout = '4panel'
+        cfg.main_window._ng_layout_switch = 0
+        cfg.main_window._cmbo_ngLayout.clear()
+        ng_layouts = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
+        cfg.main_window._cmbo_ngLayout.addItems(
+            ng_layouts)  # only doing this here so combo is empty on application open
+        cfg.main_window._cmbo_ngLayout.setCurrentText(initial_layout)
+        cfg.main_window._ng_layout_switch = 1
+
 
     def fn_ng_layout_combobox(self) -> None:
         if self._ng_layout_switch == 0:
@@ -1772,10 +1787,11 @@ class MainWindow(QMainWindow):
             layout_actions[choice].setChecked(True)
 
             if cfg.project_tab:
-                cfg.project_tab.initNeuroglancer()
+                # cfg.project_tab.initNeuroglancer()
+                cfg.project_tab.updateNeuroglancer()
             elif cfg.zarr_tab:
                 # cfg.ng_worker.initViewer()
-                cfg.zarr_tab.initNeuroglancer()
+                cfg.zarr_tab.updateNeuroglancer()
 
             # if cfg.project_tab:
             #     cfg.project_tab.updateNeuroglancer()
@@ -2777,6 +2793,14 @@ class MainWindow(QMainWindow):
         logger.info('')
         height = int(18)
 
+        self._btn_refreshNg = QPushButton()
+        self._btn_refreshNg.setIcon(qta.icon("ei.refresh", color=cfg.ICON_COLOR))
+        self._btn_refreshNg.setFixedSize(QSize(22,22))
+        self._btn_refreshNg.clicked.connect(self.restartNg)
+        self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
+
+
+
         self.toolbar = QToolBar()
         self.toolbar.setFixedHeight(40)
         self.toolbar.setObjectName('toolbar')
@@ -2890,6 +2914,7 @@ class MainWindow(QMainWindow):
         # self.toolbar.addWidget(self._btn_view1)
         # self.toolbar.addWidget(self._btn_view2)
 
+        self.toolbar.addWidget(self._btn_refreshNg)
         self.toolbar.addWidget(self._arrangeRadio)
         self.toolbar.addWidget(self._al_unal_label_widget)
         self.toolbar.addWidget(w)
@@ -2917,12 +2942,14 @@ class MainWindow(QMainWindow):
         indexes.remove(self._tabsGlob.currentIndex())
         for i in indexes:
             self._tabsGlob.setTabEnabled(i, False)
+        self._btn_refreshNg.setEnabled(False)
 
 
     def _enableAllTabs(self):
         indexes = list(range(0, self._tabsGlob.count()))
         for i in indexes:
             self._tabsGlob.setTabEnabled(i, True)
+        self._btn_refreshNg.setEnabled(True)
 
 
     def _isProjectTab(self):
@@ -3530,7 +3557,7 @@ class MainWindow(QMainWindow):
         ]
         f = QFont()
         # f.setFamily('Courier')
-        f.setPointSize(10)
+        f.setPointSize(9)
         list(map(lambda x: x.setFont(f), keyboard_commands))
         list(map(lambda x: x.setContentsMargins(0,0,0,0), keyboard_commands))
         list(map(lambda x: x.setMargin(0), keyboard_commands))

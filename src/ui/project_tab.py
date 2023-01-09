@@ -49,9 +49,27 @@ class ProjectTab(QWidget):
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
         self.arrangement = 0
 
+    def _onTabChange(self, index=None):
+        if index == None: index = self._tabs.currentIndex()
+        if index == 0:  pass
+        if index == 1:
+            if not cfg.main_window._working:
+                self.layer_view_widget.set_data()
+        if index == 2:
+            self.updateJsonWidget()
+        if index == 3:
+            self.snr_plot.data = self.datamodel
+            # self.snr_plot.plotData()
+            self.snr_plot.initSnrPlot()
+        QApplication.processEvents()
+        self.repaint()
+
     def initNeuroglancer(self):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
+
+        cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
+
         if self.arrangement == 0:
             cfg.ng_worker = NgHostSlim(parent=self, project=True)
         else:
@@ -229,20 +247,6 @@ class ProjectTab(QWidget):
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self._tabs)
         self.setLayout(vbl)
-
-
-    def _onTabChange(self, index=None):
-        if index == None: index = self._tabs.currentIndex()
-        if index == 0:  pass
-        if index == 1:  self.layer_view_widget.set_data()
-        if index == 2:  self.updateJsonWidget()
-        if index == 3:
-            self.snr_plot.data = self.datamodel
-            # self.snr_plot.plotData()
-            self.snr_plot.initSnrPlot()
-        QApplication.processEvents()
-        self.repaint()
-
 
 
     def paintEvent(self, pe):
