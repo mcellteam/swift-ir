@@ -185,11 +185,11 @@ class NgHost(QRunnable):
         self.al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
         self.unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
-        try:    cfg.unal_tensor = get_zarr_tensor(self.unal_path).result()
+        try:    cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
         except: cfg.main_window.err(f'Invalid Zarr For Tensor, Unaligned, Scale {sf}'); print_exception()
         cfg.main_window.updateToolbar()
         if is_aligned:
-            try:    cfg.al_tensor = get_zarr_tensor(self.al_path).result()
+            try:    cfg.al_tensor = cfg.tensor = get_zarr_tensor(self.al_path).result()
             except: cfg.main_window.err(f'Invalid Zarr For Tensor, Aligned, Scale {sf}'); print_exception()
 
         if cfg.data.is_mendenhall():

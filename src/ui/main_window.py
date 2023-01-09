@@ -149,7 +149,7 @@ class MainWindow(QMainWindow):
     def set_viewer_layout_0(self):
         if cfg.project_tab:
             self._ng_layout_switch = 0
-            cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
+            self._cmbo_ngLayout.setCurrentText('4panel')
             self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 0
             cfg.project_tab._tabs.setCurrentIndex(0)
@@ -159,7 +159,7 @@ class MainWindow(QMainWindow):
     def set_viewer_layout_1(self):
         if cfg.project_tab:
             self._ng_layout_switch = 0
-            cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
+            self._cmbo_ngLayout.setCurrentText('xy')
             self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 1
             cfg.project_tab._tabs.setCurrentIndex(0)
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
     def set_viewer_layout_2(self):
         if cfg.project_tab:
             self._ng_layout_switch = 0
-            cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
+            self._cmbo_ngLayout.setCurrentText('xy')
             self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 2
             cfg.project_tab._tabs.setCurrentIndex(0)
@@ -354,7 +354,7 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.setCurrentIndex(0)
         if cfg.project_tab:
             self._is_mp_mode = False
-            if exist_aligned_zarr_cur_scale():
+            if cfg.data.is_aligned():
                 self.updateStatusTips()
             self._matchpt_ctls.hide()
 
@@ -880,6 +880,7 @@ class MainWindow(QMainWindow):
 
             dir = cfg.data.dest()
             scale = cfg.data.scale()
+            cfg.project_tab._onTabChange()
             if are_aligned_images_generated(dir=dir, scale=scale):
                 self.tell('Regenerate Succeeded')
             else:
@@ -1067,7 +1068,7 @@ class MainWindow(QMainWindow):
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
-        if exist_aligned_zarr_cur_scale():
+        if cfg.data.is_aligned():
             self._btn_alignAll.setEnabled(True)
             self._btn_alignOne.setEnabled(True)
             self._btn_alignForward.setEnabled(True)
@@ -1224,7 +1225,7 @@ class MainWindow(QMainWindow):
             cfg.project_tab.layer_view_widget.set_data()
         # self.dataUpdateWidgets()
         self._set_align_status_label_visibility()
-        if exist_aligned_zarr_cur_scale():
+        if cfg.data.is_aligned():
             self.updateStatusTips()
             self._runSNRcheck()
         cfg.project_tab.updateNeuroglancer()
@@ -1233,8 +1234,8 @@ class MainWindow(QMainWindow):
 
     def _set_align_status_label_visibility(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        logger.info('')
+        # logger.info(f'caller: {caller}')
+        # logger.info('')
         if cfg.project_tab:
             if cfg.data.scale() in cfg.data.scalesAligned:
                 self.aligned_label.show()
@@ -1270,10 +1271,13 @@ class MainWindow(QMainWindow):
         if cfg.zarr_tab:
             if ng_layer:
                 self._sectionSlider.setValue(ng_layer)
+                self._jumpToLineedit.setText(str(ng_layer))
             else:
-                self._sectionSlider.setValue(0)
-            self._jumpToLineedit.setText(str(cfg.data.layer()))
+                self._sectionSlider.setValue(cfg.ng_worker._layer)
+                self._jumpToLineedit.setText(str(cfg.ng_worker._layer))
+
             return
+
         elif not cfg.project_tab:
             return
 
@@ -1361,7 +1365,7 @@ class MainWindow(QMainWindow):
         skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
         completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
                     (cfg.data.nScalesAligned, cfg.data.nscales)
-        if exist_aligned_zarr_cur_scale():
+        if cfg.data.is_aligned():
             if cfg.data.has_bb(s=s):
                 bb = cfg.data.bounding_rect(s=s)
                 dims = [bb[2], bb[3]]
@@ -1517,20 +1521,26 @@ class MainWindow(QMainWindow):
 
 
     def _resetSliderAndJumpInput(self):
-        # logger.info('Setting validators...')
+
+        if not cfg.project_tab:
+            if not cfg.zarr_tab:
+                return
+
+        if not cfg.tensor:
+            return
+        logger.info('Setting validators...')
+        self._section_slider_switch = 0
         if cfg.project_tab:
             self._jumpToLineedit.setValidator(QIntValidator(0, cfg.data.nSections - 1))
             self._sectionSlider.setRange(0, cfg.data.nSections - 1)
-            self._section_slider_switch = 0
+
             self._sectionSlider.setValue(cfg.data.nSections)
-            self._section_slider_switch = 1
         if cfg.zarr_tab:
             self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
             self._jumpToLineedit.setText(str(0))
             self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
-            self._section_slider_switch = 0
             self._sectionSlider.setValue(0)
-            self._section_slider_switch = 1
+        self._section_slider_switch = 1
 
 
     def printActiveThreads(self):
@@ -1585,6 +1595,7 @@ class MainWindow(QMainWindow):
 
 
     def jump_to_slider(self):
+        # if cfg.data:
         if self._section_slider_switch:
             caller = inspect.stack()[1].function
             if caller == 'dataUpdateWidgets':
@@ -1594,7 +1605,8 @@ class MainWindow(QMainWindow):
                     return
             # logger.info(f'caller: {caller}')
             requested = self._sectionSlider.value()
-            cfg.data.set_layer(requested)
+            if cfg.project_tab:
+                cfg.data.set_layer(requested)
             cfg.ng_worker._layer = requested
             # logger.info(f'slider, requested: {requested}')
 
@@ -1607,6 +1619,7 @@ class MainWindow(QMainWindow):
                         cfg.viewer.set_state(state)
 
             if cfg.zarr_tab:
+                logger.info('Jumping To Section #%d' % requested)
                 state = copy.deepcopy(cfg.viewer.state)
                 state.position[0] = requested
                 cfg.viewer.set_state(state)
@@ -1786,7 +1799,7 @@ class MainWindow(QMainWindow):
 
     def export_afms(self):
         if cfg.project_tab:
-            if exist_aligned_zarr_cur_scale():
+            if cfg.data.is_aligned():
                 file = export_affines_dialog()
                 if file == None:
                     logger.warning('No Filename - Canceling Export')
@@ -1988,7 +2001,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             # img_size = cfg.data.image_size(s=cfg.data.curScale)
             # self.label_toolbar_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
-            self.label_toolbar_resolution.setText(f'{cfg.unal_tensor.shape}')
+            self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
         elif cfg.zarr_tab:
             self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
 
@@ -2557,16 +2570,18 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_bnding_box(self, state):
-        logger.info('_callbk_bnding_box:')
-        self._bbToggle.setEnabled(state)
-        if cfg.project_tab:
-            if inspect.stack()[1].function == 'dataUpdateWidgets': return
-            if state:
-                self.warn('Bounding Box is now ON. Warning: Output dimensions may grow large.')
-                cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
-            else:
-                self.tell('Bounding Box is now OFF. Output dimensions will match source.')
-                cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
+        caller = inspect.stack()[1].function
+        # logger.info(f'Bounding Box Toggle Callback (caller: {caller})')
+        if caller != 'dataUpdateWidgets':
+            self._bbToggle.setEnabled(state)
+            if cfg.project_tab:
+                if inspect.stack()[1].function == 'dataUpdateWidgets': return
+                if state:
+                    self.warn('Bounding Box is now ON. Warning: Output dimensions may grow large.')
+                    cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
+                else:
+                    self.tell('Bounding Box is now OFF. Output dimensions will match source.')
+                    cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
 
 
     def _callbk_skipChanged(self, state:int):  # 'state' is connected to skipped toggle
@@ -2763,7 +2778,7 @@ class MainWindow(QMainWindow):
         height = int(18)
 
         self.toolbar = QToolBar()
-        self.toolbar.setFixedHeight(34)
+        self.toolbar.setFixedHeight(40)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
@@ -3504,13 +3519,17 @@ class MainWindow(QMainWindow):
 
         keyboard_commands = [
             # QLabel('Keyboard Commands:'),
-            QLabel('^N - New Project  ^O - Open Project  ^Z - Open Zarr'),
-            QLabel('^S - Save         ^Q - Quit          ^↕ - Zoom'),
-            QLabel(' , - Prev (comma)  . - Next (period) ^K - Skip'),
-            QLabel(' ← - Scale Down    → - Scale Up      ^A - Align All'),
+            # QLabel('^N - New Project  ^O - Open Project  ^Z - Open Zarr'),
+            # QLabel('^S - Save         ^Q - Quit          ^↕ - Zoom'),
+            # QLabel(' , - Prev (comma)  . - Next (period) ^K - Skip'),
+            # QLabel(' ← - Scale Down    → - Scale Up      ^A - Align All'),
+            QLabel('^N - New Project    ^O - Open Project    ^Z - Open Zarr'),
+            QLabel('^S - Save                 ^Q - Quit                  ^↕ - Zoom'),
+            QLabel('  , - Prev (comma)         . - Next (period)    ^K - Skip'),
+            QLabel(' ← - Scale Down       → - Scale Up           ^A - Align All'),
         ]
         f = QFont()
-        f.setFamily('Courier')
+        # f.setFamily('Courier')
         f.setPointSize(10)
         list(map(lambda x: x.setFont(f), keyboard_commands))
         list(map(lambda x: x.setContentsMargins(0,0,0,0), keyboard_commands))
@@ -3540,6 +3559,10 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self._tool_keyBindings)
         vbl.addLayout(hbl)
         self._tool_processMonitor.setLayout(vbl)
+
+        # self._btn_refresh = QPushButton('Refresh')
+        # self._btn_refresh.clicked.connect(cfg.ng_worker.ini)
+
 
         tip = 'Set Whether to Use or Reject the Current Layer'
         self._lab_keep_reject = QLabel('Keep/Reject:')
