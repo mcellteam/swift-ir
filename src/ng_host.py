@@ -252,7 +252,7 @@ class NgHost(QRunnable):
         # print('cross_section_scale          =%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
-            adjustment = 1.04
+            adjustment = 1.06
             # s.gpu_memory_limit = -1
             # s.system_memory_limit = -1
             # s.concurrent_downloads = 512
@@ -466,7 +466,7 @@ class NgHost(QRunnable):
 
     def clear_mp_buffer(self):
         if self.mp_mode:
-            logger.info('Clearing match point buffer')
+            # logger.info('Clearing match point buffer...')
             self.mp_count = 0
             self.ref_pts.clear()
             self.base_pts.clear()
