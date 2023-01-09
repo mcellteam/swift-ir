@@ -91,7 +91,6 @@ class WorkerSignals(QObject):
     mpUpdate = Signal()
 
 # class NgHostSlim(QObject):
-# class NgHostSlim(QRunnable):
 class NgHostSlim(QRunnable):
     def __init__(self, parent, resolution=None, project=False):
         # QObject.__init__(self)

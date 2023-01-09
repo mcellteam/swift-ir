@@ -100,6 +100,14 @@ class DataModel:
         except:
             logger.warning('No Images Found')
 
+    def is_aligned(self, s=None) -> bool:
+        if s == None: s = cfg.data.scale()
+        if s in self.scalesAligned:
+            return True
+        else:
+            return False
+
+
     def update_cache(self):
         self.curScale = self.scale()
         try:
