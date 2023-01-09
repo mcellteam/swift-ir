@@ -1334,8 +1334,14 @@ class MainWindow(QMainWindow):
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
             else:
-                cfg.project_tab._overlayRect.hide()
-                cfg.project_tab._overlayLab.hide()
+                if ng_layer == 0:
+                    if cfg.project_tab.arrangement == 1:
+                        cfg.project_tab._overlayLab.setText('No Reference')
+                        cfg.project_tab._overlayLab.show()
+                else:
+                    cfg.project_tab._overlayRect.hide()
+                    cfg.project_tab._overlayLab.hide()
+
             QApplication.processEvents()
             self.app.processEvents()
 
@@ -1367,9 +1373,12 @@ class MainWindow(QMainWindow):
         if s == None: s = cfg.data.curScale
         if l == None: l = cfg.data.layer()
 
-        name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
+        # name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
+        name = "<b style='font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
         skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
-        completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
+        # completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
+        #             (cfg.data.nScalesAligned, cfg.data.nscales)
+        completed = "<b style='font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
                     (cfg.data.nScalesAligned, cfg.data.nscales)
         if cfg.data.is_aligned():
             if cfg.data.has_bb(s=s):
@@ -1377,33 +1386,42 @@ class MainWindow(QMainWindow):
                 dims = [bb[2], bb[3]]
             else:
                 dims = cfg.data.image_size(s=s)
-            bb_dims = "<b style='color: #212121;font-size:11px;'>Bounds: %dx%dpx,&nbsp;%s</b><br>" \
+            # bb_dims = "<b style='color: #212121;font-size:11px;'>Bounds: %dx%dpx,&nbsp;%s</b><br>" \
+            #           % (dims[0], dims[1], cfg.data.scale_pretty())
+            bb_dims = "<b style='font-size:11px;'>Bounds: %dx%dpx,&nbsp;%s</b><br>" \
                       % (dims[0], dims[1], cfg.data.scale_pretty())
             snr_report = cfg.data.snr_report(s=s, l=l)
             snr_report = snr_report.replace('<', '&lt;')
             snr_report = snr_report.replace('>', '&gt;')
-            snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
+            # snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
+            snr = f"<b style='font-size:11px;'>%s</b><br>" % snr_report
 
             skips = '\n'.join(map(str, cfg.data.skips_list()))
             matchpoints = '\n'.join(map(str, cfg.data.find_layers_with_matchpoints()))
 
-
-            self.layer_details.setText(f"{name}{skip}"
-                                                 f"{bb_dims}"
-                                                 f"{snr}"
-                                                 f"{completed}"
-                                                 f"<b>Skipped Layers:</b> [{skips}]<br>"
-                                                 f"<b>Match Point Layers:</b> [{matchpoints}]"
-                                       )
+            text = \
+                f"{name}{skip}"\
+                f"{bb_dims}"\
+                f"{snr}"\
+                f"{completed}"\
+                f"<b>Skipped Layers:</b> [{skips}]<br>"\
+                f"<b>Match Point Layers:</b> [{matchpoints}]"
             self.updateAffineWidget()
         else:
-            self.layer_details.setText(f"{name}{skip}"
-                                                 f"<em style='color: #FF0000;'>Not Aligned</em><br>"
-                                                 f"{completed}"
-                                                 f"<b>Skipped Layers: []<br>"
-                                                 f"<b>Match Point Layers: []</b>"
-                                       )
+            text = \
+                f"{name}{skip}"\
+                f"<em style='color: #FF0000;'>Not Aligned</em><br>"\
+                f"{completed}"\
+                f"<b>Skipped Layers: []<br>"\
+                f"<b>Match Point Layers: []</b>"
+
             self.clearAffineWidget()
+
+        # self.layer_details.setText(text)
+        if cfg.project_tab.arrangement == 0:
+            cfg.project_tab._overlayNotification.setText(text)
+        else:
+            cfg.project_tab._overlayNotification.hide()
 
     def updateNewWidget(self):
         pass
@@ -2715,7 +2733,7 @@ class MainWindow(QMainWindow):
             self.matchpoint_text_snr.setHtml(f'<h4>{snr_report}</h4>')
 
     def _update_lab_keep_reject(self, layer):
-        base = 'Keep/Reject:'
+        base = 'Reject:'
         new = base + '\nSection #' + str(layer)
         self._lab_keep_reject.setText()
 
@@ -3928,8 +3946,8 @@ class MainWindow(QMainWindow):
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.setSpacing(1)
-        vbl.addWidget(lab, alignment=baseline)
-        vbl.addWidget(self.layer_details)
+        # vbl.addWidget(lab, alignment=baseline)
+        # vbl.addWidget(self.layer_details)
         self._tool_textInfo.setLayout(vbl)
 
         self._tool_hstry = QWidget()

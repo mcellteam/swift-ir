@@ -4,7 +4,7 @@ import sys, logging, inspect
 import neuroglancer as ng
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QGroupBox, QFormLayout, QLabel, QScrollArea, \
     QVBoxLayout, QSizePolicy, QHBoxLayout, QPushButton, QComboBox, QSpinBox, QStyleOption, QStyle, QTabBar, \
-    QTabWidget, QGridLayout, QHeaderView, QTreeView
+    QTabWidget, QGridLayout, QHeaderView, QTreeView, QGraphicsOpacityEffect
 from qtpy.QtCore import Qt, QSize, QRect, QUrl
 from qtpy.QtGui import QPainter, QFont
 from qtpy.QtWebEngineWidgets import *
@@ -128,16 +128,23 @@ class ProjectTab(QWidget):
         self._overlayLab.setObjectName('_overlayLab')
         self._overlayLab.hide()
         # self._overlayNotification = QLabel('No datamodel. ')
-        # font = QFont()
-        # font.setFamily("Monaco")
-        # self._overlayNotification.setFont(font)
-        # self._overlayNotification.setObjectName('_overlayNotification')
+        self._overlayNotification = QLabel('')
+        font = QFont()
+        font.setFamily("Courier New")
+        self._overlayNotification.setFont(font)
+        self._overlayNotification.setObjectName('_overlayNotification')
         self._overlayBottomLeft = QLabel()
         self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
         self._overlayBottomLeft.hide()
+
+        # op = QGraphicsOpacityEffect(self)
+        # op.setOpacity(0.3)  # 0 to 1 will cause the fade effect to kick in
+        # self._overlayNotification.setGraphicsEffect(op)
+        self._overlayNotification.setAutoFillBackground(True)
+
         gl.addWidget(self._overlayLab, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         gl.addWidget(self._overlayBottomLeft, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        # gl.addWidget(self._overlayNotification, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
+        gl.addWidget(self._overlayNotification, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.ng_browser_container.setLayout(gl)
         gl.setContentsMargins(0, 0, 0, 0)
         lab = VerticalLabel('Neuroglancer 3DEM View')
