@@ -138,9 +138,6 @@ class NgHostSlim(QRunnable):
         return floor(cfg.viewer.state.position[0])
 
     def initViewer(self,
-                   show_panel_borders=False,
-                   show_scale_bar=True,
-                   show_axis_lines=True,
                    matchpoint=None):
         caller = inspect.stack()[1].function
         logger.info(f'Initializing Neuroglancer Viewer (caller: {caller})...')
@@ -191,8 +188,8 @@ class NgHostSlim(QRunnable):
             # s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             # s.cross_section_scale = cross_section_scale * adjustment
-            s.show_scale_bar = show_scale_bar
-            s.show_axis_lines = show_axis_lines
+            s.show_scale_bar = cfg.SHOW_SCALE_BAR
+            s.show_axis_lines = cfg.SHOW_AXIS_LINES
 
             cfg.LV = ng.LocalVolume(
                 data=cfg.tensor,
@@ -218,7 +215,7 @@ class NgHostSlim(QRunnable):
 
         with cfg.viewer.config_state.txn() as s:
             s.show_ui_controls = cfg.SHOW_UI_CONTROLS
-            s.show_panel_borders = show_panel_borders
+            s.show_panel_borders = cfg.SHOW_PANEL_BORDERS
 
         self._layer = self.request_layer()
         cfg.url = str(cfg.viewer)

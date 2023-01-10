@@ -1277,7 +1277,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.info(f'caller: {caller}')
 
         if cfg.zarr_tab:
             if ng_layer:
@@ -1286,9 +1286,7 @@ class MainWindow(QMainWindow):
             else:
                 self._sectionSlider.setValue(cfg.ng_worker._layer)
                 self._jumpToLineedit.setText(str(cfg.ng_worker._layer))
-
             return
-
         elif not cfg.project_tab:
             return
 
@@ -1308,74 +1306,72 @@ class MainWindow(QMainWindow):
             logger.warning("Can't update GUI now - working...")
             self.warn("Can't update GUI now - working...")
             return
+
         if isinstance(ng_layer, int):
             try:
                 if 0 <= ng_layer < cfg.data.n_layers():
-                    # logger.info(f'Setting Layer: {ng_layer}')
+                    logger.debug(f'Setting Layer: {ng_layer}')
                     cfg.data.set_layer(ng_layer)
                     self._sectionSlider.setValue(ng_layer)
-                    cfg.project_tab._overlayRect.hide()
-                    cfg.project_tab._overlayLab.hide()
-                    QApplication.processEvents()
-                else:
-                    cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 1.0);')
-                    cfg.project_tab._overlayLab.setText('End Of Image Stack')
-                    cfg.project_tab._overlayLab.show()
-                    cfg.project_tab._overlayRect.show()
-                    QApplication.processEvents()
-                    self.clearTextWidgetA()
-                    self.clearAffineWidget()
-                    # logger.info(f'Showing Browser Overlay, Last Layer ({cfg.data.layer()}) - Returning') #Todo
-                    return
             except:
                 print_exception()
-
-
-
-        if cfg.project_tab._tabs.currentIndex() == 0:
-            if cfg.data.skipped():
-                cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
-                cfg.project_tab._overlayLab.show()
-                cfg.project_tab._overlayRect.show()
-            else:
-                if ng_layer == 0:
-                    if (cfg.project_tab.arrangement == 1) or (cfg.project_tab.arrangement == 2) :
+            if cfg.project_tab._tabs.currentIndex() == 0:
+                if self.rb1.isChecked():
+                    if ng_layer == cfg.data.n_layers():
+                        cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 1.0);')
+                        cfg.project_tab._overlayLab.setText('End Of Image Stack')
+                        cfg.project_tab._overlayLab.show()
+                        cfg.project_tab._overlayRect.show()
+                        # QApplication.processEvents()
+                        self.clearTextWidgetA()
+                        self.clearAffineWidget()
+                        return
+                    elif cfg.data.skipped():
+                        cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+                        cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
+                        cfg.project_tab._overlayLab.show()
+                        cfg.project_tab._overlayRect.show()
+                        # QApplication.processEvents()
+                    elif ng_layer == 0:
                         cfg.project_tab._overlayLab.setText('No Reference')
                         cfg.project_tab._overlayLab.show()
-                else:
-                    cfg.project_tab._overlayRect.hide()
-                    cfg.project_tab._overlayLab.hide()
-
-            QApplication.processEvents()
-            self.app.processEvents()
+                        # QApplication.processEvents()
+                    else:
+                        cfg.project_tab._overlayRect.hide()
+                        cfg.project_tab._overlayLab.hide()
+                        # QApplication.processEvents()
 
         try:
-            if cfg.project_tab:
-                self.updateTextWidgetA()
+            self.updateLayerDetails()
+            if cfg.data.is_aligned():
+                self.updateAffineWidget()
+            else:
+                self.clearAffineWidget()
+
+            try:     self._jumpToLineedit.setText(str(cfg.data.layer()))
+            except:  logger.warning('Current Layer Widget Failed to Update')
+            try:     self._skipCheckbox.setChecked(cfg.data.skipped())
+            except:  logger.warning('Skip Toggle Widget Failed to Update')
+            try:     self._whiteningInput.setText(str(cfg.data.whitening()))
+            except:  logger.warning('Whitening Input Widget Failed to Update')
+            try:     self._swimInput.setText(str(cfg.data.swim_window()))
+            except:  logger.warning('Swim Input Widget Failed to Update')
+            try:     self._bbToggle.setChecked(cfg.data.has_bb())
+            except:  logger.warning('Bounding Rect Widget Failed to Update')
+            try:
+                if cfg.data.null_cafm():
+                    self._cmbo_polynomialBias.setCurrentText(str(cfg.data.poly_order()))
+                else:
+                    self._cmbo_polynomialBias.setCurrentText('None')
+            except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+
         except:
             print_exception()
-            logger.warning('widget A Buggin out')
-        self.updateNewWidget()
-        try:     self._jumpToLineedit.setText(str(cfg.data.layer()))
-        except:  logger.warning('Current Layer Widget Failed to Update')
-        try:     self._skipCheckbox.setChecked(cfg.data.skipped())
-        except:  logger.warning('Skip Toggle Widget Failed to Update')
-        try:     self._whiteningInput.setText(str(cfg.data.whitening()))
-        except:  logger.warning('Whitening Input Widget Failed to Update')
-        try:     self._swimInput.setText(str(cfg.data.swim_window()))
-        except:  logger.warning('Swim Input Widget Failed to Update')
-        try:     self._bbToggle.setChecked(cfg.data.has_bb())
-        except:  logger.warning('Bounding Rect Widget Failed to Update')
-        try:
-            if cfg.data.null_cafm():
-                self._cmbo_polynomialBias.setCurrentText(str(cfg.data.poly_order()))
-            else:
-                'None'
-        except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+            logger.warning('dataUpdateWidgets bugging out')
 
 
-    def updateTextWidgetA(self, s=None, l=None):
+
+    def updateLayerDetails(self, s=None, l=None):
         if s == None: s = cfg.data.curScale
         if l == None: l = cfg.data.layer()
 
@@ -1409,16 +1405,6 @@ class MainWindow(QMainWindow):
         # else:
         #     cfg.project_tab._widgetArea_details.hide()
 
-
-        if cfg.data.is_aligned():
-            self.updateAffineWidget()
-        else:
-            self.clearAffineWidget()
-
-
-
-
-
         # self.layer_details.setText(text)
         # if cfg.project_tab.arrangement == 0:
         #     # text = textwrap.TextWrapper(width=24,break_long_words=False,replace_whitespace=False).fill(text=text)
@@ -1426,6 +1412,7 @@ class MainWindow(QMainWindow):
         #     # cfg.project_tab._overlayNotification.setText(text)
         # else:
         #     cfg.project_tab._overlayNotification.hide()
+
 
     def updateNewWidget(self):
         pass
@@ -2200,7 +2187,22 @@ class MainWindow(QMainWindow):
         else:
             cfg.SHOW_UI_CONTROLS = False
             self.ngShowUiControlsAction.setText('Hide UI Controls')
-        cfg.project_tab.updateNeuroglancer()
+        if cfg.project_tab:
+            cfg.project_tab.updateNeuroglancer()
+        if cfg.zarr_tab:
+            cfg.zarr_tab.updateNeuroglancer()
+
+    def ng_toggle_scale_bar(self):
+        if self.ngShowScaleBarAction.isChecked():
+            cfg.SHOW_SCALE_BAR = True
+            self.ngShowScaleBarAction.setText('Show Scale Bar')
+        else:
+            cfg.SHOW_SCALE_BAR = False
+            self.ngShowScaleBarAction.setText('Hide Scale Bar')
+        if cfg.project_tab:
+            cfg.project_tab.updateNeuroglancer()
+        if cfg.zarr_tab:
+            cfg.zarr_tab.updateNeuroglancer()
 
 
     def import_multiple_images(self, clear_role=False):
@@ -3414,6 +3416,13 @@ class MainWindow(QMainWindow):
         self.ngShowUiControlsAction.setChecked(cfg.SHOW_UI_CONTROLS)
         self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
         neuroglancerMenu.addAction(self.ngShowUiControlsAction)
+
+        self.ngShowScaleBarAction = QAction('Show UI Controls', self)
+        self.ngShowScaleBarAction.setShortcut('Ctrl+U')
+        self.ngShowScaleBarAction.setCheckable(True)
+        self.ngShowScaleBarAction.setChecked(cfg.SHOW_SCALE_BAR)
+        self.ngShowScaleBarAction.triggered.connect(self.ng_toggle_scale_bar)
+        neuroglancerMenu.addAction(self.ngShowScaleBarAction)
 
         self.ngRemoteAction = QAction('External Client', self)
         self.ngRemoteAction.triggered.connect(self.remote_view)
