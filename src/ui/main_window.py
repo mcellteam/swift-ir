@@ -28,15 +28,14 @@ import pyqtgraph as pg
 import pyqtgraph
 import qtawesome as qta
 import qtpy
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QDir, QFileSystemWatcher, QMetaObject, \
-    QRect, QCoreApplication
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-    QGuiApplication, QKeySequence, QCursor, QImageReader, QMovie, QImage, QColor
+    QKeySequence, QMovie
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-    QShortcut, QGraphicsOpacityEffect, QDialog, QStyle, QCheckBox, QSpinBox, QRadioButton, QSlider, \
+    QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton
 
@@ -55,15 +54,11 @@ from src.helpers import *
 from src.helpers import natural_sort, make_affine_widget_HTML, is_tacc, \
     create_project_structure_directories, get_aligned_scales, tracemalloc_start, tracemalloc_stop, \
     tracemalloc_compare, tracemalloc_clear, show_status_report
-from src.ng_host import NgHost
-from src.ng_host_slim import NgHostSlim
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.kimage_window import KImageWindow
-from src.ui.snr_plot import SnrPlot
 from src.ui.models.json_tree import JsonModel
-from src.ui.layer_view_widget import LayerViewWidget
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.ui_custom import VerticalLabel, HorizontalLabel
 from src.ui.widget_area import WidgetArea
