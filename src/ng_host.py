@@ -165,7 +165,6 @@ class NgHost(QRunnable):
     def initViewer(self,
                    matchpoint=None,
                    widget_size=None,
-                   show_ui_controls=True,
                    show_panel_borders=False,
                    show_scale_bar=False,
                    show_axis_lines=False
@@ -365,7 +364,7 @@ class NgHost(QRunnable):
         with cfg.viewer.config_state.txn() as s:
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
-            s.show_ui_controls = show_ui_controls
+            s.show_ui_controls = cfg.SHOW_UI_CONTROLS
             s.show_panel_borders = show_panel_borders
 
         self._layer = self.request_layer()

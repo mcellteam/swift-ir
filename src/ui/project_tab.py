@@ -15,6 +15,7 @@ from src.ui.snr_plot import SnrPlot
 import src.config as cfg
 from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
+from src.ui.widget_area import WidgetArea
 from src.helpers import print_exception
 
 logger = logging.getLogger(__name__)
@@ -128,11 +129,89 @@ class ProjectTab(QWidget):
         self._overlayLab.setObjectName('_overlayLab')
         self._overlayLab.hide()
         # self._overlayNotification = QLabel('No datamodel. ')
-        self._overlayNotification = QLabel('')
-        font = QFont()
-        font.setFamily("Courier New")
-        self._overlayNotification.setFont(font)
-        self._overlayNotification.setObjectName('_overlayNotification')
+        # self._overlayNotification = QLabel('')
+        # self._overlayNotification.setStyleSheet('background-color: rgba(0,0,0,0);'
+        #                                         'color: #ffe135;')
+        # self._overlayNotification.setFixedWidth(160)
+        # self._overlayNotification.setFixedHeight(120)
+
+        self.lab_name = QLabel('Name :')
+        self.lab_name.setStyleSheet('font-weight: 650;')
+        # self.lab_name.setFont(f)
+        self.lab_snr = QLabel('SNR: :')
+        self.lab_skipped = QLabel('Skipped Layers : []')
+        self.lab_match_point = QLabel('Match Point Layers : []')
+
+        self._layer_details = (
+            QLabel('Name :'),
+            QLabel('SNR :'),
+            QLabel('Skipped Layers : []'),
+            QLabel('Match Point Layers : []'),
+        )
+        for layer in self._layer_details:
+            layer.setStyleSheet(
+                'color: #ffe135;'
+                'background-color: rgba(0,0,0,.3);'
+                'margin: 0px;'
+                'border-width: 1px;'
+                'border-style: solid;'
+                'border-color: #141414;'
+            )
+            layer.setWordWrap(True)
+            layer.setContentsMargins(0,0,0,0)
+        self._widgetArea_details = WidgetArea(parent=self, title='Details', labels=self._layer_details)
+        # self._widgetArea_details.setStyleSheet('background-color: rgba(0,0,0,.1);'
+        #                                        'color: #f3f6fb;'
+        #                                        'margin: 0px;')
+        self._widgetArea_details.hideTitle()
+        self._widgetArea_details.setTitleStyle(
+            'font-size: 10px; '
+            'color: #f3f6fb;'
+            'font-weight: 500;'
+        )
+        # self._widgetArea_details._title.setStylesheet(
+        #     'font-size: 10px; '
+        #     'font-weight: 500;'
+        #     'color: #f3f6fb;')
+
+        # font = QFont()
+        # font.setFamily("Courier New")
+        # self._overlayNotification.setFont(font)
+        # self._overlayNotification.setObjectName('_overlayNotification')
+        # self._scrollNotification = QScrollArea()
+        self._widgetArea_details.setFixedWidth(224)
+        self._widgetArea_details.setFixedHeight(80)
+        self._widgetArea_details.setStyleSheet('font-size: 10px;'
+                                               'background-color: rgba(0,0,0,0);'
+                                               'border-radius: 2px;'
+                                               'margin: 5px;')
+        self._widgetArea_details.setContentsMargins(0, 0, 0, 0)
+        # self._scrollNotification.setWidget(self._overlayNotification)
+        # self._scrollNotification.setWidget(self._widgetArea_details)
+        # self._scrollNotification.setWidgetResizable(True)
+
+        '''
+           # 'border-width: 1px;'
+           # 'border-style: solid;'
+           # 'border-color: #141414;'
+        
+        
+        QLabel#_overlayNotification {
+        /*color: #141414;*/
+        /*color: #f3f6fb;*/
+        color: #ffe135;
+        font-size: 12px;
+        font-weight: 600;
+        /*background-color: #1b1e23;*/
+        background-color: rgba(0, 0, 0, 100);
+        border-width: 1px;
+        border-style: solid;
+        border-color: #141414;
+}
+        
+        '''
+
+
         self._overlayBottomLeft = QLabel()
         self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
         self._overlayBottomLeft.hide()
@@ -140,17 +219,19 @@ class ProjectTab(QWidget):
         # op = QGraphicsOpacityEffect(self)
         # op.setOpacity(0.3)  # 0 to 1 will cause the fade effect to kick in
         # self._overlayNotification.setGraphicsEffect(op)
-        self._overlayNotification.setAutoFillBackground(True)
+        # self._overlayNotification.setAutoFillBackground(True)
 
         gl.addWidget(self._overlayLab, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
         gl.addWidget(self._overlayBottomLeft, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        gl.addWidget(self._overlayNotification, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
+        # gl.addWidget(self._overlayNotification, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
+        gl.addWidget(self._widgetArea_details, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.ng_browser_container.setLayout(gl)
         gl.setContentsMargins(0, 0, 0, 0)
         lab = VerticalLabel('Neuroglancer 3DEM View')
         # lab.setStyleSheet('background-color: #ffe135;')
         lab.setObjectName('label_ng')
         hbl = QHBoxLayout()
+        hbl.setContentsMargins(0,0,0,0)
         hbl.setContentsMargins(0,0,0,0)
         hbl.addWidget(lab)
         hbl.addWidget(self.ng_browser_container)

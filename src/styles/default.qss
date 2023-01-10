@@ -183,14 +183,7 @@ QLabel#_overlayLab {
     font-size: 28px;
 }
 
-QLabel#_overlayNotification {
-    /*color: #141414;*/
-    /*color: #f3f6fb;*/
-    color: #ffe135;
-    font-size: 14px;
-    opacity: .3;
-    background-color: #1b1e23;
-}
+
 
 /*
 QLabel#toolbar_layer_label { color: #F3F6FB; }
