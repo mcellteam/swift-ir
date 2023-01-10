@@ -357,8 +357,11 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
         cfg.SHADER = ''
-        cfg.project_tab._overlayRect.hide()
-        cfg.project_tab._overlayLab.hide()
+        try:
+            cfg.project_tab._overlayRect.hide()
+            cfg.project_tab._overlayLab.hide()
+        except:
+            pass
         self.viewer_stack_widget.setCurrentIndex(0)
         if cfg.project_tab:
             self._is_mp_mode = False
