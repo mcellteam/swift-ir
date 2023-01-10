@@ -147,7 +147,7 @@ class NgHostSlim(QRunnable):
 
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         cfg.viewer = ng.Viewer()
-        ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
+        # ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
 
         self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',

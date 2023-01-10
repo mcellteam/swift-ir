@@ -1341,7 +1341,7 @@ class MainWindow(QMainWindow):
                 cfg.project_tab._overlayRect.show()
             else:
                 if ng_layer == 0:
-                    if cfg.project_tab.arrangement == 1:
+                    if (cfg.project_tab.arrangement == 1) or (cfg.project_tab.arrangement == 2) :
                         cfg.project_tab._overlayLab.setText('No Reference')
                         cfg.project_tab._overlayLab.show()
                 else:
@@ -1405,6 +1405,8 @@ class MainWindow(QMainWindow):
             cfg.project_tab._layer_details[1].setText(text1)
             cfg.project_tab._layer_details[2].setText(text2)
             cfg.project_tab._layer_details[3].setText(text3)
+        else:
+            cfg.project_tab._widgetArea_details.hide()
 
 
         if cfg.data.is_aligned():
