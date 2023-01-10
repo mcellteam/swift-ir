@@ -1325,6 +1325,7 @@ class MainWindow(QMainWindow):
                         # QApplication.processEvents()
                         self.clearTextWidgetA()
                         self.clearAffineWidget()
+                        cfg.project_tab._widgetArea_details.hide()
                         return
                     elif cfg.data.skipped():
                         cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
@@ -1340,6 +1341,7 @@ class MainWindow(QMainWindow):
                         cfg.project_tab._overlayRect.hide()
                         cfg.project_tab._overlayLab.hide()
                         # QApplication.processEvents()
+                    cfg.project_tab._widgetArea_details.show()
 
         try:
             self.updateLayerDetails()
@@ -2840,7 +2842,9 @@ class MainWindow(QMainWindow):
 
 
     def set_shader_none(self):
-        cfg.SHADER = ''
+        cfg.SHADER = '''void main () {
+          emitGrayscale(toNormalized(getDataValue()));
+        }'''
         cfg.project_tab.updateNeuroglancer()
 
 
