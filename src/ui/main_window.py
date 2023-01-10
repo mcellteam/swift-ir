@@ -158,7 +158,7 @@ class MainWindow(QMainWindow):
             # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('xy')
             # self._ng_layout_switch = 1
-            cfg.project_tab._widgetArea_details.hide()
+            cfg.project_tab._widgetArea_details.show()
             cfg.project_tab.arrangement = 1
             cfg.project_tab._tabs.setCurrentIndex(0)
             cfg.project_tab.initNeuroglancer()
@@ -168,6 +168,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('xy')
+            cfg.project_tab._widgetArea_details.show()
             # self._ng_layout_switch = 1
             cfg.project_tab.arrangement = 2
             cfg.project_tab._tabs.setCurrentIndex(0)
@@ -1350,7 +1351,8 @@ class MainWindow(QMainWindow):
             self.app.processEvents()
 
         try:
-            self.updateTextWidgetA()
+            if cfg.project_tab:
+                self.updateTextWidgetA()
         except:
             print_exception()
             logger.warning('widget A Buggin out')
@@ -1378,33 +1380,34 @@ class MainWindow(QMainWindow):
         if l == None: l = cfg.data.layer()
 
         # name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
-        name = "%s" % cfg.data.name_base(s=s, l=l)
+
         # skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
         # skip = "SKIP" if cfg.data.skipped(s=s, l=l) else ''
         # # completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
         # #             (cfg.data.nScalesAligned, cfg.data.nscales)
         # completed = "Scales Aligned: (%d/%d)" % (cfg.data.nScalesAligned, cfg.data.nscales)
 
-        if cfg.project_tab.arrangement == 0:
-            snr_report = cfg.data.snr_report(s=s, l=l)
-            snr = f"%s" % snr_report
-            skips = ' '.join(map(str, cfg.data.skips_list()))
-            matchpoints = ' '.join(map(str, cfg.data.find_layers_with_matchpoints()))
-            # text0 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"{name}")
-            # text1 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"{snr}")
-            # text2 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"Skipped Layers: [{skips}]")
-            # text3 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"Match Point Layers: [{matchpoints}]")
-            text0 = f"{name}"
-            text1 = f"{snr}"
-            text2 = f"Skipped Layers: [{skips}]"
-            text3 = f"Match Point Layers: [{matchpoints}]"
+        # if cfg.project_tab.arrangement == 0:
+        name = "%s" % cfg.data.name_base(s=s, l=l)
+        snr_report = cfg.data.snr_report(s=s, l=l)
+        snr = f"%s" % snr_report
+        skips = ' '.join(map(str, cfg.data.skips_list()))
+        matchpoints = ' '.join(map(str, cfg.data.find_layers_with_matchpoints()))
+        # text0 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"{name}")
+        # text1 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"{snr}")
+        # text2 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"Skipped Layers: [{skips}]")
+        # text3 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"Match Point Layers: [{matchpoints}]")
+        text0 = f"{name}"
+        text1 = f"{snr}"
+        text2 = f"Skipped Layers: [{skips}]"
+        text3 = f"Match Point Layers: [{matchpoints}]"
 
-            cfg.project_tab._layer_details[0].setText(text0)
-            cfg.project_tab._layer_details[1].setText(text1)
-            cfg.project_tab._layer_details[2].setText(text2)
-            cfg.project_tab._layer_details[3].setText(text3)
-        else:
-            cfg.project_tab._widgetArea_details.hide()
+        cfg.project_tab._layer_details[0].setText(text0)
+        cfg.project_tab._layer_details[1].setText(text1)
+        cfg.project_tab._layer_details[2].setText(text2)
+        cfg.project_tab._layer_details[3].setText(text3)
+        # else:
+        #     cfg.project_tab._widgetArea_details.hide()
 
 
         if cfg.data.is_aligned():
