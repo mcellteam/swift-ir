@@ -3410,7 +3410,7 @@ class MainWindow(QMainWindow):
         self.ngGetUrlAction.triggered.connect(self.display_actual_viewer_url)
         neuroglancerMenu.addAction(self.ngGetUrlAction)
 
-        txt = ('Hide UI Controls', 'Show UI Controls')[cfg.SHOW_UI_CONTROLS]
+        txt = ('Show UI Controls', 'Hide UI Controls')[cfg.SHOW_UI_CONTROLS]
         self.ngShowUiControlsAction = QAction(txt, self)
         self.ngShowUiControlsAction.setShortcut('Ctrl+U')
         self.ngShowUiControlsAction.setCheckable(True)
@@ -3418,9 +3418,9 @@ class MainWindow(QMainWindow):
         self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
         neuroglancerMenu.addAction(self.ngShowUiControlsAction)
 
-        txt = ('Hide Scale Bar', 'Show Scale Bar')[cfg.SHOW_SCALE_BAR]
+        txt = ('Show Scale Bar', 'Hide Scale Bar')[cfg.SHOW_SCALE_BAR]
         self.ngShowScaleBarAction = QAction(txt, self)
-        self.ngShowScaleBarAction.setShortcut('Ctrl+U')
+        self.ngShowScaleBarAction.setShortcut('Ctrl+B')
         self.ngShowScaleBarAction.setCheckable(True)
         self.ngShowScaleBarAction.setChecked(cfg.SHOW_SCALE_BAR)
         self.ngShowScaleBarAction.triggered.connect(self.ng_toggle_scale_bar)
