@@ -200,12 +200,12 @@ class NgHost(QRunnable):
                 return
 
         coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
+        logger.info('coordinate space: {}')
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm','nm','nm'],
             scales=coord_space,
         )
-
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
         self.url_viewer = str(cfg.viewer)
@@ -251,7 +251,7 @@ class NgHost(QRunnable):
         # print('cross_section_scale          =%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
-            adjustment = 1.06
+            adjustment = 1.05
             # s.gpu_memory_limit = -1
             # s.system_memory_limit = -1
             # s.concurrent_downloads = 512
@@ -265,6 +265,7 @@ class NgHost(QRunnable):
                 data=cfg.unal_tensor,
                 volume_type='image',
                 dimensions=self.coordinate_space,
+                # voxel_offset=[1, y_nudge, x_nudge],
                 voxel_offset=[1, y_nudge, x_nudge],
             )
             cfg.baseLV = ng.LocalVolume(
