@@ -3410,14 +3410,16 @@ class MainWindow(QMainWindow):
         self.ngGetUrlAction.triggered.connect(self.display_actual_viewer_url)
         neuroglancerMenu.addAction(self.ngGetUrlAction)
 
-        self.ngShowUiControlsAction = QAction('Show UI Controls', self)
+        txt = ('Hide UI Controls', 'Show UI Controls')[cfg.SHOW_UI_CONTROLS]
+        self.ngShowUiControlsAction = QAction(txt, self)
         self.ngShowUiControlsAction.setShortcut('Ctrl+U')
         self.ngShowUiControlsAction.setCheckable(True)
         self.ngShowUiControlsAction.setChecked(cfg.SHOW_UI_CONTROLS)
         self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
         neuroglancerMenu.addAction(self.ngShowUiControlsAction)
 
-        self.ngShowScaleBarAction = QAction('Show UI Controls', self)
+        txt = ('Hide Scale Bar', 'Show Scale Bar')[cfg.SHOW_SCALE_BAR]
+        self.ngShowScaleBarAction = QAction(txt, self)
         self.ngShowScaleBarAction.setShortcut('Ctrl+U')
         self.ngShowScaleBarAction.setCheckable(True)
         self.ngShowScaleBarAction.setChecked(cfg.SHOW_SCALE_BAR)
@@ -3648,10 +3650,10 @@ class MainWindow(QMainWindow):
             QLabel('   ,  - Prev (comma)      .  - Next (period)   ^K - Skip'),
             QLabel(' ← - Scale Down       → - Scale Up           ^A - Align All'),
         ]
-        f = QFont()
-        # f.setFamily('Courier')
-        f.setPointSize(11)
-        list(map(lambda x: x.setFont(f), keyboard_commands))
+        # f = QFont()
+        # # f.setFamily('Courier')
+        # f.setPointSize(11)
+        # list(map(lambda x: x.setFont(f), keyboard_commands))
         list(map(lambda x: x.setContentsMargins(0,0,0,0), keyboard_commands))
         list(map(lambda x: x.setMargin(0), keyboard_commands))
 
@@ -3659,6 +3661,8 @@ class MainWindow(QMainWindow):
         # self._tool_keyBindings = WidgetArea(parent=self, title='Keyboard Commands', labels=keyboard_commands)
         self._tool_keyBindings = WidgetArea(parent=self, title='Keyboard Bindings', labels=keyboard_commands)
         self._tool_keyBindings.setObjectName('_tool_keyBindings')
+        self._tool_keyBindings.setStyleSheet('font-size: 10px; '
+                                              'font-weight: 500;')
 
 
         baseline = Qt.AlignmentFlag.AlignBaseline
