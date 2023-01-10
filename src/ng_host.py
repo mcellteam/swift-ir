@@ -166,7 +166,7 @@ class NgHost(QRunnable):
                    matchpoint=None,
                    widget_size=None,
                    show_panel_borders=False,
-                   show_scale_bar=False,
+                   show_scale_bar=True,
                    show_axis_lines=False
                    ):
         caller = inspect.stack()[1].function
@@ -256,8 +256,8 @@ class NgHost(QRunnable):
             # s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             s.cross_section_scale = cross_section_scale * adjustment
-            s.show_scale_bar = show_scale_bar
-            s.show_axis_lines = show_axis_lines
+            s.show_scale_bar = cfg.SHOW_SCALE_BAR
+            s.show_axis_lines = cfg.SHOW_AXIS_LINES
             # s.perspective_orientation
             # s.relative_display_scales = [32, 1, 1] #Todo inspect this
 
@@ -365,7 +365,7 @@ class NgHost(QRunnable):
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = cfg.SHOW_UI_CONTROLS
-            s.show_panel_borders = show_panel_borders
+            s.show_panel_borders = cfg.SHOW_PANEL_BORDERS
 
         self._layer = self.request_layer()
         self.clear_mp_buffer()
