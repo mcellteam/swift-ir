@@ -5,7 +5,7 @@ QTabBar::tab {
 }
 
 QWidget#self._tool_keyBindings{
-    font-size: 11px;
+    font-size: 9px;
 }
 
  QTabBar::close-button {

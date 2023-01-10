@@ -208,7 +208,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     logger.info(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
                     f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
 
-    cfg.main_window.hud(f'Preallocating {path_base}/{group}...')
+    cfg.main_window.hud(f'Preallocating {path_base}/{group} Zarr...')
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return

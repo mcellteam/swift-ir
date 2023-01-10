@@ -189,6 +189,7 @@ class ProjectTab(QWidget):
         # self._scrollNotification.setWidget(self._overlayNotification)
         # self._scrollNotification.setWidget(self._widgetArea_details)
         # self._scrollNotification.setWidgetResizable(True)
+        self._widgetArea_details.hide()
 
         '''
            # 'border-width: 1px;'

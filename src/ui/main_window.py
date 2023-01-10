@@ -2092,6 +2092,7 @@ class MainWindow(QMainWindow):
         self._cmbo_ngLayout.addItems(ng_layouts) # only doing this here so combo is empty on application open
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
         self._showToolWidgets()
+        cfg.project_tab._widgetArea_details.show()
         # self.initNgServer() #0103-
         # cfg.project_tab.openViewZarr()
         QApplication.processEvents()
@@ -3053,7 +3054,7 @@ class MainWindow(QMainWindow):
         logger.info(f'Tab Changed (caller: {caller})')
         if self._tabsGlob.count() == 0:
             return
-        if (caller == 'main') or (caller == '_onGlobTabClose'):
+        if (caller == 'main') or (caller == '_onGlobTabClose') or (caller == '_setLastTab'):
             self.shutdownNeuroglancer()
         # if caller != 'new_project':
             if self._isProjectTab():

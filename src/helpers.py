@@ -548,7 +548,7 @@ def create_scale_one_symlinks(src, dest, imgs):
 def create_project_structure_directories(destination, scales) -> None:
     for scale in scales:
         subdir_path = os.path.join(destination, scale)
-        cfg.main_window.hud('Creating directories for %s...')
+        cfg.main_window.hud('Creating directories for %s...' % scale)
         src_path = os.path.join(subdir_path, 'img_src')
         aligned_path = os.path.join(subdir_path, 'img_aligned')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
