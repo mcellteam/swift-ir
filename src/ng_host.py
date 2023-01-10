@@ -200,7 +200,7 @@ class NgHost(QRunnable):
                 return
 
         coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
-        logger.info('coordinate space: {}')
+        logger.info(f'coordinate space: {coord_space}')
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm','nm','nm'],
