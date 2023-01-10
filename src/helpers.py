@@ -450,8 +450,8 @@ class TimeoutException(Exception): pass
 
 def print_exception():
     exi = sys.exc_info()
-    logger.warning(f"  Error Type/Value  : %s %s" + (str(exi[0]), str(exi[1])))
-    logger.warning("  Error Value : " + str(exi[1]))
+    logger.warning(f"  Error Type/Value  : {exi[0]} {exi[1]}")
+    # logger.warning("  Error Value : " + str(exi[1]))
     logger.warning(traceback.format_exc())
     '''Pipe these into a logs directory - but where?'''
 

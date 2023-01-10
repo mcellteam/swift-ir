@@ -505,11 +505,13 @@ class alignment_process:
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
                 ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
+                ingredient_2x2b = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
                 # ingredient_4x4 = align_ingredient(ww=sx_4x4, psta=psta_4x4, wht=wht, ad=self.align_dir)
                 ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
-                self.recipe.add_ingredient(ingredient_4x4)
+                self.recipe.add_ingredient(ingredient_2x2b)
+                # self.recipe.add_ingredient(ingredient_4x4)
         elif atrm['selected_method'] == 'Match Point Align':
             # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
             mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()

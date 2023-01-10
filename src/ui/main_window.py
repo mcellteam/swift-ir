@@ -151,6 +151,8 @@ class MainWindow(QMainWindow):
             # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('4panel')
             # self._ng_layout_switch = 1
+            # cfg.project_tab._overlayNotification.show()
+            cfg.project_tab._widgetArea_details.show()
             cfg.project_tab.arrangement = 0
             cfg.project_tab._tabs.setCurrentIndex(0)
             cfg.project_tab.initNeuroglancer()
@@ -161,6 +163,7 @@ class MainWindow(QMainWindow):
             # self._ng_layout_switch = 0
             self._cmbo_ngLayout.setCurrentText('xy')
             # self._ng_layout_switch = 1
+            cfg.project_tab._widgetArea_details.hide()
             cfg.project_tab.arrangement = 1
             cfg.project_tab._tabs.setCurrentIndex(0)
             cfg.project_tab.initNeuroglancer()
@@ -192,6 +195,8 @@ class MainWindow(QMainWindow):
 
     def restartNg(self):
         caller = inspect.stack()[1].function
+
+        self.shutdownNeuroglancer()
 
         if cfg.project_tab:
 
@@ -494,6 +499,7 @@ class MainWindow(QMainWindow):
                 self.set_idle()
 
         self._enableAllTabs()
+        self.reload_ng_layout_combobox()
         cfg.project_tab.initNeuroglancer()
         logger.info('<<<< autoscale <<<<')
 
@@ -1330,7 +1336,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab._tabs.currentIndex() == 0:
             if cfg.data.skipped():
                 cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                cfg.project_tab._overlayLab.setText('X SKIPPED - %s' % cfg.data.name_base())
+                cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
             else:
@@ -1374,54 +1380,49 @@ class MainWindow(QMainWindow):
         if l == None: l = cfg.data.layer()
 
         # name = "<b style='color: #010048;font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
-        name = "<b style='font-size:14px;'>%s</b><br>" % cfg.data.name_base(s=s, l=l)
-        skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
-        # completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
-        #             (cfg.data.nScalesAligned, cfg.data.nscales)
-        completed = "<b style='font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
-                    (cfg.data.nScalesAligned, cfg.data.nscales)
-        if cfg.data.is_aligned():
-            if cfg.data.has_bb(s=s):
-                bb = cfg.data.bounding_rect(s=s)
-                dims = [bb[2], bb[3]]
-            else:
-                dims = cfg.data.image_size(s=s)
-            # bb_dims = "<b style='color: #212121;font-size:11px;'>Bounds: %dx%dpx,&nbsp;%s</b><br>" \
-            #           % (dims[0], dims[1], cfg.data.scale_pretty())
-            bb_dims = "<b style='font-size:11px;'>Bounds: %dx%dpx,&nbsp;%s</b><br>" \
-                      % (dims[0], dims[1], cfg.data.scale_pretty())
+        name = "%s" % cfg.data.name_base(s=s, l=l)
+        # skip = "<b style='color:red;'> SKIP</b><br>" if cfg.data.skipped(s=s, l=l) else ''
+        # skip = "SKIP" if cfg.data.skipped(s=s, l=l) else ''
+        # # completed = "<b style='color: #212121;font-size:11px;'>Scales Aligned: (%d/%d)</b><br>" % \
+        # #             (cfg.data.nScalesAligned, cfg.data.nscales)
+        # completed = "Scales Aligned: (%d/%d)" % (cfg.data.nScalesAligned, cfg.data.nscales)
+
+        if cfg.project_tab.arrangement == 0:
             snr_report = cfg.data.snr_report(s=s, l=l)
-            snr_report = snr_report.replace('<', '&lt;')
-            snr_report = snr_report.replace('>', '&gt;')
-            # snr = f"<b style='color:#212121; font-size:11px;'>%s</b><br>" % snr_report
-            snr = f"<b style='font-size:11px;'>%s</b><br>" % snr_report
+            snr = f"%s" % snr_report
+            skips = ' '.join(map(str, cfg.data.skips_list()))
+            matchpoints = ' '.join(map(str, cfg.data.find_layers_with_matchpoints()))
+            # text0 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"{name}")
+            # text1 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"{snr}")
+            # text2 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"Skipped Layers: [{skips}]")
+            # text3 = textwrap.TextWrapper(width=24, replace_whitespace=False).fill(text=f"Match Point Layers: [{matchpoints}]")
+            text0 = f"{name}"
+            text1 = f"{snr}"
+            text2 = f"Skipped Layers: [{skips}]"
+            text3 = f"Match Point Layers: [{matchpoints}]"
 
-            skips = '\n'.join(map(str, cfg.data.skips_list()))
-            matchpoints = '\n'.join(map(str, cfg.data.find_layers_with_matchpoints()))
+            cfg.project_tab._layer_details[0].setText(text0)
+            cfg.project_tab._layer_details[1].setText(text1)
+            cfg.project_tab._layer_details[2].setText(text2)
+            cfg.project_tab._layer_details[3].setText(text3)
 
-            text = \
-                f"{name}{skip}"\
-                f"{bb_dims}"\
-                f"{snr}"\
-                f"{completed}"\
-                f"<b>Skipped Layers:</b> [{skips}]<br>"\
-                f"<b>Match Point Layers:</b> [{matchpoints}]"
+
+        if cfg.data.is_aligned():
             self.updateAffineWidget()
         else:
-            text = \
-                f"{name}{skip}"\
-                f"<em style='color: #FF0000;'>Not Aligned</em><br>"\
-                f"{completed}"\
-                f"<b>Skipped Layers: []<br>"\
-                f"<b>Match Point Layers: []</b>"
-
             self.clearAffineWidget()
 
+
+
+
+
         # self.layer_details.setText(text)
-        if cfg.project_tab.arrangement == 0:
-            cfg.project_tab._overlayNotification.setText(text)
-        else:
-            cfg.project_tab._overlayNotification.hide()
+        # if cfg.project_tab.arrangement == 0:
+        #     # text = textwrap.TextWrapper(width=24,break_long_words=False,replace_whitespace=False).fill(text=text)
+        #     text = textwrap.TextWrapper(width=24,replace_whitespace=False).fill(text=text)
+        #     # cfg.project_tab._overlayNotification.setText(text)
+        # else:
+        #     cfg.project_tab._overlayNotification.hide()
 
     def updateNewWidget(self):
         pass
@@ -2007,7 +2008,7 @@ class MainWindow(QMainWindow):
         # cfg.project_tab.snr_plot.initSnrPlot()  # !!!
         # self._forceHideControls()
         # self._forceHidePython()
-
+        self.rb0.setChecked(True)
         self._section_slider_switch = 0
         self._sectionSlider.setValue(cfg.data.layer())
         self._section_slider_switch = 1
@@ -2017,6 +2018,7 @@ class MainWindow(QMainWindow):
             self.updateStatusTips()
             self._runSNRcheck()
 
+        cfg.project_tab.initNeuroglancer()
         self._setLastTab()
 
 
@@ -2116,6 +2118,7 @@ class MainWindow(QMainWindow):
 
 
     def _autosave(self):
+        logger.info('Autosaving...')
         if not cfg.AUTOSAVE:
             logger.info('Autosave is OFF, There May Be Unsaved Changes...')
             return
@@ -2242,7 +2245,7 @@ class MainWindow(QMainWindow):
         else:
             self.warn('No Images Were Imported')
 
-        self._proj_saveToFile()
+        # self._proj_saveToFile()
         logger.info('<<<< import_multiple_images <<<<')
 
 
@@ -2470,7 +2473,8 @@ class MainWindow(QMainWindow):
         logger.info('')
         events = (
             (QKeySequence.MoveToPreviousChar, self.scale_down),
-            (QKeySequence.MoveToNextChar, self.scale_up)
+            (QKeySequence.MoveToNextChar, self.scale_up),
+            (Qt.Key_K, self._callbk_skipChanged)
         )
         for event, action in events:
             QShortcut(event, self, action)
@@ -2728,8 +2732,8 @@ class MainWindow(QMainWindow):
     def update_match_point_snr(self):
         if cfg.project_tab:
             snr_report = cfg.data.snr_report()
-            snr_report.replace('<', '&lt;')
-            snr_report.replace('>', '&gt;')
+            # snr_report.replace('<', '&lt;')
+            # snr_report.replace('>', '&gt;')
             self.matchpoint_text_snr.setHtml(f'<h4>{snr_report}</h4>')
 
     def _update_lab_keep_reject(self, layer):
@@ -3049,8 +3053,9 @@ class MainWindow(QMainWindow):
         logger.info(f'Tab Changed (caller: {caller})')
         if self._tabsGlob.count() == 0:
             return
-        if caller != 'new_project':
-            # if caller != 'open_project':
+        if (caller == 'main') or (caller == '_onGlobTabClose'):
+            self.shutdownNeuroglancer()
+        # if caller != 'new_project':
             if self._isProjectTab():
                 logger.info('Loading Project Tab...')
                 cfg.data = self._tabsGlob.currentWidget().datamodel
@@ -3432,6 +3437,11 @@ class MainWindow(QMainWindow):
         self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
 
+        self.skipChangeAction = QAction('Toggle Skip', self)
+        self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
+        self.skipChangeAction.setShortcut('Ctrl+K')
+        alignMenu.addAction(self.skipChangeAction)
+
         mendenhallMenu = alignMenu.addMenu('Mendenhall Protocol')
 
         self.newMendenhallAction = QAction('New', self)
@@ -3453,11 +3463,6 @@ class MainWindow(QMainWindow):
         self.stopMendenhallAction = QAction('Stop', self)
         self.stopMendenhallAction.triggered.connect(self.stop_mendenhall_protocol)
         mendenhallMenu.addAction(self.stopMendenhallAction)
-
-        # self.skipChangeAction = QAction('Toggle Skip', self)
-        # self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
-        # self.skipChangeAction.setShortcut('Ctrl+K')
-        # toolsMenu.addAction(self.skipChangeAction)
 
         # self.jumpWorstSnrAction = QAction('Jump To Next Worst SNR', self)
         # self.jumpWorstSnrAction.triggered.connect(self.jump_to_worst_snr)
@@ -3632,14 +3637,14 @@ class MainWindow(QMainWindow):
         ]
         f = QFont()
         # f.setFamily('Courier')
-        f.setPointSize(9)
+        f.setPointSize(11)
         list(map(lambda x: x.setFont(f), keyboard_commands))
         list(map(lambda x: x.setContentsMargins(0,0,0,0), keyboard_commands))
         list(map(lambda x: x.setMargin(0), keyboard_commands))
 
 
         # self._tool_keyBindings = WidgetArea(parent=self, title='Keyboard Commands', labels=keyboard_commands)
-        self._tool_keyBindings = WidgetArea(parent=self, labels=keyboard_commands)
+        self._tool_keyBindings = WidgetArea(parent=self, title='Keyboard Bindings', labels=keyboard_commands)
         self._tool_keyBindings.setObjectName('_tool_keyBindings')
 
 
@@ -3668,7 +3673,7 @@ class MainWindow(QMainWindow):
 
 
         tip = 'Set Whether to Use or Reject the Current Layer'
-        self._lab_keep_reject = QLabel('Keep/Reject:')
+        self._lab_keep_reject = QLabel('Reject:')
         self._lab_keep_reject.setStyleSheet('font-size: 10px; font-weight: 500;')
         self._lab_keep_reject.setStatusTip(tip)
         self._skipCheckbox = QCheckBox()

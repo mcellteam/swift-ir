@@ -138,7 +138,6 @@ class NgHostSlim(QRunnable):
         return floor(cfg.viewer.state.position[0])
 
     def initViewer(self,
-                   show_ui_controls=True,
                    show_panel_borders=False,
                    show_scale_bar=True,
                    show_axis_lines=True,
@@ -218,7 +217,7 @@ class NgHostSlim(QRunnable):
             else:                 s.crossSectionBackgroundColor = '#004060'
 
         with cfg.viewer.config_state.txn() as s:
-            s.show_ui_controls = show_ui_controls
+            s.show_ui_controls = cfg.SHOW_UI_CONTROLS
             s.show_panel_borders = show_panel_borders
 
         self._layer = self.request_layer()
