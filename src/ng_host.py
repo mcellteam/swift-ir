@@ -264,21 +264,21 @@ class NgHost(QRunnable):
             cfg.refLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
                 volume_type='image',
-                dimensions=self.coordinate_space,
+                # dimensions=self.coordinate_space,
                 # voxel_offset=[1, y_nudge, x_nudge],
                 voxel_offset=[1, y_nudge, x_nudge],
             )
             cfg.baseLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
                 volume_type='image',
-                dimensions=self.coordinate_space,
+                # dimensions=self.coordinate_space,
                 voxel_offset=[0, y_nudge, x_nudge],
             )
             if is_aligned:
                 cfg.alLV = ng.LocalVolume(
                     data=cfg.al_tensor,
                     volume_type='image',
-                    dimensions=self.coordinate_space,
+                    # dimensions=self.coordinate_space,
                     voxel_offset=[0, ] * 3,
                 )
 
