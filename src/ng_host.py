@@ -21,6 +21,9 @@ numcodecs.blosc.use_threads = False
 import zarr
 import neuroglancer as ng
 import neuroglancer.webdriver
+from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
+                            typed_map, typed_set, typed_string_map, wrapped_property,
+                            number_or_string)
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
@@ -259,7 +262,9 @@ class NgHost(QRunnable):
             s.show_scale_bar = cfg.SHOW_SCALE_BAR
             s.show_axis_lines = cfg.SHOW_AXIS_LINES
             # s.perspective_orientation
-            s.relative_display_scales = [48, 1, 1] #Todo inspect this
+            # s.relative_display_scales = [48, 1, 1]
+            # s.relative_display_scales = typed_string_map([48, 1, 1])
+            # s.display_dimensions = [1000,1,1]
 
             cfg.refLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
@@ -267,12 +272,14 @@ class NgHost(QRunnable):
                 dimensions=self.coordinate_space,
                 voxel_offset=[1, y_nudge, x_nudge],
                 # voxel_offset=[1, y_nudge, x_nudge],
+                max_downsampling=13824
             )
             cfg.baseLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, y_nudge, x_nudge],
+                max_downsampling=13824
             )
             if is_aligned:
                 cfg.alLV = ng.LocalVolume(
@@ -280,15 +287,32 @@ class NgHost(QRunnable):
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, ] * 3,
+                    max_downsampling=13824
                 )
 
             # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
             # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{self.unal_path}'
             # if is_aligned:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_path}'
 
-            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER)
-            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER)
-            if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER)
+            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER,
+                                                 tool_bindings={
+                                                     'A': neuroglancer.ShaderControlTool(control='normalized'),
+                                                     'B': neuroglancer.OpacityTool(),
+                                                 },
+                                                 )
+            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER,
+                                                  tool_bindings={
+                                                      'A': neuroglancer.ShaderControlTool(control='normalized'),
+                                                      'B': neuroglancer.OpacityTool(),
+                                                  },
+                                                  )
+            if is_aligned:
+                s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER,
+                                                         tool_bindings={
+                                                             'A': neuroglancer.ShaderControlTool(control='normalized'),
+                                                             'B': neuroglancer.OpacityTool(),
+                                                         },
+                                                         )
 
             s.layers['mp_ref'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
