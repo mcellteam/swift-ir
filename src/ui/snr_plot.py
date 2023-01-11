@@ -13,7 +13,7 @@ import logging
 from functools import partial
 import numpy as np
 import pyqtgraph as pg
-from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox
+from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
 from src.helpers import print_exception, exist_aligned_zarr_cur_scale, exist_aligned_zarr, get_scale_val
@@ -35,8 +35,30 @@ class SnrPlot(QWidget):
         drafting_blue = '#004060'
         self.view.setBackground(drafting_blue)
         pg.setConfigOption('foreground', '#f3f6fb')
+        pg.setConfigOptions(antialias=True)
         self.plot = self.view.addPlot()
         self.vb = CustomViewBox()
+        # self.label =
+        # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
+        self._curLayerLine = pg.InfiniteLine(movable=False,
+                                        angle=90,
+                                        label='Section #{value:d}',
+                                        # label=self.label_value,
+                                        labelOpts={'position': .1,
+                                                   'color': (200, 200, 100),
+                                                   'fill': (200, 200, 200, 50),
+                                                      'movable': True})
+        # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
+        #                                  anchor=(1, 1))
+        self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, anchor=(1, 1))
+
+        f = QFont()
+        f.setBold(True)
+        f.setPointSize(12)
+        self._snr_label.setFont(f)
+        self.plot.addItem(self._curLayerLine)
+
+
 
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
 
@@ -101,8 +123,24 @@ class SnrPlot(QWidget):
     # def setData(self, data):
     #     self.data = data
 
+    def updateLayerLinePos(self):
+        self._curLayerLine.setPos([cfg.data.layer(), 1])
+        # label = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
+        self._snr_label.setText('SNR: %.2f' % cfg.data.snr())
+
+        # self.line_label
+        # self.line_label.d
+
+
+    def callableFunction(x, y):
+        return str(cfg.data.snr())
+        # logger.info()
+        # return f"Square Values: ({x ** 2:.4f}, {y ** 2:.4f})"
+
 
     def initSnrPlot(self, s=None):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if not cfg.data:
             logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
             return
@@ -128,6 +166,7 @@ class SnrPlot(QWidget):
                 else:
                     self._snr_checkboxes[s].hide()
             self.checkboxes_hlayout.addStretch()
+            self.updateLayerLinePos()
 
         except:
             print_exception()
@@ -152,8 +191,11 @@ class SnrPlot(QWidget):
 
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if cfg.data:
             self.plot.clear()
+            self.plot.addItem(self._curLayerLine)
 
             for s in cfg.data.scales()[::-1]:
                 if exist_aligned_zarr(scale=s):
@@ -235,11 +277,14 @@ class SnrPlot(QWidget):
 
 
     def wipePlot(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
             del self._snr_checkboxes
             self.plot.clear()
+            self.plot.addItem(self._curLayerLine)
             # try:
             #     del self._snr_checkboxes
             # except:
