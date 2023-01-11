@@ -313,35 +313,41 @@ class NgHost(QRunnable):
                                                              'B': neuroglancer.OpacityTool(),
                                                          },
                                                          )
+            if self.mp_mode:
+                s.layers['mp_ref'] = ng.LocalAnnotationLayer(
+                    dimensions=self.coordinate_space,
+                    annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
+                    annotation_properties=[
+                        ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white',),
+                        ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
+                        ng.AnnotationPropertySpec(id='size', type='float32', default=7)
+                    ],
+                    shader=ann_shader,
+                )
 
-            s.layers['mp_ref'] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white',),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=7)
-                ],
-                shader=ann_shader,
-            )
-
-            s.layers['mp_base'] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotations=self.pt2ann(
-                    points=cfg.data.get_mps(role='base')) + self.base_pts,
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=7)
-                ],
-                shader=ann_shader,
-            )
+                s.layers['mp_base'] = ng.LocalAnnotationLayer(
+                    dimensions=self.coordinate_space,
+                    annotations=self.pt2ann(
+                        points=cfg.data.get_mps(role='base')) + self.base_pts,
+                    annotation_properties=[
+                        ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
+                        ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
+                        ng.AnnotationPropertySpec(id='size', type='float32', default=7)
+                    ],
+                    shader=ann_shader,
+                )
 
             grps = []
-            grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout))
-            grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout))
-            if is_aligned:
-                grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout))
+            if self.mp_mode:
+                grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout))
+                grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout))
+                if is_aligned:
+                    grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout))
+            else:
+                grps.append(ng.LayerGroupViewer(layers=[self.ref_l], layout=self.nglayout))
+                grps.append(ng.LayerGroupViewer(layers=[self.base_l], layout=self.nglayout))
+                if is_aligned:
+                    grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout))
 
             s.position = [cfg.data.layer(), frame[0]/2, frame[1]/2]
 
@@ -350,15 +356,26 @@ class NgHost(QRunnable):
 
             if self.arrangement == 2:
                 if is_aligned:
-                    s.layout = ng.row_layout([
-                        ng.column_layout([
-                            ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
-                            ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
-                        ]),
-                        ng.column_layout([
-                            ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout),
-                        ]),
-                    ])
+                    if self.mp_mode:
+                        s.layout = ng.row_layout([
+                            ng.column_layout([
+                                ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
+                                ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout),
+                            ]),
+                            ng.column_layout([
+                                ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout),
+                            ]),
+                        ])
+                    else:
+                        s.layout = ng.row_layout([
+                            ng.column_layout([
+                                ng.LayerGroupViewer(layers=[self.ref_l], layout=self.nglayout),
+                                ng.LayerGroupViewer(layers=[self.base_l], layout=self.nglayout),
+                            ]),
+                            ng.column_layout([
+                                ng.LayerGroupViewer(layers=[self.aligned_l], layout=self.nglayout),
+                            ]),
+                        ])
                 else:
                     s.layout = ng.row_layout(grps)
 

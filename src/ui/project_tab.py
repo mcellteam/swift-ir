@@ -52,7 +52,8 @@ class ProjectTab(QWidget):
 
     def _onTabChange(self, index=None):
         if index == None: index = self._tabs.currentIndex()
-        if index == 0:  pass
+        if index == 0:
+            self.updateNeuroglancer()
         if index == 1:
             if not cfg.main_window._working:
                 self.layer_view_widget.set_data()
