@@ -243,7 +243,7 @@ class NgHostSlim(QRunnable):
             self.signals.stateChanged.emit(request_layer)
         except:
             # print_exception()
-            logger.error('ERROR')
+            logger.error('ERROR on_state_change')
 
 
 def obj_to_string(obj, extra='    '):

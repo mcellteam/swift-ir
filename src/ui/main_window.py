@@ -190,25 +190,24 @@ class MainWindow(QMainWindow):
 
 
     def restartNg(self):
-        caller = inspect.stack()[1].function
+        if cfg.data:
+            caller = inspect.stack()[1].function
+            self.shutdownNeuroglancer()
+            if cfg.project_tab:
 
-        self.shutdownNeuroglancer()
-
-        if cfg.project_tab:
-
-            # self.tell('Restarting Neuroglancer...')
-            logger.info(f'Restarting Neuroglancer Server (caller: {caller})...')
-            try:
-                # cfg.ng_worker = NgHost(parent=self)
-                # cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-                cfg.project_tab.initNeuroglancer()
-            except:
-                print_exception()
-        if cfg.zarr_tab:
-            try:
-                cfg.zarr_tab.initNeuroglancer()
-            except:
-                print_exception()
+                # self.tell('Restarting Neuroglancer...')
+                logger.info(f'Restarting Neuroglancer Server (caller: {caller})...')
+                try:
+                    # cfg.ng_worker = NgHost(parent=self)
+                    # cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+                    cfg.project_tab.initNeuroglancer()
+                except:
+                    print_exception()
+            if cfg.zarr_tab:
+                try:
+                    cfg.zarr_tab.initNeuroglancer()
+                except:
+                    print_exception()
 
 
     def tell(self, message):
@@ -1277,7 +1276,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
 
         if cfg.zarr_tab:
             if ng_layer:
@@ -1303,7 +1302,7 @@ class MainWindow(QMainWindow):
         #     return
 
         if self._working == True:
-            logger.warning("Can't update GUI now - working...")
+            logger.warning(f"Can't update GUI now - working (caller: {caller})...")
             self.warn("Can't update GUI now - working...")
             return
 
@@ -1312,7 +1311,7 @@ class MainWindow(QMainWindow):
                 if 0 <= ng_layer < cfg.data.n_layers():
                     logger.debug(f'Setting Layer: {ng_layer}')
                     cfg.data.set_layer(ng_layer)
-                    self._sectionSlider.setValue(ng_layer)
+                    # self._sectionSlider.setValue(ng_layer)
             except:
                 print_exception()
             if cfg.project_tab._tabs.currentIndex() == 0:
@@ -1342,6 +1341,16 @@ class MainWindow(QMainWindow):
                         cfg.project_tab._overlayLab.hide()
                         # QApplication.processEvents()
                     cfg.project_tab._widgetArea_details.show()
+
+
+        if cfg.project_tab._tabs.currentIndex() == 3:
+            cfg.project_tab.snr_plot.updateLayerLinePos()
+
+
+
+        self._section_slider_switch = 0
+        self._sectionSlider.setValue(cfg.data.layer())
+        self._section_slider_switch = 1
 
         try:
             self.updateLayerDetails()
@@ -1634,6 +1643,10 @@ class MainWindow(QMainWindow):
                         state = copy.deepcopy(cfg.viewer.state)
                         state.position[0] = requested
                         cfg.viewer.set_state(state)
+                self.dataUpdateWidgets()
+                    # if cfg.project_tab._tabs.currentIndex() == 3:
+
+
 
             if cfg.zarr_tab:
                 logger.info('Jumping To Section #%d' % requested)
@@ -1659,7 +1672,7 @@ class MainWindow(QMainWindow):
             next_layer = sorted_indices[self._jump_to_worst_ticker]  # int
             snr = sorted_pairs[self._jump_to_worst_ticker]  # tuple
             rank = self._jump_to_worst_ticker  # int
-            self.tell("Jump To Section #%d (Badness Rank = %d, SNR = %.2f)" % (next_layer, rank, snr[1]))
+            self.tell("Jumping To Section #%d (Badness Rank = %d, SNR = %.2f)" % (next_layer, rank, snr[1]))
             # cfg.data.set_layer(next_layer)
             self.jump_to(requested=next_layer)
             self.dataUpdateWidgets()
@@ -2001,9 +2014,9 @@ class MainWindow(QMainWindow):
         # self._forceHideControls()
         # self._forceHidePython()
         self.rb0.setChecked(True)
-        self._section_slider_switch = 0
-        self._sectionSlider.setValue(cfg.data.layer())
-        self._section_slider_switch = 1
+        # self._section_slider_switch = 0
+        # self._sectionSlider.setValue(cfg.data.layer())
+        # self._section_slider_switch = 1
         self._jumpToLineedit.setText(str(cfg.data.layer()))
         self._set_align_status_label_visibility()
         if exist_aligned_zarr_cur_scale():
@@ -3030,14 +3043,14 @@ class MainWindow(QMainWindow):
         indexes.remove(self._tabsGlob.currentIndex())
         for i in indexes:
             self._tabsGlob.setTabEnabled(i, False)
-        self._btn_refreshNg.setEnabled(False)
+        # self._btn_refreshNg.setEnabled(False)
 
 
     def _enableAllTabs(self):
         indexes = list(range(0, self._tabsGlob.count()))
         for i in indexes:
             self._tabsGlob.setTabEnabled(i, True)
-        self._btn_refreshNg.setEnabled(True)
+        # self._btn_refreshNg.setEnabled(True)
 
 
     def _isProjectTab(self):

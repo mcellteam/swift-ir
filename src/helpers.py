@@ -384,7 +384,6 @@ def exist_aligned_zarr_cur_scale(dest=None) -> bool:
     return True
 
 
-
 def are_aligned_images_generated(dir, scale) -> bool:
     '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
     path = os.path.join(dir, scale, 'img_aligned')
@@ -451,9 +450,8 @@ class TimeoutException(Exception): pass
 def print_exception():
     exi = sys.exc_info()
     logger.warning(f"  Error Type/Value  : {exi[0]} {exi[1]}")
-    # logger.warning("  Error Value : " + str(exi[1]))
     logger.warning(traceback.format_exc())
-    '''Pipe these into a logs directory - but where?'''
+    # Todo Pipe these into a logs directory
 
 
 def natural_sort(l):

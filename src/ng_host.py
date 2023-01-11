@@ -203,7 +203,7 @@ class NgHost(QRunnable):
                 return
 
         coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
-        logger.info(f'coordinate space: {coord_space}')
+        # logger.info(f'coordinate space: {coord_space}')
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm','nm','nm'],
@@ -272,14 +272,14 @@ class NgHost(QRunnable):
                 dimensions=self.coordinate_space,
                 voxel_offset=[1, y_nudge, x_nudge],
                 # voxel_offset=[1, y_nudge, x_nudge],
-                max_downsampling=13824
+                max_downsampling=1, # 13824,
             )
             cfg.baseLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, y_nudge, x_nudge],
-                max_downsampling=13824
+                max_downsampling=1, # 13824,
             )
             if is_aligned:
                 cfg.alLV = ng.LocalVolume(
@@ -287,7 +287,7 @@ class NgHost(QRunnable):
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, ] * 3,
-                    max_downsampling=13824
+                    max_downsampling=1, # 13824,
                 )
 
             # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
@@ -412,7 +412,7 @@ class NgHost(QRunnable):
                 self.clear_mp_buffer()
         except:
             # print_exception()
-            logger.error('ERROR')
+            logger.error('ERROR on_state_change')
 
 
     def add_matchpoint(self, s):
