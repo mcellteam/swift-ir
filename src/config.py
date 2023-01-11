@@ -85,7 +85,9 @@ TACC_MAX_CPUS = 116 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
-SHADER = None
+SHADER = '''void main () {
+          emitGrayscale(toNormalized(getDataValue()));
+        }'''
 THEME = 0
 MP_LINEWEIGHT = 3
 MP_SIZE = 6

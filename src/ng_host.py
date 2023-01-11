@@ -259,7 +259,7 @@ class NgHost(QRunnable):
             s.show_scale_bar = cfg.SHOW_SCALE_BAR
             s.show_axis_lines = cfg.SHOW_AXIS_LINES
             # s.perspective_orientation
-            # s.relative_display_scales = [32, 1, 1] #Todo inspect this
+            s.relative_display_scales = [48, 1, 1] #Todo inspect this
 
             cfg.refLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
