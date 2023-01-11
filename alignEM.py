@@ -42,7 +42,7 @@ $ qtpy mypy-args
 import os
 import qtpy
 # os.environ['QT_API'] = 'pyqt5'
-# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ["BLOSC_NOLOCK"] = "1"
 os.environ["BLOSC_NTHREADS"] = "1"
 # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
@@ -178,6 +178,7 @@ def main():
 
 
     app = QApplication([])
+
     app.setStyle('Fusion')
     cfg.main_window = MainWindow()
     logger.info('Showing AlignEM-SWiFT...')
