@@ -748,11 +748,11 @@ class MainWindow(QMainWindow):
                         scale=scale,
                         start_layer=start_layer,
                         num_layers=num_layers,
-                        preallocate=False))
+                        preallocate=Falsee))
                 self.threadpool.start(self.worker)
             else:
                 generate_aligned(
-                    data=cfg.data,
+                    dm=cfg.data,
                     scale=scale,
                     start_layer=start_layer,
                     num_layers=num_layers,
@@ -763,6 +763,37 @@ class MainWindow(QMainWindow):
                           ' Try Re-generating images.')
 
         else:
+            self.tell('Generating Aligned Thumbnail...')
+            self.showZeroedPbar()
+            if num_layers == -1:
+                end_layer = len(cfg.data)
+            else:
+                end_layer = start_layer + num_layers
+            try:
+                if cfg.USE_EXTRA_THREADING:
+                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(
+                        dm=cfg.data,
+                        layers=range(start_layer, start_layer + end_layer))
+                    )
+                    self.threadpool.start(self.worker)
+                else:
+                    generate_thumbnails_aligned(
+                        dm=cfg.data,
+                        layers=range(start_layer, start_layer + end_layer)
+                    )
+
+            except:
+                print_exception()
+                self.warn('Something Unexpected Happened While Generating Aligned Thumbnail')
+
+            finally:
+                cfg.data.scalesList = cfg.data.scales()
+                cfg.data.nscales = len(cfg.data.scales())
+                cfg.data.set_scale(cfg.data.scales()[-1])
+                self.pbar_widget.hide()
+                logger.info('Thumbnail Generation Complete')
+
+
             self.tell('Alignment Complete')
         finally:
             self.onAlignmentEnd()
@@ -849,6 +880,27 @@ class MainWindow(QMainWindow):
             self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.'
                           ' Try Re-generating images.')
         else:
+            self.tell('Generating Aligned Thumbnail...')
+            self.showZeroedPbar()
+            try:
+                if cfg.USE_EXTRA_THREADING:
+                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(dm=cfg.data, layers=[cur_layer]))
+                    self.threadpool.start(self.worker)
+                else:
+                    generate_thumbnails_aligned(dm=cfg.data, layers=[cur_layer])
+
+            except:
+                print_exception()
+                self.warn('Something Unexpected Happened While Generating Aligned Thumbnail')
+
+            finally:
+                cfg.data.scalesList = cfg.data.scales()
+                cfg.data.nscales = len(cfg.data.scales())
+                cfg.data.set_scale(cfg.data.scales()[-1])
+                self.pbar_widget.hide()
+                logger.info('Thumbnail Generation Complete')
+
+
             self.tell('Alignment Complete')
         finally:
             self.onAlignmentEnd()
@@ -888,7 +940,8 @@ class MainWindow(QMainWindow):
                         scale=scale,
                         start_layer=0,
                         num_layers=-1,
-                        preallocate=True
+                        preallocate=True,
+                        renew_dir=True
                     )
                 )
                 self.threadpool.start(self.worker)
@@ -898,7 +951,8 @@ class MainWindow(QMainWindow):
                     scale=scale,
                     start_layer=0,
                     num_layers=-1,
-                    preallocate=True
+                    preallocate=True,
+                    renew_dir=True
                 )
 
             # self.set_status('Generating Thumbnails...')

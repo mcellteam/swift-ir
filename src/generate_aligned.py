@@ -21,7 +21,7 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True):
+def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, renew_dir=False):
     logger.critical('Generating Aligned Images...')
 
     if ng.is_server_running():
@@ -41,7 +41,8 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True):
     scale_val = get_scale_val(scale)
     zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
     od = os.path.join(dm.dest(), scale, 'img_aligned')
-    renew_directory(directory=od)
+    if renew_dir:
+        renew_directory(directory=od)
     alstack = dm.alstack(s=scale)
     print_example_cafms(dm)
     # layerator = datamodel.get_iter(s=s)
@@ -64,13 +65,15 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True):
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
     group = 's%d' % scale_val
     if preallocate:
+        logger.info('preallocating')
         preallocate_zarr(name='img_aligned.zarr',
                          group=group,
                          dimx=rect[2],
                          dimy=rect[3],
                          dimz=dm.n_layers(),
                          dtype='uint8',
-                         overwrite=True)
+                         overwrite=True
+                         )
 
     if num_layers == -1:
         end_layer = len(alstack)

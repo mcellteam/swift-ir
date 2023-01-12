@@ -290,14 +290,14 @@ class ProjectTab(QWidget):
 
     def updatePlotThumbnail(self):
         pixmap = QPixmap(cfg.data.thumbnail())
-        pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio)
+        pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio)
         self._thumbnail_src.setPixmap(pixmap)
         self._thumbnail_src.show()
         self._lab_source_thumb.show()
         if cfg.data.is_aligned():
             # pixmap = QPixmap(cfg.data.thumbnail_aligned()).scaled(150, 150, Qt.KeepAspectRatio)
             pixmap = QPixmap(cfg.data.thumbnail_aligned())
-            pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self._thumbnail_aligned.setPixmap(pixmap)
             self._thumbnail_aligned.show()
             self._lab_aligned_thumb.show()
@@ -346,10 +346,11 @@ class ProjectTab(QWidget):
         style = '''font-size: 14px; color: #f3f6fb; font-weight: 500;'''
 
         self._lab_source_thumb = QLabel('Source:')
-        self._lab_source_thumb.setFixedHeight(20)
+        self._lab_source_thumb.setFixedHeight(16)
         self._lab_source_thumb.setStyleSheet(style)
         self._lab_source_thumb.hide()
         self._lab_aligned_thumb = QLabel('Aligned:')
+        self._lab_aligned_thumb.setFixedHeight(16)
         self._lab_aligned_thumb.setStyleSheet(style)
         self._lab_aligned_thumb.hide()
 
