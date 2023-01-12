@@ -1,4 +1,33 @@
+QMenuBar {
+	background: #1b1e23;
+	color: #daebfe;
+}
 
+QMenuBar::item {
+  	spacing: 3px;
+	padding: 1px 4px;
+  	background: transparent;
+}
+
+QMenuBar::item:selected {
+  	background: #8c8c8c;
+}
+
+QMenu::item {
+	spacing: 3px;
+	padding: 3px 15px;
+}
+
+QMenu::item:selected {
+	spacing: 3px;
+	padding: 3px 15px;
+	background: #808080;
+	color: #f3f6fb;
+	border-width: 1px;
+	border-radius: 10px;
+	border-color: #1b1e23;
+	border-style: inset;
+}
 
 QTabBar::tab {
     height: 24px;
@@ -14,9 +43,7 @@ QWidget#self._tool_keyBindings{
      height: 13px;
      width: 13px;
  }
- QTabBar::close-button:hover {
-     image: url(src/resources/close-tab-hover.png)
- }
+ /* TabBar::close-button:hover { image: url(src/resources/close-tab-hover.png) } */
 
  QLabel#extra_header_text_label{
      font-size: 11px;
@@ -239,45 +266,6 @@ QListWidget#_hstry_listWidget {
     /*font-size: 11px;*/
 }
 
-
- /* ---- QMenu  ---- */
-
-QMenu {
-    background-color: white;
-    margin: 2px; /* some spacing around the menu */
-}
-
-QMenu::item {
-    padding: 2px 25px 2px 20px;
-    border: 1px solid transparent; /* reserve space for selection border */
-}
-
-QMenu::item:selected {
-    border-color: darkblue;
-    background: rgba(100, 100, 100, 150);
-}
-
-QMenu::icon:checked { /* appearance of a 'checked' icon */
-    background: gray;
-    border: 1px inset gray;
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    bottom: 1px;
-    left: 1px;
-}
-
-QMenu::separator {
-    height: 2px;
-    background: lightblue;
-    margin-left: 10px;
-    margin-right: 5px;
-}
-
-QMenu::indicator {
-    width: 13px;
-    height: 13px;
-}
 
 
  /* ---- QScrollBar  ---- */
