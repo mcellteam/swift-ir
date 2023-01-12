@@ -63,7 +63,7 @@ CLEVEL = 5
 
 '''Other Defaults'''
 
-TARGET_THUMBNAIL_SIZE = 500
+TARGET_THUMBNAIL_SIZE = 720
 # if 'Joels-' in platform.node():
 #     DEV_MODE = True
 # else:
