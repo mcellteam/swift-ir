@@ -169,7 +169,6 @@ class NgHost(QRunnable):
                    matchpoint=None,
                    widget_size=None,
                    show_panel_borders=False,
-                   show_scale_bar=True,
                    show_axis_lines=False
                    ):
         caller = inspect.stack()[1].function
@@ -424,6 +423,7 @@ class NgHost(QRunnable):
                 return
             else:
                 self._layer = request_layer
+            logger.info(f'emitting request_layer: {request_layer}')
             self.signals.stateChanged.emit(request_layer)
             if self.mp_mode:
                 self.clear_mp_buffer()

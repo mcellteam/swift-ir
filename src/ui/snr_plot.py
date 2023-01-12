@@ -37,20 +37,26 @@ class SnrPlot(QWidget):
         pg.setConfigOption('foreground', '#f3f6fb')
         pg.setConfigOptions(antialias=True)
         self.plot = self.view.addPlot()
-        self.vb = CustomViewBox()
+        # self.vb = CustomViewBox()
         # self.label =
         # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
-        self._curLayerLine = pg.InfiniteLine(movable=False,
-                                        angle=90,
-                                        label='Section #{value:d}',
-                                        # label=self.label_value,
-                                        labelOpts={'position': .1,
-                                                   'color': (200, 200, 100),
-                                                   'fill': (200, 200, 200, 50),
-                                                      'movable': True})
+        self._curLayerLine = pg.InfiniteLine(
+            movable=False,
+            angle=90,
+            label='Section #{value:.0f}',
+            # label=self.label_value,
+            labelOpts={'position': .1, 'color': (200, 200, 100), 'fill': (200, 200, 200, 50), 'movable': True})
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
-        self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, anchor=(1, 1))
+        self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, anchor=(1, 1), color='#f3f6fb')
+
+        self._mp_lines = []
+        self._mp_labels = []
+
+        self._skip_lines = []
+        self._skip_labels = []
+
+        self._error_bars = {}
 
         f = QFont()
         f.setBold(True)
@@ -89,7 +95,7 @@ class SnrPlot(QWidget):
         # self.plot.getAxis("bottom").setHeight(12)
         # self.plot.getAxis("left").setWidth(12)
         self.plot.getAxis("left").setStyle(tickTextOffset=4)
-        style = {'color': '#f3f6fb;', 'font-size': '14px'}
+        # style = {'color': '#f3f6fb;', 'font-size': '14px'}
 
         self.plot.setCursor(Qt.CrossCursor)
         # self.plot.setAspectLocked()
@@ -103,33 +109,74 @@ class SnrPlot(QWidget):
         self.checkboxes_hlayout.setContentsMargins(0, 0, 0, 0)
         self.checkboxes_widget.setLayout(self.checkboxes_hlayout)
 
-        # self.layout = QGridLayout()
-        # self.layout.addWidget(self.view, 0, 0, 1, 5)
-        # self.layout.addWidget(self.checkboxes_widget, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
-        # # self.layout.setContentsMargins(4, 2, 4, 2)
-        # self.layout.setContentsMargins(0, 0, 0, 0)
-        # self.setLayout(self.layout)
-
         self.layout = QGridLayout()
         self.layout.addWidget(self.view, 0, 0, 0, 0)
         self.layout.addWidget(self.checkboxes_widget, 0, 0, 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        # self.layout.setContentsMargins(4, 2, 4, 2)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
         self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
 
-    # def setData(self, data):
-    #     self.data = data
 
     def updateLayerLinePos(self):
-        self._curLayerLine.setPos([cfg.data.layer(), 1])
+        offset = self._getScaleOffset(s=cfg.data.scale())
+        self._curLayerLine.setPos([cfg.data.layer() + offset, 1])
         # label = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
-        self._snr_label.setText('SNR: %.2f' % cfg.data.snr())
+        self._snr_label.setText('SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty()))
 
-        # self.line_label
-        # self.line_label.d
+
+
+    def updateSpecialLayerLines(self):
+        logger.debug('')
+        offset = self._getScaleOffset(s=cfg.data.scale())
+        layers_mp = cfg.data.find_layers_with_matchpoints()
+        for line in self._mp_lines:   self.plot.removeItem(line)
+        for label in self._mp_labels: self.plot.removeItem(label)
+        self._mp_lines = []
+        self._mp_labels = []
+        for layer in layers_mp:
+            line = pg.InfiniteLine(
+                movable=False,
+                angle=90,
+                pen='#32CD32',
+                # label='Match Point #{value:.0f}',
+                # # label=self.label_value,
+                labelOpts={'position': .1, 'color': (255, 225, 53), 'fill': (200, 200, 200, 50), 'movable': True}
+            )
+            self._mp_lines.append(line)
+            label = pg.InfLineLabel(line, f'Match Point', position=0.32, color='#32CD32',rotateAxis=(1, 0), anchor=(1, 1))
+            self._mp_labels.append(label)
+            line.setPos([layer[0] + offset, 1])
+            self.plot.addItem(line)
+
+        for line in self._skip_lines:   self.plot.removeItem(line)
+        for label in self._skip_labels: self.plot.removeItem(label)
+
+        self._skip_lines = []
+        self._skip_labels = []
+
+        for layer in cfg.data.skips_list():
+            line = pg.InfiniteLine(
+                movable=False,
+                angle=90,
+                pen='#ff0000',
+                # label='Skip #{value:.0f}',
+                # # label=self.label_value,
+                labelOpts={'position': .1, 'color': (255,250,250), 'fill': (255, 0, 0, 75), 'movable': True}
+            )
+            self._skip_lines.append(line)
+            label = pg.InfLineLabel(line, f'Skip', position=0.08, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
+            self._skip_labels.append(label)
+            line.setPos([layer[0] + offset, 1])
+            self.plot.addItem(line)
+
+        # for scale in cfg.data.scalesAligned:
+        #     self.updateErrBars(s=scale)
+
+        QApplication.processEvents()
+
+
 
 
     def callableFunction(x, y):
@@ -168,6 +215,10 @@ class SnrPlot(QWidget):
             self.checkboxes_hlayout.addStretch()
             self.updateLayerLinePos()
 
+            styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
+            # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
+            self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
+
         except:
             print_exception()
         try:
@@ -192,16 +243,15 @@ class SnrPlot(QWidget):
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        logger.debug(f'caller: {caller}')
         if cfg.data:
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
 
             for s in cfg.data.scales()[::-1]:
                 if exist_aligned_zarr(scale=s):
-                    if self._snr_checkboxes[s].isChecked():
-                        logger.info(f'{s} is aligned and checkbox is checked. Plotting its SNR data....')
-                        self.plotSingleScale(s=s)
+                    self.plotSingleScale(s=s)
+
             if cfg.data.nScalesAligned:
                 if cfg.data.nScalesAligned > 0:
                     max_snr = cfg.data.snr_max_all_scales()
@@ -228,14 +278,18 @@ class SnrPlot(QWidget):
                     dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
                     ax.setTicks([dx, []])
 
+            self.updateSpecialLayerLines()
             self.plot.autoRange() # !!!
+
+    def _getScaleOffset(self, s):
+        return cfg.data.scales()[::-1].index(s) * (.5/cfg.data.nscales)
 
 
     def plotSingleScale(self, s=None):
         logger.info(f'plotSingleScale (scale: {s}):')
         if s == None: scale = cfg.data.scale()
         x_axis, y_axis = self.get_axis_data(s=s)
-        offset = cfg.data.scales()[::-1].index(s) * (.5/cfg.data.nscales)
+        offset = self._getScaleOffset(s=s)
         x_axis = [x+offset for x in x_axis]
 
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
@@ -258,22 +312,44 @@ class SnrPlot(QWidget):
         # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
 
+        self.updateErrBars(s=s)
+
+
+
+
+    def updateErrBars(self, s):
+        logger.info('')
+        offset = self._getScaleOffset(s=s)
         errbars = cfg.data.snr_errorbars(s=s)
-        n = cfg.data.nSections - 1
+        n = cfg.data.nSections
         deltas = np.zeros(n)
         y = np.zeros(n)
-        x = np.arange(1, n + 1) + offset
+        x = np.arange(0, n ) + offset
 
-        for i in range(0, n):
-            deltas[i] = errbars[i]
-            y[i]      = cfg.data.snr(s=s, l=i + 1)
+        if s in self._error_bars:
+            self.plot.removeItem(self._error_bars[s])
+            self._error_bars[s] = None
 
-        logger.info('Configuring Error Bars...')
-        self.plot.addItem(pg.ErrorBarItem(x=x, y=y,
-                                          top=deltas,
-                                          bottom=deltas,
-                                          beam=0.20,
-                                          pen={'color': '#ff0000', 'width': 2}))
+        try:
+            skip_list = list(zip(*cfg.data.skips_list()))[0]
+        except:
+            skip_list = [-1]
+
+
+        for i, err in enumerate(errbars):
+            if i not in skip_list:
+                deltas[i] = err
+                y[i]      = cfg.data.snr(s=s, l=i)
+            else:
+                logger.debug(f'skipping errbars for layer {i}')
+
+        err_bar = pg.ErrorBarItem(x=x, y=y,
+                                  top=deltas,
+                                  bottom=deltas,
+                                  beam=0.20,
+                                  pen={'color': '#ff0000', 'width': 2})
+        self._error_bars[s] = err_bar
+        self.plot.addItem(err_bar)
 
 
     def wipePlot(self):
@@ -285,6 +361,9 @@ class SnrPlot(QWidget):
             del self._snr_checkboxes
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
+            for eb in self._error_bars:
+                self.plot.removeItem(eb)
+            # self.updateSpecialLayerLines()
             # try:
             #     del self._snr_checkboxes
             # except:
