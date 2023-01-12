@@ -748,7 +748,7 @@ class MainWindow(QMainWindow):
                         scale=scale,
                         start_layer=start_layer,
                         num_layers=num_layers,
-                        preallocate=Falsee))
+                        preallocate=False))
                 self.threadpool.start(self.worker)
             else:
                 generate_aligned(
