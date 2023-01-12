@@ -3718,15 +3718,15 @@ class MainWindow(QMainWindow):
             # QLabel('^S - Save         ^Q - Quit          ^↕ - Zoom'),
             # QLabel(' , - Prev (comma)  . - Next (period) ^K - Skip'),
             # QLabel(' ← - Scale Down    → - Scale Up      ^A - Align All'),
-            QLabel('^N - New Project    ^O - Open Project    ^Z - Open Zarr'),
-            QLabel('^S - Save                  ^Q - Quit                    ^↕ - Zoom'),
-            QLabel('   ,  - Prev (comma)      .  - Next (period)   ^K - Skip'),
-            QLabel(' ← - Scale Down       → - Scale Up           ^A - Align All'),
+            QLabel('^N - New Project   ^O - Open Project   ^Z - Open Zarr'),
+            QLabel('^S - Save          ^Q - Quit           ^↕ - Zoom'),
+            QLabel(' , - Prev (comma)  .  - Next (period)  ^K - Skip'),
+            QLabel(' ← - Scale Down     → - Scale Up       ^A - Align All'),
         ]
-        # f = QFont()
-        # # f.setFamily('Courier')
+        f = QFont()
+        f.setFamily('Courier')
         # f.setPointSize(11)
-        # list(map(lambda x: x.setFont(f), keyboard_commands))
+        list(map(lambda x: x.setFont(f), keyboard_commands))
         list(map(lambda x: x.setContentsMargins(0,0,0,0), keyboard_commands))
         list(map(lambda x: x.setMargin(0), keyboard_commands))
 
