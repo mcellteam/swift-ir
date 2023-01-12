@@ -136,10 +136,11 @@ class MainWindow(QMainWindow):
 
 
     def resizeEvent(self, event):
-        self.resized.emit()
-        if cfg.project_tab:
-            cfg.project_tab.updateNeuroglancer()
-        return super(MainWindow, self).resizeEvent(event)
+        if not self._working:
+            self.resized.emit()
+            if cfg.project_tab:
+                cfg.project_tab.updateNeuroglancer()
+            return super(MainWindow, self).resizeEvent(event)
 
 
     def set_viewer_layout_0(self):
@@ -3776,7 +3777,7 @@ class MainWindow(QMainWindow):
             # QLabel(' ← - Scale Down    → - Scale Up      ^A - Align All'),
             QLabel('^N - New Project   ^O - Open Project   ^Z - Open Zarr'),
             QLabel('^S - Save          ^Q - Quit           ^↕ - Zoom'),
-            QLabel(' , - Prev (comma)  .  - Next (period)  ^K - Skip'),
+            QLabel(' , - Prev (comma)   . - Next (period)  ^K - Skip'),
             QLabel(' ← - Scale Down     → - Scale Up       ^A - Align All'),
         ]
         f = QFont()
