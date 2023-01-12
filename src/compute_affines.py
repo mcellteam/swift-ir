@@ -38,10 +38,10 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
     logger.info('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
 
     path = os.path.join(dm.dest(), scale, 'img_aligned')
-    if checkForTiffs(path):
-        # al_substack = dm['data']['scales'][scale]['alignment_stack'][start_layer:]
-        # remove_aligned(al_substack) #0903 Moved into conditional
-        dm.remove_aligned(scale, start_layer)
+    # if checkForTiffs(path):
+    #     # al_substack = dm['data']['scales'][scale]['alignment_stack'][start_layer:]
+    #     # remove_aligned(al_substack) #0903 Moved into conditional
+    #     dm.remove_aligned(scale, start_layer)
 
     dm.clear_method_results(scale=scale, start=start_layer, end=last_layer) #1109 Should this be on the copy?
     if rename_switch:
