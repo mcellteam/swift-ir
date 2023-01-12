@@ -257,11 +257,11 @@ class MainWindow(QMainWindow):
         # if qtpy.PYSIDE6:
         # if is_tacc():
 
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         # neuroglancer webdriver args
         # --disable-background-networking
