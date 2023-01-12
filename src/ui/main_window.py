@@ -2060,9 +2060,13 @@ class MainWindow(QMainWindow):
                 self.autoscale()
             except:
                 print_exception()
+
+            self.onStartProject()
         else:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
-        self.onStartProject()
+            # self.onStartProject(mendenhall=True)
+            # turn OFF onStartProject for Mendenhall
+
         # cfg.project_tab.initNeuroglancer()
 
         self._setLastTab()
@@ -2177,15 +2181,13 @@ class MainWindow(QMainWindow):
         cfg.main_window._ng_layout_switch = 1
 
 
-    def onStartProject(self):
+    def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
         caller = inspect.stack()[1].function
 
         cfg.data.update_cache()
         self._sectionSlider.setRange(0, cfg.data.nSections - 1)
-
-
         self._scales_combobox_switch = 0
         self._changeScaleCombo.show()
         self.reload_scales_combobox()

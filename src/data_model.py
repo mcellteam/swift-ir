@@ -168,13 +168,13 @@ class DataModel:
     def thumbnails_aligned(self):
         paths = []
         for layer in range(0, self.n_layers()):
-            paths.append(os.path.join(self.dest(), 'thumbnails_aligned', self.curScale, self.base_image_name(l=layer)))
+            paths.append(os.path.join(self.dest(), self.curScale, 'thumbnails', self.base_image_name(l=layer)))
         return paths
 
 
     def thumbnail_aligned(self):
         '''Returns absolute path of thumbnail for current layer '''
-        path = os.path.join(self.dest(), 'thumbnails_aligned', self.curScale, self.base_image_name())
+        path = os.path.join(self.dest(), self.curScale, 'thumbnails', self.base_image_name())
         # return self._data['data']['thumbnails'][self.layer()]
         return path
 

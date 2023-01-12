@@ -34,6 +34,7 @@ webdriver = None
 results = None
 dt = None
 py_console = None
+is_mendenhall = False
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1160, 680
