@@ -39,7 +39,7 @@ def generate_thumbnails(dm):
                            pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
-    od = os.path.join(dm.dest(), 'thumbnails')
+    od = os.path.join(dm.dest(), dm.scale(), 'thumbnails')
     if os.path.exists(od):
         try:
             shutil.rmtree(od)
