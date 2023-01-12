@@ -4,14 +4,15 @@ import sys, logging, inspect
 import neuroglancer as ng
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QGroupBox, QFormLayout, QLabel, QScrollArea, \
     QVBoxLayout, QSizePolicy, QHBoxLayout, QPushButton, QComboBox, QSpinBox, QStyleOption, QStyle, QTabBar, \
-    QTabWidget, QGridLayout, QHeaderView, QTreeView, QGraphicsOpacityEffect
+    QTabWidget, QGridLayout, QHeaderView, QTreeView, QGraphicsOpacityEffect, QSplitter
 from qtpy.QtCore import Qt, QSize, QRect, QUrl
-from qtpy.QtGui import QPainter, QFont
+from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
 from src.ui.ui_custom import VerticalLabel
 from src.ui.layer_view_widget import LayerViewWidget
 from src.ui.models.json_tree import JsonModel
 from src.ui.snr_plot import SnrPlot
+from src.ui.mini_view import MiniView
 import src.config as cfg
 from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
@@ -44,11 +45,14 @@ class ProjectTab(QWidget):
         self.initUI_details()
         self.initUI_JSON()
         self.initUI_plot()
+        # self.initUI_mini_view()
         self.initUI_tab_widget()
         self._tabs.currentChanged.connect(self._onTabChange)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
         self.arrangement = 0
+
+
 
     def _onTabChange(self, index=None):
         if index == None: index = self._tabs.currentIndex()
@@ -63,6 +67,10 @@ class ProjectTab(QWidget):
             self.snr_plot.data = self.datamodel
             # self.snr_plot.plotData()
             self.snr_plot.initSnrPlot()
+            self.snr_plot.updateSpecialLayerLines()
+            self.updatePlotThumbnail()
+
+
         QApplication.processEvents()
         self.repaint()
 
@@ -280,6 +288,22 @@ class ProjectTab(QWidget):
         hbl.addWidget(self._treeview)
         self._wdg_treeview.setLayout(hbl)
 
+    def updatePlotThumbnail(self):
+        pixmap = QPixmap(cfg.data.thumbnail())
+        pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio)
+        self._thumbnail_src.setPixmap(pixmap)
+        self._thumbnail_src.show()
+        self._lab_source_thumb.show()
+        if cfg.data.is_aligned():
+            # pixmap = QPixmap(cfg.data.thumbnail_aligned()).scaled(150, 150, Qt.KeepAspectRatio)
+            pixmap = QPixmap(cfg.data.thumbnail_aligned())
+            pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self._thumbnail_aligned.setPixmap(pixmap)
+            self._thumbnail_aligned.show()
+            self._lab_aligned_thumb.show()
+        else:
+            self._thumbnail_aligned.hide()
+            self._lab_aligned_thumb.hide()
 
     def initUI_plot(self):
         '''SNR Plot Widget'''
@@ -300,21 +324,60 @@ class ProjectTab(QWidget):
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self._plot_Yaxis)
         hbl.addWidget(self.snr_plot)
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-        self.snr_plot_widget = QWidget()
-        self.snr_plot_widget.setObjectName('snr_plot_widget')
+        # self.snr_plot_widget = QWidget()
+        # self.snr_plot_widget.setObjectName('snr_plot_widget')
         self._plot_Xaxis = QLabel('Serial Section #')
         self._plot_Xaxis.setStyleSheet('color: #f3f6fb; font-size: 14px;')
         self._plot_Xaxis.setContentsMargins(0, 0, 0, 8)
         self._plot_Xaxis.setFont(font)
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addLayout(hbl)
         vbl.addWidget(self._plot_Xaxis, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.snr_plot_widget.setLayout(vbl)
+
+        w1 = QWidget()
+        w1.setLayout(vbl)
+
+        self._thumbnail_src = QLabel()
+        self._thumbnail_aligned = QLabel()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(4, 4, 4, 4)
+
+        style = '''font-size: 14px; color: #f3f6fb; font-weight: 500;'''
+
+        self._lab_source_thumb = QLabel('Source:')
+        self._lab_source_thumb.setFixedHeight(20)
+        self._lab_source_thumb.setStyleSheet(style)
+        self._lab_source_thumb.hide()
+        self._lab_aligned_thumb = QLabel('Aligned:')
+        self._lab_aligned_thumb.setStyleSheet(style)
+        self._lab_aligned_thumb.hide()
+
+        vbl.addWidget(self._lab_source_thumb, alignment=Qt.AlignmentFlag.AlignBottom)
+        vbl.addWidget(self._thumbnail_src, alignment=Qt.AlignmentFlag.AlignTop)
+        vbl.addWidget(self._lab_aligned_thumb, alignment=Qt.AlignmentFlag.AlignBottom)
+        vbl.addWidget(self._thumbnail_aligned, alignment=Qt.AlignmentFlag.AlignTop)
+        w2 = QWidget()
+        w2.setLayout(vbl)
+
+
+        self.snr_plot_widget = QSplitter(Qt.Orientation.Horizontal)
+        self.snr_plot_widget.setObjectName('snr_plot_widget')
+        self.snr_plot_widget.addWidget(w1)
+        self.snr_plot_widget.addWidget(w2)
+        # self.snr_plot_widget.setSizes([1000, 150])
+
+        # self.snr_plot_widget.setLayout(vbl)
         try:
             self.snr_plot.initSnrPlot() #To set up some basic plot characteristics
         except:
             pass
+
+
+    def initUI_mini_view(self):
+        self._mv = MiniView()
+
+
 
 
     def initUI_tab_widget(self):
@@ -329,6 +392,7 @@ class ProjectTab(QWidget):
         self._addTab(widget=self.layer_view_container, name=' Table ')
         self._addTab(widget=self._wdg_treeview, name=' Tree ')
         self._addTab(widget=self.snr_plot_widget, name=' SNR Plot ')
+        # self._addTab(widget=self._mv, name=' Miniview ')
         self._tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(1, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(2, QTabBar.RightSide, None)

@@ -49,6 +49,7 @@ from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
+from src.generate_thumbnails_aligned import generate_thumbnails_aligned
 from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import *
 from src.helpers import natural_sort, make_affine_widget_HTML, is_tacc, \
@@ -493,7 +494,7 @@ class MainWindow(QMainWindow):
                 cfg.data.nscales = len(cfg.data.scales())
                 cfg.data.set_scale(cfg.data.scales()[-1])
                 self.pbar_widget.hide()
-                logger.info('Autoscaling Complete')
+                logger.info('Thumbnail Generation Complete')
                 self.set_idle()
 
         self._enableAllTabs()
@@ -654,6 +655,27 @@ class MainWindow(QMainWindow):
                     num_layers=-1,
                     preallocate=True
                 )
+
+            # self.set_status('Generating Thumbnails...')
+            self.tell('Generating Aligned Thumbnails...')
+            self.showZeroedPbar()
+            try:
+                if cfg.USE_EXTRA_THREADING:
+                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(dm=cfg.data))
+                    self.threadpool.start(self.worker)
+                else:
+                    generate_thumbnails_aligned(dm=cfg.data)
+
+            except:
+                print_exception()
+                self.warn('Something Unexpected Happened While Generating Thumbnails')
+
+            finally:
+                cfg.data.scalesList = cfg.data.scales()
+                cfg.data.nscales = len(cfg.data.scales())
+                cfg.data.set_scale(cfg.data.scales()[-1])
+                self.pbar_widget.hide()
+                logger.info('Thumbnail Generation Complete')
 
         except:
             print_exception()
@@ -878,12 +900,35 @@ class MainWindow(QMainWindow):
                     num_layers=-1,
                     preallocate=True
                 )
+
+            # self.set_status('Generating Thumbnails...')
+            self.tell('Generating Aligned Thumbnails...')
+            self.showZeroedPbar()
+            try:
+                if cfg.USE_EXTRA_THREADING:
+                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(dm=cfg.data))
+                    self.threadpool.start(self.worker)
+                else:
+                    generate_thumbnails_aligned(dm=cfg.data)
+
+            except:
+                print_exception()
+                self.warn('Something Unexpected Happened While Generating Thumbnails')
+
+            finally:
+                cfg.data.scalesList = cfg.data.scales()
+                cfg.data.nscales = len(cfg.data.scales())
+                cfg.data.set_scale(cfg.data.scales()[-1])
+                self.pbar_widget.hide()
+                logger.info('Thumbnail Generation Complete')
+
         except:
             print_exception()
             self.err('An Exception Was Raised During Image Generation.')
         else:
             self.dataUpdateWidgets()
             self._autosave()
+
         finally:
             # self.updateJsonWidget()
 
@@ -1345,7 +1390,11 @@ class MainWindow(QMainWindow):
 
         if cfg.project_tab._tabs.currentIndex() == 3:
             cfg.project_tab.snr_plot.updateLayerLinePos()
+            cfg.project_tab.updatePlotThumbnail()
 
+            styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
+            # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
+            cfg.project_tab.snr_plot.plot.setLabel('top', cfg.data.base_image_name(), **styles)
 
 
         self._section_slider_switch = 0
@@ -1984,7 +2033,7 @@ class MainWindow(QMainWindow):
             with open(filename, 'r') as f:
                 cfg.data = DataModel(data=json.load(f))
         except:
-            self.tell(f'No Such File Found: {filename}')
+            self.warn(f'No Such File Found: {filename}')
             logger.warning(f'No Such File Found: {filename}')
             cfg.main_window.set_idle()
             return
@@ -2025,6 +2074,8 @@ class MainWindow(QMainWindow):
 
         cfg.project_tab.initNeuroglancer()
         self._setLastTab()
+        self.hud.done()
+
 
 
     def open_zarr(self):
@@ -2653,11 +2704,10 @@ class MainWindow(QMainWindow):
 
     def _callbk_bnding_box(self, state):
         caller = inspect.stack()[1].function
-        # logger.info(f'Bounding Box Toggle Callback (caller: {caller})')
+        logger.info(f'Bounding Box Toggle Callback (caller: {caller})')
         if caller != 'dataUpdateWidgets':
-            self._bbToggle.setEnabled(state)
+            # self._bbToggle.setEnabled(state)
             if cfg.project_tab:
-                if inspect.stack()[1].function == 'dataUpdateWidgets': return
                 if state:
                     self.warn('Bounding Box is now ON. Warning: Output dimensions may grow large.')
                     cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
@@ -2667,7 +2717,7 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_skipChanged(self, state:int):  # 'state' is connected to skipped toggle
-        logger.info(f'_callbk_skipChanged, sig:{state}:')
+        logger.debug(f'_callbk_skipChanged, sig:{state}:')
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
         if cfg.project_tab:
@@ -2686,6 +2736,9 @@ class MainWindow(QMainWindow):
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.layer_view_widget.set_data()
+            if cfg.project_tab._tabs.currentIndex() == 3:
+                cfg.project_tab.snr_plot.initSnrPlot()
+                QApplication.processEvents()
 
 
     def skip_change_shortcut(self):
@@ -2744,6 +2797,8 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.updateNeuroglancer(matchpoint=False, layout='4panel')
                 cfg.project_tab.initNeuroglancer(layout='4panel', matchpoint=False)
                 # self.set_viewer_layout_0()
+                if cfg.project_tab._tabs.currentIndex == 3:
+                    cfg.project_tab.snr_plot.updateSpecialLayerLines()
 
 
             self.updateToolbar()
@@ -2757,10 +2812,10 @@ class MainWindow(QMainWindow):
             # snr_report.replace('>', '&gt;')
             self.matchpoint_text_snr.setHtml(f'<h4>{snr_report}</h4>')
 
-    def _update_lab_keep_reject(self, layer):
-        base = 'Reject:'
-        new = base + '\nSection #' + str(layer)
-        self._lab_keep_reject.setText()
+    # def _update_lab_keep_reject(self, layer):
+    #     base = 'Reject:'
+    #     new = base + '\nSection #' + str(layer)
+    #     self._lab_keep_reject.setText()
 
 
     def clear_match_points(self):
@@ -3126,8 +3181,9 @@ class MainWindow(QMainWindow):
 
 
     def _onGlobTabClose(self, index):
-        logger.info(f'Closing Tab: {index}')
-        self._tabsGlob.removeTab(index)
+        if not self._working:
+            logger.info(f'Closing Tab: {index}')
+            self._tabsGlob.removeTab(index)
 
 
     def _setLastTab(self):
@@ -3663,7 +3719,7 @@ class MainWindow(QMainWindow):
             # QLabel(' , - Prev (comma)  . - Next (period) ^K - Skip'),
             # QLabel(' ← - Scale Down    → - Scale Up      ^A - Align All'),
             QLabel('^N - New Project    ^O - Open Project    ^Z - Open Zarr'),
-            QLabel('^S - Save                 ^Q - Quit                  ^↕ - Zoom'),
+            QLabel('^S - Save                  ^Q - Quit                    ^↕ - Zoom'),
             QLabel('   ,  - Prev (comma)      .  - Next (period)   ^K - Skip'),
             QLabel(' ← - Scale Down       → - Scale Up           ^A - Align All'),
         ]

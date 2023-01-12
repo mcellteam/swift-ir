@@ -158,6 +158,16 @@ class DataModel:
         return natural_sort([os.path.basename(l['images']['base']['filename'])
                 for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
+    def thumbnail(self):
+        '''Returns absolute path of thumbnail for current layer '''
+        return self._data['data']['thumbnails'][self.layer()]
+
+    def thumbnail_aligned(self):
+        '''Returns absolute path of thumbnail for current layer '''
+        path = os.path.join(self.dest(), 'thumbnails_aligned', self.curScale, self.base_image_name())
+        # return self._data['data']['thumbnails'][self.layer()]
+        return path
+
     # def thumbnail_names(self):
     #
     #
@@ -247,7 +257,7 @@ class DataModel:
             return 0.0
         report = self.snr_report(s=s, l=l)
         if not isinstance(report, str):
-            logger.error(f'No SNR Report Available For Layer {l}, Returning 0.0...')
+            logger.debug(f'No SNR Report Available For Layer {l}, Returning 0.0...')
             return 0.0
         substr = '+-'
         return float(report[report.index(substr) + 2: report.index(substr) + 5])
@@ -256,7 +266,7 @@ class DataModel:
     def snr_errorbars(self, s=None):
         '''Note Length Of Return Array has size self.n_layers() - 1 (!)'''
         if s == None: s = self.curScale
-        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(1, self.n_layers())])
+        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(0, self.n_layers())])
 
 
     def snr(self, s=None, l=None) -> float:
@@ -271,13 +281,7 @@ class DataModel:
                                                ['align_to_ref_method']['method_results']['snr'])
             return statistics.fmean(conv_float)
         except KeyError:
-            # logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            logger.warning(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
-            # logger.error(f'  Ref  : {self.name_ref(s=s, l=l)}')
-            # cfg.main_window.warn(f'No SNR Data Available For Layer {", ".join(map(str, unavailable))}...')
-            # cfg.main_window.warn(f' Name : {self.name_base(s=s, l=i)}')
-            # cfg.main_window.warn(f'No SNR Data Available For Layer {l}...')
-            # cfg.main_window.warn(f' Name : {self.name_base(s=s, l=l)}')
+            # logger.warning(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
             return 0.0
 
 
@@ -1143,11 +1147,26 @@ class DataModel:
         else:
             return False
 
+    def set_method_options(self):
+        coarsest = self.coarsest_scale_key()
+        for s in self.scales():
+            if s == coarsest:  self._data['data']['scales'][s]['method_data']['alignment_option'] = 'init_affine'
+            else:  self._data['data']['scales'][s]['method_data']['alignment_option'] = 'refine_affine'
+            for i in range(self.n_scales()):
+                layer = self._data['data']['scales'][s]['alignment_stack'][i]
+                if s == coarsest:
+                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+                else:
+                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+
+
+
     def set_scales_from_string(self, scale_string: str):
         '''This is not pretty. Needs to be refactored ASAP.
         Two callers: 'new_project', 'prepare_generate_scales_worker'
         '''
         cur_scales = [str(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
+        logger.info(f'cur_scales: {cur_scales}')
         scale_str = scale_string.strip()
         if len(scale_str) > 0:
             input_scales = []
@@ -1183,6 +1202,7 @@ class DataModel:
                     for l in scale_1_stack:
                         new_layer = deepcopy(l)
                         new_stack.append(new_layer)
+
                     self._data['data']['scales'][scale_key] = {'alignment_stack': new_stack,
                                                                'method_data': {
                                                                    'alignment_option': 'init_affine'}}

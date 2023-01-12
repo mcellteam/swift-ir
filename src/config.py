@@ -68,7 +68,7 @@ if 'Joels-' in platform.node():
 else:
     DEV_MODE = False
 # DEV_MODE = False
-PRINT_EXAMPLE_ARGS = False
+PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = True
