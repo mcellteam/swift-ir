@@ -46,17 +46,10 @@ def generate_thumbnails_aligned(dm, layers=None):
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
 
-    pd = os.path.join(dm.dest(), 'thumbnails_aligned')
-    if not os.path.exists(pd):
-        os.makedirs(pd)
+    od = os.path.join(dm.dest(), dm.scale(), 'thumbnails')
+    if not os.path.exists(od):
+        os.makedirs(od)
 
-    od = os.path.join(pd, dm.scale())
-    if os.path.exists(od):
-        try:
-            shutil.rmtree(od)
-        except:
-            print_exception()
-    os.mkdir(od)
 
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
     task_queue.start(cpus)
