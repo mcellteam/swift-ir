@@ -145,9 +145,9 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(2, 100)
             self.table_view.setColumnWidth(3, 100)
             self.table_view.setColumnWidth(4, 32)
-            self.table_view.setColumnWidth(5, 16)
+            self.table_view.setColumnWidth(5, 20)
             self.table_view.setColumnWidth(6, 32)
-            self.table_view.setColumnWidth(7, 176)
+            # self.table_view.setColumnWidth(7, 176)
 
 
         else:
@@ -157,9 +157,9 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(1, 160)
             self.table_view.setColumnWidth(2, 100)
             self.table_view.setColumnWidth(3, 32)
-            self.table_view.setColumnWidth(4, 16)
+            self.table_view.setColumnWidth(4, 20)
             self.table_view.setColumnWidth(5, 32)
-            self.table_view.setColumnWidth(6, 176)
+            # self.table_view.setColumnWidth(6, 176)
 
 
         logger.info('setting delegate for src thumbnails...')
