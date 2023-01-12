@@ -32,6 +32,8 @@ def generate_thumbnails(dm):
     siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
     scale_factor = int(siz_start/target_thumbnail_size)
+    if scale_factor == 1:
+        scale_factor = 2
     logger.info("Thumbnail Scaling Factor : %s" % str(scale_factor))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue = TaskQueue(n_tasks=dm.n_layers(),
