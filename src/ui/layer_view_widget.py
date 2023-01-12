@@ -30,7 +30,7 @@ class LayerViewWidget(QWidget):
         self.setLayout(self.layout)
         self._dataframe = None # path to a file on disk
         self._selected_rows = []
-        self.INITIAL_ROW_HEIGHT = 30 # was 50
+        self.INITIAL_ROW_HEIGHT = 64 # was 50
         self.INITIAL_FONT_SIZE = 13
         self.table_view = QTableView()
         self.table_view.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
@@ -44,7 +44,7 @@ class LayerViewWidget(QWidget):
         self.table_view.setSelectionBehavior(QTableView.SelectRows)
 
         self.row_height_slider = Slider(min=4, max=120)
-        self.row_height_slider.setMaximumWidth(128)
+        self.row_height_slider.setMaximumWidth(256)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateRowHeight)
         self.row_height_widget = QWidget()
@@ -87,16 +87,26 @@ class LayerViewWidget(QWidget):
 
         # self.table_view.setColumnWidth(0, self.INITIAL_ROW_HEIGHT)
         # self.table_view.setColumnWidth(2, 200)
-        self.table_view.setColumnWidth(3, 380)
-        self.table_view.setColumnWidth(4, 20)
+
+
+        # self.table_view.verticalHeader().sectionResized.connect(self.updateRowHeight)
         # self.table_view.setRowHeight()
 
         # cfg.main_window.layer_view_widget.table_view.setColumnWidth(0,
         #                                                             cfg.main_window.layer_view_widget.table_view.rowHeight(
         #                                                                 0))
 
-        self.thumbnail_delegate = ThumbnailDelegate()
-        self.table_view.setItemDelegateForColumn(0, self.thumbnail_delegate)
+        # self.thumbnail_delegate = ThumbnailDelegate()
+        # self.table_view.setItemDelegateForColumn(0, self.thumbnail_delegate)
+
+        logger.info('setting delegate for src thumbnails...')
+        self.thumbnail_src_delegate = ThumbnailDelegate()
+        self.table_view.setItemDelegateForColumn(0, self.thumbnail_src_delegate)
+        if cfg.data.is_aligned():
+            logger.info('setting delegate for aligned thumbnails...')
+            self.thumbnail_al_delegate = ThumbnailDelegate()
+            self.table_view.setItemDelegateForColumn(1, self.thumbnail_al_delegate)
+
 
 
     def selection(self):
@@ -128,13 +138,37 @@ class LayerViewWidget(QWidget):
 
         # buttons = ['buttons'] * cfg.datamodel.nSections
         if is_aligned:
-            zipped = list(zip(cfg.data.thumbnails(), ref, scale, skips, method, snr_report))
-            self._dataframe = pd.DataFrame(zipped, columns=['Img', 'Reference', 'Scale',
+            zipped = list(zip(cfg.data.thumbnails(), cfg.data.thumbnails_aligned(), ref, scale, skips, method, snr_report))
+            self._dataframe = pd.DataFrame(zipped, columns=['Img', 'Aligned', 'Reference', 'Scale',
                                                             'Skip?', 'Method', 'SNR Report'])
+            self.table_view.setColumnWidth(1, 160)
+            self.table_view.setColumnWidth(2, 100)
+            self.table_view.setColumnWidth(3, 100)
+            self.table_view.setColumnWidth(4, 32)
+            self.table_view.setColumnWidth(5, 16)
+            self.table_view.setColumnWidth(6, 32)
+            self.table_view.setColumnWidth(7, 176)
+
+
         else:
             zipped = list(zip(cfg.data.thumbnails(),  ref, scale, skips, method))
             self._dataframe = pd.DataFrame(zipped, columns=['Img', 'Reference', 'Scale',
                                                             'Skip?', 'Method'])
+            self.table_view.setColumnWidth(1, 160)
+            self.table_view.setColumnWidth(2, 100)
+            self.table_view.setColumnWidth(3, 32)
+            self.table_view.setColumnWidth(4, 16)
+            self.table_view.setColumnWidth(5, 32)
+            self.table_view.setColumnWidth(6, 176)
+
+
+        logger.info('setting delegate for src thumbnails...')
+        self.thumbnail_src_delegate = ThumbnailDelegate()
+        self.table_view.setItemDelegateForColumn(0, self.thumbnail_src_delegate)
+        if cfg.data.is_aligned():
+            logger.info('setting delegate for aligned thumbnails...')
+            self.thumbnail_al_delegate = ThumbnailDelegate()
+            self.table_view.setItemDelegateForColumn(1, self.thumbnail_al_delegate)
 
         self._dataframe.index = cfg.data.basefilenames()
         self.load_dataframe()
@@ -149,10 +183,7 @@ class LayerViewWidget(QWidget):
         # self.button_delegate = PushButtonDelegate(view=self.table_view)
         # self.table_view.setItemDelegateForColumn(3, self.button_delegate)
 
-        self.table_view.setColumnWidth(1, 160)
-        self.table_view.setColumnWidth(2, 80)
-        self.table_view.setColumnWidth(3, 40)
-        self.table_view.setColumnWidth(4, 176)
+
         QApplication.processEvents()
 
     def set_selected_row(self, row):
@@ -199,6 +230,8 @@ class LayerViewWidget(QWidget):
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
         self.table_view.setColumnWidth(0, h)
+        if cfg.data.is_aligned():
+            self.table_view.setColumnWidth(1, h)
 
 
     def updateFontSize(self, s):
@@ -325,12 +358,21 @@ class PandasModel(QAbstractTableModel):
         if not index.isValid():
             return None
         if role == Qt.DisplayRole:
-            if index.column() == 3:
+            if cfg.data.is_aligned():
+                check_cols = [4]
+            else:
+                check_cols = [3]
+            if index.column() in check_cols:
                 return None
             else:
                 return str(self._dataframe.iloc[index.row(), index.column()])
         if role == Qt.CheckStateRole:
-            if index.column() == 3:
+            if cfg.data.is_aligned():
+                check_cols = [4]
+            else:
+                check_cols = [3]
+
+            if index.column() in check_cols:
                 # print(">>> datamodel() row,col = %d, %d" % (index.row(), index.column()))
                 if self._dataframe.iloc[index.row(), index.column()] == True:
                     return Qt.Checked
