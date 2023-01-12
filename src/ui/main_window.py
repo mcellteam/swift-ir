@@ -2077,8 +2077,8 @@ class MainWindow(QMainWindow):
         cfg.main_window.set_status('Awaiting User Input...')
         filename = open_project_dialog()
         if filename == None:
-            logger.info('Open Project Canceled.')
-            self.warn('Open Project Canceled.')
+            logger.info('Canceling Open Project.')
+            self.warn('Canceling Open Project.')
             return
         logger.info(f'filename: {filename}')
 
@@ -4197,9 +4197,9 @@ class MainWindow(QMainWindow):
         self.exit_matchpoint_button.clicked.connect(self.enterExitMatchPointMode)
         self.exit_matchpoint_button.setFixedSize(normal_button_size)
 
-        self.realign_matchpoint_button = QPushButton('Realign')
+        self.realign_matchpoint_button = QPushButton('Realign\nSection')
         self.realign_matchpoint_button.setStatusTip('Realign The Current Layer')
-        self.realign_matchpoint_button.setStyleSheet("font-size: 11px;")
+        self.realign_matchpoint_button.setStyleSheet("font-size: 9px;")
         self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.realign_matchpoint_button.clicked.connect(lambda: self.align_one(scale=cfg.data.curScale))
         self.realign_matchpoint_button.setFixedSize(normal_button_size)

@@ -62,12 +62,12 @@ CLEVEL = 5
 
 '''Other Defaults'''
 
-
-if 'Joels-' in platform.node():
-    DEV_MODE = True
-else:
-    DEV_MODE = False
-# DEV_MODE = False
+TARGET_THUMBNAIL_SIZE = 720
+# if 'Joels-' in platform.node():
+#     DEV_MODE = True
+# else:
+#     DEV_MODE = False
+DEV_MODE = True
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = False

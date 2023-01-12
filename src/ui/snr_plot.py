@@ -48,7 +48,7 @@ class SnrPlot(QWidget):
             labelOpts={'position': .1, 'color': (200, 200, 100), 'fill': (200, 200, 200, 50), 'movable': True})
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
-        self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, anchor=(1, 1), color='#f3f6fb')
+        self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.92, anchor=(1, 1), color='#f3f6fb')
 
         self._mp_lines = []
         self._mp_labels = []

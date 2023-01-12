@@ -59,8 +59,7 @@ class ProjectTab(QWidget):
         if index == 0:
             self.updateNeuroglancer()
         if index == 1:
-            if not cfg.main_window._working:
-                self.layer_view_widget.set_data()
+            self.layer_view_widget.set_data()
         if index == 2:
             self.updateJsonWidget()
         if index == 3:
@@ -290,20 +289,22 @@ class ProjectTab(QWidget):
 
     def updatePlotThumbnail(self):
         pixmap = QPixmap(cfg.data.thumbnail())
-        pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio)
+        # size = pixmap.size()
+        # pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio)
+        # pixmap = pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(128, 128, aspectRatioMode=Qt.KeepAspectRatio)
         self._thumbnail_src.setPixmap(pixmap)
-        self._thumbnail_src.show()
-        self._lab_source_thumb.show()
+        self.source_thumb_and_label.show()
         if cfg.data.is_aligned():
             # pixmap = QPixmap(cfg.data.thumbnail_aligned()).scaled(150, 150, Qt.KeepAspectRatio)
             pixmap = QPixmap(cfg.data.thumbnail_aligned())
-            pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            # size = pixmap.size()
+            # pixmap = pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pixmap = pixmap.scaled(128, 128, aspectRatioMode=Qt.KeepAspectRatio)
             self._thumbnail_aligned.setPixmap(pixmap)
-            self._thumbnail_aligned.show()
-            self._lab_aligned_thumb.show()
+            self.aligned_thumb_and_label.show()
         else:
-            self._thumbnail_aligned.hide()
-            self._lab_aligned_thumb.hide()
+            self.aligned_thumb_and_label.hide()
 
     def initUI_plot(self):
         '''SNR Plot Widget'''
@@ -340,26 +341,50 @@ class ProjectTab(QWidget):
 
         self._thumbnail_src = QLabel()
         self._thumbnail_aligned = QLabel()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(4, 4, 4, 4)
+
 
         style = '''font-size: 14px; color: #f3f6fb; font-weight: 500;'''
 
         self._lab_source_thumb = QLabel('Source:')
         self._lab_source_thumb.setFixedHeight(16)
         self._lab_source_thumb.setStyleSheet(style)
-        self._lab_source_thumb.hide()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self._lab_source_thumb)
+        vbl.addWidget(self._thumbnail_src, alignment=Qt.AlignmentFlag.AlignTop)
+        self.source_thumb_and_label = QWidget()
+        self.source_thumb_and_label.setLayout(vbl)
+
+
         self._lab_aligned_thumb = QLabel('Aligned:')
         self._lab_aligned_thumb.setFixedHeight(16)
         self._lab_aligned_thumb.setStyleSheet(style)
-        self._lab_aligned_thumb.hide()
-
-        vbl.addWidget(self._lab_source_thumb, alignment=Qt.AlignmentFlag.AlignBottom)
-        vbl.addWidget(self._thumbnail_src, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self._lab_aligned_thumb, alignment=Qt.AlignmentFlag.AlignBottom)
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self._lab_aligned_thumb)
         vbl.addWidget(self._thumbnail_aligned, alignment=Qt.AlignmentFlag.AlignTop)
+        self.aligned_thumb_and_label = QWidget()
+        self.aligned_thumb_and_label.setLayout(vbl)
+
+        self.source_thumb_and_label.hide()
+        self.aligned_thumb_and_label.hide()
+
+        gl = QGridLayout()
+        # gl.setContentsMargins(4, 4, 4, 4)
+        gl.setContentsMargins(4, 4, 4, 4)
+        gl.setRowStretch(0, 1)
+        gl.setRowStretch(1, 1)
+        gl.setColumnStretch(0, 1)
+
+        # vbl.addWidget(self._lab_source_thumb, alignment=Qt.AlignmentFlag.AlignBottom)
+        # vbl.addWidget(self._thumbnail_src, alignment=Qt.AlignmentFlag.AlignTop)
+        # vbl.addWidget(self._lab_aligned_thumb, alignment=Qt.AlignmentFlag.AlignBottom)
+        # vbl.addWidget(self._thumbnail_aligned, alignment=Qt.AlignmentFlag.AlignTop)
+
+        gl.addWidget(self.source_thumb_and_label, 0, 0)
+        gl.addWidget(self.aligned_thumb_and_label, 1, 0)
         w2 = QWidget()
-        w2.setLayout(vbl)
+        w2.setLayout(gl)
 
 
         self.snr_plot_widget = QSplitter(Qt.Orientation.Horizontal)
