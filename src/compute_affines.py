@@ -36,7 +36,7 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
     alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
     logger.info('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
 
-    path = os.path.join(dm.dest(), scale, 'img_aligned')
+    # path = os.path.join(dm.dest(), scale, 'img_aligned')
     # if checkForTiffs(path):
     #     # al_substack = dm['data']['scales'][scale]['alignment_stack'][start_layer:]
     #     # remove_aligned(al_substack) #0903 Moved into conditional

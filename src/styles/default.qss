@@ -1,4 +1,7 @@
 
+
+
+
 QTabBar::tab {
     height: 24px;
 }
@@ -10,8 +13,8 @@ QWidget#self._tool_keyBindings{
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);
      subcontrol-position: left;
-     height: 13px;
-     width: 13px;
+     height: 12px;
+     width: 12px;
  }
  /* TabBar::close-button:hover { image: url(src/resources/close-tab-hover.png) } */
 
@@ -90,22 +93,30 @@ QHeaderView {
 /*================================================================
 QMenuBar
 ================================================================*/
+QMenu {
+	border-width: 1px;
+	border-color: #1b1e23;
+	border-style: outset;
+}
+
+
+
+/* affects main menu top-of-window*/
+QMenuBar::item {
+  	spacing: 4px;
+	padding: 2px 2px;
+  	background: transparent;
+}
+
+QMenuBar::item:selected {
+  	background: #969696;
+}
 
 
 
 QMenuBar {
 	background: #1b1e23;
 	color: #daebfe;
-}
-
-QMenuBar::item {
-  	spacing: 3px;
-	padding: 1px 4px;
-  	background: transparent;
-}
-
-QMenuBar::item:selected {
-  	background: #8c8c8c;
 }
 
 
