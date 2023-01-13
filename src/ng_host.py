@@ -214,6 +214,11 @@ class NgHost(QRunnable):
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
 
+        self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
+        sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        self.nglayout = sw[self.nglayout]
+
         if is_aligned:
             frame = cfg.al_tensor.shape[1:] # [height, width]
             x_nudge = (frame[1] - cfg.unal_tensor.shape[2]) / 2
@@ -264,6 +269,8 @@ class NgHost(QRunnable):
             # s.relative_display_scales = [48, 1, 1]
             # s.relative_display_scales = typed_string_map([48, 1, 1])
             # s.display_dimensions = [1000,1,1]
+
+            s.layout.type = self.nglayout
 
             cfg.refLV = ng.LocalVolume(
                 data=cfg.unal_tensor,

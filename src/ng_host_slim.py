@@ -205,7 +205,7 @@ class NgHostSlim(QRunnable):
             else:
                 s.position = [0, shape[1] / 2, shape[2] / 2]
 
-            s.layers['layer'] = ng.ImageLayer(source=cfg.LV)
+            s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
 
             if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
