@@ -14,8 +14,7 @@ from pathlib import Path
 import neuroglancer as ng
 import src.config as cfg
 from src.mp_queue import TaskQueue
-from src.helpers import print_exception, rename_layers, get_scale_val, show_mp_queue_results, \
-    kill_task_queue
+from src.helpers import print_exception, rename_layers, get_scale_val
 
 
 __all__ = ['compute_affines']
@@ -67,10 +66,13 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
     task_queue = TaskQueue(n_tasks=n_tasks,
                            parent=cfg.main_window,
                            pbar_text='Computing Scale %d Transforms w/ SWIM...' % (scale_val))
+
+    # START TASK QUEUE
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
+
+    # ADD ALIGNMENT TASKS TO QUEUE
     for layer in substack:
-    # for index, layer in enumerate(datamodel):
         index = alstack.index(layer)
         if layer['skipped']:
             logger.info(f'Layer {index} is skipped')
@@ -85,6 +87,10 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
                          str(1),               # Number of layers to run                 #ATTN!
                          str(cfg.USE_FILE_IO)  # Use File IO instead of Pipe
                          ]
+            # if index == 5:
+            #     task_args[3] = 'bogus_align'
+            # if index == 8:
+            #     task_args[1] = 'bogus_script.py'
             task_queue.add_task(task_args)
             if cfg.PRINT_EXAMPLE_ARGS:
                 if index in range(start_layer, start_layer + 3):
@@ -93,8 +99,8 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
 
     # task_queue.work_q.join()
     # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
+    # BEGIN COMPUTATIONS
     dt = task_queue.collect_results()
-    show_mp_queue_results(task_queue=task_queue, dt=dt)
 
     # Sort the tasks by layers rather than by process IDs
     task_dict = {}
@@ -145,7 +151,6 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
                 al_stack_old[layer_index]['skipped'] = True
             need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-    kill_task_queue(task_queue=task_queue)
     cfg.data = updated_model #0809-
     write_run_to_file(dm)
     logger.info('<<<< Compute Affines End <<<<')

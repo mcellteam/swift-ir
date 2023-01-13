@@ -1,33 +1,3 @@
-QMenuBar {
-	background: #1b1e23;
-	color: #daebfe;
-}
-
-QMenuBar::item {
-  	spacing: 3px;
-	padding: 1px 4px;
-  	background: transparent;
-}
-
-QMenuBar::item:selected {
-  	background: #8c8c8c;
-}
-
-QMenu::item {
-	spacing: 3px;
-	padding: 3px 15px;
-}
-
-QMenu::item:selected {
-	spacing: 3px;
-	padding: 3px 15px;
-	background: #808080;
-	color: #f3f6fb;
-	border-width: 1px;
-	border-radius: 10px;
-	border-color: #1b1e23;
-	border-style: inset;
-}
 
 QTabBar::tab {
     height: 24px;
@@ -115,6 +85,33 @@ QTableView,
 QHeaderView {
 	border-radius: 0px;
 }
+
+
+/*================================================================
+QMenuBar
+================================================================*/
+
+
+
+QMenuBar {
+	background: #1b1e23;
+	color: #daebfe;
+}
+
+QMenuBar::item {
+  	spacing: 3px;
+	padding: 1px 4px;
+  	background: transparent;
+}
+
+QMenuBar::item:selected {
+  	background: #8c8c8c;
+}
+
+
+
+
+
 
 /*================================================================
 QTableView - e.g. configMenu()->Syntax highlighting table

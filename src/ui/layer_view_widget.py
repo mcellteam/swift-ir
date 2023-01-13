@@ -43,8 +43,8 @@ class LayerViewWidget(QWidget):
         self.table_view.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.table_view.setSelectionBehavior(QTableView.SelectRows)
 
-        self.row_height_slider = Slider(min=4, max=120)
-        self.row_height_slider.setMaximumWidth(256)
+        self.row_height_slider = Slider(min=4, max=256)
+        self.row_height_slider.setMaximumWidth(100)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateRowHeight)
         self.row_height_widget = QWidget()
@@ -107,19 +107,16 @@ class LayerViewWidget(QWidget):
             self.thumbnail_al_delegate = ThumbnailDelegate()
             self.table_view.setItemDelegateForColumn(1, self.thumbnail_al_delegate)
 
-
-
     def selection(self):
         '''Return Pandas Dataframe From Selection'''
         return self._dataframe.iloc[self._selected_rows]
-
 
     @Slot()
     def set_data(self):
         # logger.info('Setting Table Data..')
         selection = self._selected_rows
         # logger.info(f'selection: {selection}')
-        is_aligned = exist_aligned_zarr_cur_scale()
+        is_aligned = cfg.data.is_aligned()
         scale = [cfg.data.scale_pretty()] * cfg.data.nSections
 
         skips, ref, base, method, snr_report = [], [], [], [], []
@@ -145,7 +142,7 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(2, 100)
             self.table_view.setColumnWidth(3, 100)
             self.table_view.setColumnWidth(4, 32)
-            self.table_view.setColumnWidth(5, 20)
+            self.table_view.setColumnWidth(5, 32)
             self.table_view.setColumnWidth(6, 32)
             # self.table_view.setColumnWidth(7, 176)
 
@@ -157,7 +154,7 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(1, 160)
             self.table_view.setColumnWidth(2, 100)
             self.table_view.setColumnWidth(3, 32)
-            self.table_view.setColumnWidth(4, 20)
+            self.table_view.setColumnWidth(4, 32)
             self.table_view.setColumnWidth(5, 32)
             # self.table_view.setColumnWidth(6, 176)
 
