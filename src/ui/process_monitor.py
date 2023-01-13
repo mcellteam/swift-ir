@@ -49,8 +49,10 @@ class HeadupDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: '#F3F6FB',
-        logging.INFO: '#41FF00',
-        logging.WARNING: '#ffe135',
+        # logging.INFO: '#41FF00',
+        # logging.INFO: '#f3f6fb',
+        logging.INFO: '#1b1e23',
+        logging.WARNING: '#8B4000',
         logging.ERROR: '#FD001B',
         logging.CRITICAL: '#decfbe',
     }
@@ -153,14 +155,9 @@ class HeadupDisplay(QWidget):
     def set_theme_default(self):
 
         self.textedit.setStyleSheet("""
-            /*background-color: #d3dae3;*/
-            /*background-color:  #f5ffff;*/
-            /*background-color:  #151a1e;*/
             background-color:  #141414;
-            /*border-style: solid;*/
             border-style: inset;
-            /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
-            border-color: #d3dae3;     /* light off-white */
+            border-color: #d3dae3; /* light off-white */
             border-width: 0px;
             border-radius: 2px;
             font-size: 11px;
@@ -171,18 +168,15 @@ class HeadupDisplay(QWidget):
     def set_theme_light(self):
 
         self.textedit.setStyleSheet("""
-            color: #003B5C;
-            /*background-color: #d3dae3;*/
-            /*background-color:  #f5ffff;*/
-            /*background-color:  #151a1e;*/
-            background-color:  #FBFAF0;
+            color: #ffa213;
+            /*background-color:  #8bb8e8;*/
+            /*background-color:  #ede9e8;*/
+            background-color:  #ffffff;
             /*border-style: solid;*/
             border-style: inset;
-            border-color: #d3dae3;
-            /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
-            /*border-color: #d3dae3;*/     /* light off-white */
-            border-width: 2px;
-            border-radius: 2px;  
+            border-color: #1b1e23;
+            border-width: 1px;
+            border-radius: 4px;  
             font-size: 11px;          
             margin: 0px 0px 0px 0px;
         """)

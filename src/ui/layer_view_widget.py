@@ -49,7 +49,7 @@ class LayerViewWidget(QWidget):
         self.row_height_slider.valueChanged.connect(self.updateRowHeight)
         self.row_height_widget = QWidget()
         self.row_height_hlayout = QHBoxLayout()
-        self.row_height_hlayout.setContentsMargins(2, 0, 2, 0)
+        self.row_height_hlayout.setContentsMargins(2,2, 2, 2)
         self.row_height_widget.setLayout(self.row_height_hlayout)
         self.row_height_hlayout.addWidget(QLabel('Row Height:'))
         self.row_height_hlayout.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -61,7 +61,7 @@ class LayerViewWidget(QWidget):
         self.font_size_slider.valueChanged.connect(self.updateFontSize)
         self.font_size_widget = QWidget()
         self.font_size_hlayout = QHBoxLayout()
-        self.font_size_hlayout.setContentsMargins(2, 0, 2, 0)
+        self.font_size_hlayout.setContentsMargins(2,2, 2, 2)
         self.font_size_widget.setLayout(self.font_size_hlayout)
         self.font_size_hlayout.addWidget(QLabel('Font Size:'))
         self.font_size_hlayout.addWidget(self.font_size_slider, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -141,9 +141,9 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(1, 160)
             self.table_view.setColumnWidth(2, 100)
             self.table_view.setColumnWidth(3, 100)
-            self.table_view.setColumnWidth(4, 32)
-            self.table_view.setColumnWidth(5, 32)
-            self.table_view.setColumnWidth(6, 32)
+            self.table_view.setColumnWidth(4, 50)
+            self.table_view.setColumnWidth(5, 50)
+            self.table_view.setColumnWidth(6, 50)
             # self.table_view.setColumnWidth(7, 176)
 
 
@@ -153,9 +153,9 @@ class LayerViewWidget(QWidget):
                                                             'Skip?', 'Method'])
             self.table_view.setColumnWidth(1, 160)
             self.table_view.setColumnWidth(2, 100)
-            self.table_view.setColumnWidth(3, 32)
-            self.table_view.setColumnWidth(4, 32)
-            self.table_view.setColumnWidth(5, 32)
+            self.table_view.setColumnWidth(3, 50)
+            self.table_view.setColumnWidth(4, 50)
+            self.table_view.setColumnWidth(5, 50)
             # self.table_view.setColumnWidth(6, 176)
 
 
@@ -251,7 +251,6 @@ class Slider(QSlider):
         self.setMaximum(max)
         self.setSingleStep(1)
         self.setPageStep(2)
-        self.setTickPosition(QSlider.TicksAbove)
         self.setTickInterval(1)
 
 

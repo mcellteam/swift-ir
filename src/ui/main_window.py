@@ -86,7 +86,6 @@ class MainWindow(QMainWindow):
         self.app = QApplication.instance()
         self.setObjectName('mainwindow')
         self.setWindowTitle('AlignEM-SWiFT')
-        self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy.png')))
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
         self.initPrivateMembers()
@@ -348,7 +347,7 @@ class MainWindow(QMainWindow):
 
 
     def initView(self):
-        logger.info('')
+        logger.info('Making things look normal...')
         # self._tabs.show()
         self._enableAllTabs()
         self.main_stack_widget.setCurrentIndex(0)
@@ -1276,32 +1275,13 @@ class MainWindow(QMainWindow):
             style = f.read()
         self.setStyleSheet(style)
         self._ctl_panel.setStyleSheet(style)
-        self.hud.set_theme_default()
-        if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.updateNeuroglancer()
-
-
-    def apply_daylight_style(self):
-        cfg.THEME = 1
-        # self.tell('Setting Daylight Theme')
-        self.main_stylesheet = os.path.abspath('src/styles/daylight.qss')
-        with open(self.main_stylesheet, 'r') as f:
-            self.setStyleSheet(f.read())
-        pg.setConfigOption('background', 'w')
+        # self.hud.set_theme_default()
         self.hud.set_theme_light()
         if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.updateNeuroglancer()
-
-
-    def apply_moonlit_style(self):
-        cfg.THEME = 2
-        # self.tell('Setting Moonlit Theme')
-        self.main_stylesheet = os.path.abspath('src/styles/moonlit.qss')
-        with open(self.main_stylesheet, 'r') as f:
-            self.setStyleSheet(f.read())
-        self.hud.set_theme_default()
-        if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.updateNeuroglancer()
+            if cfg.project_tab:
+                cfg.project_tab.updateNeuroglancer()
+            elif cfg.zarr_tab:
+                cfg.zarr_tab.updateNeuroglancer()
 
 
     def apply_sagittarius_style(self):
@@ -1312,8 +1292,10 @@ class MainWindow(QMainWindow):
             self.setStyleSheet(f.read())
         self.hud.set_theme_default()
         if inspect.stack()[1].function != 'initStyle':
-            cfg.project_tab.updateNeuroglancer()
-
+            if cfg.project_tab:
+                cfg.project_tab.updateNeuroglancer()
+            elif cfg.zarr_tab:
+                cfg.zarr_tab.updateNeuroglancer()
 
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
@@ -2994,7 +2976,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
 
         self.toolbar = QToolBar()
-        self.toolbar.setFixedHeight(40)
+        self.toolbar.setFixedHeight(34)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
@@ -3016,6 +2998,7 @@ class MainWindow(QMainWindow):
 
         self._arrangeRadio = QWidget()
         hbl = QHBoxLayout()
+        hbl.setContentsMargins(8, 0, 8, 0)
         hbl.addWidget(self.rb0)
         hbl.addWidget(self.rb1)
         # hbl.addWidget(self.rb2)
@@ -3301,34 +3284,34 @@ class MainWindow(QMainWindow):
 
         fileMenu = self.menu.addMenu('File')
 
-        alignmentMenu = fileMenu.addMenu("Alignment")
-
         self.newAction = QAction('&New Project...', self)
         self.newAction.triggered.connect(self.new_project)
         self.newAction.setShortcut('Ctrl+N')
-        alignmentMenu.addAction(self.newAction)
+        fileMenu.addAction(self.newAction)
 
         self.openAction = QAction('&Open Project...', self)
         self.openAction.triggered.connect(self.open_project)
         self.openAction.setShortcut('Ctrl+O')
-        alignmentMenu.addAction(self.openAction)
-
-        self.rescaleAction = QAction('Rescale...', self)
-        self.rescaleAction.triggered.connect(self.rescale)
-        alignmentMenu.addAction(self.rescaleAction)
-
-        self.exportAfmAction = QAction('Export Affines', self)
-        self.exportAfmAction.triggered.connect(self.export_afms)
-        alignmentMenu.addAction(self.exportAfmAction)
-
-        self.exportCafmAction = QAction('Export Cumulative Affines', self)
-        self.exportCafmAction.triggered.connect(self.export_cafms)
-        alignmentMenu.addAction(self.exportCafmAction)
+        fileMenu.addAction(self.openAction)
 
         self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
         self.openArbitraryZarrAction.triggered.connect(self.open_zarr)
         self.openArbitraryZarrAction.setShortcut('Ctrl+Z')
         fileMenu.addAction(self.openArbitraryZarrAction)
+
+        exportMenu = fileMenu.addMenu('Export')
+
+        self.exportAfmAction = QAction('Affines...', self)
+        self.exportAfmAction.triggered.connect(self.export_afms)
+        exportMenu.addAction(self.exportAfmAction)
+
+        self.exportCafmAction = QAction('Cumulative Affines...', self)
+        self.exportCafmAction.triggered.connect(self.export_cafms)
+        exportMenu.addAction(self.exportCafmAction)
+
+        self.ngRemoteAction = QAction('Remote Neuroglancer', self)
+        self.ngRemoteAction.triggered.connect(self.remote_view)
+        fileMenu.addAction(self.ngRemoteAction)
 
         # self.openFileBrowserAction = QAction('File Browser...', self)
         # self.openFileBrowserAction.triggered.connect(self.open_zarr)
@@ -3345,79 +3328,75 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.exitAppAction)
 
 
-        viewMenu = self.menu.addMenu('View')
-
-        self.normalizeViewAction = QAction('Normalize', self)
-        self.normalizeViewAction.triggered.connect(self.initView)
-        viewMenu.addAction(self.normalizeViewAction)
-
-        self.soloViewAction = QAction('Solo View', self)
-        self.soloViewAction.triggered.connect(self.set_viewer_layout_0)
-        viewMenu.addAction(self.soloViewAction)
-
-        self.colViewAction = QAction('Column View', self)
-        self.colViewAction.triggered.connect(self.set_viewer_layout_1)
-        viewMenu.addAction(self.colViewAction)
-
-        self.rowViewAction = QAction('Row View', self)
-        self.rowViewAction.triggered.connect(self.set_viewer_layout_2)
-        viewMenu.addAction(self.rowViewAction)
-
-        self.splashAction = QAction('Splash', self)
-        self.splashAction.triggered.connect(self.show_splash)
-        viewMenu.addAction(self.splashAction)
-
-        themeMenu = viewMenu.addMenu("Theme")
-
-        self.theme1Action = QAction('Default', self)
-        self.theme1Action.triggered.connect(self.apply_default_style)
-        themeMenu.addAction(self.theme1Action)
-
-        self.theme2Action = QAction('Morning', self)
-        self.theme2Action.triggered.connect(self.apply_daylight_style)
-        themeMenu.addAction(self.theme2Action)
-
-        self.theme3Action = QAction('Evening', self)
-        self.theme3Action.triggered.connect(self.apply_moonlit_style)
-        themeMenu.addAction(self.theme3Action)
-
-        self.theme4Action = QAction('Sagittarius', self)
-        self.theme4Action.triggered.connect(self.apply_sagittarius_style)
-        themeMenu.addAction(self.theme4Action)
-
-        themeActionGroup = QActionGroup(self)
-        themeActionGroup.setExclusive(True)
-        themeActionGroup.addAction(self.theme1Action)
-        themeActionGroup.addAction(self.theme2Action)
-        themeActionGroup.addAction(self.theme3Action)
-        themeActionGroup.addAction(self.theme4Action)
-        self.theme1Action.setCheckable(True)
-        self.theme1Action.setChecked(True)
-        self.theme2Action.setCheckable(True)
-        self.theme3Action.setCheckable(True)
-        self.theme4Action.setCheckable(True)
-
         configMenu = self.menu.addMenu('Configure')
 
-        self.projectConfigAction = QAction('Project', self)
-        self.projectConfigAction.triggered.connect(self._dlg_cfg_project)
-        configMenu.addAction(self.projectConfigAction)
+        self.rescaleAction = QAction('Project...', self)
+        self.rescaleAction.triggered.connect(self.rescale)
+        configMenu.addAction(self.rescaleAction)
 
-        self.appConfigAction = QAction('Application', self)
+        # self.projectConfigAction = QAction('Project...', self)
+        # self.projectConfigAction.triggered.connect(self._dlg_cfg_project)
+        # configMenu.addAction(self.projectConfigAction)
+
+        self.appConfigAction = QAction('Application...', self)
         self.appConfigAction.triggered.connect(self._dlg_cfg_application)
         configMenu.addAction(self.appConfigAction)
 
-        neuroglancerMenu = self.menu.addMenu('Neuroglancer')
+        alignMenu = self.menu.addMenu('Align')
 
-        self.ngRestartAction = QAction('Reload', self)
-        self.ngRestartAction.triggered.connect(self.restartNg)
-        neuroglancerMenu.addAction(self.ngRestartAction)
+        self.alignAllAction = QAction('Align All', self)
+        self.alignAllAction.triggered.connect(lambda: self.align_all())
+        self.alignAllAction.setShortcut('Ctrl+A')
+        alignMenu.addAction(self.alignAllAction)
 
-        self.ngStopAction = QAction('Stop', self)
-        self.ngStopAction.triggered.connect(self.stopNgServer)
-        neuroglancerMenu.addAction(self.ngStopAction)
+        self.alignOneAction = QAction('Align One', self)
+        self.alignOneAction.triggered.connect(lambda: self.align_one())
+        alignMenu.addAction(self.alignOneAction)
 
-        ngLayoutMenu = neuroglancerMenu.addMenu("Layout")
+        self.alignForwardAction = QAction('Align Forward', self)
+        self.alignForwardAction.triggered.connect(lambda: self.align_forward())
+        alignMenu.addAction(self.alignForwardAction)
+
+        self.alignMatchPointAction = QAction('Match Point Align', self)
+        self.alignMatchPointAction.triggered.connect(self.enterExitMatchPointMode)
+        self.alignMatchPointAction.setShortcut('Ctrl+M')
+        alignMenu.addAction(self.alignMatchPointAction)
+
+        self.skipChangeAction = QAction('Toggle Skip', self)
+        self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
+        self.skipChangeAction.setShortcut('Ctrl+K')
+        alignMenu.addAction(self.skipChangeAction)
+
+        self.showMatchpointsAction = QAction('Show Matchpoints', self)
+        self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
+        alignMenu.addAction(self.showMatchpointsAction)
+
+        mendenhallMenu = alignMenu.addMenu('Mendenhall Protocol')
+
+        self.newMendenhallAction = QAction('New', self)
+        self.newMendenhallAction.triggered.connect(self.new_mendenhall_protocol)
+        mendenhallMenu.addAction(self.newMendenhallAction)
+
+        self.openMendenhallAction = QAction('Open', self)
+        self.openMendenhallAction.triggered.connect(self.open_mendenhall_protocol)
+        mendenhallMenu.addAction(self.openMendenhallAction)
+
+        self.importMendenhallAction = QAction('Import', self)
+        self.importMendenhallAction.triggered.connect(self.import_mendenhall_protocol)
+        mendenhallMenu.addAction(self.importMendenhallAction)
+
+        self.alignedMendenhallAction = QAction('Sunny Side Up', self)
+        self.alignedMendenhallAction.triggered.connect(self.aligned_mendenhall_protocol)
+        mendenhallMenu.addAction(self.alignedMendenhallAction)
+
+        self.stopMendenhallAction = QAction('Stop', self)
+        self.stopMendenhallAction.triggered.connect(self.stop_mendenhall_protocol)
+        mendenhallMenu.addAction(self.stopMendenhallAction)
+
+
+        ngMenu = self.menu.addMenu("Neuroglancer")
+
+        ngPerspectiveMenu = ngMenu.addMenu("Perspective")
 
         self.ngLayout1Action = QAction('xy', self)
         self.ngLayout2Action = QAction('xz', self)
@@ -3427,14 +3406,14 @@ class MainWindow(QMainWindow):
         self.ngLayout6Action = QAction('xz-3d', self)
         self.ngLayout7Action = QAction('3d', self)
         self.ngLayout8Action = QAction('4panel', self)
-        ngLayoutMenu.addAction(self.ngLayout1Action)
-        ngLayoutMenu.addAction(self.ngLayout2Action)
-        ngLayoutMenu.addAction(self.ngLayout3Action)
-        ngLayoutMenu.addAction(self.ngLayout4Action)
-        ngLayoutMenu.addAction(self.ngLayout5Action)
-        ngLayoutMenu.addAction(self.ngLayout6Action)
-        ngLayoutMenu.addAction(self.ngLayout7Action)
-        ngLayoutMenu.addAction(self.ngLayout8Action)
+        ngPerspectiveMenu.addAction(self.ngLayout1Action)
+        ngPerspectiveMenu.addAction(self.ngLayout2Action)
+        ngPerspectiveMenu.addAction(self.ngLayout3Action)
+        ngPerspectiveMenu.addAction(self.ngLayout4Action)
+        ngPerspectiveMenu.addAction(self.ngLayout5Action)
+        ngPerspectiveMenu.addAction(self.ngLayout6Action)
+        ngPerspectiveMenu.addAction(self.ngLayout7Action)
+        ngPerspectiveMenu.addAction(self.ngLayout8Action)
         self.ngLayout1Action.triggered.connect(lambda: self._cmbo_ngLayout.setCurrentText('xy'))
         self.ngLayout2Action.triggered.connect(lambda: self._cmbo_ngLayout.setCurrentText('xz'))
         self.ngLayout3Action.triggered.connect(lambda: self._cmbo_ngLayout.setCurrentText('yz'))
@@ -3463,7 +3442,21 @@ class MainWindow(QMainWindow):
         self.ngLayout7Action.setCheckable(True)
         self.ngLayout8Action.setCheckable(True)
 
-        ngShaderMenu = neuroglancerMenu.addMenu("Shader")
+        ngArrangementMenu = ngMenu.addMenu("Arrangement")
+
+        self.soloViewAction = QAction('Stack', self)
+        self.soloViewAction.triggered.connect(self.set_viewer_layout_0)
+        ngArrangementMenu.addAction(self.soloViewAction)
+
+        self.colViewAction = QAction('Column', self)
+        self.colViewAction.triggered.connect(self.set_viewer_layout_1)
+        ngArrangementMenu.addAction(self.colViewAction)
+
+        self.rowViewAction = QAction('Row', self)
+        self.rowViewAction.triggered.connect(self.set_viewer_layout_2)
+        ngArrangementMenu.addAction(self.rowViewAction)
+
+        ngShaderMenu = ngMenu.addMenu("Shader")
 
         self.shader1Action = QAction('None', self)
         self.shader1Action.triggered.connect(self.set_shader_none)
@@ -3493,7 +3486,25 @@ class MainWindow(QMainWindow):
         self.shader3Action.setCheckable(True)
         self.shader4Action.setCheckable(True)
 
-        ngStateMenu = neuroglancerMenu.addMenu("Show State")
+
+        # txt = ('Show UI Controls', 'Hide UI Controls')[cfg.SHOW_UI_CONTROLS]
+        self.ngShowUiControlsAction = QAction('Show UI Controls', self)
+        self.ngShowUiControlsAction.setShortcut('Ctrl+U')
+        self.ngShowUiControlsAction.setCheckable(True)
+        self.ngShowUiControlsAction.setChecked(cfg.SHOW_UI_CONTROLS)
+        self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
+        ngMenu.addAction(self.ngShowUiControlsAction)
+
+        # txt = ('Show Scale Bar', 'Hide Scale Bar')[cfg.SHOW_SCALE_BAR]
+        self.ngShowScaleBarAction = QAction('Show Scale Bar', self)
+        self.ngShowScaleBarAction.setShortcut('Ctrl+B')
+        self.ngShowScaleBarAction.setCheckable(True)
+        self.ngShowScaleBarAction.setChecked(cfg.SHOW_SCALE_BAR)
+        self.ngShowScaleBarAction.triggered.connect(self.ng_toggle_scale_bar)
+        ngMenu.addAction(self.ngShowScaleBarAction)
+
+
+        ngStateMenu = ngMenu.addMenu("State")
 
         self.ngShowStateJsonAction = QAction('JSON', self)
         self.ngShowStateJsonAction.triggered.connect(self.print_ng_state)
@@ -3511,122 +3522,36 @@ class MainWindow(QMainWindow):
         self.ngExtractEverythingAction.triggered.connect(self.dump_ng_details)
         ngStateMenu.addAction(self.ngExtractEverythingAction)
 
-        self.ngInvalidateAction = QAction('Invalidate Local Volumes', self)
-        self.ngInvalidateAction.triggered.connect(self.invalidate_all)
-        neuroglancerMenu.addAction(self.ngInvalidateAction)
+        # viewMenu = self.menu.addMenu('View')
+        #
+        # self.splashAction = QAction('Splash', self)
+        # self.splashAction.triggered.connect(self.show_splash)
+        # viewMenu.addAction(self.splashAction)
+        #
+        # themeMenu = viewMenu.addMenu("Theme")
+        #
+        # self.theme1Action = QAction('Default', self)
+        # self.theme1Action.triggered.connect(self.apply_default_style)
+        # themeMenu.addAction(self.theme1Action)
+        #
+        # self.theme4Action = QAction('Sagittarius', self)
+        # self.theme4Action.triggered.connect(self.apply_sagittarius_style)
+        # themeMenu.addAction(self.theme4Action)
+        #
+        # themeActionGroup = QActionGroup(self)
+        # themeActionGroup.setExclusive(True)
+        # themeActionGroup.addAction(self.theme1Action)
+        # # themeActionGroup.addAction(self.theme2Action)
+        # # themeActionGroup.addAction(self.theme3Action)
+        # themeActionGroup.addAction(self.theme4Action)
+        # self.theme1Action.setCheckable(True)
+        # self.theme1Action.setChecked(True)
+        # # self.theme2Action.setCheckable(True)
+        # # self.theme3Action.setCheckable(True)
+        # self.theme4Action.setCheckable(True)
 
-        # self.ngRefreshViewerAction = QAction('Recreate View', self)
-        # self.ngRefreshViewerAction.triggered.connect(cfg.project_tab.openViewZarr)
-        # neuroglancerMenu.addAction(self.ngRefreshViewerAction)
-
-        # self.ngRefreshUrlAction = QAction('Refresh URL', self)
-        # self.ngRefreshUrlAction.triggered.connect(self.refreshNeuroglancerURL)
-        # neuroglancerMenu.addAction(self.ngRefreshUrlAction)
-
-        self.ngGetUrlAction = QAction('Show URL', self)
-        self.ngGetUrlAction.triggered.connect(self.display_actual_viewer_url)
-        neuroglancerMenu.addAction(self.ngGetUrlAction)
-
-        # txt = ('Show UI Controls', 'Hide UI Controls')[cfg.SHOW_UI_CONTROLS]
-        self.ngShowUiControlsAction = QAction('Show UI Controls', self)
-        self.ngShowUiControlsAction.setShortcut('Ctrl+U')
-        self.ngShowUiControlsAction.setCheckable(True)
-        self.ngShowUiControlsAction.setChecked(cfg.SHOW_UI_CONTROLS)
-        self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
-        neuroglancerMenu.addAction(self.ngShowUiControlsAction)
-
-        # txt = ('Show Scale Bar', 'Hide Scale Bar')[cfg.SHOW_SCALE_BAR]
-        self.ngShowScaleBarAction = QAction('Show Scale Bar', self)
-        self.ngShowScaleBarAction.setShortcut('Ctrl+B')
-        self.ngShowScaleBarAction.setCheckable(True)
-        self.ngShowScaleBarAction.setChecked(cfg.SHOW_SCALE_BAR)
-        self.ngShowScaleBarAction.triggered.connect(self.ng_toggle_scale_bar)
-        neuroglancerMenu.addAction(self.ngShowScaleBarAction)
-
-        self.ngRemoteAction = QAction('External Client', self)
-        self.ngRemoteAction.triggered.connect(self.remote_view)
-        neuroglancerMenu.addAction(self.ngRemoteAction)
 
         # toolsMenu = self.menu.addMenu('Tools')
-
-        alignMenu = self.menu.addMenu('Align')
-
-        self.alignAllAction = QAction('Align All', self)
-        self.alignAllAction.triggered.connect(lambda: self.align_all())
-        self.alignAllAction.setShortcut('Ctrl+A')
-        alignMenu.addAction(self.alignAllAction)
-
-        self.alignOneAction = QAction('Align One', self)
-        self.alignOneAction.triggered.connect(lambda: self.align_one())
-        alignMenu.addAction(self.alignOneAction)
-
-        self.alignForwardAction = QAction('Align Forward', self)
-        self.alignForwardAction.triggered.connect(lambda: self.align_forward())
-        alignMenu.addAction(self.alignForwardAction)
-
-        self.alignMatchPointAction = QAction('Match Point Align', self)
-        self.alignMatchPointAction.triggered.connect(self.enterExitMatchPointMode)
-        self.alignMatchPointAction.setShortcut('Ctrl+M')
-        alignMenu.addAction(self.alignMatchPointAction)
-
-        self.skipChangeAction = QAction('Toggle Skip', self)
-        self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
-        self.skipChangeAction.setShortcut('Ctrl+K')
-        alignMenu.addAction(self.skipChangeAction)
-
-        mendenhallMenu = alignMenu.addMenu('Mendenhall Protocol')
-
-        self.newMendenhallAction = QAction('New', self)
-        self.newMendenhallAction.triggered.connect(self.new_mendenhall_protocol)
-        mendenhallMenu.addAction(self.newMendenhallAction)
-
-        self.openMendenhallAction = QAction('Open', self)
-        self.openMendenhallAction.triggered.connect(self.open_mendenhall_protocol)
-        mendenhallMenu.addAction(self.openMendenhallAction)
-
-        self.importMendenhallAction = QAction('Import', self)
-        self.importMendenhallAction.triggered.connect(self.import_mendenhall_protocol)
-        mendenhallMenu.addAction(self.importMendenhallAction)
-
-        self.alignedMendenhallAction = QAction('Sunny Side Up', self)
-        self.alignedMendenhallAction.triggered.connect(self.aligned_mendenhall_protocol)
-        mendenhallMenu.addAction(self.alignedMendenhallAction)
-
-        self.stopMendenhallAction = QAction('Stop', self)
-        self.stopMendenhallAction.triggered.connect(self.stop_mendenhall_protocol)
-        mendenhallMenu.addAction(self.stopMendenhallAction)
-
-        # self.jumpWorstSnrAction = QAction('Jump To Next Worst SNR', self)
-        # self.jumpWorstSnrAction.triggered.connect(self.jump_to_worst_snr)
-        # toolsMenu.addAction(self.jumpWorstSnrAction)
-        #
-        # self.jumpBestSnrAction = QAction('Jump To Next Best SNR', self)
-        # self.jumpBestSnrAction.triggered.connect(self.jump_to_best_snr)
-        # toolsMenu.addAction(self.jumpBestSnrAction)
-
-        detailsMenu = self.menu.addMenu('Details')
-
-        zarrMenu = detailsMenu.addMenu('Zarr Details')
-
-        self.detailsZarrSourceAction = QAction('img_src.zarr', self)
-        self.detailsZarrSourceAction.triggered.connect(self.show_zarr_info_source)
-        zarrMenu.addAction(self.detailsZarrSourceAction)
-
-        self.detailsZarrAlignedAction = QAction('img_aligned.zarr', self)
-        self.detailsZarrAlignedAction.triggered.connect(self.show_zarr_info_aligned)
-        zarrMenu.addAction(self.detailsZarrAlignedAction)
-
-        self.moduleSearchPathAction = QAction('Show Module Search Path', self)
-        self.moduleSearchPathAction.triggered.connect(self.show_module_search_path)
-        detailsMenu.addAction(self.moduleSearchPathAction)
-
-        self.runtimePathAction = QAction('Show Runtime Path', self)
-        self.runtimePathAction.triggered.connect(self.show_run_path)
-        detailsMenu.addAction(self.runtimePathAction)
-
-        self.showMatchpointsAction = QAction('Show Matchpoints', self)
-        self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
-        detailsMenu.addAction(self.showMatchpointsAction)
 
         debugMenu = self.menu.addMenu('Debug')
 
@@ -3648,19 +3573,19 @@ class MainWindow(QMainWindow):
         self.tracemallocClearAction.triggered.connect(tracemalloc_clear)
         tracemallocMenu.addAction(self.tracemallocClearAction)
 
-        self.detailsWebglAction = QAction('Web GL Test', self)
-        self.detailsWebglAction.triggered.connect(self.webgl2_test)
-        debugMenu.addAction(self.detailsWebglAction)
+        self.debugWebglAction = QAction('Web GL Test', self)
+        self.debugWebglAction.triggered.connect(self.webgl2_test)
+        debugMenu.addAction(self.debugWebglAction)
 
-        self.detailsGpuAction = QAction('GPU Configuration', self)
-        self.detailsGpuAction.triggered.connect(self.gpu_config)
-        debugMenu.addAction(self.detailsGpuAction)
+        self.debugGpuAction = QAction('GPU Configuration', self)
+        self.debugGpuAction.triggered.connect(self.gpu_config)
+        debugMenu.addAction(self.debugGpuAction)
 
-        self.chromiumDebugAction = QAction('Chromium Debug', self)
+        self.chromiumDebugAction = QAction('Troubleshoot Chromium', self)
         self.chromiumDebugAction.triggered.connect(self.chromium_debug)
         debugMenu.addAction(self.chromiumDebugAction)
 
-        self.ngWebdriverLogAction = QAction('Show Webdriver Log', self)
+        self.ngWebdriverLogAction = QAction('Webdriver Log', self)
         self.ngWebdriverLogAction.triggered.connect(self.show_webdriver_log)
         debugMenu.addAction(self.ngWebdriverLogAction)
 
@@ -3668,9 +3593,27 @@ class MainWindow(QMainWindow):
         self.anableAllControlsAction.triggered.connect(self.enableAllButtons)
         debugMenu.addAction(self.anableAllControlsAction)
 
-        self.printActiveThreadsAction = QAction('Show Active Threads', self)
+        self.printActiveThreadsAction = QAction('Active Threads', self)
         self.printActiveThreadsAction.triggered.connect(self.printActiveThreads)
         debugMenu.addAction(self.printActiveThreadsAction)
+
+        self.moduleSearchPathAction = QAction('Module Search Path', self)
+        self.moduleSearchPathAction.triggered.connect(self.show_module_search_path)
+        debugMenu.addAction(self.moduleSearchPathAction)
+
+        self.runtimePathAction = QAction('Runtime Path', self)
+        self.runtimePathAction.triggered.connect(self.show_run_path)
+        debugMenu.addAction(self.runtimePathAction)
+
+        zarrMenu = debugMenu.addMenu('Zarr Info')
+
+        self.detailsZarrSourceAction = QAction('img_src.zarr', self)
+        self.detailsZarrSourceAction.triggered.connect(self.show_zarr_info_source)
+        zarrMenu.addAction(self.detailsZarrSourceAction)
+
+        self.detailsZarrAlignedAction = QAction('img_aligned.zarr', self)
+        self.detailsZarrAlignedAction.triggered.connect(self.show_zarr_info_aligned)
+        zarrMenu.addAction(self.detailsZarrAlignedAction)
 
         if cfg.DEV_MODE:
             # developerMenu = debugMenu.addMenu('Developer')
@@ -4386,6 +4329,7 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.addWidget(self._wdg_demos)           # (2)
         self.main_stack_widget.addWidget(self._wdg_remote_viewer)   # (3)
         self.main_panel.setLayout(vbl)
+        self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
         self.setCentralWidget(self.main_stack_widget)
 
 
