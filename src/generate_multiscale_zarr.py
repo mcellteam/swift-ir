@@ -8,7 +8,7 @@ import logging
 import argparse
 import src.config as cfg
 from src.mp_queue import TaskQueue
-from src.helpers import get_scale_val, get_img_filenames, print_exception, show_mp_queue_results, kill_task_queue
+from src.helpers import get_scale_val, get_img_filenames, print_exception
 
 __all__ = ['generate_multiscale_zarr']
 
@@ -49,8 +49,6 @@ def generate_multiscale_zarr(src, out):
     t0 = time.time()
     task_queue.collect_results()
     dt = time.time() - t0
-    show_mp_queue_results(task_queue=task_queue, dt=dt)
-    kill_task_queue(task_queue=task_queue)
     logger.info('<<<< Generate Zarr End <<<<')
 
 

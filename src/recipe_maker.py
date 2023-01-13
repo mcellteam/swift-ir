@@ -486,11 +486,13 @@ class alignment_process:
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
                 '''refine_affine'''
+                # self.init_affine_matrix - result from previous alignment at coarser scale
                 # ingredient_4x4 = align_ingredient(ww=int(sx_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
-                ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
-                self.recipe.add_ingredient(ingredient_4x4)
-                # ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
-                # self.recipe.add_ingredient(ingredient_2x2)
+
+                # ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
+                # self.recipe.add_ingredient(ingredient_4x4)
+                ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
+                self.recipe.add_ingredient(ingredient_2x2)
             elif alignment_option == 'apply_affine':
                 '''apply_affine'''
                 ingredient_apply_affine = align_ingredient(afm=self.init_affine_matrix, align_mode='apply_affine_align', ad=self.align_dir)
@@ -499,15 +501,13 @@ class alignment_process:
                 '''init_affine'''
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
-
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
                 ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir )  # 0721
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
                 ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
                 ingredient_2x2b = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
-                # ingredient_4x4 = align_ingredient(ww=sx_4x4, psta=psta_4x4, wht=wht, ad=self.align_dir)
-                ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, wht=wht, ad=self.align_dir)
+                # ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_2x2b)

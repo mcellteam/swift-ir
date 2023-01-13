@@ -1576,6 +1576,7 @@ class MainWindow(QMainWindow):
                     project = json.load(f)
                 self.projecthistory_model.load(project)
                 self._tabsGlob.addTab(self.historyview_widget, cfg.data.scale_pretty())
+        self._setLastTab()
 
 
     def rename_historical_alignment(self):
@@ -2300,32 +2301,18 @@ class MainWindow(QMainWindow):
             return
         self._unsaved_changes = True
         name = os.path.basename(cfg.data.dest())
-        self._tabsGlob.setTabText(self._tabsGlob.currentIndex(), name + '.proj' +  '*')
+        self._tabsGlob.setTabText(self._tabsGlob.currentIndex(), name + '.proj' + '*')
 
 
     def ng_toggle_show_ui_controls(self):
-        if self.ngShowUiControlsAction.isChecked():
-            cfg.SHOW_UI_CONTROLS = True
-            self.ngShowUiControlsAction.setText('Show UI Controls')
-        else:
-            cfg.SHOW_UI_CONTROLS = False
-            self.ngShowUiControlsAction.setText('Hide UI Controls')
-        if cfg.project_tab:
-            cfg.project_tab.updateNeuroglancer()
-        if cfg.zarr_tab:
-            cfg.zarr_tab.updateNeuroglancer()
+        cfg.SHOW_UI_CONTROLS = self.ngShowUiControlsAction.isChecked()
+        if cfg.project_tab:  cfg.project_tab.updateNeuroglancer()
+        if cfg.zarr_tab:      cfg.zarr_tab.updateNeuroglancer()
 
     def ng_toggle_scale_bar(self):
-        if self.ngShowScaleBarAction.isChecked():
-            cfg.SHOW_SCALE_BAR = True
-            self.ngShowScaleBarAction.setText('Show Scale Bar')
-        else:
-            cfg.SHOW_SCALE_BAR = False
-            self.ngShowScaleBarAction.setText('Hide Scale Bar')
-        if cfg.project_tab:
-            cfg.project_tab.updateNeuroglancer()
-        if cfg.zarr_tab:
-            cfg.zarr_tab.updateNeuroglancer()
+        cfg.SHOW_SCALE_BAR = self.ngShowScaleBarAction.isChecked()
+        if cfg.project_tab:  cfg.project_tab.updateNeuroglancer()
+        if cfg.zarr_tab:     cfg.zarr_tab.updateNeuroglancer()
 
 
     def import_multiple_images(self, clear_role=False):
@@ -3540,16 +3527,16 @@ class MainWindow(QMainWindow):
         self.ngGetUrlAction.triggered.connect(self.display_actual_viewer_url)
         neuroglancerMenu.addAction(self.ngGetUrlAction)
 
-        txt = ('Show UI Controls', 'Hide UI Controls')[cfg.SHOW_UI_CONTROLS]
-        self.ngShowUiControlsAction = QAction(txt, self)
+        # txt = ('Show UI Controls', 'Hide UI Controls')[cfg.SHOW_UI_CONTROLS]
+        self.ngShowUiControlsAction = QAction('Show UI Controls', self)
         self.ngShowUiControlsAction.setShortcut('Ctrl+U')
         self.ngShowUiControlsAction.setCheckable(True)
         self.ngShowUiControlsAction.setChecked(cfg.SHOW_UI_CONTROLS)
         self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
         neuroglancerMenu.addAction(self.ngShowUiControlsAction)
 
-        txt = ('Show Scale Bar', 'Hide Scale Bar')[cfg.SHOW_SCALE_BAR]
-        self.ngShowScaleBarAction = QAction(txt, self)
+        # txt = ('Show Scale Bar', 'Hide Scale Bar')[cfg.SHOW_SCALE_BAR]
+        self.ngShowScaleBarAction = QAction('Show Scale Bar', self)
         self.ngShowScaleBarAction.setShortcut('Ctrl+B')
         self.ngShowScaleBarAction.setCheckable(True)
         self.ngShowScaleBarAction.setChecked(cfg.SHOW_SCALE_BAR)

@@ -8,7 +8,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
-    get_bindir, show_mp_queue_results, kill_task_queue, create_scale_one_symlinks
+    get_bindir, create_scale_one_symlinks
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -53,7 +53,6 @@ def generate_scales(dm):
     dt = task_queue.collect_results()
     results = task_queue.get_status_of_tasks()
     # show_mp_queue_results(task_queue=task_queue, dt=dt)
-    kill_task_queue(task_queue=task_queue)
     print(f'results : {results}')
     print(f'dt      : {dt}')
     cfg.results = results

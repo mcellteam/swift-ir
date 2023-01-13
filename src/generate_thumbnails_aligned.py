@@ -11,7 +11,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, get_bindir, natural_sort, show_mp_queue_results, kill_task_queue
+    get_best_path, get_bindir, natural_sort
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_thumbnails_aligned']
@@ -74,8 +74,6 @@ def generate_thumbnails_aligned(dm, layers=None):
         #     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 
     dt = task_queue.collect_results()
-    show_mp_queue_results(task_queue=task_queue, dt=dt)
-    kill_task_queue(task_queue=task_queue)
 
     logger.info('<<<< Thumbnail Generation Complete <<<<')
 

@@ -8,8 +8,8 @@ import logging
 import argparse
 import src.config as cfg
 from src.mp_queue import TaskQueue
-from src.helpers import get_scale_val, get_img_filenames, print_exception, show_mp_queue_results, kill_task_queue, \
-    renew_directory, reorder_tasks
+from src.helpers import get_scale_val, get_img_filenames, print_exception, renew_directory, \
+    reorder_tasks
 from src.funcs_zarr import preallocate_zarr
 
 __all__ = ['generate_zarr_scales']
@@ -69,8 +69,6 @@ def generate_zarr_scales(data):
 
 
     dt = task_queue.collect_results()
-    show_mp_queue_results(task_queue=task_queue, dt=dt)
-    kill_task_queue(task_queue=task_queue)
     logger.info('<<<< Generate Zarr Scales End <<<<')
 
 

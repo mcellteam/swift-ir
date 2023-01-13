@@ -161,12 +161,12 @@ def renew_directory(directory:str) -> None:
         except:  print_exception()
         cfg.main_window.hud.done()
 
-def kill_task_queue(task_queue):
-    '''End task queue multiprocessing tasks and delete a task queue object'''
-    try: task_queue.end_tasks()
-    except: print_exception()
-    task_queue.stop()
-    del task_queue
+# def kill_task_queue(task_queue):
+#     '''End task queue multiprocessing tasks and delete a task queue object'''
+#     try: task_queue.end_tasks()
+#     except: print_exception()
+#     task_queue.stop()
+#     del task_queue
 
 def show_status_report(results, dt):
     if results[2] > 0:
@@ -184,57 +184,57 @@ def show_status_report(results, dt):
         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
 
 
-def show_mp_queue_results(task_queue, dt):
-
-    logger.info('Checking Status of Tasks...')
-    n_tasks = len(task_queue.task_dict.keys())
-    n_success, n_queued, n_failed = 0, 0, 0
-    for k in task_queue.task_dict.keys():
-        task_item = task_queue.task_dict[k]
-        if task_item['statusBar'] == 'completed':
-            logger.debug('\nCompleted:')
-            logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
-            logger.debug('   ARGS:   %s' % (str(task_item['args'])))
-            logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_success += 1
-        elif task_item['statusBar'] == 'queued':
-            logger.warning('\nQueued:')
-            logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-            logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-            logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_queued += 1
-        elif task_item['statusBar'] == 'task_error':
-            logger.warning('\nTask Error:')
-            logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-            logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-            logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
-            n_failed += 1
-
-    # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
-
-    if n_failed > 0:
-        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
-        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
-        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
-        # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
-        # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
-        cfg.main_window.hud(f'  Succeeded    = {n_success}')
-        if n_queued > 0:
-            cfg.main_window.warning(f'  Queued       = {n_queued}')
-        else:
-            cfg.main_window.hud(f'  Queued       = {n_queued}')
-        cfg.main_window.err(f'  Failed       = {n_failed}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
-    else:
-        # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
-        # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
-        # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
-        # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
-        # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
-        cfg.main_window.hud(f'  Succeeded    = {n_success}')
-        cfg.main_window.hud(f'  Queued       = {n_queued}')
-        cfg.main_window.hud(f'  Failed       = {n_failed}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+# def show_mp_queue_results(task_queue, dt):
+#
+#     logger.info('Checking Status of Tasks...')
+#     n_tasks = len(task_queue.task_dict.keys())
+#     n_success, n_queued, n_failed = 0, 0, 0
+#     for k in task_queue.task_dict.keys():
+#         task_item = task_queue.task_dict[k]
+#         if task_item['statusBar'] == 'completed':
+#             logger.debug('\nCompleted:')
+#             logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
+#             logger.debug('   ARGS:   %s' % (str(task_item['args'])))
+#             logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             n_success += 1
+#         elif task_item['statusBar'] == 'queued':
+#             logger.warning('\nQueued:')
+#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             n_queued += 1
+#         elif task_item['statusBar'] == 'task_error':
+#             logger.warning('\nTask Error:')
+#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             n_failed += 1
+#
+#     # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
+#
+#     if n_failed > 0:
+#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
+#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
+#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
+#         # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
+#         # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
+#         if n_queued > 0:
+#             cfg.main_window.warning(f'  Queued       = {n_queued}')
+#         else:
+#             cfg.main_window.hud(f'  Queued       = {n_queued}')
+#         cfg.main_window.err(f'  Failed       = {n_failed}')
+#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+#     else:
+#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
+#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
+#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
+#         # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
+#         # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
+#         cfg.main_window.hud(f'  Queued       = {n_queued}')
+#         cfg.main_window.hud(f'  Failed       = {n_failed}')
+#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
 
 # def load():
 #     try:

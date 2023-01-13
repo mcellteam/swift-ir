@@ -9,8 +9,7 @@ import logging
 import neuroglancer as ng
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
-from src.helpers import get_scale_val, print_exception, reorder_tasks, show_mp_queue_results, \
-    kill_task_queue, renew_directory
+from src.helpers import get_scale_val, print_exception, reorder_tasks,renew_directory
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
@@ -91,12 +90,10 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
         task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
-        show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()
         logger.warning('Task Queue encountered a problem')
-    finally:
-        kill_task_queue(task_queue=task_queue)
+
 
     logger.info('Making Zarr Copy-convert Alignment Tasks List...')
     # cfg.main_window.set_status('Copy-converting TIFFs...')
@@ -123,12 +120,10 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
         task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
-        show_mp_queue_results(task_queue=task_queue, dt=dt)
     except:
         print_exception()
         logger.warning('Task Queue encountered a problem')
     finally:
-        kill_task_queue(task_queue=task_queue)
         cfg.main_window.set_idle()
 
     logger.info('<<<< Generate Aligned End <<<<')

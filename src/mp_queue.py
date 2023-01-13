@@ -51,10 +51,10 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
 
         dt = time.time() - t0
         result_q.put((task_id, outs, errs, rc, dt)) # put method uses block=True by default
-        task_q.task_done()
+        task_q.task_done() # Pop finished task
     result_q.close()
     # result_q.join_thread()
-    task_q.task_done()
+    task_q.task_done()# Pop the Sentinel
     logger.debug('<<<< Worker %d Finished' % (worker_id))
 
 
@@ -120,7 +120,7 @@ class TaskQueue(QObject):
         self.workers = []
 
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting Worker %d...' % i)
+            # sys.stderr.write('Restarting Worker %d...' % i)
             # time.sleep(.1)
             try:
                 if cfg.DAEMON_THREADS:
@@ -138,6 +138,7 @@ class TaskQueue(QObject):
     def end_tasks(self) -> None:
         '''Tell child processes to stop'''
         # logger.info('Ending Tasks...')
+        # Add one sentinel per worker
         for i in range(self.n_workers):
             self.work_queue.put('END_TASKS')
 
@@ -211,8 +212,14 @@ class TaskQueue(QObject):
             logger.error('ERROR')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
+
+                self.end_tasks() # Add end sentinels (one/worker)
+
                 logger.info('# Tasks Pending   : %d' % n_pending)
                 retry_list = []
+
+                # Loop over pending tasks...
+                # Update progress bar and result queue as tasks finish (mp.Queue.get() is blocking).
                 for j in range(n_pending):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
                     # logger.info(task_str)
@@ -223,7 +230,10 @@ class TaskQueue(QObject):
                         # print_exception()
                         logger.error('ERROR')
                         pass
+
+                    # .get method is BLOCKING by default for mp.Queue
                     task_id, outs, errs, rc, dt = self.result_queue.get()
+
                     # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
                     self.task_dict[task_id]['stdout'] = outs
                     self.task_dict[task_id]['stderr'] = errs
@@ -242,6 +252,9 @@ class TaskQueue(QObject):
 
                     realtime -= 1
 
+                self.work_queue.join()
+                self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
+
                 '''Restart Queue and Requeue failed tasks'''
                 n_pending = len(retry_list)
                 if (retries_tot < self.retries) and n_pending:
@@ -255,6 +268,7 @@ class TaskQueue(QObject):
                         # [logger.info(key,':',value) for key, value in self.task_dict[task_id].items()]
                         self.requeue_task(task_id)
                 retries_tot += 1
+
 
             logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
             logger.debug('    Failed Tasks: %d\n' % (n_pending))
@@ -276,31 +290,29 @@ class TaskQueue(QObject):
             # n_success, n_queued, n_failed = 0, 0, 0
             # for task_item in self.task_dict:
             #     if task_item['statusBar'] == 'completed':
-            #         # logger.debug('\nCompleted:')
-            #         # logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
-            #         # logger.debug('   ARGS:   %s' % (str(task_item['args'])))
-            #         # logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         logger.debug('\nCompleted:')
+            #         logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
+            #         logger.debug('   ARGS:   %s' % (str(task_item['args'])))
+            #         logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
             #         n_success += 1
             #     elif task_item['statusBar'] == 'queued':
-            #         # logger.warning('\nQueued:')
-            #         # logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-            #         # logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-            #         # logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         logger.warning('\nQueued:')
+            #         logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+            #         logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+            #         logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
             #         n_queued += 1
             #     elif task_item['statusBar'] == 'task_error':
-            #         # logger.error('\nTask Error:')
-            #         # logger.error('   CMD:    %s' % (str(task_item['cmd'])))
-            #         # logger.error('   ARGS:   %s' % (str(task_item['args'])))
-            #         # logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         logger.error('\nTask Error:')
+            #         logger.error('   CMD:    %s' % (str(task_item['cmd'])))
+            #         logger.error('   ARGS:   %s' % (str(task_item['args'])))
+            #         logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
             #         n_failed += 1
-            #     # self.end_tasks()
-            #     # self.work_queue.join()
-            #     # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
-            #     # logger.critical('# TASKS: %d... SUCCESS: %d | QUEUED: %d | FAILED: %d' % (self.n_tasks, n_success, n_queued, n_failed))
-            #     self.parent.pbar.hide()
-                dt = time.time() - t0
-                # return (dt,n_success,n_queued, n_failed)
-                return (dt)
+
+            # logger.critical('# TASKS: %d... SUCCESS: %d | QUEUED: %d | FAILED: %d' % (self.n_tasks, n_success, n_queued, n_failed))
+            # self.parent.pbar.hide()
+            dt = time.time() - t0
+            # return (dt,n_success,n_queued, n_failed)
+            return (dt)
 
         # logger.info('Exiting Task Queue scope')
 
