@@ -514,8 +514,8 @@ class MainWindow(QMainWindow):
             for name in names:
                 lst_names += f'\n  Section: {name}'
             self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...'
-                      f'{lst_names}\n'
-                      f'  (try skipping these layers...)')
+                      # f'{lst_names}\n'
+                      # f'  (try skipping these layers...)')
 
 
     def onAlignmentEnd(self):

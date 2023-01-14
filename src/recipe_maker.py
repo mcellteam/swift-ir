@@ -105,7 +105,7 @@ def run_json_project(project,
             logger.info("Next coarsest s completed: %s" % str(next_scale))
             logger.info("Upscale factor: %s" % str(upscale))
 
-        scale_tbd_dir = os.path.join(project['data']['destination_path'], 'scale_' + str(scale_tbd))
+        scale_tbd_dir = os.path.join(project['data']['destination_path'], 'scale_' + str(scale_tbd)) #directory -> ad variable
         ident = swiftir.identityAffine()
         s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
         common_length = len(s_tbd)
@@ -752,7 +752,7 @@ class align_ingredient:
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         logger.critical('afm_arg =  %s' % afm_arg)
 
-        karg = ''
+
         # if keep != None:
         #  karg = '-k %s' % (keep)
 
@@ -789,10 +789,18 @@ class align_ingredient:
         # ' -d ' + dir + \
 
         # ' -f3' + \
+
+
+        # im_sta_fn = ref, im_mov_fn = base
+        scale_dir = os.path.abspath(os.path.dirname(self.ad)) # self.ad = project/scale_X/img_aligned/
+        k_arg = os.path.join(scale_dir, 'keep_' + os.path.basename(self.recipe.im_mov_fn))
+        t_arg = os.path.join(scale_dir, 'target_' + os.path.basename(self.recipe.im_mov_fn))
+        b_arg = os.path.join(scale_dir, 'corr_spot_' +  os.path.basename(self.recipe.im_mov_fn))
+
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
             offy = int(self.psta[1][i] - (wwy_f / 2.0))
-            logger.debug("Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")")
+            logger.critical("Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")")
             # swim_arg_string = 'ww_' + swim_ww_arg + \
             #                   ' -i ' + str(self.iters) + \
             #                   ' -w ' + str(self.wht) + \
@@ -813,7 +821,9 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' ' + karg + \
+                              ' -k ' + k_arg + \
+                              ' -t ' + t_arg + \
+                              ' -b ' + b_arg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
                               ' ' + base_y + \
@@ -822,10 +832,27 @@ class align_ingredient:
                               ' ' + adjust_y + \
                               ' ' + rota_arg + \
                               ' ' + afm_arg
+            # swim_arg_string = 'ww_' + swim_ww_arg + \
+            #                   ' -f3 ' + \
+            #                   ' -i ' + str(self.iters) + \
+            #                   ' -w ' + str(self.wht) + \
+            #                   ' -x ' + str(offx) + \
+            #                   ' -y ' + str(offy) + \
+            #                   ' -b ' + os.path.join(self.ad, 'spot_image_' + self.recipe.im_mov_fn) + \
+            #                   ' ' + self.recipe.im_sta_fn + \
+            #                   ' ' + base_x + \
+            #                   ' ' + base_y + \
+            #                   ' ' + self.recipe.im_mov_fn + \
+            #                   ' ' + adjust_x + \
+            #                   ' ' + adjust_y + \
+            #                   ' ' + rota_arg + \
+            #                   ' ' + afm_arg
+
+
 
             # default -f is 3x3
 
-            logger.debug('SWIM argument string: %s' % swim_arg_string)
+            logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
             # print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
 
