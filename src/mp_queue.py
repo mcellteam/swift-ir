@@ -209,7 +209,7 @@ class TaskQueue(QObject):
             self.parent.pbar_widget.show()
         except:
             # print_exception()
-            logger.error('ERROR')
+            logger.error('An exception was raised while setting up progress bar')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
 
@@ -228,7 +228,7 @@ class TaskQueue(QObject):
                         QApplication.processEvents()
                     except:
                         # print_exception()
-                        logger.error('ERROR')
+                        logger.warning('An exception was raised while updating progress bar')
                         pass
 
                     # .get method is BLOCKING by default for mp.Queue

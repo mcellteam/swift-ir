@@ -318,7 +318,7 @@ class SnrPlot(QWidget):
 
 
     def updateErrBars(self, s):
-        logger.info('')
+        # logger.info('')
         offset = self._getScaleOffset(s=s)
         errbars = cfg.data.snr_errorbars(s=s)
         n = cfg.data.nSections
