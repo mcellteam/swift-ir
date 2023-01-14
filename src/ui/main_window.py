@@ -513,7 +513,7 @@ class MainWindow(QMainWindow):
             lst_names = ''
             for name in names:
                 lst_names += f'\n  Section: {name}'
-            self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...'
+            self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...')
                       # f'{lst_names}\n'
                       # f'  (try skipping these layers...)')
 
