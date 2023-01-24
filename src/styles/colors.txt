@@ -19,3 +19,4 @@
 #39ff14 - neon green
 #00BF00 - pure green
 #969696 - medium grey
+#0096ff - bright blue

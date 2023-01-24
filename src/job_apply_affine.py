@@ -30,7 +30,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    return ({'out': cmd_stdout, 'err': cmd_stderr})
+    return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
 
 if (__name__ == '__main__'):
@@ -88,6 +88,12 @@ if (__name__ == '__main__'):
 
     # Python Implementation
     # image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)
+    sys.stdout.write(o['out'])
+    sys.stderr.write(o['err'])
+    sys.stdout.close()
+    sys.stderr.close()
+    if o['rc']:
+        exit(1)
 
 
 '''

@@ -24,7 +24,7 @@ def generate_multiscale_zarr(src, out):
     imgs = sorted(get_img_filenames(os.path.join(src, cfg.data.scale(), 'img_aligned')))
     logger.info('# images: %d' % len(imgs))
     for ID, img in enumerate(imgs):
-        for scale in cfg.data.aligned_list():
+        for scale in cfg.data.scalesAlignedAndGenerated:
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
             tasks_.append([ID, img, src, path_out, scale])

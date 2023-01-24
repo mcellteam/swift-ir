@@ -194,7 +194,7 @@ class DataTable(QMainWindow):
 
 
 class PandasModel(QAbstractTableModel):
-    """A previewmodel to interface a Qt table_view with pandas dataframe.
+    """A previewmodel to interface a Qt table with pandas dataframe.
     Adapted from Qt Documentation Example:
     https://doc.qt.io/qtforpython/examples/example_external__pandas.html"""
     def __init__(self, dataframe: pd.DataFrame, parent=None):

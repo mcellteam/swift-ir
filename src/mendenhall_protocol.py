@@ -69,7 +69,7 @@ class Mendenhall(QObject):
         img = diff[0]
         logger.info(f'New Image (or possibly removed): {img}')
         self.add_image(os.path.join(self.sink, img))
-        cfg.data.nSections = cfg.data.n_layers()
+        cfg.data.nSections = cfg.data.n_sections()
         self._files = contents
 
     def n_files(self):
@@ -88,7 +88,7 @@ class Mendenhall(QObject):
     def add_image(self, img):
         cfg.main_window.hud.post(f"Adding Image Layer '{os.path.basename(img)}'...")
         cfg.data.append_image(img)
-        cfg.data.link_all_stacks()
+        cfg.data.link_reference_sections()
         self.img_to_zarr(ID=self._index, fn=img)
         self._index += 1
         # cfg.main_window.initNgServer()

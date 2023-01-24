@@ -20,6 +20,8 @@ import tifffile
 import numpy as np
 from shutil import rmtree
 import psutil
+from functools import reduce
+import operator
 
 try: import src.config as cfg
 except: import config as cfg
@@ -34,12 +36,147 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
-           'get_aligned_scales'
+           'get_scales_with_generated_alignments'
            ]
 
 logger = logging.getLogger(__name__)
 
 snapshot = None
+
+def getOpt(lookup):
+    if isinstance(lookup, str):
+        lookup = lookup.split(',')
+    return reduce(operator.getitem, lookup, cfg.settings)
+
+
+def setOpt(lookup, val):
+    if isinstance(lookup, str):
+        lookup = lookup.split(',')
+    getOpt(lookup[:-1])[lookup[-1]] = val
+
+
+# def cleanup_project_list(dict):
+#     projects = dict['projects']
+#     dict['projects'] = []
+#     for path in projects:
+#         project_dir = os.path.splitext(path)[0]
+#         if os.path.exists(path):
+#             if os.path.isdir(project_dir):
+#                 dict['projects'].append(path)
+#     return dict
+
+
+def validate_selection() -> bool:
+    logger.info('Validating selection %s...' % cfg.selected_file)
+    # called by setSelectionPathText
+    path, extension = os.path.splitext(cfg.selected_file)
+    if extension != '.swiftir':
+        return False
+    else:
+        return True
+
+
+def validate_file(file) -> bool:
+    logger.info('Validating file...\n%s' % file)
+    # logger.info('called by %s' % inspect.stack()[1].function)
+    is_valid = False
+    path, extension = os.path.splitext(file)
+    if extension != '.swiftir':
+        return False
+    else:
+        return True
+
+
+def cleanup_project_list(paths: list) -> list:
+    logger.info('')
+    # logger.info(f'paths: {paths}')
+    paths = list( dict.fromkeys(paths) ) # remove duplicates
+    paths = [x for x in paths if x != '']
+    clean_paths = []
+    for path in paths:
+        project_dir = os.path.splitext(path)[0]
+        if os.path.exists(path):
+            if os.path.isdir(project_dir):
+                if validate_file(path):
+                    clean_paths.append(path)
+    diff = list(set(paths) - set(clean_paths))
+    logger.info(f'diff: {diff}')
+    if diff:
+        txt = f'Some projects were not found and will be removed from the project cache:\n{diff}'
+        logger.warning(txt)
+    # logger.info(f'clean_paths: {clean_paths}')
+    return clean_paths
+
+
+def get_project_list():
+    logger.info('')
+    try:
+        userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+        with open(userprojectspath, 'r') as f:
+            projectpaths = [line.rstrip() for line in f]
+        return projectpaths
+    except:
+        print_exception()
+
+
+def configure_project_settings():
+    usersettingspath = os.path.join(os.path.expanduser('~'), '.swiftrc')
+
+    if not os.path.exists(usersettingspath):
+        logger.info(f'Creating user settings from defaults "{usersettingspath}"...')
+        with open('defaults.json', 'r') as f:
+            settings = json.load(f)
+        with open(usersettingspath, 'w') as f:
+            json.dump(settings, f, indent=2)
+    try:
+        logger.info(f'Loading user settings "{usersettingspath}"...')
+        # if cfg.DEV_MODE:
+        #     with open('defaults.json', 'r') as f:
+        #         cfg.settings = json.load(f)
+        # else:
+        cfg.settings = json.load(open(usersettingspath,'r'))
+        logger.critical(f'User Application Settings:\n{cfg.settings}')
+    except:
+        print_exception()
+        logger.warning(f'Unable to load user settings "{usersettingspath}". Initializing from defaults...')
+        with open('defaults.json', 'r') as f:
+            cfg.settings = json.load(f)
+        with open(usersettingspath, 'w') as f:
+            json.dump(cfg.settings, f, indent=2)
+
+
+def configure_project_paths():
+    logger.info('')
+    userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+    if not os.path.exists(userprojectspath):
+        open(userprojectspath, 'a').close()
+
+    try:
+        with open(userprojectspath, 'r') as f:
+            lines = f.readlines()
+        paths = [line.rstrip() for line in lines]
+        logger.info(f'paths: {paths}')
+        projectpaths = cleanup_project_list(paths)
+        logger.info(f'projectpaths: {projectpaths}')
+        with open(userprojectspath, 'w') as f:
+            for line in projectpaths:
+                f.write(f"{line}\n")
+        if projectpaths:
+            logger.info('AlignEM-SWiFT Knows About The Following Projects:\n'
+                        '%s' % '  \n'.join(projectpaths))
+    except:
+        print_exception()
+
+
+def get_paths_absolute(directory):
+    for dirpath,_,filenames in os.walk(directory):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
+
+
+def list_paths_absolute(directory):
+    return natural_sort(list(get_paths_absolute(directory)))
+
 
 def tracemalloc_start():
     logger.info('Starting tracemalloc memory allocation analysis...')
@@ -96,31 +233,73 @@ def timer(func):
     return wrap_func
 
 
+def get_bytes(start_path = '.'):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                # skip symbolic links
+                total_size += os.path.getsize(fp)
+
+    return total_size
+
+
+# def make_affine_widget_HTML(afm, cafm):
+#     # 'cellspacing' affects table width and 'cellpadding' affects table height
+#     # text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
+#     text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
+#            f"  <tr>"\
+#            f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
+#            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
+#            f"  </tr>"\
+#            f"  <tr>"\
+#            f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
+#            f"  </tr>"\
+#            f"  <tr>"\
+#            f"    <td rowspan=2 style='background-color: #dcdcdc; width: 10%'><b>CAFM</b></td>"\
+#            f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
+#            f"  </tr>"\
+#            f"  <tr>"\
+#            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
+#            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
+#            f"  </tr>"\
+#            f"</table>"
+#     return text
+
 def make_affine_widget_HTML(afm, cafm):
     # 'cellspacing' affects table width and 'cellpadding' affects table height
     # text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
-    text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
+    # text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
+    text = f"<table table-layout='fixed' style='border-bottom: 1pt solid black;' cellspacing='2' cellpadding='2'>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
-           f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td rowspan=2 style='font-size: 7px;'>AFM</td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='background-color: #dcdcdc; width: 10%'><b>CAFM</b></td>"\
-           f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td rowspan=2 style='font-size: 7px;'>CAFM</td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"</table>"
     return text
@@ -327,8 +506,8 @@ def do_scales_exist() -> bool:
         pass
 
 
-def get_aligned_scales(scales) -> list:
-    logger.info('get_aligned_scales:')
+def get_scales_with_generated_alignments(scales) -> list:
+    logger.info('get_scales_with_generated_alignments:')
     l = []
     for s in scales:
         if exist_aligned_zarr(s):
@@ -824,7 +1003,7 @@ def create_paged_tiff():
 # NOTE: this is called right after importing base images
 # def update_linking_callback():
 #     logger.info('Updating linking callback | update_linking_callback...')
-#     link_all_stacks()
+#     link_reference_sections()
 #     logger.info('Exiting update_linking_callback()')
 #
 #

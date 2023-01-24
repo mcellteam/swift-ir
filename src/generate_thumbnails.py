@@ -36,7 +36,7 @@ def generate_thumbnails(dm):
         scale_factor = 2
     logger.info("Thumbnail Scaling Factor : %s" % str(scale_factor))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=dm.n_layers(),
+    task_queue = TaskQueue(n_tasks=dm.n_sections(),
                            parent=cfg.main_window,
                            pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'

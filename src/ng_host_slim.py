@@ -168,7 +168,15 @@ class NgHostSlim(QRunnable):
             scales=coord_space, )
 
         try:
-            cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
+            # cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
+            cfg.tensor = get_zarr_tensor(self.path).result()
+            if cfg.data.is_aligned_and_generated():
+                cfg.al_tensor = cfg.tensor
+                cfg.unal_tensor = None
+            else:
+                cfg.al_tensor = None
+                cfg.unal_tensor = cfg.tensor
+
             cfg.main_window.updateToolbar()
             print('TensorStore Object Created Successfully!')
         except Exception as e:
@@ -188,8 +196,8 @@ class NgHostSlim(QRunnable):
             # s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             # s.cross_section_scale = cross_section_scale * adjustment
-            s.show_scale_bar = cfg.SHOW_SCALE_BAR
-            s.show_axis_lines = cfg.SHOW_AXIS_LINES
+            s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
+            s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
 
             cfg.LV = ng.LocalVolume(
                 data=cfg.tensor,
@@ -214,14 +222,17 @@ class NgHostSlim(QRunnable):
             else:                 s.crossSectionBackgroundColor = '#004060'
 
         with cfg.viewer.config_state.txn() as s:
-            s.show_ui_controls = cfg.SHOW_UI_CONTROLS
-            s.show_panel_borders = cfg.SHOW_PANEL_BORDERS
+            s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
+            s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
         self._layer = self.request_layer()
         cfg.url = str(cfg.viewer)
         print(f'url: {cfg.url}')
 
         cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+
+        if cfg.main_window.detachedNg.view.isVisible():
+            cfg.main_window.detachedNg.open(url=cfg.url)
 
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')

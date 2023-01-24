@@ -253,7 +253,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
 def write_metadata_zarr_multiscale(path):
     root = zarr.group(store=path)
     datasets = []
-    for scale in cfg.data.aligned_list():
+    for scale in cfg.data.scalesAlignedAndGenerated:
         scale_factor = get_scale_val(scale)
         name = 's' + str(scale_factor)
         metadata = {

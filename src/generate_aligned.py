@@ -69,7 +69,7 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
                          group=group,
                          dimx=rect[2],
                          dimy=rect[3],
-                         dimz=dm.n_layers(),
+                         dimz=dm.n_sections(),
                          dtype='uint8',
                          overwrite=True
                          )
@@ -150,6 +150,11 @@ def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
         if cfg.PRINT_EXAMPLE_ARGS:
             if ID in [0,1,2]:
                 logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
+            # if ID is 7:
+            #     args[2] = '-bogus_option'
+            # if ID is 11:
+            #     args[15] = 'bogus_file'
+
         # NOTE - previously had conditional here for 'if use_bounding_rect' then don't pass -rect args
         args_list.append(args)
     return args_list

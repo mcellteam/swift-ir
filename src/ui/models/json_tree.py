@@ -145,9 +145,7 @@ class JsonModel(QAbstractItemModel):
     # def datamodel(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
     def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
         """Override from QAbstractItemModel
-
         Return datamodel from a json item according index and role
-
         """
         # role = Qt.DisplayRole  # 0718+
 
@@ -192,9 +190,7 @@ class JsonModel(QAbstractItemModel):
     # def headerData(self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole):
     def headerData(self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole):
         """Override from QAbstractItemModel
-
         For the JsonModel, it returns only datamodel for columns (orientation = Horizontal)
-
         """
 
         # role = Qt.DisplayRole  # 0718+
@@ -207,9 +203,7 @@ class JsonModel(QAbstractItemModel):
 
     def index(self, row: int, column: int, parent=QModelIndex()) -> QModelIndex:
         """Override from QAbstractItemModel
-
         Return index according row, column and parent
-
         """
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
@@ -227,9 +221,7 @@ class JsonModel(QAbstractItemModel):
 
     def parent(self, index: QModelIndex) -> QModelIndex:
         """Override from QAbstractItemModel
-
         Return parent index of index
-
         """
 
         if not index.isValid():
@@ -245,7 +237,6 @@ class JsonModel(QAbstractItemModel):
 
     def rowCount(self, parent=QModelIndex()):
         """Override from QAbstractItemModel
-
         Return row count from parent index
         """
         if parent.column() > 0:
@@ -260,7 +251,6 @@ class JsonModel(QAbstractItemModel):
 
     def columnCount(self, parent=QModelIndex()):
         """Override from QAbstractItemModel
-
         Return column number. For the previewmodel, it always return 2 columns
         """
         return 2
@@ -312,7 +302,7 @@ if __name__ == "__main__":
 
     view.setModel(model)
 
-    json_path = QFileInfo(__file__).absoluteDir().filePath("r34_alignment.proj")
+    json_path = QFileInfo(__file__).absoluteDir().filePath("r34_alignment.swiftir")
 
     with open(json_path) as file:
         document = json.load(file)

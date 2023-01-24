@@ -8,21 +8,17 @@ using any number of technologies.
 import os
 import copy
 import json
-import glob
 import inspect
 import logging
-import itertools
 import statistics
 from copy import deepcopy
 from dataclasses import dataclass
-from qtpy.QtCore import QObject
-
+from datetime import datetime
 import numpy as np
-
 import src.config as cfg
 from src.data_structs import data_template, layer_template, image_template
 from src.helpers import print_exception, natural_sort, exist_aligned_zarr, get_scale_key, \
-    get_scale_val, get_aligned_scales
+    get_scale_val, get_scales_with_generated_alignments
 from src.funcs_image import ComputeBoundingRect, ImageSize
 
 __all__ = ['DataModel']
@@ -48,20 +44,28 @@ class ScaleIterator:
 
 class DataModel:
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
-    def __init__(self, data=None, name=None, mendenhall=False):
-        logger.info('Constructing Data Model...')
+    def __init__(self, data=None, name=None, quitely=False, mendenhall=False):
         self._current_version = 0.50
-        self.scalesAligned = []
-        self.nScalesAligned = None
+        self.quietly = quitely
+        self.scalesAlignedAndGenerated = []
+        self.nScalesAlignedAndGenerated = None
         self.nscales = None
         self.nSections = None
         self.curScale = None
+        if not self.quietly:
+            logger.info('Constructing Data Model...')
 
         if data:
             self._data = data
             self.update_cache()
         else:
             self._data = copy.deepcopy(data_template)
+            current_time = datetime.now()
+            # self._data['created'] = current_time.strftime("%m/%d/%Y, %H:%M:%S")
+            self._data['created'] = current_time.strftime("%d-%m-%y %H:%M:%S")
+
+        if not self.quietly:
+            self._data['last_opened'] = datetime.now().strftime("%d-%m-%y %H:%M:%S")
 
         if name:
             self._data['data']['destination_path'] = name
@@ -96,28 +100,43 @@ class DataModel:
 
     def __len__(self):
         try:
-            return self.n_layers()
+            return self.n_sections()
         except:
             logger.warning('No Images Found')
 
-    def is_aligned(self, s=None) -> bool:
+    def created(self):
+        return self._data['created']
+
+    def last_opened(self):
+        return self._data['last_opened']
+
+    def is_aligned(self, s=None):
+        logger.info('')
+        if s == None: s = self.curScale
+        if sum(self.snr_list(s=s)) < 1:
+            # logger.info('is_aligned is returning False')
+            return False
+        else:
+            # logger.info('is_aligned is returning True')
+            return True
+
+    def is_aligned_and_generated(self, s=None) -> bool:
         if s == None: s = cfg.data.scale()
-        if s in self.scalesAligned:
+        if s in self.scalesAlignedAndGenerated:
             return True
         else:
             return False
 
-
     def update_cache(self):
         self.curScale = self.scale()
         try:
-            self.scalesAligned = get_aligned_scales(self.scales())
-            self.nScalesAligned = len(self.scalesAligned)
+            self.scalesAlignedAndGenerated = get_scales_with_generated_alignments(self.scales())
+            self.nScalesAlignedAndGenerated = len(self.scalesAlignedAndGenerated)
         except:
             pass
         self.scalesList = self.scales()
         self.nscales = len(self.scalesList)
-        self.nSections = self.n_layers()
+        self.nSections = self.n_sections()
 
     def set_defaults(self):
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
@@ -125,6 +144,24 @@ class DataModel:
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+
+        scales_dict = self._data['data']['scales']
+        coarsest = list(scales_dict.keys())[-1]
+        for scale_key in scales_dict.keys():
+            scale = scales_dict[scale_key]
+            scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
+            scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
+            scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+            for layer_index in range(len(scale['alignment_stack'])):
+                layer = scale['alignment_stack'][layer_index]
+                layer.setdefault('align_to_ref_method', {})
+                layer['align_to_ref_method'].setdefault('method_data', {})
+                layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+                layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+                if scale_key == coarsest:
+                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+                else:
+                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
     def sl(self):
         return (self.curScale, self.layer())
@@ -140,7 +177,6 @@ class DataModel:
 
     def name(self) -> str:
         return os.path.split(self.dest())[-1]
-
 
     def base_image_name(self, s=None, l=None):
         if s == None: s = self.curScale
@@ -165,9 +201,40 @@ class DataModel:
     def thumbnails(self) -> list:
         return self._data['data']['thumbnails']
 
-    def thumbnails_aligned(self):
+    def thumbnails_ref(self) -> list:
         paths = []
-        for layer in range(0, self.n_layers()):
+        for l in cfg.data.alstack():
+            paths.append(l['images']['ref']['filename'])
+        return paths
+
+    def corr_spots_q0(self) -> list:
+        names = []
+        for img in self.basefilenames():
+            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_0_' + img))
+        return names
+
+    def corr_spots_q1(self) -> list:
+        names = []
+        for img in self.basefilenames():
+            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_1_' + img))
+        return names
+
+    def corr_spots_q2(self) -> list:
+        names = []
+        for img in self.basefilenames():
+            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_2_' + img))
+        return names
+
+    def corr_spots_q3(self) -> list:
+        names = []
+        for img in self.basefilenames():
+            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots', 'corr_spot_3_' + img))
+        return names
+
+
+    def thumbnails_aligned(self) -> list:
+        paths = []
+        for layer in range(0, self.n_sections()):
             paths.append(os.path.join(self.dest(), self.curScale, 'thumbnails', self.base_image_name(l=layer)))
         return paths
 
@@ -183,7 +250,6 @@ class DataModel:
     #
     #     [os.path.join(cfg.dest())            name in self.basefilenames()])
     #     return glob.glob(os.path.join(self.dest(), 'thumbnails', '*.tif'))
-
 
     # def thumbnail_paths(self):
     #     names = self.thumbnail_names()
@@ -258,26 +324,6 @@ class DataModel:
     #     return snr_lst
 
 
-
-    def snr_errorbar_size(self, s=None, l=None):
-        if s == None: s = self.curScale
-        if l == None: l = self.layer()
-        if l == 0:
-            return 0.0
-        report = self.snr_report(s=s, l=l)
-        if not isinstance(report, str):
-            logger.debug(f'No SNR Report Available For Layer {l}, Returning 0.0...')
-            return 0.0
-        substr = '+-'
-        return float(report[report.index(substr) + 2: report.index(substr) + 5])
-
-
-    def snr_errorbars(self, s=None):
-        '''Note Length Of Return Array has size self.n_layers() - 1 (!)'''
-        if s == None: s = self.curScale
-        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(0, self.n_layers())])
-
-
     def snr(self, s=None, l=None) -> float:
         '''TODO This probably shouldn't return a string'''
         if s == None: s = self.curScale
@@ -294,6 +340,36 @@ class DataModel:
             return 0.0
 
 
+    def snr_report(self, s=None, l=None) -> str:
+        '''TODO This probably shouldn't return a string'''
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']['snr_report']
+        except KeyError:
+            logger.debug('An Exception Was Raised Trying To Get SNR of The Current Layer')
+            pass
+
+
+    def snr_errorbar_size(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        if l == 0:
+            return 0.0
+        report = self.snr_report(s=s, l=l)
+        if not isinstance(report, str):
+            logger.debug(f'No SNR Report Available For Layer {l}, Returning 0.0...')
+            return 0.0
+        substr = '+-'
+        return float(report[report.index(substr) + 2: report.index(substr) + 5])
+
+
+    def snr_errorbars(self, s=None):
+        '''Note Length Of Return Array has size self.n_sections() - 1 (!)'''
+        if s == None: s = self.curScale
+        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(0, self.n_sections())])
+
+
     def check_snr_status(self, s=None) -> list:
         if s == None: s = self.curScale
         unavailable = []
@@ -308,7 +384,7 @@ class DataModel:
         if s == None: s = self.curScale
         # n should be 16 for layers except for index 0 which equals [0.0]
         try:
-            lst = [self.snr(s=s, l=i) for i in range(0, self.n_layers())]
+            lst = [self.snr(s=s, l=i) for i in range(0, self.n_sections())]
             return lst
         except:
             print_exception()
@@ -316,13 +392,12 @@ class DataModel:
             return []
 
 
-
     def snr_max_all_scales(self) -> float:
         try:
             #Todo refactor, store local copy, this is a bottleneck
             max_snr = []
-            # logger.critical(f'self.scalesAligned: {self.scalesAligned}')
-            for scale in self.scalesAligned:
+            # logger.critical(f'self.scalesAlignedAndGenerated: {self.scalesAlignedAndGenerated}')
+            for scale in self.scalesAlignedAndGenerated:
                 logger.info(f'scale={scale}')
                 try:
                     m = max(self.snr_list(s=scale))
@@ -343,17 +418,6 @@ class DataModel:
         return statistics.fmean(self.snr_list(s=scale)[1:])
 
 
-    def snr_report(self, s=None, l=None) -> str:
-        '''TODO This probably shouldn't return a string'''
-        if s == None: s = self.curScale
-        if l == None: l = self.layer()
-        try:
-            return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']['snr_report']
-        except KeyError:
-            logger.debug('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            pass
-
-
     def print_all_matchpoints(self):
         logger.info('Match Points:')
         for i, l in enumerate(self.alstack()):
@@ -364,14 +428,6 @@ class DataModel:
             if b != []:
                 logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
 
-    # def find_layers_with_skips(self):
-    #     lst = []
-    #     for i, l in enumerate(self.alstack()):
-    #         r = l['images']['ref']['metadata']['match_points']
-    #         b = l['images']['base']['metadata']['match_points']
-    #         if (r != []) or (b != []):
-    #             lst.append(i)
-    #     return lst
 
     def scale(self) -> str:
         '''Returns the Current Scale as a String.'''
@@ -389,8 +445,14 @@ class DataModel:
         if l == None: l = self.layer()
         logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
-            coordinates
-        )
+            coordinates)
+        if role == 'base':
+            self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['src'].append(
+                coordinates)
+        elif role == 'ref':
+            self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref'].append(
+                coordinates)
+
 
     def match_points(self, s=None, l=None):
         if s == None: s = self.curScale
@@ -635,7 +697,7 @@ class DataModel:
         except:
             logger.warning('No Scales Found - Returning 0')
 
-    def n_layers(self) -> int:
+    def n_sections(self) -> int:
         '''Returns # of imported images.
         #TODO Check this for off-by-one bug'''
         try:
@@ -644,7 +706,7 @@ class DataModel:
             else:
                 return len(self._data['data']['scales']['scale_1']['alignment_stack'])
         except:
-            logger.warning('No Images Found - Returning 0')
+            print_exception()
 
     def scales(self) -> list[str]:
         '''Get scales list.
@@ -697,12 +759,18 @@ class DataModel:
             logger.warning('Unable to To Return Skips List')
             return []
 
+    def skips_indices(self) -> list:
+        try:
+            return list(list(zip(*cfg.data.skips_list()))[0])
+        except:
+            return []
+
     def skips_by_name(self, s=None) -> list[str]:
         '''Returns the list of skipped images for a s'''
         if s == None: s = self.curScale
         lst = []
         try:
-            for i in range(self.n_layers()):
+            for i in range(self.n_sections()):
                 if self._data['data']['scales'][s]['alignment_stack'][i]['skipped'] == True:
                     f = os.path.basename(self._data['data']['scales'][s]['alignment_stack'][i][
                                              'images']['base']['filename'])
@@ -749,12 +817,15 @@ class DataModel:
             try:
                 self.set_image_size(s=s)
                 answer = self._data['data']['scales'][s]['image_src_size']
-                logger.debug(f'Returning {answer}')
+                logger.info(f'Returning {answer}')
                 return answer
             except:
                 print_exception()
                 logger.warning('Unable to return the image size (s=%s)' % s)
                 return None
+
+    def full_scale_size(self):
+        return ImageSize(self.path_base(s='scale_1'))
 
     def poly_order(self, s=None) -> int:
         '''Returns the Polynomial Order for the Current Scale.'''
@@ -1004,7 +1075,7 @@ class DataModel:
     #     return lst
 
     def not_aligned_list(self):
-        return set(self.scales()) - set(self.scalesAligned)
+        return set(self.scales()) - set(self.scalesAlignedAndGenerated)
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''
@@ -1040,7 +1111,7 @@ class DataModel:
                 return True
             cur_scale_index = scales_list.index(cur_scale_key)
             next_coarsest_scale_key = scales_list[cur_scale_index + 1]
-            if not exist_aligned_zarr(next_coarsest_scale_key):
+            if not cfg.data.is_aligned(s=next_coarsest_scale_key):
                 logger.debug("is_alignable returning False because: "
                              "not exist_aligned_zarr(next_coarsest_scale_key) is True")
                 return False
@@ -1057,68 +1128,52 @@ class DataModel:
             for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
                 layer['skipped'] = False
 
-    def append_layer(self, scale):
-        logger.debug(f'Appending Layer ({scale})...')
-        self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
-
-        # self._data['data']['scales'][scale_key]['alignment_stack'].append(
-        #     {
-        #         "align_to_ref_method": {
-        #             "method_data": {},
-        #             "method_options": {},
-        #             "selected_method": "Auto Swim Align",
-        #             "method_results": {}
-        #         },
-        #         "images": {},
-        #         "skipped": False
-        #     })
-
-    def append_image(self, file, role_name='base'):
-        logger.debug("Adding Image %s to Role '%s'..." % (file, role_name))
+    def append_image(self, file):
         scale = self.scale()
-        used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
+        logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
+        used_for_this_role = ['base' in l['images'].keys() for l in self.alstack(s=scale)]
+        # logger.info(f'used_for_this_role = {used_for_this_role}')
+        # used_for_this_role = [True, True, True, True]
         if False in used_for_this_role:
             layer_index = used_for_this_role.index(False)
+            logger.critical(f'(!!!) "False in used_for_this_role" layer_index: {layer_index}')
         else:
-            self.append_layer(scale=scale)
-            layer_index = self.n_layers() - 1
-        self.add_img(
-            scale=scale,
-            layer=layer_index,
-            role=role_name,
-            filename=file
-        )
+            self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
+            '''copy from template'''
+            layer_index = self.n_sections() - 1
+        self.add_img_base(scale=scale, layer=layer_index, filename=file)
+        self.add_img_ref(scale=scale, layer=layer_index, filename='')
 
-    def add_img(self, scale, layer, role, filename=''):
-        logger.debug(f'Adding Image ({scale}, {layer}, {role}): {filename}...')
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['images'][role] = \
-            copy.deepcopy(image_template)
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['images'][role]['filename'] = filename
-        # self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
-        #     {
-        #         "filename": filename,
-        #         "metadata": {
-        #             "annotations": [],
-        #             "match_points": []
-        #         }
-        #     }
-
-    def append_empty(self, role_name):
-        logger.debug('MainWindow.append_empty:')
+    def append_empty(self):
+        logger.critical('MainWindow.append_empty:')
         scale = self.curScale
-        used_for_this_role = [role_name in l['images'].keys() for l in self.alstack(s=scale)]
+        used_for_this_role = ['base' in l['images'].keys() for l in self.alstack(s=scale)]
         layer_index = -1
         if False in used_for_this_role:
             layer_index = used_for_this_role.index(False)
         else:
-            self.append_layer(scale=scale)
+            self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
             layer_index_for_new_role = len(self['data']['scales'][scale]['alignment_stack']) - 1
-        self.add_img(
-            scale=scale,
-            layer=layer_index,
-            role=role_name,
-            filename=''
-        )
+        self.add_img_base(scale=scale, layer=layer_index, filename='')
+
+    def add_img_ref(self, scale, layer, filename=''):
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['ref'] = copy.deepcopy(image_template)
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['ref']['filename'] = filename
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['reference'] = filename          # 0119+
+
+    def add_img_base(self, scale, layer, filename=''):
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['base'] = copy.deepcopy(image_template)
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['base']['filename'] = filename
+        self._data['data']['scales'][scale]['alignment_stack'][layer]['filename'] = filename          # 0119+
+
+
+    # def add_img(self, scale, layer, role, filename=''):
+    #     logger.info(f'Adding Image ({scale}, {layer}, {role}): {filename}...')
+    #     self._data['data']['scales'][scale]['alignment_stack'][layer]['images'][role] = copy.deepcopy(image_template)
+    #     self._data['data']['scales'][scale]['alignment_stack'][layer]['images'][role]['filename'] = filename
+    #     self._data['data']['scales'][scale]['alignment_stack'][layer]['img'] = copy.deepcopy(image_template) # 0119+
+    #     self._data['data']['scales'][scale]['alignment_stack'][layer]['img'] = filename                      # 0119+
+
 
     def update_datamodel(self, updated_model):
         '''This function is called by align_layers and regenerate_aligned. It is called when
@@ -1174,109 +1229,69 @@ class DataModel:
         '''This is not pretty. Needs to be refactored ASAP.
         Two callers: 'new_project', 'prepare_generate_scales_worker'
         '''
-        cur_scales = [str(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
-        logger.info(f'cur_scales: {cur_scales}')
-        scale_str = scale_string.strip()
-        if len(scale_str) > 0:
+        logger.info('')
+        cur_scales = list(map(str, cfg.data.scale_vals()))
+        try:
+            input_scales = [str(v) for v in sorted([get_scale_val(s) for s in scale_string.strip().split(' ')])]
+        except:
+            logger.error(f'Bad input: {scale_string}. Scales Unchanged.')
             input_scales = []
-            try:
-                input_scales = [str(v) for v in sorted([get_scale_val(s) for s in scale_str.strip().split(' ')])]
-            except:
-                logger.info("Bad input: (" + str(scale_str) + "), Scales not changed")
-                input_scales = []
+        if (input_scales != cur_scales):
+            input_scale_keys = [get_scale_key(v) for v in input_scales]
+            scales_to_remove = list(set(self.scales()) - set(input_scale_keys) - {'scale_1'})
+            logger.info(f'Removing Scale Keys: {scales_to_remove}...')
+            for key in scales_to_remove:
+                self._data['data']['scales'].pop(key)
+            scales_to_add = list(set(input_scale_keys) - set(self.scales()))
+            logger.info(f'Adding Scale Keys (copying from scale_1): {scales_to_add}...')
+            for key in scales_to_add:
+                new_stack = [deepcopy(l) for l in self.alstack(s='scale_1')]
+                self._data['data']['scales'][key] = \
+                    {'alignment_stack': new_stack, 'method_data': { 'alignment_option': 'init_affine' } }
 
-            if not (input_scales == cur_scales):
-                # The scales have changed!!
-                # self.define_scales_menu (input_scales)
-                cur_scale_keys = [get_scale_key(v) for v in cur_scales]
-                input_scale_keys = [get_scale_key(v) for v in input_scales]
+    # def set_default_data(self):
+    #     '''Ensure Proper Data Structure (that the previewmodel is usable)...'''
+    #     logger.debug('Ensuring called by %s' % inspect.stack()[1].function)
+    #     '''  '''
+    #     scales_dict = self._data['data']['scales']
+    #     coarsest = list(scales_dict.keys())[-1]
+    #     for scale_key in scales_dict.keys():
+    #         scale = scales_dict[scale_key]
+    #         scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
+    #         scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
+    #         scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+    #         for layer_index in range(len(scale['alignment_stack'])):
+    #             layer = scale['alignment_stack'][layer_index]
+    #             layer.setdefault('align_to_ref_method', {})
+    #             layer['align_to_ref_method'].setdefault('method_data', {})
+    #             layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+    #             layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+    #             if scale_key == coarsest:
+    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+    #             else:
+    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
-                # Remove any scales not in the new list (except always leave 1)
-                scales_to_remove = []
-                for scale_key in self.scales():
-                    if not (scale_key in input_scale_keys):
-                        if get_scale_val(scale_key) != 1:
-                            scales_to_remove.append(scale_key)
-                for scale_key in scales_to_remove:
-                    self._data['data']['scales'].pop(scale_key)
 
-                # Add any scales not in the new list
-                scales_to_add = []
-                for scale_key in input_scale_keys:
-                    if not (scale_key in self.scales()):
-                        scales_to_add.append(scale_key)
-                for scale_key in scales_to_add:
-                    new_stack = []
-                    scale_1_stack = self._data['data']['scales'][get_scale_key(1)]['alignment_stack']
-                    for l in scale_1_stack:
-                        new_layer = deepcopy(l)
-                        new_stack.append(new_layer)
-
-                    self._data['data']['scales'][scale_key] = {'alignment_stack': new_stack,
-                                                               'method_data': {
-                                                                   'alignment_option': 'init_affine'}}
-        else:
-            logger.info("No input: Scales not changed")
-
-    def ensure_proper_data_structure(self):
-        '''Ensure Proper Data Structure (that the previewmodel is usable)...'''
-        logger.debug('Ensuring called by %s' % inspect.stack()[1].function)
-        '''  '''
-        scales_dict = self._data['data']['scales']
-        coarsest = list(scales_dict.keys())[-1]
-        for scale_key in scales_dict.keys():
-            scale = scales_dict[scale_key]
-            scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
-            scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
-            scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
-            for layer_index in range(len(scale['alignment_stack'])):
-                layer = scale['alignment_stack'][layer_index]
-                layer.setdefault('align_to_ref_method', {})
-                layer['align_to_ref_method'].setdefault('method_data', {})
-                layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-                layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-                if scale_key == coarsest:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+    def link_reference_sections(self):
+        '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'
+        Link layers, taking into accounts skipped layers'''
+        # self.set_default_data()  # 0712 #0802 #original
+        for s in self.scales():
+            skip_list = self.skips_indices()
+            for layer_index in range(len(self)):
+                base_layer = self._data['data']['scales'][s]['alignment_stack'][layer_index]
+                if (layer_index == 0) or (layer_index in skip_list):
+                    self.add_img_ref(scale=s, layer=layer_index, filename='')
                 else:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
-
-    def link_all_stacks(self):
-        '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'  '''
-        # logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
-        self.ensure_proper_data_structure()  # 0712 #0802 #original
-        for scale_key in self.scales():
-            skip_list = []
-            for layer_index in range(len(self._data['data']['scales'][scale_key]['alignment_stack'])):
-                try:
-                    if self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skipped'] == True:
-                        skip_list.append(layer_index)
-                except:
-                    print_exception()
-                base_layer = self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]
-                if layer_index == 0:
-                    if 'ref' not in base_layer['images'].keys():
-                        self.add_img(scale=scale_key, layer=layer_index, role='ref', filename='')
-                elif layer_index in skip_list:
-                    # No ref for skipped l
-                    if 'ref' not in base_layer['images'].keys():
-                        self.add_img(scale=scale_key, layer=layer_index, role='ref', filename='')
-
-                else:
-                    # Find nearest previous non-skipped l
-                    j = layer_index - 1
+                    j = layer_index - 1  # Find nearest previous non-skipped l
                     while (j in skip_list) and (j >= 0):
                         j -= 1
-
-                    # Use the nearest previous non-skipped l as ref for this l
                     if (j not in skip_list) and (j >= 0):
-                        ref_layer = self._data['data']['scales'][scale_key]['alignment_stack'][j]
-                        ref_fn = ''
-                        if 'base' in ref_layer['images'].keys():
-                            ref_fn = ref_layer['images']['base']['filename']
-                        if 'ref' not in base_layer['images'].keys():
-                            self.add_img(scale=scale_key, layer=layer_index, role='ref', filename=ref_fn)
-                        else:
-                            base_layer['images']['ref']['filename'] = ref_fn
+                        ref = self._data['data']['scales'][s]['alignment_stack'][j]['images']['base']['filename']
+                        ref = os.path.join(self.dest(), s, 'img_src', ref)
+                        base_layer['images']['ref']['filename'] = ref
+                        base_layer['reference'] = ref
+
 
     def upgrade_data_model(self):
         # Upgrade the "Data Model"

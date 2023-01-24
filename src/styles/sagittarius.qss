@@ -1,6 +1,5 @@
 
 
-
 QWidget#self._tool_keyBindings{
     font-size: 11px;
 }

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def generate_scales(dm):
     logger.info('>>>> generate_scales >>>>')
 
-    n_tasks = dm.n_layers() * (dm.n_scales() - 1)  #0901 #Refactor
+    n_tasks = dm.n_sections() * (dm.n_scales() - 1)  #0901 #Refactor
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     # task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy (%d Cores)...' % cpus)
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy (%d Cores)...' % cpus)
@@ -32,6 +32,7 @@ def generate_scales(dm):
     create_scale_one_symlinks(src=src, dest=dm.dest(), imgs=imgs)
 
     task_queue.start(cpus)
+    assert dm.downscales() != 'scale_None'
     for s in dm.downscales():  # value string '1 2 4'
         scale_val = get_scale_val(s)
         logger.info("Queuing Downsample Tasks For Scale %d..." % scale_val)

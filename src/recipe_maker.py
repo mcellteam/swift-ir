@@ -543,6 +543,9 @@ class alignment_process:
         atrm['method_results']['snr_report'] = snr_report
         atrm['method_results']['affine_matrix'] = afm.tolist()
         atrm['method_results']['cumulative_afm'] = c_afm.tolist()
+        atrm['method_results']['swim_str'] = self.recipe.ingredients[-1].swim_str
+        atrm['method_results']['mir_script'] = self.recipe.ingredients[-1].mir_script
+        atrm['method_results']['swim_pos'] = self.recipe.ingredients[-1].psta.tolist()
 
         atrm['method_data']['bias_x_per_image'] = 0  # x_bias
         atrm['method_data']['bias_y_per_image'] = 0  # y_bias
@@ -684,12 +687,11 @@ class align_ingredient:
         self.snr = None
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
-        self.ad=ad
+        self.ad = ad
+        self.swim_str = None
+        self.mir_script = None
 
-
-        #
         # mir has a -v flag for more output
-        #
 
         # Configure platform-specific path to executables for C SWiFT-IR
         my_path = os.path.split(os.path.realpath(__file__))[0]
@@ -777,27 +779,21 @@ class align_ingredient:
         # 0721 ^^ use this form to add initial rotation
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
-        # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img.JPG')
-        dir = os.path.join(os.path.dirname(os.path.dirname(self.ad))) #dir is the datamodel directory (I think)
-        kip = 'keep.JPG'
-        # ' -k  ' + kip + \
-        # logger.critical('kip = ' + kip)
-
-        #                              ' -f ' +  \
-
         # ' -k ' + kip + \
         # ' -d ' + dir + \
-
         # ' -f3' + \
 
-
         # im_sta_fn = ref, im_mov_fn = base
-        scale_dir = os.path.abspath(os.path.dirname(self.ad)) # self.ad = project/scale_X/img_aligned/
-        k_arg = os.path.join(scale_dir, 'keep_' + os.path.basename(self.recipe.im_mov_fn))
-        t_arg = os.path.join(scale_dir, 'target_' + os.path.basename(self.recipe.im_mov_fn))
-        b_arg = os.path.join(scale_dir, 'corr_spot_' +  os.path.basename(self.recipe.im_mov_fn))
+        scale_dir = os.path.abspath(os.path.dirname(os.path.dirname(self.ad))) # self.ad = project/scale_X/img_aligned/
+        path = os.path.join(scale_dir, 'corr_spots')
+        # if not os.path.exists(path):
+        #     os.mkdir(path)
+        # k_arg = os.path.join(scale_dir, 'keep_' + os.path.basename(self.recipe.im_mov_fn))
+        # t_arg = os.path.join(scale_dir, 'target_' + os.path.basename(self.recipe.im_mov_fn))
 
         for i in range(len(self.psta[0])):
+            b_arg = os.path.join(path, 'corr_spot_%d_' %i + os.path.basename(self.recipe.im_mov_fn))
+
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
             offy = int(self.psta[1][i] - (wwy_f / 2.0))
             logger.critical("Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")")
@@ -806,6 +802,8 @@ class align_ingredient:
             #                   ' -w ' + str(self.wht) + \
             #                   ' -x ' + str(offx) + \
             #                   ' -y ' + str(offy) + \
+            #                   ' -k ' + k_arg + \
+            #                   ' -t ' + t_arg + \
             #                   ' ' + karg + \
             #                   ' ' + self.recipe.im_sta_fn + \
             #                   ' ' + base_x + \
@@ -821,8 +819,6 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' -k ' + k_arg + \
-                              ' -t ' + t_arg + \
                               ' -b ' + b_arg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
@@ -832,37 +828,14 @@ class align_ingredient:
                               ' ' + adjust_y + \
                               ' ' + rota_arg + \
                               ' ' + afm_arg
-            # swim_arg_string = 'ww_' + swim_ww_arg + \
-            #                   ' -f3 ' + \
-            #                   ' -i ' + str(self.iters) + \
-            #                   ' -w ' + str(self.wht) + \
-            #                   ' -x ' + str(offx) + \
-            #                   ' -y ' + str(offy) + \
-            #                   ' -b ' + os.path.join(self.ad, 'spot_image_' + self.recipe.im_mov_fn) + \
-            #                   ' ' + self.recipe.im_sta_fn + \
-            #                   ' ' + base_x + \
-            #                   ' ' + base_y + \
-            #                   ' ' + self.recipe.im_mov_fn + \
-            #                   ' ' + adjust_x + \
-            #                   ' ' + adjust_y + \
-            #                   ' ' + rota_arg + \
-            #                   ' ' + afm_arg
-
-
 
             # default -f is 3x3
-
-            logger.critical('SWIM argument string: %s' % swim_arg_string)
+            # logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
-            # print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
-
-
 
         '''SWIM'''
+        self.swim_str = multi_swim_arg_string
         o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
-
-
-
 
         swim_out_lines = o['out'].strip().split('\n')
         swim_err_lines = o['err'].strip().split('\n')
@@ -898,10 +871,8 @@ class align_ingredient:
         mir_script += 'R\n'
 
         '''MIR'''
+        self.mir_script = mir_script
         o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
-
-
-
 
         mir_out_lines = o['out'].strip().split('\n')
         mir_err_lines = o['err'].strip().split('\n')
