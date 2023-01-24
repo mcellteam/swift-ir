@@ -5,6 +5,7 @@ import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
     QPushButton, QSizePolicy, QAbstractItemView
 from qtpy.QtCore import Slot, Qt, QSize
+import src.config as cfg
 
 try:
     import qtawesome as qta
@@ -19,8 +20,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class FileBrowser(QWidget):
-    def __init__(self):
-        super(FileBrowser, self).__init__()
+    # def __init__(self):
+    #     super(FileBrowser, self).__init__()
+    def __init__(self, parent=None, *args, **kwargs):
+        super(QWidget, self).__init__(*args, **kwargs)
+
         self.treeview = QTreeView()
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
@@ -42,9 +46,6 @@ class FileBrowser(QWidget):
     def initUI(self):
         with open('src/styles/controls.qss', 'r') as f:
             style = f.read()
-        self._btn_open = QPushButton('Open')
-        self._btn_open.setFixedSize(86, 18)
-        self._btn_open.setStyleSheet(style)
 
         self._btn_showFileBrowser = QPushButton('Hide Files')
         self._btn_showFileBrowser.setFixedSize(86, 18)
@@ -54,28 +55,30 @@ class FileBrowser(QWidget):
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 2, 4, 2)
+        hbl.addWidget(self._btn_showFileBrowser, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addStretch()
-        hbl.addWidget(self._btn_showFileBrowser)
-        hbl.addWidget(self._btn_open)
         self.controls = QWidget()
         self.controls.setFixedHeight(24)
         self.controls.setLayout(hbl)
+        self.controls.hide()
 
         vbl = QVBoxLayout(self)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.treeview)
         vbl.addWidget(self.controls, alignment=Qt.AlignmentFlag.AlignLeft)
-        vbl.setStretch(1,0)
+        # vbl.setStretch(1,0)
         self.setLayout(vbl)
 
     def selectionChanged(self):
-        print('Selection Changed!')
+        cfg.selected_file = self.getSelectionPath()
+        logger.info(f'Project Selection Changed! {cfg.selected_file}')
+        cfg.main_window.setSelectionPathText(cfg.selected_file)
 
     def showSelection(self):
-        print('showSelection:')
+        logger.info('showSelection:')
         try:
             selection = self.fileSystemModel.itemData(self.treeview.selectedIndexes()[0])
-            print(selection)
+            logger.info(selection)
         except:
             logger.warning('Is Any File Selected?')
 
@@ -96,9 +99,6 @@ class FileBrowser(QWidget):
         except:
             logger.warning('No Path Selected.')
 
-    def getOpenButton(self):
-        return self._btn_open
-
     def showFb(self):
         self.treeview.show()
 
@@ -107,9 +107,11 @@ class FileBrowser(QWidget):
 
     def showFbButton(self):
         self._btn_showFileBrowser.show()
+        self.controls.show()
 
     def hideFbButton(self):
         self._btn_showFileBrowser.hide()
+        self.controls.hide()
 
     def _showHideFb(self):
         if self.treeview.isHidden():

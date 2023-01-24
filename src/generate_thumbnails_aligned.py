@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def generate_thumbnails_aligned(dm, layers=None):
     if layers == None:
-        layers = range(0,dm.n_layers())
+        layers = range(0, dm.n_sections())
     logger.info('Generating Thumbnails...')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
@@ -40,7 +40,7 @@ def generate_thumbnails_aligned(dm, layers=None):
     scale_factor = int(siz_start/target_thumbnail_size)
     logger.info("Thumbnail Scaling Factor : %s" % str(scale_factor))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=dm.n_layers(),
+    task_queue = TaskQueue(n_tasks=dm.n_sections(),
                            parent=cfg.main_window,
                            pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'

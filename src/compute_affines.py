@@ -42,6 +42,11 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
     #     # remove_aligned(al_substack) #0903 Moved into conditional
     #     dm.remove_aligned(scale, start_layer)
 
+    corr_spots_dir = os.path.join(dm.dest(), scale, 'corr_spots')
+    if os.path.exists(corr_spots_dir):
+        shutil.rmtree(corr_spots_dir)
+    os.mkdir(corr_spots_dir)
+
     dm.clear_method_results(scale=scale, start=start_layer, end=last_layer) #1109 Should this be on the copy?
     if rename_switch:
         rename_layers(use_scale=scale, al_dict=alignment_dict)
@@ -56,7 +61,7 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
         if not layer['skipped']: n_tasks +=1
         else:                    n_skips +=1
-    logger.info('# Layers (total)           : %d' % dm.n_layers())
+    logger.info('# Layers (total)           : %d' % dm.n_sections())
     logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
     logger.info('# Skipped Layers           : %d' % n_skips)
     temp_file = os.path.join(dm.dest(), "temp_project_file.json")
@@ -153,6 +158,38 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
 
     cfg.data = updated_model #0809-
     write_run_to_file(dm)
+
+    # logger.info('Collating Correlation Spot Images...')
+    # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')
+    # task_queue = TaskQueue(n_tasks=len(substack),
+    #                        parent=cfg.main_window,
+    #                        pbar_text='Collating Scale %s Correlation Spot Images...' % (scale_val))
+    # task_queue.start(cpus)
+    #
+    # for i, layer in enumerate(substack):
+    #     if layer['skipped']:
+    #         continue
+    #     fn = os.path.basename(layer['images']['base']['filename'])
+    #     out = os.path.join(corr_spots_dir, 'collated_' + fn)
+    #     # out = os.path.join(dm.dest(), 'collated_' + fn)
+    #     task_args = [sys.executable,
+    #                  job_script,            # Python program to run (single_alignment_job)
+    #                  fn,
+    #                  out
+    #                  ]
+    #     task_queue.add_task(task_args)
+    #     if cfg.PRINT_EXAMPLE_ARGS:
+    #         if i in range(0,3):
+    #             logger.info("Layer #%d (example):\n%s" % (i, "\n".join(task_args)))
+    #
+    # try:
+    #     dt = task_queue.collect_results()
+    # except:
+    #     print_exception()
+    #     logger.warning('Task Queue encountered a problem')
+    # finally:
+    #     cfg.main_window.set_idle()
+
     logger.info('<<<< Compute Affines End <<<<')
 
 
@@ -173,7 +210,7 @@ def write_run_to_file(dm, scale=None):
     results = 'results'
     # swim_input = 'swim=%.3f' % dm.swim_window()
     # whitening_input = 'whitening=%.3f' % dm.whitening()
-    # details = [date, time, s, _swimInput, _whiteningInput, snr_avg]
+    # details = [date, time, s, _swimWindowControl, _whiteningControl, snr_avg]
     scale_str = 's' + str(get_scale_val(scale))
     details = [scale_str, results, timestamp]
     fn = '_'.join(details) + '.json'

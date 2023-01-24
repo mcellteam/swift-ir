@@ -39,14 +39,14 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(stream=sys.stdout)
 logger.addHandler(handler)
 
-def handle_exception(exc_type, exc_value, exc_traceback):
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-
-    logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-
-sys.excepthook = handle_exception
+# def handle_exception(exc_type, exc_value, exc_traceback):
+#     if issubclass(exc_type, KeyboardInterrupt):
+#         sys.__excepthook__(exc_type, exc_value, exc_traceback)
+#         return
+#
+#     logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+#
+# sys.excepthook = handle_exception
 
 logger = logging.getLogger(__name__)
 
@@ -186,12 +186,18 @@ class NgHost(QRunnable):
         self.al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
         self.unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
-        try:    cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
-        except: cfg.main_window.err(f'Invalid Zarr For Tensor, Unaligned, Scale {sf}'); print_exception()
+        try:
+            cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
+        except:
+            cfg.main_window.err(f'Invalid Zarr For Tensor, Unaligned, Scale {sf}'); print_exception()
         cfg.main_window.updateToolbar()
         if is_aligned:
-            try:    cfg.al_tensor = cfg.tensor = get_zarr_tensor(self.al_path).result()
-            except: cfg.main_window.err(f'Invalid Zarr For Tensor, Aligned, Scale {sf}'); print_exception()
+            try:
+                cfg.al_tensor = cfg.tensor = get_zarr_tensor(self.al_path).result()
+            except:
+                cfg.main_window.err(f'Invalid Zarr For Tensor, Aligned, Scale {sf}'); print_exception()
+        else:
+            cfg.al_tensor=None
 
         if cfg.data.is_mendenhall():
             self.unal_path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
@@ -247,7 +253,7 @@ class NgHost(QRunnable):
         # print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
         # print('widget size                  =%s' % str(widget_size))
         # print('arrangement                  =%d' % self.arrangement)
-        # print('is aligned                   =%s' % is_aligned)
+        # print('is aligned                   =%s' % is_aligned_and_generated)
         # print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
         # print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
         # print('frame width,height           =%d,%d' % (frame[1], frame[0]))
@@ -263,15 +269,14 @@ class NgHost(QRunnable):
             # s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             s.cross_section_scale = cross_section_scale * adjustment
-            s.show_scale_bar = cfg.SHOW_SCALE_BAR
-            s.show_axis_lines = cfg.SHOW_AXIS_LINES
+            s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
+            s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
             # s.perspective_orientation
             # s.relative_display_scales = [48, 1, 1]
             # s.relative_display_scales = typed_string_map([48, 1, 1])
             # s.display_dimensions = [1000,1,1]
 
             s.layout.type = self.nglayout
-
             cfg.refLV = ng.LocalVolume(
                 data=cfg.unal_tensor,
                 volume_type='image',
@@ -298,7 +303,7 @@ class NgHost(QRunnable):
 
             # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
             # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{self.unal_path}'
-            # if is_aligned:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_path}'
+            # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_path}'
 
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER,
                                                  tool_bindings={
@@ -412,14 +417,17 @@ class NgHost(QRunnable):
         with cfg.viewer.config_state.txn() as s:
             for key, command in mp_key_bindings:
                 s.input_event_bindings.viewer[key] = command
-            s.show_ui_controls = cfg.SHOW_UI_CONTROLS
-            s.show_panel_borders = cfg.SHOW_PANEL_BORDERS
+            s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
+            s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
         self._layer = self.request_layer()
         self.clear_mp_buffer()
         cfg.url = str(cfg.viewer)
+        if cfg.main_window.detachedNg.view.isVisible():
+            cfg.main_window.detachedNg.open(url=cfg.url)
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
+
 
 
     def on_state_changed(self):

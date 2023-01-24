@@ -33,7 +33,7 @@ def generate_zarr_scales(data):
                          group=group,
                          dimx=x,
                          dimy=y,
-                         dimz=data.n_layers(),
+                         dimz=data.n_sections(),
                          dtype='uint8',
                          overwrite=True)
     n_tasks = len(data) * data.n_scales()

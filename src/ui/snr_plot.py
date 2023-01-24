@@ -171,7 +171,7 @@ class SnrPlot(QWidget):
             line.setPos([layer[0] + offset, 1])
             self.plot.addItem(line)
 
-        # for scale in cfg.data.scalesAligned:
+        # for scale in cfg.data.scalesAlignedAndGenerated:
         #     self.updateErrBars(s=scale)
 
         QApplication.processEvents()
@@ -192,7 +192,8 @@ class SnrPlot(QWidget):
             logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
             return
         try:
-            self.wipePlot()
+            if caller != 'initUI_plot':
+                self.wipePlot()
             self._snr_checkboxes = dict()
             for i, s in enumerate(cfg.data.scales()):
                 self._snr_checkboxes[s] = QCheckBox()
@@ -208,7 +209,7 @@ class SnrPlot(QWidget):
                     f'border-color: {color}; '
                     f'border-width: 3px; '
                     f'border-style: outset;')
-                if s in cfg.data.scalesAligned:
+                if s in cfg.data.scalesAlignedAndGenerated:
                     self._snr_checkboxes[s].show()
                 else:
                     self._snr_checkboxes[s].hide()
@@ -249,18 +250,20 @@ class SnrPlot(QWidget):
             self.plot.addItem(self._curLayerLine)
 
             for s in cfg.data.scales()[::-1]:
-                if exist_aligned_zarr(scale=s):
+                # if exist_aligned_zarr(scale=s):
+                #     self.plotSingleScale(s=s)
+                if cfg.data.is_aligned(s=s):
                     self.plotSingleScale(s=s)
 
-            if cfg.data.nScalesAligned:
-                if cfg.data.nScalesAligned > 0:
+            if cfg.data.nScalesAlignedAndGenerated:
+                if cfg.data.nScalesAlignedAndGenerated > 0:
                     max_snr = cfg.data.snr_max_all_scales()
                     assert max_snr is not None
                     assert type(max_snr) is float
-                    # self.plot.setLimits(xMin=0, xMax=cfg.datamodel.n_layers(), yMin=0, yMax=ceil(max_snr) + 1)
-                    # self.plot.setXRange(0, cfg.datamodel.n_layers(), padding=0)
+                    # self.plot.setLimits(xMin=0, xMax=cfg.datamodel.n_sections(), yMin=0, yMax=ceil(max_snr) + 1)
+                    # self.plot.setXRange(0, cfg.datamodel.n_sections(), padding=0)
                     # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
-                    # self.plot.setRange(xRange=[0, cfg.datamodel.n_layers() + 0.5])
+                    # self.plot.setRange(xRange=[0, cfg.datamodel.n_sections() + 0.5])
                     # self.plot.setRange(yRange=[0, ceil(max_snr)])
                     xmax = cfg.data.nSections + 1
                     ymax = ceil(max_snr) + 5
@@ -358,7 +361,11 @@ class SnrPlot(QWidget):
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
-            del self._snr_checkboxes
+            # try:
+            #     del self._snr_checkboxes
+            # except:
+            #     pass
+            #0123 !!!!!!!
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
             for eb in self._error_bars:
@@ -369,6 +376,7 @@ class SnrPlot(QWidget):
             # except:
             #     print_exception()
         except:
+            print_exception()
             logger.warning('Unable To Wipe SNR Plot')
 
 

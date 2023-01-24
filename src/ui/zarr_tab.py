@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-import os, sys, json, logging, inspect
-import neuroglancer as ng
-from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QSplitter, QVBoxLayout, QHBoxLayout, \
-    QSizePolicy, QPushButton, QComboBox, QSpinBox, QStyleOption, QStyle
+import os, sys, json, logging, inspect, copy
+from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QSplitter, QVBoxLayout, QStyleOption, QStyle
 from qtpy.QtCore import Qt, QSize, QRect, QUrl
 from qtpy.QtGui import QPainter, QFont
 from qtpy.QtWebEngineWidgets import *
-
 from src.ui.file_browser import FileBrowser
 from src.ui.ui_custom import VerticalLabel
 import src.config as cfg
-from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
 from src.helpers import print_exception
 
@@ -20,12 +16,10 @@ logger = logging.getLogger(__name__)
 class ZarrTab(QWidget):
 
     def __init__(self,
-                 key,
                  parent=None,
                  *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
         logger.info('')
-        self.key = key
         self.parent = parent
         self.path = None
         self.zarray = None
@@ -37,17 +31,17 @@ class ZarrTab(QWidget):
         cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
         cfg.main_window._ng_layout_switch = 1
         self.initUI()
-        self._fb.getOpenButton().clicked.connect(self.openViewZarr)
 
 
     def initUI(self):
         self._fb = FileBrowser()
         self._webEngine = QWebEngineView()
+        self.initSpecialSettings(self._webEngine)
         self._webEngine.hide()
         self._splitter = QSplitter(Qt.Orientation.Vertical)
         self._splitter.addWidget(self._webEngine)
         self._splitter.addWidget(self._fb)
-        self._splitter.setSizes([1000,200])
+        self._splitter.setSizes([1000,100])
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self._splitter)
@@ -60,6 +54,13 @@ class ZarrTab(QWidget):
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(parent=self, project=False)
         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        cfg.main_window.updateMenuDetails()
+
+    def updateNgLayer(self):
+        state = copy.deepcopy(cfg.viewer.state)
+        state.position[0] = cfg.data.layer()
+        cfg.viewer.set_state(state)
+
 
     def updateNeuroglancer(self, matchpoint=None):
         # caller = inspect.stack()[1].function
@@ -69,14 +70,12 @@ class ZarrTab(QWidget):
         self._webEngine.setFocus()
 
 
-
     def openViewZarr(self):
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.main_window.set_status('Opening Zarr...')
-        logger.info('(openViewZarr) Going To Open Zarr...')
+        logger.info('(openViewZarr) Going To Open Zarr ...')
         path = self._fb.getSelectionPath()
         logger.info(f'path: {path}')
-        cfg.ng_worker.path = path
         try:
             with open(os.path.join(path, '.zarray')) as j:
                 self.zarray = json.load(j)
@@ -90,17 +89,17 @@ class ZarrTab(QWidget):
         logger.info(f'array shape: {self.shape}, chunk shape: {self.chunkshape} ')
 
         cfg.main_window._sectionSlider.setRange(0, self.nSections - 1)
-
+        cfg.ng_worker.path = path
         cfg.ng_worker.initViewer()
         cur_index = cfg.main_window._tabsGlob.currentIndex()
-        cfg.main_window._tabsGlob.setTabText(cur_index, 'Zarr: ' + os.path.basename(path))
+        cfg.main_window._tabsGlob.setTabText(cur_index, 'File: ' + os.path.basename(path))
         cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
         cfg.main_window._jumpToLineedit.setText('0')
         self._webEngine.setUrl(QUrl(str(cfg.viewer)))
         self._webEngine.show()
         self._webEngine.setFocus()
         # self.fb.hideFb()
-        self._fb.showFbButton()
+        # self._fb.showFbButton()
         cfg.main_window.set_idle()
 
 

@@ -62,13 +62,12 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
-
+DEFAULT_PLAYBACK_SPEED = 2.5 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 720
-# if 'Joels-' in platform.node():
-#     DEV_MODE = True
-# else:
-#     DEV_MODE = False
-DEV_MODE = True
+if 'Joels-' in platform.node():
+    DEV_MODE = True
+else:
+    DEV_MODE = False
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = False
@@ -101,8 +100,14 @@ ICON_COLOR = '#2774AE'
 
 MV = True
 
-SHOW_UI_CONTROLS = False
-SHOW_SCALE_BAR = True
-SHOW_PANEL_BORDERS = True
-SHOW_AXIS_LINES = False
+# SHOW_UI_CONTROLS = False
+# SHOW_SCALE_BAR = True
+# SHOW_PANEL_BORDERS = True
+# SHOW_AXIS_LINES = False
+
+settings = None
+projects = None
+selected_file = None
+
+
 

@@ -4,6 +4,7 @@ import src.config as cfg
 data_template = \
     {
         "version": 0.50,
+        "created": '',
         "method": "None",
         "user_settings": {
             "use_c_version": True
@@ -13,11 +14,6 @@ data_template = \
             "destination_path": "",
             "current_layer": 0,
             "current_scale": "scale_1",
-            "panel_roles": [
-                "ref",
-                "base",
-                "aligned"
-            ],
             "thumbnails": [],
             "scales": {
                 "scale_1": {
@@ -38,6 +34,10 @@ layer_template = \
             "method_data": {},
             "method_options": {},
             "selected_method": "Auto Swim Align",
+            "match_points": {
+                "src": [],
+                'ref': []
+            },
             "method_results": {}
         },
         "images": {},

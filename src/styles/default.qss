@@ -1,5 +1,14 @@
 
 
+
+
+
+
+QTableWidget{
+
+}
+
+
 QDialog QLabel {
 	color: #141414;
 }
@@ -8,13 +17,7 @@ QMainWindow#mainwindow{
     background-color: #f3f6fb;
 }
 
-QLayout {
-    background-color: #2d2d30;
-    border-width: 0px;
-    border-color: #1d84c9;
-    border-style: solid;
-    border-radius: 6px;
-}
+
 
 QTabBar::tab {
     height: 24px;
@@ -50,7 +53,7 @@ QLabel#label_toolbar_resolution{
     border: 1px solid #808080;
 }
 
-QLabel#aligned_label{
+QLabel#green_toolbar_label{
     font-size: 11px;
     /*color: #39ff14;*/
     color: #00BF00;
@@ -61,10 +64,19 @@ QLabel#aligned_label{
     border: 1px solid #00BF00;
 }
 
-QLabel#unaligned_label{
+QLabel#red_toolbar_label{
     font-size: 11px;
     color: #ff0000;
     font-weight: 550;
+    background-color: #f3f6fb;
+    border-radius: 5px;
+    border: 1px solid #ff0000;
+}
+
+QLabel#validity_label{
+    font-size: 11px;
+    color: #ff0000;
+    font-weight: 700;
     background-color: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #ff0000;
@@ -79,25 +91,10 @@ QHeaderView
     color: #141414;
 }
 
-QTableWidget {
-    background-color: #373b3f; /*#232629;*/
-    gridline-color: yellow; /*#31363b;*/
-}
 
 QProgressBar {
 	font-size: 10px;
 
-}
-
-
-
-
-
-/*QTableView::item:hover {background: #18465d;}*/
-
-QTableView,
-QHeaderView {
-	border-radius: 0px;
 }
 
 
@@ -121,38 +118,18 @@ QMenuBar::item:selected {
 }
 
 QMenuBar {
-	background: #1b1e23;
-	/*color: #daebfe;*/
-	color: #ffffff;
+	background: #141414;
+	color: #f3f6fb;
 }
+
+QMenu::item {
+  	height: 8px;
+}
+
+
 
  /* ---- QTableWidget/QTableView/QTreeView  ---- */
 
- QTableWidget::item {
- 	outline-style: none;
- 	color: #eff0f1;
- 	background: #31363b;
- 	border: none;
- 	border-bottom: 1px solid #31363b;
- }
-
-QTableView::item:pressed,
-QListView::item:pressed,
-QTreeView::item:pressed {
-	background: #18465d;
-	color: #eff0f1;
-}
-
-QTableView::item:selected:active,
-QTreeView::item:selected:active,
-QListView::item:selected:active {
-	background: #8bb8e8;
-}
-
-QTableCornerButton::section {
-	border: 1px transparent #76797C;
-	border-radius: 0px;
-}
 
 QTreeView {
     show-decoration-selected: 1;
@@ -196,10 +173,12 @@ QTreeView#treeview {
 
 
 QTextEdit#_tool_afmCafm {
-    background-color: #f3f6fb;
-    font-size: 11px;
-    border: none;
-
+    font-size: 10px;
+    color: #ffe135;
+    background-color: rgba(0,0,0,.5);
+    border-radius: 1px;
+    /*padding: 0px;*/
+    margin-right: 10px;
 }
 
 QToolBar#toolbar {
@@ -261,12 +240,12 @@ QListWidget#_hstry_listWidget {
  /* ---- QScrollBar  ---- */
 QScrollBar:vertical {
     border: none;
-    background-color: #1b1e23;
+    /*background-color: #1b1e23;*/
     width: 10px;
  }
 QScrollBar:horizontal {
     border: none;
-    background-color: #1b1e23;
+    /*background-color: #1b1e23;*/
     width: 10px;
 }
 
@@ -312,15 +291,16 @@ QGroupBox {
   color: #f3f6fb;  /* snow white */
 }
 
-
+/*
 QTextEdit {
 	border-width: 1px;
 	border-style: solid;
 	border-color: #4fa08b;
 	background-color: #f3f6fb;
-	/*color: #d3dae3;*/
 	color: #151a1e;
 }
+*/
+
 QPlainTextEdit {
 	border-width: 0px;
 	border-style: solid;
@@ -405,6 +385,7 @@ QStatusBar {
 	color: #1b1e23;
 	/*font-weight: bold;*/
 }
+
 QSpinBox {
 	color: #d3dae3;
 	background-color: #222b2e;
@@ -419,6 +400,3 @@ QDoubleSpinBox {
 	border-style: solid;
 	border-color: #4fa08b;
 }
-
-
-

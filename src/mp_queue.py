@@ -38,14 +38,14 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
         try:
             task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
             # task_proc = sp.Popen(task, shell=False, stdout=sys.stdout, stderr=sys.stderr, bufsize=1)
-            outs, errs = task_proc.communicate()
+            outs, errs = task_proc.communicate() # execute the task and capture output
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
             rc = task_proc.returncode
-            logger.debug('Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
+            logger.info('Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
         except:
             outs = ''
-            errs = 'Worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
+            errs = '(!) Worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
             print(errs)
             rc = 1
 
@@ -203,12 +203,11 @@ class TaskQueue(QObject):
         retries_tot = 0
         try:
             self.parent.pbar_max(self.n_tasks)
-            if self.pbar_text != None:
+            if self.pbar_text:
                 self.parent.setPbarText(text=self.pbar_text)
                 # self.parent.statusBar.showMessage(self.pbar_text)
             self.parent.pbar_widget.show()
         except:
-            # print_exception()
             logger.error('An exception was raised while setting up progress bar')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
@@ -243,13 +242,13 @@ class TaskQueue(QObject):
                     else:
                         self.task_dict[task_id]['statusBar'] = 'task_error'
                         retry_list.append(task_id)
-                        logger.warning(f'task_id  : {task_id}\n'
-                                       f'outs     : {outs}\n'
-                                       f'errs     : {errs}\n'
-                                       f'rc       : {rc}\n'
-                                       f'dt       : {dt}\n')  # *** lots of output for alignment
+                        logger.info(f'\n_________TaskQueue.collect_results()_________\n'
+                                    f'task_id : {task_id}\n'
+                                    f'outs    : {outs}\n'
+                                    f'errs    : {errs}'
+                                    f'rc : {rc}, dt : {dt:.2f}'
+                                    f'\n_____________________________________________')  # *** lots of output for alignment
                     self.task_dict[task_id]['dt'] = dt
-
                     realtime -= 1
 
                 self.work_queue.join()
@@ -283,8 +282,7 @@ class TaskQueue(QObject):
                 logger.info('Retries          : %d' % (retries_tot - 1))
                 logger.info('══════ Complete ══════')
         except:
-            logger.error('ERROR')
-            # print_exception()
+            print_exception()
         finally:
             # logger.info('Checking Status of Tasks...')
             # n_success, n_queued, n_failed = 0, 0, 0

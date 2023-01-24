@@ -132,6 +132,8 @@ class HeadupDisplay(QWidget):
         txt = self.textedit.toPlainText()
         self.textedit.undo()
         last_line = txt.split('[INFO]')[-1].lstrip()
+        if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
+            return
         self.post(last_line + 'done.')
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()

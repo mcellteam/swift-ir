@@ -40,6 +40,8 @@ $ qtpy mypy-args
 
 """
 import os
+import json
+import platform
 import qtpy
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
@@ -52,13 +54,14 @@ import sys, signal, logging, argparse
 import faulthandler
 
 from qtpy import QtCore,QtWebEngineCore
-from qtpy.QtCore import QCoreApplication, Qt
+from qtpy.QtCore import QCoreApplication, Qt, QUrl, QDir
 from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QGuiApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-from src.helpers import check_for_binaries, is_tacc
+from src.helpers import check_for_binaries, is_tacc, cleanup_project_list, print_exception, \
+    configure_project_paths, configure_project_settings
 import src.config as cfg
-
 
 
 class CustomFormatter(logging.Formatter):
@@ -164,7 +167,6 @@ def main():
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
-
     # if qtpy.QT5:
     #     logger.info('Setting Qt.AA_EnableHighDpiScaling')
     #     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -176,11 +178,18 @@ def main():
     # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
+    configure_project_settings()
+    configure_project_paths()
+
+    # sys_argv = sys.argv
+    # sys_argv += ['--style', 'material']
+    # app = QGuiApplication(['--style', 'material'])
 
     app = QApplication([])
-
     app.setStyle('Fusion')
     cfg.main_window = MainWindow()
+
+
     logger.info('Showing AlignEM-SWiFT...')
     cfg.main_window.show()
     sys.exit(app.exec())
