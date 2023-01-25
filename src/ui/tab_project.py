@@ -16,6 +16,7 @@ from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
 from src.ui.widget_area import WidgetArea
 from src.helpers import print_exception
+from src.ui.project_table import ProjectTable
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,6 @@ class ProjectTab(QWidget):
         self._tabs.currentChanged.connect(self._onTabChange)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
-        self.arrangement = 0
 
 
     def _onTabChange(self, index=None):
@@ -53,7 +53,7 @@ class ProjectTab(QWidget):
         # if index == 0:
         #     self.updateNeuroglancer()
         if index == 1:
-            self.layer_view_widget.set_data()
+            self.project_table.set_data()
         if index == 2:
             self.updateJsonWidget()
         if index == 3:
@@ -66,41 +66,40 @@ class ProjectTab(QWidget):
         QApplication.processEvents()
         self.repaint()
 
-    def initNeuroglancer(self, layout=None, matchpoint=None):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+
+    def initNeuroglancer(self, layout=None, matchpoint=False):
+        logger.info(f'caller: {inspect.stack()[1].function}')
         if cfg.data:
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
             # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
-            if self.arrangement == 0:
+            if cfg.main_window.rb0.isChecked():
+                cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
                 cfg.ng_worker = NgHostSlim(parent=self, project=True)
-            else:
+            elif cfg.main_window.rb1.isChecked():
+                cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
                 cfg.ng_worker = NgHost(parent=self)
-                if self.arrangement == 1:
-                    cfg.ng_worker.arrangement = 1
-                elif self.arrangement == 2:
-                    cfg.ng_worker.arrangement = 2
             cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
             self.updateNeuroglancer(matchpoint=matchpoint)
+
+
+    def updateNeuroglancer(self, matchpoint=False, layout=None):
+
+        logger.info(f'caller: {inspect.stack()[1].function}')
+        if layout: cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
+        cfg.ng_worker.initViewer(matchpoint=matchpoint)
+        self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
+        self.ng_browser.setFocus()
+        self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
+
+    def setNeuroglancerUrl(self):
+        self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
+
 
     def updateNgLayer(self):
         state = copy.deepcopy(cfg.viewer.state)
         state.position[0] = cfg.data.layer()
         cfg.viewer.set_state(state)
-
-
-    def updateNeuroglancer(self, matchpoint=None, layout=None):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        if layout:
-            cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
-        if matchpoint != None:
-            cfg.ng_worker.initViewer(matchpoint=matchpoint)
-        else:
-            cfg.ng_worker.initViewer()
-        self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
-        self.ng_browser.setFocus()
 
 
     def getBrowserSize(self):
@@ -126,11 +125,11 @@ class ProjectTab(QWidget):
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
 
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
@@ -230,20 +229,21 @@ class ProjectTab(QWidget):
     def initUI_table(self):
         '''Layer View Widget'''
         logger.info('')
-        self.layer_view_widget = LayerViewWidget()
-        self.layer_view_widget.setObjectName('layer_view_widget')
+        # self.project_table = LayerViewWidget()
+        self.project_table = ProjectTable()
+        self.project_table.setObjectName('project_table')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.layer_view_widget)
+        vbl.addWidget(self.project_table)
         self.label_overview = VerticalLabel('Project Data Table View')
         self.label_overview.setObjectName('label_overview')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.label_overview)
         hbl.addLayout(vbl)
-        self.layer_view_container = QWidget(parent=self)
-        self.layer_view_container.setObjectName('layer_view_container')
-        self.layer_view_container.setLayout(hbl)
+        self.table_container = QWidget(parent=self)
+        self.table_container.setObjectName('table_container')
+        self.table_container.setLayout(hbl)
 
 
     def initUI_JSON(self):
@@ -314,7 +314,6 @@ class ProjectTab(QWidget):
         self._thumbnail_src = QLabel()
         self._thumbnail_aligned = QLabel()
 
-
         style = '''font-size: 14px; color: #f3f6fb; font-weight: 500;'''
 
         self._lab_source_thumb = QLabel('Source:')
@@ -326,7 +325,6 @@ class ProjectTab(QWidget):
         vbl.addWidget(self._thumbnail_src, alignment=Qt.AlignmentFlag.AlignTop)
         self.source_thumb_and_label = QWidget()
         self.source_thumb_and_label.setLayout(vbl)
-
 
         self._lab_aligned_thumb = QLabel('Aligned:')
         self._lab_aligned_thumb.setFixedHeight(16)
@@ -355,8 +353,8 @@ class ProjectTab(QWidget):
         self.snr_plot_widget.addWidget(w1)
         self.snr_plot_widget.addWidget(w2)
         # self.snr_plot_widget.setSizes([1000, 150])
-        try:    self.snr_plot.initSnrPlot() # sets up some basic plot characteristics
-        except: logger.warning('exception while initializing Snr Plot')
+        # try:    self.snr_plot.initSnrPlot() # sets up some basic plot characteristics
+        # except: logger.warning('exception while initializing Snr Plot')
 
 
     def initUI_mini_view(self):
@@ -372,7 +370,7 @@ class ProjectTab(QWidget):
         self._tabs.setTabsClosable(True)
         self._tabs.setObjectName('project_tabs')
         self._addTab(widget=self.ng_browser_container_outer, name=' 3DEM ')
-        self._addTab(widget=self.layer_view_container, name=' Table ')
+        self._addTab(widget=self.table_container, name=' Table ')
         self._addTab(widget=self._wdg_treeview, name=' Tree ')
         self._addTab(widget=self.snr_plot_widget, name=' SNR Plot ')
         # self._addTab(widget=self._mv, name=' Miniview ')

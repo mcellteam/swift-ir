@@ -246,9 +246,9 @@ def get_bytes(start_path = '.'):
 
 
 # def make_affine_widget_HTML(afm, cafm):
-#     # 'cellspacing' affects table width and 'cellpadding' affects table height
-#     # text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
-#     text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
+#     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
+#     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
+#     text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
 #            f"  <tr>"\
 #            f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
 #            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
@@ -271,13 +271,13 @@ def get_bytes(start_path = '.'):
 #            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
 #            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
 #            f"  </tr>"\
-#            f"</table>"
+#            f"</project_table>"
 #     return text
 
 def make_affine_widget_HTML(afm, cafm):
-    # 'cellspacing' affects table width and 'cellpadding' affects table height
-    # text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
-    # text = f"<table table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
+    # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
+    # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
+    # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
     text = f"<table table-layout='fixed' style='border-bottom: 1pt solid black;' cellspacing='2' cellpadding='2'>"\
            f"  <tr>"\
            f"    <td rowspan=2 style='font-size: 7px;'>AFM</td>"\
@@ -507,7 +507,7 @@ def do_scales_exist() -> bool:
 
 
 def get_scales_with_generated_alignments(scales) -> list:
-    logger.info('get_scales_with_generated_alignments:')
+    logger.info('called by %s' % inspect.stack()[1].function)
     l = []
     for s in scales:
         if exist_aligned_zarr(s):
@@ -517,23 +517,27 @@ def get_scales_with_generated_alignments(scales) -> list:
 
 def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
+    caller = inspect.stack()[1].function
     # logger.info('called by %s' % inspect.stack()[1].function)
-    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
-    if not os.path.isdir(zarr_path):
-        logger.debug(f"Path Not Found: {zarr_path}")
-        result = False
-    elif not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
-        result = False
-    elif not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
-        result = False
-    elif not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
-        result = False
+    if cfg.data:
+        zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
+        if not os.path.isdir(zarr_path):
+            logger.debug(f"Path Not Found: {zarr_path}")
+            result = False
+        elif not os.path.exists(os.path.join(zarr_path, '.zattrs')):
+            logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
+            result = False
+        elif not os.path.exists(os.path.join(zarr_path, '.zarray')):
+            logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
+            result = False
+        elif not os.path.exists(os.path.join(zarr_path, '0.0.0')):
+            logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+            result = False
+        else:
+            result = True
+        return result
     else:
-        result = True
-    return result
+        logger.warning(f'called by {caller} but there is no cfg.data!')
 
 
 def exist_aligned_zarr_cur_scale(dest=None) -> bool:

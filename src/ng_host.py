@@ -165,6 +165,11 @@ class NgHost(QRunnable):
 
         # self.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=True)
 
+    def rowArrangement(self):
+        self.arrangement = 2
+        self.initViewer()
+
+
     def initViewer(self,
                    matchpoint=None,
                    widget_size=None,
@@ -175,6 +180,7 @@ class NgHost(QRunnable):
         if matchpoint: self.mp_mode = matchpoint
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         self.scale = cfg.data.scale()
+        logger.info(f'ATTN: cfg.data.scale() = {cfg.data.scale()}')
         print(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = exist_aligned_zarr(self.scale)
         sf = get_scale_val(self.scale)
@@ -187,14 +193,16 @@ class NgHost(QRunnable):
         self.unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
         try:
-            cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
+            self.unal_tensor = cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
         except:
+            print_exception()
             cfg.main_window.err(f'Invalid Zarr For Tensor, Unaligned, Scale {sf}'); print_exception()
         cfg.main_window.updateToolbar()
         if is_aligned:
             try:
-                cfg.al_tensor = cfg.tensor = get_zarr_tensor(self.al_path).result()
+                self.al_tensor = cfg.al_tensor = cfg.tensor = get_zarr_tensor(self.al_path).result()
             except:
+                print_exception()
                 cfg.main_window.err(f'Invalid Zarr For Tensor, Aligned, Scale {sf}'); print_exception()
         else:
             cfg.al_tensor=None
@@ -250,23 +258,23 @@ class NgHost(QRunnable):
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
 
-        # print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
-        # print('widget size                  =%s' % str(widget_size))
-        # print('arrangement                  =%d' % self.arrangement)
-        # print('is aligned                   =%s' % is_aligned_and_generated)
-        # print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
-        # print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
-        # print('frame width,height           =%d,%d' % (frame[1], frame[0]))
-        # print('x_nudge,y_nudge              =%d,%d' % (x_nudge, y_nudge))
-        # print('widget width,height          =%d,%d' % (widget_width, widget_height))
-        # print('tissue width,height          =%d,%d' % (tissue_width, tissue_height))
-        # print('cross_section width,height   =%.10f,%.10f' % (cross_section_width, cross_section_height))
-        # print('cross_section_scale          =%.10f' % cross_section_scale)
+        print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
+        print('widget size                  =%s' % str(widget_size))
+        print('arrangement                  =%d' % self.arrangement)
+        print('is aligned                   =%s' % is_aligned)
+        print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
+        print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
+        print('frame width,height           =%d,%d' % (frame[1], frame[0]))
+        print('x_nudge,y_nudge              =%d,%d' % (x_nudge, y_nudge))
+        print('widget width,height          =%d,%d' % (widget_width, widget_height))
+        print('tissue width,height          =%d,%d' % (tissue_width, tissue_height))
+        print('cross_section width,height   =%.10f,%.10f' % (cross_section_width, cross_section_height))
+        print('cross_section_scale          =%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
             adjustment = 1.05
-            # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
@@ -362,9 +370,11 @@ class NgHost(QRunnable):
 
             s.position = [cfg.data.layer(), frame[0]/2, frame[1]/2]
 
+            # Columnar Arrangment
             if self.arrangement == 1:
                 s.layout = ng.row_layout(grps)
 
+            # Ref/base one on-top Arrangement
             if self.arrangement == 2:
                 if is_aligned:
                     if self.mp_mode:

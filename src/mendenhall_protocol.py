@@ -42,7 +42,7 @@ class Mendenhall(QObject):
     def set_directory(self):
         self.sink = mendenhall_dialog()
         cfg.data.set_source_path(self.sink)
-        cfg.main_window._proj_saveToFile()
+        cfg.main_window._saveProjectToFile()
 
     def start_watching(self):
         self.watchmen = QFileSystemWatcher() # files(), directories()
@@ -86,7 +86,7 @@ class Mendenhall(QObject):
         cfg.project_tab.openViewZarr()
 
     def add_image(self, img):
-        cfg.main_window.hud.post(f"Adding Image Layer '{os.path.basename(img)}'...")
+        # cfg.main_window.hud.post(f"Adding Image\n'{os.path.basename(img)}'...")
         cfg.data.append_image(img)
         cfg.data.link_reference_sections()
         self.img_to_zarr(ID=self._index, fn=img)

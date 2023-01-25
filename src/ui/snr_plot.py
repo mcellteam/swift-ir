@@ -120,10 +120,19 @@ class SnrPlot(QWidget):
 
 
     def updateLayerLinePos(self):
-        offset = self._getScaleOffset(s=cfg.data.scale())
-        self._curLayerLine.setPos([cfg.data.layer() + offset, 1])
-        # label = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
-        self._snr_label.setText('SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty()))
+        caller = inspect.stack()[1].function
+        logger.info(f'caller={caller}')
+        if cfg.data:
+            offset = self._getScaleOffset(s=cfg.data.scale())
+            pos = [cfg.data.layer() + offset, 1]
+            logger.info(f'pos = {pos}')
+            self._curLayerLine.setPos(pos)
+            # label = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
+            lab = 'SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
+            logger.info(f'lab = {lab}')
+            self._snr_label.setText(lab)
+        else:
+            logger.warning(f'Cant update layer line caller={caller}')
 
 
 
@@ -285,7 +294,7 @@ class SnrPlot(QWidget):
             self.plot.autoRange() # !!!
 
     def _getScaleOffset(self, s):
-        return cfg.data.scales()[::-1].index(s) * (.5/cfg.data.nscales)
+        return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
 
 
     def plotSingleScale(self, s=None):

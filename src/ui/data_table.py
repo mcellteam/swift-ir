@@ -6,8 +6,8 @@ Demo GUI script for Mohammad spinehead volume project.
 
 Demonstrates:
 - Loading datamodel from CSV file via cli and open file dialog
-- Displaying datamodel in pretty table
-- Selecting table datamodel and returning pandas dataframe
+- Displaying datamodel in pretty project_table
+- Selecting project_table datamodel and returning pandas dataframe
 - Performing some analysis on arbitrary user datamodel
 - Using classes from Qt documentation ('PandasModel')
 - QApplication, QMainWindow, QWidget,  QFileDialog, QTableView, QPushButton, QTabWidget, QGridLayout, QHBoxLayout,
@@ -65,8 +65,8 @@ class DataTable(QMainWindow):
             self.table_widget.setModel(my_pandas_model)
             self.table_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
             self.selection_model = self.table_widget.selectionModel()
-            # This line connects  'self.selectionChanged' method/function (Slot)
-            # to 'self.selection_model.selectionChanged' (Signal)
+            # This line connects  'self.userSelectionChanged' method/function (Slot)
+            # to 'self.selection_model.userSelectionChanged' (Signal)
             self.selection_model.selectionChanged.connect(self.selected_rows_changed)
         else:
             error_dialog = QErrorMessage()
@@ -194,7 +194,7 @@ class DataTable(QMainWindow):
 
 
 class PandasModel(QAbstractTableModel):
-    """A previewmodel to interface a Qt table with pandas dataframe.
+    """A previewmodel to interface a Qt project_table with pandas dataframe.
     Adapted from Qt Documentation Example:
     https://doc.qt.io/qtforpython/examples/example_external__pandas.html"""
     def __init__(self, dataframe: pd.DataFrame, parent=None):

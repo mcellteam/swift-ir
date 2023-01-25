@@ -29,7 +29,7 @@ import neuroglancer.webdriver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 if caller != None:
     import src.config as cfg
-from src.helpers import exist_aligned_zarr_cur_scale
+from src.helpers import exist_aligned_zarr_cur_scale, print_exception
 
 __all__ = ['NgHostSlim']
 
@@ -107,6 +107,7 @@ class NgHostSlim(QRunnable):
             self.resolution = (50, 2, 2)
         self.signals = WorkerSignals()
         self.mp_mode = False
+        self.path = ''
 
     def __del__(self):
         try:
@@ -169,7 +170,10 @@ class NgHostSlim(QRunnable):
 
         try:
             # cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
-            cfg.tensor = get_zarr_tensor(self.path).result()
+            try:
+                cfg.tensor = get_zarr_tensor(self.path).result()
+            except:
+                print_exception()
             if cfg.data.is_aligned_and_generated():
                 cfg.al_tensor = cfg.tensor
                 cfg.unal_tensor = None
@@ -179,21 +183,19 @@ class NgHostSlim(QRunnable):
 
             cfg.main_window.updateToolbar()
             print('TensorStore Object Created Successfully!')
-        except Exception as e:
-            print(e)
-            try:
-                logger.error(f'Invalid Zarr For Tensor,\nTensor Path: {self.path}')
-                cfg.main_window.err('Invalid Zarr. Unable To Create Tensor for Zarr Array')
-            except:
-                pass
+        except:
+            print_exception()
+            logger.error(f'Invalid Zarr: {self.path} - Unable To Create Tensor store with Zarr driver')
+            cfg.main_window.err(f'Invalid Zarr: {self.path} - Unable To Create Tensor store with Zarr driver')
+
 
         shape = cfg.tensor.shape
 
         with cfg.viewer.txn() as s:
             s.layout.type = self.nglayout
             adjustment = 1.04
-            # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             # s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
