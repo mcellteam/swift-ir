@@ -57,7 +57,6 @@ class DataModel:
 
         if data:
             self._data = data
-            self.update_cache()
         else:
             self._data = copy.deepcopy(data_template)
             current_time = datetime.now()
@@ -128,12 +127,13 @@ class DataModel:
             return False
 
     def update_cache(self):
+        logger.info('Caching data model variables...')
         self.curScale = self.scale()
         try:
             self.scalesAlignedAndGenerated = get_scales_with_generated_alignments(self.scales())
             self.nScalesAlignedAndGenerated = len(self.scalesAlignedAndGenerated)
         except:
-            pass
+            print_exception()
         self.scalesList = self.scales()
         self.nscales = len(self.scalesList)
         self.nSections = self.n_sections()
@@ -325,7 +325,6 @@ class DataModel:
 
 
     def snr(self, s=None, l=None) -> float:
-        '''TODO This probably shouldn't return a string'''
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         if l == 0:
@@ -339,9 +338,22 @@ class DataModel:
             # logger.warning(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
             return 0.0
 
+    def all_snr(self, s=None, l=None) -> list[float]:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            snr_lst =  self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['snr']
+            if (len(snr_lst) == 1) and (snr_lst[0] == 0):
+                # Todo make this correct at the data assignment level,
+                # Todo make not be specific to 2x2 SWiFT
+                snr_lst = [0.0, 0.0, 0.0, 0.0]
+            return snr_lst
+        except:
+            print_exception()
+
 
     def snr_report(self, s=None, l=None) -> str:
-        '''TODO This probably shouldn't return a string'''
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
@@ -1097,7 +1109,7 @@ class DataModel:
         return next_coarsest_scale_key
 
     def is_alignable(self) -> bool:
-        '''Checks if the current s is able to be aligned'''
+        '''Checks if the current scale is able to be aligned'''
         try:
             if self.nSections < 1:
                 logger.debug("Returning False because self.nSections < 1")
@@ -1123,14 +1135,17 @@ class DataModel:
 
     def clear_all_skips(self):
         logger.info('Clearing all skips...')
-        for scale in self.scales():
-            scale_key = str(scale)
-            for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
-                layer['skipped'] = False
+        try:
+            for scale in self.scales():
+                scale_key = str(scale)
+                for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
+                    layer['skipped'] = False
+        except:
+            print_exception()
 
     def append_image(self, file):
         scale = self.scale()
-        logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
+        # logger.debug("Adding Image: %s, role: base, scale: %s" % (file, scale))
         used_for_this_role = ['base' in l['images'].keys() for l in self.alstack(s=scale)]
         # logger.info(f'used_for_this_role = {used_for_this_role}')
         # used_for_this_role = [True, True, True, True]

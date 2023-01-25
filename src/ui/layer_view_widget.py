@@ -6,16 +6,11 @@ import math
 import inspect
 import logging
 import pandas as pd
-from collections import namedtuple
-
-from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex, Signal, QEvent
-from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTabWidget, QGridLayout, \
-    QHBoxLayout, QFileDialog, QTableView, QErrorMessage, QGroupBox, QTextEdit, QSplitter, QStatusBar, \
-    QAbstractItemView, QStyledItemDelegate, QItemDelegate, QSlider, QLabel, QAbstractScrollArea
+from qtpy.QtCore import QSize, Qt, Slot, QAbstractTableModel, QModelIndex, Signal
+from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QGridLayout, \
+    QHBoxLayout, QTableView, QStyledItemDelegate, QSlider, QLabel, QAbstractScrollArea
 from qtpy.QtGui import QImage, QFont, QColor
-
 from src.data_model import DataModel
-from src.helpers import exist_aligned_zarr_cur_scale
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -28,7 +23,6 @@ class LayerViewWidget(QWidget):
         super(QWidget, self).__init__(*args, **kwargs)
         self.fileCount = 0
         self.fileList = []
-
         self.parent = parent
         self.layout = QGridLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -41,12 +35,11 @@ class LayerViewWidget(QWidget):
         self.table_view.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         self.table_view.setFont(QFont('Arial', self.INITIAL_FONT_SIZE))
 
-
         self.hheader = self.table_view.horizontalHeader()
         self.vheader = self.table_view.verticalHeader()
         self.table_view.horizontalHeader().setStretchLastSection(True)
         self.table_view.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-        # self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        # self.project_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table_view.setSelectionBehavior(QTableView.SelectRows)
 
         self.row_height_slider = Slider(min=64, max=256)
@@ -60,17 +53,6 @@ class LayerViewWidget(QWidget):
         self.row_height_widget.setLayout(self.row_height_hlayout)
         self.row_height_hlayout.addWidget(QLabel('Thumbnail Size:'))
         self.row_height_hlayout.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
-
-        # self.font_size_slider = Slider(min=4, max=26)
-        # self.font_size_slider.setMaximumWidth(100)
-        # self.font_size_slider.setValue(self.INITIAL_FONT_SIZE)
-        # self.font_size_slider.valueChanged.connect(self.updateFontSize)
-        # self.font_size_widget = QWidget()
-        # self.font_size_hlayout = QHBoxLayout()
-        # self.font_size_hlayout.setContentsMargins(2,2, 2, 2)
-        # self.font_size_widget.setLayout(self.font_size_hlayout)
-        # self.font_size_hlayout.addWidget(QLabel('Font Size:'))
-        # self.font_size_hlayout.addWidget(self.font_size_slider, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.controls = QWidget()
         self.controls.setObjectName('controls')
@@ -94,14 +76,12 @@ class LayerViewWidget(QWidget):
 
     @Slot()
     def set_data(self):
-        logger.info('Setting Table Data..')
-        selection = self._selected_rows
-        # logger.info(f'selection: {selection}')
+        logger.info('Setting Table Data...')
+        # selection = self._selected_rows
+        # # logger.info(f'selection: {selection}')
         is_aligned = cfg.data.is_aligned_and_generated()
         scale = [cfg.data.scale_pretty()] * cfg.data.nSections
-
         ref = cfg.data.thumbnails_ref()
-
         skips, base, method, snr_report = [], [], [], []
         for l in cfg.data.alstack():
             ref.append(os.path.basename(l['images']['ref']['filename']))
@@ -139,9 +119,9 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(9, 30)  # 7 Scale
             self.table_view.setColumnWidth(10, 30) # 8 Skip
             self.table_view.setColumnWidth(11, 80) # 9 Method
-            # self.table.setColumnWidth(7, 176) # 10 SNR Report
-            # self.table.resizeColumnToContents(7)
-            # self.table.resizeColumnToContents(8)
+            # self.project_table.setColumnWidth(7, 176) # 10 SNR Report
+            # self.project_table.resizeColumnToContents(7)
+            # self.project_table.resizeColumnToContents(8)
             self.table_view.resizeColumnToContents(9)
 
         else:
@@ -154,15 +134,13 @@ class LayerViewWidget(QWidget):
             self.table_view.setColumnWidth(4, 30)  # 2 Scale
             self.table_view.setColumnWidth(5, 30)  # 3 Skip
             self.table_view.setColumnWidth(6, 80)  # 4 Method
-            # self.table.setColumnWidth(6, 176)
             self.table_view.resizeColumnToContents(4)
-
 
         self.setThumbnailDelegates()
         self._dataframe.index = cfg.data.basefilenames() # set row header titles (!)
         self.load_dataframe()
         # if selection:
-        #     self.table.selectRow(selection[0])
+        #     self.project_table.selectRow(selection[0])
         self.table_view.selectRow(cfg.data.layer())
 
         QApplication.processEvents()
@@ -172,13 +150,13 @@ class LayerViewWidget(QWidget):
         self.thumb_delegate = ThumbnailDelegate()
         self.table_view.setItemDelegateForColumn(0, self.thumb_delegate)
         self.table_view.setItemDelegateForColumn(1, self.thumb_delegate)
-        # if cfg.data.is_aligned_and_generated():
-        self.cs_delegate = CorrSpotDelegate()
-        self.table_view.setItemDelegateForColumn(2, self.thumb_delegate)
-        self.table_view.setItemDelegateForColumn(3, self.cs_delegate)
-        self.table_view.setItemDelegateForColumn(4, self.cs_delegate)
-        self.table_view.setItemDelegateForColumn(5, self.cs_delegate)
-        self.table_view.setItemDelegateForColumn(6, self.cs_delegate)
+        if cfg.data.is_aligned_and_generated():
+            self.cs_delegate = CorrSpotDelegate()
+            self.table_view.setItemDelegateForColumn(2, self.thumb_delegate)
+            self.table_view.setItemDelegateForColumn(3, self.cs_delegate)
+            self.table_view.setItemDelegateForColumn(4, self.cs_delegate)
+            self.table_view.setItemDelegateForColumn(5, self.cs_delegate)
+            self.table_view.setItemDelegateForColumn(6, self.cs_delegate)
 
 
     def set_selected_row(self, row):
@@ -192,7 +170,7 @@ class LayerViewWidget(QWidget):
         if isinstance(self._dataframe, pd.DataFrame):
             self.model = PandasModel(self._dataframe)
             self.table_view.setModel(self.model)
-            # self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+            # self.project_table.setSelectionMode(QAbstractItemView.ExtendedSelection)
             self.selection_model = self.table_view.selectionModel()
             self.selection_model.selectionChanged.connect(self.selectionChanged)
         else:
@@ -231,51 +209,6 @@ class LayerViewWidget(QWidget):
         self.table_view.resizeColumnToContents(7)
         self.table_view.resizeColumnToContents(8)
 
-        # self.updateFontSize(h)
-
-    # def updateFontSize(self, s):
-    #     # self.table.setFont(QFont('Arial', s))
-    #     size = s/4
-    #     logger.info(f'size={size}')
-    #     if size in range(5,18):
-    #         fnt = self.table.font()
-    #         fnt.setPointSize(size)
-    #         self.table.setFont(fnt)
-
-
-    # def canFetchMore(self, index):
-    #     return self.fileCount < len(self.fileList)
-    #
-    # def fetchMore(self, index):
-    #     remainder = len(self.fileList) - self.fileCount
-    #     itemsToFetch = min(100, remainder)
-    #
-    #     self.beginInsertRows(QtCore.QModelIndex(), self.fileCount,
-    #             self.fileCount + itemsToFetch)
-    #
-    #     self.fileCount += itemsToFetch
-    #
-    #     self.endInsertRows()
-    #
-    #     self.numberPopulated.emit(itemsToFetch)
-
-
-    def canFetchMore(self, index):
-        return self.fileCount < len(self.fileList)
-
-    def fetchMore(self, index):
-        remainder = len(self.fileList) - self.fileCount
-        itemsToFetch = min(100, remainder)
-
-        self.beginInsertRows(QModelIndex(), self.fileCount,
-                self.fileCount + itemsToFetch)
-
-        self.fileCount += itemsToFetch
-
-        self.endInsertRows()
-
-        self.numberPopulated.emit(itemsToFetch)
-
 
 class Slider(QSlider):
     def __init__(self, min, max, parent=None):
@@ -288,41 +221,6 @@ class Slider(QSlider):
         self.setPageStep(2)
         self.setTickInterval(1)
 
-#
-# class CheckBoxDelegate(QItemDelegate):
-#     """A delegate that places a fully functioning QCheckBox cell of the column to which it's applied."""
-#     def __init__(self, parent=None):
-#         QItemDelegate.__init__(self, parent)
-#
-#     def createEditor(self, parent, option, index):
-#         """Important, otherwise an editor is created if the user clicks in this cell."""
-#         return None
-#
-#     def paint(self, painter, option, index):
-#         """Paint a checkbox without the label."""
-#         self.drawCheck(painter, option, option.rect, Qt.Unchecked if index.data() == False else Qt.Checked)
-#
-#     def editorEvent(self, event, model, option, index):
-#         '''Change the datamodel in the model and the state of the checkbox if the user presses
-#         the left mousebutton and this cell is editable. Otherwise do nothing.'''
-#         logger.info(f'index.row()={index.row()}')
-#         # event  = <PyQt5.QtGui.QMouseEvent object at 0x1cd5eb310>
-#         # model  = <src.ui.layer_view_widget.PandasModel object at 0x1cd5c8040>
-#         # option = <PyQt5.QtWidgets.QStyleOptionViewItem object at 0x1d08da2e0
-#         # index  = <PyQt5.QtCore.QModelIndex object at 0x1d08da120>
-#
-#         if not int(index.flags() & Qt.ItemIsEditable) > 0:
-#             return False
-#         if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
-#             self.setModelData(None, model, index) # Change the checkbox-state
-#             return True
-#         return False
-#
-#     def setModelData (self, editor, model, index):
-#         '''The user wanted to change the old state in the opposite.'''
-#         logger.info(f'setModelData | editor={editor} | model={model} | index={index}')
-#         model.setData(index, True if index.data() == False else False, Qt.EditRole)
-
 
 class ThumbnailDelegate(QStyledItemDelegate):
 
@@ -332,42 +230,16 @@ class ThumbnailDelegate(QStyledItemDelegate):
             return
 
         thumbnail = QImage(data)
-        # padding = 10
-        # width = option.rect.width() - padding * 2
-        # height = option.rect.height() - padding * 2
-        # width = 120
         width = option.rect.width()
         height = option.rect.height()
-        # print(f'width: {width} height: {height}')
-        # print(f'ThumbnailDelegate, width: {width}')
-        # print(f'ThumbnailDelegate, height: {height}')
-        # ThumbnailDelegate, width: 99
-        # ThumbnailDelegate, height: 29
-
-        # option.rect holds the painting area (table cell)
-        # scaled = datamodel.image.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio, )
         scaled = thumbnail.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
-        # scaled = thumbnail.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
-        # print(f'ThumbnailDelegate, scaled.width(): {scaled.width()}')
-        # print(f'ThumbnailDelegate, scaled.height(): {scaled.height()}')
-        # ThumbnailDelegate, scaled.width(): 29
-        # ThumbnailDelegate, scaled.height(): 29
-
-        # print(f'ThumbnailDelegate, option.rect.x(): {option.rect.x()}')
-        # print(f'ThumbnailDelegate, option.rect.y(): {option.rect.y()}')
-        # ThumbnailDelegate, option.rect.x(): 0
-        # ThumbnailDelegate, option.rect.y(): 330
-
-        # Position in the middle of the area.
-        # x = padding + (width - scaled.width()) / 2
-        # y = padding + (height - scaled.height()) / 2
         painter.drawImage(option.rect.x(), option.rect.y(), scaled)
 
-        # type(index.model()) = <class 'src.ui.layer_view_widget.PandasModel'>
-        # 19:21:52 INFO [layer_view_widget.paint:337] type(index.model().data) = <class 'method'>
-        # 19:21:52 INFO [layer_view_widget.paint:338] index.model().data = <bound method PandasModel.data of <src.ui.layer_view_widget.PandasModel object at 0x1d4852b80>>
-        # 19:21:52 INFO [layer_view_widget.paint:339] type(index.model().itemData) = <class 'builtin_function_or_method'>
-        # 19:21:52 INFO [layer_view_widget.paint:340] index.model().itemData = <built-in method itemData of PandasModel object at 0x1d4852b80>
+        # type(index.model()) = <class 'src.ui.project_table.PandasModel'>
+        # 19:21:52 INFO [project_table.paint:337] type(index.model().data) = <class 'method'>
+        # 19:21:52 INFO [project_table.paint:338] index.model().data = <bound method PandasModel.data of <src.ui.project_table.PandasModel object at 0x1d4852b80>>
+        # 19:21:52 INFO [project_table.paint:339] type(index.model().itemData) = <class 'builtin_function_or_method'>
+        # 19:21:52 INFO [project_table.paint:340] index.model().itemData = <built-in method itemData of PandasModel object at 0x1d4852b80>
 
 class CorrSpotDelegate(QStyledItemDelegate):
 
@@ -394,7 +266,7 @@ class CorrSpotDelegate(QStyledItemDelegate):
 
 
 class PandasModel(QAbstractTableModel):
-    """A model to interface a Qt table with pandas dataframe.
+    """A model to interface a Qt project_table with pandas dataframe.
     Adapted from Qt Documentation Example:
     https://doc.qt.io/qtforpython/examples/example_external__pandas.html"""
     def __init__(self, dataframe: pd.DataFrame, parent=None):
@@ -491,3 +363,37 @@ class PushButtonDelegate(QStyledItemDelegate):
         self._button = QPushButton()
         self.setRole(role)
 
+
+# class CheckBoxDelegate(QItemDelegate):
+#     """A delegate that places a fully functioning QCheckBox cell of the column to which it's applied."""
+#     def __init__(self, parent=None):
+#         QItemDelegate.__init__(self, parent)
+#
+#     def createEditor(self, parent, option, index):
+#         """Important, otherwise an editor is created if the user clicks in this cell."""
+#         return None
+#
+#     def paint(self, painter, option, index):
+#         """Paint a checkbox without the label."""
+#         self.drawCheck(painter, option, option.rect, Qt.Unchecked if index.data() == False else Qt.Checked)
+#
+#     def editorEvent(self, event, model, option, index):
+#         '''Change the datamodel in the model and the state of the checkbox if the user presses
+#         the left mousebutton and this cell is editable. Otherwise do nothing.'''
+#         logger.info(f'index.row()={index.row()}')
+#         # event  = <PyQt5.QtGui.QMouseEvent object at 0x1cd5eb310>
+#         # model  = <src.ui.project_table.PandasModel object at 0x1cd5c8040>
+#         # option = <PyQt5.QtWidgets.QStyleOptionViewItem object at 0x1d08da2e0
+#         # index  = <PyQt5.QtCore.QModelIndex object at 0x1d08da120>
+#
+#         if not int(index.flags() & Qt.ItemIsEditable) > 0:
+#             return False
+#         if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
+#             self.setModelData(None, model, index) # Change the checkbox-state
+#             return True
+#         return False
+#
+#     def setModelData (self, editor, model, index):
+#         '''The user wanted to change the old state in the opposite.'''
+#         logger.info(f'setModelData | editor={editor} | model={model} | index={index}')
+#         model.setData(index, True if index.data() == False else False, Qt.EditRole)

@@ -54,7 +54,7 @@ class ZarrTab(QWidget):
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(parent=self, project=False)
         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-        cfg.main_window.updateMenuDetails()
+        cfg.main_window.updateMenus()
 
     def updateNgLayer(self):
         state = copy.deepcopy(cfg.viewer.state)

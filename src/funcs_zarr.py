@@ -21,7 +21,6 @@ from numcodecs import Blosc
 from numcodecs import Zstd
 import numcodecs
 numcodecs.blosc.use_threads = False
-
 # import imagecodecs
 # import dask.array as da
 import src.config as cfg
@@ -39,7 +38,6 @@ https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highper
 __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
 
 logger = logging.getLogger(__name__)
-
 
 
 def get_zarr_tensor(zarr_path):
@@ -62,19 +60,20 @@ def get_zarr_tensor(zarr_path):
         # total_bytes_limit = 200_000_000_000
         total_bytes_limit = 250_000_000_000 # just under 256 GB
     else:
-        total_bytes_limit = 6_000_000_000_000
+        total_bytes_limit = 6_000_000_000
     # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
     arr = ts.open({
         'dtype': 'uint8',
         'driver': 'zarr',
         'kvstore': {
             'driver': 'file',
+            # 'driver': 'memory',
             'path': zarr_path
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            'data_copy_concurrency': {'limit': 128},
-            'file_io_concurrency': {'limit': 128},
+            # 'data_copy_concurrency': {'limit': 128},
+            # 'file_io_concurrency': {'limit': 128},
         },
         'recheck_cached_data': 'open',
     })
