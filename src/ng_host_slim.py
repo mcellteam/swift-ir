@@ -143,7 +143,7 @@ class NgHostSlim(QRunnable):
     def initViewer(self,
                    matchpoint=None):
         caller = inspect.stack()[1].function
-        logger.info(f'Initializing Neuroglancer Viewer (caller: {caller})...')
+        logger.critical('caller: %s' % caller)
 
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         cfg.viewer = ng.Viewer()
@@ -173,7 +173,12 @@ class NgHostSlim(QRunnable):
         try:
             # cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
             try:
-                cfg.tensor = store = get_zarr_tensor(self.path).result()
+                if cfg.USE_TENSORSTORE:
+                    logger.info('Getting Tensorstore Result...')
+                    cfg.tensor = store = get_zarr_tensor(self.path).result()
+                else:
+                    logger.info('Opening Zarr...')
+                    store = zarr.open(self.path)
             except:
                 print_exception()
                 if not os.path.exists(self.path):

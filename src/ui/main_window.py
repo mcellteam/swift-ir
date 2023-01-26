@@ -56,7 +56,8 @@ from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_
     is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, show_status_report, exist_aligned_zarr_cur_scale, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_selection, \
-    configure_project_paths, handleError, append_project_path
+    configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, count_widgets, \
+    find_allocated_widgets
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 from src.ui.process_monitor import HeadupDisplay
@@ -1921,7 +1922,6 @@ class MainWindow(QMainWindow):
 
     def open_project(self):
         #Todo check for Zarr. Generate/Re-generate if necessary
-
         logger.critical('Opening A Project...')
         self.tell('Opening A Project...')
         # self.shutdownNeuroglancer()
@@ -1975,6 +1975,8 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         # cfg.data = None
+        caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % caller)
 
         if self._getTabType() == 'ZarrTab':
             self.open_zarr()
@@ -2001,6 +2003,7 @@ class MainWindow(QMainWindow):
             self.warn(f'No Such File Found: {filename}')
             logger.warning(f'No Such File Found: {filename}')
             cfg.main_window.set_idle()
+            print_exception()
             return
         else:
             logger.info(f'Project Opened!')
@@ -2035,7 +2038,8 @@ class MainWindow(QMainWindow):
 
 
     def open_zarr(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % caller)
         self.label_toolbar_resolution.setText('[dims]')
         cfg.zarr_tab = ZarrTab()
         cfg.zarr_tab.initNeuroglancer()
@@ -2060,8 +2064,8 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
-        logger.info('')
         caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % caller)
 
         cfg.data.update_cache()
         self._changeScaleCombo.show()
@@ -2858,11 +2862,16 @@ class MainWindow(QMainWindow):
         psutil.virtual_memory()
         percent_ram = psutil.virtual_memory().percent
         num_widgets = len(QApplication.allWidgets())
+
+
         # memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
         # memory_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
-        print('CPU Usage: %.3f%% | RAM Usage: %.3f%% | # widgets: %d'
-              % (cpu_percent, percent_ram, num_widgets))
+        print('CPU Usage: %.3f%% | RAM Usage: %.3f%%' % (cpu_percent, percent_ram))
+        print('Neuoglancer Running? %r' % isNeuroglancerRunning())
+        print('# Allocated Widgets: %d' % num_widgets)
+        print('# Allocated NGHost/NgHostSlim objects: %d' % count_widgets('NgHost'))
+
         # print(f'CPU Usage    : {cpu_percent:.3f}%')
         # print(f'RAM Usage    : {percent_ram:.3f}%')
         # print(f'Memory Used  : {memory_mb:.3f}MB')
@@ -3134,10 +3143,14 @@ class MainWindow(QMainWindow):
         self._tabsGlob.show()
         self.stopPlaybackTimer()
         tabtype = self._getTabType()
+
+        if caller == 'initLaunchTab':
+            return
+
         if tabtype == 'OpenProject':
-            self._actions_widget.show()
-        else:
-            self._actions_widget.hide()
+            #     self._actions_widget.show()
+            # else:
+            #     self._actions_widget.hide()
             self.clearSelectionPathText()
         if self._tabsGlob.count() == 0:
             return
@@ -4767,6 +4780,7 @@ class MainWindow(QMainWindow):
     def initLaunchTab(self):
         self._launchScreen = OpenProject()
         self._tabsGlob.addTab(self._launchScreen, 'Welcome')
+
 
 
     def get_application_root(self):

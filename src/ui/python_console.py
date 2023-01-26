@@ -34,6 +34,7 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('import src.config as cfg')
             self.execute_command('from src.config import main_window')
             self.execute_command('import src.helpers')
+            self.execute_command('from src.helpers import find_allocated_widgets, count_widgets')
             self.execute_command('import os, sys, zarr, neuroglancer')
             self.execute_command('from qtpy.QtCore import QUrl, Qt')
             self.execute_command('from qtpy import QtCore, QtGui, QtWidgets')

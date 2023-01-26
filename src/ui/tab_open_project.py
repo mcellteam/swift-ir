@@ -73,6 +73,8 @@ class OpenProject(QWidget):
         self.layout.addWidget(controls)
         self.setLayout(self.layout)
 
+        self.user_projects.set_data()
+
 
 class UserProjects(QWidget):
     def __init__(self, **kwargs):
@@ -81,6 +83,7 @@ class UserProjects(QWidget):
         self.counter1 = 0
         self.counter2 = 0
         # self.counter3 = 0
+        self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
         self.table.setShowGrid(False)
@@ -213,13 +216,14 @@ class UserProjects(QWidget):
         projects, created, last_opened, n_sections, img_dimensions, thumbnail_first, thumbnail_last,  \
         bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
+        logger.info('Project Path List:\n %s' % str(self.project_paths))
         for p in self.project_paths:
             try:
                 with open(p, 'r') as f:
                     dm = DataModel(data=json.load(f), quitely=True)
             except:
-                logger.warn('Table view failed to load data model')
-                cfg.main_window.err('Table view failed to load data model')
+                logger.error('Table view failed to load data model: %s' % p)
+                # cfg.main_window.err('Table view failed to load data model')
             try:    created.append(dm.created())
             except: created.append('Unknown')
             try:    last_opened.append(dm.last_opened())

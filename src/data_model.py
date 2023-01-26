@@ -139,26 +139,28 @@ class DataModel:
         self.nSections = self.n_sections()
 
     def set_defaults(self):
+        logger.critical('')
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
         self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
 
-        scales_dict = self._data['data']['scales']
-        coarsest = list(scales_dict.keys())[-1]
-        for scale_key in scales_dict.keys():
-            scale = scales_dict[scale_key]
+        for s in self.scales():
+            scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
             scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+            scale.setdefault('resolution_x', cfg.DEFAULT_RESX)
+            scale.setdefault('resolution_y', cfg.DEFAULT_RESY)
+            scale.setdefault('resolution_z', cfg.DEFAULT_RESZ)
             for layer_index in range(len(scale['alignment_stack'])):
                 layer = scale['alignment_stack'][layer_index]
                 layer.setdefault('align_to_ref_method', {})
                 layer['align_to_ref_method'].setdefault('method_data', {})
                 layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
                 layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-                if scale_key == coarsest:
+                if s == self.coarsest_scale_key():
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
                 else:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
@@ -1095,7 +1097,7 @@ class DataModel:
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''
-        return self.scales()[-1]
+        return natural_sort([key for key in self._data['data']['scales'].keys()])[-1]
 
     def next_coarsest_scale_key(self) -> str:
         if self.n_scales() == 1:

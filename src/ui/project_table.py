@@ -256,6 +256,7 @@ class SnrThumbnail(QWidget):
 
     def __init__(self, path, label='<SNR>'):
         super(SnrThumbnail, self).__init__()
+        logger.info('')
         # thumbnail = QLabel(self)
         thumbnail = ScaledPixmapLabel()
         try:
