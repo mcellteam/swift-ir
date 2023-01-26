@@ -61,7 +61,7 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
-PROFILING_TIMER_SPEED = 2500
+PROFILING_TIMER_SPEED = 5000
 DEFAULT_PLAYBACK_SPEED = 2.5 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 500
 if 'Joels-' in platform.node():
@@ -72,7 +72,7 @@ PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = True
-DEBUG_MP = False
+DEBUG_MP = True
 DEBUG_NEUROGLANCER = False
 PROFILER = False
 DUMMY = False

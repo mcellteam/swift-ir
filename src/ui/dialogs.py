@@ -11,9 +11,79 @@ from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridL
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
-from src.helpers import get_scale_val, do_scales_exist
+from src.helpers import get_scale_val, do_scales_exist, is_tacc
 
 logger = logging.getLogger(__name__)
+
+
+
+def import_images_dialog():
+    '''Dialog for importing images. Returns list of filenames.'''
+    dialog = QFileDialogPreview()
+    dialog.setOption(QFileDialog.DontUseNativeDialog)
+    # dialog.setWindowTitle('Import Images - %s' % cfg.datamodel.name())
+    dialog.setWindowTitle('New Project - Import Images (2/3)')
+    dialog.setNameFilter('Images (*.tif *.tiff)')
+    dialog.setFileMode(QFileDialog.ExistingFiles)
+    dialog.setModal(True)
+    urls = dialog.sidebarUrls()
+    urls.append(QUrl.fromLocalFile(QDir.homePath()))
+    if '.tacc.utexas.edu' in platform.node():
+        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
+    if is_tacc():
+        urls.append(QUrl.fromLocalFile('$WORK'))
+        urls.append(QUrl.fromLocalFile('$SCRATCH'))
+    dialog.setSidebarUrls(urls)
+    cfg.main_window.set_status('Awaiting User Input...')
+    logger.info('Awaiting user input...')
+    if dialog.exec_() == QDialog.Accepted:
+        # self.set_mainwindow_project_view()
+        cfg.main_window.set_idle()
+        return dialog.selectedFiles()
+    else:
+        logger.warning('Import images dialog did not return a valid file list')
+        cfg.main_window.warn('Import images dialog did not return a valid file list')
+        cfg.main_window.set_idle()
+        return
+
+class QFileDialogPreview(QFileDialog):
+    def __init__(self, *args, **kwargs):
+        QFileDialog.__init__(self, *args, **kwargs)
+        self.setOption(QFileDialog.DontUseNativeDialog, True)
+        self.setFixedSize(self.width() + 360, self.height())
+        self.mpPreview = QLabel("Preview", self)
+        self.mpPreview.setFixedSize(360, 360)
+        self.mpPreview.setAlignment(Qt.AlignCenter)
+        self.mpPreview.setObjectName("labelPreview")
+        box = QVBoxLayout()
+        box.addWidget(self.mpPreview)
+        box.addStretch()
+        self.layout().addLayout(box, 1, 3, 1, 1)
+        self.currentChanged.connect(self.onChange)
+        self.fileSelected.connect(self.onFileSelected)
+        self.filesSelected.connect(self.onFilesSelected)
+        self._fileSelected = None
+        self._filesSelected = None
+
+    def onChange(self, path):
+        pixmap = QPixmap(path)
+        if(pixmap.isNull()):
+            self.mpPreview.setText('Preview')
+        else:
+            self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(),
+                                                   self.mpPreview.height(),
+                                                   Qt.KeepAspectRatio,
+                                                   Qt.SmoothTransformation))
+
+    def onFileSelected(self, file):
+        self._fileSelected = file
+    def onFilesSelected(self, files):
+        self._filesSelected = files
+    def getFileSelected(self):
+        return self._fileSelected
+    def getFilesSelected(self):
+        return self._filesSelected
 
 #
 # class TestMend(QWidget):
@@ -130,31 +200,6 @@ def open_project_dialog() -> str:
         cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
-
-def import_images_dialog():
-    '''Dialog for importing images. Returns list of filenames.'''
-    dialog = QFileDialogPreview()
-    dialog.setOption(QFileDialog.DontUseNativeDialog)
-    # dialog.setWindowTitle('Import Images - %s' % cfg.datamodel.name())
-    dialog.setWindowTitle('New Project - Import Images (2/3)')
-    dialog.setNameFilter('Images (*.tif *.tiff)')
-    dialog.setFileMode(QFileDialog.ExistingFiles)
-    dialog.setModal(True)
-    urls = dialog.sidebarUrls()
-    urls.append(QUrl.fromLocalFile(QDir.homePath()))
-    if '.tacc.utexas.edu' in platform.node():
-        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
-    dialog.setSidebarUrls(urls)
-    cfg.main_window.set_status('Awaiting User Input...')
-    if dialog.exec_() == QDialog.Accepted:
-        # self.set_mainwindow_project_view()
-        cfg.main_window.set_idle()
-        return dialog.selectedFiles()
-    else:
-        logger.warning('Import Images dialog did not return an image list')
-        cfg.main_window.set_idle()
-        return
 
 
 def new_project_dialog() -> str:
@@ -689,38 +734,3 @@ class DefaultsModel(QAbstractListModel):
         self.lst[index.row()] = value
         self.dataChanged.emit(index, index, list())
         return True
-
-
-class QFileDialogPreview(QFileDialog):
-    def __init__(self, *args, **kwargs):
-        QFileDialog.__init__(self, *args, **kwargs)
-        self.setOption(QFileDialog.DontUseNativeDialog, True)
-        self.setFixedSize(self.width() + 360, self.height())
-        self.mpPreview = QLabel("Preview", self)
-        self.mpPreview.setFixedSize(360, 360)
-        self.mpPreview.setAlignment(Qt.AlignCenter)
-        self.mpPreview.setObjectName("labelPreview")
-        box = QVBoxLayout()
-        box.addWidget(self.mpPreview)
-        box.addStretch()
-        self.layout().addLayout(box, 1, 3, 1, 1)
-        self.currentChanged.connect(self.onChange)
-        self.fileSelected.connect(self.onFileSelected)
-        self.filesSelected.connect(self.onFilesSelected)
-        self._fileSelected = None
-        self._filesSelected = None
-
-    def onChange(self, path):
-        pixmap = QPixmap(path)
-        if(pixmap.isNull()):
-            self.mpPreview.setText('Preview')
-        else:
-            self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(),
-                                                   self.mpPreview.height(),
-                                                   Qt.KeepAspectRatio,
-                                                   Qt.SmoothTransformation))
-
-    def onFileSelected(self, file):    self._fileSelected = file
-    def onFilesSelected(self, files):  self._filesSelected = files
-    def getFileSelected(self):         return self._fileSelected
-    def getFilesSelected(self):        return self._filesSelected

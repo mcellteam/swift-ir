@@ -22,6 +22,9 @@ from shutil import rmtree
 import psutil
 from functools import reduce
 import operator
+import neuroglancer as ng
+
+from qtpy.QtWidgets import QApplication
 
 try: import src.config as cfg
 except: import config as cfg
@@ -36,12 +39,24 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
-           'get_scales_with_generated_alignments', 'handleError'
+           'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets'
            ]
 
 logger = logging.getLogger(__name__)
 
 snapshot = None
+
+
+def find_allocated_widgets(filter) -> list:
+    # if isinstance(filter, str):
+    #     filter = list(filter)
+    # return [i for i in map(str,QApplication.allWidgets())
+    #         if any(i for j in map(str,filter) if j in i)]
+    # return list(filter(lambda k: str(filter) in k, lst))
+    return [k for k in map(str,QApplication.allWidgets()) if str(filter) in k]
+
+def count_widgets(name_or_type) -> int:
+    return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
 
 def getOpt(lookup):
     if isinstance(lookup, str):
@@ -54,6 +69,9 @@ def setOpt(lookup, val):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
 
+def isNeuroglancerRunning():
+   return ng.server.is_server_running()
+
 
 # def cleanup_project_list(dict):
 #     projects = dict['projects']
@@ -64,6 +82,7 @@ def setOpt(lookup, val):
 #             if os.path.isdir(project_dir):
 #                 dict['projects'].append(path)
 #     return dict
+
 
 
 def validate_selection() -> bool:

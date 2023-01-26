@@ -178,6 +178,7 @@ class NgHost(QRunnable):
                    show_axis_lines=False
                    ):
         caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % caller)
         if matchpoint: self.mp_mode = matchpoint
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         self.scale = cfg.data.scale()
