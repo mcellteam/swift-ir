@@ -20,7 +20,7 @@ import src.config as cfg
 
 logger = logging.getLogger(__name__)
 
-ROW_HEIGHT = 80
+ROW_HEIGHT = 60
 
 
 class OpenProject(QWidget):
@@ -31,7 +31,7 @@ class OpenProject(QWidget):
         self.setMinimumHeight(200)
         self.filebrowser = FileBrowser(parent=self)
         self.user_projects = UserProjects()
-        self.row_height_slider = Slider(min=40, max=256)
+        self.row_height_slider = Slider(min=30, max=256)
         self.row_height_slider.setValue(ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         self.row_height_slider.setMaximumWidth(128)
@@ -42,17 +42,16 @@ class OpenProject(QWidget):
         self.userProjectsWidget = QWidget()
         lab = QLabel('<h3>User Projects:</h3>')
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(6, 0, 6, 0)
+        vbl.setContentsMargins(2, 2, 2, 2)
         vbl.addWidget(lab)
         vbl.addWidget(self.user_projects)
-        vbl.addWidget(self.row_height_slider,alignment=Qt.AlignmentFlag.AlignLeft)
         self.userProjectsWidget.setLayout(vbl)
 
         # User Files Widget
         self.userFilesWidget = QWidget()
         lab = QLabel('<h3>Import Project:</h3>')
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(6, 0, 6, 0)
+        vbl.setContentsMargins(2, 2, 2, 2)
         vbl.addWidget(lab)
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
@@ -62,8 +61,16 @@ class OpenProject(QWidget):
         self._splitter.addWidget(self.userFilesWidget)
         self._splitter.setSizes([650, 350])
 
+        controls = QWidget()
+        controls.setFixedHeight(18)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.addWidget(self.row_height_slider,alignment=Qt.AlignmentFlag.AlignLeft)
+        controls.setLayout(hbl)
+
         self.layout = QVBoxLayout()
         self.layout.addWidget(self._splitter)
+        self.layout.addWidget(controls)
         self.setLayout(self.layout)
 
 
@@ -73,6 +80,7 @@ class UserProjects(QWidget):
 
         self.counter1 = 0
         self.counter2 = 0
+        # self.counter3 = 0
 
         self.table = QTableWidget()
         self.table.setShowGrid(False)
@@ -86,10 +94,14 @@ class UserProjects(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
+
         self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.itemClicked.connect(self.countItemClickedCalls)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.countCurrentItemChangedCalls)
+        # self.table.itemChanged.connect(self.userSelectionChanged)
+        # self.table.itemChanged.connect(self.countItemChangedCalls)
+
         # self.project_table.setStyleSheet("border-radius: 12px")
         self.table.setColumnCount(10)
         self.set_headers()
@@ -100,10 +112,16 @@ class UserProjects(QWidget):
         self.setLayout(self.layout)
 
     def countItemClickedCalls(self):
+        logger.info('')
         self.counter1 += 1
 
     def countCurrentItemChangedCalls(self):
+        logger.info('')
         self.counter2 += 1
+
+    # def countItemChangedCalls(self):
+    #     logger.info('')
+    #     self.counter3 += 1
 
     def updateRowHeight(self, h):
         logger.info(f'h = {h}')
@@ -172,14 +190,14 @@ class UserProjects(QWidget):
         # self.table.setItemDelegateForColumn(5, self.thumb_delegate)
         # self.table.setItemDelegateForColumn(6, self.thumb_delegate)
         self.table.setColumnWidth(0, 110)
-        self.table.setColumnWidth(1, 60)
-        self.table.setColumnWidth(2, 60)
+        self.table.setColumnWidth(1, 56)
+        self.table.setColumnWidth(2, 56)
         self.table.setColumnWidth(3, 30)
         self.table.setColumnWidth(4, 56)
-        self.table.setColumnWidth(5, 90)
-        self.table.setColumnWidth(6, 90)
-        self.table.setColumnWidth(7, 70)
-        self.table.setColumnWidth(8, 70)
+        self.table.setColumnWidth(5, 64)
+        self.table.setColumnWidth(6, 64)
+        self.table.setColumnWidth(7, 74)
+        self.table.setColumnWidth(8, 74)
         self.table.setColumnWidth(9, 120)
         # self.project_table.setColumnWidth(8, 120)
         self.table.setWordWrap(True)
@@ -233,6 +251,8 @@ class UserProjects(QWidget):
 
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function
+        # if caller == 'set_data':
+        #     return
         row = self.table.currentIndex().row()
         try:
             path = self.table.item(row,9).text()
@@ -289,6 +309,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
         scaled = thumbnail.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
         painter.drawImage(option.rect.x(), option.rect.y() + 4, scaled)
 
+
 class Thumbnail(QWidget):
 
     def __init__(self, path):
@@ -343,16 +364,30 @@ class ScaledPixmapLabel(QLabel):
     def paintEvent(self, event):
         if self.pixmap():
             pm = self.pixmap()
-            originalRatio = pm.width() / pm.height()
-            currentRatio = self.width() / self.height()
-            if originalRatio != currentRatio:
-                qp = QPainter(self)
-                pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                rect = QRect(0, 0, pm.width(), pm.height())
-                rect.moveCenter(self.rect().center())
-                qp.drawPixmap(rect, pm)
-                return
+            try:
+                originalRatio = pm.width() / pm.height()
+                currentRatio = self.width() / self.height()
+                if originalRatio != currentRatio:
+                    qp = QPainter(self)
+                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    rect = QRect(0, 0, pm.width(), pm.height())
+                    rect.moveCenter(self.rect().center())
+                    qp.drawPixmap(rect, pm)
+                    return
+            except ZeroDivisionError:
+                logger.warning('Cannot divide by zero')
         super().paintEvent(event)
 
 
+class ImageWidget(QLabel):
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setScaledContents(True)
+
+    def hasHeightForWidth(self):
+        return self.pixmap() is not None
+
+    def heightForWidth(self, w):
+        if self.pixmap():
+            return int(w * (self.pixmap().height() / self.pixmap().width()))

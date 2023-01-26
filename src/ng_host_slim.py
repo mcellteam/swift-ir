@@ -23,6 +23,7 @@ import platform
 from math import floor
 import numcodecs
 numcodecs.blosc.use_threads = False
+import zarr
 import tensorstore as ts
 import neuroglancer as ng
 import neuroglancer.webdriver
@@ -92,10 +93,9 @@ class WorkerSignals(QObject):
 
 # class NgHostSlim(QObject):
 class NgHostSlim(QRunnable):
-    def __init__(self, parent, resolution=None, project=False):
+    def __init__(self, parent=None, resolution=None, project=False):
         # QObject.__init__(self)
         QRunnable.__init__(self)
-        self.parent = parent
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
@@ -108,6 +108,8 @@ class NgHostSlim(QRunnable):
         self.signals = WorkerSignals()
         self.mp_mode = False
         self.path = ''
+
+        # self.parent().callMe()callFn()
 
     def __del__(self):
         try:
@@ -171,9 +173,21 @@ class NgHostSlim(QRunnable):
         try:
             # cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
             try:
-                cfg.tensor = get_zarr_tensor(self.path).result()
+                cfg.tensor = store = get_zarr_tensor(self.path).result()
             except:
                 print_exception()
+                if not os.path.exists(self.path):
+                    cfg.main_window.warning('The path where a Tensorstore-Zarr should be does '
+                                            'not exist: %s - Returning' % self.path)
+                    return
+                else:
+                    cfg.main_window.warn('There was a problem opening the Tensorstore-Zarr at %s' % self.path)
+                    cfg.main_window.info('Trying regular Zarr datastore...')
+                    try:
+                        store = zarr.open(self.path)
+                    except:
+                        logger.warning('Failed to create datastore using regular Zarr driver - Returning')
+                        return
             if cfg.data.is_aligned_and_generated():
                 cfg.al_tensor = cfg.tensor
                 cfg.unal_tensor = None
@@ -188,8 +202,7 @@ class NgHostSlim(QRunnable):
             logger.error(f'Invalid Zarr: {self.path} - Unable To Create Tensor store with Zarr driver')
             cfg.main_window.err(f'Invalid Zarr: {self.path} - Unable To Create Tensor store with Zarr driver')
 
-
-        shape = cfg.tensor.shape
+        shape = store.shape
 
         with cfg.viewer.txn() as s:
             s.layout.type = self.nglayout
@@ -202,7 +215,7 @@ class NgHostSlim(QRunnable):
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
 
             cfg.LV = ng.LocalVolume(
-                data=cfg.tensor,
+                data=store,
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 # voxel_offset=[0, 0, 0],

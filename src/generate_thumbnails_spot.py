@@ -8,6 +8,7 @@ import sys
 import shutil
 import psutil
 import time
+from glob import glob
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
@@ -19,7 +20,9 @@ __all__ = ['generate_thumbnails_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_thumbnails_aligned(dm, layers=None):
+def generate_thumbnails_spot(dm, layers=None):
+    logger.info('>>>> Spot Thumbnail Generation Complete >>>>')
+
     if layers == None:
         layers = range(0, dm.n_sections())
     logger.info('Generating Thumbnails...')
@@ -42,26 +45,27 @@ def generate_thumbnails_aligned(dm, layers=None):
                     f'target_thumbnail_size: {target_thumbnail_size}')
     logger.critical("Thumbnail Scaling Factor : %s" % str(scale_factor))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=dm.n_sections(),
-                           parent=cfg.main_window,
-                           pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
+    task_queue = TaskQueue(n_tasks=dm.n_sections(), parent=cfg.main_window,
+                           pbar_text='Generating Corr. Spot Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
-
-    od = os.path.join(dm.dest(), dm.scale(), 'thumbnails')
+    od = os.path.join(dm.dest(), dm.scale(), 'thumbnails_corr_spots')
     if not os.path.exists(od):
         os.makedirs(od)
-
 
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
     task_queue.start(cpus)
 
     # it = dm.get_iter(s=smallest_scale_key)
     # for i, layer in enumerate(it):
-    for i,layer in enumerate(layers):
+
+    glob_str = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots', '*.tif')
+    filenames = glob(glob_str)
+
+    for i, file in enumerate(filenames):
 
         # fn = os.path.abspath(layer['images']['aligned']['filename'])
-        fn = os.path.abspath(dm['data']['scales'][dm.scale()]['alignment_stack'][layer]['images']['aligned']['filename'])
+        fn = file
         ofn = os.path.join(od, os.path.split(fn)[1])
         # dm['data']['thumbnails'].append(ofn)
         scale_arg = '+%d' % scale_val
@@ -76,5 +80,5 @@ def generate_thumbnails_aligned(dm, layers=None):
 
     dt = task_queue.collect_results()
 
-    logger.info('<<<< Thumbnail Generation Complete <<<<')
+    logger.info('<<<< Spot Thumbnail Generation Complete <<<<')
 

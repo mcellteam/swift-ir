@@ -11,7 +11,6 @@ LOG_LEVEL = 1
 '''Main Objects'''
 # datamodel = None
 data = None
-increasing_tab_counter = 0
 main_window = None
 project_tab = None
 zarr_tab = None
@@ -62,8 +61,9 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
+PROFILING_TIMER_SPEED = 2500
 DEFAULT_PLAYBACK_SPEED = 2.5 # playback speed (fps)
-TARGET_THUMBNAIL_SIZE = 720
+TARGET_THUMBNAIL_SIZE = 500
 if 'Joels-' in platform.node():
     DEV_MODE = True
 else:
@@ -111,6 +111,7 @@ projects = None
 selected_file = None
 tasks_remaining = None
 tasks_total = None
+
 
 
 

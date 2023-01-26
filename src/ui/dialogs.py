@@ -167,6 +167,9 @@ def new_project_dialog() -> str:
     dialog.setViewMode(QFileDialog.Detail)
     dialog.setAcceptMode(QFileDialog.AcceptSave)
     dialog.setModal(True)
+    # dialog.setFilter(QDir.Hidden)
+    dialog.setOptions(dialog.DontUseNativeDialog)
+    dialog.setFilter(QDir.AllEntries | QDir.Hidden)
     urls = dialog.sidebarUrls()
     if '.tacc.utexas.edu' in platform.node():
         urls.append(QUrl.fromLocalFile(os.getenv('WORK')))

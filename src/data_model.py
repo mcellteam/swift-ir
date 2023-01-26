@@ -210,25 +210,29 @@ class DataModel:
     def corr_spots_q0(self) -> list:
         names = []
         for img in self.basefilenames():
-            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_0_' + img))
+            # names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_0_' + img))
+            names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots' , 'corr_spot_0_' + img))
         return names
 
     def corr_spots_q1(self) -> list:
         names = []
         for img in self.basefilenames():
-            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_1_' + img))
+            # names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_1_' + img))
+            names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots' , 'corr_spot_1_' + img))
         return names
 
     def corr_spots_q2(self) -> list:
         names = []
         for img in self.basefilenames():
-            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_2_' + img))
+            # names.append(os.path.join(self.dest(), self.curScale, 'corr_spots' , 'corr_spot_2_' + img))
+            names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots' , 'corr_spot_2_' + img))
         return names
 
     def corr_spots_q3(self) -> list:
         names = []
         for img in self.basefilenames():
-            names.append(os.path.join(self.dest(), self.curScale, 'corr_spots', 'corr_spot_3_' + img))
+            # names.append(os.path.join(self.dest(), self.curScale, 'corr_spots', 'corr_spot_3_' + img))
+            names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots', 'corr_spot_3_' + img))
         return names
 
 

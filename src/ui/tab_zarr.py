@@ -49,10 +49,11 @@ class ZarrTab(QWidget):
 
 
     def initNeuroglancer(self, layout='4panel'):
+        logger.critical(f'Initializing Neuroglancer Host (caller: {inspect.stack()[1].function})')
         cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
         # cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
         logger.info(f'caller: {inspect.stack()[1].function}')
-        cfg.ng_worker = NgHostSlim(parent=self, project=False)
+        cfg.ng_worker = NgHostSlim(self, project=False)
         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         cfg.main_window.updateMenus()
 
@@ -63,6 +64,7 @@ class ZarrTab(QWidget):
 
 
     def updateNeuroglancer(self, matchpoint=None):
+        logger.critical(f'Updating Neuroglancer Viewer (caller: {inspect.stack()[1].function})')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         cfg.ng_worker.initViewer()

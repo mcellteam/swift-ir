@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, logging, inspect, copy
+import os, sys, logging, inspect, copy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QHeaderView, QTreeView, QSplitter, QTextEdit
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, QSortFilterProxyModel
@@ -68,24 +68,23 @@ class ProjectTab(QWidget):
 
 
     def initNeuroglancer(self, layout=None, matchpoint=False):
-        logger.info(f'caller: {inspect.stack()[1].function}')
+        logger.critical(f'Initializing Neuroglancer Host (caller: {inspect.stack()[1].function})')
         if cfg.data:
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
             # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
             if cfg.main_window.rb0.isChecked():
                 cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
-                cfg.ng_worker = NgHostSlim(parent=self, project=True)
+                cfg.ng_worker = NgHostSlim(self, project=True)
             elif cfg.main_window.rb1.isChecked():
                 cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
-                cfg.ng_worker = NgHost(parent=self)
+                cfg.ng_worker = NgHost(self)
             cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
             self.updateNeuroglancer(matchpoint=matchpoint)
 
 
     def updateNeuroglancer(self, matchpoint=False, layout=None):
-
-        logger.info(f'caller: {inspect.stack()[1].function}')
+        logger.critical(f'Updating Neuroglancer Viewer (caller: {inspect.stack()[1].function})')
         if layout: cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
         cfg.ng_worker.initViewer(matchpoint=matchpoint)
         self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
@@ -104,10 +103,6 @@ class ProjectTab(QWidget):
 
     def getBrowserSize(self):
         return self.ng_browser.geometry().getRect()
-
-
-    def _addTab(self, widget, name):
-        self._tabs.addTab(widget, name)
 
 
     def updateJsonWidget(self):
@@ -230,7 +225,7 @@ class ProjectTab(QWidget):
         '''Layer View Widget'''
         logger.info('')
         # self.project_table = LayerViewWidget()
-        self.project_table = ProjectTable()
+        self.project_table = ProjectTable(self)
         self.project_table.setObjectName('project_table')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
@@ -369,10 +364,11 @@ class ProjectTab(QWidget):
         self._tabs.setDocumentMode(True)
         self._tabs.setTabsClosable(True)
         self._tabs.setObjectName('project_tabs')
-        self._addTab(widget=self.ng_browser_container_outer, name=' 3DEM ')
-        self._addTab(widget=self.table_container, name=' Table ')
-        self._addTab(widget=self._wdg_treeview, name=' Tree ')
-        self._addTab(widget=self.snr_plot_widget, name=' SNR Plot ')
+        self._tabs.addTab(self.ng_browser_container_outer, ' 3DEM ')
+        self._tabs.addTab(self.table_container, ' Table ')
+        self._tabs.setTabToolTip(1, os.path.basename(cfg.data.dest()))
+        self._tabs.addTab(self._wdg_treeview, ' Tree ')
+        self._tabs.addTab(self.snr_plot_widget, ' SNR Plot ')
         # self._addTab(widget=self._mv, name=' Miniview ')
         self._tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(1, QTabBar.RightSide, None)

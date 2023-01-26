@@ -74,7 +74,7 @@ class TaskQueue(QObject):
         self.logging_handler = logging_handler
 
     # def start(self, n_workers, retries=10) -> None:
-    def start(self, n_workers, retries=3) -> None:
+    def start(self, n_workers, retries=2) -> None:
         if cfg.DEBUG_MP:
             logger.info('Multiprocessing Module Debugging is ENABLED')
             mpl = mp.log_to_stderr()
@@ -242,12 +242,12 @@ class TaskQueue(QObject):
                     else:
                         self.task_dict[task_id]['statusBar'] = 'task_error'
                         retry_list.append(task_id)
-                        logger.info(f'\n_________TaskQueue.collect_results()_________\n'
-                                    f'task_id : {task_id}\n'
-                                    f'outs    : {outs}\n'
-                                    f'errs    : {errs}'
-                                    f'rc : {rc}, dt : {dt:.2f}'
-                                    f'\n_____________________________________________')  # *** lots of output for alignment
+                        # logger.info(f'\n_________TaskQueue.collect_results()_________\n'
+                        #             f'task_id : {task_id}\n'
+                        #             f'outs    : {outs}\n'
+                        #             f'errs    : {errs}'
+                        #             f'rc : {rc}, dt : {dt:.2f}'
+                        #             f'\n_____________________________________________')  # *** lots of output for alignment
                     self.task_dict[task_id]['dt'] = dt
                     realtime -= 1
 

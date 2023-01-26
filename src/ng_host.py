@@ -59,9 +59,8 @@ class WorkerSignals(QObject):
 class NgHost(QRunnable):
 # class NgHost:
     # def __init__(self, parent, src, scale, src, scale, bind='127.0.0.1', port=9000):
-    def __init__(self, parent, bind='127.0.0.1', port=9000):
+    def __init__(self, parent=None, bind='127.0.0.1', port=9000):
         QRunnable.__init__(self)
-        self.parent = parent
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
@@ -80,6 +79,8 @@ class NgHost(QRunnable):
         self._is_fullscreen = False
         self.arrangement = 1
         self.mp_mode = False
+
+        # self.parent().callFn()
 
     def __del__(self):
         try:
