@@ -202,7 +202,7 @@ class SnrPlot(QWidget):
                                                   alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                 self._snr_checkboxes[s].setChecked(True)
                 self._snr_checkboxes[s].clicked.connect(self.plotData)
-                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot ' % cfg.data.scale_pretty(s=s))
+                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
                 color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
                 self._snr_checkboxes[s].setStyleSheet(
                     f'background-color: #F3F6FB;'
@@ -316,8 +316,6 @@ class SnrPlot(QWidget):
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
 
         self.updateErrBars(s=s)
-
-
 
 
     def updateErrBars(self, s):

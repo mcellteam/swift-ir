@@ -121,8 +121,8 @@ class MainWindow(QMainWindow):
         if not cfg.NO_SPLASH:
             self.show_splash()
 
-        if cfg.DEV_MODE:
-            self.profilingTimerButton.click()
+        # if cfg.DEV_MODE:
+        #     self.profilingTimerButton.click()
 
 
     def initSizeAndPos(self, width, height):
@@ -2456,7 +2456,7 @@ class MainWindow(QMainWindow):
             self.automaticPlayTimer.stop()
             self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
         elif cfg.project_tab or cfg.zarr_tab:
-            self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
+            # self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
             self.automaticPlayTimer.start()
             self._btn_automaticPlayTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
         self._isPlayingBack = not self._isPlayingBack
@@ -2964,6 +2964,9 @@ class MainWindow(QMainWindow):
 
         def onTimer():
             logger.info('')
+            # self.automaticPlayTimer.set #comeback
+            # self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
+            self.automaticPlayTimer.setInterval(1000 / self._fps_spinbox.value())
             if cfg.data:
                 if cfg.project_tab:
                     if self._sectionSlider.value() < cfg.data.nSections - 1:

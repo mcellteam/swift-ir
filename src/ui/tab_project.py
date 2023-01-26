@@ -37,6 +37,7 @@ class ProjectTab(QWidget):
         # cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
         # cfg.main_window._ng_layout_switch = 1
         self.ng_browser = QWebEngineView()
+        self.ng_browser.setFocusPolicy(Qt.StrongFocus)
         self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
@@ -212,7 +213,6 @@ class ProjectTab(QWidget):
         lab = VerticalLabel('Neuroglancer 3DEM View')
         lab.setObjectName('label_ng')
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(0,0,0,0)
         hbl.setContentsMargins(0,0,0,0)
         hbl.addWidget(lab)
         hbl.addWidget(self.ng_browser_container)
