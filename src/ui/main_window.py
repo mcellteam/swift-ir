@@ -19,13 +19,14 @@ from pathlib import Path
 import zarr
 import dis
 import stat
+import psutil
+import resource
 from collections import namedtuple
 import numpy as np
-import numpy
+from guppy import hpy; h=hpy()
 import neuroglancer as ng
 import pyqtgraph.console
 import pyqtgraph as pg
-import pyqtgraph
 import qtawesome as qta
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
@@ -49,11 +50,13 @@ from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
 from src.generate_thumbnails import generate_thumbnails
 from src.generate_thumbnails_aligned import generate_thumbnails_aligned
+from src.generate_thumbnails_spot import generate_thumbnails_spot
 from src.generate_scales_zarr import generate_zarr_scales
-from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_sort, make_affine_widget_HTML, is_tacc, \
-    create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, tracemalloc_stop, \
-    tracemalloc_compare, tracemalloc_clear, show_status_report, exist_aligned_zarr_cur_scale, makedirs_exist_ok, \
-    are_aligned_images_generated, exist_aligned_zarr, validate_selection, configure_project_paths
+from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_sort, make_affine_widget_HTML, \
+    is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
+    tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, show_status_report, exist_aligned_zarr_cur_scale, \
+    makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_selection, \
+    configure_project_paths, handleError, append_project_path
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 from src.ui.process_monitor import HeadupDisplay
@@ -67,6 +70,7 @@ from src.ui.file_browser import FileBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.webpage import WebPage
+from src.ui.tab_browser import WebBrowser
 from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
 from src.ui.tab_open_project import OpenProject
@@ -116,6 +120,9 @@ class MainWindow(QMainWindow):
 
         if not cfg.NO_SPLASH:
             self.show_splash()
+
+        if cfg.DEV_MODE:
+            self.profilingTimerButton.click()
 
 
     def initSizeAndPos(self, width, height):
@@ -234,7 +241,8 @@ class MainWindow(QMainWindow):
         self._ng_layout_switch = 1 #1125
         self._section_slider_switch = 1
         self._isPlayingBack = 0
-        self.detachedNg = WebPage()
+        self._isProfiling = 0
+        self.detachedNg = WebPage(self)
 
 
     def initStyle(self):
@@ -246,8 +254,8 @@ class MainWindow(QMainWindow):
     def initPythonConsole(self):
         logger.info('')
         namespace = {
-            'pg': pyqtgraph,
-            'np': numpy,
+            'pg': pg,
+            'np': np,
             'cfg': src.config,
             'mw': src.config.main_window,
             'viewer': cfg.viewer,
@@ -446,7 +454,9 @@ class MainWindow(QMainWindow):
             logger.info('Aligned Scales:\n%s' % cfg.data.scalesAlignedAndGenerated)
             self.updateEnabledButtons()
             self.updateToolbar()
-            cfg.project_tab.project_table.set_data()
+            if self._isOpenProjTab():
+                try:    cfg.project_tab.project_table.set_data()
+                except: logger.warning('No data to set!')
             self._showSNRcheck()
             cfg.project_tab.initNeuroglancer()
             self.updateMenus()
@@ -668,7 +678,6 @@ class MainWindow(QMainWindow):
                     preallocate=True
                 )
 
-            # self.set_status('Generating Thumbnails...')
             self.tell('Generating Aligned Thumbnails...')
             self.showZeroedPbar()
             try:
@@ -686,8 +695,36 @@ class MainWindow(QMainWindow):
                 cfg.data.scalesList = cfg.data.scales()
                 cfg.data.nscales = len(cfg.data.scales())
                 cfg.data.set_scale(cfg.data.scales()[-1])
-                self.pbar_widget.hide()
                 logger.info('Thumbnail Generation Complete')
+
+
+            self.tell('Generating Correlation Spot Thumbnails...')
+            self.showZeroedPbar()
+            try:
+                if cfg.USE_EXTRA_THREADING:
+                    self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                    self.threadpool.start(self.worker)
+                else:
+                    generate_thumbnails_spot(dm=cfg.data)
+
+            except:
+                print_exception()
+                self.warn('Something Unexpected Happened While Generating Thumbnails')
+
+            finally:
+                logger.info('Thumbnail Generation Complete')
+
+            remove_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
+            logger.info(f'Deleting Corr Spot Directory {remove_path}...')
+            try:
+
+                shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
+                shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
+            except:
+                self.warn('An Error Was Encountered During Deletion of the Project Directory')
+                print_exception()
+            else:
+                self.hud.done()
 
         except:
             print_exception()
@@ -698,9 +735,9 @@ class MainWindow(QMainWindow):
                 self.tell('Aligned Images Generated Successfully')
                 logger.critical('Alignment seems successful')
         finally:
+            self.pbar_widget.hide()
             self.onAlignmentEnd()
             self.set_idle()
-            self.pbar_widget.hide()
             QApplication.processEvents()
 
 
@@ -796,9 +833,9 @@ class MainWindow(QMainWindow):
 
             self.tell('Alignment Complete!')
         finally:
+            self.pbar_widget.hide()
             self.onAlignmentEnd()
             self.set_idle()
-            self.pbar_widget.hide()
             QApplication.processEvents()
 
 
@@ -890,10 +927,10 @@ class MainWindow(QMainWindow):
 
             self.tell('Alignment Complete!')
         finally:
+            self.pbar_widget.hide()
             self.onAlignmentEnd()
             self.update_match_point_snr()
             self.set_idle()
-            self.pbar_widget.hide()
             QApplication.processEvents()
 
     def rescale(self):
@@ -1833,6 +1870,7 @@ class MainWindow(QMainWindow):
         msgbox = QMessageBox(QMessageBox.Warning, 'Confirm Delete Project', txt,
                           buttons=QMessageBox.Abort | QMessageBox.Yes)
         msgbox.setIcon(QMessageBox.Critical)
+        msgbox.setMaximumWidth(350)
         msgbox.setDefaultButton(QMessageBox.Cancel)
         reply = msgbox.exec_()
         if reply == QMessageBox.Abort:
@@ -1840,20 +1878,10 @@ class MainWindow(QMainWindow):
             logger.warning('Aborting Delete Project Permanently Instruction...')
             return
         if reply == QMessageBox.Ok:
-            self.tell('Executing Delete Project Permanently Instruction...')
+            logger.info('Deleting Project File %s...' % project_file)
+            self.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
             logger.warning('Executing Delete Project Permanently Instruction...')
 
-
-        def handleError(func, path, exc_info):
-            logger.warning('Handling Error for file %s' % path)
-            self.tell('Handling Error for file %s' % path)
-            logger.warning(exc_info)
-            if not os.access(path, os.W_OK):
-                os.chmod(path, stat.S_IWUSR)
-                func(path)
-
-        logger.info('Deleting Project File %s...' % project_file )
-        self.tell('Deleting Project File %s...' % project_file )
         try:
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
@@ -1874,6 +1902,7 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
+        self.tell('Wrapping up...')
         configure_project_paths()
         if self._tabsGlob.currentWidget().__class__.__name__ == 'OpenProject':
             logger.critical('Refreshing data...')
@@ -1883,6 +1912,8 @@ class MainWindow(QMainWindow):
             except:
                 logger.warning('There was a problem updating the project list')
                 print_exception()
+
+
 
         self.tell('Deletion Complete')
         logger.info('Deletion Complete')
@@ -1923,7 +1954,8 @@ class MainWindow(QMainWindow):
             datamodel=cfg.data
         )
 
-        tab_name = os.path.basename(cfg.data.dest() + '.swiftir')
+        # tab_name = os.path.basename(cfg.data.dest() + '.swiftir')
+        tab_name = os.path.basename(cfg.data.dest())
         self._tabsGlob.addTab(cfg.project_tab, tab_name)
         self._setLastTab()
         # self.rb0.setChecked(True)
@@ -1942,11 +1974,18 @@ class MainWindow(QMainWindow):
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        cfg.data = None
+        # cfg.data = None
 
         if self._getTabType() == 'ZarrTab':
             self.open_zarr()
             return
+
+        if not validate_selection():
+            self.warn("Invalid Path, extension must be '.swiftir'")
+            logger.warning('Invalid Path...')
+            return
+
+
 
         filename = cfg.selected_file
 
@@ -1965,6 +2004,8 @@ class MainWindow(QMainWindow):
             return
         else:
             logger.info(f'Project Opened!')
+
+        append_project_path(filename)
 
         print(cfg.data.scales())
 
@@ -2322,48 +2363,54 @@ class MainWindow(QMainWindow):
         print(html_f)
         with open(html_f, 'r') as f:
             html = f.read()
-        self.browser_docs.setHtml(html)
+        self.browser_web.setHtml(html)
         self.main_stack_widget.setCurrentIndex(1)
+
 
 
     def documentation_view(self):
-        self.tell("Viewing AlignEM_SWiFT Documentation")
-        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md'))
-        self.main_stack_widget.setCurrentIndex(1)
-
-
-    def documentation_view_home(self):
-        self.tell("Viewing AlignEM-SWiFT Documentation")
-        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md'))
-        self.main_stack_widget.setCurrentIndex(1)
+        self.tell('Opening Documentation...')
+        browser = WebBrowser()
+        browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md'))
+        self._tabsGlob.addTab(browser, 'Documentation')
+        self._setLastTab()
+        self._forceHideControls()
 
 
     def remote_view(self):
-        self.tell("Loading A Neuroglancer Instance Running On A Remote Server...")
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-        self.main_stack_widget.setCurrentIndex(3)
+        self.tell('Opening Neuroglancer Remote Viewer...')
+        browser = WebBrowser()
+        browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+        self._tabsGlob.addTab(browser, 'Neuroglancer')
+        self._setLastTab()
+        self._forceHideControls()
 
 
     def open_url(self, text: str) -> None:
-        self.browser_docs.setUrl(QUrl(text))
+        self.browser_web.setUrl(QUrl(text))
         self.main_stack_widget.setCurrentIndex(1)
 
 
     def view_swiftir_examples(self):
-        self.browser_docs.setUrl(
+        self.browser_web.setUrl(
             QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/docs/user/command_line/examples/README.md'))
         self.main_stack_widget.setCurrentIndex(1)
 
 
     def view_swiftir_commands(self):
-        self.browser_docs.setUrl(
+        self.browser_web.setUrl(
             QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/docs/user/command_line/commands/README.md'))
         self.main_stack_widget.setCurrentIndex(1)
 
+    def browser_3dem_community(self):
+        self.browser_web.setUrl(QUrl(
+            'https://3dem.org/workbench/data/tapis/community/data-3dem-community/'))
+
 
     def shutdownNeuroglancer(self):
+        logger.info('')
         if ng.is_server_running():
-            logger.info('Stopping Neuroglancer...')
+            logger.critical('Stopping Neuroglancer...')
             self.tell('Stopping Neuroglancer...')
             try:     ng.server.stop()
             except:  print_exception()
@@ -2392,6 +2439,16 @@ class MainWindow(QMainWindow):
         else:
             self.tell('Neuroglancer Is Not Running')
 
+    def startStopProfiler(self):
+        logger.info('')
+        if self._isProfiling:
+            self.profilingTimer.stop()
+            self.profilingTimerButton.setIcon(qta.icon('ph.gauge-fill', color=cfg.ICON_COLOR))
+        else:
+            self.profilingTimer.setInterval(cfg.PROFILING_TIMER_SPEED)
+            self.profilingTimer.start()
+            self.profilingTimerButton.setIcon(qta.icon('ph.gauge-fill', color='#AAFF00'))
+        self._isProfiling = not self._isProfiling
 
     def startStopTimer(self):
         logger.info('')
@@ -2447,21 +2504,34 @@ class MainWindow(QMainWindow):
 
     def webgl2_test(self):
         '''https://www.khronos.org/files/webgl20-reference-guide.pdf'''
-        self.browser_docs.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.browser_web.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.main_stack_widget.setCurrentIndex(1)
 
     def google(self):
-        self.tell('Googling...')
-        self.browser_docs.setUrl(QUrl('https://www.google.com'))
-        self.main_stack_widget.setCurrentIndex(1)
+        self.tell('Opening Google Tab...')
+        self.browser = WebBrowser(self)
+        self.browser.setObjectName('web_browser')
+        self.browser.setUrl(QUrl('https://www.google.com'))
+        self._tabsGlob.addTab(self.browser, 'Web Browser')
+        self._setLastTab()
+        # self._getTabObject()
+        self._forceHideControls()
 
     def gpu_config(self):
-        self.browser_docs.setUrl(QUrl('chrome://gpu'))
-        self.main_stack_widget.setCurrentIndex(1)
+        self.tell('Opening GPU Config...')
+        browser = WebBrowser()
+        browser.setUrl(QUrl('chrome://gpu'))
+        self._tabsGlob.addTab(browser, 'GPU Configuration')
+        self._setLastTab()
+        self._forceHideControls()
 
     def chromium_debug(self):
-        self.browser_docs.setUrl(QUrl('http://127.0.0.1:9000'))
-        self.main_stack_widget.setCurrentIndex(1)
+        self.tell('Opening Chromium Debugger...')
+        browser = WebBrowser()
+        browser.setUrl(QUrl('http://127.0.0.1:9000'))
+        self._tabsGlob.addTab(browser, 'Debug Chromium')
+        self._setLastTab()
+        self._forceHideControls()
 
     def get_ng_state(self):
         if cfg.project_tab:
@@ -2783,13 +2853,30 @@ class MainWindow(QMainWindow):
     def _setPlaybackFps(self):
         cfg.DEFAULT_PLAYBACK_SPEED = float(self._fps_spinbox.value())
 
+    def onProfilingTimer(self):
+        cpu_percent = psutil.cpu_percent()
+        psutil.virtual_memory()
+        percent_ram = psutil.virtual_memory().percent
+        num_widgets = len(QApplication.allWidgets())
+        # memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
+        # memory_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+
+        print('CPU Usage: %.3f%% | RAM Usage: %.3f%% | # widgets: %d'
+              % (cpu_percent, percent_ram, num_widgets))
+        # print(f'CPU Usage    : {cpu_percent:.3f}%')
+        # print(f'RAM Usage    : {percent_ram:.3f}%')
+        # print(f'Memory Used  : {memory_mb:.3f}MB')
+        # print(f'Memory Peak  : {memory_peak/2072576:.3f}MB')
+        # print(f'# of widgets : {num_widgets}')
+        # print(h.heap())
+
 
     def initToolbar(self):
         logger.info('')
         height = int(18)
 
         self._btn_refreshNg = QPushButton()
-        self._btn_refreshNg.setIcon(qta.icon("ei.refresh", color=cfg.ICON_COLOR))
+        self._btn_refreshNg.setIcon(qta.icon('ei.refresh', color=cfg.ICON_COLOR))
         # self._btn_refreshNg.setFixedSize(QSize(22,22))
         self._btn_refreshNg.clicked.connect(self.restartNg)
         self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
@@ -2840,6 +2927,14 @@ class MainWindow(QMainWindow):
         tip = 'Show Neuroglancer key bindings'
         self.info_button_buffer_label = QLabel(' ')
 
+        self.profilingTimerButton = QPushButton()
+        self.profilingTimerButton.setFixedSize(20,20)
+        self.profilingTimerButton.setIcon(qta.icon('ph.gauge-fill', color=cfg.ICON_COLOR))
+        self.profilingTimerButton.clicked.connect(self.startStopProfiler)
+        self.profilingTimer = QTimer(self)
+        self.profilingTimer.timeout.connect(self.onProfilingTimer)
+
+
         tip = 'Jump To Image #'
         lab = QLabel('Section #: ')
         lab.setObjectName('toolbar_layer_label')
@@ -2870,7 +2965,6 @@ class MainWindow(QMainWindow):
         def onTimer():
             logger.info('')
             if cfg.data:
-
                 if cfg.project_tab:
                     if self._sectionSlider.value() < cfg.data.nSections - 1:
                         self._sectionSlider.setValue(self._sectionSlider.value() + 1)
@@ -2973,6 +3067,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self._fps_spinbox)
         self.toolbar.addWidget(self._ngLayoutWidget)
         self.toolbar.addWidget(self._changeScaleWidget)
+        if cfg.DEV_MODE:
+            self.toolbar.addWidget(self.profilingTimerButton)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
 
@@ -4359,6 +4455,7 @@ class MainWindow(QMainWindow):
         self._tabsGlob = QTabWidget()
         # self._tabsGlob.setTabBarAutoHide(True)
         self._tabsGlob.setElideMode(Qt.ElideMiddle)
+        self._tabsGlob.setMovable(True)
         self._tabsGlob.hide()
         # mic_icon = qta.icon('ph.microphone-fill')
         # self._tabsGlob.setStyleSheet('''QTabBar::close-button {
@@ -4399,6 +4496,7 @@ class MainWindow(QMainWindow):
         # self.selectionReadout = QLabel('<h4>Selection:</h4>')
         # self.selectionReadout = QLabel()
         self.selectionReadout = QLineEdit()
+        self.selectionReadout.returnPressed.connect(self.open_project_selected)
         # self.selectionReadout.textChanged.connect(lambda: print('Text Changed!'))
         # self.selectionReadout.textEdited.connect(lambda: print('Text Edited!'))
         self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
@@ -4477,23 +4575,119 @@ class MainWindow(QMainWindow):
         self._splitter.setStretchFactor(4, 1)
 
         '''Documentation Panel'''
-        self.browser_docs = QWebEngineView()
-        self.exit_docs_button = QPushButton("Back")
-        self.exit_docs_button.setFixedSize(std_button_size)
-        self.exit_docs_button.clicked.connect(self.exit_docs)
-        self.readme_button = QPushButton("README.md")
-        self.readme_button.setFixedSize(std_button_size)
-        self.readme_button.clicked.connect(self.documentation_view_home)
-        self.docs_panel = QWidget()
-        vbl = QVBoxLayout()
-        vbl.addWidget(self.browser_docs)
+        self.browser_web = QWebEngineView()
+        # self.browser = WebPage(self)
+        self._buttonExitBrowserWeb = QPushButton("Exit")
+        self._buttonExitBrowserWeb.setFixedSize(64, 20)
+        self._buttonExitBrowserWeb.setFixedSize(std_button_size)
+        self._buttonExitBrowserWeb.clicked.connect(self.exit_docs)
+        self._readmeButton = QPushButton("README.md")
+        self._readmeButton.setFixedSize(std_button_size)
+        self._readmeButton.clicked.connect(self.documentation_view)
+        self.browser_widget = QWidget()
+        w = QWidget()
+        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        def browser_backward():
+            self.browser_web.page().triggerAction(QWebEnginePage.Back)
+
+        def browser_forward():
+            self.browser_web.page().triggerAction(QWebEnginePage.Forward)
+
+        def browser_reload():
+            self.browser_web.page().triggerAction(QWebEnginePage.Reload)
+
+        def browser_view_source():
+            self.browser_web.page().triggerAction(QWebEnginePage.ViewSource)
+
+        def browser_copy():
+            self.browser_web.page().triggerAction(QWebEnginePage.Copy)
+
+        def browser_paste():
+            self.browser_web.page().triggerAction(QWebEnginePage.Paste)
+
+        buttonBrowserBack = QPushButton()
+        buttonBrowserBack.setStatusTip('Go Back')
+        buttonBrowserBack.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserBack.clicked.connect(browser_backward)
+        buttonBrowserBack.setFixedSize(QSize(20, 20))
+        buttonBrowserBack.setIcon(qta.icon('fa.arrow-left', color=ICON_COLOR))
+
+        buttonBrowserForward = QPushButton()
+        buttonBrowserForward.setStatusTip('Go Forward')
+        buttonBrowserForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserForward.clicked.connect(browser_forward)
+        buttonBrowserForward.setFixedSize(QSize(20, 20))
+        buttonBrowserForward.setIcon(qta.icon('fa.arrow-right', color=ICON_COLOR))
+
+        buttonBrowserRefresh = QPushButton()
+        buttonBrowserRefresh.setStatusTip('Refresh')
+        buttonBrowserRefresh.setIcon(qta.icon("ei.refresh", color=cfg.ICON_COLOR))
+        buttonBrowserRefresh.setFixedSize(QSize(22,22))
+        buttonBrowserRefresh.clicked.connect(browser_reload)
+
+        buttonBrowserViewSource = QPushButton()
+        buttonBrowserViewSource.setStatusTip('View Source')
+        buttonBrowserViewSource.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserViewSource.clicked.connect(browser_view_source)
+        buttonBrowserViewSource.setFixedSize(QSize(20, 20))
+        buttonBrowserViewSource.setIcon(qta.icon('ri.code-view', color=ICON_COLOR))
+
+        buttonBrowserCopy = QPushButton('Copy')
+        buttonBrowserCopy.setStatusTip('Copy Text')
+        buttonBrowserCopy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserCopy.clicked.connect(browser_copy)
+        buttonBrowserCopy.setFixedSize(QSize(50, 20))
+
+        buttonBrowserPaste = QPushButton('Paste')
+        buttonBrowserPaste.setStatusTip('Paste Text')
+        buttonBrowserPaste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserPaste.clicked.connect(browser_paste)
+        buttonBrowserPaste.setFixedSize(QSize(50, 20))
+
+        button3demCommunity = QPushButton('3DEM Community Data')
+        button3demCommunity.setStyleSheet('font-size: 10px;')
+        button3demCommunity.setStatusTip('Vist the 3DEM Community Workbench')
+        button3demCommunity.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button3demCommunity.clicked.connect(self.browser_3dem_community)
+        button3demCommunity.setFixedSize(QSize(120, 20))
+
+        #webpage
+        browser_controls_widget = QWidget()
+        browser_controls_widget.setFixedHeight(24)
         hbl = QHBoxLayout()
-        hbl.addWidget(self.exit_docs_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        hbl.addWidget(self.readme_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(QLabel(' '))
+        hbl.addWidget(buttonBrowserBack, alignment=right)
+        hbl.addWidget(buttonBrowserForward, alignment=left)
+        hbl.addWidget(QLabel(' '))
+        hbl.addWidget(buttonBrowserRefresh, alignment=left)
+        hbl.addWidget(QLabel(' '))
+        hbl.addWidget(buttonBrowserViewSource, alignment=left)
+        hbl.addWidget(QLabel(' '))
+        hbl.addWidget(buttonBrowserCopy, alignment=left)
+        hbl.addWidget(QLabel(' '))
+        hbl.addWidget(buttonBrowserPaste, alignment=left)
+        hbl.addWidget(QLabel('   |   '))
+        hbl.addWidget(button3demCommunity, alignment=left)
+        browser_controls_widget.setLayout(hbl)
+
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(browser_controls_widget, alignment=Qt.AlignmentFlag.AlignLeft)
+        vbl.addWidget(self.browser_web)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self._buttonExitBrowserWeb, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.addWidget(self._readmeButton, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.addWidget(w)
+        browser_bottom_controls = QWidget()
+        browser_bottom_controls.setFixedHeight(24)
+        browser_bottom_controls.setLayout(hbl)
         # self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         # hbl.addSpacerItem(self.spacer_item_docs)
-        vbl.addLayout(hbl)
-        self.docs_panel.setLayout(vbl)
+        vbl.addWidget(browser_bottom_controls)
+        self.browser_widget.setLayout(vbl)
 
         '''Remote Neuroglancer Viewer (_wdg_remote_viewer)'''
         self._wdg_remote_viewer = QWidget()
@@ -4534,7 +4728,7 @@ class MainWindow(QMainWindow):
         #Todo keep this main_stack_widget for now, repurpose later
         self.main_stack_widget = QStackedWidget(self)               #____INDEX____
         self.main_stack_widget.addWidget(self.main_panel)           # (0)
-        self.main_stack_widget.addWidget(self.docs_panel)           # (1)
+        self.main_stack_widget.addWidget(self.browser_widget)           # (1)
         self.main_stack_widget.addWidget(self._wdg_demos)           # (2)
         self.main_stack_widget.addWidget(self._wdg_remote_viewer)   # (3)
         self.main_panel.setLayout(vbl)

@@ -8,8 +8,8 @@ import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QStyledItemDelegate, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QSlider, QAbstractScrollArea
-from qtpy.QtCore import Qt, QAbstractTableModel
-from qtpy.QtGui import QImage, QFont, QColor, QPixmap
+from qtpy.QtCore import Qt, QAbstractTableModel, QRect
+from qtpy.QtGui import QImage, QFont, QColor, QPixmap, QPainter
 
 from src.ui.file_browser import FileBrowser
 from src.helpers import get_project_list, list_paths_absolute, get_bytes
@@ -26,7 +26,8 @@ cfg.project_tab.project_table.updateRowHeight(100)
 
 
 class ProjectTable(QWidget):
-    def __init__(self):
+    def __init__(self, parent):
+        super(ProjectTable, self).__init__(parent)
         super().__init__()
         self.table = QTableWidget()
         self.table.itemClicked.connect(self.userSelectionChanged)
@@ -34,7 +35,7 @@ class ProjectTable(QWidget):
         self.table.currentItemChanged.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.countCurrentItemChangedCalls)
         self.INITIAL_ROW_HEIGHT = 100
-        self.row_height_slider = Slider(min=64, max=256)
+        self.row_height_slider = Slider(min=30, max=256)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateRowHeight)
         self.row_height_slider.setMaximumWidth(128)
@@ -256,7 +257,7 @@ class SnrThumbnail(QWidget):
     def __init__(self, path, label='<SNR>'):
         super(SnrThumbnail, self).__init__()
         # thumbnail = QLabel(self)
-        thumbnail = thumbnail = ScaledPixmapLabel()
+        thumbnail = ScaledPixmapLabel()
         try:
             pixmap = QPixmap(path)
             thumbnail.setPixmap(pixmap)
@@ -308,15 +309,19 @@ class ScaledPixmapLabel(QLabel):
     def paintEvent(self, event):
         if self.pixmap():
             pm = self.pixmap()
-            originalRatio = pm.width() / pm.height()
-            currentRatio = self.width() / self.height()
-            if originalRatio != currentRatio:
-                qp = QPainter(self)
-                pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                rect = QRect(0, 0, pm.width(), pm.height())
-                rect.moveCenter(self.rect().center())
-                qp.drawPixmap(rect, pm)
-                return
+            try:
+                originalRatio = pm.width() / pm.height()
+                currentRatio = self.width() / self.height()
+                if originalRatio != currentRatio:
+                    qp = QPainter(self)
+                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    rect = QRect(0, 0, pm.width(), pm.height())
+                    rect.moveCenter(self.rect().center())
+                    qp.drawPixmap(rect, pm)
+                    return
+            except ZeroDivisionError:
+                logger.warning('Cannot divide by zero')
+                # print_exception()
         super().paintEvent(event)
 
 

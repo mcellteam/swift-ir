@@ -4,7 +4,7 @@
 import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
     QPushButton, QSizePolicy, QAbstractItemView
-from qtpy.QtCore import Slot, Qt, QSize
+from qtpy.QtCore import Slot, Qt, QSize, QDir
 import src.config as cfg
 
 try:
@@ -32,8 +32,10 @@ class FileBrowser(QWidget):
         self.treeview.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.fileSystemModel = QFileSystemModel(self.treeview)
         self.fileSystemModel.setReadOnly(False)
+        self.fileSystemModel.setFilter(QDir.AllEntries | QDir.Hidden)
         self.treeview.setModel(self.fileSystemModel)
-        root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
+        # root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
+        root = self.fileSystemModel.setRootPath('/')
         self.treeview.setRootIndex(root)
         # self.setSizePolicy(
         #     QSizePolicy.MinimumExpanding,

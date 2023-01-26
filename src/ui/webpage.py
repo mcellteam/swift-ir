@@ -1,22 +1,15 @@
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QWidget
 from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from qtpy.QtCore import QUrl
 
 class WebEnginePage(QWebEnginePage):
     def __init__(self, *args, **kwargs):
         QWebEnginePage.__init__(self, *args, **kwargs)
-        self.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
 
-    def onFeaturePermissionRequested(self, url, feature):
-        if feature in (QWebEnginePage.MediaAudioCapture,
-            QWebEnginePage.MediaVideoCapture,
-            QWebEnginePage.MediaAudioVideoCapture):
-            self.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-        else:
-            self.setFeaturePermission(url, feature, QWebEnginePage.PermissionDeniedByUser)
+class WebPage(QWidget):
 
-class WebPage:
-    def __init__(self, url=None):
+    def __init__(self, parent=None, url=None):
+        super(WebPage, self).__init__()
         self.page = WebEnginePage()
         self.page.windowCloseRequested.connect(lambda: print('(!) windowCloseRequested'))
         self.view = QWebEngineView()
@@ -26,6 +19,8 @@ class WebPage:
         # self.view.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
+
+        self.show()
         if url:
             self.open(url=url)
             self.show()
@@ -35,6 +30,9 @@ class WebPage:
         self.view.setPage(self.page)
         self.view.load(QUrl(url))
         self.view.show()
+
+    def setUrl(self, url):
+        self.view.setUrl(url)
 
     def show(self):
         self.view.show()

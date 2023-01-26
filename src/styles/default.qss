@@ -21,6 +21,7 @@ QMainWindow#mainwindow{
 
 QTabBar::tab {
     height: 24px;
+    max-width: 200px;
 }
 
 QWidget#self._tool_keyBindings{

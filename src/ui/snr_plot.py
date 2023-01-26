@@ -16,7 +16,7 @@ import pyqtgraph as pg
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
-from src.helpers import print_exception, exist_aligned_zarr_cur_scale, exist_aligned_zarr, get_scale_val
+from src.helpers import print_exception
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,6 @@ class SnrPlot(QWidget):
         super().__init__(**kwargs)
 
         # cfg.data = None
-
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
         # self.view.setBackground('#ffffff')
@@ -49,25 +48,17 @@ class SnrPlot(QWidget):
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
         self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.92, anchor=(1, 1), color='#f3f6fb')
-
         self._mp_lines = []
         self._mp_labels = []
-
         self._skip_lines = []
         self._skip_labels = []
-
         self._error_bars = {}
-
         f = QFont()
         f.setBold(True)
         f.setPointSize(12)
         self._snr_label.setFont(f)
         self.plot.addItem(self._curLayerLine)
-
-
-
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
-
         # pg.setConfigOptions(antialias=True)
         self._plot_colors = ['#FEFE62', '#40B0A6', '#D41159',
                              '#E66100', '#1AFF1A', '#FFC20A',
@@ -211,7 +202,7 @@ class SnrPlot(QWidget):
                                                   alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                 self._snr_checkboxes[s].setChecked(True)
                 self._snr_checkboxes[s].clicked.connect(self.plotData)
-                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot Scale %d' % get_scale_val(s))
+                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot ' % cfg.data.scale_pretty(s=s))
                 color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
                 self._snr_checkboxes[s].setStyleSheet(
                     f'background-color: #F3F6FB;'

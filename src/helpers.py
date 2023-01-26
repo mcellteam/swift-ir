@@ -7,7 +7,7 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
-import os, re, sys, copy, json, time, signal, logging, inspect
+import os, re, sys, stat, copy, json, time, signal, logging, inspect
 import platform, traceback, shutil, statistics, tracemalloc
 from time import time
 from typing import Dict, List, Tuple, Any, Union, Sequence
@@ -36,7 +36,7 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
-           'get_scales_with_generated_alignments'
+           'get_scales_with_generated_alignments', 'handleError'
            ]
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def setOpt(lookup, val):
 
 
 def validate_selection() -> bool:
-    logger.info('Validating selection %s...' % cfg.selected_file)
+    # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     path, extension = os.path.splitext(cfg.selected_file)
     if extension != '.swiftir':
@@ -77,7 +77,7 @@ def validate_selection() -> bool:
 
 
 def validate_file(file) -> bool:
-    logger.info('Validating file...\n%s' % file)
+    # logger.info('Validating file...\n%s' % file)
     # logger.info('called by %s' % inspect.stack()[1].function)
     is_valid = False
     path, extension = os.path.splitext(file)
@@ -145,12 +145,25 @@ def configure_project_settings():
             json.dump(cfg.settings, f, indent=2)
 
 
+# file = os.path.join(os.path.expanduser('~'), '.swift_cache')
+def append_project_path(path):
+    userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+    with open(userprojectspath, 'r') as f:
+        lines = f.readlines()
+    paths = [line.rstrip() for line in lines]
+    paths.append(path)
+    new_paths = cleanup_project_list(paths)
+    with open(userprojectspath, 'a') as f:
+        for p in new_paths:
+            f.write(f"{p}\n")
+
+
+
 def configure_project_paths():
     logger.info('')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
     if not os.path.exists(userprojectspath):
         open(userprojectspath, 'a').close()
-
     try:
         with open(userprojectspath, 'r') as f:
             lines = f.readlines()
@@ -159,13 +172,20 @@ def configure_project_paths():
         projectpaths = cleanup_project_list(paths)
         logger.info(f'projectpaths: {projectpaths}')
         with open(userprojectspath, 'w') as f:
-            for line in projectpaths:
-                f.write(f"{line}\n")
+            for p in projectpaths:
+                f.write(f"{p}\n")
         if projectpaths:
             logger.info('AlignEM-SWiFT Knows About The Following Projects:\n'
                         '%s' % '  \n'.join(projectpaths))
     except:
         print_exception()
+
+def handleError(func, path, exc_info):
+    logger.warning('Handling Error for file %s' % path)
+    logger.warning(exc_info)
+    if not os.access(path, os.W_OK):
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
 
 
 def get_paths_absolute(directory):
