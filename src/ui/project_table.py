@@ -224,9 +224,10 @@ class ProjectTable(QWidget):
 
         layout =QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.table, 0, 0)
-        layout.addWidget(self.controls, 1, 0)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.table)
+        layout.addWidget(self.controls)
+
         self.setLayout(layout)
 
 
