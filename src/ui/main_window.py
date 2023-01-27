@@ -23,7 +23,7 @@ import psutil
 import resource
 from collections import namedtuple
 import numpy as np
-from guppy import hpy; h=hpy()
+# from guppy import hpy; h=hpy()
 import neuroglancer as ng
 import pyqtgraph.console
 import pyqtgraph as pg
