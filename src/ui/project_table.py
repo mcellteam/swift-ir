@@ -27,7 +27,7 @@ cfg.project_tab.project_table.updateTableDimensions(100)
 
 
 class ProjectTable(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         # super().__init__(parent)
         super().__init__(parent)
         caller = inspect.stack()[1].function

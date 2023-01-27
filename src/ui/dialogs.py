@@ -213,7 +213,7 @@ def new_project_dialog() -> str:
     '''Dialog for saving a datamodel. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('New Project - Set Project Location (1/3)')
+    dialog.setWindowTitle('New Project Name - Set Project Name (1/3)')
     dialog.setNameFilter("Text Files (*.swiftir)")
     dialog.setLabelText(QFileDialog.Accept, "Create")
     dialog.setViewMode(QFileDialog.Detail)
@@ -224,12 +224,12 @@ def new_project_dialog() -> str:
     dialog.setFilter(QDir.AllEntries | QDir.Hidden)
     urls = dialog.sidebarUrls()
     if '.tacc.utexas.edu' in platform.node():
-        # urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-        # urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        # urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-        urls.append(QUrl(os.getenv('HOME')))
-        urls.append(QUrl(os.getenv('WORK')))
-        urls.append(QUrl(os.getenv('SCRATCH')))
+        urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        # urls.append(QUrl(os.getenv('HOME')))
+        # urls.append(QUrl(os.getenv('WORK')))
+        # urls.append(QUrl(os.getenv('SCRATCH')))
         # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
     else:
         urls.append(QUrl.fromLocalFile('/tmp'))

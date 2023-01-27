@@ -239,7 +239,8 @@ class ProjectTab(QWidget):
         '''Layer View Widget'''
         logger.info('')
         # self.project_table = LayerViewWidget()
-        self.project_table = ProjectTable(self)
+        # self.project_table = ProjectTable(self)
+        self.project_table = ProjectTable()
         self.project_table.setObjectName('project_table')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
