@@ -224,9 +224,12 @@ def new_project_dialog() -> str:
     dialog.setFilter(QDir.AllEntries | QDir.Hidden)
     urls = dialog.sidebarUrls()
     if '.tacc.utexas.edu' in platform.node():
-        urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        # urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+        # urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        # urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        urls.append(QUrl(os.getenv('HOME')))
+        urls.append(QUrl(os.getenv('WORK')))
+        urls.append(QUrl(os.getenv('SCRATCH')))
         # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
     else:
         urls.append(QUrl.fromLocalFile('/tmp'))
