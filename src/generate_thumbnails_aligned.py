@@ -19,22 +19,20 @@ __all__ = ['generate_thumbnails_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_thumbnails_aligned(dm, layers=None):
-    if layers == None:
-        layers = range(0, dm.n_sections())
+def generate_thumbnails_aligned(dm, scale=None, layers=None):
+    if scale == None: scale = dm.scale()
+    if layers == None: layers = range(0, dm.n_sections())
     logger.info('Generating Thumbnails...')
+
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
-    # Todo: If the smallest s happens to be less that thumbnail size, just copy smallest s for thumbnails
-
     target_thumbnail_size = cfg.TARGET_THUMBNAIL_SIZE
-    smallest_scale_key = natural_sort(dm['data']['scales'].keys())[-1]
-    scale_val = get_scale_val(smallest_scale_key)
+    scale_val = get_scale_val(scale)
 
     if dm.has_bb():
         size = dm.bounding_rect()[2:4]
     else:
-        size = dm.image_size(s=smallest_scale_key)
+        size = dm.image_size(s=scale)
     siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
     scale_factor = int(siz_start/target_thumbnail_size)
@@ -56,12 +54,10 @@ def generate_thumbnails_aligned(dm, layers=None):
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
     task_queue.start(cpus)
 
-    # it = dm.get_iter(s=smallest_scale_key)
-    # for i, layer in enumerate(it):
-    for i,layer in enumerate(layers):
 
+    for i,layer in enumerate(layers):
         # fn = os.path.abspath(layer['images']['aligned']['filename'])
-        fn = os.path.abspath(dm['data']['scales'][dm.scale()]['alignment_stack'][layer]['images']['aligned']['filename'])
+        fn = os.path.abspath(dm['data']['scales'][scale]['alignment_stack'][layer]['images']['aligned']['filename'])
         ofn = os.path.join(od, os.path.split(fn)[1])
         # dm['data']['thumbnails'].append(ofn)
         scale_arg = '+%d' % scale_val
@@ -75,6 +71,7 @@ def generate_thumbnails_aligned(dm, layers=None):
                             % (iscale2_c, scale_arg, of_arg, if_arg))
 
     dt = task_queue.collect_results()
+    cfg.data.set_t_thumbs_aligned(dt,s=scale)
 
     logger.info('<<<< Thumbnail Generation Complete <<<<')
 

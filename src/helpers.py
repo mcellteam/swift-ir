@@ -107,7 +107,7 @@ def validate_file(file) -> bool:
 
 
 def cleanup_project_list(paths: list) -> list:
-    logger.info('')
+    # logger.info('')
     # logger.info(f'paths: {paths}')
     paths = list( dict.fromkeys(paths) ) # remove duplicates
     paths = [x for x in paths if x != '']
@@ -485,6 +485,14 @@ def is_mac() -> bool:
     system = platform.system()
     if system == 'Darwin':  return True
     else:                   return False
+
+def is_joel() -> bool:
+    '''Checks if the program is running on macOS. Returns a boolean.'''
+    system = platform.system()
+    if 'Joels-' in platform.node():
+        return True
+    else:
+        return False
 
 def get_bindir() -> str:
     '''Checks operating system. Returns the operating system-dependent

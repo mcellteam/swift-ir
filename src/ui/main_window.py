@@ -57,7 +57,7 @@ from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, show_status_report, exist_aligned_zarr_cur_scale, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_selection, \
     configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, count_widgets, \
-    find_allocated_widgets
+    find_allocated_widgets, cleanup_project_list
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 from src.ui.process_monitor import HeadupDisplay
@@ -142,6 +142,18 @@ class MainWindow(QMainWindow):
             return super(MainWindow, self).resizeEvent(event)
 
 
+    def setAppropriateNgLayout(self):
+        current_text = self._cmbo_ngLayout.currentText()
+        if self.rb0.isChecked():
+            if current_text != '4panel':
+                logger.warning('Snapping current combobox text to 4panel')
+                self._cmbo_ngLayout.setCurrentText('4panel')
+        elif self.rb1.isChecked():
+            if current_text != 'xy':
+                logger.warning('Snapping current combobox text to xy')
+                self._cmbo_ngLayout.setCurrentText('xy')
+
+
     def neuroglancer_configuration_0(self):
         logger.info('')
         if cfg.data:
@@ -156,6 +168,11 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab._tabs.setCurrentIndex(0) #0124-
                 # cfg.project_tab.updateNeuroglancer()
                 cfg.project_tab.initNeuroglancer()
+                # time.sleep(1)
+                # cfg.project_tab.initNeuroglancer()
+                # time.sleep(.2)
+                # cfg.project_tab.initNeuroglancer()
+
 
 
     def neuroglancer_configuration_1(self):
@@ -166,7 +183,20 @@ class MainWindow(QMainWindow):
                 cfg.project_tab._widgetArea_details.show()
                 # cfg.project_tab._tabs.setCurrentIndex(0) #0124-
                 # cfg.project_tab.updateNeuroglancer()
-                cfg.project_tab.initNeuroglancer()
+                try:
+                    cfg.project_tab.initNeuroglancer()
+                    # cfg.project_tab.updateNeuroglancer()
+                except:
+                    print_exception()
+                    self.warn('There was a problem loading Side-by-side layout')
+                    self.rb0.setChecked(True)
+                    self.setAppropriateNgLayout()
+                    cfg.project_tab.initNeuroglancer()
+                    # time.sleep(1)
+                    # cfg.project_tab.initNeuroglancer()
+                    # time.sleep(.2)
+                    # cfg.project_tab.initNeuroglancer()
+
 
 
     def neuroglancer_configuration_2(self):
@@ -183,7 +213,9 @@ class MainWindow(QMainWindow):
     def hardRestartNg(self):
         self.restartNg(hard_restart=True)
 
+
     def restartNg(self, hard_restart=False):
+        logger.critical('Restarting Neuroglancer (hard_restrt=%r)' % hard_restart)
         if cfg.data:
             if not self._working:
                 if hard_restart:
@@ -193,6 +225,16 @@ class MainWindow(QMainWindow):
             else:
                 self.warn('The application is busy')
                 logger.warn('The application is busy')
+
+
+    def shutdownNeuroglancer(self):
+        logger.critical('')
+        if ng.is_server_running():
+            logger.critical('Stopping Neuroglancer...')
+            self.tell('Stopping Neuroglancer...')
+            try:     ng.server.stop()
+            except:  print_exception()
+            finally: self.hud.done()
 
 
     def tell(self, message):
@@ -416,6 +458,7 @@ class MainWindow(QMainWindow):
 
 
     def _showSNRcheck(self, s=None):
+        caller = inspect.stack()[1].function
         if s == None: s = cfg.data.scale()
         if cfg.data.is_aligned():
             logger.info(f'Checking SNR data for {s}...')
@@ -428,8 +471,6 @@ class MainWindow(QMainWindow):
                 for name in names:
                     lst_names += f'\n  Section: {name}'
                 self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...')
-        else:
-            logger.warning('Cant show SNR check without alignment data')
 
 
 
@@ -459,6 +500,8 @@ class MainWindow(QMainWindow):
                 try:    cfg.project_tab.project_table.set_data()
                 except: logger.warning('No data to set!')
             self._showSNRcheck()
+            cfg.project_tab.initNeuroglancer()
+            time.sleep(1)
             cfg.project_tab.initNeuroglancer()
             self.updateMenus()
         except:
@@ -553,6 +596,9 @@ class MainWindow(QMainWindow):
                 self.err('Image Generation Failed Unexpectedly. Try Re-aligning.')
             self.set_idle()
             self.pbar_widget.hide()
+            cfg.project_tab.initNeuroglancer()
+            time.sleep(1)
+            cfg.project_tab.initNeuroglancer()
             QApplication.processEvents()
 
 
@@ -1233,22 +1279,21 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         caller = inspect.stack()[1].function
+        logger.critical(f'Changing Scales...')
         if caller != 'OnStartProject':
-            logger.info(f'caller: {caller}')
-            s = cfg.data.curScale
-            cfg.data.curScale = s
-            logger.debug('Changing To Scale %s (caller %s)...' % (s, inspect.stack()[1].function))
             # self.jump_to(cfg.data.layer())
             self.dataUpdateWidgets()
             self.updateEnabledButtons()
-            cfg.project_tab.project_table.set_data()
+            if cfg.project_tab._tabs.currentIndex == 1:
+                cfg.project_tab.project_table.set_data()
             self.updateToolbar()
             self._showSNRcheck()
             try:
                 self._bbToggle.setChecked(cfg.data.has_bb())
             except:
                 logger.warning('Bounding Rect Widget Failed to Update')
-            cfg.project_tab.updateNeuroglancer()
+            # cfg.project_tab.updateNeuroglancer()
+            cfg.project_tab.initNeuroglancer()
 
 
     def updateToolbar(self):
@@ -1282,6 +1327,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
+        logger.info(f'Updating widgets (caller: {caller})...')
         # logger.info(f'caller: {caller}')
         if cfg.zarr_tab:
             if ng_layer:
@@ -1586,13 +1632,9 @@ class MainWindow(QMainWindow):
                 logger.warning('Requested layer is not a valid layer')
                 return
             cfg.data.set_layer(requested)
-            cfg.project_tab.updateNgLayer()
-            # if cfg.project_tab._tabs.currentIndex() == 0:
-            #     # logger.info('Jumping To Section #%d' % requested)
-            #     cfg.project_tab.updateNgLayer()
-            #     # self.refreshNeuroglancerURL()
-            # cfg.project_tab.openViewZarr()
-            # self.dataUpdateWidgets() #0106-
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                cfg.project_tab.project_table.table.selectRow(requested)
+
 
 
     def jump_to_slider(self):
@@ -1621,6 +1663,9 @@ class MainWindow(QMainWindow):
                         state = copy.deepcopy(cfg.viewer.state)
                         state.position[0] = requested
                         cfg.viewer.set_state(state)
+
+                    if cfg.project_tab._tabs.currentIndex() == 1:
+                        cfg.project_tab.project_table.table.selectRow(requested)
                     # elif self.detachedNg:
                     #     if self.detachedNg.view.isVisible():
                     #         state = copy.deepcopy(cfg.viewer.state)
@@ -1792,7 +1837,7 @@ class MainWindow(QMainWindow):
 
         # self.initView()
         # self.clearUIDetails()
-        # self.shutdownNeuroglancer()
+
         self.tell('New Project Path:')
         filename = new_project_dialog()
         if filename in ['', None]:
@@ -1813,12 +1858,18 @@ class MainWindow(QMainWindow):
             logger.info(f"Removing Extant Project File '{path_proj}'...")
             os.remove(filename)
 
+        # path, extension = os.path.splitext(filename)
+        # makedirs_exist_ok(path, exist_ok=True)
+        # cfg.data = DataModel(name=path, mendenhall=mendenhall)
+        # cfg.project_tab = ProjectTab(path=path, datamodel=cfg.data)
+
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path, mendenhall=mendenhall)
         cfg.project_tab = ProjectTab(path=path, datamodel=cfg.data)
         self._tabsGlob.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
         self._setLastTab()
         makedirs_exist_ok(path, exist_ok=True)
+
 
         if not mendenhall:
             try:
@@ -1842,13 +1893,17 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
 
+            # cfg.data.set_defaults()
+            # self._tabsGlob.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
+            # self._setLastTab()
+
             self.onStartProject()
         else:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
             # self.onStartProject(mendenhall=True)
             # turn OFF onStartProject for Mendenhall
 
-        logger.critical(f'Appending {filename} to project paths...')
+        logger.critical(f'Appending {filename} to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
@@ -1924,7 +1979,6 @@ class MainWindow(QMainWindow):
         #Todo check for Zarr. Generate/Re-generate if necessary
         logger.critical('Opening A Project...')
         self.tell('Opening A Project...')
-        # self.shutdownNeuroglancer()
         self.stopPlaybackTimer()
         cfg.main_window.set_status('Awaiting User Input...')
         filename = open_project_dialog()
@@ -1974,9 +2028,6 @@ class MainWindow(QMainWindow):
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        # cfg.data = None
-        caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
 
         if self._getTabType() == 'ZarrTab':
             self.open_zarr()
@@ -1987,10 +2038,7 @@ class MainWindow(QMainWindow):
             logger.warning('Invalid Path...')
             return
 
-
-
         filename = cfg.selected_file
-
         logger.critical(f'Opening Project {filename}...')
         self.tell('Opening A Project...')
         self.stopPlaybackTimer()
@@ -2013,7 +2061,6 @@ class MainWindow(QMainWindow):
         print(cfg.data.scales())
 
         cfg.data.set_paths_absolute(filename=filename)
-
 
         cfg.project_tab = ProjectTab(
             parent=self,
@@ -2065,7 +2112,8 @@ class MainWindow(QMainWindow):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
+        # logger.critical('caller: %s' % caller)
+        logger.critical('Loading project...')
 
         cfg.data.update_cache()
         self._changeScaleCombo.show()
@@ -2076,6 +2124,8 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         # self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)
         cfg.data.set_defaults() # BEFORE dataUpdateWidgets
+        cfg.project_tab.initNeuroglancer()
+        time.sleep(1)
         cfg.project_tab.initNeuroglancer()
         self.dataUpdateWidgets()
         try:    self._bbToggle.setChecked(cfg.data.has_bb())
@@ -2410,15 +2460,6 @@ class MainWindow(QMainWindow):
         self.browser_web.setUrl(QUrl(
             'https://3dem.org/workbench/data/tapis/community/data-3dem-community/'))
 
-
-    def shutdownNeuroglancer(self):
-        logger.info('')
-        if ng.is_server_running():
-            logger.critical('Stopping Neuroglancer...')
-            self.tell('Stopping Neuroglancer...')
-            try:     ng.server.stop()
-            except:  print_exception()
-            finally: self.hud.done()
 
 
     def invalidate_all(self, s=None):
@@ -2863,14 +2904,13 @@ class MainWindow(QMainWindow):
         percent_ram = psutil.virtual_memory().percent
         num_widgets = len(QApplication.allWidgets())
 
-
         # memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
         # memory_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
         print('CPU Usage: %.3f%% | RAM Usage: %.3f%%' % (cpu_percent, percent_ram))
         print('Neuoglancer Running? %r' % isNeuroglancerRunning())
         print('# Allocated Widgets: %d' % num_widgets)
-        print('# Allocated NGHost/NgHostSlim objects: %d' % count_widgets('NgHost'))
+        print('Allocated NgHost/NgHostSlim Objects:\n%s' % find_allocated_widgets('NgHost'))
 
         # print(f'CPU Usage    : {cpu_percent:.3f}%')
         # print(f'RAM Usage    : {percent_ram:.3f}%')
@@ -2942,6 +2982,8 @@ class MainWindow(QMainWindow):
         self.profilingTimerButton.clicked.connect(self.startStopProfiler)
         self.profilingTimer = QTimer(self)
         self.profilingTimer.timeout.connect(self.onProfilingTimer)
+        if cfg.PROFILING_TIMER_AUTOSTART:
+            self.profilingTimerButton.click()
 
 
         tip = 'Jump To Image #'
@@ -3137,25 +3179,29 @@ class MainWindow(QMainWindow):
 
 
     def _onGlobTabChange(self):
+        logger.info('')
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
+        if self._tabsGlob.count() == 0:
+            return
+
         cfg.selected_file = None
         self._tabsGlob.show()
         self.stopPlaybackTimer()
         tabtype = self._getTabType()
 
+
         if caller == 'initLaunchTab':
             return
 
         if tabtype == 'OpenProject':
-            #     self._actions_widget.show()
-            # else:
-            #     self._actions_widget.hide()
+            self._actions_widget.show()
             self.clearSelectionPathText()
-        if self._tabsGlob.count() == 0:
-            return
+            configure_project_paths()
+        else:
+            self._actions_widget.hide()
 
-        #0124- !!!!
+        # #0124- !!!!
         # if (caller == 'main') or (caller == '_onGlobTabClose') or (caller == '_setLastTab'):
         #     self.shutdownNeuroglancer()
 
@@ -3179,7 +3225,7 @@ class MainWindow(QMainWindow):
             elif self.rb1.isChecked():
                 self.set_nglayout_combo_text(layout='xy')  # must be before initNeuroglancer
 
-            # cfg.project_tab.initNeuroglancer() #!!!!
+            cfg.project_tab.initNeuroglancer() #!!!!
 
         else:
             cfg.data = None
@@ -3187,13 +3233,11 @@ class MainWindow(QMainWindow):
             self._changeScaleCombo.clear()
             self.extra_header_text_label.hide()
 
-
-
         if self._isZarrTab():
             logger.info('Loading Zarr Tab...')
             cfg.zarr_tab = self._tabsGlob.currentWidget()
             self.set_nglayout_combo_text(layout=cfg.zarr_tab.ng_layout)  # must be before initNeuroglancer
-            # cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
+            cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
             self.label_toolbar_resolution.show()
 
         if self._isOpenProjTab():
@@ -4585,7 +4629,7 @@ class MainWindow(QMainWindow):
         self._splitter.setCollapsible(3, False)
         self._splitter.setCollapsible(4, False)
         self._splitter.setStretchFactor(0, 7)
-        self._splitter.setStretchFactor(1, 7)
+        self._splitter.setStretchFactor(1, 1)
         self._splitter.setStretchFactor(2, 1)
         self._splitter.setStretchFactor(3, 1)
         self._splitter.setStretchFactor(4, 1)

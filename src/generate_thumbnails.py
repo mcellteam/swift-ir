@@ -23,15 +23,13 @@ def generate_thumbnails(dm):
     logger.info('Generating Thumbnails...')
     cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
 
-    # Todo: If the smallest s happens to be less that thumbnail size, just copy smallest s for thumbnails
-
     target_thumbnail_size = cfg.TARGET_THUMBNAIL_SIZE
     smallest_scale_key = natural_sort(dm['data']['scales'].keys())[-1]
     scale_val = get_scale_val(smallest_scale_key)
     size = dm.image_size(s=smallest_scale_key)
     siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
-    scale_factor = scale_factor_ = int(siz_start/target_thumbnail_size)
+    scale_factor = int(siz_start/target_thumbnail_size)
     # if scale_factor == 1:
     #     scale_factor = 2
     logger.critical(f'size: {size}, siz_start: {siz_start}, scale_factor_:{scale_factor}, '
@@ -72,6 +70,7 @@ def generate_thumbnails(dm):
         #     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 
     dt = task_queue.collect_results()
+    cfg.data.set_t_thumbs(dt)
 
     logger.info('<<<< Thumbnail Generation Complete <<<<')
 

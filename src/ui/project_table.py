@@ -7,7 +7,8 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QStyledItemDelegate, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QSlider, QAbstractScrollArea
+    QStyledItemDelegate, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QSlider, QAbstractScrollArea, \
+    QHeaderView
 from qtpy.QtCore import Qt, QAbstractTableModel, QRect
 from qtpy.QtGui import QImage, QFont, QColor, QPixmap, QPainter
 
@@ -21,7 +22,7 @@ import src.config as cfg
 logger = logging.getLogger(__name__)
 
 '''
-cfg.project_tab.project_table.updateRowHeight(100)
+cfg.project_tab.project_table.updateTableDimensions(100)
 '''
 
 
@@ -31,24 +32,15 @@ class ProjectTable(QWidget):
         super().__init__()
         self.table = QTableWidget()
         self.table.itemClicked.connect(self.userSelectionChanged)
-        self.table.itemClicked.connect(self.countItemClickedCalls)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
-        self.table.currentItemChanged.connect(self.countCurrentItemChangedCalls)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.INITIAL_ROW_HEIGHT = 100
         self.row_height_slider = Slider(min=30, max=256)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
-        self.row_height_slider.valueChanged.connect(self.updateRowHeight)
+        self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
         self.row_height_slider.setMaximumWidth(128)
-        # self.updateRowHeight(self.INITIAL_ROW_HEIGHT)
+        # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
         self.initUI()
-        self.counter1 = 0
-        self.counter2 = 0
-
-    def countItemClickedCalls(self):
-        self.counter1 += 1
-
-    def countCurrentItemChangedCalls(self):
-        self.counter2 += 1
 
     def set_column_headers(self):
         if cfg.data.is_aligned():
@@ -61,9 +53,8 @@ class ProjectTable(QWidget):
 
 
     def set_data(self):
-        logger.info('')
+        logger.info('Setting Table Data...')
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
         self.table.clearContents()
         self.table.clear()
         self.table.setRowCount(0)
@@ -93,12 +84,12 @@ class ProjectTable(QWidget):
                         self.table.setItem(i, j, QTableWidgetItem(str(item)))
 
         self.set_column_headers()
-        self.updateRowHeight(self.INITIAL_ROW_HEIGHT)
+        self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
 
 
     def get_data(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         try:     is_aligned = cfg.data.is_aligned_and_generated()
         except:  is_aligned = False;  print_exception()
         try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
@@ -151,42 +142,15 @@ class ProjectTable(QWidget):
         return zipped
 
 
-    # def setThumbnailDelegates(self):
-    #     logger.info('')
-    #     self.thumb_delegate = ThumbnailDelegate()
-    #     self.table.setItemDelegateForColumn(0, self.thumb_delegate)
-    #     self.table.setItemDelegateForColumn(1, self.thumb_delegate)
-    #     if cfg.data.is_aligned_and_generated():
-    #         self.cs_delegate = CorrSpotDelegate()
-    #         self.table.setItemDelegateForColumn(2, self.thumb_delegate)
-    #         self.table.setItemDelegateForColumn(3, self.cs_delegate)
-    #         self.table.setItemDelegateForColumn(4, self.cs_delegate)
-    #         self.table.setItemDelegateForColumn(5, self.cs_delegate)
-    #         self.table.setItemDelegateForColumn(6, self.cs_delegate)
-
-
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function
         row = self.table.currentIndex().row()
-        try:
-            path = self.table.item(row,9).text()
-        except:
-            cfg.selected_file = ''
-            logger.warning(f'No file path at table.currentIndex().row()! '
-                           f'caller: {caller} - Returning...')
-            return
-        logger.info(f'path: {path}')
-        cfg.selected_file = path
-        cfg.main_window.setSelectionPathText(path)
-        logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
+        cfg.data.set_layer('row')
+        cfg.main_window.tell('Section #%d' % row)
 
-    # def set_row_height(self, h):
-    #     parentVerticalHeader = self.table.verticalHeader()
-    #     for section in range(parentVerticalHeader.count()):
-    #         parentVerticalHeader.resizeSection(section, h)
 
-    def updateRowHeight(self, h):
-        logger.info(f'h = {h}')
+    def updateTableDimensions(self, h):
+        logger.info(f'Updating table dimensions...')
         if h < 64:
             return
         parentVerticalHeader = self.table.verticalHeader()

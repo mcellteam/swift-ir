@@ -30,7 +30,7 @@ import neuroglancer.webdriver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 if caller != None:
     import src.config as cfg
-from src.helpers import exist_aligned_zarr_cur_scale, print_exception
+from src.helpers import exist_aligned_zarr_cur_scale, print_exception, find_allocated_widgets
 
 __all__ = ['NgHostSlim']
 
@@ -93,7 +93,7 @@ class WorkerSignals(QObject):
 
 # class NgHostSlim(QObject):
 class NgHostSlim(QRunnable):
-    def __init__(self, parent=None, resolution=None, project=False):
+    def __init__(self, parent=None, project=False):
         # QObject.__init__(self)
         QRunnable.__init__(self)
         self.signals = WorkerSignals()
@@ -103,8 +103,6 @@ class NgHostSlim(QRunnable):
         self.port = 9000
         self.project = project
         # self.shape = shape
-        if resolution == None:
-            self.resolution = (50, 2, 2)
         self.signals = WorkerSignals()
         self.mp_mode = False
         self.path = ''
@@ -143,7 +141,8 @@ class NgHostSlim(QRunnable):
     def initViewer(self,
                    matchpoint=None):
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
+        # logger.critical('caller: %s' % caller)
+        logger.info(f'Initializing viewer (caller: {caller})....')
 
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         cfg.viewer = ng.Viewer()
@@ -154,21 +153,16 @@ class NgHostSlim(QRunnable):
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         self.nglayout = sw[self.nglayout]
 
-        if cfg.project_tab:
-            if exist_aligned_zarr_cur_scale(): zd = 'img_aligned.zarr'
-            else:                              zd = 'img_src.zarr'
-            self.path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
-            scale = cfg.data.scale()
-            coord_space = [cfg.data.res_z(s=scale),
-                           cfg.data.res_y(s=scale),
-                           cfg.data.res_x(s=scale)]
-        else:
-            coord_space = self.resolution
 
-        self.coordinate_space = ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
-            units=['nm', 'nm', 'nm'],
-            scales=coord_space, )
+        if cfg.project_tab:
+            if exist_aligned_zarr_cur_scale():
+                zd = 'img_aligned.zarr'
+            else:
+                zd = 'img_src.zarr'
+            self.path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
+
+        logger.info(f'tensor/zarr path: {self.path}')
+
 
         try:
             # cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
@@ -182,8 +176,10 @@ class NgHostSlim(QRunnable):
             except:
                 print_exception()
                 if not os.path.exists(self.path):
-                    cfg.main_window.warning('The path where a Tensorstore-Zarr should be does '
-                                            'not exist: %s - Returning' % self.path)
+                    txt = 'The path where a Tensorstore-Zarr should be ' \
+                          'does not exist: %s - Returning' % self.path
+                    cfg.main_window.warn(txt)
+                    logger.warning(txt)
                     return
                 else:
                     cfg.main_window.warn('There was a problem opening the Tensorstore-Zarr at %s' % self.path)
@@ -191,7 +187,9 @@ class NgHostSlim(QRunnable):
                     try:
                         store = zarr.open(self.path)
                     except:
-                        logger.warning('Failed to create datastore using regular Zarr driver - Returning')
+                        txt = 'Failed to create datastore using regular Zarr driver - Returning'
+                        cfg.main_window.warn(txt)
+                        logger.warning(txt)
                         return
             if cfg.data.is_aligned_and_generated():
                 cfg.al_tensor = cfg.tensor
@@ -208,6 +206,20 @@ class NgHostSlim(QRunnable):
             cfg.main_window.err(f'Invalid Zarr: {self.path} - Unable To Create Tensor store with Zarr driver')
 
         shape = store.shape
+
+        if cfg.project_tab:
+            coord_space = list(cfg.data.resolution(s=cfg.data.scale()))
+        else:
+            coord_space = shape
+
+        logger.info(f'tensor dimensions: {shape}')
+
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=coord_space, )
+
+
 
         with cfg.viewer.txn() as s:
             s.layout.type = self.nglayout
@@ -273,7 +285,7 @@ class NgHostSlim(QRunnable):
             logger.info(f'emitting request_layer: {request_layer}')
             self.signals.stateChanged.emit(request_layer)
         except:
-            # print_exception()
+            print_exception()
             logger.error('ERROR on_state_change')
 
 

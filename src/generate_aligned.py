@@ -90,6 +90,7 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
         task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
+        cfg.data.set_t_generate(dt, s=scale)
     except:
         print_exception()
         logger.warning('Task Queue encountered a problem')
@@ -120,6 +121,8 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
         task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
+        cfg.data.set_t_convert_zarr(dt, s=scale)
+
     except:
         print_exception()
         logger.warning('Task Queue encountered a problem')

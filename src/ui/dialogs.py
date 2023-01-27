@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridL
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
-from src.helpers import get_scale_val, do_scales_exist, is_tacc
+from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +28,19 @@ def import_images_dialog():
     dialog.setModal(True)
     urls = dialog.sidebarUrls()
     urls.append(QUrl.fromLocalFile(QDir.homePath()))
-    if '.tacc.utexas.edu' in platform.node():
-        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
     if is_tacc():
-        urls.append(QUrl.fromLocalFile('$WORK'))
-        urls.append(QUrl.fromLocalFile('$SCRATCH'))
+        urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+        urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+    else:
+        if os.path.exists('/Volumes'):
+            urls.append(QUrl.fromLocalFile('/Volumes'))
+        if is_joel():
+            if os.path.exists('/Volumes/3dem_data'):
+                urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+
+
     dialog.setSidebarUrls(urls)
     cfg.main_window.set_status('Awaiting User Input...')
     logger.info('Awaiting user input...')
@@ -217,8 +224,17 @@ def new_project_dialog() -> str:
     dialog.setFilter(QDir.AllEntries | QDir.Hidden)
     urls = dialog.sidebarUrls()
     if '.tacc.utexas.edu' in platform.node():
+        urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
         urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+        urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+    else:
+        urls.append(QUrl.fromLocalFile('/tmp'))
+        if os.path.exists('/Volumes'):
+            urls.append(QUrl.fromLocalFile('/Volumes'))
+        if is_joel():
+            if os.path.exists('/Volumes/3dem_data'):
+                urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
     dialog.setSidebarUrls(urls)
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
@@ -466,7 +482,7 @@ class ConfigProjectDialog(QDialog):
                 res_x = int(self.res_x_lineedit.text()) * scale_val
                 res_y = int(self.res_y_lineedit.text()) * scale_val
                 res_z = int(self.res_z_lineedit.text())
-                cfg.data.set_resolutions(scale=scale, res_x=res_x, res_y=res_y, res_z=res_z)
+                cfg.data.set_resolution(s=scale, res_x=res_x, res_y=res_y, res_z=res_z)
         except Exception as e:
             logger.warning(e)
         finally:

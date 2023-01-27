@@ -91,7 +91,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
         'path': 'temp.zarr',
         'metadata': {
             'dtype': '<f4',
-            'shape': [cfg.data.res_z(), cfg.data.res_y(), cfg.data.res_x()],
+            'shape': list(cfg.data.resolution()),
             'chunks': list(cfg.data.chunkshape()),
             'order': 'C',
         },

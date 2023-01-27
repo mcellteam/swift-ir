@@ -54,6 +54,7 @@ def generate_scales(dm):
     dt = task_queue.collect_results()
     results = task_queue.get_status_of_tasks()
     # show_mp_queue_results(task_queue=task_queue, dt=dt)
+    cfg.data.set_t_scaling(dt)
     print(f'results : {results}')
     print(f'dt      : {dt}')
     cfg.results = results

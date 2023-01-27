@@ -53,7 +53,7 @@ class DataModel:
         self.nSections = None
         self.curScale = None
         if not self.quietly:
-            logger.info('Constructing Data Model...')
+            logger.info(f'Constructing Data Model (caller:{inspect.stack()[1].function})...')
 
         if data:
             self._data = data
@@ -63,16 +63,23 @@ class DataModel:
             # self._data['created'] = current_time.strftime("%m/%d/%Y, %H:%M:%S")
             self._data['created'] = current_time.strftime("%d-%m-%y %H:%M:%S")
 
+        # if not self.layer():
+        #     self.set_layer(0)
+
         if not self.quietly:
             self._data['last_opened'] = datetime.now().strftime("%d-%m-%y %H:%M:%S")
+            # self.set_defaults()
 
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
 
-        self.set_defaults()
+        if not self.quietly:
+            self.set_defaults()
         if not self.layer():
             self.set_layer(0)
+
+
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -110,7 +117,7 @@ class DataModel:
         return self._data['last_opened']
 
     def is_aligned(self, s=None):
-        logger.info('')
+        # logger.info('')
         if s == None: s = self.curScale
         if sum(self.snr_list(s=s)) < 1:
             # logger.info('is_aligned is returning False')
@@ -138,22 +145,54 @@ class DataModel:
         self.nscales = len(self.scalesList)
         self.nSections = self.n_sections()
 
+    def set_t_scaling(self, dt):
+        self._data['data']['t_scaling'] = int(dt)
+
+    def set_t_scaling_convert_zarr(self, dt):
+        self._data['data']['t_scaling_convert_zarr'] = int(dt)
+
+    def set_t_thumbs(self, dt):
+        self._data['data']['t_thumbs'] = int(dt)
+
+    def set_t_align(self, dt, s=None):
+        if s == None: s = cfg.data.scale()
+        self._data['data']['scales'][s]['t_align'] = int(dt)
+
+    def set_t_generate(self, dt, s=None):
+        if s == None: s = cfg.data.scale()
+        self._data['data']['scales'][s]['t_generate'] = int(dt)
+
+    def set_t_convert_zarr(self, dt, s=None):
+        if s == None: s = cfg.data.scale()
+        self._data['data']['scales'][s]['t_convert_zarr'] = int(dt)
+
+    def set_t_thumbs_aligned(self, dt, s=None):
+        if s == None: s = cfg.data.scale()
+        self._data['data']['scales'][s]['t_thumbs_aligned'] = int(dt)
+
+    def set_t_thumbs_spot(self, dt, s=None):
+        if s == None: s = cfg.data.scale()
+        self._data['data']['scales'][s]['t_thumbs_spot'] = int(dt)
+
+
+
     def set_defaults(self):
-        logger.critical('')
+        # logger.info(f'caller: {inspect.stack()[1].function}')
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
         self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
 
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self._data['data']['scales'].keys():
+            logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
             scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
             scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
-            scale.setdefault('resolution_x', cfg.DEFAULT_RESX)
-            scale.setdefault('resolution_y', cfg.DEFAULT_RESY)
-            scale.setdefault('resolution_z', cfg.DEFAULT_RESZ)
+            scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
+
             for layer_index in range(len(scale['alignment_stack'])):
                 layer = scale['alignment_stack'][layer_index]
                 layer.setdefault('align_to_ref_method', {})
@@ -164,6 +203,26 @@ class DataModel:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
                 else:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+
+
+
+    # def set_defaults_alignment_stack(self, s=None):
+    #     if s == None: s = self.scale()
+    #     logger.critical(f'caller: {inspect.stack()[1].function}')
+    #
+    #     for s in self.scales():
+    #         scale = self._data['data']['scales'][s]
+    #
+    #         for layer_index in range(len(scale['alignment_stack'])):
+    #             layer = scale['alignment_stack'][layer_index]
+    #             layer.setdefault('align_to_ref_method', {})
+    #             layer['align_to_ref_method'].setdefault('method_data', {})
+    #             layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+    #             layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+    #             if s == self.coarsest_scale_key():
+    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+    #             else:
+    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
     def sl(self):
         return (self.curScale, self.layer())
@@ -646,35 +705,42 @@ class DataModel:
     def show_cafm(self):
         logger.info('\ncafm = %s\n' % ' '.join(map(str, self.cafm())))
 
-    def res_x(self, s=None) -> int:
-        if s == None: s = self.curScale
-        if 'resolution_x' in self._data['data']['scales'][s]:
-            return int(self._data['data']['scales'][s]['resolution_x'])
-        else:
-            logger.warning('resolution_x not in dictionary')
-            # return int(2)
+    def resolution(self, s=None):
+        if s == None: s = self.scale()
+        # logger.info('returning: %s' % str(self._data['data']['scales'][s]['resolution']))
+        return self._data['data']['scales'][s]['resolution']
+    #
+    # def res_x(self, s=None) -> int:
+    #     if s == None: s = self.curScale
+    #     if 'resolution_x' in self._data['data']['scales'][s]:
+    #         return int(self._data['data']['scales'][s]['resolution_x'])
+    #     else:
+    #         logger.warning('resolution_x not in dictionary')
+    #         # return int(2)
+    #
+    # def res_y(self, s=None) -> int:
+    #     if s == None: s = self.curScale
+    #     if 'resolution_y' in self._data['data']['scales'][s]:
+    #         return int(self._data['data']['scales'][s]['resolution_y'])
+    #     else:
+    #         logger.warning('resolution_y not in dictionary')
+    #         # return int(2)
+    #
+    # def res_z(self, s=None) -> int:
+    #     if s == None: s = self.curScale
+    #     if 'resolution_z' in self._data['data']['scales'][s]:
+    #         return int(self._data['data']['scales'][s]['resolution_z'])
+    #     else:
+    #         logger.warning('resolution_z not in dictionary')
+    #         # return int(50)
 
-    def res_y(self, s=None) -> int:
-        if s == None: s = self.curScale
-        if 'resolution_y' in self._data['data']['scales'][s]:
-            return int(self._data['data']['scales'][s]['resolution_y'])
-        else:
-            logger.warning('resolution_y not in dictionary')
-            # return int(2)
+    # def set_resolutions(self, scale, res_x:int, res_y:int, res_z:int):
+    #     self._data['data']['scales'][scale]['resolution_x'] = res_x
+    #     self._data['data']['scales'][scale]['resolution_y'] = res_y
+    #     self._data['data']['scales'][scale]['resolution_z'] = res_z
 
-    def res_z(self, s=None) -> int:
-        if s == None: s = self.curScale
-        if 'resolution_z' in self._data['data']['scales'][s]:
-            return int(self._data['data']['scales'][s]['resolution_z'])
-        else:
-            logger.warning('resolution_z not in dictionary')
-            # return int(50)
-
-    def set_resolutions(self, scale, res_x:int, res_y:int, res_z:int):
-        self._data['data']['scales'][scale]['resolution_x'] = res_x
-        self._data['data']['scales'][scale]['resolution_y'] = res_y
-        self._data['data']['scales'][scale]['resolution_z'] = res_z
-
+    def set_resolution(self, s, res_x:int, res_y:int, res_z:int):
+        self._data['data']['scales'][s]['resolution'] = (res_z, res_y, res_x)
 
     def cname(self):
         try:     return self._data['data']['cname']
