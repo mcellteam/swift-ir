@@ -39,10 +39,6 @@ class ProjectTable(QWidget):
         self.table.currentItemChanged.connect(self.userSelectionChanged)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.INITIAL_ROW_HEIGHT = 100
-        self.row_height_slider = Slider(self, min=30, max=256)
-        self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
-        self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
-        self.row_height_slider.setMaximumWidth(128)
         # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
         self.initUI()
 
@@ -184,6 +180,7 @@ class ProjectTable(QWidget):
         return super().eventFilter(obj, event)
 
     def initUI(self):
+        logger.info('Initializing Table UI...')
 
         self.table.setShowGrid(False)
         self.table.setSortingEnabled(True)
@@ -197,29 +194,40 @@ class ProjectTable(QWidget):
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
 
-        self.layout = QGridLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
+        self.row_height_slider = Slider(min=30, max=256)
+        self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
+        self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
+        self.row_height_slider.setMaximumWidth(128)
+
         # self.row_height_slider.valueChanged.connect(self.updateFontSize)
-        self.row_height_widget = QWidget()
-        self.thumbnailPixelsLabel = QLabel()
-        self.row_height_hlayout = QHBoxLayout()
-        self.row_height_hlayout.setContentsMargins(2, 2, 2, 2)
-        self.row_height_widget.setLayout(self.row_height_hlayout)
-        self.row_height_hlayout.addWidget(QLabel('Thumbnail Size:'))
-        self.row_height_hlayout.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.row_height_hlayout.addWidget(self.thumbnailPixelsLabel, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.row_height_widget = QWidget()
+        # self.thumbnailPixelsLabel = QLabel()
+        # self.row_height_hlayout = QHBoxLayout()
+        # self.row_height_hlayout.setContentsMargins(2, 2, 2, 2)
+        # self.row_height_hlayout.addWidget(QLabel('Thumbnail Size:'))
+        # self.row_height_hlayout.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.row_height_hlayout.addWidget(self.thumbnailPixelsLabel, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.row_height_widget.setLayout(self.row_height_hlayout)
+
+        logger.info('Initializing Table Controls...')
 
         self.controls = QWidget()
         self.controls.setObjectName('controls')
-        self.controls_hlayout = QHBoxLayout()
-        self.controls_hlayout.setContentsMargins(0, 0, 0, 0)
-        self.controls_hlayout.addWidget(self.row_height_widget)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self.row_height_slider, alignment=Qt.AlignLeft)
         # self.controls_hlayout.addWidget(self.font_size_widget)
-        self.controls_hlayout.addStretch()
-        self.controls.setLayout(self.controls_hlayout)
-        self.layout.addWidget(self.table, 0, 0)
-        self.layout.addWidget(self.controls, 1, 0)
+        hbl.addStretch()
+        self.controls.setLayout(hbl)
+
+        logger.info('Initializing Table Layout...')
+
+        layout =QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.table, 0, 0)
+        layout.addWidget(self.controls, 1, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
 
 
 class SnrThumbnail(QWidget):
@@ -286,8 +294,8 @@ class ScaledPixmapLabel(QLabel):
 
 
 class Slider(QSlider):
-    def __init__(self, parent, min, max):
-        super().__init__(parent)
+    def __init__(self, min, max):
+        super().__init__()
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(min)
         self.setMaximum(max)
