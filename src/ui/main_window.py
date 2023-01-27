@@ -2538,11 +2538,9 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self._isProfiling:
             self.profilingTimer.stop()
-            self.profilingTimerButton.setIcon(qta.icon('ph.gauge-fill', color=cfg.ICON_COLOR))
         else:
             self.profilingTimer.setInterval(cfg.PROFILING_TIMER_SPEED)
             self.profilingTimer.start()
-            self.profilingTimerButton.setIcon(qta.icon('ph.gauge-fill', color='#AAFF00'))
         self._isProfiling = not self._isProfiling
 
     def startStopTimer(self):
@@ -3024,9 +3022,8 @@ class MainWindow(QMainWindow):
         tip = 'Show Neuroglancer key bindings'
         self.info_button_buffer_label = QLabel(' ')
 
-        self.profilingTimerButton = QPushButton()
+        self.profilingTimerButton = QPushButton('Profile')
         self.profilingTimerButton.setFixedSize(20,20)
-        self.profilingTimerButton.setIcon(qta.icon('ph.gauge-fill', color=cfg.ICON_COLOR))
         self.profilingTimerButton.clicked.connect(self.startStopProfiler)
         self.profilingTimer = QTimer(self)
         self.profilingTimer.timeout.connect(self.onProfilingTimer)
