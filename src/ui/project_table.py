@@ -34,11 +34,17 @@ class ProjectTable(QWidget):
         logger.info(f'caller: {caller}')
         # self.table = QTableWidget() #0126-
         self.table = QTableWidget()
+        logger.info('1')
         self.table.setUpdatesEnabled(True)
+        logger.info('2')
         self.table.itemClicked.connect(self.userSelectionChanged)
+        logger.info('3')
         self.table.currentItemChanged.connect(self.userSelectionChanged)
+        logger.info('4')
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        logger.info('5')
         self.INITIAL_ROW_HEIGHT = 100
+        logger.info('6')
         # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
         self.initUI()
 
