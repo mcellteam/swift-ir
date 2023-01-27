@@ -30,11 +30,12 @@ class OpenProject(QWidget):
 
         self.setMinimumHeight(200)
         self.filebrowser = FileBrowser(parent=self)
+        self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects()
         self.row_height_slider = Slider(min=30, max=256)
         self.row_height_slider.setValue(ROW_HEIGHT)
-        self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         self.row_height_slider.setMaximumWidth(128)
+        self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         self.initUI()
 
     def initUI(self):
@@ -103,7 +104,8 @@ class UserProjects(QWidget):
         self.table.currentItemChanged.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.countCurrentItemChangedCalls)
         # self.table.itemChanged.connect(self.userSelectionChanged)
-        # self.table.itemChanged.connect(self.countItemChangedCalls)
+        # self.table.itemChanged.connect(self.countItemChangedCalls)s
+        # self.table.itemChanged.connect(lambda: print('itemChanged!'))
 
         # self.project_table.setStyleSheet("border-radius: 12px")
         self.table.setColumnCount(10)

@@ -28,7 +28,7 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
-from src.helpers import print_exception, get_scale_val, exist_aligned_zarr, obj_to_string
+from src.helpers import print_exception, get_scale_val, exist_aligned_zarr, obj_to_string, find_allocated_widgets
 from src.shaders import ann_shader
 
 __all__ = ['NgHost']
@@ -86,6 +86,7 @@ class NgHost(QRunnable):
         try:
             caller = inspect.stack()[1].function
             logger.warning('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.scale, self.created))
+            logger.warning('Allocated NgHost/NgHostSlim Objects:\n%s' % find_allocated_widgets('NgHost'))
         except:
             logger.warning('Lost Track Of Caller')
 
@@ -178,12 +179,11 @@ class NgHost(QRunnable):
                    show_axis_lines=False
                    ):
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
+        logger.info(f'Initializing viewer (caller: {caller})....')
         if matchpoint: self.mp_mode = matchpoint
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         self.scale = cfg.data.scale()
-        logger.info(f'ATTN: cfg.data.scale() = {cfg.data.scale()}')
-        print(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
+        logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
         is_aligned = exist_aligned_zarr(self.scale)
         sf = get_scale_val(self.scale)
         self.ref_l, self.base_l, self.aligned_l  = 'ref_%d'%sf, 'base_%d'%sf, 'aligned_%d'%sf
@@ -196,9 +196,10 @@ class NgHost(QRunnable):
 
         try:
             self.unal_tensor = cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
-        except:
-            print_exception()
-            cfg.main_window.err(f'Invalid Zarr For Tensor, Unaligned, Scale {sf}'); print_exception()
+        except Exception as e:
+            logger.warning('Failed to acquire Tensorstore view')
+            raise e
+            return
         cfg.main_window.updateToolbar()
         if is_aligned:
             try:
@@ -217,7 +218,8 @@ class NgHost(QRunnable):
                 self.initViewerMendenhall()
                 return
 
-        coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
+        # coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
+        coord_space = list(cfg.data.resolution(s=cfg.data.scale()))
         # logger.info(f'coordinate space: {coord_space}')
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
@@ -254,24 +256,26 @@ class NgHost(QRunnable):
         else:
             widget_width = widget_size[2] / 2
 
-        tissue_height = cfg.data.res_y(s=self.scale) * frame[0]  # nm
+        res_z, res_y, res_x = cfg.data.resolution(s=self.scale)
+
+        tissue_height = res_y * frame[0]  # nm
         cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-        tissue_width = cfg.data.res_x(s=self.scale) * frame[1]  # nm
+        tissue_width = res_x * frame[1]  # nm
         cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
         cross_section_scale = max(cross_section_height, cross_section_width)
 
-        print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
-        print('widget size                  =%s' % str(widget_size))
-        print('arrangement                  =%d' % self.arrangement)
-        print('is aligned                   =%s' % is_aligned)
-        print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
-        print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
-        print('frame width,height           =%d,%d' % (frame[1], frame[0]))
-        print('x_nudge,y_nudge              =%d,%d' % (x_nudge, y_nudge))
-        print('widget width,height          =%d,%d' % (widget_width, widget_height))
-        print('tissue width,height          =%d,%d' % (tissue_width, tissue_height))
-        print('cross_section width,height   =%.10f,%.10f' % (cross_section_width, cross_section_height))
-        print('cross_section_scale          =%.10f' % cross_section_scale)
+        # print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
+        # print('widget size                  =%s' % str(widget_size))
+        # print('arrangement                  =%d' % self.arrangement)
+        # print('is aligned                   =%s' % is_aligned)
+        # print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
+        # print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
+        # print('frame width,height           =%d,%d' % (frame[1], frame[0]))
+        # print('x_nudge,y_nudge              =%d,%d' % (x_nudge, y_nudge))
+        # print('widget width,height          =%d,%d' % (widget_width, widget_height))
+        # print('tissue width,height          =%d,%d' % (tissue_width, tissue_height))
+        # print('cross_section width,height   =%.10f,%.10f' % (cross_section_width, cross_section_height))
+        # print('cross_section_scale          =%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
             adjustment = 1.05
@@ -288,7 +292,7 @@ class NgHost(QRunnable):
 
             s.layout.type = self.nglayout
             cfg.refLV = ng.LocalVolume(
-                data=cfg.unal_tensor,
+                data=cfg.unal_tensor[0:5, :, :],
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[1, y_nudge, x_nudge],
@@ -455,7 +459,7 @@ class NgHost(QRunnable):
             if self.mp_mode:
                 self.clear_mp_buffer()
         except:
-            # print_exception()
+            print_exception()
             logger.error('ERROR on_state_change')
 
 
@@ -477,8 +481,7 @@ class NgHost(QRunnable):
                                % (coords[1], coords[2], bounds[0], bounds[1]))
                 return
         except:
-            # print_exception()
-            logger.error('ERROR')
+            print_exception()
 
         n_mp_pairs = floor(self.mp_count / 2)
         props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]

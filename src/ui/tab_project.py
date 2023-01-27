@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import os, sys, logging, inspect, copy
+import os, sys, logging, inspect, copy, time
+import neuroglancer as ng
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QHeaderView, QTreeView, QSplitter, QTextEdit
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, QSortFilterProxyModel
@@ -28,7 +29,7 @@ class ProjectTab(QWidget):
                  datamodel=None,
                  *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
-        logger.info(f'ID(datamodel): {id(datamodel)}, Path: {path}')
+        logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
         self.datamodel = datamodel
@@ -66,19 +67,32 @@ class ProjectTab(QWidget):
         QApplication.processEvents()
         self.repaint()
 
+    def shutdownNeuroglancer(self):
+        logger.critical('')
+        if ng.is_server_running():
+            logger.critical('Stopping Neuroglancer...')
+            cfg.main_window.tell('Stopping Neuroglancer...')
+            try:
+                ng.server.stop()
+            except:
+                print_exception()
+            else:
+                cfg.main_window.hud.done()
+
 
     def initNeuroglancer(self, layout=None, matchpoint=False):
-        logger.critical(f'Initializing Neuroglancer Host (caller: {inspect.stack()[1].function})')
+        logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
+
         if cfg.data:
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
             # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
             if cfg.main_window.rb0.isChecked():
                 cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
-                cfg.ng_worker = NgHostSlim(self, project=True)
+                cfg.ng_worker = NgHostSlim(parent=self, project=True)
             elif cfg.main_window.rb1.isChecked():
                 cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
-                cfg.ng_worker = NgHost(self)
+                cfg.ng_worker = NgHost(parent=self)
             cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
             self.updateNeuroglancer(matchpoint=matchpoint)
 
@@ -90,6 +104,7 @@ class ProjectTab(QWidget):
         self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
         self.ng_browser.setFocus()
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
+
 
     def setNeuroglancerUrl(self):
         self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
@@ -113,18 +128,17 @@ class ProjectTab(QWidget):
         '''NG Browser'''
         logger.info('')
 
-
         self.ng_browser.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
         # self.ng_browser.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
         # self.ng_browser.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
 
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')

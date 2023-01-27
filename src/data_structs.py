@@ -15,6 +15,9 @@ data_template = \
             "current_layer": 0,
             "current_scale": "scale_1",
             "thumbnails": [],
+            "t_scaling": None,
+            "t_scaling_convert_zarr": None,
+            "t_thumbs": None,
             "scales": {
                 "scale_1": {
                     "method_data": {
@@ -22,7 +25,12 @@ data_template = \
                     },
                     "null_cafm_trends": cfg.DEFAULT_NULL_BIAS,
                     "use_bounding_rect": cfg.DEFAULT_BOUNDING_BOX,
-                    "alignment_stack": []
+                    "alignment_stack": [],
+                    "t_align": None,
+                    "t_generate": None,
+                    "t_convert_zarr": None,
+                    "t_thumbs_aligned": None,
+                    "t_thumbs_spot": None,
                 }
             }
         }
