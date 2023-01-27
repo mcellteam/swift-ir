@@ -22,9 +22,7 @@ logger = logging.getLogger(__name__)
 def generate_thumbnails_aligned(dm, scale=None, layers=None):
     if scale == None: scale = dm.scale()
     if layers == None: layers = range(0, dm.n_sections())
-    logger.info('Generating Thumbnails...')
-
-    cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
+    logger.info('Preparing To Generate Aligned Thumbnails...')
 
     target_thumbnail_size = cfg.TARGET_THUMBNAIL_SIZE
     scale_val = get_scale_val(scale)
@@ -45,15 +43,12 @@ def generate_thumbnails_aligned(dm, scale=None, layers=None):
                            pbar_text='Generating Thumbnails (%d Cores)...' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
-
-    od = os.path.join(dm.dest(), dm.scale(), 'thumbnails')
+    od = os.path.join(dm.dest(), dm.scale(), 'thumbnails_aligned')
     if not os.path.exists(od):
         os.makedirs(od)
 
-
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
     task_queue.start(cpus)
-
 
     for i,layer in enumerate(layers):
         # fn = os.path.abspath(layer['images']['aligned']['filename'])

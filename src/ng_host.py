@@ -55,12 +55,13 @@ class WorkerSignals(QObject):
     stateChanged = Signal(int)
     mpUpdate = Signal()
 
-# class NgHost(QObject):
-class NgHost(QRunnable):
+class NgHost(QObject):
+# class NgHost(QRunnable):
 # class NgHost:
     # def __init__(self, parent, src, scale, src, scale, bind='127.0.0.1', port=9000):
     def __init__(self, parent=None, bind='127.0.0.1', port=9000):
-        QRunnable.__init__(self)
+        # QRunnable.__init__(self)
+        QObject.__init__(self)
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
@@ -86,7 +87,6 @@ class NgHost(QRunnable):
         try:
             caller = inspect.stack()[1].function
             logger.warning('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.scale, self.created))
-            logger.warning('Allocated NgHost/NgHostSlim Objects:\n%s' % find_allocated_widgets('NgHost'))
         except:
             logger.warning('Lost Track Of Caller')
 
@@ -448,7 +448,9 @@ class NgHost(QRunnable):
 
     def on_state_changed(self):
         try:
-            request_layer = floor(cfg.viewer.state.position[0])
+            # print('requested layer: %s' % str(cfg.viewer.state.position[0]))
+            # request_layer = floor(cfg.viewer.state.position[0])
+            request_layer = int(cfg.viewer.state.position[0])
             if request_layer == self._layer:
                 logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
                 return

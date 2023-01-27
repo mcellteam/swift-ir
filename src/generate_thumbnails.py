@@ -9,6 +9,7 @@ import shutil
 import psutil
 import time
 import logging
+from math import ceil
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
     get_best_path, get_bindir, natural_sort
@@ -20,8 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_thumbnails(dm):
-    logger.info('Generating Thumbnails...')
-    cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
+    logger.info('Preparing To Generate Source Thumbnails...')
 
     target_thumbnail_size = cfg.TARGET_THUMBNAIL_SIZE
     smallest_scale_key = natural_sort(dm['data']['scales'].keys())[-1]
@@ -29,7 +29,7 @@ def generate_thumbnails(dm):
     size = dm.image_size(s=smallest_scale_key)
     siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
-    scale_factor = int(siz_start/target_thumbnail_size)
+    scale_factor = ceil(siz_start/target_thumbnail_size)
     # if scale_factor == 1:
     #     scale_factor = 2
     logger.critical(f'size: {size}, siz_start: {siz_start}, scale_factor_:{scale_factor}, '

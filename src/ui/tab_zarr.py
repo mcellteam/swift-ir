@@ -49,6 +49,9 @@ class ZarrTab(QWidget):
 
 
     def initNeuroglancer(self, layout='4panel'):
+
+        ### need to shutdown/restart neuroglancer here ###
+
         logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
         cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
         # cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')

@@ -61,20 +61,23 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
+KEEP_ORIGINAL_SPOTS = False
 PROFILING_TIMER_SPEED = 5000
-PROFILING_TIMER_AUTOSTART = True
+PROFILING_TIMER_AUTOSTART = False
 DEFAULT_PLAYBACK_SPEED = 2.5 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 500
 if 'Joels-' in platform.node():
     DEV_MODE = True
 else:
     DEV_MODE = False
-PRINT_EXAMPLE_ARGS = True
+PRINT_EXAMPLE_ARGS = False
 AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = True
-DEBUG_MP = (False,True)[DEV_MODE]
-DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
+DEBUG_MP = False
+DEBUG_NEUROGLANCER = False
+# DEBUG_MP = (False,True)[DEV_MODE]
+# DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
 PROFILER = False
 DUMMY = False
 USE_TENSORSTORE = True
@@ -82,7 +85,7 @@ FAULT_HANDLER = False
 HEADLESS = False
 # TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 116 # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
