@@ -12,7 +12,7 @@ from glob import glob
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
-    get_best_path, get_bindir, natural_sort
+    get_best_path, get_bindir, natural_sort, handleError
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_thumbnails_aligned']
@@ -24,8 +24,7 @@ def generate_thumbnails_spot(dm, scale=None, layers=None):
     logger.info('>>>> Spot Thumbnail Generation Complete >>>>')
     if scale == None:  scale = dm.scale()
     if layers == None: layers = range(0, dm.n_sections())
-    logger.info('Generating Thumbnails...')
-    cfg.main_window.hud.post('Preparing To Generate Thumbnails...')
+    logger.info('Preparing To Generate Corr Spot Thumbnails...')
 
     target_thumbnail_size = cfg.TARGET_THUMBNAIL_SIZE
     scale_val = get_scale_val(scale)
@@ -53,12 +52,17 @@ def generate_thumbnails_spot(dm, scale=None, layers=None):
     task_queue.start(cpus)
 
     glob_str = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots', '*.tif')
-    filenames = glob(glob_str)
+    filenames = natural_sort(glob(glob_str))
 
-    for i, file in enumerate(filenames):
+    if len(filenames) < 7:
+        if filenames:
+            name = os.path.basename(filenames[0])[12:]
+            cfg.main_window.tell('Generating Correlation Spot Thumbnail for %s' % name)
 
+    # Create Thumbs for Every File in the Folder
+    # for i, file in enumerate(filenames):
+    for i,fn in enumerate(filenames):
         # fn = os.path.abspath(layer['images']['aligned']['filename'])
-        fn = file
         ofn = os.path.join(od, os.path.split(fn)[1])
         # dm['data']['thumbnails'].append(ofn)
         scale_arg = '+%d' % scale_val
@@ -74,6 +78,18 @@ def generate_thumbnails_spot(dm, scale=None, layers=None):
     dt = task_queue.collect_results()
 
     cfg.data.set_t_thumbs_spot(dt,s=scale)
+
+    if cfg.KEEP_ORIGINAL_SPOTS:
+        remove_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
+        logger.info(f'Deleting Corr Spot Directory {remove_path}...')
+        try:
+            shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
+            shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
+        except:
+            cfg.main_window.warn('An Error Was Encountered During Deletion of the Project Directory')
+            print_exception()
+        else:
+            cfg.main_window.hud.done()
 
     logger.info('<<<< Spot Thumbnail Generation Complete <<<<')
 

@@ -138,7 +138,7 @@ class MainWindow(QMainWindow):
         if not self._working:
             self.resized.emit()
             if cfg.project_tab:
-                cfg.project_tab.updateNeuroglancer()
+                cfg.project_tab.initNeuroglancer()
             return super(MainWindow, self).resizeEvent(event)
 
 
@@ -165,14 +165,7 @@ class MainWindow(QMainWindow):
                 self._cmbo_ngLayout.setCurrentText('4panel')
                 # cfg.project_tab._overlayNotification.show()
                 cfg.project_tab._widgetArea_details.show()
-                # cfg.project_tab._tabs.setCurrentIndex(0) #0124-
-                # cfg.project_tab.updateNeuroglancer()
                 cfg.project_tab.initNeuroglancer()
-                # time.sleep(1)
-                # cfg.project_tab.initNeuroglancer()
-                # time.sleep(.2)
-                # cfg.project_tab.initNeuroglancer()
-
 
 
     def neuroglancer_configuration_1(self):
@@ -181,21 +174,14 @@ class MainWindow(QMainWindow):
             if cfg.project_tab:
                 self._cmbo_ngLayout.setCurrentText('xy')
                 cfg.project_tab._widgetArea_details.show()
-                # cfg.project_tab._tabs.setCurrentIndex(0) #0124-
-                # cfg.project_tab.updateNeuroglancer()
                 try:
                     cfg.project_tab.initNeuroglancer()
-                    # cfg.project_tab.updateNeuroglancer()
                 except:
                     print_exception()
                     self.warn('There was a problem loading Side-by-side layout')
                     self.rb0.setChecked(True)
                     self.setAppropriateNgLayout()
                     cfg.project_tab.initNeuroglancer()
-                    # time.sleep(1)
-                    # cfg.project_tab.initNeuroglancer()
-                    # time.sleep(.2)
-                    # cfg.project_tab.initNeuroglancer()
 
 
 
@@ -214,7 +200,7 @@ class MainWindow(QMainWindow):
         self.restartNg(hard_restart=True)
 
 
-    def restartNg(self, hard_restart=False):
+    def restartNg(self, hard_restart=True):
         logger.critical('Restarting Neuroglancer (hard_restrt=%r)' % hard_restart)
         if cfg.data:
             if not self._working:
@@ -228,13 +214,13 @@ class MainWindow(QMainWindow):
 
 
     def shutdownNeuroglancer(self):
-        logger.critical('')
         if ng.is_server_running():
+            time.sleep(.5)
             logger.critical('Stopping Neuroglancer...')
-            self.tell('Stopping Neuroglancer...')
-            try:     ng.server.stop()
-            except:  print_exception()
-            finally: self.hud.done()
+            # self.tell('Stopping Neuroglancer...')
+            ng.server.stop()
+            time.sleep(.5)
+            self.hud.done()
 
 
     def tell(self, message):
@@ -497,7 +483,7 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self.updateToolbar()
             if self._isOpenProjTab():
-                try:    cfg.project_tab.project_table.set_data()
+                try:    cfg.project_tab.project_table.setScaleData()
                 except: logger.warning('No data to set!')
             self._showSNRcheck()
             cfg.project_tab.initNeuroglancer()
@@ -672,6 +658,22 @@ class MainWindow(QMainWindow):
             self.set_idle()
             QApplication.processEvents()
 
+        self.tell('Generating Correlation Spot Thumbnails...')
+        self.showZeroedPbar()
+        try:
+            if cfg.USE_EXTRA_THREADING:
+                self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                self.threadpool.start(self.worker)
+            else:
+                generate_thumbnails_spot(dm=cfg.data)
+
+        except:
+            print_exception()
+            self.warn('Something Unexpected Happened While Generating Correlation Spot Thumbnails')
+
+        finally:
+            logger.info('Correlation Spot Thumbnail Generation Complete')
+
         if not self._toggleAutogenerate.isChecked():
             self.set_idle()
             self.pbar_widget.hide()
@@ -696,7 +698,9 @@ class MainWindow(QMainWindow):
             self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
             self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
             self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-            if diff_avg > 0:
+            if abs(diff_avg) < .001:
+                self.tell('  Δ SNR : 0.000 (NO CHANGE)')
+            elif diff_avg > 0:
                 self.tell('  Δ SNR : +%.3f (BETTER)' % diff_avg)
             else:
                 self.tell('  Δ SNR : -%.3f (WORSE)' % diff_avg)
@@ -743,35 +747,6 @@ class MainWindow(QMainWindow):
                 cfg.data.nscales = len(cfg.data.scales())
                 cfg.data.set_scale(cfg.data.scales()[-1])
                 logger.info('Thumbnail Generation Complete')
-
-
-            self.tell('Generating Correlation Spot Thumbnails...')
-            self.showZeroedPbar()
-            try:
-                if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
-                    self.threadpool.start(self.worker)
-                else:
-                    generate_thumbnails_spot(dm=cfg.data)
-
-            except:
-                print_exception()
-                self.warn('Something Unexpected Happened While Generating Thumbnails')
-
-            finally:
-                logger.info('Thumbnail Generation Complete')
-
-            remove_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
-            logger.info(f'Deleting Corr Spot Directory {remove_path}...')
-            try:
-
-                shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
-                shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
-            except:
-                self.warn('An Error Was Encountered During Deletion of the Project Directory')
-                print_exception()
-            else:
-                self.hud.done()
 
         except:
             print_exception()
@@ -820,6 +795,41 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             self.err('An Exception Was Raised During Alignment.')
+
+        self.tell('Generating Correlation Spot Thumbnails...')
+        self.showZeroedPbar()
+        try:
+            if cfg.USE_EXTRA_THREADING:
+                self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                self.threadpool.start(self.worker)
+            else:
+                generate_thumbnails_spot(dm=cfg.data)
+
+        except:
+            print_exception()
+            self.warn('Something Unexpected Happened While Generating Correlation Spot Thumbnails')
+
+        finally:
+            logger.info('Correlation Spot Thumbnail Generation Complete')
+
+        # remove_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
+        # logger.info(f'Deleting Corr Spot Directory {remove_path}...')
+        # try:
+        #
+        #     shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
+        #     shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
+        # except:
+        #     self.warn('An Error Was Encountered During Deletion of the Project Directory')
+        #     print_exception()
+        # else:
+        #     self.hud.done()
+
+        if not self._toggleAutogenerate.isChecked():
+            self.set_idle()
+            self.pbar_widget.hide()
+            self.tell('Affine Computation Complete!')
+            self.onAlignmentEnd()
+            return
 
         self.tell('Generating Aligned Images From Layers %d -> End,  Scale  %d...' % (start_layer, scale_val))
         self.set_status('Generating Alignment...')
@@ -897,6 +907,11 @@ class MainWindow(QMainWindow):
 
         self.onAlignmentStart()
 
+        try:
+            snr_start = cfg.data.snr(l=cfg.data.layer())
+        except:
+            snr_start = 0.0
+
         logger.info('SNR Before: %s' % str(cfg.data.snr_report()))
         logger.info('Aligning Single Layer...')
         if scale == None: scale = cfg.data.curScale
@@ -925,8 +940,37 @@ class MainWindow(QMainWindow):
             print_exception()
             self.err('An Exception Was Raised During Alignment.')
 
+        try:
+            snr_end = cfg.data.snr(l=cfg.data.layer())
+        except:
+            snr_end = 0.0
+
+        self.showZeroedPbar()
+        try:
+            if cfg.USE_EXTRA_THREADING:
+                self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                self.threadpool.start(self.worker)
+            else:
+                generate_thumbnails_spot(dm=cfg.data)
+
+        except:
+            print_exception()
+            self.warn('Something Unexpected Happened While Generating Correlation Spot Thumbnails')
+
+        finally:
+            logger.info('Correlation Spot Thumbnail Generation Complete')
+
+
+
+        if not self._toggleAutogenerate.isChecked():
+            self.set_idle()
+            self.pbar_widget.hide()
+            self.tell('Affine Computation Complete!')
+            self.onAlignmentEnd()
+            return
+
         cur_layer = cfg.data.layer()
-        self.tell('Generating Aligned Image For Layer %d Only...' % cur_layer)
+        self.tell('Generating Aligned Image For Section # %d...' % cur_layer)
         self.set_status('Generating Alignment...')
         self.showZeroedPbar()
         try:
@@ -946,6 +990,7 @@ class MainWindow(QMainWindow):
                     start_layer=cur_layer,
                     num_layers=1,
                     preallocate=False)
+
         except:
             print_exception()
             self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.'
@@ -968,9 +1013,15 @@ class MainWindow(QMainWindow):
                 cfg.data.scalesList = cfg.data.scales()
                 cfg.data.nscales = len(cfg.data.scales())
                 cfg.data.set_scale(cfg.data.scales()[-1])
-                self.pbar_widget.hide()
-                logger.info('Thumbnail Generation Complete')
+                logger.info('Aligned Thumbnail Generation Complete')
 
+            delta = snr_start - snr_end
+            if abs(delta) < .001:
+                self.tell('  Δ SNR : 0.000 (NO CHANGE)')
+            elif delta > 0:
+                self.tell('  Δ SNR : +%.3f (BETTER)' % delta)
+            else:
+                self.tell('  Δ SNR : -%.3f (WORSE)' % delta)
 
             self.tell('Alignment Complete!')
         finally:
@@ -1140,6 +1191,7 @@ class MainWindow(QMainWindow):
         (1) Update the visibility of next/prev s buttons depending on current s.
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
+        logger.info('')
         if cfg.data:
             self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
             self._ctlpanel_applyAllButton.setEnabled(True)
@@ -1214,6 +1266,7 @@ class MainWindow(QMainWindow):
 
     def scale_up(self) -> None:
         '''Callback function for the Next Scale button.'''
+        logger.info('')
         if not self._scaleUpButton.isEnabled():
             return
         if self._working:
@@ -1229,6 +1282,7 @@ class MainWindow(QMainWindow):
 
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
+        logger.info('')
         if not self._scaleDownButton.isEnabled():
             return
         if self._working:
@@ -1284,15 +1338,14 @@ class MainWindow(QMainWindow):
             # self.jump_to(cfg.data.layer())
             self.dataUpdateWidgets()
             self.updateEnabledButtons()
-            if cfg.project_tab._tabs.currentIndex == 1:
-                cfg.project_tab.project_table.set_data()
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                cfg.project_tab.project_table.setScaleData()
             self.updateToolbar()
             self._showSNRcheck()
             try:
                 self._bbToggle.setChecked(cfg.data.has_bb())
             except:
                 logger.warning('Bounding Rect Widget Failed to Update')
-            # cfg.project_tab.updateNeuroglancer()
             cfg.project_tab.initNeuroglancer()
 
 
@@ -1392,18 +1445,16 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
                     cfg.project_tab.snr_plot.plot.setLabel('top', cfg.data.base_image_name(), **styles)
 
-                self._section_slider_switch = 0
                 self._sectionSlider.setValue(cfg.data.layer())
-                self._section_slider_switch = 1
 
-                try:
-                    if self.detachedNg.view.isVisible():
-                        if cfg.project_tab:
-                            cfg.project_tab.updateNgLayer()
-                        if cfg.zarr_tab:
-                            cfg.zarr_tab.updateNgLayer()
-                except:
-                    print_exception()
+                # try:
+                #     if self.detachedNg.view.isVisible():
+                #         if cfg.project_tab:
+                #             cfg.project_tab.updateNgLayer()
+                #         if cfg.zarr_tab:
+                #             cfg.zarr_tab.updateNgLayer()
+                # except:
+                #     print_exception()
 
                 try:
                     self.updateLayerDetails()
@@ -1639,13 +1690,13 @@ class MainWindow(QMainWindow):
 
     def jump_to_slider(self):
         # if cfg.data:
+        caller = inspect.stack()[1].function
+        if caller == 'dataUpdateWidgets':
+            return
         if not cfg.project_tab:
             if not cfg.zarr_tab:
                 return
-        caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        if caller == 'dataUpdateWidgets':
-            return
         if self._section_slider_switch:
 
 
@@ -1865,7 +1916,7 @@ class MainWindow(QMainWindow):
 
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path, mendenhall=mendenhall)
-        cfg.project_tab = ProjectTab(path=path, datamodel=cfg.data)
+        cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
         self._tabsGlob.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
         self._setLastTab()
         makedirs_exist_ok(path, exist_ok=True)
@@ -1963,7 +2014,7 @@ class MainWindow(QMainWindow):
         if self._tabsGlob.currentWidget().__class__.__name__ == 'OpenProject':
             logger.critical('Refreshing data...')
             try:
-                self._tabsGlob.currentWidget().user_projects.set_data()
+                self._tabsGlob.currentWidget().user_projects.setScaleData()
                 QApplication.processEvents()
             except:
                 logger.warning('There was a problem updating the project list')
@@ -2003,7 +2054,7 @@ class MainWindow(QMainWindow):
 
         cfg.data.set_paths_absolute(filename=filename)
         cfg.project_tab = ProjectTab(
-            parent=self,
+            self,
             path=cfg.data.dest() + '.swiftir',
             datamodel=cfg.data
         )
@@ -2063,7 +2114,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_paths_absolute(filename=filename)
 
         cfg.project_tab = ProjectTab(
-            parent=self,
+            self,
             path=cfg.data.dest() + '.swiftir',
             datamodel=cfg.data
         )
@@ -2098,6 +2149,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab or cfg.zarr_tab:
             # self.detachedNg = WebPage()
             self.detachedNg.open(url=str(cfg.viewer))
+            self.detachedNg.show()
         else:
             if not ng.server.is_server_running():
                 self.warn('Neuroglancer is not running.')
@@ -2124,8 +2176,6 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         # self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)
         cfg.data.set_defaults() # BEFORE dataUpdateWidgets
-        cfg.project_tab.initNeuroglancer()
-        time.sleep(1)
         cfg.project_tab.initNeuroglancer()
         self.dataUpdateWidgets()
         try:    self._bbToggle.setChecked(cfg.data.has_bb())
@@ -2260,8 +2310,8 @@ class MainWindow(QMainWindow):
     def _callbk_unsavedChanges(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
-            self.tell('You have unsaved changes.')
-            logger.info("Called by " + inspect.stack()[1].function)
+            # self.tell('You have unsaved changes.')
+            # logger.info("Called by " + inspect.stack()[1].function)
             self._unsaved_changes = True
             name = os.path.basename(cfg.data.dest())
             self._tabsGlob.setTabText(self._tabsGlob.currentIndex(), name + '.swiftir' + '*')
@@ -2512,6 +2562,9 @@ class MainWindow(QMainWindow):
         self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
         self._isPlayingBack = 0
 
+    # def _setPlaybackFps(self):
+    #     cfg.DEFAULT_PLAYBACK_SPEED = float(self._fps_spinbox.value())
+
 
     def initShortcuts(self):
         logger.info('')
@@ -2704,7 +2757,7 @@ class MainWindow(QMainWindow):
                 cfg.data.link_reference_sections()
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.set_data()
+                    cfg.project_tab.project_table.setScaleData()
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.initSnrPlot()
                 QApplication.processEvents()
@@ -2763,7 +2816,7 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.updateNeuroglancer(matchpoint=False, layout='4panel')
                     cfg.project_tab.initNeuroglancer(layout='4panel', matchpoint=False)
                     # self.neuroglancer_configuration_0()
-                    if cfg.project_tab._tabs.currentIndex == 3:
+                    if cfg.project_tab._tabs.currentIndex() == 3:
                         cfg.project_tab.snr_plot.updateSpecialLayerLines()
 
 
@@ -2894,10 +2947,6 @@ class MainWindow(QMainWindow):
     #     if rb.isChecked():
     #         self.result_label.setText(f'You selected {rb.text()}')
 
-
-    def _setPlaybackFps(self):
-        cfg.DEFAULT_PLAYBACK_SPEED = float(self._fps_spinbox.value())
-
     def onProfilingTimer(self):
         cpu_percent = psutil.cpu_percent()
         psutil.virtual_memory()
@@ -2910,7 +2959,6 @@ class MainWindow(QMainWindow):
         print('CPU Usage: %.3f%% | RAM Usage: %.3f%%' % (cpu_percent, percent_ram))
         print('Neuoglancer Running? %r' % isNeuroglancerRunning())
         print('# Allocated Widgets: %d' % num_widgets)
-        print('Allocated NgHost/NgHostSlim Objects:\n%s' % find_allocated_widgets('NgHost'))
 
         # print(f'CPU Usage    : {cpu_percent:.3f}%')
         # print(f'RAM Usage    : {percent_ram:.3f}%')
@@ -3048,7 +3096,7 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.setDecimals(1)
         self._fps_spinbox.setSuffix('fps')
         self._fps_spinbox.setStatusTip('Playback Speed (frames/second)')
-        self._fps_spinbox.valueChanged.connect(self._setPlaybackFps)
+        # self._fps_spinbox.valueChanged.connect(self._setPlaybackFps)
         self._fps_spinbox.clear()
 
         '''NG arrangement/layout combobox'''
@@ -3182,7 +3230,10 @@ class MainWindow(QMainWindow):
         logger.info('')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+
         if self._tabsGlob.count() == 0:
+            return
+        if caller == 'onStartProject':
             return
 
         cfg.selected_file = None
@@ -3242,7 +3293,7 @@ class MainWindow(QMainWindow):
 
         if self._isOpenProjTab():
             try:
-                self.getCurrentTabWidget().user_projects.set_data()
+                self.getCurrentTabWidget().user_projects.setScaleData()
             except:
                 logger.warning('No data to set!')
 
@@ -3337,10 +3388,10 @@ class MainWindow(QMainWindow):
     def updateMenus(self):
         '''NOTE: This should always be run AFTER initializing Neuroglancer!'''
         caller = inspect.stack()[1].function
-        logger.info(f'Updating Menu (caller: {caller})')
+        logger.info('')
         if (not self._isProjectTab()) and (not self._isZarrTab()):
             return
-        logger.info('Clearing menus...')
+        # logger.info('Clearing menus...')
         self.tensorMenu.clear()
 
         def addTensorMenuInfo(label, body):
@@ -3355,12 +3406,12 @@ class MainWindow(QMainWindow):
 
         if cfg.project_tab:
             if cfg.unal_tensor:
-                logger.info('Adding Raw Series tensor to menu...')
+                # logger.info('Adding Raw Series tensor to menu...')
                 txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
                 addTensorMenuInfo(label='Raw Series', body=txt)
             if cfg.data.is_aligned():
                 if cfg.al_tensor:
-                    logger.info('Adding Aligned Series tensor to menu...')
+                    # logger.info('Adding Aligned Series tensor to menu...')
                     txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
                     addTensorMenuInfo(label='Aligned Series', body=txt)
 
@@ -4380,7 +4431,7 @@ class MainWindow(QMainWindow):
 
         self._hstry_treeview = QTreeView()
         self._hstry_treeview.setStyleSheet('background-color: #ffffff;')
-        self._hstry_treeview.setObjectName('_treeview')
+        self._hstry_treeview.setObjectName('treeview')
         self.projecthistory_model = JsonModel()
         self._hstry_treeview.setModel(self.projecthistory_model)
         self._hstry_treeview.header().setSectionResizeMode(0, QHeaderView.Stretch)

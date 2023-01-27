@@ -443,6 +443,7 @@ class CustomViewBox(pg.ViewBox):
             pg.ViewBox.mouseDragEvent(self, ev, axis=axis)
 
 
+
 '''
 >>> import pyqtgraph.examples
 >>> 

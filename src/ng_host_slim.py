@@ -168,7 +168,7 @@ class NgHostSlim(QRunnable):
             # cfg.tensor = cfg.unal_tensor = get_zarr_tensor(self.path).result()
             try:
                 if cfg.USE_TENSORSTORE:
-                    logger.info('Getting Tensorstore Result...')
+                    # logger.info('Getting Tensorstore Result...')
                     cfg.tensor = store = get_zarr_tensor(self.path).result()
                 else:
                     logger.info('Opening Zarr...')
@@ -275,8 +275,11 @@ class NgHostSlim(QRunnable):
 
 
     def on_state_changed(self):
+
         try:
-            request_layer = floor(cfg.viewer.state.position[0])
+            print('requested layer: %s' % str(cfg.viewer.state.position[0]))
+            # request_layer = floor(cfg.viewer.state.position[0])
+            request_layer = int(cfg.viewer.state.position[0])
             if request_layer == self._layer:
                 logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
                 return

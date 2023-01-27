@@ -146,35 +146,33 @@ class DataModel:
         self.nSections = self.n_sections()
 
     def set_t_scaling(self, dt):
-        self._data['data']['t_scaling'] = int(dt)
+        self._data['data']['t_scaling'] = '%.3f' % dt
 
     def set_t_scaling_convert_zarr(self, dt):
-        self._data['data']['t_scaling_convert_zarr'] = int(dt)
+        self._data['data']['t_scaling_convert_zarr'] = '%.3f' % dt
 
     def set_t_thumbs(self, dt):
-        self._data['data']['t_thumbs'] = int(dt)
+        self._data['data']['t_thumbs'] = '%.3f' % dt
 
     def set_t_align(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_align'] = int(dt)
+        self._data['data']['scales'][s]['t_align'] = '%.3f' % dt
 
     def set_t_generate(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_generate'] = int(dt)
+        self._data['data']['scales'][s]['t_generate'] = '%.3f' % dt
 
     def set_t_convert_zarr(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_convert_zarr'] = int(dt)
+        self._data['data']['scales'][s]['t_convert_zarr'] = '%.3f' % dt
 
     def set_t_thumbs_aligned(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_thumbs_aligned'] = int(dt)
+        self._data['data']['scales'][s]['t_thumbs_aligned'] = '%.3f' % dt
 
     def set_t_thumbs_spot(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_thumbs_spot'] = int(dt)
-
-
+        self._data['data']['scales'][s]['t_thumbs_spot'] = '%.3f' % dt
 
     def set_defaults(self):
         # logger.info(f'caller: {inspect.stack()[1].function}')
@@ -265,8 +263,20 @@ class DataModel:
     def thumbnails_ref(self) -> list:
         paths = []
         for l in cfg.data.alstack():
-            paths.append(l['images']['ref']['filename'])
+            paths.append(os.path.join(self.dest(), 'thumbnails', os.path.basename(l['images']['ref']['filename'])))
         return paths
+
+    def thumbnails_aligned(self) -> list:
+        paths = []
+        for layer in range(0, self.n_sections()):
+            paths.append(os.path.join(self.dest(), self.curScale, 'thumbnails_aligned', self.base_image_name(l=layer)))
+        return paths
+
+    def thumbnail_aligned(self):
+        '''Returns absolute path of thumbnail for current layer '''
+        path = os.path.join(self.dest(), self.curScale, 'thumbnails_aligned', self.base_image_name())
+        # return self._data['data']['thumbnails'][self.layer()]
+        return path
 
     def corr_spots_q0(self) -> list:
         names = []
@@ -295,20 +305,6 @@ class DataModel:
             # names.append(os.path.join(self.dest(), self.curScale, 'corr_spots', 'corr_spot_3_' + img))
             names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots', 'corr_spot_3_' + img))
         return names
-
-
-    def thumbnails_aligned(self) -> list:
-        paths = []
-        for layer in range(0, self.n_sections()):
-            paths.append(os.path.join(self.dest(), self.curScale, 'thumbnails', self.base_image_name(l=layer)))
-        return paths
-
-
-    def thumbnail_aligned(self):
-        '''Returns absolute path of thumbnail for current layer '''
-        path = os.path.join(self.dest(), self.curScale, 'thumbnails', self.base_image_name())
-        # return self._data['data']['thumbnails'][self.layer()]
-        return path
 
     # def thumbnail_names(self):
     #

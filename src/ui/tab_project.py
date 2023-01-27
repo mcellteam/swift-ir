@@ -24,16 +24,17 @@ logger = logging.getLogger(__name__)
 class ProjectTab(QWidget):
 
     def __init__(self,
-                 parent=None,
+                 parent,
                  path=None,
                  datamodel=None,
                  *args, **kwargs):
-        QWidget.__init__(self, *args, **kwargs)
+        super().__init__(**kwargs)
         logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
         self.datamodel = datamodel
         self.ng_layout = '4panel'
+        self.setUpdatesEnabled(True)
         # cfg.main_window._ng_layout_switch = 0
         # cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
         # cfg.main_window._ng_layout_switch = 1
@@ -54,7 +55,8 @@ class ProjectTab(QWidget):
         # if index == 0:
         #     self.updateNeuroglancer()
         if index == 1:
-            self.project_table.set_data()
+            self.project_table.setScaleData()
+            self.project_table.setScaleData() #weird - not sure why this needs to be called twice
         if index == 2:
             self.updateJsonWidget()
         if index == 3:
@@ -68,25 +70,22 @@ class ProjectTab(QWidget):
         self.repaint()
 
     def shutdownNeuroglancer(self):
-        logger.critical('')
-        if ng.is_server_running():
-            logger.critical('Stopping Neuroglancer...')
-            cfg.main_window.tell('Stopping Neuroglancer...')
-            try:
-                ng.server.stop()
-            except:
-                print_exception()
-            else:
-                cfg.main_window.hud.done()
+        # if ng.is_server_running():
+            # logger.critical('Stopping Neuroglancer...')
+            # self.tell('Stopping Neuroglancer...')
+        ng.server.stop()
+        time.sleep(.5)
+        cfg.main_window.hud.done()
 
 
     def initNeuroglancer(self, layout=None, matchpoint=False):
         logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-
+        self.shutdownNeuroglancer()
         if cfg.data:
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
             # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
+            del cfg.ng_worker
             if cfg.main_window.rb0.isChecked():
                 cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
                 cfg.ng_worker = NgHostSlim(parent=self, project=True)
@@ -98,7 +97,9 @@ class ProjectTab(QWidget):
 
 
     def updateNeuroglancer(self, matchpoint=False, layout=None):
-        logger.critical(f'Updating Neuroglancer Viewer (caller: {inspect.stack()[1].function})')
+        caller = inspect.stack()[1].function
+        if caller != 'initNeuroglancer':
+            logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
         if layout: cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
         cfg.ng_worker.initViewer(matchpoint=matchpoint)
         self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
@@ -121,7 +122,7 @@ class ProjectTab(QWidget):
 
 
     def updateJsonWidget(self):
-        self._treeview_model.load(cfg.data.to_dict())
+        self.treeview_model.load(cfg.data.to_dict())
 
 
     def initUI_Neuroglancer(self):
@@ -249,7 +250,7 @@ class ProjectTab(QWidget):
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.label_overview)
         hbl.addLayout(vbl)
-        self.table_container = QWidget(parent=self)
+        self.table_container = QWidget()
         self.table_container.setObjectName('table_container')
         self.table_container.setLayout(hbl)
 
@@ -257,12 +258,13 @@ class ProjectTab(QWidget):
     def initUI_JSON(self):
         '''JSON Project View'''
         logger.info('')
-        self._treeview = QTreeView()
-        self._treeview.setIndentation(20)
-        self._treeview_model = JsonModel()
-        self._treeview.setModel(self._treeview_model)
-        self._treeview.header().setSectionResizeMode(1, QHeaderView.Stretch)
-        self._treeview.setAlternatingRowColors(True)
+        self.treeview = QTreeView()
+        self.treeview.setIndentation(20)
+        self.treeview.header().resizeSection(0, 300)
+        self.treeview_model = JsonModel()
+        self.treeview.setModel(self.treeview_model)
+        self.treeview.header().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.treeview.setAlternatingRowColors(True)
         self._wdg_treeview = QWidget()
         self._wdg_treeview.setObjectName('_wdg_treeview')
         hbl = QHBoxLayout()
@@ -270,7 +272,7 @@ class ProjectTab(QWidget):
         lab = VerticalLabel('Project Dictionary/JSON Tree View')
         lab.setObjectName('label_treeview')
         hbl.addWidget(lab)
-        hbl.addWidget(self._treeview)
+        hbl.addWidget(self.treeview)
         self._wdg_treeview.setLayout(hbl)
 
     def updatePlotThumbnail(self):
@@ -407,6 +409,45 @@ class ProjectTab(QWidget):
 
     def sizeHint(self):
         return QSize(1000,1000)
+
+
+class Thumbnail(QWidget):
+
+    def __init__(self, parent, path):
+        super().__init__(parent)
+        thumbnail = ScaledPixmapLabel(self)
+        pixmap = QPixmap(path)
+        thumbnail.setPixmap(pixmap)
+        thumbnail.setScaledContents(True)
+        layout = QGridLayout()
+        layout.setContentsMargins(1, 1, 1, 1)
+        layout.addWidget(thumbnail, 0, 0)
+        self.setLayout(layout)
+
+
+class ScaledPixmapLabel(QLabel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setScaledContents(True)
+
+    def paintEvent(self, event):
+        if self.pixmap():
+            pm = self.pixmap()
+            try:
+                originalRatio = pm.width() / pm.height()
+                currentRatio = self.width() / self.height()
+                if originalRatio != currentRatio:
+                    qp = QPainter(self)
+                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    rect = QRect(0, 0, pm.width(), pm.height())
+                    rect.moveCenter(self.rect().center())
+                    qp.drawPixmap(rect, pm)
+                    return
+            except ZeroDivisionError:
+                pass
+                # logger.warning('Cannot divide by zero')
+                # print_exception()
+        super().paintEvent(event)
 
 
 

@@ -32,7 +32,7 @@ class OpenProject(QWidget):
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects()
-        self.row_height_slider = Slider(min=30, max=256)
+        self.row_height_slider = Slider(self, min=30, max=256)
         self.row_height_slider.setValue(ROW_HEIGHT)
         self.row_height_slider.setMaximumWidth(128)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
@@ -65,11 +65,12 @@ class OpenProject(QWidget):
         controls = QWidget()
         controls.setFixedHeight(18)
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.setContentsMargins(6, 0, 6, 0)
         hbl.addWidget(self.row_height_slider,alignment=Qt.AlignmentFlag.AlignLeft)
         controls.setLayout(hbl)
 
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self._splitter)
         self.layout.addWidget(controls)
         self.setLayout(self.layout)
@@ -110,7 +111,7 @@ class UserProjects(QWidget):
         # self.project_table.setStyleSheet("border-radius: 12px")
         self.table.setColumnCount(10)
         self.set_headers()
-        # self.set_data() # This is now called from _onGlobTabChange
+        # self.setScaleData() # This is now called from _onGlobTabChange
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.table)
@@ -135,8 +136,8 @@ class UserProjects(QWidget):
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
-        self.table.setColumnWidth(5, h)
-        self.table.setColumnWidth(6, h)
+        self.table.setColumnWidth(1, h)
+        self.table.setColumnWidth(2, h)
 
         # header = self.table.horizontalHeader()
         # header.setSectionResizeMode(5, QHeaderView.Stretch)
@@ -146,12 +147,12 @@ class UserProjects(QWidget):
     def set_headers(self):
         self.table.setHorizontalHeaderLabels([
             "Name",
+            "First\nThumbnail",
+            "Last\nThumbnail",
             "Created",
             "Last\nOpened",
             "#\nImgs",
             "Image\nSize (px)",
-            "First\nThumbnail",
-            "Last\nThumbnail",
             "Disk Space\n(Bytes)",
             "Disk Space\n(Gigabytes)",
             "Location"])
@@ -181,8 +182,8 @@ class UserProjects(QWidget):
                     font.setPointSize(11)
                     lab.setFont(font)
                     self.table.setCellWidget(i, j, lab)
-                elif j in (5, 6):
-                    thumbnail = Thumbnail(path=item)
+                elif j in (1, 2):
+                    thumbnail = Thumbnail(self, path=item)
                     self.table.setCellWidget(i, j, thumbnail)
                 else:
                     table_item = QTableWidgetItem(str(item))
@@ -191,20 +192,16 @@ class UserProjects(QWidget):
                     table_item.setFont(font)
                     self.table.setItem(i, j, table_item)
         self.set_row_height(ROW_HEIGHT)
-        # self.thumb_delegate = ThumbnailDelegate()
-        # self.table.setItemDelegateForColumn(5, self.thumb_delegate)
-        # self.table.setItemDelegateForColumn(6, self.thumb_delegate)
         self.table.setColumnWidth(0, 110)
-        self.table.setColumnWidth(1, 56)
-        self.table.setColumnWidth(2, 56)
-        self.table.setColumnWidth(3, 30)
+        self.table.setColumnWidth(1, 64)
+        self.table.setColumnWidth(2, 64)
+        self.table.setColumnWidth(3, 56)
         self.table.setColumnWidth(4, 56)
-        self.table.setColumnWidth(5, 64)
-        self.table.setColumnWidth(6, 64)
+        self.table.setColumnWidth(5, 30)
+        self.table.setColumnWidth(6, 56)
         self.table.setColumnWidth(7, 74)
         self.table.setColumnWidth(8, 74)
         self.table.setColumnWidth(9, 120)
-        # self.project_table.setColumnWidth(8, 120)
         self.table.setWordWrap(True)
 
 
@@ -215,7 +212,7 @@ class UserProjects(QWidget):
         # logger.info(project_paths)
         # if not self.project_paths:
         #     return
-        projects, created, last_opened, n_sections, img_dimensions, thumbnail_first, thumbnail_last,  \
+        projects, thumbnail_first, thumbnail_last, created, last_opened, n_sections, img_dimensions,   \
         bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
         logger.info('Project Path List:\n %s' % str(self.project_paths))
@@ -252,12 +249,12 @@ class UserProjects(QWidget):
             except: thumbnail_last.append('No Thumbnail')
             try:    location.append(p)
             except: location.append('Unknown')
-        return zip(projects, created, last_opened, n_sections, img_dimensions, thumbnail_first, thumbnail_last,
+        return zip(projects, thumbnail_first, thumbnail_last, created, last_opened, n_sections, img_dimensions,
                    bytes, gigabytes, location)
 
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function
-        # if caller == 'set_data':
+        # if caller == 'setScaleData':
         #     return
         row = self.table.currentIndex().row()
         try:
@@ -270,7 +267,7 @@ class UserProjects(QWidget):
         logger.info(f'path: {path}')
         cfg.selected_file = path
         cfg.main_window.setSelectionPathText(path)
-        logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
+        # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
 
     def set_row_height(self, h):
         parentVerticalHeader = self.table.verticalHeader()
@@ -318,25 +315,22 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
 class Thumbnail(QWidget):
 
-    def __init__(self, path):
-        super(Thumbnail, self).__init__()
-        # thumbnail = QLabel(self)
-        # thumbnail = Label(self)
-        thumbnail = ScaledPixmapLabel()
-        pixmap = QPixmap(path)
-        pixmap = pixmap.scaledToHeight(ROW_HEIGHT)
-        pixmap.scaled(ROW_HEIGHT, ROW_HEIGHT, Qt.KeepAspectRatio)
-        thumbnail.setPixmap(pixmap)
-        # thumbnail.setScaledContents(True)
-        layout = QGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
-        layout.addWidget(thumbnail, 0, 0)
-        self.setLayout(layout)
+    def __init__(self, parent, path):
+        super().__init__(parent)
+        self.thumbnail = ScaledPixmapLabel(self)
+        self.pixmap = QPixmap(path)
+        self.thumbnail.setPixmap(self.pixmap)
+        self.thumbnail.setScaledContents(True)
+        self.layout = QGridLayout()
+        self.layout.setContentsMargins(1, 1, 1, 1)
+        self.layout.addWidget(self.thumbnail, 0, 0)
+        self.setLayout(self.layout)
+
+
 
 class Slider(QSlider):
-    def __init__(self, min, max, parent=None):
-        #QSlider.__init__(self, parent)
-        super(Slider, self).__init__(parent)
+    def __init__(self, parent, min, max):
+        super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(min)
         self.setMaximum(max)
@@ -363,8 +357,8 @@ class Slider(QSlider):
 #         painter.drawPixmap(point, scaledPix)
 
 class ScaledPixmapLabel(QLabel):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setScaledContents(True)
 
     def paintEvent(self, event):
