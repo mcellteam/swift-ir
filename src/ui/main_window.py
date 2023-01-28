@@ -201,6 +201,11 @@ class MainWindow(QMainWindow):
     def restartNg(self, hard_restart=True):
         logger.critical('Restarting Neuroglancer (hard_restrt=%r)' % hard_restart)
         if cfg.data:
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                cfg.project_tab.project_table.set_data()
+            if cfg.project_tab._tabs.currentIndex() == 3:
+                cfg.project_tab.snr_plot.wipeData()
+                cfg.project_tab.snr_plot.initSnrPlot()
             if not self._working:
                 if hard_restart:
                     self.shutdownNeuroglancer()
@@ -2073,6 +2078,7 @@ class MainWindow(QMainWindow):
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+        logger.info('')
 
         if self._getTabType() == 'ZarrTab':
             self.open_zarr()

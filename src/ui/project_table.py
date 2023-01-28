@@ -37,10 +37,17 @@ class ProjectTable(QWidget):
         self.table.setUpdatesEnabled(True)
         self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
+        # self.table.itemDoubleClicked.connect(self.onDoubleClick)
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
         self.INITIAL_ROW_HEIGHT = 100
         # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
         self.initUI()
+
+    # def onDoubleClick(self, item=None):
+    #     print(type(item))
+        # userSelectionChanged
+        # cfg.main_window.open_project_selected()
+
 
     def set_column_headers(self):
         if cfg.data.is_aligned():
@@ -66,7 +73,6 @@ class ProjectTable(QWidget):
                 self.table.insertRow(i)
                 snr_4x = cfg.data.all_snr(l=i)
                 for j, item in enumerate(row):
-                    logger.info(f'j={j}, item={item}')
                     if j in (2, 3, 4):
                         thumbnail = Thumbnail(self, path=item)
                         self.table.setCellWidget(i, j, thumbnail)
