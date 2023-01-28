@@ -117,6 +117,8 @@ class MainWindow(QMainWindow):
 
         self.initLaunchTab()
 
+        self.tell('To relaunch:\n  cd $WORK/swift-ir\n  source tacc_boostrap')
+
         if not cfg.NO_SPLASH:
             self.show_splash()
 
@@ -494,10 +496,9 @@ class MainWindow(QMainWindow):
                 self.set_status('Regenerating Alignment...')
                 self.worker = BackgroundWorker(
                     fn=generate_aligned(
-                        dm=cfg.data,
                         scale=scale,
-                        start_layer=0,
-                        num_layers=-1,
+                        start=0,
+                        end=None,
                         preallocate=True,
                         renew_dir=True
                     )
@@ -505,10 +506,9 @@ class MainWindow(QMainWindow):
                 self.threadpool.start(self.worker)
             else:
                 generate_aligned(
-                    dm=cfg.data,
                     scale=scale,
-                    start_layer=0,
-                    num_layers=-1,
+                    start=0,
+                    end=None,
                     preallocate=True,
                     renew_dir=True
                 )
