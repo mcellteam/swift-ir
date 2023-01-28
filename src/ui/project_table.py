@@ -87,7 +87,7 @@ class ProjectTable(QWidget):
                             lab.setWordWrap(True)
                             font = QFont()
                             font.setBold(True)
-                            font.setPointSize(11)
+                            font.setPointSize(9)
                             lab.setFont(font)
                             self.table.setCellWidget(i, j, lab)
                         elif j in (2, 3, 4):
@@ -148,7 +148,7 @@ class ProjectTable(QWidget):
                               cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
                               cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(),
                               scale, skips, method, cfg.data.snr_list(), snr_report))
-            self.table.setColumnWidth(0, 116)  # 0 index
+            self.table.setColumnWidth(0, 128)  # 0 index
             self.table.setColumnWidth(1, 40)  # 1 Filename
             self.table.setColumnWidth(2, 100) # 2 Current
             self.table.setColumnWidth(3, 100) # 1 Reference
@@ -169,7 +169,7 @@ class ProjectTable(QWidget):
             zipped = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),  ref, scale, skips, method))
 
 
-            self.table.setColumnWidth(0, 116)
+            self.table.setColumnWidth(0, 128)
             self.table.setColumnWidth(1, 40)
             self.table.setColumnWidth(2, 100)
             self.table.setColumnWidth(3, 100)
@@ -224,7 +224,7 @@ class ProjectTable(QWidget):
         else:
             thumb_path = os.path.join(cfg.data.dest(), 'thumbnails')
         max_val = max(ImageSize(next(absFilePaths(thumb_path))))
-        self.row_height_slider.setMaximum(max_val)
+        # self.row_height_slider.setMaximum(max_val)
 
 
     def initUI(self):
@@ -347,7 +347,7 @@ class Slider(QSlider):
         super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(16)
-        self.setMaximum(256)
+        self.setMaximum(512)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)
