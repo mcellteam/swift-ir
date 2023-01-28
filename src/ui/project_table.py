@@ -10,7 +10,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QChec
     QStyledItemDelegate, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QSlider, QAbstractScrollArea, \
     QHeaderView
 from qtpy.QtCore import Qt, QAbstractTableModel, QRect
-from qtpy.QtGui import QImage, QFont, QColor, QPixmap, QPainter
+from qtpy.QtGui import QImage, QFont, QColor, QPixmap, QPainter, QStandardItemModel
 
 from src.ui.file_browser import FileBrowser
 from src.helpers import get_project_list, list_paths_absolute, get_bytes
@@ -32,8 +32,8 @@ class ProjectTable(QWidget):
         super().__init__(parent)
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        # self.table = QTableWidget() #0126-
         self.table = QTableWidget()
+        self.table.verticalHeader().hide()
         self.table.setUpdatesEnabled(True)
         self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
@@ -44,10 +44,10 @@ class ProjectTable(QWidget):
 
     def set_column_headers(self):
         if cfg.data.is_aligned():
-            labels = [ 'Img', 'Reference', 'Aligned', 'Q0', 'Q1', 'Q2', 'Q3',
-                       'Scale', 'Skip?', 'Method', 'SNR Report' ]
+            labels = [ 'Img\nName','Index', 'Img', 'Reference', 'Aligned', 'Q0', 'Q1', 'Q2', 'Q3',
+                       'Scale', 'Skip?', 'Method']
         else:
-            labels = [ 'Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
+            labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
         self.table.setHorizontalHeaderLabels(labels)
         self.table.setColumnCount(len(labels))
 
@@ -66,11 +66,12 @@ class ProjectTable(QWidget):
                 self.table.insertRow(i)
                 snr_4x = cfg.data.all_snr(l=i)
                 for j, item in enumerate(row):
-                    if (j <= 2):
+                    logger.info(f'j={j}, item={item}')
+                    if j in (2, 3, 4):
                         thumbnail = Thumbnail(self, path=item)
                         self.table.setCellWidget(i, j, thumbnail)
-                    elif (2 < j < 7):
-                        thumbnail = SnrThumbnail(self, path=item, label='%.3f' % snr_4x[j - 3])
+                    elif j in (5, 6, 7, 8):
+                        thumbnail = SnrThumbnail(self, path=item, label='%.3f' % snr_4x[j - 5])
                         self.table.setCellWidget(i, j, thumbnail)
                     else:
                         self.table.setItem(i, j, QTableWidgetItem(str(item)))
@@ -78,7 +79,7 @@ class ProjectTable(QWidget):
             for i, row in enumerate(data):
                 self.table.insertRow(i)
                 for j, item in enumerate(row):
-                    if (j < 2):
+                    if j in (2, 3):
                         thumbnail = Thumbnail(self, path=item)
                         self.table.setCellWidget(i, j, thumbnail)
                     else:
@@ -99,8 +100,9 @@ class ProjectTable(QWidget):
         except:  scale = ['Unknown'] * cfg.data.nSections; print_exception()
         try:     ref = cfg.data.thumbnails_ref()
         except:  ref = ['Unknown'] * cfg.data.nSections; print_exception()
-        skips, base, method, snr_report, test = [], [], [], [], []
-        for l in cfg.data.alstack():
+        indexes, skips, base, method, snr_report, test = [], [], [], [], [], []
+        for i, l in enumerate(cfg.data.alstack()):
+            indexes.append(i)
             try:     skips.append(l['skipped'])
             except:  skips.append('?'); print_exception()
             try:
@@ -114,34 +116,40 @@ class ProjectTable(QWidget):
                 except:  snr_report.append('<No SNR Report>')
 
         if is_aligned:
-            zipped = list(zip(cfg.data.thumbnails(), ref,
+            zipped = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(), ref,
                               cfg.data.thumbnails_aligned(),
                               cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
                               cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(),
-                              scale, skips, method, cfg.data.all_snr(), snr_report))
-            self.table.setColumnWidth(1, 100)
-            self.table.setColumnWidth(2, 100) # 0 Current
+                              scale, skips, method, cfg.data.snr_list(), snr_report))
+            self.table.setColumnWidth(0, 70)  # 0 index
+            self.table.setColumnWidth(1, 40)  # 1 Filename
+            self.table.setColumnWidth(2, 100) # 2 Current
             self.table.setColumnWidth(3, 100) # 1 Reference
             self.table.setColumnWidth(4, 100) # 2 Aligned
             self.table.setColumnWidth(5, 100) # 3 Q0
             self.table.setColumnWidth(6, 100) # 4 Q1
             self.table.setColumnWidth(7, 100) # 5 Q2
             self.table.setColumnWidth(8, 100) # 6 Q3
-            self.table.setColumnWidth(9, 50)  # 7 Scale
-            self.table.setColumnWidth(10, 50) # 8 Skip
+            self.table.setColumnWidth(9, 100) # 7 Scale
+            self.table.setColumnWidth(0, 50)  # 8 Skip
             self.table.setColumnWidth(11, 50) # 9 Method
-            self.table.setColumnWidth(11, 50) # 10 SNR
-            self.table.setColumnWidth(11, 80) # 11 SNR_report
+            self.table.setColumnWidth(12, 50) # 10 SNR
+            self.table.setColumnWidth(13, 50) # 11 SNR_report
+            # self.table.setColumnWidth(14, 80) # 12
             # self.table.resizeColumnToContents(9)
 
         else:
-            zipped = list(zip(cfg.data.thumbnails(),  ref, scale, skips, method))
-            self.table.setColumnWidth(0, 100)
-            self.table.setColumnWidth(1, 100) # 0
-            self.table.setColumnWidth(2, 60) # 1
-            self.table.setColumnWidth(3, 60)  # 2 Scale
-            self.table.setColumnWidth(4, 80)  # 3 Skip
-            # self.table.setColumnWidth(6, 80)  # 4 Method
+            zipped = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),  ref, scale, skips, method))
+
+
+            self.table.setColumnWidth(0, 70)
+            self.table.setColumnWidth(1, 40)
+            self.table.setColumnWidth(2, 100)
+            self.table.setColumnWidth(3, 100)
+            self.table.setColumnWidth(4, 50)
+            self.table.setColumnWidth(5, 50)
+            self.table.setColumnWidth(6, 80)
+            # self.table.setColumnWidth(6, 80)
             self.table.resizeColumnToContents(4)
 
         return zipped
@@ -156,22 +164,24 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         # logger.info(f'Updating table dimensions...')
+        logger.info('')
         if h < 64:
             return
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
-        self.table.setColumnWidth(0, h)
-        self.table.setColumnWidth(1, h)
+        self.table.setColumnWidth(2, h)
+        self.table.setColumnWidth(3, h)
         if cfg.data.is_aligned_and_generated():
             self.table.setColumnWidth(2, h)
             self.table.setColumnWidth(3, h)
             self.table.setColumnWidth(4, h)
             self.table.setColumnWidth(5, h)
             self.table.setColumnWidth(6, h)
-        self.table.resizeColumnToContents(7)
-        self.table.resizeColumnToContents(8)
-        self.table.resizeColumnToContents(9)
+            self.table.setColumnWidth(7, h)
+            self.table.setColumnWidth(8, h)
+        # self.table.resizeColumnToContents()
+        # self.table.resizeColumnToContents(9)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
