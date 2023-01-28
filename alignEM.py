@@ -56,10 +56,9 @@ import faulthandler
 from qtpy import QtCore,QtWebEngineCore
 from qtpy.QtCore import QCoreApplication, Qt, QUrl, QDir
 from qtpy.QtWidgets import QApplication
-from qtpy.QtGui import QGuiApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-from src.helpers import check_for_binaries, is_tacc, cleanup_project_list, print_exception, \
+from src.helpers import check_for_binaries, is_tacc, print_exception, \
     configure_project_paths, configure_project_settings
 import src.config as cfg
 

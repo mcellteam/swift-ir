@@ -25,15 +25,6 @@ import os
 import numpy as np
 import tifffile
 # import scipy
-try:
-    import config as cfg
-except ImportError:
-    import src.config as cfg
-
-if cfg.USE_PYTHON:
-    print('swiftir will use OpenCV to apply affines.')
-    import cv2
-    os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
 
 apo = []
 apo0 = []

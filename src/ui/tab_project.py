@@ -19,6 +19,7 @@ from src.ui.widget_area import WidgetArea
 from src.helpers import print_exception
 from src.ui.project_table import ProjectTable
 
+
 logger = logging.getLogger(__name__)
 
 class ProjectTab(QWidget):
@@ -73,8 +74,9 @@ class ProjectTab(QWidget):
         # if ng.is_server_running():
             # logger.critical('Stopping Neuroglancer...')
             # self.tell('Stopping Neuroglancer...')
-        ng.server.stop()
-        time.sleep(.5)
+        if ng.is_server_running():
+            ng.server.stop()
+            time.sleep(1)
         cfg.main_window.hud.done()
 
 
@@ -85,7 +87,6 @@ class ProjectTab(QWidget):
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
             # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
-            del cfg.ng_worker
             if cfg.main_window.rb0.isChecked():
                 cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
                 cfg.ng_worker = NgHostSlim(parent=self, project=True)

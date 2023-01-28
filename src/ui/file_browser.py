@@ -78,6 +78,7 @@ class FileBrowser(QWidget):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_special))
         except: cfg.main_window.warn('Directory cannot be accessed')
 
+
     def initUI(self):
         with open('src/styles/controls.qss', 'r') as f:
             style = f.read()
@@ -119,9 +120,10 @@ class FileBrowser(QWidget):
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
-        hbl.addWidget(self.buttonSetRootRoot)
+        if not is_tacc(): hbl.addWidget(self.buttonSetRootRoot)
         hbl.addWidget(self.buttonSetRootHome)
-        if self.path_work:    hbl.addWidget(self.buttonSetRootWork)
+
+        if self.path_work: hbl.addWidget(self.buttonSetRootWork)
         if self.path_scratch: hbl.addWidget(self.buttonSetRootScratch)
         if is_joel():
             if os.path.exists(self.path_special):
