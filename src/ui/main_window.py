@@ -2991,7 +2991,7 @@ class MainWindow(QMainWindow):
         self.new_project(mendenhall=True)
         scale = cfg.data.scale()
 
-        cfg.data['data']['cname'] = 'zstd'
+        cfg.data['data']['cname'] = 'none'
         cfg.data['data']['clevel'] = 5
         cfg.data['data']['chunkshape'] = (1, 512, 512)
         cfg.data['data']['scales'][scale]['resolution_x'] = 2
@@ -3103,7 +3103,7 @@ class MainWindow(QMainWindow):
 
 
     def updateNgMenuStateWidgets(self):
-        logger.info('')
+        # logger.info('')
         if not cfg.data:
             self.clearNgStateMenus()
             return
