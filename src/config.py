@@ -14,6 +14,7 @@ data = None
 main_window = None
 project_tab = None
 zarr_tab = None
+thumb = None
 opengllogger = None
 selected = None
 ng_worker = None
@@ -70,7 +71,7 @@ if 'Joels-' in platform.node():
     DEV_MODE = True
 else:
     DEV_MODE = False
-PRINT_EXAMPLE_ARGS = False
+PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = False
 USE_EXTRA_THREADING = True

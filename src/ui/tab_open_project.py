@@ -215,7 +215,7 @@ class UserProjects(QWidget):
         projects, thumbnail_first, thumbnail_last, created, last_opened, n_sections, img_dimensions,   \
         bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
-        logger.info('Project Path List:\n %s' % str(self.project_paths))
+        # logger.info('Project Path List:\n %s' % str(self.project_paths))
         for p in self.project_paths:
             try:
                 with open(p, 'r') as f:
@@ -327,7 +327,6 @@ class Thumbnail(QWidget):
         self.setLayout(self.layout)
 
 
-
 class Slider(QSlider):
     def __init__(self, parent, min, max):
         super().__init__(parent)
@@ -375,7 +374,8 @@ class ScaledPixmapLabel(QLabel):
                     qp.drawPixmap(rect, pm)
                     return
             except ZeroDivisionError:
-                logger.warning('Cannot divide by zero')
+                # logger.warning('Cannot divide by zero')
+                pass
         super().paintEvent(event)
 
 

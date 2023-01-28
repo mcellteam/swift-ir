@@ -1,0 +1,194 @@
+{
+    "alignment_stack": [
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "win_scale_factor": 0.8125,
+                    "whitening_factor": -0.68
+                },
+                "method_options": {},
+                "selected_method": "Auto Swim Align",
+                "match_points": {
+                    "src": [],
+                    "ref": []
+                },
+                "method_results": {}
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy1.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false,
+            "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy1.tif",
+            "reference": ""
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "win_scale_factor": 0.8125,
+                    "whitening_factor": -0.68
+                },
+                "method_options": {},
+                "selected_method": "Auto Swim Align",
+                "match_points": {
+                    "src": [],
+                    "ref": []
+                },
+                "method_results": {}
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy2.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy1.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false,
+            "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy2.tif",
+            "reference": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy1.tif"
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "alignment_option": "init_affine",
+                    "win_scale_factor": 0.8125,
+                    "whitening_factor": -0.68
+                },
+                "method_options": {},
+                "selected_method": "Auto Swim Align",
+                "match_points": {
+                    "src": [],
+                    "ref": []
+                },
+                "method_results": {}
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy3.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy2.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false,
+            "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy3.tif",
+            "reference": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy2.tif"
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "win_scale_factor": 0.8125,
+                    "whitening_factor": -0.68,
+                    "alignment_option": "init_affine"
+                },
+                "method_options": {},
+                "selected_method": "Auto Swim Align",
+                "match_points": {
+                    "src": [],
+                    "ref": []
+                },
+                "method_results": {}
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy4.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy3.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false,
+            "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy4.tif",
+            "reference": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy3.tif"
+        },
+        {
+            "align_to_ref_method": {
+                "method_data": {
+                    "win_scale_factor": 0.8125,
+                    "whitening_factor": -0.68,
+                    "alignment_option": "init_affine"
+                },
+                "method_options": {},
+                "selected_method": "Auto Swim Align",
+                "match_points": {
+                    "src": [],
+                    "ref": []
+                },
+                "method_results": {}
+            },
+            "images": {
+                "base": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy5.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                },
+                "ref": {
+                    "filename": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy4.tif",
+                    "metadata": {
+                        "annotations": [],
+                        "match_points": []
+                    }
+                }
+            },
+            "skipped": false,
+            "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy5.tif",
+            "reference": "/Users/joelyancey/glanceem_swift/alignEM/test101/scale_4/img_src/dummy4.tif"
+        }
+    ],
+    "method_data": {
+        "alignment_option": "init_affine"
+    },
+    "use_bounding_rect": false,
+    "resolution": [
+        50,
+        8,
+        8
+    ],
+    "image_src_size": [
+        1024,
+        1024
+    ],
+    "null_cafm_trends": true,
+    "poly_order": 0
+}

@@ -48,9 +48,7 @@ from src.data_model import DataModel
 from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
-from src.generate_thumbnails import generate_thumbnails
-from src.generate_thumbnails_aligned import generate_thumbnails_aligned
-from src.generate_thumbnails_spot import generate_thumbnails_spot
+from src.thumbnailer import Thumbnailer
 from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_sort, make_affine_widget_HTML, \
     is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
@@ -64,7 +62,6 @@ from src.ui.process_monitor import HeadupDisplay
 from src.ui.kimage_window import KImageWindow
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
-from src.ui.ui_custom import VerticalLabel, HorizontalLabel
 from src.ui.widget_area import WidgetArea
 from src.ui.control_panel import ControlPanel
 from src.ui.file_browser import FileBrowser
@@ -95,6 +92,7 @@ class MainWindow(QMainWindow):
         self.setObjectName('mainwindow')
         self.setWindowTitle('AlignEM-SWiFT')
         self._mainVSplitterSizes = [800, 160, 160, 160]
+        cfg.thumb = Thumbnailer()
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
         self.initImageAllocations()
@@ -215,11 +213,11 @@ class MainWindow(QMainWindow):
 
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
-            time.sleep(.5)
             logger.critical('Stopping Neuroglancer...')
             # self.tell('Stopping Neuroglancer...')
             ng.server.stop()
-            time.sleep(.5)
+            logger.info('Is server running? %r ' % ng.is_server_running())
+            time.sleep(1)
             self.hud.done()
 
 
@@ -421,10 +419,10 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_thumbnails(dm=cfg.data))
+                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_main())
                     self.threadpool.start(self.worker)
                 else:
-                    generate_thumbnails(dm=cfg.data)
+                    cfg.thumb.generate_main()
 
             except:
                 print_exception()
@@ -548,10 +546,10 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(dm=cfg.data))
+                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=0, end=None))
                     self.threadpool.start(self.worker)
                 else:
-                    generate_thumbnails_aligned(dm=cfg.data)
+                    cfg.thumb.generate_aligned(start=0, end=None)
 
             except:
                 print_exception()
@@ -662,10 +660,10 @@ class MainWindow(QMainWindow):
         self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=0, end=None))
                 self.threadpool.start(self.worker)
             else:
-                generate_thumbnails_spot(dm=cfg.data)
+                cfg.thumb.generate_corr_spot(start=0, end=None)
 
         except:
             print_exception()
@@ -733,10 +731,10 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(dm=cfg.data))
+                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=0, end=None))
                     self.threadpool.start(self.worker)
                 else:
-                    generate_thumbnails_aligned(dm=cfg.data)
+                    cfg.thumb.generate_aligned(start=0, end=None)
 
             except:
                 print_exception()
@@ -800,10 +798,10 @@ class MainWindow(QMainWindow):
         self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start_layer, end=None))
                 self.threadpool.start(self.worker)
             else:
-                generate_thumbnails_spot(dm=cfg.data)
+                cfg.thumb.generate_corr_spot(start=start_layer, end=None)
 
         except:
             print_exception()
@@ -865,16 +863,10 @@ class MainWindow(QMainWindow):
                 end_layer = start_layer + num_layers
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(
-                        dm=cfg.data,
-                        layers=range(start_layer, start_layer + end_layer))
-                    )
+                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start_layer, end=None))
                     self.threadpool.start(self.worker)
                 else:
-                    generate_thumbnails_aligned(
-                        dm=cfg.data,
-                        layers=range(start_layer, start_layer + end_layer)
-                    )
+                    cfg.thumb.generate_aligned(start=start_layer, end=None)
 
             except:
                 print_exception()
@@ -916,6 +908,7 @@ class MainWindow(QMainWindow):
         logger.info('Aligning Single Layer...')
         if scale == None: scale = cfg.data.curScale
         scale_val = get_scale_val(scale)
+        cur = cfg.data.layer()
         self.tell('Re-aligning The Current Layer,  Scale %d...' % scale_val)
         self.set_status('Aligning...')
         try:
@@ -924,7 +917,7 @@ class MainWindow(QMainWindow):
                     fn=compute_affines(
                         dm=cfg.data,
                         scale=scale,
-                        start_layer=cfg.data.layer(),
+                        start_layer=cur,
                         num_layers=1
                     )
                 )
@@ -933,7 +926,7 @@ class MainWindow(QMainWindow):
                 compute_affines(
                     dm=cfg.data,
                     scale=scale,
-                    start_layer=cfg.data.layer(),
+                    start_layer=cur,
                     num_layers=1
                 )
         except:
@@ -948,10 +941,10 @@ class MainWindow(QMainWindow):
         self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_thumbnails_spot(dm=cfg.data))
+                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=cur, end=cur))
                 self.threadpool.start(self.worker)
             else:
-                generate_thumbnails_spot(dm=cfg.data)
+                cfg.thumb.generate_corr_spot(start=cur, end=cur)
 
         except:
             print_exception()
@@ -1000,10 +993,10 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_thumbnails_aligned(dm=cfg.data, layers=[cur_layer]))
+                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=cur_layer, end=cur_layer))
                     self.threadpool.start(self.worker)
                 else:
-                    generate_thumbnails_aligned(dm=cfg.data, layers=[cur_layer])
+                    cfg.thumb.generate_aligned(start=cur_layer, end=cur_layer)
 
             except:
                 print_exception()
@@ -1158,14 +1151,15 @@ class MainWindow(QMainWindow):
     def apply_all(self, s) -> None:
         if s == None: s = cfg.data.curScale
         '''Apply alignment settings to all images for all scales'''
-        swim_val = self._swimWindowControl.value() * 100.
-        whitening_val = self._whiteningControl.value()
-        self.tell('Applying These Settings To All Scales + Layers...')
-        self.tell('  SWIM Window  : %s' % str(swim_val))
-        self.tell('  Whitening    : %s' % str(whitening_val))
-        for layer in cfg.data.alstack(s=s):
-            layer['align_to_ref_method']['method_data']['win_scale_factor'] = swim_val
-            layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_val
+        if cfg.data:
+            swim_val = self._swimWindowControl.value() * 100.
+            whitening_val = self._whiteningControl.value()
+            self.tell('Applying These Settings To All Scales + Layers...')
+            self.tell('  SWIM Window  : %s' % str(swim_val))
+            self.tell('  Whitening    : %s' % str(whitening_val))
+            for layer in cfg.data.alstack(s=s):
+                layer['align_to_ref_method']['method_data']['win_scale_factor'] = swim_val
+                layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_val
 
 
     def enableAllButtons(self):

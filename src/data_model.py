@@ -174,6 +174,15 @@ class DataModel:
         if s == None: s = cfg.data.scale()
         self._data['data']['scales'][s]['t_thumbs_spot'] = '%.3f' % dt
 
+    def set_thumb_scaling_factor_source(self, factor:int):
+        self._data['data']['thumb_scaling_factor_source'] = factor
+
+    def set_thumb_scaling_factor_aligned(self, factor:int, s:str):
+        self._data['data']['scales'][s]['thumb_scaling_factor_aligned'] = factor
+
+    def set_thumb_scaling_factor_corr_spot(self, factor:int, s:str):
+        self._data['data']['scales'][s]['thumb_scaling_factor_corr_spot'] = factor
+
     def set_defaults(self):
         # logger.info(f'caller: {inspect.stack()[1].function}')
         self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
@@ -253,12 +262,17 @@ class DataModel:
         return natural_sort([os.path.basename(l['images']['base']['filename'])
                 for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
-    def thumbnail(self):
+    def thumbnail(self, l = None):
         '''Returns absolute path of thumbnail for current layer '''
-        return self._data['data']['thumbnails'][self.layer()]
+        if l == None: l = cfg.data.layer()
+        return self.thumbnails()[l]
 
     def thumbnails(self) -> list:
-        return self._data['data']['thumbnails']
+        lst = []
+        for name in self.basefilenames():
+            lst.append(os.path.join(self.dest(), 'thumbnails', name))
+        return lst
+
 
     def thumbnails_ref(self) -> list:
         paths = []
@@ -306,6 +320,9 @@ class DataModel:
             names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots', 'corr_spot_3_' + img))
         return names
 
+    def smallest_scale(self):
+        return natural_sort(self._data['data']['scales'].keys())[-1]
+
     # def thumbnail_names(self):
     #
     #
@@ -333,9 +350,9 @@ class DataModel:
     def is_mendenhall(self):
         return self._data['data']['mendenhall']
 
-    def get_iter(self, s=None):
+    def get_iter(self, s=None, start=0, end=None):
         if s == None: s = self.curScale
-        return ScaleIterator(self._data['data']['scales'][s]['alignment_stack'])
+        return ScaleIterator(self._data['data']['scales'][s]['alignment_stack'][start:end])
 
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''

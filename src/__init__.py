@@ -1,3 +1,6 @@
+
+# print(f'{__name__}')
+
 __all__ = []
 
 from . import ui
@@ -46,13 +49,15 @@ from . import ng_host_slim
 from .ng_host_slim import *
 __all__.extend(ng_host_slim.__all__)
 
+from . import thumbnailer
+from .thumbnailer import *
+__all__.extend(thumbnailer.__all__)
+
 from . import ng_host_slim
 from .ng_host_slim import *
 
 from . import save_bias_analysis
 from .save_bias_analysis import *
 
-from . import recipe_maker
-from .recipe_maker import *
 
 

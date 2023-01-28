@@ -39,7 +39,8 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
-           'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets'
+           'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets',
+           'absFilePaths'
            ]
 
 logger = logging.getLogger(__name__)
@@ -187,9 +188,9 @@ def configure_project_paths():
         with open(userprojectspath, 'r') as f:
             lines = f.readlines()
         paths = [line.rstrip() for line in lines]
-        logger.info(f'paths: {paths}')
+        # logger.info(f'paths: {paths}')
         projectpaths = cleanup_project_list(paths)
-        logger.info(f'projectpaths: {projectpaths}')
+        # logger.info(f'projectpaths: {projectpaths}')
         with open(userprojectspath, 'w') as f:
             for p in projectpaths:
                 f.write(f"{p}\n")
@@ -373,7 +374,7 @@ def renew_directory(directory:str) -> None:
     if os.path.exists(directory):
         d = os.path.basename(directory)
         cfg.main_window.hud.post("Regenerating Directory '%s'..." % directory)
-        try:     shutil.rmtree(directory)
+        try:     shutil.rmtree(directory, ignore_errors=True)
         except:  print_exception()
         try:     os.makedirs(directory, exist_ok=True)
         except:  print_exception()
@@ -508,6 +509,16 @@ def get_bindir() -> str:
     assert len(bindir) > 0
     return bindir
 
+def get_appdir() -> str:
+    return os.path.split(os.path.realpath(__file__))[0]
+
+def absFilePaths(d):
+    for dirpath,_,filenames in os.walk(d):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
+
+def absFilePathsList(d):
+    return list(absFilePaths(d))
 
 def is_destination_set() -> bool:
     '''Checks if there is a datamodel open'''

@@ -9,6 +9,7 @@ import shutil
 import psutil
 import time
 from glob import glob
+from math import ceil
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, create_project_structure_directories, \
@@ -35,7 +36,7 @@ def generate_thumbnails_spot(dm, scale=None, layers=None):
         size = dm.image_size(s=scale)
     siz_x, siz_y = size[0], size[1]
     siz_start = siz_x if siz_x <= siz_y else siz_y
-    scale_factor = int(siz_start/target_thumbnail_size)
+    scale_factor = ceil(siz_start/target_thumbnail_size)
     logger.critical(f'size: {size}, siz_start: {siz_start}, scale_factor_:{scale_factor}, '
                     f'target_thumbnail_size: {target_thumbnail_size}')
     logger.critical("Thumbnail Scaling Factor : %s" % str(scale_factor))

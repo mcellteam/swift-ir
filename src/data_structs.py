@@ -14,10 +14,10 @@ data_template = \
             "destination_path": "",
             "current_layer": 0,
             "current_scale": "scale_1",
-            "thumbnails": [],
             "t_scaling": None,
             "t_scaling_convert_zarr": None,
             "t_thumbs": None,
+            "thumb_scaling_factor_source": None,
             "scales": {
                 "scale_1": {
                     "method_data": {
@@ -31,6 +31,8 @@ data_template = \
                     "t_convert_zarr": None,
                     "t_thumbs_aligned": None,
                     "t_thumbs_spot": None,
+                    "thumb_scaling_factor_aligned": None,
+                    "thumb_scaling_factor_corr_spot": None,
                 }
             }
         }
