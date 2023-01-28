@@ -518,7 +518,7 @@ class ConfigProjectDialog(QDialog):
         self.cname_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cname_combobox = QComboBox(self)
         # self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
-        self.cname_combobox.addItems(["zstd", "zlib", "none"])
+        self.cname_combobox.addItems(["none", "zstd", "zlib"])
         self.cname_combobox.setCurrentText(cfg.data.cname())
         self.cname_combobox.setFixedWidth(78)
         self.cname_layout = QHBoxLayout()
