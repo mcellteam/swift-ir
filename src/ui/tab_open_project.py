@@ -108,6 +108,8 @@ class UserProjects(QWidget):
         # self.table.itemChanged.connect(self.countItemChangedCalls)s
         # self.table.itemChanged.connect(lambda: print('itemChanged!'))
 
+        self.table.itemDoubleClicked.connect(self.onDoubleClick)
+
         # self.project_table.setStyleSheet("border-radius: 12px")
         self.table.setColumnCount(10)
         self.set_headers()
@@ -116,6 +118,11 @@ class UserProjects(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.table)
         self.setLayout(self.layout)
+
+    def onDoubleClick(self, item=None):
+        print(type(item))
+        # userSelectionChanged
+        cfg.main_window.open_project_selected()
 
     def countItemClickedCalls(self):
         logger.info('')

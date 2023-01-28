@@ -3,28 +3,17 @@
 '''Generates thumbnails for use with an AlignEM-SWiFT project.'''
 
 import os
-import sys
 import shutil
 import psutil
-import time
 import inspect
 import logging
 from math import ceil
 from glob import glob
 
-try:
-    import src.config as cfg
-except Exception as e:
-    print(e)
-    try:
-        import config as cfg
-    except Exception as e:
-        print(e)
-
-
-from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths, absFilePathsList
+import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.funcs_image import ImageSize
+from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths
 
 __all__ = ['Thumbnailer']
 
@@ -81,11 +70,9 @@ class Thumbnailer:
 
         glob_str = os.path.join(src, '*.tif')
         filenames = natural_sort(glob(glob_str))[start:end]
-
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         pbar_text = 'Generating Thumbnails (%d Cores)...' % cpus
-        task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window,
-                               pbar_text=pbar_text)
+        task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
 
         for i, fn in enumerate(filenames):
@@ -96,7 +83,7 @@ class Thumbnailer:
             task = [self.iscale2_c, scale_arg, of_arg, if_arg]
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS:
-                if i in [0, 1, 2]:
+                if i in (0, 1, 2):
                     logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s'
                                 % (self.iscale2_c, scale_arg, of_arg, if_arg))
 
