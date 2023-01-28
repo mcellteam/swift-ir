@@ -53,6 +53,8 @@ class Thumbnailer:
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
+            if scale_factor == 0:
+                scale_factor = 1
         except:
             print_exception()
             logger.warning('Are there any files in this directory? - Returning')

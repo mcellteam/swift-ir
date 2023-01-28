@@ -10,7 +10,6 @@ from qtpy.QtCore import Qt, QSize, QRect, QUrl, QSortFilterProxyModel
 from qtpy.QtGui import QPainter, QFont, QPixmap, QStandardItem, QStandardItemModel
 from qtpy.QtWebEngineWidgets import *
 from src.ui.ui_custom import VerticalLabel
-from src.ui.layer_view_widget import LayerViewWidget
 from src.ui.models.json_tree import JsonModel
 from src.ui.snr_plot import SnrPlot
 from src.ui.mini_view import MiniView
@@ -124,10 +123,6 @@ class ProjectTab(QWidget):
         return self.ng_browser.geometry().getRect()
 
 
-    def updateJsonWidget(self):
-        self.treeview_model.load(cfg.data.to_dict())
-
-
     def initUI_Neuroglancer(self):
         '''NG Browser'''
         logger.info('')
@@ -138,11 +133,11 @@ class ProjectTab(QWidget):
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
 
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
@@ -185,9 +180,6 @@ class ProjectTab(QWidget):
             layer.setContentsMargins(0,0,0,0)
 
         '''AFM/CAFM Widget'''
-        # lab = QLabel('Transformation')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #ffe135;')
-        # lab.setObjectName('label_afm')
         self.afm_widget_ = QTextEdit()
         self.afm_widget_.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.afm_widget_.setObjectName('_tool_afmCafm')
@@ -259,6 +251,11 @@ class ProjectTab(QWidget):
         self.table_container.setLayout(hbl)
 
 
+    def updateJsonWidget(self):
+        self.treeview_model.load(cfg.data.to_dict())
+        self.treeview.header().resizeSection(0, 300)
+
+
     def initUI_JSON(self):
         '''JSON Project View'''
         logger.info('')
@@ -267,7 +264,7 @@ class ProjectTab(QWidget):
         self.treeview.header().resizeSection(0, 300)
         self.treeview_model = JsonModel()
         self.treeview.setModel(self.treeview_model)
-        self.treeview.header().setSectionResizeMode(1, QHeaderView.Stretch)
+        # self.treeview.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self.treeview.setAlternatingRowColors(True)
         self._wdg_treeview = QWidget()
         self._wdg_treeview.setObjectName('_wdg_treeview')

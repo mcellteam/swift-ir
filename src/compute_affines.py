@@ -21,39 +21,39 @@ __all__ = ['compute_affines']
 
 logger = logging.getLogger(__name__)
 
-def compute_affines(dm, scale, start_layer=0, num_layers=-1):
+def compute_affines(scale, start=0, end=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     logger.critical('Computing Affines...')
+    dm = cfg.data
 
-    if ng.is_server_running():
-        logger.info('Stopping Neuroglancer...')
-        ng.server.stop()
+    # if ng.is_server_running():
+    #     logger.info('Stopping Neuroglancer...')
+    #     ng.server.stop()
 
     rename_switch = False
     alignment_dict = dm['data']['scales'][scale]['alignment_stack']
     scale_val = get_scale_val(scale)
-    last_layer = len(alignment_dict) if num_layers == -1 else start_layer + num_layers
     alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
-    logger.info('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
+    logger.info('Start Layer: %s / # Layers: %s' % (str(start), str(end)))
 
     # path = os.path.join(dm.dest(), scale, 'img_aligned')
     # if checkForTiffs(path):
-    #     # al_substack = dm['data']['scales'][scale]['alignment_stack'][start_layer:]
+    #     # al_substack = dm['data']['scales'][scale]['alignment_stack'][start:]
     #     # remove_aligned(al_substack) #0903 Moved into conditional
-    #     dm.remove_aligned(scale, start_layer)
+    #     dm.remove_aligned(scale, start)
 
     corr_spots_dir = os.path.join(dm.dest(), scale, 'corr_spots')
     if os.path.exists(corr_spots_dir):
         shutil.rmtree(corr_spots_dir)
     os.mkdir(corr_spots_dir)
 
-    dm.clear_method_results(scale=scale, start=start_layer, end=last_layer) #1109 Should this be on the copy?
+    dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
     if rename_switch:
         rename_layers(use_scale=scale, al_dict=alignment_dict)
 
     dm_ = copy.deepcopy(dm) # Copy the datamodel previewmodel for this datamodel to add local fields for SWiFT
     alstack = dm_['data']['scales'][scale]['alignment_stack']
-    substack = alstack[start_layer:last_layer]
+    substack = alstack[start:end]
     n_tasks = n_skips = 0
     for layer in substack: # Operating on the Copy!
         # layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
@@ -97,10 +97,10 @@ def compute_affines(dm, scale, start_layer=0, num_layers=-1):
             # if index == 8:
             #     task_args[1] = 'bogus_script.py'
             task_queue.add_task(task_args)
-            if cfg.PRINT_EXAMPLE_ARGS:
-                if index in range(start_layer, start_layer + 3):
-                    e = [str(p) for p in task_args] # example
-                    logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
+            # if cfg.PRINT_EXAMPLE_ARGS:
+            #     if index in range(start, start + 3):
+            e = [str(p) for p in task_args] # example
+            logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
 
     # task_queue.work_q.join()
     # cfg.main_window.hud.post('Computing Alignment Using SWIM...')

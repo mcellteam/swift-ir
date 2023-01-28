@@ -83,6 +83,7 @@ class TaskQueue(QObject):
         #     mpl.setLevel(logging.INFO)
 
         cfg.main_window.shutdownNeuroglancer()
+        cfg.main_window.showZeroedPbar()
 
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()

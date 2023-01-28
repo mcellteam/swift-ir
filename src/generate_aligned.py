@@ -20,8 +20,9 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, renew_dir=False):
+def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False):
     logger.critical('Generating Aligned Images...')
+    dm = cfg.data
 
     if ng.is_server_running():
         logger.info('Stopping Neuroglancer...')
@@ -74,11 +75,7 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
                          overwrite=True
                          )
 
-    if num_layers == -1:
-        end_layer = len(alstack)
-    else:
-        end_layer = start_layer + num_layers
-    iterator = iter(alstack[start_layer:end_layer])
+    iterator = iter(alstack[start:end])
     args_list = makeTasksList(dm, iterator, job_script, scale, rect, zarr_group)
     # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
@@ -105,7 +102,7 @@ def generate_aligned(dm, scale, start_layer=0, num_layers=-1, preallocate=True, 
     task_queue.start(cpus)
     job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
     task_list = []
-    for ID, layer in enumerate(iter(alstack[start_layer:end_layer])):
+    for ID, layer in enumerate(iter(alstack[start:end])):
         _ , fn = os.path.split(layer['images']['base']['filename'])
         al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
         zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
