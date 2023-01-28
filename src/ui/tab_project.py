@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+'''TODO This needs to have columns for indexing and section name (for sorting!)'''
+
 import os, sys, logging, inspect, copy, time
 import neuroglancer as ng
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \

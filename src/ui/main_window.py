@@ -3016,7 +3016,7 @@ class MainWindow(QMainWindow):
         tip = 'Show Neuroglancer key bindings'
         self.info_button_buffer_label = QLabel(' ')
 
-        self.profilingTimerButton = QPushButton('Profile')
+        self.profilingTimerButton = QPushButton('P')
         self.profilingTimerButton.setFixedSize(20,20)
         self.profilingTimerButton.clicked.connect(self.startStopProfiler)
         self.profilingTimer = QTimer(self)
