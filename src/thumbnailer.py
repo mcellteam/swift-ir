@@ -7,7 +7,7 @@ import shutil
 import psutil
 import inspect
 import logging
-from math import ceil
+from math import floor, ceil
 from glob import glob
 
 import src.config as cfg
@@ -37,26 +37,26 @@ class Thumbnailer:
     def generate_aligned(self, start, end):
         src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'img_aligned')
         od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
-        self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
+        dt = self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
+        cfg.data.set_t_thumbs_aligned(dt)
 
 
     def generate_corr_spot(self, start, end):
         src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
         od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
-        self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
+        dt = self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
+        cfg.data.set_t_thumbs_spot(dt)
 
 
     def generate_thumbnails(self, src, od, rmdir=False, prefix='', start=0, end=None):
-        caller = inspect.stack()[1].function
-
         logger.critical('Thumbnail Source Directory: %s' % src)
-        # siz_x, siz_y = ImageSize(next(absFilePaths(src)))
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
-            scale_factor = ceil(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
+            scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
         except:
             print_exception()
             logger.warning('Are there any files in this directory? - Returning')
+            cfg.main_window.err('Unable to generate thumbnail(s)')
             return 1
 
         if rmdir:
@@ -68,8 +68,7 @@ class Thumbnailer:
 
         logger.critical(f'Thumbnail Scaling Factor:{scale_factor}, Target : {cfg.TARGET_THUMBNAIL_SIZE}')
 
-        glob_str = os.path.join(src, '*.tif')
-        filenames = natural_sort(glob(glob_str))[start:end]
+        filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         pbar_text = 'Generating Thumbnails (%d Cores)...' % cpus
         task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window, pbar_text=pbar_text)
@@ -77,15 +76,10 @@ class Thumbnailer:
 
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
-            scale_arg = '+%d' % scale_factor
-            of_arg = 'of=%s' % ofn
-            if_arg = '%s' % fn
-            task = [self.iscale2_c, scale_arg, of_arg, if_arg]
+            task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
-            if cfg.PRINT_EXAMPLE_ARGS:
-                if i in (0, 1, 2):
-                    logger.info('\nTQ Params:\n  1: %s\n  2: %s\n  3: %s\n  4: %s'
-                                % (self.iscale2_c, scale_arg, of_arg, if_arg))
+            if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
+                logger.info('\nTQ Params: (1) %s (2) %s (3) %s (4) %s' % task)
 
         dt = task_queue.collect_results()
 

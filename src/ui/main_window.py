@@ -2970,7 +2970,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         height = int(18)
 
-        self._btn_refreshNg = QPushButton()
+        self._btn_refreshNg = QPushButton('Refresh')
         self._btn_refreshNg.setIcon(qta.icon('ei.refresh', color=cfg.ICON_COLOR))
         # self._btn_refreshNg.setFixedSize(QSize(22,22))
         self._btn_refreshNg.clicked.connect(self.restartNg)

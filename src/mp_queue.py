@@ -74,7 +74,7 @@ class TaskQueue(QObject):
         self.logging_handler = logging_handler
 
     # def start(self, n_workers, retries=10) -> None:
-    def start(self, n_workers, retries=2) -> None:
+    def start(self, n_workers, retries=1) -> None:
         if cfg.DEBUG_MP:
             logger.info('Multiprocessing Module Debugging is ENABLED')
             mpl = mp.log_to_stderr()
