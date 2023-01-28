@@ -69,7 +69,7 @@ class ProjectTable(QWidget):
         self.table.clearContents()
         self.table.clear()
         self.table.setRowCount(0)
-        self.updateSliderMaxVal()
+        # self.updateSliderMaxVal()
 
         try:
             data = self.get_data()
@@ -241,8 +241,6 @@ class ProjectTable(QWidget):
         # self.project_table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-
-        self.updateSliderMaxVal()
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
         self.row_height_slider.setMaximumWidth(128)
@@ -352,8 +350,6 @@ class Slider(QSlider):
         self.setPageStep(2)
         self.setTickInterval(1)
 
-    def setMaximum(self, a0: int) -> None:
-        self.setMaximum(a0)
 
 
 
