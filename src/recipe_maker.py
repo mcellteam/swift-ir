@@ -155,7 +155,8 @@ def run_json_project(project,
             if s_tbd[i]['skipped'] or mr == {}:
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
-                mr['snr'] = [0.0]
+                # mr['snr'] = [0.0]
+                mr['snr'] = [0.0, 0.0, 0.0, 0.0] #jy for consistency
                 mr['snr_report'] = 'SNR: --'
 
             # set alignment option

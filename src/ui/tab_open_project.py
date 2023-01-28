@@ -7,20 +7,20 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QStyledItemDelegate, QPushButton, QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QHeaderView, \
-    QFrame
-from qtpy.QtCore import Qt, QAbstractTableModel, QPoint, QRect
-from qtpy.QtGui import QImage, QFont, QPixmap, QPainter
+    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout
+from qtpy.QtCore import Qt, QRect
+from qtpy.QtGui import QFont, QPixmap, QPainter
 
 from src.ui.file_browser import FileBrowser
-from src.helpers import get_project_list, list_paths_absolute, get_bytes
+from src.funcs_image import ImageSize
+from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths
 from src.data_model import DataModel
 
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
 
-ROW_HEIGHT = 60
+ROW_HEIGHT = 40
 
 
 class OpenProject(QWidget):
@@ -28,13 +28,14 @@ class OpenProject(QWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.setMinimumHeight(200)
+        self.initial_row_height = 50
+
+        self.setMinimumHeight(256)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects()
-        self.row_height_slider = Slider(self, min=30, max=256)
+        self.row_height_slider = Slider(self)
         self.row_height_slider.setValue(ROW_HEIGHT)
-        self.row_height_slider.setMaximumWidth(128)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         self.initUI()
 
@@ -43,7 +44,7 @@ class OpenProject(QWidget):
         self.userProjectsWidget = QWidget()
         lab = QLabel('<h3>User Projects:</h3>')
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(2, 2, 2, 2)
+        vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(lab)
         vbl.addWidget(self.user_projects)
         self.userProjectsWidget.setLayout(vbl)
@@ -52,7 +53,7 @@ class OpenProject(QWidget):
         self.userFilesWidget = QWidget()
         lab = QLabel('<h3>Import Project:</h3>')
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(2, 2, 2, 2)
+        vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(lab)
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
@@ -65,17 +66,19 @@ class OpenProject(QWidget):
         controls = QWidget()
         controls.setFixedHeight(18)
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(6, 0, 6, 0)
+        hbl.setContentsMargins(4, 0, 4, 0)
         hbl.addWidget(self.row_height_slider,alignment=Qt.AlignmentFlag.AlignLeft)
         controls.setLayout(hbl)
 
         self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(4, 4, 4, 4)
         self.layout.addWidget(self._splitter)
         self.layout.addWidget(controls)
         self.setLayout(self.layout)
 
         self.user_projects.set_data()
+        self.row_height_slider.setValue(self.initial_row_height)
+
 
 
 class UserProjects(QWidget):
@@ -104,13 +107,9 @@ class UserProjects(QWidget):
         self.table.itemClicked.connect(self.countItemClickedCalls)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.countCurrentItemChangedCalls)
-        # self.table.itemChanged.connect(self.userSelectionChanged)
-        # self.table.itemChanged.connect(self.countItemChangedCalls)s
-        # self.table.itemChanged.connect(lambda: print('itemChanged!'))
-
         self.table.itemDoubleClicked.connect(self.onDoubleClick)
 
-        # self.project_table.setStyleSheet("border-radius: 12px")
+        self.table.setStyleSheet("border-radius: 12px; border-width: 3px;")
         self.table.setColumnCount(10)
         self.set_headers()
         # self.setScaleData() # This is now called from _onGlobTabChange
@@ -174,15 +173,12 @@ class UserProjects(QWidget):
         logger.info(f'caller: {caller}')
         self.table.clearContents()
         # self.set_column_headers()
-        data = self.get_data()
         self.table.setRowCount(0)
-        for i, row in enumerate(data):
+        for i, row in enumerate(self.get_data()):
             self.table.insertRow(i)
             for j, item in enumerate(row):
-                # logger.info(f'item: {item}')
                 if j == 0:
-                    # lab = QLabel('<h3>' + '\n'.join(textwrap.wrap(item, 12)) + '</h3>')
-                    lab = QLabel('\n'.join(textwrap.wrap(item, 18)))
+                    lab = QLabel('\n'.join(textwrap.wrap(item, 22)))
                     lab.setWordWrap(True)
                     font = QFont()
                     font.setBold(True)
@@ -198,8 +194,7 @@ class UserProjects(QWidget):
                     font.setPointSize(10)
                     table_item.setFont(font)
                     self.table.setItem(i, j, table_item)
-        self.set_row_height(ROW_HEIGHT)
-        self.table.setColumnWidth(0, 110)
+        self.table.setColumnWidth(0, 116)
         self.table.setColumnWidth(1, 64)
         self.table.setColumnWidth(2, 64)
         self.table.setColumnWidth(3, 56)
@@ -209,27 +204,21 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(7, 74)
         self.table.setColumnWidth(8, 74)
         self.table.setColumnWidth(9, 120)
-        self.table.setWordWrap(True)
 
 
     def get_data(self):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         self.project_paths = get_project_list()
-        # logger.info(project_paths)
-        # if not self.project_paths:
-        #     return
-        projects, thumbnail_first, thumbnail_last, created, last_opened, n_sections, img_dimensions,   \
-        bytes, gigabytes, location = \
+        projects, thumbnail_first, thumbnail_last, created, last_opened, \
+        n_sections, img_dimensions, bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
-        # logger.info('Project Path List:\n %s' % str(self.project_paths))
         for p in self.project_paths:
             try:
                 with open(p, 'r') as f:
                     dm = DataModel(data=json.load(f), quitely=True)
             except:
                 logger.error('Table view failed to load data model: %s' % p)
-                # cfg.main_window.err('Table view failed to load data model')
             try:    created.append(dm.created())
             except: created.append('Unknown')
             try:    last_opened.append(dm.last_opened())
@@ -238,14 +227,13 @@ class UserProjects(QWidget):
             except: n_sections.append('Unknown')
             try:    img_dimensions.append(dm.full_scale_size())
             except: img_dimensions.append('Unknown')
-            # projects.append(os.path.splitext(os.path.basename(p))[0])
-            projects.append(os.path.basename(p))
+            try:    projects.append(os.path.basename(p))
+            except: projects.append('Unknown')
             project_dir = os.path.splitext(p)[0]
             try:
                 _bytes = get_bytes(project_dir)
                 bytes.append(_bytes)
-                _gigabytes = _bytes / (1024 * 1024 * 1024)
-                gigabytes.append('%.4f' % _gigabytes)
+                gigabytes.append('%.4f' % _bytes / 1073741824)
             except:
                 bytes.append('Unknown')
                 gigabytes.append('Unknown')
@@ -256,8 +244,8 @@ class UserProjects(QWidget):
             except: thumbnail_last.append('No Thumbnail')
             try:    location.append(p)
             except: location.append('Unknown')
-        return zip(projects, thumbnail_first, thumbnail_last, created, last_opened, n_sections, img_dimensions,
-                   bytes, gigabytes, location)
+        return zip(projects, thumbnail_first, thumbnail_last, created, last_opened,
+                   n_sections, img_dimensions, bytes, gigabytes, location)
 
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function
@@ -276,11 +264,6 @@ class UserProjects(QWidget):
         cfg.main_window.setSelectionPathText(path)
         # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
 
-    def set_row_height(self, h):
-        parentVerticalHeader = self.table.verticalHeader()
-        for section in range(parentVerticalHeader.count()):
-            parentVerticalHeader.resizeSection(section, h)
-
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             logger.info('Click detected!')
@@ -289,35 +272,6 @@ class UserProjects(QWidget):
         if event.type() == event.MouseMove:
             print('mouse moving')
         return super().eventFilter(obj, event)
-
-
-# class TableModel(QAbstractTableModel):
-#     def __init__(self, data):
-#         super().__init__()
-#         self._data = data
-#
-#     def data(self, index, role):
-#         if role == Qt.DisplayRole:
-#             return self._data[index.row()][index.column()]
-#
-#     def rowCount(self, parent=None):
-#         return len(self._data)
-#
-#     def columnCount(self, parent=None):
-#         return len(self._data[0])
-
-
-class ThumbnailDelegate(QStyledItemDelegate):
-
-    def paint(self, painter, option, index):
-        data = index.model().data(index, Qt.DisplayRole)
-        if data is None:
-            return
-        thumbnail = QImage(data)
-        width = option.rect.width() - 2
-        height = option.rect.height() - 2
-        scaled = thumbnail.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
-        painter.drawImage(option.rect.x(), option.rect.y() + 4, scaled)
 
 
 class Thumbnail(QWidget):
@@ -335,32 +289,16 @@ class Thumbnail(QWidget):
 
 
 class Slider(QSlider):
-    def __init__(self, parent, min, max):
+    def __init__(self, parent):
         super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
-        self.setMinimum(min)
-        self.setMaximum(max)
+        self.setMinimum(16)
+        self.setMaximum(256)
+        self.setValue(128)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)
 
-
-# class Label(QLabel):
-#     def __init__(self, img):
-#         super(Label, self).__init__()
-#         self.setFrameStyle(QFrame.StyledPanel)
-#         self.pixmap = QPixmap(img)
-#
-#     def paintEvent(self, event):
-#         size = self.size()
-#         painter = QPainter(self)
-#         point = QPoint(0,0)
-#         scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
-#         # start painting the label from left upper corner
-#         point.setX((size.width() - scaledPix.width())/2)
-#         point.setY((size.height() - scaledPix.height())/2)
-#         print(point.x(), ' ', point.y())
-#         painter.drawPixmap(point, scaledPix)
 
 class ScaledPixmapLabel(QLabel):
     def __init__(self, parent):
@@ -398,3 +336,22 @@ class ImageWidget(QLabel):
     def heightForWidth(self, w):
         if self.pixmap():
             return int(w * (self.pixmap().height() / self.pixmap().width()))
+
+
+
+# class Label(QLabel):
+#     def __init__(self, img):
+#         super(Label, self).__init__()
+#         self.setFrameStyle(QFrame.StyledPanel)
+#         self.pixmap = QPixmap(img)
+#
+#     def paintEvent(self, event):
+#         size = self.size()
+#         painter = QPainter(self)
+#         point = QPoint(0,0)
+#         scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
+#         # start painting the label from left upper corner
+#         point.setX((size.width() - scaledPix.width())/2)
+#         point.setY((size.height() - scaledPix.height())/2)
+#         print(point.x(), ' ', point.y())
+#         painter.drawPixmap(point, scaledPix)

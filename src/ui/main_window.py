@@ -194,26 +194,32 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.initNeuroglancer()
 
 
-    def hardRestartNg(self):
-        self.restartNg(hard_restart=True)
+    # def hardRestartNg(self):
+    #     self.refreshTab(hard_restart=True)
 
 
-    def restartNg(self, hard_restart=True):
-        logger.critical('Restarting Neuroglancer (hard_restrt=%r)' % hard_restart)
+    def refreshTab(self):
+        if cfg.zarr_tab:
+            cfg.zarr_tab.initNeuroglancer()
         if cfg.data:
-            if cfg.project_tab._tabs.currentIndex() == 1:
-                cfg.project_tab.project_table.set_data()
-            if cfg.project_tab._tabs.currentIndex() == 3:
-                cfg.project_tab.snr_plot.wipeData()
-                cfg.project_tab.snr_plot.initSnrPlot()
-            if not self._working:
-                if hard_restart:
-                    self.shutdownNeuroglancer()
-                if cfg.project_tab:  cfg.project_tab.initNeuroglancer()
-                if cfg.zarr_tab:     cfg.zarr_tab.initNeuroglancer()
-            else:
-                self.warn('The application is busy')
-                logger.warn('The application is busy')
+            if cfg.project_tab:
+                if not self._working:
+                    if cfg.project_tab._tabs.currentIndex() == 0:
+                        logger.critical('Refreshing Neuroglancer...')
+                        self.tell('Refreshing SNR Plot...')
+                        cfg.project_tab.initNeuroglancer()
+                    if cfg.project_tab._tabs.currentIndex() == 1:
+                        logger.critical('Refreshing Table...')
+                        self.tell('Refreshing SNR Plot...')
+                        cfg.project_tab.project_table.set_data()
+                    elif cfg.project_tab._tabs.currentIndex() == 3:
+                        logger.critical('Refreshing SNR Plot...')
+                        self.tell('Refreshing SNR Plot...')
+                        cfg.project_tab.snr_plot.wipeData()
+                        cfg.project_tab.snr_plot.initSnrPlot()
+                    else:
+                        self.warn('The application is busy')
+                        logger.warn('The application is busy')
 
 
     def shutdownNeuroglancer(self):
@@ -462,45 +468,6 @@ class MainWindow(QMainWindow):
                 self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...')
 
 
-
-    def onAlignmentStart(self):
-        logger.info('')
-        self.stopPlaybackTimer()
-        self.stopNgServer()
-        self._disableAllOtherTabs()
-        self.showZeroedPbar()
-        cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
-
-
-    def onAlignmentEnd(self):
-        logger.info('')
-        logger.critical('Running Post- Alignment Tasks...')
-        try:
-            cfg.project_tab._onTabChange()
-            s = cfg.data.curScale
-            cfg.data.scalesAlignedAndGenerated = get_scales_with_generated_alignments(cfg.data.scales())
-            cfg.data.nScalesAlignedAndGenerated = len(cfg.data.scalesAlignedAndGenerated)
-            # self.updateHistoryListWidget(s=s)
-            self.dataUpdateWidgets()
-            logger.info('Aligned Scales:\n%s' % cfg.data.scalesAlignedAndGenerated)
-            self.updateEnabledButtons()
-            self.updateToolbar()
-            if self._isOpenProjTab():
-                try:    cfg.project_tab.project_table.set_data()
-                except: logger.warning('No data to set!')
-            self._showSNRcheck()
-            cfg.project_tab.initNeuroglancer()
-            time.sleep(1)
-            cfg.project_tab.initNeuroglancer()
-            self.updateMenus()
-        except:
-            print_exception()
-        finally:
-            self._enableAllTabs()
-            self._autosave()
-
-
-
     def regenerate(self, scale) -> None:
 
         if cfg.project_tab is None:
@@ -607,93 +574,97 @@ class MainWindow(QMainWindow):
             return True
 
 
-
-    def align_all(self, scale=None) -> None:
-
-        if not self.verify_alignment_readiness():
-            return
-
-        self.onAlignmentStart()
-
-        logger.info('Aligning All...')
-
-        if scale == None: scale = cfg.data.curScale
-        scale_val = get_scale_val(scale)
-        is_realign = cfg.data.is_aligned(s=scale)
-        if is_realign:
-            try:
-                # For computing SNR differences later
-                snr_before = cfg.data.snr_list()
-                snr_avg_before = cfg.data.snr_average()
-            except:
-                print_exception()
-                logger.warning('Unable to get SNR average. Treating project as unaligned...')
-                is_realign = False
-
-        if cfg.data.al_option(s=scale) == 'init_affine':
-            self.tell("Initializing Affine Transforms (Scale %d)..." % scale_val)
-        else:
-            self.tell("Refining Affine Transforms (Scale %d)..." % scale_val)
-        self.set_status('Aligning...')
+    def onAlignmentEnd(self):
+        logger.info('')
+        logger.critical('Running Post- Alignment Tasks...')
         try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=compute_affines(
-                        dm=cfg.data,
-                        scale=scale,
-                        start_layer=0,
-                        num_layers=-1
-                    )
-                )
-                self.threadpool.start(self.worker)
-            else:
-                compute_affines(
-                    dm=cfg.data,
-                    scale=scale,
-                    start_layer=0,
-                    num_layers=-1
-                )
+            self.pbar_widget.hide()
+            cfg.project_tab._onTabChange()
+            s = cfg.data.curScale
+            cfg.data.scalesAlignedAndGenerated = get_scales_with_generated_alignments(cfg.data.scales())
+            cfg.data.nScalesAlignedAndGenerated = len(cfg.data.scalesAlignedAndGenerated)
+            # self.updateHistoryListWidget(s=s)
+            cfg.data.update_cache()
+            self.dataUpdateWidgets()
+            logger.info('Aligned Scales:\n%s' % cfg.data.scalesAlignedAndGenerated)
+            self.updateEnabledButtons()
+            self.updateToolbar()
+            if self._isOpenProjTab():
+                try:    cfg.project_tab.project_table.set_data()
+                except: logger.warning('No data to set!')
+            self._showSNRcheck()
+            cfg.project_tab.project_table.updateSliderMaxVal()
+            cfg.project_tab.initNeuroglancer()
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                cfg.project_tab.project_table.setScaleData()
+            if cfg.project_tab._tabs.currentIndex() == 3:
+                cfg.project_tab.snr_plot.initSnrPlot()
 
+
+            self.updateMenus()
         except:
             print_exception()
-            self.err('An Exception Was Raised During Alignment.')
         finally:
-            self.set_idle()
+            self._enableAllTabs()
+            self._autosave()
             QApplication.processEvents()
 
-        self.tell('Generating Correlation Spot Thumbnails...')
+
+    def onAlignmentStart(self):
+        logger.info('')
+        self.stopPlaybackTimer()
+        self.stopNgServer()
+        self._disableAllOtherTabs()
         self.showZeroedPbar()
+        cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
+        cfg.data.set_prev_snr()
+
+
+    def alignAll(self):
+        self.align(scale=cfg.data.curScale, start=0, end=None)
+        if exist_aligned_zarr_cur_scale():
+            self.tell('Aligned Images Generated Successfully')
+            logger.info('Alignment seems successful')
+
+
+    def alignForward(self):
+        self.align(scale=cfg.data.curScale, start=cfg.data.layer(), end=None)
+
+
+    def alignOne(self):
+        self.align(scale=cfg.data.curScale, start=cfg.data.layer(), end=cfg.data.layer())
+
+
+    def align(self, scale, start, end):
+        logger.info('')
+        if not self.verify_alignment_readiness(): return
+        self.onAlignmentStart()
+        is_realign = cfg.data.is_aligned(s=scale)
+        m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
+        self.tell("%s Affines (%s)..." %(m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
+        # self.showZeroedPbar()
+        try:
+            if cfg.USE_EXTRA_THREADING:
+                self.worker = BackgroundWorker(fn=compute_affines(scale, start, end))
+                self.threadpool.start(self.worker)
+            else: compute_affines(scale, start, end)
+        except:   print_exception(); self.err('An Exception Was Raised During Alignment.')
+        else:     logger.info('Affine Computation Succeeded')
+
+        self.tell('Generating Correlation Spot Thumbnails...')
+        # self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=0, end=None))
                 self.threadpool.start(self.worker)
-            else:
-                cfg.thumb.generate_corr_spot(start=0, end=None)
+            else: cfg.thumb.generate_corr_spot(start=0, end=None)
+        except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
+        else:   logger.info('Correlation Spot Thumbnail Generation Succeeded')
 
-        except:
-            print_exception()
-            self.warn('Something Unexpected Happened While Generating Correlation Spot Thumbnails')
-
-        finally:
-            logger.info('Correlation Spot Thumbnail Generation Complete')
-
-        if not self._toggleAutogenerate.isChecked():
-            self.set_idle()
-            self.pbar_widget.hide()
-            self.tell('Affine Computation Complete!')
-            self.onAlignmentEnd()
-            logger.info('RUNNING SNR CHECK...')
-            self._showSNRcheck()
-            return
-
-        self.showZeroedPbar()
-        '''Compute SNR differences'''
         logger.info('Calculating SNR Delta Values...')
         if is_realign:
-            snr_after = cfg.data.snr_list()
-            snr_avg_after = cfg.data.snr_average()
-            diff_avg = snr_avg_after - snr_avg_before
-            diff = [a_i - b_i for a_i, b_i in zip(snr_before, snr_after)]
+            diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
+            diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
             no_chg = [i for i, x in enumerate(diff) if x == 0]
             pos = [i for i, x in enumerate(diff) if x > 0]
             neg = [i for i, x in enumerate(diff) if x < 0]
@@ -701,340 +672,45 @@ class MainWindow(QMainWindow):
             self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
             self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
             self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-            if abs(diff_avg) < .001:
-                self.tell('  Δ SNR : 0.000 (NO CHANGE)')
-            elif diff_avg > 0:
-                self.tell('  Δ SNR : +%.3f (BETTER)' % diff_avg)
-            else:
-                self.tell('  Δ SNR : -%.3f (WORSE)' % diff_avg)
-            # self.tell('Layers whose SNR changed value: %s' % str(diff_indexes))
-        self.tell('Generating Aligned Images...')
-        self.set_status('Generating Alignment...')
+            if abs(diff_avg) < .001: self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
+            elif diff_avg > 0:       self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
+            else:                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
 
+        if not self._toggleAutogenerate.isChecked():
+            self.onAlignmentEnd()
+            self.tell('Affine Computation Complete!')
+            return
+
+        self.tell('Generating Aligned Images...')
+        # self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=generate_aligned(
-                        dm=cfg.data,
-                        scale=scale,
-                        start_layer=0,
-                        num_layers=-1,
-                        preallocate=True
-                    )
-                )
+                self.worker = BackgroundWorker(fn=generate_aligned(scale, start, end, preallocate=True))
                 self.threadpool.start(self.worker)
-            else:
-                fn = generate_aligned(
-                    dm=cfg.data,
-                    scale=scale,
-                    start_layer=0,
-                    num_layers=-1,
-                    preallocate=True
-                )
+            else: generate_aligned(scale, start, end, preallocate=True)
 
             self.tell('Generating Aligned Thumbnails...')
-            self.showZeroedPbar()
+            # self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=0, end=None))
                     self.threadpool.start(self.worker)
-                else:
-                    cfg.thumb.generate_aligned(start=0, end=None)
+                else: cfg.thumb.generate_aligned(start=0, end=None)
+            except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
+            finally: logger.info('Thumbnail Generation Complete')
+        except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
+        finally: self.onAlignmentEnd()
 
-            except:
-                print_exception()
-                self.warn('Something Unexpected Happened While Generating Thumbnails')
-
-            finally:
-                cfg.data.scalesList = cfg.data.scales()
-                cfg.data.nscales = len(cfg.data.scales())
-                cfg.data.set_scale(cfg.data.scales()[-1])
-                logger.info('Thumbnail Generation Complete')
-
-        except:
-            print_exception()
-            self.err('Alignment Succeeded But Image Generation Failed Unexpectedly. '
-                          'Try Re-generating images.')
-        else:
-            if exist_aligned_zarr_cur_scale():
-                self.tell('Aligned Images Generated Successfully')
-                logger.critical('Alignment seems successful')
-        finally:
-            self.pbar_widget.hide()
-            self.onAlignmentEnd()
-            self.set_idle()
-            QApplication.processEvents()
-
-
-    def align_forward(self, scale=None, num_layers=-1) -> None:
-
-        if not self.verify_alignment_readiness():
-            return
-
-        if not exist_aligned_zarr_cur_scale():
-            self.warn('Please align and generate the full series first!')
-            return
-
-        self.onAlignmentStart()
-
-        logger.info('Aligning Forward...')
-        if scale == None: scale = cfg.data.curScale
-        scale_val = get_scale_val(scale)
-        start_layer = cfg.data.layer()
-        self.tell('Computing Alignment For Layers %d -> End,  Scale %d...' % (start_layer, scale_val))
-        self.set_status('Aligning...')
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=compute_affines(
-                        dm=cfg.data,
-                        scale=scale,
-                        start_layer=start_layer,
-                        num_layers=num_layers
-                    )
-                )
-            else:
-                self.threadpool.start(self.worker)
-        except:
-            print_exception()
-            self.err('An Exception Was Raised During Alignment.')
-
-        self.tell('Generating Correlation Spot Thumbnails...')
-        self.showZeroedPbar()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start_layer, end=None))
-                self.threadpool.start(self.worker)
-            else:
-                cfg.thumb.generate_corr_spot(start=start_layer, end=None)
-
-        except:
-            print_exception()
-            self.warn('Something Unexpected Happened While Generating Correlation Spot Thumbnails')
-
-        finally:
-            logger.info('Correlation Spot Thumbnail Generation Complete')
-
-        # remove_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
-        # logger.info(f'Deleting Corr Spot Directory {remove_path}...')
-        # try:
-        #
-        #     shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
-        #     shutil.rmtree(remove_path, ignore_errors=True, onerror=handleError)
-        # except:
-        #     self.warn('An Error Was Encountered During Deletion of the Project Directory')
-        #     print_exception()
-        # else:
-        #     self.hud.done()
-
-        if not self._toggleAutogenerate.isChecked():
-            self.set_idle()
-            self.pbar_widget.hide()
-            self.tell('Affine Computation Complete!')
-            self.onAlignmentEnd()
-            return
-
-        self.tell('Generating Aligned Images From Layers %d -> End,  Scale  %d...' % (start_layer, scale_val))
-        self.set_status('Generating Alignment...')
-        self.showZeroedPbar()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=generate_aligned(
-                        dm=cfg.data,
-                        scale=scale,
-                        start_layer=start_layer,
-                        num_layers=num_layers,
-                        preallocate=False))
-                self.threadpool.start(self.worker)
-            else:
-                generate_aligned(
-                    dm=cfg.data,
-                    scale=scale,
-                    start_layer=start_layer,
-                    num_layers=num_layers,
-                    preallocate=False)
-        except:
-            print_exception()
-            self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.'
-                          ' Try Re-generating images.')
-
-        else:
-            self.tell('Generating Aligned Thumbnail...')
-            self.showZeroedPbar()
-            if num_layers == -1:
-                end_layer = len(cfg.data)
-            else:
-                end_layer = start_layer + num_layers
-            try:
-                if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start_layer, end=None))
-                    self.threadpool.start(self.worker)
-                else:
-                    cfg.thumb.generate_aligned(start=start_layer, end=None)
-
-            except:
-                print_exception()
-                self.warn('Something Unexpected Happened While Generating Aligned Thumbnail')
-
-            finally:
-                cfg.data.scalesList = cfg.data.scales()
-                cfg.data.nscales = len(cfg.data.scales())
-                cfg.data.set_scale(cfg.data.scales()[-1])
-                self.pbar_widget.hide()
-                logger.info('Thumbnail Generation Complete')
-
-
-            self.tell('Alignment Complete!')
-        finally:
-            self.pbar_widget.hide()
-            self.onAlignmentEnd()
-            self.set_idle()
-            QApplication.processEvents()
-
-
-    def align_one(self, scale=None) -> None:
-
-        if not self.verify_alignment_readiness():
-            return
-
-        if not exist_aligned_zarr_cur_scale():
-            self.warn('Please align and generate the full series first!')
-            return
-
-        self.onAlignmentStart()
-
-        try:
-            snr_start = cfg.data.snr(l=cfg.data.layer())
-        except:
-            snr_start = 0.0
-
-        logger.info('SNR Before: %s' % str(cfg.data.snr_report()))
-        logger.info('Aligning Single Layer...')
-        if scale == None: scale = cfg.data.curScale
-        scale_val = get_scale_val(scale)
-        cur = cfg.data.layer()
-        self.tell('Re-aligning The Current Layer,  Scale %d...' % scale_val)
-        self.set_status('Aligning...')
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=compute_affines(
-                        dm=cfg.data,
-                        scale=scale,
-                        start_layer=cur,
-                        num_layers=1
-                    )
-                )
-                self.threadpool.start(self.worker)
-            else:
-                compute_affines(
-                    dm=cfg.data,
-                    scale=scale,
-                    start_layer=cur,
-                    num_layers=1
-                )
-        except:
-            print_exception()
-            self.err('An Exception Was Raised During Alignment.')
-
-        try:
-            snr_end = cfg.data.snr(l=cfg.data.layer())
-        except:
-            snr_end = 0.0
-
-        self.showZeroedPbar()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=cur, end=cur))
-                self.threadpool.start(self.worker)
-            else:
-                cfg.thumb.generate_corr_spot(start=cur, end=cur)
-
-        except:
-            print_exception()
-            self.warn('Something Unexpected Happened While Generating Correlation Spot Thumbnails')
-
-        finally:
-            logger.info('Correlation Spot Thumbnail Generation Complete')
-
-
-
-        if not self._toggleAutogenerate.isChecked():
-            self.set_idle()
-            self.pbar_widget.hide()
-            self.tell('Affine Computation Complete!')
-            self.onAlignmentEnd()
-            return
-
-        cur_layer = cfg.data.layer()
-        self.tell('Generating Aligned Image For Section # %d...' % cur_layer)
-        self.set_status('Generating Alignment...')
-        self.showZeroedPbar()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=generate_aligned(
-                        dm=cfg.data,
-                        scale=scale,
-                        start_layer=cur_layer,
-                        num_layers=1,
-                        preallocate=False))
-                self.threadpool.start(self.worker)
-            else:
-                generate_aligned(
-                    dm=cfg.data,
-                    scale=scale,
-                    start_layer=cur_layer,
-                    num_layers=1,
-                    preallocate=False)
-
-        except:
-            print_exception()
-            self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.'
-                          ' Try Re-generating images.')
-        else:
-            self.tell('Generating Aligned Thumbnail...')
-            self.showZeroedPbar()
-            try:
-                if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=cur_layer, end=cur_layer))
-                    self.threadpool.start(self.worker)
-                else:
-                    cfg.thumb.generate_aligned(start=cur_layer, end=cur_layer)
-
-            except:
-                print_exception()
-                self.warn('Something Unexpected Happened While Generating Aligned Thumbnail')
-
-            finally:
-                cfg.data.scalesList = cfg.data.scales()
-                cfg.data.nscales = len(cfg.data.scales())
-                cfg.data.set_scale(cfg.data.scales()[-1])
-                logger.info('Aligned Thumbnail Generation Complete')
-
-            delta = snr_start - snr_end
-            if abs(delta) < .001:
-                self.tell('  Δ SNR : 0.000 (NO CHANGE)')
-            elif delta > 0:
-                self.tell('  Δ SNR : +%.3f (BETTER)' % delta)
-            else:
-                self.tell('  Δ SNR : -%.3f (WORSE)' % delta)
-
-            self.tell('Alignment Complete!')
-        finally:
-            self.pbar_widget.hide()
-            self.onAlignmentEnd()
-            self.update_match_point_snr()
-            self.set_idle()
-            QApplication.processEvents()
 
     def rescale(self):
+
+        #Todo clear SNR data!
+
         if not cfg.data:
             self.warn('No data yet!')
             return
-        dlg = AskContinueDialog(title='Confirm Rescale', msg='Warning: Rescaling resets project data.\n'
-                                                             'Progress will be lost.  Continue?')
+        msg ='Warning: Rescaling resets project data.\nAll progress will be lost. Continue?'
+        dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
         if not dlg.exec():
             logger.info('Rescale Canceled')
             return
@@ -1136,21 +812,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def clear_skips(self):
         if cfg.project_tab.are_there_any_skips():
-            reply = QMessageBox.question(self, 'Verify Reset Skips',
-                                         'Clear all skips? This makes all layers unskipped.',
-                                         QMessageBox.Cancel | QMessageBox.Ok)
+            msg = 'Verify reset the reject list.'
+            reply = QMessageBox.question(self, 'Verify Reset Reject List', msg, QMessageBox.Cancel | QMessageBox.Ok)
             if reply == QMessageBox.Ok:
-                try:
-                    self.tell('Resetting Skips...')
-                    cfg.data.clear_all_skips()
-                except:
-                    print_exception()
-                    self.warn('Something Went Wrong')
-                else:
-                    self.hud.done()
+                cfg.data.clear_all_skips()
         else:
-            self.warn('There Are No Skips To Clear.')
-            return
+            self.warn('No Skips To Clear.')
 
 
     def apply_all(self, s) -> None:
@@ -1655,7 +1322,7 @@ class MainWindow(QMainWindow):
     @Slot()
     # def jump_to(self, requested) -> None:
     def jump_to(self, requested) -> None:
-        logger.info('jump_to:')
+        logger.info('')
         if cfg.project_tab:
             if requested not in range(cfg.data.n_sections()):
                 logger.warning('Requested layer is not a valid layer')
@@ -1676,6 +1343,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def jump_to_layer(self) -> None:
+        logger.info('')
         if cfg.project_tab:
             requested = int(self._jumpToLineedit.text())
             if requested not in range(cfg.data.n_sections()):
@@ -1684,12 +1352,14 @@ class MainWindow(QMainWindow):
             cfg.data.set_layer(requested)
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.table.selectRow(requested)
+            self._sectionSlider.setValue(requested)
 
 
 
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if caller == 'dataUpdateWidgets':
             return
         if not cfg.project_tab:
@@ -1989,6 +1659,7 @@ class MainWindow(QMainWindow):
             logger.warning('Executing Delete Project Permanently Instruction...')
 
         try:
+            logger.critical(f'Deleting Project File: {project_file}')
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
         except:
@@ -1997,9 +1668,10 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
-        logger.info('Deleting Project Directory %s...' % project)
-        self.tell('Deleting Project Directory %s...' % project)
+
         try:
+            logger.info('Deleting Project Directory %s...' % project)
+            self.tell('Deleting Project Directory %s...' % project)
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
@@ -2973,7 +2645,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshNg = QPushButton('Refresh')
         self._btn_refreshNg.setIcon(qta.icon('ei.refresh', color=cfg.ICON_COLOR))
         # self._btn_refreshNg.setFixedSize(QSize(22,22))
-        self._btn_refreshNg.clicked.connect(self.restartNg)
+        self._btn_refreshNg.clicked.connect(self.refreshTab)
         self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
 
         self.toolbar = QToolBar()
@@ -3548,16 +3220,16 @@ class MainWindow(QMainWindow):
         menu.addAction(action)
 
         self.alignAllAction = QAction('Align All', self)
-        self.alignAllAction.triggered.connect(self.align_all)
+        self.alignAllAction.triggered.connect(self.alignAll)
         self.alignAllAction.setShortcut('Ctrl+A')
         alignMenu.addAction(self.alignAllAction)
 
         self.alignOneAction = QAction('Align One', self)
-        self.alignOneAction.triggered.connect(self.align_one)
+        self.alignOneAction.triggered.connect(self.alignOne)
         alignMenu.addAction(self.alignOneAction)
 
         self.alignForwardAction = QAction('Align Forward', self)
-        self.alignForwardAction.triggered.connect(self.align_forward)
+        self.alignForwardAction.triggered.connect(self.alignForward)
         alignMenu.addAction(self.alignForwardAction)
 
         self.alignMatchPointAction = QAction('Match Point Align', self)
@@ -3737,9 +3409,9 @@ class MainWindow(QMainWindow):
         self.detachNgAction.triggered.connect(self.detachNeuroglancer)
         ngMenu.addAction(self.detachNgAction)
 
-        self.hardRestartNgAction = QAction('Hard Restart Neuroglancer', self)
-        self.hardRestartNgAction.triggered.connect(self.hardRestartNg)
-        ngMenu.addAction(self.hardRestartNgAction)
+        # self.hardRestartNgAction = QAction('Hard Restart Neuroglancer', self)
+        # self.hardRestartNgAction.triggered.connect(self.hardRestartNg)
+        # ngMenu.addAction(self.hardRestartNgAction)
 
 
 
@@ -4131,7 +3803,7 @@ class MainWindow(QMainWindow):
         self._btn_alignAll.setStyleSheet("font-size: 9px;")
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignAll.setStatusTip(tip)
-        self._btn_alignAll.clicked.connect(lambda: self.align_all(scale=cfg.data.curScale))
+        self._btn_alignAll.clicked.connect(self.alignAll)
         self._btn_alignAll.setFixedSize(normal_button_size)
 
         tip = 'Align and Generate This Layer'
@@ -4140,7 +3812,7 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.setStyleSheet("font-size: 9px;")
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.setStatusTip(tip)
-        self._btn_alignOne.clicked.connect(lambda: self.align_one(scale=cfg.data.curScale))
+        self._btn_alignOne.clicked.connect(self.alignOne)
         self._btn_alignOne.setFixedSize(normal_button_size)
 
         tip = 'Align and Generate From Layer Current Layer to End'
@@ -4149,7 +3821,7 @@ class MainWindow(QMainWindow):
         self._btn_alignForward.setStyleSheet("font-size: 9px;")
         self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignForward.setStatusTip(tip)
-        self._btn_alignForward.clicked.connect(lambda: self.align_forward(scale=cfg.data.curScale))
+        self._btn_alignForward.clicked.connect(self.alignForward)
         self._btn_alignForward.setFixedSize(normal_button_size)
 
         tip = 'Automatically generate aligned images.'
@@ -4494,7 +4166,7 @@ class MainWindow(QMainWindow):
         self.realign_matchpoint_button.setStatusTip('Realign The Current Layer')
         self.realign_matchpoint_button.setStyleSheet("font-size: 9px;")
         self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.realign_matchpoint_button.clicked.connect(self.align_one)
+        self.realign_matchpoint_button.clicked.connect(self.alignOne)
         self.realign_matchpoint_button.setFixedSize(normal_button_size)
 
         hbl = QHBoxLayout()

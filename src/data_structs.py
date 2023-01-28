@@ -48,7 +48,10 @@ layer_template = \
                 "src": [],
                 'ref': []
             },
-            "method_results": {}
+            "method_results": {
+                "snr": [0.0, 0.0, 0.0, 0.0],
+                "snr_prev": [0.0, 0.0, 0.0, 0.0],
+            }
         },
         "images": {},
         "skipped": False

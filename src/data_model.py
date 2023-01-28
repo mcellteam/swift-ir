@@ -366,69 +366,78 @@ class DataModel:
             self.set_layer(0)
             return self._data['data']['current_layer']
 
-    # def snr(self) -> str:
-    #     '''TODO This probably shouldn't return a string'''
-    #     if not self._data['data']['current_scale']:
-    #         logger.warning("Can't Get SNR Because Scale is Not Set")
-    #         return ''
-    #     try:
-    #         s = self._data['data']['current_scale']
-    #         l = self._data['data']['current_layer']
-    #         if len(self._data['data']['scales']) > 0:
-    #             scale = self._data['data']['scales'][s]
-    #             if len(scale['alignment_stack']) > 0:
-    #                 layer = scale['alignment_stack'][l]
-    #                 if 'align_to_ref_method' in layer:
-    #                     if 'method_results' in layer['align_to_ref_method']:
-    #                         method_results = layer['align_to_ref_method']['method_results']
-    #                         if 'snr_report' in method_results:
-    #                             if method_results['snr_report'] != None:
-    #                                 curr_snr = method_results['snr_report']
-    #                                 logger.debug("  returning the current snr: %s" % str(curr_snr))
-    #                                 return str(curr_snr)
-    #     except:
-    #         logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
-    #
-    # def snr_list(self, s=None):
-    #     if s == None: s = self.curScale
-    #     snr_lst = []
-    #     for layer in self._data['data']['scales'][s]['alignment_stack']:
-    #         try:
-    #             snr_vals = layer['align_to_ref_method']['method_results']['snr']
-    #             mean_snr = sum(snr_vals) / len(snr_vals)
-    #             snr_lst.append(mean_snr)
-    #         except:
-    #             pass
-    #     return snr_lst
-
 
     def snr(self, s=None, l=None) -> float:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         if l == 0:
             return 0.0
-
         try:
-            conv_float = map(float, self._data['data']['scales'][s]['alignment_stack'][l]
-                                               ['align_to_ref_method']['method_results']['snr'])
-            return statistics.fmean(conv_float)
-        except KeyError:
-            # logger.warning(f'No SNR Data Available For Layer {l}: {self.name_base(s=s, l=l)}...')
+            value = self._data['data']['scales'][s]['alignment_stack'][l][
+                                                    'align_to_ref_method']['method_results']['snr']
+            if isinstance(value, list):
+                return statistics.fmean(map(float, value))
+        except:
+            print_exception()
+            logger.warning(f'Unexpected Token For Layer #{l} - Returning 0.0...')
             return 0.0
 
-    def all_snr(self, s=None, l=None) -> list[float]:
+    def snr_prev(self, s=None, l=None) -> float:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        if l == 0:
+            return 0.0
+        try:
+            value = self._data['data']['scales'][s]['alignment_stack'][l][
+                                                    'align_to_ref_method']['method_results']['snr']
+            if isinstance(value, list):
+                return statistics.fmean(map(float, value))
+        except KeyError:
+            print_exception()
+            logger.warning(f'Unexpected Token For Layer #{l} - Returning 0.0...')
+            return 0.0
+
+
+    def snr_list(self, s=None) -> list[float]:
+        logger.info('caller: %s...' % inspect.stack()[1].function)
+        ''' n is 4 for a 2x2 SWIM'''
+        try:
+            return [self.snr(s=s, l=i) for i in range(len(self))]
+        except:
+            print_exception()
+            logger.error('Unable To Determine SNR List')
+
+
+    def snr_prev_list(self, s=None, l=None):
+        logger.info('caller: %s...' % inspect.stack()[1].function)
+        if s == None: s = self.curScale
+        try:
+            return [self.snr_prev(s=s, l=i) for i in range(self.n_sections())]
+        except:
+            print_exception()
+            logger.error('Unable To Determine Previous SNR List')
+
+
+    def snr_components(self, s=None, l=None) -> list[float]:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
-            snr_lst =  self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['snr']
-            if (len(snr_lst) == 1) and (snr_lst[0] == 0):
-                # Todo make this correct at the data assignment level,
-                # Todo make not be specific to 2x2 SWiFT
-                snr_lst = [0.0, 0.0, 0.0, 0.0]
-            return snr_lst
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                            'align_to_ref_method']['method_results']['snr']
         except:
             print_exception()
+            return [0.0, 0.0, 0.0, 0.0]
+
+
+    def snr_prev_components(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = cfg.data.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['snr_prev']
+        except:
+            print_exception()
+            return [0.0, 0.0, 0.0, 0.0]
 
 
     def snr_report(self, s=None, l=None) -> str:
@@ -469,19 +478,6 @@ class DataModel:
         return unavailable
 
 
-    def snr_list(self, s=None) -> list[float]:
-        # logger.info('Caller: %s' % inspect.stack()[1].function)
-        if s == None: s = self.curScale
-        # n should be 16 for layers except for index 0 which equals [0.0]
-        try:
-            lst = [self.snr(s=s, l=i) for i in range(0, self.n_sections())]
-            return lst
-        except:
-            print_exception()
-            logger.error('Unable To Determine SNR List')
-            return []
-
-
     def snr_max_all_scales(self) -> float:
         try:
             #Todo refactor, store local copy, this is a bottleneck
@@ -506,6 +502,13 @@ class DataModel:
         if scale == None: scale = self.curScale
         # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
         return statistics.fmean(self.snr_list(s=scale)[1:])
+
+
+    def snr_prev_average(self, scale=None) -> float:
+        logger.info('caller: %s...' % inspect.stack()[1].function)
+        if scale == None: scale = self.curScale
+        # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
+        return statistics.fmean(self.snr_prev_list(s=scale)[1:])
 
 
     def print_all_matchpoints(self):
@@ -1000,6 +1003,18 @@ class DataModel:
         # logger.info(f'Viewing #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index
 
+    def set_prev_snr(self, s=None):
+        logger.info('caller: %s...' % inspect.stack()[1].function)
+        if s == None: s = self.curScale
+        logger.info('')
+        try:
+            for l in range(len(self)):
+                self._data['data']['scales'][s]['alignment_stack'][l][
+                    'align_to_ref_method']['method_results']['snr_prev'] = self.snr_components(s=s, l=l)
+        except:
+            print_exception()
+            logger.warning('Unable to set previous SNR...')
+
     def set_skip(self, b: bool, s=None, l=None) -> None:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
@@ -1219,7 +1234,7 @@ class DataModel:
             print_exception()
 
     def clear_all_skips(self):
-        logger.info('Clearing all skips...')
+        cfg.main_window.tell('Resetting Skips...')
         try:
             for scale in self.scales():
                 scale_key = str(scale)

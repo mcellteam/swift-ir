@@ -13,9 +13,10 @@ from qtpy.QtCore import Qt, QAbstractTableModel, QRect
 from qtpy.QtGui import QImage, QFont, QColor, QPixmap, QPainter, QStandardItemModel
 
 from src.ui.file_browser import FileBrowser
-from src.helpers import get_project_list, list_paths_absolute, get_bytes
+from src.helpers import absFilePaths, get_project_list, list_paths_absolute, get_bytes
 from src.data_model import DataModel
 from src.helpers import print_exception
+from src.funcs_image import ImageSize
 
 import src.config as cfg
 
@@ -34,10 +35,11 @@ class ProjectTable(QWidget):
         logger.info(f'caller: {caller}')
         self.table = QTableWidget()
         self.table.verticalHeader().hide()
+        self.table.setWordWrap(True)
         self.table.setUpdatesEnabled(True)
         self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
-        # self.table.itemDoubleClicked.connect(self.onDoubleClick)
+        self.row_height_slider = Slider(self)
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
         self.INITIAL_ROW_HEIGHT = 100
         # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
@@ -60,41 +62,60 @@ class ProjectTable(QWidget):
 
 
     def setScaleData(self):
-        logger.info('Setting Table Data...')
+
         self.setUpdatesEnabled(False)
         caller = inspect.stack()[1].function
+        logger.info('Setting Table Data (caller: %s)...' % caller)
         self.table.clearContents()
-        # self.table.clear()
+        self.table.clear()
         self.table.setRowCount(0)
+        self.updateSliderMaxVal()
 
-        data = self.get_data()
-        if cfg.data.is_aligned():
-            for i, row in enumerate(data):
-                self.table.insertRow(i)
-                snr_4x = cfg.data.all_snr(l=i)
-                for j, item in enumerate(row):
-                    if j in (2, 3, 4):
-                        thumbnail = Thumbnail(self, path=item)
-                        self.table.setCellWidget(i, j, thumbnail)
-                    elif j in (5, 6, 7, 8):
-                        thumbnail = SnrThumbnail(self, path=item, label='%.3f' % snr_4x[j - 5])
-                        self.table.setCellWidget(i, j, thumbnail)
-                    else:
-                        self.table.setItem(i, j, QTableWidgetItem(str(item)))
-        else:
-            for i, row in enumerate(data):
-                self.table.insertRow(i)
-                for j, item in enumerate(row):
-                    if j in (2, 3):
-                        thumbnail = Thumbnail(self, path=item)
-                        self.table.setCellWidget(i, j, thumbnail)
-                    else:
-                        self.table.setItem(i, j, QTableWidgetItem(str(item)))
+        try:
+            data = self.get_data()
+        except:
+            print_exception()
+        try:
+            if cfg.data.is_aligned():
+                for i, row in enumerate(data):
+                    self.table.insertRow(i)
+                    snr_4x = cfg.data.snr_components(l=i)
+                    for j, item in enumerate(row):
+                        if j == (0, 1):
+                            # lab = QLabel('<h3>' + '\n'.join(textwrap.wrap(item, 12)) + '</h3>')
+                            lab = QLabel('\n'.join(textwrap.wrap(item, 22)))
+                            lab.setWordWrap(True)
+                            font = QFont()
+                            font.setBold(True)
+                            font.setPointSize(11)
+                            lab.setFont(font)
+                            self.table.setCellWidget(i, j, lab)
+                        elif j in (2, 3, 4):
+                            thumbnail = Thumbnail(self, path=item)
+                            self.table.setCellWidget(i, j, thumbnail)
+                        elif j in (5, 6, 7, 8):
+                            logger.info(f'j={j}, item={str(item)}')
+                            thumbnail = SnrThumbnail(self, path=item, label='%.3f' % snr_4x[j - 5])
+                            self.table.setCellWidget(i, j, thumbnail)
+                        else:
+                            self.table.setItem(i, j, QTableWidgetItem(str(item)))
+            else:
+                for i, row in enumerate(data):
+                    self.table.insertRow(i)
+                    for j, item in enumerate(row):
+                        if j in (2, 3):
+                            thumbnail = Thumbnail(self, path=item)
+                            self.table.setCellWidget(i, j, thumbnail)
+                        else:
+                            self.table.setItem(i, j, QTableWidgetItem(str(item)))
+        except:
+            print_exception()
+        finally:
+            self.setUpdatesEnabled(True)
+            self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
+            self.set_column_headers()
+            self.table.update()
 
-        self.set_column_headers()
-        self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
-        self.setUpdatesEnabled(True)
-        self.table.repaint()
 
 
     def get_data(self):
@@ -127,7 +148,7 @@ class ProjectTable(QWidget):
                               cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
                               cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(),
                               scale, skips, method, cfg.data.snr_list(), snr_report))
-            self.table.setColumnWidth(0, 70)  # 0 index
+            self.table.setColumnWidth(0, 116)  # 0 index
             self.table.setColumnWidth(1, 40)  # 1 Filename
             self.table.setColumnWidth(2, 100) # 2 Current
             self.table.setColumnWidth(3, 100) # 1 Reference
@@ -148,7 +169,7 @@ class ProjectTable(QWidget):
             zipped = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),  ref, scale, skips, method))
 
 
-            self.table.setColumnWidth(0, 70)
+            self.table.setColumnWidth(0, 116)
             self.table.setColumnWidth(1, 40)
             self.table.setColumnWidth(2, 100)
             self.table.setColumnWidth(3, 100)
@@ -156,7 +177,6 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(5, 50)
             self.table.setColumnWidth(6, 80)
             # self.table.setColumnWidth(6, 80)
-            self.table.resizeColumnToContents(4)
 
         return zipped
 
@@ -198,6 +218,15 @@ class ProjectTable(QWidget):
             print('mouse moving')
         return super().eventFilter(obj, event)
 
+    def updateSliderMaxVal(self):
+        if cfg.data.is_aligned():
+            thumb_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
+        else:
+            thumb_path = os.path.join(cfg.data.dest(), 'thumbnails')
+        max_val = max(ImageSize(next(absFilePaths(thumb_path))))
+        self.row_height_slider.setMaximum(max_val)
+
+
     def initUI(self):
         logger.info('Initializing Table UI...')
 
@@ -213,7 +242,7 @@ class ProjectTable(QWidget):
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
 
-        self.row_height_slider = Slider(min=30, max=256)
+        self.updateSliderMaxVal()
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
         self.row_height_slider.setMaximumWidth(128)
@@ -314,14 +343,18 @@ class ScaledPixmapLabel(QLabel):
 
 
 class Slider(QSlider):
-    def __init__(self, min, max):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
-        self.setMinimum(min)
-        self.setMaximum(max)
+        self.setMinimum(16)
+        self.setMaximum(256)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)
+
+    def setMaximum(self, a0: int) -> None:
+        self.setMaximum(a0)
+
 
 
 
