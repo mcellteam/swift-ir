@@ -118,7 +118,7 @@ class ProjectTable(QWidget):
                               cfg.data.thumbnails_aligned(),
                               cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
                               cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(),
-                              scale, skips, method, snr_report))
+                              scale, skips, method, cfg.data.all_snr(), snr_report))
             self.table.setColumnWidth(1, 100)
             self.table.setColumnWidth(2, 100) # 0 Current
             self.table.setColumnWidth(3, 100) # 1 Reference
@@ -127,9 +127,11 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(6, 100) # 4 Q1
             self.table.setColumnWidth(7, 100) # 5 Q2
             self.table.setColumnWidth(8, 100) # 6 Q3
-            self.table.setColumnWidth(9, 60)  # 7 Scale
-            self.table.setColumnWidth(10, 60) # 8 Skip
-            self.table.setColumnWidth(11, 80) # 9 Method
+            self.table.setColumnWidth(9, 50)  # 7 Scale
+            self.table.setColumnWidth(10, 50) # 8 Skip
+            self.table.setColumnWidth(11, 50) # 9 Method
+            self.table.setColumnWidth(11, 50) # 10 SNR
+            self.table.setColumnWidth(11, 80) # 11 SNR_report
             # self.table.resizeColumnToContents(9)
 
         else:
@@ -169,6 +171,7 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(6, h)
         self.table.resizeColumnToContents(7)
         self.table.resizeColumnToContents(8)
+        self.table.resizeColumnToContents(9)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

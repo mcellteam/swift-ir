@@ -481,7 +481,7 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self.updateToolbar()
             if self._isOpenProjTab():
-                try:    cfg.project_tab.project_table.setScaleData()
+                try:    cfg.project_tab.project_table.set_data()
                 except: logger.warning('No data to set!')
             self._showSNRcheck()
             cfg.project_tab.initNeuroglancer()
@@ -1333,7 +1333,7 @@ class MainWindow(QMainWindow):
             self.dataUpdateWidgets()
             self.updateEnabledButtons()
             if cfg.project_tab._tabs.currentIndex() == 1:
-                cfg.project_tab.project_table.setScaleData()
+                cfg.project_tab.project_table.set_data()
             self.updateToolbar()
             self._showSNRcheck()
             try:
@@ -2008,7 +2008,7 @@ class MainWindow(QMainWindow):
         if self._tabsGlob.currentWidget().__class__.__name__ == 'OpenProject':
             logger.critical('Refreshing data...')
             try:
-                self._tabsGlob.currentWidget().user_projects.setScaleData()
+                self._tabsGlob.currentWidget().user_projects.set_data()
                 QApplication.processEvents()
             except:
                 logger.warning('There was a problem updating the project list')
@@ -2749,7 +2749,7 @@ class MainWindow(QMainWindow):
                 cfg.data.link_reference_sections()
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.setScaleData()
+                    cfg.project_tab.project_table.set_data()
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.initSnrPlot()
                 QApplication.processEvents()
@@ -3284,7 +3284,7 @@ class MainWindow(QMainWindow):
 
         if self._isOpenProjTab():
             try:
-                self.getCurrentTabWidget().user_projects.setScaleData()
+                self.getCurrentTabWidget().user_projects.set_data()
             except:
                 logger.warning('No data to set!')
 
