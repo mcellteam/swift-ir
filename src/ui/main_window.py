@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         self.initShortcuts()
         # self.initData()
         # self.initView()
-        self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
+
         self.set_idle()
 
         self.initLaunchTab()
@@ -124,6 +124,8 @@ class MainWindow(QMainWindow):
 
         # if cfg.DEV_MODE:
         #     self.profilingTimerButton.click()
+
+        self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
 
 
     def initSizeAndPos(self, width, height):
@@ -222,6 +224,9 @@ class MainWindow(QMainWindow):
                     else:
                         self.warn('The application is busy')
                         logger.warn('The application is busy')
+
+        if self._getTabType() == 'WebBrowser':
+            self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
 
 
     def shutdownNeuroglancer(self):
@@ -973,10 +978,6 @@ class MainWindow(QMainWindow):
 
 
     def apply_default_style(self):
-        '''#colors
-        color: #f3f6fb;  /* snow white */
-        color: #004060;  /* drafting blue */
-        '''
         cfg.THEME = 0
         # self.tell('Setting Default Theme')
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
@@ -1171,7 +1172,6 @@ class MainWindow(QMainWindow):
     def clearUIDetails(self):
         self.layer_details.setText('')
         self.clearAffineWidget()
-
 
 
     def clearAffineWidget(self):

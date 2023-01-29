@@ -399,7 +399,7 @@ class DataModel:
 
 
     def snr_list(self, s=None) -> list[float]:
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s...' % inspect.stack()[1].function)
         ''' n is 4 for a 2x2 SWIM'''
         try:
             return [self.snr(s=s, l=i) for i in range(len(self))]
@@ -409,7 +409,7 @@ class DataModel:
 
 
     def snr_prev_list(self, s=None, l=None):
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s...' % inspect.stack()[1].function)
         if s == None: s = self.curScale
         try:
             return [self.snr_prev(s=s, l=i) for i in range(self.n_sections())]
