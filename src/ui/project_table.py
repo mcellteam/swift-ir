@@ -83,7 +83,7 @@ class ProjectTable(QWidget):
                     for j, item in enumerate(row):
                         if j == (0, 1):
                             # lab = QLabel('<h3>' + '\n'.join(textwrap.wrap(item, 12)) + '</h3>')
-                            lab = QLabel('\n'.join(textwrap.wrap(item, 22)))
+                            lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
                             lab.setWordWrap(True)
                             font = QFont()
                             font.setBold(True)

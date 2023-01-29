@@ -28,7 +28,7 @@ class OpenProject(QWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.initial_row_height = 50
+        self.initial_row_height = 64
 
         self.setMinimumHeight(256)
         self.filebrowser = FileBrowser(parent=self)
@@ -178,7 +178,7 @@ class UserProjects(QWidget):
             self.table.insertRow(i)
             for j, item in enumerate(row):
                 if j == 0:
-                    lab = QLabel('\n'.join(textwrap.wrap(item, 22)))
+                    lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
                     lab.setWordWrap(True)
                     font = QFont()
                     font.setBold(True)
@@ -195,14 +195,14 @@ class UserProjects(QWidget):
                     table_item.setFont(font)
                     self.table.setItem(i, j, table_item)
         self.table.setColumnWidth(0, 128)
-        self.table.setColumnWidth(1, 64)
-        self.table.setColumnWidth(2, 64)
-        self.table.setColumnWidth(3, 56)
-        self.table.setColumnWidth(4, 56)
-        self.table.setColumnWidth(5, 30)
-        self.table.setColumnWidth(6, 56)
-        self.table.setColumnWidth(7, 74)
-        self.table.setColumnWidth(8, 74)
+        self.table.setColumnWidth(1, 80)
+        self.table.setColumnWidth(2, 80)
+        self.table.setColumnWidth(3, 70)
+        self.table.setColumnWidth(4, 70)
+        self.table.setColumnWidth(5, 50)
+        self.table.setColumnWidth(6, 70)
+        self.table.setColumnWidth(7, 90)
+        self.table.setColumnWidth(8, 90)
         self.table.setColumnWidth(9, 120)
 
 
@@ -233,7 +233,7 @@ class UserProjects(QWidget):
             try:
                 _bytes = get_bytes(project_dir)
                 bytes.append(_bytes)
-                gigabytes.append('%.4f' % _bytes / 1073741824)
+                gigabytes.append('%.4f' % float(_bytes / 1073741824))
             except:
                 bytes.append('Unknown')
                 gigabytes.append('Unknown')
