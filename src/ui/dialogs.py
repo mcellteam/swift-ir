@@ -46,12 +46,10 @@ def import_images_dialog():
     logger.info('Awaiting user input...')
     if dialog.exec_() == QDialog.Accepted:
         # self.set_mainwindow_project_view()
-        cfg.main_window.set_idle()
         return dialog.selectedFiles()
     else:
         logger.warning('Import images dialog did not return a valid file list')
         cfg.main_window.warn('Import images dialog did not return a valid file list')
-        cfg.main_window.set_idle()
         return
 
 class QFileDialogPreview(QFileDialog):
@@ -159,7 +157,6 @@ def mendenhall_dialog() -> str:
         logger.info(f'Selected Path: {path}')
         if os.path.exists(path):
             cfg.main_window.hud.post('Path Already Exists', logging.WARNING)
-            cfg.main_window.set_idle()
             return
         else:
             try:
@@ -170,7 +167,6 @@ def mendenhall_dialog() -> str:
             else:
                 logger.info(f"Directory Created: {path}")
                 cfg.main_window.hud.post(f"Directory Created: {path}")
-                cfg.main_window.set_idle()
                 return path
 
 
@@ -185,7 +181,6 @@ def export_affines_dialog() -> str:
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
         cfg.main_window.hud.post('Exported: %s' % dialog.selectedFiles()[0])
-        cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
 
@@ -204,7 +199,6 @@ def open_project_dialog() -> str:
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
         # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
-        cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
 
@@ -242,7 +236,6 @@ def new_project_dialog() -> str:
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
         logger.info('Save File Path: %s' % dialog.selectedFiles()[0])
-        cfg.main_window.set_idle()
         return dialog.selectedFiles()[0]
 
 
@@ -422,7 +415,6 @@ class ConfigAppDialog(QDialog):
             logger.warning(e)
         finally:
             self.accept()
-            cfg.main_window.set_idle()
 
     @Slot()
     def on_cancel(self):
@@ -491,7 +483,6 @@ class ConfigProjectDialog(QDialog):
         finally:
             cfg.main_window.hud.done()
             self.accept()
-            cfg.main_window.set_idle()
 
 
     @Slot()

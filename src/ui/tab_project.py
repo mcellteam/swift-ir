@@ -2,23 +2,22 @@
 
 '''TODO This needs to have columns for indexing and section name (for sorting!)'''
 
-import os, sys, logging, inspect, copy, time
+import os, sys, logging, inspect, copy, time, warnings
 import neuroglancer as ng
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
-    QStyle, QTabBar, QTabWidget, QGridLayout, QHeaderView, QTreeView, QSplitter, QTextEdit
-from qtpy.QtCore import Qt, QSize, QRect, QUrl, QSortFilterProxyModel
-from qtpy.QtGui import QPainter, QFont, QPixmap, QStandardItem, QStandardItemModel
+    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit
+from qtpy.QtCore import Qt, QSize, QRect, QUrl
+from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
-from src.ui.ui_custom import VerticalLabel
-from src.ui.models.json_tree import JsonModel
-from src.ui.snr_plot import SnrPlot
-from src.ui.mini_view import MiniView
 import src.config as cfg
 from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
-from src.ui.widget_area import WidgetArea
 from src.helpers import print_exception
+from src.ui.snr_plot import SnrPlot
+from src.ui.mini_view import MiniView
+from src.ui.widget_area import WidgetArea
 from src.ui.project_table import ProjectTable
+from src.ui.models.json_tree import JsonModel
 
 
 logger = logging.getLogger(__name__)
@@ -28,18 +27,14 @@ class ProjectTab(QWidget):
     def __init__(self,
                  parent,
                  path=None,
-                 datamodel=None,
-                 *args, **kwargs):
-        super().__init__(**kwargs)
+                 datamodel=None):
+        super().__init__(parent)
         logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
         self.datamodel = datamodel
         self.ng_layout = '4panel'
         self.setUpdatesEnabled(True)
-        # cfg.main_window._ng_layout_switch = 0
-        # cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
-        # cfg.main_window._ng_layout_switch = 1
         self.ng_browser = QWebEngineView()
         self.initUI_Neuroglancer()
         self.initUI_table()
@@ -48,7 +43,6 @@ class ProjectTab(QWidget):
         # self.initUI_mini_view()
         self.initUI_tab_widget()
         self._tabs.currentChanged.connect(self._onTabChange)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
 
 
@@ -64,17 +58,12 @@ class ProjectTab(QWidget):
         if index == 3:
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()
-            # self.snr_plot.updateSpecialLayerLines()
             self.updatePlotThumbnail()
+        # QApplication.processEvents()
+        # self.repaint()
 
-
-        QApplication.processEvents()
-        self.repaint()
 
     def shutdownNeuroglancer(self):
-        # if ng.is_server_running():
-            # logger.critical('Stopping Neuroglancer...')
-            # self.tell('Stopping Neuroglancer...')
         if ng.is_server_running():
             ng.server.stop()
             time.sleep(1)
@@ -84,7 +73,6 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self, layout=None, matchpoint=False):
         logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
         self.shutdownNeuroglancer()
-        time.sleep(.75)
         if cfg.data:
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
@@ -234,8 +222,6 @@ class ProjectTab(QWidget):
     def initUI_table(self):
         '''Layer View Widget'''
         logger.info('')
-        # self.project_table = LayerViewWidget()
-        # self.project_table = ProjectTable(self)
         self.project_table = ProjectTable()
         self.project_table.setObjectName('project_table')
         vbl = QVBoxLayout()
@@ -265,7 +251,6 @@ class ProjectTab(QWidget):
         self.treeview.header().resizeSection(0, 300)
         self.treeview_model = JsonModel()
         self.treeview.setModel(self.treeview_model)
-        # self.treeview.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self.treeview.setAlternatingRowColors(True)
         self._wdg_treeview = QWidget()
         self._wdg_treeview.setObjectName('_wdg_treeview')
@@ -276,6 +261,7 @@ class ProjectTab(QWidget):
         hbl.addWidget(lab)
         hbl.addWidget(self.treeview)
         self._wdg_treeview.setLayout(hbl)
+
 
     def updatePlotThumbnail(self):
         pixmap = QPixmap(cfg.data.thumbnail())
@@ -289,6 +275,7 @@ class ProjectTab(QWidget):
             self.aligned_thumb_and_label.show()
         else:
             self.aligned_thumb_and_label.hide()
+
 
     def initUI_plot(self):
         '''SNR Plot Widget'''
@@ -364,9 +351,6 @@ class ProjectTab(QWidget):
         self.snr_plot_widget.setObjectName('snr_plot_widget')
         self.snr_plot_widget.addWidget(w1)
         self.snr_plot_widget.addWidget(w2)
-        # self.snr_plot_widget.setSizes([1000, 150])
-        # try:    self.snr_plot.initSnrPlot() # sets up some basic plot characteristics
-        # except: logger.warning('exception while initializing Snr Plot')
 
 
     def initUI_mini_view(self):
@@ -450,6 +434,55 @@ class ScaledPixmapLabel(QLabel):
                 # logger.warning('Cannot divide by zero')
                 # print_exception()
         super().paintEvent(event)
+
+
+
+class VerticalLabel(QLabel):
+
+    def __init__(self, text, bg_color=None, font_color=None, font_size=None, *args):
+        QLabel.__init__(self, text, *args)
+
+        self.text = text
+        self.setStyleSheet("font-size: 12px;")
+        font = QFont()
+        font.setBold(True)
+        self.setFont(font)
+        style = ''
+        if bg_color:
+            style += f'background-color: {bg_color};'
+        if font_color:
+            style += f'color: {font_color};'
+        if font_size:
+            style += f'font-size: {str(font_size)};'
+        if style != '':
+            self.setStyleSheet(style)
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.rotate(-90)
+        rgn = QRect(-self.height(), 0, self.height(), self.width())
+        align  = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignHCenter
+        # align  = Qt.AlignmentFlag.AlignCenter
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.hint = p.drawText(rgn, align, self.text)
+        p.end()
+        self.setMaximumWidth(self.hint.height())
+        self.setMinimumHeight(self.hint.width())
+
+
+    def sizeHint(self):
+        if hasattr(self, 'hint'):
+            return QSize(self.hint.height(), self.hint.width() + 10)
+        else:
+            return QSize(16, 48)
+
+
+    def minimumSizeHint(self):
+        size = QLabel.minimumSizeHint(self)
+        return QSize(size.height(), size.width())
+
+
 
 
 

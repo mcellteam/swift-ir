@@ -187,8 +187,6 @@ def compute_affines(scale, start=0, end=None):
     # except:
     #     print_exception()
     #     logger.warning('Task Queue encountered a problem')
-    # finally:
-    #     cfg.main_window.set_idle()
 
     logger.info('<<<< Compute Affines End <<<<')
 

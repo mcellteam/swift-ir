@@ -123,8 +123,6 @@ def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False
     except:
         print_exception()
         logger.warning('Task Queue encountered a problem')
-    finally:
-        cfg.main_window.set_idle()
 
     logger.info('<<<< Generate Aligned End <<<<')
 
