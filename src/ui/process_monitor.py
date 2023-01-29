@@ -128,15 +128,21 @@ class HeadupDisplay(QWidget):
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 
+
     def done(self):
-        txt = self.textedit.toPlainText()
-        self.textedit.undo()
-        last_line = txt.split('[INFO]')[-1].lstrip()
-        if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
-            return
-        self.post(last_line + 'done.')
-        self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
+        pass
+
+
+    # def done(self):
+    #     txt = self.textedit.toPlainText()
+    #     self.textedit.undo()
+    #     last_line = txt.split('[INFO]')[-1].lstrip()
+    #     if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
+    #         return
+    #     self.post(last_line + 'done.')
+    #     self.textedit.moveCursor(QTextCursor.End)
+    #     QApplication.processEvents()
+
 
     # def cycle_text(self):
     #     txt = self.textedit.toPlainText()

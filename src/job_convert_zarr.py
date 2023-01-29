@@ -26,10 +26,12 @@ if __name__ == '__main__':
     # synchronizer = zarr.ThreadSynchronizer()
     # store = zarr.open(out, synchronizer=synchronizer)\
     store = zarr.open(out, write_empty_chunks=False)
-    # tif = TIFF.open(fn)
-    # img = tif.read_image()[:,::-1] # numpy array
+
+    tif = TIFF.open(fn)
+    img = tif.read_image()[:,::-1] # numpy array
+
     # LIBTIFF (pure Python module)
-    img = TIFFfile(fn)  # pylibtiff
+    # img = TIFFfile(fn)  # pylibtiff
 
     # img = tifffile.imread(fn)
 
