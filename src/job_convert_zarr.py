@@ -29,9 +29,9 @@ if __name__ == '__main__':
     # tif = TIFF.open(fn)
     # img = tif.read_image()[:,::-1] # numpy array
     # LIBTIFF (pure Python module)
-    # img = TIFFfile(fn)  # pylibtiff
+    img = TIFFfile(fn)  # pylibtiff
 
-    img = tifffile.imread(fn)
+    # img = tifffile.imread(fn)
 
     store[ID,:,:] = img # store: <zarr.core.Array (19, 1244, 1130) uint8>
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
