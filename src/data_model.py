@@ -10,6 +10,7 @@ import copy
 import json
 import inspect
 import logging
+import platform
 import statistics
 from copy import deepcopy
 from dataclasses import dataclass
@@ -62,6 +63,7 @@ class DataModel:
             current_time = datetime.now()
             # self._data['created'] = current_time.strftime("%m/%d/%Y, %H:%M:%S")
             self._data['created'] = current_time.strftime("%d-%m-%y %H:%M:%S")
+            self.set_system_info()
 
         # if not self.layer():
         #     self.set_layer(0)
@@ -78,8 +80,6 @@ class DataModel:
             self.set_defaults()
         if not self.layer():
             self.set_layer(0)
-
-
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -245,6 +245,12 @@ class DataModel:
 
     def name(self) -> str:
         return os.path.split(self.dest())[-1]
+
+
+    def set_system_info(self):
+        try:    self._data['data']['system']['node'] = platform.node()
+        except: self._data['data']['system']['node'] = 'Unknown'
+
 
     def base_image_name(self, s=None, l=None):
         if s == None: s = self.curScale
