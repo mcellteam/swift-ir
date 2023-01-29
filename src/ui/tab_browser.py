@@ -1,21 +1,13 @@
 #!/usr/bin/env python3
 
 import os
-import json
-import inspect
 import logging
-import textwrap
 import qtawesome as qta
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout,QLabel, QPushButton, QSplitter, \
-    QTableWidgetItem, QSlider, QGridLayout, QSizePolicy, QLineEdit
-from qtpy.QtCore import Qt, QAbstractTableModel, QPoint, QRect, QSize, QUrl
-from qtpy.QtGui import QImage, QFont, QPixmap, QPainter
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout,QLabel, QPushButton, QLineEdit
+from qtpy.QtCore import Qt, QSize, QUrl
+from qtpy.QtGui import QPixmap
 from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
-
-from src.ui.file_browser import FileBrowser
 from src.helpers import print_exception
-from src.data_model import DataModel
-
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -28,10 +20,9 @@ class WebEnginePage(QWebEnginePage):
 class WebBrowser(QWidget):
 
     def __init__(self, parent=None):
-        super().__init__()
+        super().__init__(parent)
 
         self.browser = QWebEngineView()
-        self.browser.urlChanged.connect(self.urlChangedSlot)
         self.browser.loadFinished.connect(self.updateTabLabel)
         self.browser.urlChanged.connect(self.updateUrlBar)
         self.page = WebEnginePage()
@@ -167,8 +158,10 @@ class WebBrowser(QWidget):
 
         self.setLayout(self.layout)
 
+
     def urlChangeed(self):
         pass
+
 
     def open(self, url='https://www.google.com/'):
         self.page.profile().clearHttpCache()
@@ -176,10 +169,11 @@ class WebBrowser(QWidget):
         self.browser.load(QUrl(url))
         self.browser.show()
 
+
     def setUrl(self, url):
         logger.info('Setting URL to %s' % url)
         self.browser.setUrl(QUrl(url))
-        self.urlChangedSlot()
+
 
     def navigateToUrl(self):
         try:
@@ -204,6 +198,7 @@ class WebBrowser(QWidget):
         self.urlBar.setText(q.toString())
         self.urlBar.setCursorPosition(0)
 
+
     def updateTabLabel(self):
         if cfg.main_window._getTabType() == 'WebBrowser':
             try:
@@ -217,23 +212,4 @@ class WebBrowser(QWidget):
                 cfg.main_window._tabsGlob.setTabText(tab_index, tab_text)
             except:
                 logger.warning('There was a problem updating the web browser tab text')
-
-
-    def urlChangedSlot(self):
-        # logger.info('URL changed!')
-        cur_index = cfg.main_window._tabsGlob.currentIndex()
-        # logger.info('cfg.main_window._getTabType() = %s' % cfg.main_window._getTabType())
-        # if cfg.main_window._getTabType() == 'WebBrowser':
-        #
-        #     try:
-        #         tab_index = cfg.main_window._tabsGlob.indexOf(cfg.main_window.browser)
-        #         tab_text = cfg.main_window._tabsGlob.currentWidget().browser.title()
-        #         if tab_text == 'https://www.google.com':
-        #             tab_text = 'Google'
-        #         logger.info('Setting tab text: %s' % tab_text)
-        #         cfg.main_window._tabsGlob.setTabText(tab_index, tab_text)
-        #     except:
-        #         logger.warning('There was a problem updating the web browser tab text')
-
-
 

@@ -6,7 +6,6 @@ from qtpy.QtCore import Qt, QSize, QRect, QUrl
 from qtpy.QtGui import QPainter, QFont
 from qtpy.QtWebEngineWidgets import *
 from src.ui.file_browser import FileBrowser
-from src.ui.ui_custom import VerticalLabel
 import src.config as cfg
 from src.ng_host_slim import NgHostSlim
 from src.helpers import print_exception
@@ -105,7 +104,6 @@ class ZarrTab(QWidget):
         self._webEngine.setFocus()
         # self.fb.hideFb()
         # self._fb.showFbButton()
-        cfg.main_window.set_idle()
 
 
     def initSpecialSettings(self, webengine):

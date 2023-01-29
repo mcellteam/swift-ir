@@ -106,8 +106,6 @@ class BackgroundWorker(QRunnable):
             self.signals.finished.emit()
 
             # cfg.main_window.pbar.hide()
-            # cfg.main_window.set_idle()
             # cfg.main_window._working = False
             # cfg.main_window.pbar.hide()
-            # cfg.main_window.set_idle()
             # QApplication.processEvents()
