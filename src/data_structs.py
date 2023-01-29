@@ -34,6 +34,10 @@ data_template = \
                     "thumb_scaling_factor_aligned": None,
                     "thumb_scaling_factor_corr_spot": None,
                 }
+            },
+            "system":{
+                "node": None,
+
             }
         }
     }
