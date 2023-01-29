@@ -221,9 +221,9 @@ class MainWindow(QMainWindow):
                         self.tell('Refreshing SNR Plot...')
                         cfg.project_tab.snr_plot.wipeData()
                         cfg.project_tab.snr_plot.initSnrPlot()
-                    else:
-                        self.warn('The application is busy')
-                        logger.warn('The application is busy')
+                else:
+                    self.warn('The application is busy')
+                    logger.warn('The application is busy')
 
         if self._getTabType() == 'WebBrowser':
             self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
