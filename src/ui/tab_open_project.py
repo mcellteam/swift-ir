@@ -136,7 +136,7 @@ class UserProjects(QWidget):
     #     self.counter3 += 1
 
     def updateRowHeight(self, h):
-        logger.info(f'h = {h}')
+        # logger.info(f'h = {h}')
         # if h < 64:
         #     return
         parentVerticalHeader = self.table.verticalHeader()
@@ -170,7 +170,7 @@ class UserProjects(QWidget):
 
     def set_data(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         self.table.clearContents()
         # self.set_column_headers()
         self.table.setRowCount(0)
@@ -207,8 +207,8 @@ class UserProjects(QWidget):
 
 
     def get_data(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         self.project_paths = get_project_list()
         projects, thumbnail_first, thumbnail_last, created, last_opened, \
         n_sections, img_dimensions, bytes, gigabytes, location = \
