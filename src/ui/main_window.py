@@ -1668,10 +1668,9 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
-
         try:
             logger.info('Deleting Project Directory %s...' % project)
-            self.tell('Deleting Project Directory %s...' % project)
+            self.warn('Deleting Project Directory %s...' % project)
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
@@ -1691,9 +1690,7 @@ class MainWindow(QMainWindow):
                 logger.warning('There was a problem updating the project list')
                 print_exception()
 
-
-
-        self.tell('Deletion Complete')
+        self.tell('Deletion Complete!')
         logger.info('Deletion Complete')
 
 
@@ -1848,6 +1845,7 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         # self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)
         cfg.data.set_defaults() # BEFORE dataUpdateWidgets
+        cfg.project_tab.initNeuroglancer()
         cfg.project_tab.initNeuroglancer()
         self.dataUpdateWidgets()
         try:    self._bbToggle.setChecked(cfg.data.has_bb())
