@@ -192,7 +192,7 @@ class LayerViewWidget(QWidget):
 
 
     def updateRowHeight(self, h):
-        logger.info(f'h = {h}')
+        # logger.info(f'h = {h}')
         if h < 64:
             return
         parentVerticalHeader = self.table_view.verticalHeader()
