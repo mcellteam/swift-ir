@@ -83,8 +83,8 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self, layout=None, matchpoint=False):
         logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-        # self.shutdownNeuroglancer()
-        time.sleep(1)
+        self.shutdownNeuroglancer()
+        time.sleep(.75)
         if cfg.data:
             if layout:
                 cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
