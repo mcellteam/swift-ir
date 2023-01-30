@@ -108,7 +108,7 @@ def validate_file(file) -> bool:
 
 
 def cleanup_project_list(paths: list) -> list:
-    # logger.info('')
+    logger.info('')
     # logger.info(f'paths: {paths}')
     paths = list( dict.fromkeys(paths) ) # remove duplicates
     paths = [x for x in paths if x != '']
@@ -140,6 +140,7 @@ def get_project_list():
 
 
 def configure_project_settings():
+    logger.info('')
     usersettingspath = os.path.join(os.path.expanduser('~'), '.swiftrc')
 
     if not os.path.exists(usersettingspath):
@@ -167,6 +168,7 @@ def configure_project_settings():
 
 # file = os.path.join(os.path.expanduser('~'), '.swift_cache')
 def append_project_path(path):
+    logger.info('')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
     with open(userprojectspath, 'r') as f:
         lines = f.readlines()
