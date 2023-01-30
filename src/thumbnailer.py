@@ -30,7 +30,7 @@ class Thumbnailer:
         coarsest_scale = cfg.data.smallest_scale()
         src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
         od = os.path.join(cfg.data.dest(), 'thumbnails')
-        dt = self.generate_thumbnails(src=src, od=od, rmdir=True)
+        dt = self.generate_thumbnails(src=src, od=od, rmdir=True, prefix='', start=0, end=None)
         cfg.data.set_t_thumbs(dt)
 
 
@@ -46,6 +46,8 @@ class Thumbnailer:
         od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
         dt = self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
         cfg.data.set_t_thumbs_spot(dt)
+        shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
+        shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
 
 
     def generate_thumbnails(self, src, od, rmdir=False, prefix='', start=0, end=None):
