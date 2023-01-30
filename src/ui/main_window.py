@@ -607,7 +607,8 @@ class MainWindow(QMainWindow):
         self._disableAllOtherTabs()
         self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
-        cfg.data.set_previous_results()
+        if cfg.data.is_aligned():
+            cfg.data.set_previous_results()
         self._autosave()
 
 
