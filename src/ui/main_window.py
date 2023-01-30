@@ -492,7 +492,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab is None: self.warn('No data yet!'); return
         if self._working == True: self.warn('Another Process is Already Running'); return
         if not cfg.data.is_aligned(s=scale): self.warn('Scale Must Be Aligned First'); return
-        self.onAlignmentStart()
+        self.onAlignmentStart(scale=scale)
         logger.info('Regenerate Aligned Images...')
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
@@ -564,7 +564,7 @@ class MainWindow(QMainWindow):
 
     def onAlignmentEnd(self):
         logger.info('')
-        logger.critical('Running Post- Alignment Tasks...')
+        logger.info('Running Post- Alignment Tasks...')
         try:
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
@@ -600,14 +600,14 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
 
 
-    def onAlignmentStart(self):
+    def onAlignmentStart(self, scale):
         logger.info('')
         self.stopPlaybackTimer()
         self.stopNgServer()
         self._disableAllOtherTabs()
         self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
-        if cfg.data.is_aligned():
+        if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
         self._autosave()
 
@@ -628,13 +628,12 @@ class MainWindow(QMainWindow):
 
 
     def align(self, scale, start, end):
+        #Todo change printout based upon alignment scope, i.e. for single layer
         logger.info('')
         if not self.verify_alignment_readiness(): return
-        self.onAlignmentStart()
-        is_realign = cfg.data.is_aligned(s=scale)
+        self.onAlignmentStart(scale=scale)
         m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
         self.tell("%s Affines (%s)..." %(m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
-        # self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=compute_affines(scale, start, end))
@@ -644,7 +643,6 @@ class MainWindow(QMainWindow):
         else:     logger.info('Affine Computation Succeeded')
 
         self.tell('Generating Correlation Spot Thumbnails...')
-        # self.showZeroedPbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=0, end=None))
@@ -654,7 +652,7 @@ class MainWindow(QMainWindow):
         else:   logger.info('Correlation Spot Thumbnail Generation Succeeded')
 
         logger.info('Calculating SNR Delta Values...')
-        if is_realign:
+        if cfg.data.is_aligned(s=scale):
             diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
             diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
             no_chg = [i for i, x in enumerate(diff) if x == 0]
@@ -668,30 +666,26 @@ class MainWindow(QMainWindow):
             elif diff_avg > 0:       self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
             else:                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
 
-        if not self._toggleAutogenerate.isChecked():
-            self.onAlignmentEnd()
-            self.tell('Affine Computation Complete!')
-            return
-
-        self.tell('Generating Aligned Images...')
-        # self.showZeroedPbar()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_aligned(scale, start, end, preallocate=True))
-                self.threadpool.start(self.worker)
-            else: generate_aligned(scale, start, end, preallocate=True)
-
-            self.tell('Generating Aligned Thumbnails...')
-            # self.showZeroedPbar()
+        if self._toggleAutogenerate.isChecked():
+            self.tell('Generating Aligned Images...')
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=0, end=None))
+                    self.worker = BackgroundWorker(fn=generate_aligned(scale, start, end, preallocate=True))
                     self.threadpool.start(self.worker)
-                else: cfg.thumb.generate_aligned(start=0, end=None)
-            except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
-            finally: logger.info('Thumbnail Generation Complete')
-        except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
-        finally: self.onAlignmentEnd()
+                else: generate_aligned(scale, start, end, preallocate=True)
+
+                self.tell('Generating Aligned Thumbnails...')
+                try:
+                    if cfg.USE_EXTRA_THREADING:
+                        self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=0, end=None))
+                        self.threadpool.start(self.worker)
+                    else: cfg.thumb.generate_aligned(start=0, end=None)
+                except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
+                finally: logger.info('Thumbnail Generation Complete')
+            except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
+        self.tell('Alignment Complete!')
+        self.onAlignmentEnd()
+
 
 
     def rescale(self):
