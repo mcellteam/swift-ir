@@ -46,6 +46,7 @@ class ScaleIterator:
 class DataModel:
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, quitely=False, mendenhall=False):
+        logger.info('>>>> Exiting datamodel constructor >>>>')
         self._current_version = 0.50
         self.quietly = quitely
         self.scalesAlignedAndGenerated = []
@@ -65,6 +66,8 @@ class DataModel:
             self._data['created'] = current_time.strftime("%d-%m-%y %H:%M:%S")
             self.set_system_info()
 
+        logger.info('')
+
         # if not self.layer():
         #     self.set_layer(0)
 
@@ -80,6 +83,8 @@ class DataModel:
             self.set_defaults()
         if not self.layer():
             self.set_layer(0)
+
+        logger.info('<<<< Exiting datamodel constructor <<<<')
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -248,6 +253,7 @@ class DataModel:
 
 
     def set_system_info(self):
+        logger.info('')
         try:    self._data['data']['system']['node'] = platform.node()
         except: self._data['data']['system']['node'] = 'Unknown'
 
