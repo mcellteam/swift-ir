@@ -413,8 +413,8 @@ class NgHost(QObject):
             # cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
             cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
-            # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='ref'))
-            # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.datamodel.get_mps(role='base'))
+            s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
+            s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
             if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
