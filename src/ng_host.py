@@ -295,7 +295,8 @@ class NgHost(QObject):
 
             s.layout.type = self.nglayout
             cfg.refLV = ng.LocalVolume(
-                data=cfg.unal_tensor[0:5, :, :],
+                # data=cfg.unal_tensor[0:5, :, :],
+                data=cfg.unal_tensor[:, :, :],
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[1, y_nudge, x_nudge],

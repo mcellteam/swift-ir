@@ -2317,9 +2317,13 @@ class MainWindow(QMainWindow):
             if cfg.project_tab:
                 if self._is_mp_mode == False:
                     logger.info('\nEntering Match Point Mode...')
+                    self.rb1.setChecked(True)
+
                     self.tell('Entering Match Point Mode...')
                     self._is_mp_mode = True
                     self._changeScaleCombo.setEnabled(False)
+                    self.rb0.setEnabled(False)
+                    self.rb1.setChecked(True)
                     self.extra_header_text_label.setText('Match Point Mode')
                     self._forceHideControls()
                     self._matchpt_ctls.show()
@@ -2329,15 +2333,16 @@ class MainWindow(QMainWindow):
                     self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
                     self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
                     # self.rb0.setEnabled(False)
-                    self.rb1.setChecked(True)
+
                     self.extra_header_text_label.show()
                     # cfg.project_tab.ng_layout = 'xy'
-                    cfg.project_tab.updateNeuroglancer(matchpoint=True, layout='xy')
+                    cfg.project_tab.initNeuroglancer(matchpoint=True, layout='xy')
                     # self.neuroglancer_configuration_1()
                 else:
                     logger.info('\nExiting Match Point Mode...')
                     self.tell('Exiting Match Point Mode...')
                     self._is_mp_mode = False
+                    self.rb0.setEnabled(True)
                     self._changeScaleCombo.setEnabled(True)
                     # self.extra_header_text_label.setText('')
                     self.extra_header_text_label.hide()
@@ -2345,10 +2350,9 @@ class MainWindow(QMainWindow):
                     # self.updateSkipMatchWidget()s
                     self.initView()
                     cfg.project_tab.ng_layout = '4panel'
-                    # self.rb0.setEnabled(True)
-                    self.rb0.setChecked(True)
+                    self.rb0.setEnabled(True)
                     # cfg.project_tab.updateNeuroglancer(matchpoint=False, layout='4panel')
-                    cfg.project_tab.initNeuroglancer(layout='4panel', matchpoint=False)
+                    cfg.project_tab.initNeuroglancer(matchpoint=False)
                     # self.neuroglancer_configuration_0()
                     if cfg.project_tab._tabs.currentIndex() == 3:
                         cfg.project_tab.snr_plot.updateSpecialLayerLines()

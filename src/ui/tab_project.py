@@ -81,7 +81,7 @@ class ProjectTab(QWidget):
 
         if caller != '_onGlobTabChange':
             logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-            # self.shutdownNeuroglancer()
+            self.shutdownNeuroglancer()
             if cfg.data:
                 if layout:
                     cfg.main_window.comboboxNgLayout.setCurrentText(layout)
@@ -95,8 +95,6 @@ class ProjectTab(QWidget):
                     # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
                     cfg.ng_worker = NgHost(parent=self)
                 QApplication.processEvents()
-
-
                 # cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 self.updateNeuroglancer(matchpoint=matchpoint)
 
