@@ -395,7 +395,7 @@ class DataModel:
             return 0.0
         try:
             value = self._data['data']['scales'][s]['alignment_stack'][l][
-                                                    'align_to_ref_method']['method_results']['snr']
+                                                    'align_to_ref_method']['previous_method_results']['snr']
             if isinstance(value, list):
                 return statistics.fmean(map(float, value))
         except KeyError:
@@ -440,7 +440,7 @@ class DataModel:
         if l == None: l = cfg.data.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['snr_prev']
+                'align_to_ref_method']['previous_method_results']['snr_prev']
         except:
             print_exception()
             return [0.0, 0.0, 0.0, 0.0]
@@ -1009,14 +1009,16 @@ class DataModel:
         # logger.info(f'Viewing #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index
 
-    def set_prev_snr(self, s=None):
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+    def set_previous_results(self, s=None):
+        logger.info('Setting PREVIOUS SNR, caller: %s...' % inspect.stack()[1].function)
         if s == None: s = self.curScale
         logger.info('')
         try:
             for l in range(len(self)):
                 self._data['data']['scales'][s]['alignment_stack'][l][
-                    'align_to_ref_method']['method_results']['snr_prev'] = self.snr_components(s=s, l=l)
+                    'align_to_ref_method']['previous_method_results'] = \
+                    self._data['data']['scales'][s]['alignment_stack'][l][
+                        'align_to_ref_method']['method_results']
         except:
             print_exception()
             logger.warning('Unable to set previous SNR...')

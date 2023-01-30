@@ -202,14 +202,14 @@ class WebBrowser(QWidget):
     def updateTabLabel(self):
         if cfg.main_window._getTabType() == 'WebBrowser':
             try:
-                tab_index = cfg.main_window._tabsGlob.indexOf(cfg.main_window.browser)
-                tab_text = cfg.main_window._tabsGlob.currentWidget().browser.title()
+                tab_index = cfg.main_window.globTabs.indexOf(cfg.main_window.browser)
+                tab_text = cfg.main_window.globTabs.currentWidget().browser.title()
                 if tab_text == 'https://www.google.com':
                     tab_text = 'Google'
                 elif tab_text == 'https://www.wolframalpha.com/':
                     tab_text = 'WolframAlpha'
                 logger.info('Setting tab text: %s' % tab_text)
-                cfg.main_window._tabsGlob.setTabText(tab_index, tab_text)
+                cfg.main_window.globTabs.setTabText(tab_index, tab_text)
             except:
                 logger.warning('There was a problem updating the web browser tab text')
 

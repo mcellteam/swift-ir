@@ -148,7 +148,7 @@ class NgHostSlim(QRunnable):
         cfg.viewer = ng.Viewer()
         # ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
 
-        self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
+        self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         self.nglayout = sw[self.nglayout]
@@ -161,7 +161,7 @@ class NgHostSlim(QRunnable):
                 zd = 'img_src.zarr'
             self.path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
 
-        logger.info(f'tensor/zarr path: {self.path}')
+        logger.info(f'tensor: {self.path}')
 
 
         try:
