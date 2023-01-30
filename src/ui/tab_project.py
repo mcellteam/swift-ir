@@ -55,8 +55,7 @@ class ProjectTab(QWidget):
         if index == 1:
             self.project_table.setScaleData()
             self.project_table.setScaleData() #not sure why this is needed twice
-            self.project_table.update()
-            self.project_table.table.update()
+
         if index == 2:
             self.updateJsonWidget()
         if index == 3:
