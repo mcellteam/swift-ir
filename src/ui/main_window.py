@@ -632,6 +632,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if not self.verify_alignment_readiness(): return
         self.onAlignmentStart(scale=scale)
+        is_realign = cfg.data.is_aligned(s=scale)
         m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
         self.tell("%s Affines (%s)..." %(m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
         try:
@@ -652,7 +653,7 @@ class MainWindow(QMainWindow):
         else:   logger.info('Correlation Spot Thumbnail Generation Succeeded')
 
         logger.info('Calculating SNR Delta Values...')
-        if cfg.data.is_aligned(s=scale):
+        if is_realign:
             diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
             diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
             no_chg = [i for i, x in enumerate(diff) if x == 0]
