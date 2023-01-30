@@ -640,7 +640,7 @@ class MainWindow(QMainWindow):
 
 
         if exist_aligned_zarr_cur_scale():
-            self.tell('Aligned Images Generated Successfully')
+            self.tell('The Entire Stack is ALigned!')
             logger.info('Alignment seems successful')
 
 
@@ -652,6 +652,7 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
+        self.tell('Alignment Forward Complete!')
 
 
     def alignOne(self):
@@ -664,7 +665,8 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
-        self.tell('SNR Before: %.3f, SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
+        self.tell('Section #%d is Re-aligned!' % layer)
+        self.tell('  SNR Before: %.3f\n  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
                                                          cfg.data.snr(l=layer)))
 
 
@@ -692,8 +694,8 @@ class MainWindow(QMainWindow):
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
         else:   logger.info('Correlation Spot Thumbnail Generation Succeeded')
 
-        if cfg.project_tab._tabs.currentIndex() == 1:
-            cfg.project_tab.project_table.setScaleData()
+        # if cfg.project_tab._tabs.currentIndex() == 1:
+        #     cfg.project_tab.project_table.setScaleData()
 
         if self._toggleAutogenerate.isChecked():
             self.tell('Generating Aligned Images...')
@@ -715,7 +717,6 @@ class MainWindow(QMainWindow):
                 finally: logger.info('Thumbnail Generation Complete')
             except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
         self.onAlignmentEnd()
-        self.tell('Alignment Complete!')
 
 
     def rescale(self):

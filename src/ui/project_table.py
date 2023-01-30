@@ -38,13 +38,7 @@ class ProjectTable(QWidget):
         self.initUI()
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.itemClicked.connect(self.userSelectionChanged)
-        def selection_changed():
-            logger.info('')
-            row = self.table.currentIndex().row()
-            cfg.main_window.tell('Section #%d' % row)
-            cfg.data.set_layer(row)
-            cfg.main_window.dataUpdateWidgets()
-        self.table.itemSelectionChanged.connect(selection_changed)
+        self.table.itemSelectionChanged.connect(self.selection_changed)
         # self.table.itemClicked.connect(lambda: print('itemClicked was CALLED!'))
         # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChange was CALLED!')) #Works!
         # self.table.cellChanged.connect(lambda: print('cellChanged was CALLED!'))
@@ -59,6 +53,15 @@ class ProjectTable(QWidget):
     #     print(type(item))
         # userSelectionChanged
         # cfg.main_window.open_project_selected()
+
+    def selection_changed(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
+        if caller != 'setScaleData':
+            row = self.table.currentIndex().row()
+            cfg.main_window.tell('Section #%d' % row)
+            cfg.data.set_layer(row)
+            cfg.main_window.dataUpdateWidgets()
 
 
     def set_column_headers(self):
