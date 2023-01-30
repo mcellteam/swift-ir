@@ -47,12 +47,16 @@ class ProjectTab(QWidget):
 
 
     def _onTabChange(self, index=None):
+        logger.info(f'index = {str(index)}')
         if index == None: index = self._tabs.currentIndex()
+        logger.info(f'index = {index}')
         # if index == 0:
         #     self.updateNeuroglancer()
         if index == 1:
             self.project_table.setScaleData()
-            self.project_table.setScaleData() #weird - not sure why this needs to be called twice
+            self.project_table.setScaleData() #not sure why this is needed twice
+            self.project_table.update()
+            self.project_table.table.update()
         if index == 2:
             self.updateJsonWidget()
         if index == 3:
@@ -64,38 +68,53 @@ class ProjectTab(QWidget):
 
 
     def shutdownNeuroglancer(self):
+        logger.critical('')
         if ng.is_server_running():
             ng.server.stop()
-            time.sleep(1)
-        cfg.main_window.hud.done()
+            # time.sleep(.5)
 
 
     def initNeuroglancer(self, layout=None, matchpoint=False):
-        logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-        self.shutdownNeuroglancer()
-        if cfg.data:
-            if layout:
-                cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
-            # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
-            if cfg.main_window.rb0.isChecked():
-                cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
-                cfg.ng_worker = NgHostSlim(parent=self, project=True)
-            elif cfg.main_window.rb1.isChecked():
-                cfg.main_window._cmbo_ngLayout.setCurrentText('xy')
-                cfg.ng_worker = NgHost(parent=self)
-            cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            self.updateNeuroglancer(matchpoint=matchpoint)
+        caller = inspect.stack()[1].function
+
+        # self.shutdownNeuroglancer()
+
+        if caller != '_onGlobTabChange':
+            logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
+            # self.shutdownNeuroglancer()
+            if cfg.data:
+                if layout:
+                    cfg.main_window.comboboxNgLayout.setCurrentText(layout)
+                # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
+                if cfg.main_window.rb0.isChecked():
+                    # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+                    logger.info('Instantiating NgHostSlim...')
+                    cfg.ng_worker = NgHostSlim(parent=self, project=True)
+                elif cfg.main_window.rb1.isChecked():
+                    logger.info('Instantiating NgHost...')
+                    # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+                    cfg.ng_worker = NgHost(parent=self)
+                QApplication.processEvents()
+
+
+                # cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+                self.updateNeuroglancer(matchpoint=matchpoint)
+
 
 
     def updateNeuroglancer(self, matchpoint=False, layout=None):
         caller = inspect.stack()[1].function
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
-        if layout: cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
+        if layout: cfg.main_window.comboboxNgLayout.setCurrentText(layout)
         cfg.ng_worker.initViewer(matchpoint=matchpoint)
+        logger.critical(f'cfg.ng_worker.url() = {cfg.ng_worker.url()}')
         self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
         self.ng_browser.setFocus()
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
+        # when to connect this signal is very important
+        self.ViewerChanged = lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l)
+        cfg.ng_worker.signals.stateChanged.connect(self.ViewerChanged)
 
 
     def setNeuroglancerUrl(self):
@@ -239,6 +258,7 @@ class ProjectTab(QWidget):
 
 
     def updateJsonWidget(self):
+        logger.info('')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.header().resizeSection(0, 300)
 
@@ -481,9 +501,6 @@ class VerticalLabel(QLabel):
     def minimumSizeHint(self):
         size = QLabel.minimumSizeHint(self)
         return QSize(size.height(), size.width())
-
-
-
 
 
 

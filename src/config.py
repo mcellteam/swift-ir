@@ -11,6 +11,7 @@ LOG_LEVEL = 1
 '''Main Objects'''
 # datamodel = None
 data = None
+dataById = {}
 main_window = None
 project_tab = None
 zarr_tab = None
@@ -75,7 +76,7 @@ else:
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True
-USE_EXTRA_THREADING = True
+USE_EXTRA_THREADING = False
 DEBUG_MP = False
 DEBUG_NEUROGLANCER = False
 # DEBUG_MP = (False,True)[DEV_MODE]

@@ -25,10 +25,10 @@ class ZarrTab(QWidget):
         self.shape = None
         self.nSections = None
         self.chunkshape = None
-        self.ng_layout = '4panel'
-        cfg.main_window._ng_layout_switch = 0
-        cfg.main_window._cmbo_ngLayout.setCurrentText(self.ng_layout)
-        cfg.main_window._ng_layout_switch = 1
+        # self.ng_layout = '4panel'
+        # cfg.main_window._ng_layout_switch = 0
+        # cfg.main_window.comboboxNgLayout.setCurrentText(self.ng_layout)
+        # cfg.main_window._ng_layout_switch = 1
         self.initUI()
 
 
@@ -52,7 +52,7 @@ class ZarrTab(QWidget):
         ### need to shutdown/restart neuroglancer here ###
 
         logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-        cfg.main_window._cmbo_ngLayout.setCurrentText(layout)
+        cfg.main_window.comboboxNgLayout.setCurrentText(layout)
         # cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
         logger.info(f'caller: {inspect.stack()[1].function}')
         cfg.ng_worker = NgHostSlim(self, project=False)
@@ -95,9 +95,9 @@ class ZarrTab(QWidget):
         cfg.main_window._sectionSlider.setRange(0, self.nSections - 1)
         cfg.ng_worker.path = path
         cfg.ng_worker.initViewer()
-        cur_index = cfg.main_window._tabsGlob.currentIndex()
-        cfg.main_window._tabsGlob.setTabText(cur_index, 'File: ' + os.path.basename(path))
-        cfg.main_window._cmbo_ngLayout.setCurrentText('4panel')
+        cur_index = cfg.main_window.globTabs.currentIndex()
+        cfg.main_window.globTabs.setTabText(cur_index, 'File: ' + os.path.basename(path))
+        cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
         cfg.main_window._jumpToLineedit.setText('0')
         self._webEngine.setUrl(QUrl(str(cfg.viewer)))
         self._webEngine.show()

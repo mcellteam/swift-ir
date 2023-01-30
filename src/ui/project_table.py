@@ -63,7 +63,7 @@ class ProjectTable(QWidget):
 
     def setScaleData(self):
 
-        self.setUpdatesEnabled(False)
+        # self.setUpdatesEnabled(False)
         caller = inspect.stack()[1].function
         logger.info('Setting Table Data (caller: %s)...' % caller)
         self.table.clearContents()
@@ -111,7 +111,7 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
-            self.setUpdatesEnabled(True)
+            # self.setUpdatesEnabled(True)
             self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
             self.set_column_headers()
             self.table.update()
@@ -119,8 +119,7 @@ class ProjectTable(QWidget):
 
 
     def get_data(self):
-        caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.info('')
         try:     is_aligned = cfg.data.is_aligned_and_generated()
         except:  is_aligned = False;  print_exception()
         try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
@@ -177,6 +176,8 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(5, 50)
             self.table.setColumnWidth(6, 80)
             # self.table.setColumnWidth(6, 80)
+
+        print(str(list(zipped)))
 
         return zipped
 

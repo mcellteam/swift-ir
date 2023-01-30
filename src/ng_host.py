@@ -143,12 +143,13 @@ class NgHost(QObject):
             dimensions=coordinate_space,
             voxel_offset=[0, 0, 0],
         )
-        print('Instantiating Viewer...')
+        logger.info('Instantiating Viewer...')
         cfg.viewer = ng.Viewer()
         self.url_viewer = str(cfg.viewer)
         image_size = cfg.data.image_size()
-        widget_size = cfg.project_tab.getBrowserSize()
-        print(f'\nwidget_size = {widget_size}\n')
+        widget_size = cfg.main_window.globTabs.size()
+        logger.critical(f'cfg.main_window.globTabs.size() = {cfg.main_window.globTabs.size()}')
+        logger.critical(f'widget_size = {widget_size}')
 
         widget_height = widget_size[3]
         tissue_height = 2 * image_size[1]  # nm
@@ -190,7 +191,7 @@ class NgHost(QObject):
 
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        self.nglayout = mapping[cfg.main_window._cmbo_ngLayout.currentText()]
+        self.nglayout = mapping[cfg.main_window.comboboxNgLayout.currentText()]
         self.al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
         self.unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
@@ -232,7 +233,7 @@ class NgHost(QObject):
         self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
         self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
 
-        self.nglayout = cfg.main_window._cmbo_ngLayout.currentText()
+        self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         self.nglayout = sw[self.nglayout]
@@ -246,7 +247,9 @@ class NgHost(QObject):
             x_nudge, y_nudge = 0, 0
 
         if widget_size is None:
-            widget_size = cfg.project_tab.geometry().getRect()
+            # widget_size = cfg.project_tab.geometry().getRect()
+            widget_size = cfg.main_window.globTabs.geometry().getRect()
+        logger.critical(f'widget size: {str(widget_size)}')
         # widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
         widget_height = widget_size[3] - 54 # subtract pixel height of Neuroglancer toolbar
 

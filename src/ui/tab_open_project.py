@@ -7,7 +7,7 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout
+    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame
 from qtpy.QtCore import Qt, QRect
 from qtpy.QtGui import QFont, QPixmap, QPainter
 
@@ -20,23 +20,15 @@ import src.config as cfg
 
 logger = logging.getLogger(__name__)
 
-ROW_HEIGHT = 40
-
 
 class OpenProject(QWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        self.initial_row_height = 64
-
         self.setMinimumHeight(256)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects()
-        self.row_height_slider = Slider(self)
-        self.row_height_slider.setValue(ROW_HEIGHT)
-        self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         self.initUI()
 
     def initUI(self):
@@ -63,27 +55,21 @@ class OpenProject(QWidget):
         self._splitter.addWidget(self.userFilesWidget)
         self._splitter.setSizes([650, 350])
 
-        controls = QWidget()
-        controls.setFixedHeight(18)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 0, 4, 0)
-        hbl.addWidget(self.row_height_slider,alignment=Qt.AlignmentFlag.AlignLeft)
-        controls.setLayout(hbl)
-
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(4, 4, 4, 4)
         self.layout.addWidget(self._splitter)
-        self.layout.addWidget(controls)
         self.setLayout(self.layout)
 
-        self.user_projects.set_data()
-        self.row_height_slider.setValue(self.initial_row_height)
+        # self.user_projects.set_data()
 
 
 
 class UserProjects(QWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # self.initial_row_height = 64
+        self.ROW_HEIGHT = 64
 
         self.counter1 = 0
         self.counter2 = 0
@@ -102,52 +88,61 @@ class UserProjects(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-
+        def countCurrentItemChangedCalls(): self.counter2 += 1
+        self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
         self.table.itemClicked.connect(self.userSelectionChanged)
-        self.table.itemClicked.connect(self.countItemClickedCalls)
+        def countItemClickedCalls(): self.counter1 += 1
+        self.table.itemClicked.connect(countItemClickedCalls)
         self.table.currentItemChanged.connect(self.userSelectionChanged)
-        self.table.currentItemChanged.connect(self.countCurrentItemChangedCalls)
-        self.table.itemDoubleClicked.connect(self.onDoubleClick)
-
+        def onDoubleClick(): cfg.main_window.open_project_selected()
+        self.table.itemDoubleClicked.connect(onDoubleClick)
         self.table.setStyleSheet("border-radius: 12px; border-width: 3px;")
         self.table.setColumnCount(10)
         self.set_headers()
         # self.setScaleData() # This is now called from _onGlobTabChange
+        self.row_height_slider = Slider(self)
+        self.row_height_slider.valueChanged.connect(self.updateRowHeight)
+        # self.row_height_slider.setValue(self.initial_row_height)
+        # self.updateRowHeight(self.initial_row_height)
+
+        controls = QWidget()
+        controls.setFixedHeight(18)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
+        controls.setLayout(hbl)
+
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.table)
+        self.layout.addWidget(controls)
         self.setLayout(self.layout)
-
-    def onDoubleClick(self, item=None):
-        print(type(item))
-        # userSelectionChanged
-        cfg.main_window.open_project_selected()
-
-    def countItemClickedCalls(self):
-        logger.info('')
-        self.counter1 += 1
-
-    def countCurrentItemChangedCalls(self):
-        logger.info('')
-        self.counter2 += 1
-
-    # def countItemChangedCalls(self):
-    #     logger.info('')
-    #     self.counter3 += 1
+        self.set_data()
+        self.updateRowHeight(self.ROW_HEIGHT)
 
     def updateRowHeight(self, h):
-        # logger.info(f'h = {h}')
-        # if h < 64:
-        #     return
-        parentVerticalHeader = self.table.verticalHeader()
-        for section in range(parentVerticalHeader.count()):
-            parentVerticalHeader.resizeSection(section, h)
+        for section in range(self.table.verticalHeader().count()):
+            self.table.verticalHeader().resizeSection(section, h)
         self.table.setColumnWidth(1, h)
         self.table.setColumnWidth(2, h)
 
-        # header = self.table.horizontalHeader()
-        # header.setSectionResizeMode(5, QHeaderView.Stretch)
-        # header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+
+    def userSelectionChanged(self):
+        caller = inspect.stack()[1].function
+        # if caller == 'setScaleData':
+        #     return
+        row = self.table.currentIndex().row()
+        try:
+            path = self.table.item(row,9).text()
+        except:
+            cfg.selected_file = ''
+            logger.warning(f'No file path at project_table.currentIndex().row()! '
+                           f'caller: {caller} - Returning...')
+            return
+        logger.info(f'path: {path}')
+        cfg.selected_file = path
+        cfg.main_window.setSelectionPathText(path)
+        # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
 
 
     def set_headers(self):
@@ -164,7 +159,7 @@ class UserProjects(QWidget):
             "Location"])
 
         header = self.table.horizontalHeader()
-        # self.header.setFrameStyle(QFrame.Box | QFrame.Plain)
+        header.setFrameStyle(QFrame.Box | QFrame.Plain)
         header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
         self.table.setHorizontalHeader(header)
 
@@ -204,6 +199,8 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(7, 90)
         self.table.setColumnWidth(8, 90)
         self.table.setColumnWidth(9, 120)
+        # self.row_height_slider.setValue(self.initial_row_height)
+        self.updateRowHeight(self.ROW_HEIGHT)
 
 
     def get_data(self):
@@ -247,31 +244,6 @@ class UserProjects(QWidget):
         return zip(projects, thumbnail_first, thumbnail_last, created, last_opened,
                    n_sections, img_dimensions, bytes, gigabytes, location)
 
-    def userSelectionChanged(self):
-        caller = inspect.stack()[1].function
-        # if caller == 'setScaleData':
-        #     return
-        row = self.table.currentIndex().row()
-        try:
-            path = self.table.item(row,9).text()
-        except:
-            cfg.selected_file = ''
-            logger.warning(f'No file path at project_table.currentIndex().row()! '
-                           f'caller: {caller} - Returning...')
-            return
-        logger.info(f'path: {path}')
-        cfg.selected_file = path
-        cfg.main_window.setSelectionPathText(path)
-        # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            logger.info('Click detected!')
-
-    def eventFilter(self, obj, event):
-        if event.type() == event.MouseMove:
-            print('mouse moving')
-        return super().eventFilter(obj, event)
 
 
 class Thumbnail(QWidget):
@@ -294,7 +266,6 @@ class Slider(QSlider):
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(16)
         self.setMaximum(512)
-        self.setValue(128)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)
