@@ -75,6 +75,7 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info('Setting Table Data (caller: %s)...' % caller)
         cur_selection = self.table.currentIndex().row()
+        cur_scroll_pos = self.table.verticalScrollBar().value()
         self.setUpdatesEnabled(False)
         self.table.clearContents()
         # self.table.clear()
@@ -140,7 +141,9 @@ class ProjectTable(QWidget):
 
             if cur_selection != 0:
                 self.table.selectRow(cur_selection)
-                # cur_selection = self.table.currentIndex().row()
+            self.table.verticalScrollBar().setValue(cur_scroll_pos)
+            logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
+            # cur_selection = self.table.currentIndex().row()
             self.table.update()
 
 
