@@ -656,16 +656,14 @@ class MainWindow(QMainWindow):
 
     def alignOne(self):
         self.tell('Re-aligning Section #%d' % cfg.data.layer())
-        snr_before = cfg.data.snr()
         self.align(
             scale=cfg.data.curScale,
             start=cfg.data.layer(),
-            end=cfg.data.layer(),
+            end=cfg.data.layer() + 1,
             renew_od=False,
             reallocate_zarr=False
         )
-        snr_after = cfg.data.snr()
-        self.tell('SNR Before: %.3f, SNR After: %.3f' % (snr_before, snr_after))
+        self.tell('SNR Before: %.3f, SNR After: %.3f' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
 
 
     def align(self, scale, start, end, renew_od=False, reallocate_zarr=False):
