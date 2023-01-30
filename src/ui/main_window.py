@@ -664,8 +664,8 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
-        self.tell('SNR Before: %.3f, SNR After: %.3f' % (cfg.data.snr(l=layer),
-                                                         cfg.data.snr_prev(l=layer)))
+        self.tell('SNR Before: %.3f, SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
+                                                         cfg.data.snr(l=layer)))
 
 
     def align(self, scale, start, end, renew_od=False, reallocate_zarr=False):
