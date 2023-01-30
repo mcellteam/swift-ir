@@ -2316,7 +2316,7 @@ class MainWindow(QMainWindow):
 
             if cfg.project_tab:
                 if self._is_mp_mode == False:
-                    logger.info('\nEntering Match Point Mode...')
+                    logger.critical('Entering Match Point Mode...')
                     self.rb1.setChecked(True)
 
                     self.tell('Entering Match Point Mode...')
@@ -2339,7 +2339,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.initNeuroglancer(matchpoint=True, layout='xy')
                     # self.neuroglancer_configuration_1()
                 else:
-                    logger.info('\nExiting Match Point Mode...')
+                    logger.critical('Exiting Match Point Mode...')
                     self.tell('Exiting Match Point Mode...')
                     self._is_mp_mode = False
                     self.rb0.setEnabled(True)
