@@ -201,9 +201,11 @@ class UserProjects(QWidget):
 
 
     def get_data(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         self.project_paths = get_project_list()
+        logger.info('Getting project data...')
+
         projects, thumbnail_first, thumbnail_last, created, last_opened, \
         n_sections, img_dimensions, bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
@@ -238,6 +240,7 @@ class UserProjects(QWidget):
             except: thumbnail_last.append('No Thumbnail')
             try:    location.append(p)
             except: location.append('Unknown')
+        logger.info('<<<< get_data <<<<')
         return zip(projects, thumbnail_first, thumbnail_last, created, last_opened,
                    n_sections, img_dimensions, bytes, gigabytes, location)
 
