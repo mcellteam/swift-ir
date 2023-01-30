@@ -1006,7 +1006,7 @@ class DataModel:
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
         assert isinstance(index, int)
-        # logger.info(f'Viewing #{index}, {self.curScale}')
+        logger.info(f'Setting Current Layer #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index
 
     def set_previous_results(self, s=None):

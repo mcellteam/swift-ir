@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
                     if cfg.project_tab._tabs.currentIndex() == 1:
                         logger.critical('Refreshing Table...')
                         self.tell('Refreshing Table...')
-                        cfg.project_tab.project_table.set_data()
+                        cfg.project_tab.project_table.setScaleData()
                     elif cfg.project_tab._tabs.currentIndex() == 3:
                         logger.critical('Refreshing SNR Plot...')
                         self.tell('Refreshing SNR Plot...')
@@ -499,10 +499,10 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.set_status('Regenerating Alignment...')
                 self.worker = BackgroundWorker(
-                    fn=generate_aligned(scale=scale, start=0, end=None, preallocate=True, renew_dir=True))
+                    fn=generate_aligned(scale=scale, start=0, end=None, renew_od=True, reallocate_zarr=True))
                 self.threadpool.start(self.worker)
             else:
-                generate_aligned(scale=scale, start=0, end=None, preallocate=True, renew_dir=True)
+                generate_aligned(scale=scale, start=0, end=None, renew_od=True, reallocate_zarr=True)
 
             self.tell('Generating Aligned Thumbnails...')
             self.showZeroedPbar()
@@ -563,8 +563,7 @@ class MainWindow(QMainWindow):
 
 
     def onAlignmentEnd(self):
-        logger.info('')
-        logger.info('Running Post- Alignment Tasks...')
+        logger.info('Running Post-Alignment Tasks...')
         try:
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
@@ -613,26 +612,67 @@ class MainWindow(QMainWindow):
 
 
     def alignAll(self):
-        self.align(scale=cfg.data.curScale, start=0, end=None)
+        is_realign = cfg.data.is_aligned(s=cfg.data.curScale)
+        self.align(
+            scale=cfg.data.curScale,
+            start=0,
+            end=None,
+            renew_od=True,
+            reallocate_zarr=True
+        )
+        if is_realign:
+            logger.info('Calculating SNR Diff Values...')
+            diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
+            diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
+            no_chg = [i for i, x in enumerate(diff) if x == 0]
+            pos = [i for i, x in enumerate(diff) if x > 0]
+            neg = [i for i, x in enumerate(diff) if x < 0]
+            self.tell('Re-alignment Results:')
+            self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
+            self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
+            self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
+            if abs(diff_avg) < .001:
+                self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
+            elif diff_avg > 0:
+                self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
+            else:
+                self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
+
+
         if exist_aligned_zarr_cur_scale():
             self.tell('Aligned Images Generated Successfully')
             logger.info('Alignment seems successful')
 
 
     def alignForward(self):
-        self.align(scale=cfg.data.curScale, start=cfg.data.layer(), end=None)
+        self.align(
+            scale=cfg.data.curScale,
+            start=cfg.data.layer(),
+            end=None,
+            renew_od=False,
+            reallocate_zarr=False
+        )
 
 
     def alignOne(self):
-        self.align(scale=cfg.data.curScale, start=cfg.data.layer(), end=cfg.data.layer())
+        self.tell('Re-aligning Section #%d' % cfg.data.layer())
+        snr_before = cfg.data.snr()
+        self.align(
+            scale=cfg.data.curScale,
+            start=cfg.data.layer(),
+            end=cfg.data.layer(),
+            renew_od=False,
+            reallocate_zarr=False
+        )
+        snr_after = cfg.data.snr()
+        self.tell('SNR Before: %.3f, SNR After: %.3f' % (snr_before, snr_after))
 
 
-    def align(self, scale, start, end):
+    def align(self, scale, start, end, renew_od=False, reallocate_zarr=False):
         #Todo change printout based upon alignment scope, i.e. for single layer
         logger.info('')
         if not self.verify_alignment_readiness(): return
         self.onAlignmentStart(scale=scale)
-        is_realign = cfg.data.is_aligned(s=scale)
         m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
         self.tell("%s Affines (%s)..." %(m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
         try:
@@ -646,47 +686,36 @@ class MainWindow(QMainWindow):
         self.tell('Generating Correlation Spot Thumbnails...')
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=0, end=None))
+                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
                 self.threadpool.start(self.worker)
-            else: cfg.thumb.generate_corr_spot(start=0, end=None)
+            else: cfg.thumb.generate_corr_spot(start=start, end=end)
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
         else:   logger.info('Correlation Spot Thumbnail Generation Succeeded')
 
-        logger.info('Calculating SNR Delta Values...')
-        if is_realign:
-            diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
-            diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
-            no_chg = [i for i, x in enumerate(diff) if x == 0]
-            pos = [i for i, x in enumerate(diff) if x > 0]
-            neg = [i for i, x in enumerate(diff) if x < 0]
-            self.tell('Re-alignment Results:')
-            self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
-            self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
-            self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-            if abs(diff_avg) < .001: self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
-            elif diff_avg > 0:       self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
-            else:                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
+        if cfg.project_tab._tabs.currentIndex() == 1:
+            cfg.project_tab.project_table.setScaleData()
 
         if self._toggleAutogenerate.isChecked():
             self.tell('Generating Aligned Images...')
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_aligned(scale, start, end, preallocate=True))
+                    self.worker = BackgroundWorker(fn=generate_aligned(
+                        scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr))
                     self.threadpool.start(self.worker)
-                else: generate_aligned(scale, start, end, preallocate=True)
+                else: generate_aligned(
+                    scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr)
 
                 self.tell('Generating Aligned Thumbnails...')
                 try:
                     if cfg.USE_EXTRA_THREADING:
-                        self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=0, end=None))
+                        self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
                         self.threadpool.start(self.worker)
-                    else: cfg.thumb.generate_aligned(start=0, end=None)
+                    else: cfg.thumb.generate_aligned(start=start, end=end)
                 except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
                 finally: logger.info('Thumbnail Generation Complete')
             except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
-        self.tell('Alignment Complete!')
         self.onAlignmentEnd()
-
+        self.tell('Alignment Complete!')
 
 
     def rescale(self):
@@ -983,7 +1012,7 @@ class MainWindow(QMainWindow):
                 self.dataUpdateWidgets()
                 self.updateEnabledButtons()
                 if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.set_data()
+                    cfg.project_tab.project_table.setScaleData()
                 self.updateToolbar()
                 self._showSNRcheck()
                 try:
@@ -2261,7 +2290,7 @@ class MainWindow(QMainWindow):
                 cfg.data.link_reference_sections()
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.set_data()
+                    cfg.project_tab.project_table.setScaleData()
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.initSnrPlot()
                 QApplication.processEvents()

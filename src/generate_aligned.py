@@ -20,7 +20,7 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False):
+def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=True):
     logger.critical('Generating Aligned Images...')
     dm = cfg.data
 
@@ -39,19 +39,20 @@ def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False
     path = os.path.split(os.path.realpath(__file__))[0]
     job_script = os.path.join(path, job_script)
     scale_val = get_scale_val(scale)
-    zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-    od = os.path.join(dm.dest(), scale, 'img_aligned')
-    if renew_dir:
-        renew_directory(directory=od)
     alstack = dm.alstack(s=scale)
     print_example_cafms(dm)
-    # layerator = datamodel.get_iter(s=s)
-    logger.critical('Setting Stack CAFM...')
+    logger.info('Setting Stack CAFM...')
     SetStackCafm(scale=scale, null_biases=dm.null_cafm(s=scale), poly_order=dm.poly_order(s=scale))
+    od = os.path.join(dm.dest(), scale, 'img_aligned')
+    if renew_od:
+        logger.info('Renewing Directory %s...' % od)
+        renew_directory(directory=od)
     # print_example_cafms(scale_dict)
     bias_path = os.path.join(dm.dest(), scale, 'bias_data')
-    iterator = dm.get_iter(s=scale)
-    save_bias_analysis(layers=iterator, bias_path=bias_path)
+    save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+    if end == None:
+        end = len(dm)
+    n_tasks = len(list(range(start,end)))
     if dm.has_bb():
         # Note: now have got new cafm's -> recalculate bounding box
         rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
@@ -63,28 +64,30 @@ def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False
         rect = [0, 0, w, h] # might need to swap w/h for Zarr
     logger.info(f'Aligned Size              : {rect[2:]}')
     logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
-    group = 's%d' % scale_val
-    if preallocate:
-        logger.info('preallocating')
-        preallocate_zarr(name='img_aligned.zarr',
-                         group=group,
-                         dimx=rect[2],
-                         dimy=rect[3],
-                         dimz=dm.n_sections(),
-                         dtype='uint8',
-                         overwrite=True
-                         )
-
-    iterator = iter(alstack[start:end])
-    args_list = makeTasksList(dm, iterator, job_script, scale, rect, zarr_group)
-    # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
+    # args_list = makeTasksList(dm, iter(alstack[start:end]), job_script, scale, rect) #0129-
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=len(args_list),
-                           parent=cfg.main_window,
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window,
                            pbar_text='Generating Scale %d Alignment w/ MIR...' % (scale_val))
     task_queue.start(cpus)
-    for task in args_list:
-        task_queue.add_task(task)
+    for ID, layer in enumerate(iter(alstack[start:end])):
+        base_name = layer['images']['base']['filename']
+        _ , fn = os.path.split(base_name)
+        al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
+        layer['images']['aligned'] = {}
+        layer['images']['aligned']['filename'] = al_name
+        cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
+        args = [sys.executable, job_script, '-gray', '-rect',
+                str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
+                str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
+        task_queue.add_task(args)
+        if cfg.PRINT_EXAMPLE_ARGS:
+            if ID in [0,1,2]:
+                logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
+            # if ID is 7:
+
+    # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
+    # for task in args_list:
+    #     task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
         cfg.data.set_t_generate(dt, s=scale)
@@ -92,10 +95,23 @@ def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False
         print_exception()
         logger.warning('Task Queue encountered a problem')
 
+    logger.info('Generating Zarr...')
 
-    logger.info('Making Zarr Copy-convert Alignment Tasks List...')
+    if reallocate_zarr:
+        logger.info('preallocating')
+        preallocate_zarr(name='img_aligned.zarr',
+                         group='s%d' % scale_val,
+                         dimx=rect[2],
+                         dimy=rect[3],
+                         dimz=dm.n_sections(),
+                         dtype='uint8',
+                         overwrite=True
+                         )
+
+
+    logger.info('Making Copy-convert Alignment To Zarr Tasks List...')
     # cfg.main_window.set_status('Copy-converting TIFFs...')
-    task_queue = TaskQueue(n_tasks=len(args_list),
+    task_queue = TaskQueue(n_tasks=n_tasks,
                            parent=cfg.main_window,
                            pbar_text='Copy-converting Scale %d Alignment To Zarr...' % (
                            scale_val))
@@ -107,19 +123,15 @@ def generate_aligned(scale, start=0, end=None, preallocate=True, renew_dir=False
         al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
         zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
         args = [sys.executable, job_script, str(ID), al_name, zarr_group]
-        task_list.append(args)
+        task_queue.add_task(args)
         if cfg.PRINT_EXAMPLE_ARGS:
             if ID in [0,1,2]:
                 logger.info('generate_aligned/job_convert_zarr Example Arguments (ID: %d):\n%s' % (ID, str(args)))
         # task_queue.add_task(args)
     logger.info('Adding Tasks To Multiprocessing Queue...')
-    for task in task_list:
-        # logger.info('Adding Layer %s Task' % task[2])
-        task_queue.add_task(task)
     try:
         dt = task_queue.collect_results()
         cfg.data.set_t_convert_zarr(dt, s=scale)
-
     except:
         print_exception()
         logger.warning('Task Queue encountered a problem')

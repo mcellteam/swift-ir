@@ -34,13 +34,10 @@ def run_command(cmd, arg_list=None, cmd_input=None):
 
 
 if (__name__ == '__main__'):
-    in_fn = sys.argv[-4]
-    out_fn = sys.argv[-3]
-    zarr_grp = sys.argv[-2]
-    ID = int(sys.argv[-1])
+    in_fn = sys.argv[-2]
+    out_fn = sys.argv[-1]
     rect = None
     grayBorder = False
-
     i = 1
     while (i < len(sys.argv) - 4):
         logger.info("Processing option " + sys.argv[i])

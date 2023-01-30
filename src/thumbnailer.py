@@ -49,7 +49,8 @@ class Thumbnailer:
 
 
     def generate_thumbnails(self, src, od, rmdir=False, prefix='', start=0, end=None):
-        logger.critical('Thumbnail Source Directory: %s' % src)
+        caller = inspect.stack()[1].function
+        logger.critical('Thumbnail Source Directory: %s (caller : %s)' % (src, caller))
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
@@ -69,8 +70,9 @@ class Thumbnailer:
             os.mkdir(od)
 
         logger.critical(f'Thumbnail Scaling Factor:{scale_factor}, Target : {cfg.TARGET_THUMBNAIL_SIZE}')
-
+        logger.info(f'start={start}, end={end}')
         filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
+        logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         pbar_text = 'Generating Thumbnails (%d Cores)...' % cpus
         task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window, pbar_text=pbar_text)

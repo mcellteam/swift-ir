@@ -90,10 +90,10 @@ class UserProjects(QWidget):
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         def countCurrentItemChangedCalls(): self.counter2 += 1
         self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
-        self.table.itemClicked.connect(self.userSelectionChanged)
+        self.table.currentItemChanged.connect(self.userSelectionChanged)
         def countItemClickedCalls(): self.counter1 += 1
         self.table.itemClicked.connect(countItemClickedCalls)
-        self.table.currentItemChanged.connect(self.userSelectionChanged)
+        self.table.itemClicked.connect(self.userSelectionChanged)
         def onDoubleClick(): cfg.main_window.open_project_selected()
         self.table.itemDoubleClicked.connect(onDoubleClick)
         self.table.setStyleSheet("border-radius: 12px; border-width: 3px;")
@@ -173,12 +173,9 @@ class UserProjects(QWidget):
             self.table.insertRow(i)
             for j, item in enumerate(row):
                 if j == 0:
+                    item = '<h5>' + item + '</h5>'
                     lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
                     lab.setWordWrap(True)
-                    font = QFont()
-                    font.setBold(True)
-                    font.setPointSize(9)
-                    lab.setFont(font)
                     self.table.setCellWidget(i, j, lab)
                 elif j in (1, 2):
                     thumbnail = Thumbnail(self, path=item)
