@@ -6,6 +6,7 @@ import os, sys, logging, inspect, copy, time, warnings
 # from math import log10
 from math import log2, sqrt
 import neuroglancer as ng
+import numpy as np
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider
 from qtpy.QtCore import Qt, QSize, QRect, QUrl
@@ -241,51 +242,88 @@ class ProjectTab(QWidget):
         # self.crossSectionScaleSlider.setMaximum(100)
         self.crossSectionScaleSlider.setMaximum(5)
         self.crossSectionScaleSlider.setMinimum(0.0)
-
         self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
         self.crossSectionScaleSlider.setValue(4.0)
+
+        # self.crossSectionOrientationSlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # # self.crossSectionScaleSlider.setMaximum(8.0)
+        # # self.crossSectionScaleSlider.setMaximum(100)
+        # self.crossSectionOrientationSlider.setMaximum(5.0)
+        # self.crossSectionOrientationSlider.setMinimum(-5.0)
+        # self.crossSectionOrientationSlider.valueChanged.connect(self.onSliderCrossSectionOrientation)
+
+        # self.crossSectionOrientationSliderAndLabel = QWidget()
+        # self.crossSectionOrientationSliderAndLabel.setFixedWidth(24)
+        # vbl = QVBoxLayout()
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # vbl.addWidget(self.crossSectionOrientationSlider)
+        # vbl.addWidget(VerticalLabel('Rotation:'))
+        # self.crossSectionOrientationSliderAndLabel.setLayout(vbl)
+
+        self.crossSectionScaleSliderAndLabel = QWidget()
+        self.crossSectionScaleSliderAndLabel.setFixedWidth(20)
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.crossSectionScaleSlider)
+        vbl.addWidget(VerticalLabel('Zoom:'))
+        self.crossSectionScaleSliderAndLabel.setLayout(vbl)
+
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(lab)
         hbl.addWidget(self.ng_browser_container)
-        hbl.addWidget(self.crossSectionScaleSlider)
+        # hbl.addWidget(self.crossSectionScaleSlider)
+        # hbl.addWidget(self.crossSectionOrientationSliderAndLabel)
+        hbl.addWidget(self.crossSectionScaleSliderAndLabel)
         self.ng_browser_container_outer = QWidget()
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
         self.ng_browser_container_outer.setLayout(hbl)
 
+
     def resetCrossSectionScaleSlider(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         try:
             val = cfg.viewer.state.cross_section_scale
 
             if val:
                 if val != 0:
                     new_val = float(sqrt(val))
-                    logger.info(f'val = {val}, new_val = {new_val}')
+                    # logger.info(f'val = {val}, new_val = {new_val}')
                     self.crossSectionScaleSlider.setValue(new_val)
         except:
             print_exception()
 
 
-    def manualSetCrossSectionScaleSlider(self, val):
-        self.crossSectionScaleSlider.setValue(val)
-
-
     def onSliderCrossSectionScale(self):
         caller = inspect.stack()[1].function
         if caller not in  ('resetCrossSectionScaleSlider', 'setValue'):
-            logger.info(f'caller: {caller}')
+            # logger.info(f'caller: {caller}')
 
             val = self.crossSectionScaleSlider.value()
-            logger.info(f'val: {val}')
             state = copy.deepcopy(cfg.viewer.state)
             # new_val = log2(1 + val)
             new_val = val * val
-            logger.info(f'val = {val}, new_val = {new_val}')
+            # logger.info(f'val = {val}, new_val = {new_val}')
             state.cross_section_scale = new_val
             cfg.viewer.set_state(state)
+
+    # def onSliderCrossSectionOrientation(self):
+    #     caller = inspect.stack()[1].function
+    #     # if caller not in ('resetCrossSectionScaleSlider', 'setValue'):
+    #     #     # logger.info(f'caller: {caller}')
+    #     if cfg.viewer.state.cross_section_scale:
+    #         state = copy.deepcopy(cfg.viewer.state)
+    #         val = self.crossSectionOrientationSlider.value()
+    #         logger.info(f'val={val}')
+    #         # cur_val = state.cross_section_orientation
+    #         state.cross_section_orientation = [0,0,0,val]
+    #         cfg.viewer.set_state(state)
+    #     else:
+    #         logger.warning('cfg.viewer.state.cross_section_scale does not exist!')
+
+
 
 
     def initUI_table(self):
