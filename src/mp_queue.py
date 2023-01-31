@@ -83,7 +83,16 @@ class TaskQueue(QObject):
         #     mpl.setLevel(logging.INFO)
 
         cfg.main_window.shutdownNeuroglancer()
-        cfg.main_window.showZeroedPbar()
+        # cfg.main_window.showZeroedPbar()
+
+        try:
+            self.parent.pbar_max(self.n_tasks)
+            if self.pbar_text:
+                self.parent.setPbarText(text=self.pbar_text)
+                # self.parent.statusBar.showMessage(self.pbar_text)
+            self.parent.pbar_widget.show()
+        except:
+            logger.error('An exception was raised while setting up progress bar')
 
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
@@ -202,14 +211,14 @@ class TaskQueue(QObject):
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
         retries_tot = 0
-        try:
-            self.parent.pbar_max(self.n_tasks)
-            if self.pbar_text:
-                self.parent.setPbarText(text=self.pbar_text)
-                # self.parent.statusBar.showMessage(self.pbar_text)
-            self.parent.pbar_widget.show()
-        except:
-            logger.error('An exception was raised while setting up progress bar')
+        # try:
+        #     self.parent.pbar_max(self.n_tasks)
+        #     if self.pbar_text:
+        #         self.parent.setPbarText(text=self.pbar_text)
+        #         # self.parent.statusBar.showMessage(self.pbar_text)
+        #     self.parent.pbar_widget.show()
+        # except:
+        #     logger.error('An exception was raised while setting up progress bar')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
 
