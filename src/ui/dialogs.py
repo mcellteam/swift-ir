@@ -384,10 +384,12 @@ class ConfigAppDialog(QDialog):
             # cfg.USE_TENSORSTORE = self.tsCheckbox.isChecked()
             cfg.HEADLESS = self.headlessCheckbox.isChecked()
             if cfg.HEADLESS:
-                cfg.main_window._tabs.setTabVisible(0, False)
+                if cfg.project_tab:
+                    cfg.main_window._tabs.setTabVisible(0, False)
                 cfg.main_window.external_hyperlink.show()
             else:
-                cfg.main_window._tabs.setTabVisible(0, True)
+                if cfg.project_tab:
+                    cfg.main_window._tabs.setTabVisible(0, True)
                 cfg.main_window.external_hyperlink.hide()
             cfg.DEBUG_NEUROGLANCER = self.ngdebugCheckbox.isChecked()
             if ng.is_server_running():
