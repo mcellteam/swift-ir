@@ -3,9 +3,11 @@
 '''TODO This needs to have columns for indexing and section name (for sorting!)'''
 
 import os, sys, logging, inspect, copy, time, warnings
+# from math import log10
+from math import log2, sqrt
 import neuroglancer as ng
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
-    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit
+    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider
 from qtpy.QtCore import Qt, QSize, QRect, QUrl
 from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
@@ -18,6 +20,8 @@ from src.ui.mini_view import MiniView
 from src.ui.widget_area import WidgetArea
 from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
+from src.ui.doubleslider import DoubleSlider
+
 
 
 logger = logging.getLogger(__name__)
@@ -111,6 +115,8 @@ class ProjectTab(QWidget):
         # when to connect this signal is very important
         self.ViewerChanged = lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l)
         cfg.ng_worker.signals.stateChanged.connect(self.ViewerChanged)
+        cfg.ng_worker.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
+        # self.resetCrossSectionScaleSlider()
 
 
     def setNeuroglancerUrl(self):
@@ -127,11 +133,13 @@ class ProjectTab(QWidget):
         return self.ng_browser.geometry().getRect()
 
 
+
     def initUI_Neuroglancer(self):
         '''NG Browser'''
         logger.info('')
 
         self.ng_browser.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
+        self.ng_browser.loadFinished.connect(self.resetCrossSectionScaleSlider)
         # self.ng_browser.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
         # self.ng_browser.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
@@ -225,13 +233,59 @@ class ProjectTab(QWidget):
         gl.setContentsMargins(0, 0, 0, 0)
         lab = VerticalLabel('Neuroglancer 3DEM View')
         lab.setObjectName('label_ng')
+
+
+        # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
+        self.crossSectionScaleSlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.crossSectionScaleSlider.setMaximum(8.0)
+        # self.crossSectionScaleSlider.setMaximum(100)
+        self.crossSectionScaleSlider.setMaximum(5)
+        self.crossSectionScaleSlider.setMinimum(0.0)
+
+        self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
+        self.crossSectionScaleSlider.setValue(4.0)
+
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(0,0,0,0)
+        hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(lab)
         hbl.addWidget(self.ng_browser_container)
+        hbl.addWidget(self.crossSectionScaleSlider)
         self.ng_browser_container_outer = QWidget()
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
         self.ng_browser_container_outer.setLayout(hbl)
+
+    def resetCrossSectionScaleSlider(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
+        try:
+            val = cfg.viewer.state.cross_section_scale
+
+            if val:
+                if val != 0:
+                    new_val = float(sqrt(val))
+                    logger.info(f'val = {val}, new_val = {new_val}')
+                    self.crossSectionScaleSlider.setValue(new_val)
+        except:
+            print_exception()
+
+
+    def manualSetCrossSectionScaleSlider(self, val):
+        self.crossSectionScaleSlider.setValue(val)
+
+
+    def onSliderCrossSectionScale(self):
+        caller = inspect.stack()[1].function
+        if caller not in  ('resetCrossSectionScaleSlider', 'setValue'):
+            logger.info(f'caller: {caller}')
+
+            val = self.crossSectionScaleSlider.value()
+            logger.info(f'val: {val}')
+            state = copy.deepcopy(cfg.viewer.state)
+            # new_val = log2(1 + val)
+            new_val = val * val
+            logger.info(f'val = {val}, new_val = {new_val}')
+            state.cross_section_scale = new_val
+            cfg.viewer.set_state(state)
 
 
     def initUI_table(self):

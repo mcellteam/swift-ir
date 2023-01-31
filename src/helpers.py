@@ -56,8 +56,10 @@ def find_allocated_widgets(filter) -> list:
     # return list(filter(lambda k: str(filter) in k, lst))
     return [k for k in map(str,QApplication.allWidgets()) if str(filter) in k]
 
+
 def count_widgets(name_or_type) -> int:
     return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
+
 
 def getOpt(lookup):
     if isinstance(lookup, str):
@@ -69,6 +71,39 @@ def setOpt(lookup, val):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
+
+
+def update_preferences_model():
+    logger.info('Updating user preferences model...')
+    cfg.settings.setdefault('neuroglancer', {})
+    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_PANEL_BORDERS', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
+    cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
+    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 7)
+    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
+
+
+def initialize_user_preferences():
+    logger.info('Initializing user preferences model...')
+    userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
+    if os.path.exists(userpreferencespath):
+        logger.info(f'Loading user settings "{userpreferencespath}"...')
+        with open(userpreferencespath, 'r') as f:
+            cfg.settings = json.load(f)
+    else:
+        logger.info(f'Loading user settings from defaults...')
+        cfg.settings = {}
+    update_preferences_model()
+
+
+def reset_user_preferences():
+    userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
+    if os.path.exists(userpreferencespath):
+        os.remove(userpreferencespath)
+    cfg.settings = {}
+    update_preferences_model()
+
 
 def isNeuroglancerRunning():
    return ng.server.is_server_running()
@@ -137,33 +172,6 @@ def get_project_list():
         return projectpaths
     except:
         print_exception()
-
-
-def configure_project_settings():
-    logger.info('')
-    usersettingspath = os.path.join(os.path.expanduser('~'), '.swiftrc')
-
-    if not os.path.exists(usersettingspath):
-        logger.info(f'Creating user settings from defaults "{usersettingspath}"...')
-        with open('defaults.json', 'r') as f:
-            settings = json.load(f)
-        with open(usersettingspath, 'w') as f:
-            json.dump(settings, f, indent=2)
-    try:
-        logger.info(f'Loading user settings "{usersettingspath}"...')
-        # if cfg.DEV_MODE:
-        #     with open('defaults.json', 'r') as f:
-        #         cfg.settings = json.load(f)
-        # else:
-        cfg.settings = json.load(open(usersettingspath,'r'))
-        logger.critical(f'User Application Settings:\n{cfg.settings}')
-    except:
-        print_exception()
-        logger.warning(f'Unable to load user settings "{usersettingspath}". Initializing from defaults...')
-        with open('defaults.json', 'r') as f:
-            cfg.settings = json.load(f)
-        with open(usersettingspath, 'w') as f:
-            json.dump(cfg.settings, f, indent=2)
 
 
 # file = os.path.join(os.path.expanduser('~'), '.swift_cache')

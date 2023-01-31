@@ -59,7 +59,7 @@ from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 from src.helpers import check_for_binaries, is_tacc, print_exception, \
-    configure_project_paths, configure_project_settings
+    configure_project_paths, initialize_user_preferences
 import src.config as cfg
 
 
@@ -177,7 +177,7 @@ def main():
     # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
-    configure_project_settings()
+    initialize_user_preferences()
     configure_project_paths()
 
     # sys_argv = sys.argv

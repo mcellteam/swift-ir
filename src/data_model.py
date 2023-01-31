@@ -65,9 +65,6 @@ class DataModel:
             # self._data['created'] = current_time.strftime("%m/%d/%Y, %H:%M:%S")
             self._data['created'] = current_time.strftime("%d-%m-%y %H:%M:%S")
             self.set_system_info()
-
-        logger.info('')
-
         # if not self.layer():
         #     self.set_layer(0)
 
@@ -303,6 +300,30 @@ class DataModel:
         path = os.path.join(self.dest(), self.curScale, 'thumbnails_aligned', self.base_image_name())
         # return self._data['data']['thumbnails'][self.layer()]
         return path
+
+    def corr_spot_q0_path(self, s=None, l=None) -> list:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        img = self.base_image_name(s=s, l=l)
+        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_0_' + img)
+
+    def corr_spot_q1_path(self, s=None, l=None) -> list:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        img = self.base_image_name(s=s, l=l)
+        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_1_' + img)
+
+    def corr_spot_q2_path(self, s=None, l=None) -> list:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        img = self.base_image_name(s=s, l=l)
+        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_2_' + img)
+
+    def corr_spot_q3_path(self, s=None, l=None) -> list:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        img = self.base_image_name(s=s, l=l)
+        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_3_' + img)
 
     def corr_spots_q0(self) -> list:
         names = []

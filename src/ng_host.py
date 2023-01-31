@@ -55,13 +55,13 @@ class WorkerSignals(QObject):
     stateChanged = Signal(int)
     mpUpdate = Signal()
 
-class NgHost(QObject):
-# class NgHost(QRunnable):
+# class NgHost(QObject):
+class NgHost(QRunnable):
 # class NgHost:
     # def __init__(self, parent, src, scale, src, scale, bind='127.0.0.1', port=9000):
     def __init__(self, parent=None, bind='127.0.0.1', port=9000):
-        # QRunnable.__init__(self)
-        QObject.__init__(self)
+        QRunnable.__init__(self)
+        # QObject.__init__(self)
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
@@ -72,7 +72,7 @@ class NgHost(QObject):
         self.port = port
         self.scale = None
         self.zarr_addr = "zarr://http://localhost:" + str(self.port)
-        self.mp_colors = ['#f3e375', '#5c4ccc', '#d6acd6',
+        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
                           '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74']
@@ -181,7 +181,11 @@ class NgHost(QObject):
                    ):
         caller = inspect.stack()[1].function
         logger.info(f'Initializing viewer (caller: {caller})....')
-        if matchpoint: self.mp_mode = matchpoint
+        # if matchpoint: self.mp_mode = matchpoint
+        if cfg.main_window._is_mp_mode:
+            self.mp_mode = True
+        else:
+            self.mp_mode = False
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         self.scale = cfg.data.scale()
         logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
@@ -230,8 +234,6 @@ class NgHost(QObject):
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
         self.url_viewer = str(cfg.viewer)
-        self.mp_marker_size = cfg.data['user_settings']['mp_marker_size']
-        self.mp_marker_lineweight = cfg.data['user_settings']['mp_marker_lineweight']
 
         self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -288,6 +290,8 @@ class NgHost(QObject):
             s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
+            # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
+            s.relative_display_scales = {'z':25, 'y':1, 'x':1}
             # s.perspective_orientation
             # s.relative_display_scales = [48, 1, 1]
             # s.relative_display_scales = typed_string_map([48, 1, 1])
@@ -295,28 +299,33 @@ class NgHost(QObject):
 
             s.layout.type = self.nglayout
             cfg.refLV = ng.LocalVolume(
-                # data=cfg.unal_tensor[0:5, :, :],
                 data=cfg.unal_tensor[:, :, :],
+                # data=(cfg.unal_tensor[:, :, :],
+                #       cfg.unal_tensor[cfg.data.layer()-1:cfg.data.layer(), :, :])[self.mp_mode],
                 volume_type='image',
                 dimensions=self.coordinate_space,
-                voxel_offset=[1, y_nudge, x_nudge],
+                voxel_offset=([1, y_nudge, x_nudge], [0, y_nudge, x_nudge])[self.mp_mode],
                 # voxel_offset=[1, y_nudge, x_nudge],
-                max_downsampling=1, # 13824,
+                # max_downsampling=1, # 13824,
             )
             cfg.baseLV = ng.LocalVolume(
-                data=cfg.unal_tensor,
+                data=cfg.unal_tensor[:, :, :],
+                # data=(cfg.unal_tensor[:, :, :],
+                #       cfg.unal_tensor[cfg.data.layer():cfg.data.layer()+1, :, :])[self.mp_mode],
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, y_nudge, x_nudge],
-                max_downsampling=1, # 13824,
+                # max_downsampling=1, # 13824,
             )
             if is_aligned:
                 cfg.alLV = ng.LocalVolume(
-                    data=cfg.al_tensor,
+                    data=cfg.unal_tensor[:, :, :],
+                    # data=(cfg.unal_tensor[:, :, :],
+                    #       cfg.unal_tensor[cfg.data.layer():cfg.data.layer()+1, :, :])[self.mp_mode],
                     volume_type='image',
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, ] * 3,
-                    max_downsampling=1, # 13824,
+                    # max_downsampling=1, # 13824,
                 )
 
             # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
@@ -324,23 +333,23 @@ class NgHost(QObject):
             # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_path}'
 
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER,
-                                                 tool_bindings={
-                                                     'A': neuroglancer.ShaderControlTool(control='normalized'),
-                                                     'B': neuroglancer.OpacityTool(),
-                                                 },
+                                                 # tool_bindings={
+                                                 #     'A': neuroglancer.ShaderControlTool(control='normalized'),
+                                                 #     'B': neuroglancer.OpacityTool(),
+                                                 # },
                                                  )
             s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER,
-                                                  tool_bindings={
-                                                      'A': neuroglancer.ShaderControlTool(control='normalized'),
-                                                      'B': neuroglancer.OpacityTool(),
-                                                  },
+                                                  # tool_bindings={
+                                                  #     'A': neuroglancer.ShaderControlTool(control='normalized'),
+                                                  #     'B': neuroglancer.OpacityTool(),
+                                                  # },
                                                   )
             if is_aligned:
                 s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER,
-                                                         tool_bindings={
-                                                             'A': neuroglancer.ShaderControlTool(control='normalized'),
-                                                             'B': neuroglancer.OpacityTool(),
-                                                         },
+                                                         # tool_bindings={
+                                                         #     'A': neuroglancer.ShaderControlTool(control='normalized'),
+                                                         #     'B': neuroglancer.OpacityTool(),
+                                                         # },
                                                          )
             if self.mp_mode:
                 s.layers['mp_ref'] = ng.LocalAnnotationLayer(
@@ -351,7 +360,7 @@ class NgHost(QObject):
                         ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
                         ng.AnnotationPropertySpec(id='size', type='float32', default=7)
                     ],
-                    shader=ann_shader,
+                    shader=copy.deepcopy(ann_shader),
                 )
 
                 s.layers['mp_base'] = ng.LocalAnnotationLayer(
@@ -363,7 +372,7 @@ class NgHost(QObject):
                         ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
                         ng.AnnotationPropertySpec(id='size', type='float32', default=7)
                     ],
-                    shader=ann_shader,
+                    shader=copy.deepcopy(ann_shader),
                 )
 
             grps = []
@@ -413,8 +422,9 @@ class NgHost(QObject):
             # cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
             cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
-            s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
-            s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
+            if self.mp_mode:
+                s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
+                s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
             if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
@@ -440,6 +450,8 @@ class NgHost(QObject):
             s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
             s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
+
+
         self._layer = self.request_layer()
         self.clear_mp_buffer()
         cfg.url = str(cfg.viewer)
@@ -450,14 +462,16 @@ class NgHost(QObject):
 
 
 
+
     def on_state_changed(self):
         try:
             # print('requested layer: %s' % str(cfg.viewer.state.position[0]))
             # request_layer = floor(cfg.viewer.state.position[0])
             request_layer = int(cfg.viewer.state.position[0])
             if request_layer == self._layer:
-                logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
-                return
+                # logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
+                # return
+                pass
             else:
                 self._layer = request_layer
             logger.info(f'emitting request_layer: {request_layer}')
@@ -490,7 +504,9 @@ class NgHost(QObject):
             print_exception()
 
         n_mp_pairs = floor(self.mp_count / 2)
-        props = [self.mp_colors[n_mp_pairs], self.mp_marker_lineweight, self.mp_marker_size, ]
+        props = [self.mp_colors[n_mp_pairs],
+                 cfg.main_window.mp_marker_lineweight_spinbox.value(),
+                 cfg.main_window.mp_marker_size_spinbox.value(), ]
         with cfg.viewer.txn() as s:
             if self.mp_count in range(0, 100, 2):
                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
@@ -584,13 +600,14 @@ class NgHost(QObject):
                                                   props=[self.mp_colors[i % 3],
                                                          self.mp_marker_size,
                                                          self.mp_marker_lineweight]))
+        self.annotations = annotations
         return annotations
 
 
     def take_screenshot(self, directory=None):
         if directory is None:
             directory = cfg.data.dest()
-        ss = ScreenshotSaver(viewer=cfg.viewer, directory=dir)
+        ss = ScreenshotSaver(viewer=cfg.viewer, directory=directory)
         ss.capture()
 
 
