@@ -75,8 +75,9 @@ from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
 from src.mendenhall_protocol import Mendenhall
 import src.pairwise
-if cfg.DEV_MODE:
-    from src.ui.python_console import PythonConsole
+# if cfg.DEV_MODE:
+#     from src.ui.python_console import PythonConsole
+from src.ui.python_console import PythonConsole
 
 
 __all__ = ['MainWindow']
@@ -358,7 +359,8 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_showHidePython(self):
-        con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
+        # con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
+        con = self._dev_console
         if con.isHidden():
             label  = 'Hide Python'
             icon   = 'fa.caret-down'
@@ -396,7 +398,9 @@ class MainWindow(QMainWindow):
 
 
     def _forceHidePython(self):
-        con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
+
+        # con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
+        con = self._dev_console
         label = ' Python'
         icon = 'mdi.language-python'
         color = '#f3f6fb'
@@ -2030,17 +2034,17 @@ class MainWindow(QMainWindow):
                 finally:
                     time.sleep(.4)
 
-        if cfg.DEV_MODE:
-            self.tell('Shutting Down Developer Console Kernel...')
-            logger.info('Shutting Down Developer Console Kernel...')
-            try:
-                self._dev_console.kernel_client.stop_channels()
-                self._dev_console.kernel_manager.shutdown_kernel()
-            except:
-                print_exception()
-                self.warn('Having trouble shutting down developer console kernel')
-            finally:
-                time.sleep(.4)
+        # if cfg.DEV_MODE:
+        self.tell('Shutting Down Python Console Kernel...')
+        logger.info('Shutting Down Python Console Kernel...')
+        try:
+            self._dev_console.kernel_client.stop_channels()
+            self._dev_console.kernel_manager.shutdown_kernel()
+        except:
+            print_exception()
+            self.warn('Having trouble shutting down Python console kernel')
+        finally:
+            time.sleep(.4)
 
         self.tell('Graceful, Goodbye!')
         logger.info('Exiting...')
@@ -4330,12 +4334,15 @@ class MainWindow(QMainWindow):
         self._splitter.addWidget(self._py_console)             # (3)
         self._splitter.setSizes(self._mainVSplitterSizes)
 
-        if cfg.DEV_MODE:
-            self._dev_console = PythonConsole()
-            self._splitter.addWidget(self._dev_console)           # (5)
-            self._dev_console.hide()
-        else:
-            self._dev_console = None
+        self._dev_console = PythonConsole()
+        self._splitter.addWidget(self._dev_console)  # (5)
+        self._dev_console.hide()
+        # if cfg.DEV_MODE:
+        #     self._dev_console = PythonConsole()
+        #     self._splitter.addWidget(self._dev_console)           # (5)
+        #     self._dev_console.hide()
+        # else:
+        #     self._dev_console = None
         self._splitter.addWidget(self._showHideFeatures)  # (6)
         self._splitter.setHandleWidth(3)
         self._splitter.setCollapsible(0, False)
