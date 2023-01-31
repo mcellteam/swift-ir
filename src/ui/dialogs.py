@@ -7,9 +7,10 @@ import faulthandler
 import neuroglancer as ng
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
-    QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton
-from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo
-from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
+    QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
+    QColorDialog, QWidgetAction, QMenu, QToolButton
+from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal
+from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc
 
@@ -744,3 +745,5 @@ class DefaultsModel(QAbstractListModel):
         self.lst[index.row()] = value
         self.dataChanged.emit(index, index, list())
         return True
+
+

@@ -56,7 +56,7 @@ class ProjectTab(QWidget):
         if index == None: index = self._tabs.currentIndex()
         logger.info(f'index = {index}')
         # if index == 0:
-        #     self.updateNeuroglancer()
+        #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain viewer state
         if index == 1:
             self.project_table.setScaleData()
             self.project_table.setScaleData() #not sure why this is needed twice
