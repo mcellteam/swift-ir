@@ -114,9 +114,9 @@ class ProjectTab(QWidget):
         self.ng_browser.setFocus()
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
         # when to connect this signal is very important
-        self.ViewerChanged = lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l)
-        cfg.ng_worker.signals.stateChanged.connect(self.ViewerChanged)
-        cfg.ng_worker.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
+        cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        # cfg.ng_worker.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
+        cfg.ng_worker.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
         # self.resetCrossSectionScaleSlider()
 
 
@@ -238,11 +238,13 @@ class ProjectTab(QWidget):
 
         # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
         self.crossSectionScaleSlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.crossSectionScaleSlider.set
         # self.crossSectionScaleSlider.setMaximum(8.0)
         # self.crossSectionScaleSlider.setMaximum(100)
         self.crossSectionScaleSlider.setMaximum(5)
         self.crossSectionScaleSlider.setMinimum(0.0)
-        self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
+        # self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
+        self.crossSectionScaleSlider.sliderMoved.connect(self.onSliderCrossSectionScale)
         self.crossSectionScaleSlider.setValue(4.0)
 
         # self.crossSectionOrientationSlider = DoubleSlider(Qt.Orientation.Vertical, self)
@@ -300,14 +302,16 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         if caller not in  ('resetCrossSectionScaleSlider', 'setValue'):
             # logger.info(f'caller: {caller}')
-
-            val = self.crossSectionScaleSlider.value()
-            state = copy.deepcopy(cfg.viewer.state)
-            # new_val = log2(1 + val)
-            new_val = val * val
-            # logger.info(f'val = {val}, new_val = {new_val}')
-            state.cross_section_scale = new_val
-            cfg.viewer.set_state(state)
+            try:
+                val = self.crossSectionScaleSlider.value()
+                state = copy.deepcopy(cfg.viewer.state)
+                # new_val = log2(1 + val)
+                # new_val = val * val
+                # logger.info(f'val = {val}, new_val = {new_val}')
+                state.cross_section_scale = val * val
+                cfg.viewer.set_state(state)
+            except:
+                print_exception()
 
     # def onSliderCrossSectionOrientation(self):
     #     caller = inspect.stack()[1].function

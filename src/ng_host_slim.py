@@ -89,6 +89,7 @@ def get_zarr_tensor(zarr_path):
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal(int)
+    zoomChanged = Signal(float)
     mpUpdate = Signal()
 
 # class NgHostSlim(QObject):
@@ -99,6 +100,7 @@ class NgHostSlim(QRunnable):
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
+        self._crossSectionScale = 1.0
         self.bind = '127.0.0.1'
         self.port = 9000
         self.project = project
@@ -276,22 +278,18 @@ class NgHostSlim(QRunnable):
 
 
     def on_state_changed(self):
-
-        try:
-            print('requested layer: %s' % str(cfg.viewer.state.position[0]))
-            # request_layer = floor(cfg.viewer.state.position[0])
-            request_layer = int(cfg.viewer.state.position[0])
-            if request_layer == self._layer:
-                # logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
-                # return
-                pass
-            else:
-                self._layer = request_layer
+        request_layer = int(cfg.viewer.state.position[0])
+        if request_layer == self._layer:
+            logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
+        else:
+            self._layer = request_layer
             logger.info(f'emitting request_layer: {request_layer}')
             self.signals.stateChanged.emit(request_layer)
-        except:
-            print_exception()
-            logger.error('ERROR on_state_change')
+        zoom = cfg.viewer.state.cross_section_scale
+        if zoom != self._crossSectionScale:
+            logger.info(f'emitting Zoom Changed: {zoom}')
+            self.signals.zoomChanged.emit(zoom)
+        self._crossSectionScale = zoom
 
 
 def obj_to_string(obj, extra='    '):
