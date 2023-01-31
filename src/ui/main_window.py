@@ -106,7 +106,7 @@ class MainWindow(QMainWindow):
         self.initToolbar()
         self.initControlPanel()
         self.initUI()
-        self.savePreferencesAction()
+        self.initMenu()
         self.initWidgetSpacing()
         self.initStyle()
         self.initShortcuts()
@@ -3099,7 +3099,7 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textedit)
         menu.addAction(action)
 
-    def savePreferencesAction(self):
+    def initMenu(self):
         '''Initialize Menu'''
         logger.info('')
         self.action_groups = {}
@@ -3349,6 +3349,15 @@ class MainWindow(QMainWindow):
         self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
         self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
         ngMenu.addAction(self.ngShowPanelBordersAction)
+
+        # self.colorMenu = ngMenu.addMenu('Select Background Color')
+        # from qtpy.QtWidgets import QColorDialog
+        # self.ngColorMenu= QColorDialog(self)
+        # action = QWidgetAction(self)
+        # action.setDefaultWidget(self.ngColorMenu)
+        # # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
+        # self.colorMenu.addAction(action)
+
 
         self.detachNgAction = QAction('Detach Neuroglancer...', self)
         self.detachNgAction.triggered.connect(self.detachNeuroglancer)

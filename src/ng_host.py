@@ -21,9 +21,11 @@ numcodecs.blosc.use_threads = False
 import zarr
 import neuroglancer as ng
 import neuroglancer.webdriver
+from neuroglancer.json_wrappers import typed_string_map
 from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
                             typed_map, typed_set, typed_string_map, wrapped_property,
                             number_or_string)
+from collections import OrderedDict
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
@@ -291,7 +293,10 @@ class NgHost(QRunnable):
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
             # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
-            s.relative_display_scales = {'z':25, 'y':1, 'x':1}
+            # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
+            # s.relative_display_scales = {"z":25}
+            # s.relative_display_scales = OrderedDict([['z', 42],['y', 1],['x', 1]])
+            # s.relative_display_scales = [['z', 42],['y', 1],['x', 1],]
             # s.perspective_orientation
             # s.relative_display_scales = [48, 1, 1]
             # s.relative_display_scales = typed_string_map([48, 1, 1])
