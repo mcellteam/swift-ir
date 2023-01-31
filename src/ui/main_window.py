@@ -225,11 +225,11 @@ class MainWindow(QMainWindow):
 
 
     def refreshTab(self):
-        self.hardRestartNg()
         if cfg.data:
             if cfg.project_tab:
                 if not self._working:
                     if cfg.project_tab._tabs.currentIndex() == 0:
+                        self.hardRestartNg()
                         # cfg.project_tab.initNeuroglancer()
                         pass
                     if cfg.project_tab._tabs.currentIndex() == 1:
@@ -3363,6 +3363,12 @@ class MainWindow(QMainWindow):
         self.clearTensorMenu()
 
         configMenu = self.menu.addMenu('Configure')
+
+
+        self.refreshTabAction = QAction('Refresh', self)
+        self.refreshTabAction.triggered.connect(self.refreshTab)
+        self.refreshTabAction.setShortcut('Ctrl+R')
+        configMenu.addAction(self.refreshTabAction)
 
         self.rescaleAction = QAction('Project...', self)
         self.rescaleAction.triggered.connect(self.rescale)
