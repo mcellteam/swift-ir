@@ -424,8 +424,8 @@ class NgHost(QRunnable):
                 else:
                     s.layout = ng.row_layout(grps)
 
-            # cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+            cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
+            # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
             if self.mp_mode:
                 s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
