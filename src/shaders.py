@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 
-ann_shader = '''
-void main() { 
-  setPointMarkerBorderColor(prop_ptColor()); 
-  setPointMarkerBorderWidth(prop_ptWidth()); 
-  setPointMarkerSize(prop_size()); 
-}
-'''
+ann_shader = '''void main() { setPointMarkerBorderColor(prop_ptColor()); setPointMarkerBorderWidth(prop_ptWidth()); setPointMarkerSize(prop_size());}'''
 
 shader_test1 = '''
 #uicontrol vec3 color color(default="red")

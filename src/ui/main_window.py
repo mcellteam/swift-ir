@@ -56,7 +56,7 @@ from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, show_status_report, exist_aligned_zarr_cur_scale, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_selection, \
     configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, count_widgets, \
-    find_allocated_widgets, cleanup_project_list
+    find_allocated_widgets, cleanup_project_list, update_preferences_model
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
     import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
 from src.ui.process_monitor import HeadupDisplay
@@ -72,6 +72,7 @@ from src.ui.tab_browser import WebBrowser
 from src.ng_host import NgHost
 from src.ng_host_slim import NgHostSlim
 from src.ui.tab_open_project import OpenProject
+from src.ui.thumbnails import Thumbnail, SnrThumbnail
 from src.mendenhall_protocol import Mendenhall
 import src.pairwise
 if cfg.DEV_MODE:
@@ -105,7 +106,7 @@ class MainWindow(QMainWindow):
         self.initToolbar()
         self.initControlPanel()
         self.initUI()
-        self.initMenu()
+        self.savePreferencesAction()
         self.initWidgetSpacing()
         self.initStyle()
         self.initShortcuts()
@@ -132,12 +133,12 @@ class MainWindow(QMainWindow):
         self.move(qr.topLeft())
 
 
-    def resizeEvent(self, event):
-        if not self._working:
-            self.resized.emit()
-            if cfg.project_tab:
-                cfg.project_tab.initNeuroglancer()
-            return super(MainWindow, self).resizeEvent(event)
+    # def resizeEvent(self, event):
+    #     if not self._working:
+    #         self.resized.emit()
+    #         if cfg.project_tab:
+    #             cfg.project_tab.initNeuroglancer()
+    #         return super(MainWindow, self).resizeEvent(event)
 
 
     def getNgLayout(self):
@@ -216,8 +217,11 @@ class MainWindow(QMainWindow):
                 ng.server.stop()
             if cfg.project_tab:
                 cfg.project_tab.initNeuroglancer()
+                # cfg.project_tab.resetCrossSectionScaleSlider()
             if cfg.zarr_tab:
                 cfg.zarr_tab.initNeuroglancer()
+
+
 
 
     def refreshTab(self):
@@ -338,7 +342,7 @@ class MainWindow(QMainWindow):
     def initView(self):
         logger.info('Making things look normal...')
         # self._tabs.show()
-        self._enableAllTabs()
+        self.enableAllTabs()
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
         cfg.SHADER = ''
@@ -350,7 +354,7 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.setCurrentIndex(0)
         if cfg.project_tab:
             self._is_mp_mode = False
-            self._matchpt_ctls.hide()
+            self.matchpointControlPanel.hide()
 
 
     def _callbk_showHidePython(self):
@@ -410,7 +414,7 @@ class MainWindow(QMainWindow):
         self.tell('Generating TIFF Scale Image Hierarchy...')
         self.showZeroedPbar()
         self.set_status('Autoscaling...')
-        self._disableAllOtherTabs()
+        self._disableGlobTabs()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_scales(dm=cfg.data))
@@ -466,7 +470,7 @@ class MainWindow(QMainWindow):
                 self.pbar_widget.hide()
                 logger.info('Thumbnail Generation Complete')
 
-        self._enableAllTabs()
+        self.enableAllTabs()
         # cfg.project_tab.initNeuroglancer()
         logger.info('<<<< autoscale <<<<')
 
@@ -541,8 +545,6 @@ class MainWindow(QMainWindow):
                 self.err('Image Generation Failed Unexpectedly. Try Re-aligning.')
             self.pbar_widget.hide()
             cfg.project_tab.initNeuroglancer()
-            time.sleep(1)
-            cfg.project_tab.initNeuroglancer()
             QApplication.processEvents()
 
 
@@ -583,8 +585,8 @@ class MainWindow(QMainWindow):
                 try:    cfg.project_tab.project_table.set_data()
                 except: logger.warning('No data to set!')
             self._showSNRcheck()
-            cfg.project_tab.project_table.updateSliderMaxVal()
-            self.hardRestartNg()
+            # cfg.project_tab.project_table.updateSliderMaxVal()
+            # self.hardRestartNg()
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.setScaleData()
                 cfg.project_tab.project_table.setScaleData()
@@ -594,7 +596,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
         finally:
-            self._enableAllTabs()
+            self.enableAllTabs()
             self._autosave()
             QApplication.processEvents()
 
@@ -603,7 +605,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         self.stopPlaybackTimer()
         self.stopNgServer()
-        self._disableAllOtherTabs()
+        self._disableGlobTabs()
         self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
         if cfg.data.is_aligned(s=scale):
@@ -637,10 +639,10 @@ class MainWindow(QMainWindow):
                 self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
             else:
                 self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
-
-
+        self.onAlignmentEnd()
+        self.hardRestartNg()
         if exist_aligned_zarr_cur_scale():
-            self.tell('The Entire Stack is ALigned!')
+            self.tell('The Stack is Aligned!')
             logger.info('Alignment seems successful')
 
 
@@ -652,6 +654,8 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
+        self.onAlignmentEnd()
+        self.hardRestartNg()
         self.tell('Alignment Forward Complete!')
 
 
@@ -665,9 +669,27 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
+        self.onAlignmentEnd()
+        self.hardRestartNg()
         self.tell('Section #%d is Re-aligned!' % layer)
         self.tell('  SNR Before: %.3f\n  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
-                                                         cfg.data.snr(l=layer)))
+                                                             cfg.data.snr(l=layer)))
+
+    def alignOneMp(self):
+        self.tell('Re-aligning Section #%d' % cfg.data.layer())
+        layer = cfg.data.layer()
+        self.align(
+            scale=cfg.data.curScale,
+            start= layer,
+            end=cfg.data.layer() + 1,
+            renew_od=False,
+            reallocate_zarr=False
+        )
+        self.onAlignmentEnd()
+        cfg.ng_worker.initViewer()
+        self.tell('Section #%d is Re-aligned!' % layer)
+        self.tell('  SNR Before: %.3f\n  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
+                                                             cfg.data.snr(l=layer)))
 
 
     def align(self, scale, start, end, renew_od=False, reallocate_zarr=False):
@@ -716,7 +738,6 @@ class MainWindow(QMainWindow):
                 except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
                 finally: logger.info('Thumbnail Generation Complete')
             except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
-        self.onAlignmentEnd()
 
 
     def rescale(self):
@@ -733,7 +754,7 @@ class MainWindow(QMainWindow):
             return
 
         self.stopNgServer()
-        self._disableAllOtherTabs()
+        self._disableGlobTabs()
 
         # self.initView()
         # self.shutdownNeuroglancer()
@@ -791,7 +812,7 @@ class MainWindow(QMainWindow):
             self.tell('Rescaling Successful')
         finally:
             self.pbar_widget.hide()
-            self._enableAllTabs()
+            self.enableAllTabs()
             self.onStartProject()
             self.onAlignmentEnd()
 
@@ -1146,21 +1167,30 @@ class MainWindow(QMainWindow):
 
                 try:
                     self.updateLayerDetails()
+                    if self._is_mp_mode:
+                        try:
+                            self.matchpoint_text_snr.setText(cfg.data.snr_report())
+                            self.updateMatchpointThumbnails()
+                        except:
+                            print_exception()
+                    else:
 
-                    try:     self._jumpToLineedit.setText(str(cfg.data.layer()))
-                    except:  logger.warning('Current Layer Widget Failed to Update')
-                    try:     self._skipCheckbox.setChecked(cfg.data.skipped())
-                    except:  logger.warning('Skip Toggle Widget Failed to Update')
-                    try:     self._whiteningControl.setValue(cfg.data.whitening())
-                    except:  logger.warning('Whitening Input Widget Failed to Update')
-                    try:     self._swimWindowControl.setValue(cfg.data.swim_window() * 100.)
-                    except:  logger.warning('Swim Input Widget Failed to Update')
-                    try:
-                        if cfg.data.null_cafm():
-                            self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
-                        else:
-                            self._polyBiasCombo.setCurrentText('None')
-                    except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+                        try:     self._jumpToLineedit.setText(str(cfg.data.layer()))
+                        except:  logger.warning('Current Layer Widget Failed to Update')
+                        try:     self._skipCheckbox.setChecked(cfg.data.skipped())
+                        except:  logger.warning('Skip Toggle Widget Failed to Update')
+                        try:     self._whiteningControl.setValue(cfg.data.whitening())
+                        except:  logger.warning('Whitening Input Widget Failed to Update')
+                        try:     self._swimWindowControl.setValue(cfg.data.swim_window() * 100.)
+                        except:  logger.warning('Swim Input Widget Failed to Update')
+                        try:
+                            if cfg.data.null_cafm():
+                                self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
+                            else:
+                                self._polyBiasCombo.setCurrentText('None')
+                        except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+
+                        # cfg.project_tab.resetCrossSectionScaleSlider()
 
                 except:
                     print_exception()
@@ -1748,6 +1778,7 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.updateMenus()
         self.updateToolbar()
+        self.enableAllTabs()
         cfg.main_window._sectionSlider.setValue(int(cfg.data.n_sections() / 2))
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
         cfg.project_tab._widgetArea_details.show()
@@ -1771,11 +1802,11 @@ class MainWindow(QMainWindow):
 
 
 
-    def saveApplicationSettings(self):
+    def saveUserPreferences(self):
         logger.info('')
-        usersettingspath = os.path.join(os.path.expanduser('~'), '.swiftrc')
+        userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         try:
-            f = open(usersettingspath, 'w')
+            f = open(userpreferencespath, 'w')
             json.dump(cfg.settings, f, indent=2)
             f.close()
         except:
@@ -1785,6 +1816,16 @@ class MainWindow(QMainWindow):
             cfg.settings = json.load(f)
         else:
             self.tell(f'Application Settings Saved!')
+
+
+    def resetUserPreferences(self):
+        logger.info('')
+        userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
+        if os.path.exists(userpreferencespath):
+            os.remove(userpreferencespath)
+        cfg.settings = {}
+        update_preferences_model()
+        self.saveUserPreferences()
 
 
     def rename_project(self):
@@ -2305,6 +2346,16 @@ class MainWindow(QMainWindow):
                 else:                              self._skipCheckbox.setChecked(True)
 
 
+    def updateMatchpointThumbnails(self, s=None, l=None):
+        if s == None: s=cfg.data.curScale
+        if l == None: l=cfg.data.layer()
+        snr_vals = cfg.data.snr_components()
+        self.corrspot_q0.set_data(path=cfg.data.corr_spot_q0_path(s=s, l=l), snr=snr_vals[0])
+        self.corrspot_q1.set_data(path=cfg.data.corr_spot_q1_path(s=s, l=l), snr=snr_vals[1])
+        self.corrspot_q2.set_data(path=cfg.data.corr_spot_q2_path(s=s, l=l), snr=snr_vals[2])
+        self.corrspot_q3.set_data(path=cfg.data.corr_spot_q3_path(s=s, l=l), snr=snr_vals[3])
+
+
     def enterExitMatchPointMode(self):
         #Todo REFACTOR
         logger.info('')
@@ -2319,6 +2370,7 @@ class MainWindow(QMainWindow):
                     logger.critical('Entering Match Point Mode...')
                     self.rb1.setChecked(True)
 
+
                     self.tell('Entering Match Point Mode...')
                     self._is_mp_mode = True
                     self._changeScaleCombo.setEnabled(False)
@@ -2326,16 +2378,23 @@ class MainWindow(QMainWindow):
                     self.rb1.setChecked(True)
                     self.extra_header_text_label.setText('Match Point Mode')
                     self._forceHideControls()
-                    self._matchpt_ctls.show()
+                    self.matchpointControlPanel.show()
                     if cfg.data.is_aligned_and_generated():
                         self.update_match_point_snr()
                     self.extra_header_text_label.show()
-                    self.mp_marker_size_spinbox.setValue(cfg.data['user_settings']['mp_marker_size'])
-                    self.mp_marker_lineweight_spinbox.setValue(cfg.data['user_settings']['mp_marker_lineweight'])
+                    self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
+                    self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
                     # self.rb0.setEnabled(False)
 
+
                     self.extra_header_text_label.show()
+                    cfg.project_tab._tabs.setCurrentIndex(0)
+                    self._disableGlobTabs()
+                    if cfg.project_tab:
+                        for i in range(1, 4):
+                            cfg.project_tab._tabs.setTabEnabled(i, False)
                     # cfg.project_tab.ng_layout = 'xy'
+                    self.updateMatchpointThumbnails()
                     cfg.project_tab.initNeuroglancer(matchpoint=True, layout='xy')
                     # self.neuroglancer_configuration_1()
                 else:
@@ -2351,6 +2410,7 @@ class MainWindow(QMainWindow):
                     self.initView()
                     cfg.project_tab.ng_layout = '4panel'
                     self.rb0.setEnabled(True)
+                    self.enableAllTabs()
                     # cfg.project_tab.updateNeuroglancer(matchpoint=False, layout='4panel')
                     cfg.project_tab.initNeuroglancer(matchpoint=False)
                     # self.neuroglancer_configuration_0()
@@ -2438,16 +2498,20 @@ class MainWindow(QMainWindow):
             self._dev_console.hide()
 
 
-    def set_mp_marker_lineweight(self):
-        cfg.data['user_settings']['mp_marker_lineweight'] = self.mp_marker_lineweight_spinbox.value()
-        if inspect.stack()[1].function != 'enterExitMatchPointMode':
-            cfg.project_tab.updateNeuroglancer()
-
-
-    def set_mp_marker_size(self):
-        cfg.data['user_settings']['mp_marker_size'] = self.mp_marker_size_spinbox.value()
-        if inspect.stack()[1].function != 'enterExitMatchPointMode':
-            cfg.project_tab.updateNeuroglancer()
+    # def set_mp_marker_lineweight(self):
+    #     caller = inspect.stack()[1].function
+    #     logger.info('caller: %s' % caller)
+    #     cfg.data['user_settings']['mp_marker_lineweight'] = self.mp_marker_size_spinbox.value()
+    #     if inspect.stack()[1].function != 'enterExitMatchPointMode':
+    #         cfg.project_tab.updateNeuroglancer()
+    #
+    #
+    # def set_mp_marker_size(self):
+    #     caller = inspect.stack()[1].function
+    #     logger.info('caller: %s' % caller)
+    #     cfg.data['user_settings']['mp_marker_size'] = self.mp_marker_lineweight_spinbox.value()
+    #     if inspect.stack()[1].function != 'enterExitMatchPointMode':
+    #         cfg.project_tab.updateNeuroglancer()
 
 
     def set_opacity(self, obj, val):
@@ -2726,7 +2790,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.info_button_buffer_label)
 
 
-    def _disableAllOtherTabs(self):
+    def _disableGlobTabs(self):
         indexes = list(range(0, self.globTabs.count()))
         indexes.remove(self.globTabs.currentIndex())
         for i in indexes:
@@ -2734,10 +2798,13 @@ class MainWindow(QMainWindow):
         # self._btn_refreshNg.setEnabled(False)
 
 
-    def _enableAllTabs(self):
+    def enableAllTabs(self):
         indexes = list(range(0, self.globTabs.count()))
         for i in indexes:
             self.globTabs.setTabEnabled(i, True)
+        if cfg.project_tab:
+            for i in range(0,4):
+                cfg.project_tab._tabs.setTabEnabled(i, True)
         # self._btn_refreshNg.setEnabled(True)
 
 
@@ -3032,7 +3099,7 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textedit)
         menu.addAction(action)
 
-    def initMenu(self):
+    def savePreferencesAction(self):
         '''Initialize Menu'''
         logger.info('')
         self.action_groups = {}
@@ -3076,9 +3143,13 @@ class MainWindow(QMainWindow):
         self.saveAction.setShortcut('Ctrl+S')
         fileMenu.addAction(self.saveAction)
 
-        self.saveAppSettingsAction = QAction('Save User Preferences', self)
-        self.saveAppSettingsAction.triggered.connect(self.saveApplicationSettings)
-        fileMenu.addAction(self.saveAppSettingsAction)
+        self.savePreferencesAction = QAction('Save User Preferences', self)
+        self.savePreferencesAction.triggered.connect(self.saveUserPreferences)
+        fileMenu.addAction(self.savePreferencesAction)
+
+        self.resetPreferencesAction = QAction('Set Default Preferences', self)
+        self.resetPreferencesAction.triggered.connect(self.resetUserPreferences)
+        fileMenu.addAction(self.resetPreferencesAction)
 
         self.exitAppAction = QAction('&Quit', self)
         self.exitAppAction.triggered.connect(self.exit_app)
@@ -3250,6 +3321,20 @@ class MainWindow(QMainWindow):
         self.shader3Action.setCheckable(True)
         self.shader4Action.setCheckable(True)
 
+        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
+        self.ngShowScaleBarAction.setCheckable(True)
+        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
+        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
+        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowScaleBarAction)
+
+        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
+        self.ngShowAxisLinesAction.setCheckable(True)
+        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
+        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
+        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowAxisLinesAction)
+
         self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
         self.ngShowUiControlsAction.setCheckable(True)
         self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
@@ -3258,26 +3343,12 @@ class MainWindow(QMainWindow):
         self.ngShowUiControlsAction.triggered.connect(self.update_ng)
         ngMenu.addAction(self.ngShowUiControlsAction)
 
-        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
-        self.ngShowScaleBarAction.setCheckable(True)
-        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
-        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowScaleBarAction)
-
         self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
         self.ngShowPanelBordersAction.setCheckable(True)
         self.ngShowPanelBordersAction.setChecked(getOpt('neuroglancer,SHOW_PANEL_BORDERS'))
         self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
         self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
         ngMenu.addAction(self.ngShowPanelBordersAction)
-
-        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
-        self.ngShowAxisLinesAction.setCheckable(True)
-        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
-        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
-        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowAxisLinesAction)
 
         self.detachNgAction = QAction('Detach Neuroglancer...', self)
         self.detachNgAction.triggered.connect(self.detachNeuroglancer)
@@ -3311,7 +3382,12 @@ class MainWindow(QMainWindow):
 
         debugMenu = self.menu.addMenu('Debug')
 
+        self.initViewAction = QAction('Fix View', self)
+        self.initViewAction.triggered.connect(self.initView)
+        debugMenu.addAction(self.initViewAction)
+
         tracemallocMenu = debugMenu.addMenu('tracemalloc')
+
 
         self.tracemallocStartAction = QAction('Start', self)
         self.tracemallocStartAction.triggered.connect(tracemalloc_start)
@@ -3451,6 +3527,21 @@ class MainWindow(QMainWindow):
     # def widgetsUpdateData(self) -> None:
     #     '''Reads MainWindow to Update Project Data.'''
     #     logger.debug('widgetsUpdateData:')
+
+    def set_corrspot_size(self, size):
+        # self.corrspot_q0.setFixedHeight(h)
+        # self.corrspot_q1.setFixedHeight(h)
+        # self.corrspot_q2.setFixedHeight(h)
+        # self.corrspot_q3.setFixedHeight(h)
+        self.corrspot_q0.setFixedSize(size,size)
+        self.corrspot_q1.setFixedSize(size,size)
+        self.corrspot_q2.setFixedSize(size,size)
+        self.corrspot_q3.setFixedSize(size,size)
+        # self.corrspot_q0.resize(size,size)
+        # self.corrspot_q1.resize(size,size)
+        # self.corrspot_q2.resize(size,size)
+        # self.corrspot_q3.resize(size,size)
+
 
 
     def _valueChangedSwimWindow(self):
@@ -3980,19 +4071,22 @@ class MainWindow(QMainWindow):
 
         self._matchpt_ctls = QWidget()
 
-        self.mp_marker_size_label = QLabel('Lineweight')
-        self.mp_marker_size_spinbox = QSpinBox()
-        self.mp_marker_size_spinbox.setMinimum(0)
-        self.mp_marker_size_spinbox.setMaximum(32)
-        self.mp_marker_size_spinbox.setSuffix('pt')
-        self.mp_marker_size_spinbox.valueChanged.connect(self.set_mp_marker_lineweight)
-
-        self.mp_marker_lineweight_label = QLabel('Size')
+        mp_marker_lineweight_label = QLabel('Lineweight')
         self.mp_marker_lineweight_spinbox = QSpinBox()
-        self.mp_marker_lineweight_spinbox.setMinimum(0)
+        self.mp_marker_lineweight_spinbox.setMinimum(1)
         self.mp_marker_lineweight_spinbox.setMaximum(32)
         self.mp_marker_lineweight_spinbox.setSuffix('pt')
-        self.mp_marker_lineweight_spinbox.valueChanged.connect(self.set_mp_marker_size)
+        # self.mp_marker_lineweight_spinbox.valueChanged.connect(self.set_mp_marker_lineweight)
+        self.mp_marker_lineweight_spinbox.valueChanged.connect(
+            lambda val: setOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT', val))
+
+        mp_marker_size_label = QLabel('Size')
+        self.mp_marker_size_spinbox = QSpinBox()
+        self.mp_marker_size_spinbox.setMinimum(1)
+        self.mp_marker_size_spinbox.setMaximum(32)
+        self.mp_marker_size_spinbox.setSuffix('pt')
+        self.mp_marker_size_spinbox.valueChanged.connect(
+            lambda val: setOpt('neuroglancer,MATCHPOINT_MARKER_SIZE', val))
 
         self.exit_matchpoint_button = QPushButton('Exit')
         self.exit_matchpoint_button.setStatusTip('Exit Match Point Mode')
@@ -4004,34 +4098,95 @@ class MainWindow(QMainWindow):
         self.realign_matchpoint_button.setStatusTip('Realign The Current Layer')
         self.realign_matchpoint_button.setStyleSheet("font-size: 9px;")
         self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.realign_matchpoint_button.clicked.connect(self.alignOne)
+        self.realign_matchpoint_button.clicked.connect(self.alignOneMp)
         self.realign_matchpoint_button.setFixedSize(normal_button_size)
 
+        class Slider(QSlider):
+            def __init__(self, parent):
+                super().__init__(parent)
+                self.setOrientation(Qt.Horizontal)
+                self.setMinimum(64)
+                self.setMaximum(512)
+                self.setSingleStep(1)
+                self.setPageStep(2)
+                self.setTickInterval(1)
+
+
+        # self.mpCorrspotSlider = Slider(parent=self)
+        # self.mpCorrspotSlider.setValue(128)
+        # self.mpCorrspotSlider.setFixedWidth(128)
+        # self.mpCorrspotSlider.valueChanged.connect(lambda value: print('lambda value: %d' % value))
+        # self.mpCorrspotSlider.valueChanged.connect(lambda value: self.set_corrspot_size(size=value))
+
+
+
         hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.exit_matchpoint_button)
         hbl.addWidget(self.realign_matchpoint_button)
-        hbl.addWidget(self.mp_marker_size_label)
-        hbl.addWidget(self.mp_marker_size_spinbox)
-        hbl.addWidget(self.mp_marker_lineweight_label)
+        hbl.addWidget(mp_marker_lineweight_label)
         hbl.addWidget(self.mp_marker_lineweight_spinbox)
+        hbl.addWidget(mp_marker_size_label)
+        hbl.addWidget(self.mp_marker_size_spinbox)
+        # hbl.addWidget(self.mpCorrspotSlider)
         hbl.addStretch()
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(0,0,0,0)
+        vbl.setContentsMargins(4, 4, 4, 4)
         self.matchpoint_text_snr = QTextEdit()
+        self.matchpoint_text_snr.setReadOnly(True)
+        self.matchpoint_text_snr.setMaximumWidth(300)
+        self.matchpoint_text_snr.setFixedHeight(26)
         self.matchpoint_text_snr.setObjectName('matchpoint_text_snr')
         self.matchpoint_text_prompt = QTextEdit()
+        # self.matchpoint_text_prompt.setMaximumWidth(600)
+        self.matchpoint_text_prompt.setFixedHeight(74)
+        self.matchpoint_text_prompt.setReadOnly(True)
         self.matchpoint_text_prompt.setObjectName('matchpoint_text_prompt')
+        self.matchpoint_text_prompt.setStyleSheet('border: 0px;')
         self.matchpoint_text_prompt.setHtml("Select 3-5 corresponding match points on the reference and base images. Key Bindings:<br>"
                                             "<b>Enter/return</b> - Add match points (Left, Right, Left, Right...)<br>"
                                             "<b>s</b>            - Save match points<br>"
                                             "<b>c</b>            - Clear match points for this layer")
-        self.matchpoint_text_prompt.setReadOnly(True)
+
         vbl.addLayout(hbl)
         vbl.addWidget(self.matchpoint_text_snr)
         vbl.addWidget(self.matchpoint_text_prompt)
-        vbl.addStretch()
+        # vbl.addStretch()
         self._matchpt_ctls.setLayout(vbl)
-        self._matchpt_ctls.hide()
+
+        self.corrspot_q0 = SnrThumbnail(parent=self)
+        self.corrspot_q1 = SnrThumbnail(parent=self)
+        self.corrspot_q2 = SnrThumbnail(parent=self)
+        self.corrspot_q3 = SnrThumbnail(parent=self)
+        self.set_corrspot_size(128)
+        # self.corrspot_q0.resize(128,128)
+        # self.corrspot_q1.resize(128,128)
+        # self.corrspot_q2.resize(128,128)
+        # self.corrspot_q3.resize(128,128)
+        # self.corrspot_q0.setFixedSize(128,128)
+        # self.corrspot_q1.setFixedSize(128,128)
+        # self.corrspot_q2.setFixedSize(128,128)
+        # self.corrspot_q3.setFixedSize(128,128)
+        # self.corrspot_q0.setMaximumWidth(128)
+        # self.corrspot_q1.setMaximumWidth(128)
+        # self.corrspot_q2.setMaximumWidth(128)
+        # self.corrspot_q3.setMaximumWidth(128)
+
+        self.matchpointControlPanel = QWidget()
+        hbl = QHBoxLayout()
+        # hbl.setSpacing(0)
+        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.addWidget(self._matchpt_ctls)
+        # hbl.addStretch()
+        hbl.addWidget(self.corrspot_q0)
+        hbl.addWidget(self.corrspot_q1)
+        hbl.addWidget(self.corrspot_q2)
+        hbl.addWidget(self.corrspot_q3)
+        # hbl.addStretch()
+        self.matchpointControlPanel.setLayout(hbl)
+        self.matchpointControlPanel.hide()
+        self.matchpointControlPanel.setMaximumHeight(160)
+
 
         '''Show/Hide Primary Tools Buttons'''
         show_hide_button_sizes = QSize(102, 18)
@@ -4156,7 +4311,7 @@ class MainWindow(QMainWindow):
         self._splitter = QSplitter(Qt.Orientation.Vertical)    # __SPLITTER INDEX__
         self._splitter.addWidget(self.globTabs)               # (0)
         self._splitter.addWidget(self._controlPanelAndHud)     # (1)
-        self._splitter.addWidget(self._matchpt_ctls)           # (2)
+        self._splitter.addWidget(self.matchpointControlPanel)  # (2)
         self._splitter.addWidget(self._py_console)             # (3)
         self._splitter.setSizes(self._mainVSplitterSizes)
 
@@ -4167,7 +4322,7 @@ class MainWindow(QMainWindow):
         else:
             self._dev_console = None
         self._splitter.addWidget(self._showHideFeatures)  # (6)
-        self._splitter.setHandleWidth(2)
+        self._splitter.setHandleWidth(3)
         self._splitter.setCollapsible(0, False)
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)

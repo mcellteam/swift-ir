@@ -76,7 +76,7 @@ else:
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True
-USE_EXTRA_THREADING = False
+USE_EXTRA_THREADING = True
 DEBUG_MP = False
 DEBUG_NEUROGLANCER = False
 # DEBUG_MP = (False,True)[DEV_MODE]
@@ -118,6 +118,8 @@ projects = None
 selected_file = None
 tasks_remaining = None
 tasks_total = None
+
+MP_MODE = False
 
 
 

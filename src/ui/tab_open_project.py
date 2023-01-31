@@ -326,7 +326,7 @@ class ImageWidget(QLabel):
 #         painter = QPainter(self)
 #         point = QPoint(0,0)
 #         scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
-#         # start painting the label from left upper corner
+#         # start painting the snr from left upper corner
 #         point.setX((size.width() - scaledPix.width())/2)
 #         point.setY((size.height() - scaledPix.height())/2)
 #         print(point.x(), ' ', point.y())

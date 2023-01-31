@@ -281,8 +281,9 @@ class NgHostSlim(QRunnable):
             # request_layer = floor(cfg.viewer.state.position[0])
             request_layer = int(cfg.viewer.state.position[0])
             if request_layer == self._layer:
-                logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
-                return
+                # logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
+                # return
+                pass
             else:
                 self._layer = request_layer
             logger.info(f'emitting request_layer: {request_layer}')

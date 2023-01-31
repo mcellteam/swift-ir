@@ -11,6 +11,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QChec
 from qtpy.QtCore import Qt, QRect
 from qtpy.QtGui import QPixmap, QPainter
 from src.helpers import absFilePaths
+from src.ui.thumbnails import Thumbnail, SnrThumbnail
 from src.helpers import print_exception
 from src.funcs_image import ImageSize
 
@@ -83,7 +84,6 @@ class ProjectTable(QWidget):
         self.table.clearContents()
         # self.table.clear()
         self.table.setRowCount(0)
-        # self.updateSliderMaxVal()
         try:
             data = self.get_data()
         except:
@@ -112,7 +112,7 @@ class ProjectTable(QWidget):
                             self.table.setCellWidget(i, j, thumbnail)
                         elif j in (6, 7, 8, 9):
                             # logger.info(f'j={j}, item={str(item)}')
-                            thumbnail = SnrThumbnail(self, path=item, label='%.3f' % snr_4x[j - 6])
+                            thumbnail = SnrThumbnail(self, path=item, snr=snr_4x[j - 6])
                             self.table.setCellWidget(i, j, thumbnail)
                         else:
                             self.table.setItem(i, j, QTableWidgetItem(str(item)))
@@ -231,13 +231,13 @@ class ProjectTable(QWidget):
         return zipped
 
 
-    def updateSliderMaxVal(self):
-        if cfg.data.is_aligned():
-            thumb_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
-        else:
-            thumb_path = os.path.join(cfg.data.dest(), 'thumbnails')
-        max_val = max(ImageSize(next(absFilePaths(thumb_path))))
-        # self.row_height_slider.setMaximum(max_val)
+    # def updateSliderMaxVal(self):
+    #     if cfg.data.is_aligned():
+    #         thumb_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
+    #     else:
+    #         thumb_path = os.path.join(cfg.data.dest(), 'thumbnails')
+    #     max_val = max(ImageSize(next(absFilePaths(thumb_path))))
+    #     # self.row_height_slider.setMaximum(max_val)
 
 
     def initUI(self):
@@ -285,69 +285,69 @@ class ProjectTable(QWidget):
         layout.addWidget(self.controls)
 
         self.setLayout(layout)
-
-
-class SnrThumbnail(QWidget):
-
-    def __init__(self, parent, path, label='<SNR>'):
-        super().__init__(parent)
-        # thumbnail = QLabel(self)
-        thumbnail = ScaledPixmapLabel(self)
-        try:
-            pixmap = QPixmap(path)
-            thumbnail.setPixmap(pixmap)
-            thumbnail.setScaledContents(True)
-            label = QLabel(label)
-            label.setStyleSheet('color: #ff0000')
-        except:
-            label = QLabel('<h5>' + str(label) + '</h5>')
-            label.setStyleSheet('background-color: #141414')
-            print_exception()
-            logger.warning(f'WARNING path={path}, label={label}')
-        layout = QGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
-        layout.addWidget(thumbnail, 0, 0)
-        layout.addWidget(label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
-        self.setLayout(layout)
-
-
-class Thumbnail(QWidget):
-
-    def __init__(self, parent, path):
-        super().__init__(parent)
-        self.thumbnail = ScaledPixmapLabel(self)
-        self.pixmap = QPixmap(path)
-        self.thumbnail.setPixmap(self.pixmap)
-        self.thumbnail.setScaledContents(True)
-        self.layout = QGridLayout()
-        self.layout.setContentsMargins(1, 1, 1, 1)
-        self.layout.addWidget(self.thumbnail, 0, 0)
-        self.setLayout(self.layout)
-
-
-class ScaledPixmapLabel(QLabel):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setScaledContents(True)
-
-    def paintEvent(self, event):
-        if self.pixmap():
-            pm = self.pixmap()
-            try:
-                originalRatio = pm.width() / pm.height()
-                currentRatio = self.width() / self.height()
-                if originalRatio != currentRatio:
-                    qp = QPainter(self)
-                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    rect = QRect(0, 0, pm.width(), pm.height())
-                    rect.moveCenter(self.rect().center())
-                    qp.drawPixmap(rect, pm)
-                    return
-            except ZeroDivisionError:
-                # logger.warning('Cannot divide by zero')
-                # print_exception()
-                pass
-        super().paintEvent(event)
+#
+#
+# class SnrThumbnail(QWidget):
+#
+#     def __init__(self, parent, path, snr='<SNR>'):
+#         super().__init__(parent)
+#         # thumbnail = QLabel(self)
+#         thumbnail = ScaledPixmapLabel(self)
+#         try:
+#             pixmap = QPixmap(path)
+#             thumbnail.setPixmap(pixmap)
+#             thumbnail.setScaledContents(True)
+#             snr = QLabel(snr)
+#             snr.setStyleSheet('color: #ff0000')
+#         except:
+#             snr = QLabel('<h5>' + str(snr) + '</h5>')
+#             snr.setStyleSheet('background-color: #141414')
+#             print_exception()
+#             logger.warning(f'WARNING path={path}, snr={snr}')
+#         layout = QGridLayout()
+#         layout.setContentsMargins(1, 1, 1, 1)
+#         layout.addWidget(thumbnail, 0, 0)
+#         layout.addWidget(snr, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
+#         self.setLayout(layout)
+#
+#
+# class Thumbnail(QWidget):
+#
+#     def __init__(self, parent, path):
+#         super().__init__(parent)
+#         self.thumbnail = ScaledPixmapLabel(self)
+#         self.pixmap = QPixmap(path)
+#         self.thumbnail.setPixmap(self.pixmap)
+#         self.thumbnail.setScaledContents(True)
+#         self.layout = QGridLayout()
+#         self.layout.setContentsMargins(1, 1, 1, 1)
+#         self.layout.addWidget(self.thumbnail, 0, 0)
+#         self.setLayout(self.layout)
+#
+#
+# class ScaledPixmapLabel(QLabel):
+#     def __init__(self, parent):
+#         super().__init__(parent)
+#         self.setScaledContents(True)
+#
+#     def paintEvent(self, event):
+#         if self.pixmap():
+#             pm = self.pixmap()
+#             try:
+#                 originalRatio = pm.width() / pm.height()
+#                 currentRatio = self.width() / self.height()
+#                 if originalRatio != currentRatio:
+#                     qp = QPainter(self)
+#                     pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+#                     rect = QRect(0, 0, pm.width(), pm.height())
+#                     rect.moveCenter(self.rect().center())
+#                     qp.drawPixmap(rect, pm)
+#                     return
+#             except ZeroDivisionError:
+#                 # logger.warning('Cannot divide by zero')
+#                 # print_exception()
+#                 pass
+#         super().paintEvent(event)
 
 
 class Slider(QSlider):

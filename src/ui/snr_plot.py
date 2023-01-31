@@ -37,13 +37,13 @@ class SnrPlot(QWidget):
         pg.setConfigOptions(antialias=True)
         self.plot = self.view.addPlot()
         # self.vb = CustomViewBox()
-        # self.label =
+        # self.snr =
         # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
         self._curLayerLine = pg.InfiniteLine(
             movable=False,
             angle=90,
             label='Section #{value:.0f}',
-            # label=self.label_value,
+            # snr=self.label_value,
             labelOpts={'position': .1, 'color': (200, 200, 100), 'fill': (200, 200, 200, 50), 'movable': True})
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
@@ -118,7 +118,7 @@ class SnrPlot(QWidget):
             pos = [cfg.data.layer() + offset, 1]
             logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
-            # label = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
+            # snr = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
             lab = 'SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
             logger.info(f'lab = {lab}')
             self._snr_label.setText(lab)
@@ -140,8 +140,8 @@ class SnrPlot(QWidget):
                 movable=False,
                 angle=90,
                 pen='#32CD32',
-                # label='Match Point #{value:.0f}',
-                # # label=self.label_value,
+                # snr='Match Point #{value:.0f}',
+                # # snr=self.label_value,
                 labelOpts={'position': .1, 'color': (255, 225, 53), 'fill': (200, 200, 200, 50), 'movable': True}
             )
             self._mp_lines.append(line)
@@ -161,8 +161,8 @@ class SnrPlot(QWidget):
                 movable=False,
                 angle=90,
                 pen='#ff0000',
-                # label='Skip #{value:.0f}',
-                # # label=self.label_value,
+                # snr='Skip #{value:.0f}',
+                # # snr=self.label_value,
                 labelOpts={'position': .1, 'color': (255,250,250), 'fill': (255, 0, 0, 75), 'movable': True}
             )
             self._skip_lines.append(line)
