@@ -381,7 +381,7 @@ class ConfigAppDialog(QDialog):
     def on_apply(self):
         try:
             cfg.main_window.hud('Applying Application Settings...')
-            cfg.USE_TENCSORSTORE = self.tsCheckbox.isChecked()
+            # cfg.USE_TENSORSTORE = self.tsCheckbox.isChecked()
             cfg.HEADLESS = self.headlessCheckbox.isChecked()
             if cfg.HEADLESS:
                 cfg.main_window._tabs.setTabVisible(0, False)

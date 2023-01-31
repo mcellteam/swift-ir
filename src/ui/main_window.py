@@ -492,7 +492,7 @@ class MainWindow(QMainWindow):
                 lst_names = ''
                 for name in names:
                     lst_names += f'\n  Section: {name}'
-                self.warn(f'No SNR Data For Layers {", ".join(map(str, indexes))}...')
+                self.warn(f'No SNR Data For Layer(s): {", ".join(map(str, indexes))}')
 
 
     def regenerate(self, scale) -> None:
@@ -2892,7 +2892,8 @@ class MainWindow(QMainWindow):
             elif self.rb1.isChecked():
                 self.set_nglayout_combo_text(layout='xy')  # must be before initNeuroglancer
 
-            cfg.project_tab.initNeuroglancer() #!!!!
+            # cfg.project_tab.initNeuroglancer() #!!!!
+            self.hardRestartNg()
 
         else:
             cfg.data = None
@@ -2904,7 +2905,8 @@ class MainWindow(QMainWindow):
             logger.info('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
             self.set_nglayout_combo_text(layout=cfg.zarr_tab.ng_layout)  # must be before initNeuroglancer
-            cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
+            # cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
+            self.hardRestartNg()
 
         if self._isOpenProjTab():
             try:
