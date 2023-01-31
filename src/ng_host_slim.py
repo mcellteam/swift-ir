@@ -261,7 +261,8 @@ class NgHostSlim(QRunnable):
         cfg.url = str(cfg.viewer)
         print(f'url: {cfg.url}')
 
-        cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+        cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
+        # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
         if cfg.main_window.detachedNg.view.isVisible():
             cfg.main_window.detachedNg.open(url=cfg.url)
