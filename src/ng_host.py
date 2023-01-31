@@ -55,6 +55,7 @@ logger = logging.getLogger(__name__)
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal(int)
+    zoomChanged = Signal(float)
     mpUpdate = Signal()
 
 # class NgHost(QObject):
@@ -67,6 +68,7 @@ class NgHost(QRunnable):
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
+        self._crossSectionScale = 1.0
         self.url_viewer = None
         self.ref_pts = []
         self.base_pts = []
@@ -474,15 +476,20 @@ class NgHost(QRunnable):
             # request_layer = floor(cfg.viewer.state.position[0])
             request_layer = int(cfg.viewer.state.position[0])
             if request_layer == self._layer:
-                # logger.debug('State Changed, But Layer Is The Same - Suppressing The Callback Signal')
-                # return
-                pass
+                logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
             else:
                 self._layer = request_layer
-            logger.info(f'emitting request_layer: {request_layer}')
-            self.signals.stateChanged.emit(request_layer)
-            if self.mp_mode:
-                self.clear_mp_buffer()
+                logger.info(f'emitting request_layer: {request_layer}')
+                self.signals.stateChanged.emit(request_layer)
+                if self.mp_mode:
+                    self.clear_mp_buffer()
+            zoom = cfg.viewer.state.cross_section_scale
+            if zoom != self._crossSectionScale:
+                logger.info(f'emitting Zoom Changed: {zoom}')
+                self.signals.zoomChanged.emit(zoom)
+            self._crossSectionScale = zoom
+
+
         except:
             print_exception()
             logger.error('ERROR on_state_change')
