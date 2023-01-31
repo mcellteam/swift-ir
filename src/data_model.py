@@ -411,7 +411,6 @@ class DataModel:
             if isinstance(value, list):
                 return statistics.fmean(map(float, value))
         except:
-            print_exception()
             logger.warning(f'Unexpected Token For Layer #{l} - Returning 0.0...')
             return 0.0
 
