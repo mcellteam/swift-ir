@@ -416,11 +416,11 @@ class DataModel:
                 value = self._data['data']['scales'][s]['alignment_stack'][l][
                                                     'align_to_ref_method']['method_results']['snr']
                 if value:
-                    logger.warning(f'No SNR Data for {s}, Layer #{l} - Returning 0.0...')
                     # if isinstance(value, list):
                     #     return statistics.fmean(map(float, value))
                     return statistics.fmean(map(float, value))
                 else:
+                    # logger.warning(f'No SNR Data for {s}, Layer #{l} - Returning 0.0...')
                     return 0.0
         except:
             logger.warning(f'Unexpected Token For {s}, Layer #{l} - Returning 0.0...')

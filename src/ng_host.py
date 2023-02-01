@@ -249,7 +249,7 @@ class NgHost(QRunnable):
         if widget_size is None:
             # widget_size = cfg.project_tab.geometry().getRect()
             widget_size = cfg.main_window.globTabs.geometry().getRect()
-        logger.critical(f'widget size: {str(widget_size)}')
+        # logger.info(f'widget size: {str(widget_size)}')
         widget_height = widget_size[3] - 50 # subtract pixel height of Neuroglancer toolbar
 
         if self.arrangement == 1:
@@ -283,10 +283,6 @@ class NgHost(QRunnable):
 
             s.relativeDisplayScales = {"z": 25}
             s.displayDimensions = ["z", "y", "x"]
-
-            logger.critical(type(s))
-            logger.critical(str(s))
-
 
             # s.relative_display_scales = {"z": 25}
             # s.display_dimensions = ["z", "y", "x"]

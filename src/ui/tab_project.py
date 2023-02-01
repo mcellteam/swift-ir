@@ -133,7 +133,7 @@ class ProjectTab(QWidget):
 
 
 
-        logger.critical(f'cfg.ng_worker.url() = {cfg.viewer.get_viewer_url()}')
+        logger.critical(f'URL:\n{cfg.viewer.get_viewer_url()}')
         self.ng_browser.setUrl(QUrl(cfg.viewer.get_viewer_url()))
         self.ng_browser.setFocus()
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())

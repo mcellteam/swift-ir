@@ -73,7 +73,7 @@ class Thumbnailer:
         if cpus == None:
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         caller = inspect.stack()[1].function
-        logger.critical('Thumbnail Source Directory: %s (caller : %s)' % (src, caller))
+        logger.info('Thumbnail Source Directory: %s' % src)
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
@@ -95,7 +95,7 @@ class Thumbnailer:
         logger.critical(f'Thumbnail Scaling Factor:{scale_factor}, Target : {cfg.TARGET_THUMBNAIL_SIZE}')
         logger.info(f'start={start}, end={end}')
         filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
-        logger.info(f'Generating thumbnails for:\n{str(filenames)}')
+        # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
