@@ -18,8 +18,8 @@ from datetime import datetime
 import numpy as np
 import src.config as cfg
 from src.data_structs import data_template, layer_template, image_template
-from src.helpers import print_exception, natural_sort, exist_aligned_zarr, get_scale_key, \
-    get_scale_val, get_scales_with_generated_alignments
+from src.helpers import print_exception, natural_sort, exist_aligned_zarr,  \
+    get_scale_val, get_scale_key, get_scales_with_generated_alignments
 from src.funcs_image import ComputeBoundingRect, ImageSize
 
 __all__ = ['DataModel']
@@ -1385,6 +1385,7 @@ class DataModel:
         except:
             logger.error(f'Bad input: {scale_string}. Scales Unchanged.')
             input_scales = []
+
         if (input_scales != cur_scales):
             input_scale_keys = [get_scale_key(v) for v in input_scales]
             scales_to_remove = list(set(self.scales()) - set(input_scale_keys) - {'scale_1'})

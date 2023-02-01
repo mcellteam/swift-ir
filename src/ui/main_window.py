@@ -179,6 +179,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._widgetArea_details.show()
                     # cfg.project_tab.initNeuroglancer()
                     self.hardRestartNg()
+                    # cfg.project_tab.updateNeuroglancer()
 
                 elif self.rb1.isChecked() or self.rb2.isChecked():
                     logger.critical('rb1/2 is checked!')
@@ -186,6 +187,8 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._widgetArea_details.show()
                     # cfg.project_tab.initNeuroglancer()
                     self.hardRestartNg()
+                    # cfg.ng_worker.initViewer()
+                    # cfg.project_tab.updateNeuroglancer()
             QApplication.processEvents()
 
 
@@ -213,14 +216,20 @@ class MainWindow(QMainWindow):
     def hardRestartNg(self):
         logger.critical('Restarting Neuroglancer...')
         self.tell('Restarting Neuroglancer...')
+        if cfg.USE_DELAY:
+            time.sleep(cfg.DELAY_BEFORE)
         if self._isProjectTab() or self._isZarrTab():
             if ng.is_server_running():
+                logger.info('Stopping Neuroglancer...')
                 ng.server.stop()
             if cfg.project_tab:
                 cfg.project_tab.initNeuroglancer()
                 # cfg.project_tab.resetCrossSectionScaleSlider()
             if cfg.zarr_tab:
                 cfg.zarr_tab.initNeuroglancer()
+        if cfg.USE_DELAY:
+            time.sleep(cfg.DELAY_AFTER)
+
 
 
 
@@ -232,16 +241,16 @@ class MainWindow(QMainWindow):
                     if cfg.project_tab._tabs.currentIndex() == 0:
                         self.hardRestartNg()
                         # cfg.project_tab.initNeuroglancer()
-                        pass
                     if cfg.project_tab._tabs.currentIndex() == 1:
                         logger.critical('Refreshing Table...')
                         self.tell('Refreshing Table...')
                         cfg.project_tab.project_table.setScaleData()
+                        self.hud.done()
                     elif cfg.project_tab._tabs.currentIndex() == 3:
                         logger.critical('Refreshing SNR Plot...')
                         self.tell('Refreshing SNR Plot...')
-                        cfg.project_tab.snr_plot.wipeData()
                         cfg.project_tab.snr_plot.initSnrPlot()
+                        self.hud.done()
                 else:
                     self.warn('The application is busy')
                     logger.warn('The application is busy')
@@ -317,12 +326,14 @@ class MainWindow(QMainWindow):
 
     def initPythonConsole(self):
         logger.info('')
+
         namespace = {
             'pg': pg,
             'np': np,
             'cfg': src.config,
             'mw': src.config.main_window,
             'viewer': cfg.viewer,
+            'ng': ng,
         }
         text = """
         Caution - anything executed here is injected into the main event loop of AlignEM-SWiFT!
@@ -417,6 +428,9 @@ class MainWindow(QMainWindow):
         self.stopNgServer()
         self.tell('Generating TIFF Scale Image Hierarchy...')
         self.showZeroedPbar()
+        cfg.nTasks = 3
+        cfg.nCompleted = 0
+        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.set_status('Autoscaling...')
         self._disableGlobTabs()
         try:
@@ -476,6 +490,7 @@ class MainWindow(QMainWindow):
 
         self.enableAllTabs()
         # cfg.project_tab.initNeuroglancer()
+        self.pbarLabel.setText('')
         logger.info('<<<< autoscale <<<<')
 
 
@@ -571,6 +586,7 @@ class MainWindow(QMainWindow):
     def onAlignmentEnd(self):
         logger.info('Running Post-Alignment Tasks...')
         try:
+            self.pbarLabel.setText('')
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
             self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
@@ -591,9 +607,9 @@ class MainWindow(QMainWindow):
             self._showSNRcheck()
             # cfg.project_tab.project_table.updateSliderMaxVal()
             # self.hardRestartNg()
-            if cfg.project_tab._tabs.currentIndex() == 1:
-                cfg.project_tab.project_table.setScaleData()
-                cfg.project_tab.project_table.setScaleData()
+            # if cfg.project_tab._tabs.currentIndex() == 1:
+            cfg.project_tab.project_table.setScaleData()
+            cfg.project_tab.project_table.setScaleData()
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.initSnrPlot()
             self.updateMenus()
@@ -607,6 +623,12 @@ class MainWindow(QMainWindow):
 
     def onAlignmentStart(self, scale):
         logger.info('')
+        if self._toggleAutogenerate.isChecked():
+            cfg.nTasks = 5
+        else:
+            cfg.nTasks = 3
+        cfg.nCompleted = 0
+        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
         self.stopNgServer()
         self._disableGlobTabs()
@@ -618,6 +640,7 @@ class MainWindow(QMainWindow):
 
 
     def alignAll(self):
+
         is_realign = cfg.data.is_aligned(s=cfg.data.curScale)
         self.align(
             scale=cfg.data.curScale,
@@ -676,7 +699,7 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd()
         self.hardRestartNg()
         self.tell('Section #%d is Re-aligned!' % layer)
-        self.tell('  SNR Before: %.3f\n  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
+        self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
                                                              cfg.data.snr(l=layer)))
 
     def alignOneMp(self):
@@ -692,7 +715,7 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd()
         cfg.ng_worker.initViewer()
         self.tell('Section #%d is Re-aligned!' % layer)
-        self.tell('  SNR Before: %.3f\n  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
+        self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
                                                              cfg.data.snr(l=layer)))
 
 
@@ -742,6 +765,8 @@ class MainWindow(QMainWindow):
                 except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
                 finally: logger.info('Thumbnail Generation Complete')
             except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
+        else:
+            self.pbarLabel.setText('')
 
 
     def rescale(self):
@@ -1159,6 +1184,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.snr_plot.plot.setLabel('top', cfg.data.base_image_name(), **styles)
 
                 self._sectionSlider.setValue(cfg.data.layer())
+                self._jumpToLineedit.setText(str(cfg.data.layer())) #0131+
 
                 # try:
                 #     if self.detachedNg.view.isVisible():
@@ -2642,7 +2668,7 @@ class MainWindow(QMainWindow):
         self._arrangeRadio.setLayout(hbl)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
-        self._sectionSlider.setFixedWidth(192)
+        self._sectionSlider.setFixedWidth(180)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
 
         tip = 'Show Neuroglancer key bindings'
@@ -3449,6 +3475,23 @@ class MainWindow(QMainWindow):
         self.menuTextWebdriverLog = QTextEdit(self)
         self.menuTextWebdriverLog.setReadOnly(True)
         self.menuTextWebdriverLog.setText('Webdriver is offline.')
+        action = QWidgetAction(self)
+        action.setDefaultWidget(self.menuTextWebdriverLog)
+        menu.hovered.connect(fn)
+        debugMenu.hovered.connect(fn)
+        menu.addAction(action)
+
+
+        def fn():
+            try:
+                log = json.dumps(cfg.webdriver.get_log(), indent=2)
+            except:
+                log = 'Webdriver is offline.'
+            self.menuTextWebdriverLog.setText(log)
+
+        menu = debugMenu.addMenu('Debug Dump')
+        self.menuTextWebdriverLog = QTextEdit(self)
+        self.menuTextWebdriverLog.setReadOnly(True)
         action = QWidgetAction(self)
         action.setDefaultWidget(self.menuTextWebdriverLog)
         menu.hovered.connect(fn)
@@ -4589,7 +4632,8 @@ class MainWindow(QMainWindow):
         self.status_bar_layout = QHBoxLayout()
         self.status_bar_layout.setContentsMargins(0, 0, 0, 0)
         self.pbar_widget.setLayout(self.status_bar_layout)
-        self.status_bar_layout.addWidget(QLabel('Progress: '), alignment=Qt.AlignmentFlag.AlignRight)
+        self.pbarLabel = QLabel('Processing... ')
+        self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)
         self.statusBar.addPermanentWidget(self.pbar_widget)
         self.pbar_widget.hide()
@@ -4605,6 +4649,7 @@ class MainWindow(QMainWindow):
 
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
+        self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
 
 
     def showZeroedPbar(self):

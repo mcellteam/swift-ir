@@ -8,7 +8,7 @@ import time
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
-    get_bindir, create_scale_one_symlinks
+    get_bindir
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -27,9 +27,23 @@ def generate_scales(dm):
     create_project_structure_directories(dm.dest(), dm.scales())
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
 
-    src = dm.source_path()
-    imgs = dm.basefilenames()
-    create_scale_one_symlinks(src=src, dest=dm.dest(), imgs=imgs)
+
+    # Create Scale 1 Symlinks
+    logger.info('Creating Scale 1 symlinks')
+    cfg.main_window.tell('Sym-linking full scale images...')
+    src_path = dm.source_path()
+    for img in dm.basefilenames():
+        fn = os.path.join(src_path, img)
+        ofn = os.path.join(dm.dest(), 'scale_1', 'img_src', os.path.split(fn)[1])
+        # normalize path for different OSs
+        if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+            try:    os.unlink(ofn)
+            except: pass
+            try:    os.symlink(fn, ofn)
+            except:
+                logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
+                try:    shutil.copy(fn, ofn)
+                except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
 
     task_queue.start(cpus)
     assert dm.downscales() != 'scale_None'
@@ -39,7 +53,7 @@ def generate_scales(dm):
         # for i, layer in enumerate(datamodel.get_iter(s)):
         for i, layer in enumerate(dm['data']['scales'][s]['alignment_stack']):
             base       = dm.base_image_name(s=s, l=i)
-            if_arg     = os.path.join(src, base)
+            if_arg     = os.path.join(src_path, base)
             ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
             of_arg     = 'of=%s' % ofn
             scale_arg  = '+%d' % scale_val

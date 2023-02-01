@@ -85,6 +85,7 @@ class TaskQueue(QObject):
         cfg.main_window.shutdownNeuroglancer()
         # cfg.main_window.showZeroedPbar()
 
+        cfg.nCompleted += 1
         try:
             self.parent.pbar_max(self.n_tasks)
             if self.pbar_text:

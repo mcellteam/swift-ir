@@ -224,6 +224,15 @@ class NgHostSlim(QRunnable):
 
 
         with cfg.viewer.txn() as s:
+
+            cfg.LV = ng.LocalVolume(
+                data=store,
+                volume_type='image',
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, 0, 0],
+                # downsampling=None
+            )
+
             s.layout.type = self.nglayout
             adjustment = 1.04
             s.gpu_memory_limit = -1
@@ -233,51 +242,66 @@ class NgHostSlim(QRunnable):
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
 
-            cfg.LV = ng.LocalVolume(
-                data=store,
-                volume_type='image',
-                dimensions=self.coordinate_space,
-                # voxel_offset=[0, 0, 0],
-                voxel_offset=[0, 0, 0],
-                # downsampling=None
-            )
+            s.relative_display_scales = {"z": 25}
+            s.display_dimensions = ["z", "y", "x"]
 
-            if cfg.project_tab:
-                s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
-            else:
-                s.position = [0, shape[1] / 2, shape[2] / 2]
+            # s.relativeDisplayScales = {"z": 25}
+            # s.displayDimensions = ["z", "y", "x"]
+            #
+            # logger.critical(type(s))
+            # logger.critical(str(s))
+
+            if cfg.project_tab: s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
+            else:               s.position = [0, shape[1] / 2, shape[2] / 2]
 
             s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
 
-            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
+            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080' # 128 grey
             elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
             elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080'  # 128 grey
             elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
             else:                 s.crossSectionBackgroundColor = '#004060'
 
+            logger.critical(type(s))
+            logger.critical(str(s))
+
+
         with cfg.viewer.config_state.txn() as s:
             s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
             s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
+
         self._layer = self.request_layer()
-        cfg.url = str(cfg.viewer)
-        print(f'url: {cfg.url}')
+
 
         cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
         # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
 
         if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=cfg.url)
+            cfg.main_window.detachedNg.open(url=cfg.viewer.get_viewer_url())
 
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
 
+        state = copy.deepcopy(cfg.viewer.state)
+        state.relative_display_scales = {"z": 25}
+        cfg.viewer.set_state(state)
+        # logger.critical('cfg.viewer.state = ' + str(cfg.viewer.state))
+        # logger.critical(f'url: {cfg.viewer.get_viewer_url()}')
+        # logger.critical(f'id(cfg.viewer) = {id(cfg.viewer)}')
+        cfg.LV.invalidate()
+
+
 
     def url(self):
-        return cfg.url
+        return cfg.viewer.get_viewer_url()
 
 
     def on_state_changed(self):
+        logger.info('----------------State Changed!----------------')
+        logger.info('cfg.viewer.state = ' + str(cfg.viewer.state))
+        logger.info(f'url: {cfg.viewer.get_viewer_url()}')
+        logger.info('----------------------------------------------')
         request_layer = int(cfg.viewer.state.position[0])
         if request_layer == self._layer:
             logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
@@ -288,7 +312,8 @@ class NgHostSlim(QRunnable):
         zoom = cfg.viewer.state.cross_section_scale
         if zoom != self._crossSectionScale:
             logger.info(f'emitting Zoom Changed: {zoom}')
-            self.signals.zoomChanged.emit(zoom)
+            if zoom:
+                self.signals.zoomChanged.emit(zoom)
         self._crossSectionScale = zoom
 
 
