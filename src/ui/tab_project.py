@@ -72,9 +72,13 @@ class ProjectTab(QWidget):
 
     def shutdownNeuroglancer(self):
         logger.critical('')
+        if cfg.USE_DELAY:
+            time.sleep(cfg.DELAY_BEFORE)
         if ng.is_server_running():
             ng.server.stop()
             # time.sleep(.5)
+        if cfg.USE_DELAY:
+            time.sleep(cfg.DELAY_AFTER)
 
 
     def initNeuroglancer(self, layout=None, matchpoint=False):
@@ -84,20 +88,26 @@ class ProjectTab(QWidget):
 
         if caller != '_onGlobTabChange':
             logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-            self.shutdownNeuroglancer()
+            # self.shutdownNeuroglancer()
             if cfg.data:
                 if layout:
                     cfg.main_window.comboboxNgLayout.setCurrentText(layout)
                 # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
-                if cfg.main_window.rb0.isChecked():
-                    # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-                    logger.info('Instantiating NgHostSlim...')
-                    cfg.ng_worker = NgHostSlim(parent=self, project=True)
-                elif cfg.main_window.rb1.isChecked():
-                    logger.info('Instantiating NgHost...')
-                    # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-                    cfg.ng_worker = NgHost(parent=self)
-                QApplication.processEvents()
+
+
+                # if cfg.main_window.rb0.isChecked():
+                #     # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+                #     logger.info('Instantiating NgHostSlim...')
+                #     cfg.ng_worker = NgHostSlim(parent=self, project=True)
+                # elif cfg.main_window.rb1.isChecked():
+                #     logger.info('Instantiating NgHost...')
+                #     # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+                #     cfg.ng_worker = NgHost(parent=self)
+
+
+                cfg.ng_worker = NgHost(parent=self)
+
+
                 # cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 self.updateNeuroglancer(matchpoint=matchpoint)
 
@@ -108,9 +118,23 @@ class ProjectTab(QWidget):
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
         if layout: cfg.main_window.comboboxNgLayout.setCurrentText(layout)
+
+
+
         cfg.ng_worker.initViewer(matchpoint=matchpoint)
-        logger.critical(f'cfg.ng_worker.url() = {cfg.ng_worker.url()}')
-        self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
+
+        if cfg.main_window.rb0.isChecked():
+            cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+            cfg.ng_worker.initViewerSlim()
+        elif cfg.main_window.rb1.isChecked():
+            cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            cfg.ng_worker.initViewer(matchpoint=matchpoint)
+
+
+
+
+        logger.critical(f'cfg.ng_worker.url() = {cfg.viewer.get_viewer_url()}')
+        self.ng_browser.setUrl(QUrl(cfg.viewer.get_viewer_url()))
         self.ng_browser.setFocus()
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
         # when to connect this signal is very important
@@ -118,10 +142,16 @@ class ProjectTab(QWidget):
         # cfg.ng_worker.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
         cfg.ng_worker.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
         # self.resetCrossSectionScaleSlider()
+        self.resetSliderZdisplay()
 
+    def addToState(self):
+        state = copy.deepcopy(cfg.viewer.state)
+        state.relative_display_scales = {"z": 25}
+        cfg.viewer.set_state(state)
+        cfg.LV.invalidate()
 
     def setNeuroglancerUrl(self):
-        self.ng_browser.setUrl(QUrl(cfg.ng_worker.url()))
+        self.ng_browser.setUrl(QUrl(cfg.viewer.get_viewer_url()))
 
 
     def updateNgLayer(self):
@@ -180,7 +210,7 @@ class ProjectTab(QWidget):
             layer.setStyleSheet(
                 'color: #ffe135;'
                 'font-size: 9px;'
-                'background-color: rgba(0,0,0,.5);'
+                'background-color: rgba(0,0,0,.32);'
                 'margin: 1px 1px 1px 1px;'
                 'border-width: 0px;'
                 'border-style: solid;'
@@ -188,7 +218,7 @@ class ProjectTab(QWidget):
                 'border-radius: 1px;'
                 'margin-right: 10px;'
             )
-            layer.setFixedWidth(160)
+            layer.setFixedWidth(170)
             layer.setWordWrap(True)
             layer.setContentsMargins(0,0,0,0)
 
@@ -199,7 +229,7 @@ class ProjectTab(QWidget):
         self.afm_widget_.setReadOnly(True)
         self._transformationWidget = QWidget()
         # self._transformationWidget.setFixedSize(180,80)
-        self._transformationWidget.setFixedWidth(160)
+        self._transformationWidget.setFixedWidth(170)
         self._transformationWidget.setMaximumHeight(70)
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
@@ -271,12 +301,34 @@ class ProjectTab(QWidget):
         self.crossSectionScaleSliderAndLabel.setLayout(vbl)
 
 
+
+        # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
+        self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.crossSectionScaleSlider.set
+        # self.crossSectionScaleSlider.setMaximum(8.0)
+        # self.crossSectionScaleSlider.setMaximum(100)
+        self.ZdisplaySlider.setMaximum(100.)
+        self.ZdisplaySlider.setMinimum(1.0)
+        # self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
+        self.ZdisplaySlider.sliderMoved.connect(self.onSliderZdisplay)
+        self.ZdisplaySlider.setValue(1.0)
+
+        self.ZdisplaySliderAndLabel = QWidget()
+        self.ZdisplaySliderAndLabel.setFixedWidth(20)
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.ZdisplaySlider)
+        vbl.addWidget(VerticalLabel('Z-display:'))
+        self.ZdisplaySliderAndLabel.setLayout(vbl)
+
+
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(lab)
         hbl.addWidget(self.ng_browser_container)
         # hbl.addWidget(self.crossSectionScaleSlider)
         # hbl.addWidget(self.crossSectionOrientationSliderAndLabel)
+        hbl.addWidget(self.ZdisplaySliderAndLabel)
         hbl.addWidget(self.crossSectionScaleSliderAndLabel)
         self.ng_browser_container_outer = QWidget()
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
@@ -312,6 +364,26 @@ class ProjectTab(QWidget):
                 cfg.viewer.set_state(state)
             except:
                 print_exception()
+
+
+    def onSliderZdisplay(self):
+        # caller = inspect.stack()[1].function
+        try:
+            val = self.ZdisplaySlider.value()
+            state = copy.deepcopy(cfg.viewer.state)
+            state.relative_display_scales = {'z': val}
+            cfg.viewer.set_state(state)
+        except:
+            print_exception()
+
+
+    def resetSliderZdisplay(self):
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
+        try:
+            self.ZdisplaySlider.setValue(1)
+        except:
+            print_exception()
 
     # def onSliderCrossSectionOrientation(self):
     #     caller = inspect.stack()[1].function
@@ -461,8 +533,28 @@ class ProjectTab(QWidget):
         w2.setLayout(gl)
         self.snr_plot_widget = QSplitter(Qt.Orientation.Horizontal)
         self.snr_plot_widget.setObjectName('snr_plot_widget')
+
+
+        # self.snr_plot_browser = QWebEngineView()
+        # w3 = QWidget()
+        # vbl = QVBoxLayout()
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # vbl.addWidget(self.snr_plot_browser)
+        # w3.setLayout(vbl)
+
+
         self.snr_plot_widget.addWidget(w1)
         self.snr_plot_widget.addWidget(w2)
+        # self.snr_plot_widget.addWidget(w3)
+
+
+    # def upateSnrPlotBrowser(self):
+    #     cfg.ng_worker = NgHost(parent=self)
+    #     cfg.ng_worker.initViewerSlim()
+    #     url = cfg.viewer.get_viewer_url()
+    #     self.snr_plot_browser.setUrl(QUrl(url))
+
+
 
 
     def initUI_mini_view(self):

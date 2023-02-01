@@ -35,7 +35,7 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'is_destination_set',
+__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries',
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
@@ -47,20 +47,6 @@ logger = logging.getLogger(__name__)
 
 snapshot = None
 
-
-def find_allocated_widgets(filter) -> list:
-    # if isinstance(filter, str):
-    #     filter = list(filter)
-    # return [i for i in map(str,QApplication.allWidgets())
-    #         if any(i for j in map(str,filter) if j in i)]
-    # return list(filter(lambda k: str(filter) in k, lst))
-    return [k for k in map(str,QApplication.allWidgets()) if str(filter) in k]
-
-
-def count_widgets(name_or_type) -> int:
-    return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
-
-
 def getOpt(lookup):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
@@ -71,6 +57,21 @@ def setOpt(lookup, val):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
+
+
+def natural_sort(l):
+    '''Natural sort a list of strings regardless of zero padding'''
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
+
+
+def find_allocated_widgets(filter) -> list:
+    return [k for k in map(str,QApplication.allWidgets()) if str(filter) in k]
+
+
+def count_widgets(name_or_type) -> int:
+    return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
 
 
 def update_preferences_model():
@@ -107,18 +108,6 @@ def reset_user_preferences():
 
 def isNeuroglancerRunning():
    return ng.server.is_server_running()
-
-
-# def cleanup_project_list(dict):
-#     projects = dict['projects']
-#     dict['projects'] = []
-#     for path in projects:
-#         project_dir = os.path.splitext(path)[0]
-#         if os.path.exists(path):
-#             if os.path.isdir(project_dir):
-#                 dict['projects'].append(path)
-#     return dict
-
 
 
 def validate_selection() -> bool:
@@ -188,7 +177,6 @@ def append_project_path(path):
             f.write(f"{p}\n")
 
 
-
 def configure_project_paths():
     logger.info('')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
@@ -209,6 +197,95 @@ def configure_project_paths():
                         '%s' % '  \n'.join(projectpaths))
     except:
         print_exception()
+
+
+def check_for_binaries():
+    # print("Checking platform-specific path to SWiFT-IR executables...")
+    path = os.path.split(os.path.realpath(__file__))[0]
+    if platform.system() == 'Darwin':
+        bindir = os.path.join(path, 'lib', 'bin_darwin')
+    elif platform.system() == 'Linux':
+        bindir = os.path.join(path, 'lib', 'bin_tacc') if '.tacc.utexas.edu' in platform.node() else 'bin_linux'
+    else:
+        logger.warning("System Could Not Be Resolved. C Binaries Not Found.")
+        return
+    bin_lst = [os.path.join(bindir, 'iavg'),
+               os.path.join(bindir, 'iscale2'),
+               os.path.join(bindir, 'mir'),
+               os.path.join(bindir, 'remod'),
+               os.path.join(bindir, 'swim')
+               ]
+    for f in bin_lst:
+        if os.path.isfile(f):  print(u'\u2713 FOUND: ' + f)
+        else:  logger.warning('BINARY FILE NOT FOUND, PLEASE COMPILE: ' + f)
+
+
+def obj_to_string(obj, extra='    '):
+    return str(obj.__class__) + '\n' + '\n'.join(
+        (extra + (str(item) + ' = ' +
+                  (obj_to_string(obj.__dict__[item], extra + '    ') if hasattr(obj.__dict__[item], '__dict__') else str(
+                      obj.__dict__[item])))
+         for item in sorted(obj.__dict__)))
+
+
+def is_tacc() -> bool:
+    '''Checks if the program is running on a computer at TACC. Returns a boolean.'''
+    node = platform.node()
+    if '.tacc.utexas.edu' in node:  return True
+    else:                           return False
+
+
+def is_linux() -> bool:
+    '''Checks if the program is running on a Linux OS. Returns a boolean.'''
+    system = platform.system()
+    if system == 'Linux':  return True
+    else:                  return False
+
+
+def is_mac() -> bool:
+    '''Checks if the program is running on macOS. Returns a boolean.'''
+    system = platform.system()
+    if system == 'Darwin':  return True
+    else:                   return False
+
+
+def is_joel() -> bool:
+    '''Checks if the program is running on macOS. Returns a boolean.'''
+    system = platform.system()
+    if 'Joels-' in platform.node():
+        return True
+    else:
+        return False
+
+
+def get_bindir() -> str:
+    '''Checks operating system. Returns the operating system-dependent
+    path to where SWiFT-IR binaries should exist'''
+    bindir = ''
+    error = 'Operating System Could Not Be Resolved'
+    if is_tacc():     bindir = 'bin_tacc'
+    elif is_mac():    bindir = 'bin_darwin'
+    elif is_linux():  bindir = 'bin_linux'
+    else:
+        logger.warning(error)
+        cfg.main_window.hud.post(error, logging.ERROR)
+    assert len(bindir) > 0
+    return bindir
+
+
+def get_appdir() -> str:
+    return os.path.split(os.path.realpath(__file__))[0]
+
+
+def absFilePaths(d):
+    for dirpath,_,filenames in os.walk(d):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
+
+
+def absFilePathsList(d):
+    return list(absFilePaths(d))
+
 
 def handleError(func, path, exc_info):
     logger.warning('Handling Error for file %s' % path)
@@ -294,35 +371,6 @@ def get_bytes(start_path = '.'):
 
     return total_size
 
-
-# def make_affine_widget_HTML(afm, cafm):
-#     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
-#     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
-#     text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
-#            f"  <tr>"\
-#            f"    <td rowspan=2 style='background-color: #F3F6FB; width: 20px'><b>AFM</b></td>"\
-#            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #F3F6FB; width:34px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
-#            f"  </tr>"\
-#            f"  <tr>"\
-#            f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #F3F6FB; width:34px'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
-#            f"  </tr>"\
-#            f"  <tr>"\
-#            f"    <td rowspan=2 style='background-color: #dcdcdc; width: 10%'><b>CAFM</b></td>"\
-#            f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #dcdcdc; width:34px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
-#            f"  </tr>"\
-#            f"  <tr>"\
-#            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
-#            f"    <td style='background-color: #dcdcdc; width:34px'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
-#            f"  </tr>"\
-#            f"</project_table>"
-#     return text
 
 def make_affine_widget_HTML(afm, cafm):
     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
@@ -411,133 +459,6 @@ def show_status_report(results, dt):
         cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.hud(f'  Failed       = {results[2]}')
         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
-
-
-# def show_mp_queue_results(task_queue, dt):
-#
-#     logger.info('Checking Status of Tasks...')
-#     n_tasks = len(task_queue.task_dict.keys())
-#     n_success, n_queued, n_failed = 0, 0, 0
-#     for k in task_queue.task_dict.keys():
-#         task_item = task_queue.task_dict[k]
-#         if task_item['statusBar'] == 'completed':
-#             logger.debug('\nCompleted:')
-#             logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
-#             logger.debug('   ARGS:   %s' % (str(task_item['args'])))
-#             logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
-#             n_success += 1
-#         elif task_item['statusBar'] == 'queued':
-#             logger.warning('\nQueued:')
-#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
-#             n_queued += 1
-#         elif task_item['statusBar'] == 'task_error':
-#             logger.warning('\nTask Error:')
-#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
-#             n_failed += 1
-#
-#     # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
-#
-#     if n_failed > 0:
-#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
-#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
-#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
-#         # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
-#         # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
-#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
-#         if n_queued > 0:
-#             cfg.main_window.warning(f'  Queued       = {n_queued}')
-#         else:
-#             cfg.main_window.hud(f'  Queued       = {n_queued}')
-#         cfg.main_window.err(f'  Failed       = {n_failed}')
-#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
-#     else:
-#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
-#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
-#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
-#         # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
-#         # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
-#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
-#         cfg.main_window.hud(f'  Queued       = {n_queued}')
-#         cfg.main_window.hud(f'  Failed       = {n_failed}')
-#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
-
-# def load():
-#     try:
-#         with open('datamodel.json', 'r') as f:
-#             self.previewmodel.todos = json.load(f)
-#     except Exception:
-#         pass
-
-def obj_to_string(obj, extra='    '):
-    return str(obj.__class__) + '\n' + '\n'.join(
-        (extra + (str(item) + ' = ' +
-                  (obj_to_string(obj.__dict__[item], extra + '    ') if hasattr(obj.__dict__[item], '__dict__') else str(
-                      obj.__dict__[item])))
-         for item in sorted(obj.__dict__)))
-
-def is_tacc() -> bool:
-    '''Checks if the program is running on a computer at TACC. Returns a boolean.'''
-    node = platform.node()
-    if '.tacc.utexas.edu' in node:  return True
-    else:                           return False
-
-def is_linux() -> bool:
-    '''Checks if the program is running on a Linux OS. Returns a boolean.'''
-    system = platform.system()
-    if system == 'Linux':  return True
-    else:                  return False
-
-def is_mac() -> bool:
-    '''Checks if the program is running on macOS. Returns a boolean.'''
-    system = platform.system()
-    if system == 'Darwin':  return True
-    else:                   return False
-
-def is_joel() -> bool:
-    '''Checks if the program is running on macOS. Returns a boolean.'''
-    system = platform.system()
-    if 'Joels-' in platform.node():
-        return True
-    else:
-        return False
-
-def get_bindir() -> str:
-    '''Checks operating system. Returns the operating system-dependent
-    path to where SWiFT-IR binaries should exist'''
-    bindir = ''
-    error = 'Operating System Could Not Be Resolved'
-    if is_tacc():     bindir = 'bin_tacc'
-    elif is_mac():    bindir = 'bin_darwin'
-    elif is_linux():  bindir = 'bin_linux'
-    else:
-        logger.warning(error)
-        cfg.main_window.hud.post(error, logging.ERROR)
-    assert len(bindir) > 0
-    return bindir
-
-def get_appdir() -> str:
-    return os.path.split(os.path.realpath(__file__))[0]
-
-def absFilePaths(d):
-    for dirpath,_,filenames in os.walk(d):
-        for f in filenames:
-            yield os.path.abspath(os.path.join(dirpath, f))
-
-def absFilePathsList(d):
-    return list(absFilePaths(d))
-
-def is_destination_set() -> bool:
-    '''Checks if there is a datamodel open'''
-    if cfg.data['data']['destination_path']:
-        return True
-    else:
-        return False
-
-
 
 
 def get_scale_key(scale_val) -> str:
@@ -649,27 +570,6 @@ def are_aligned_images_generated(dir, scale) -> bool:
 
 
 
-def check_for_binaries():
-    # print("Checking platform-specific path to SWiFT-IR executables...")
-    path = os.path.split(os.path.realpath(__file__))[0]
-    if platform.system() == 'Darwin':
-        bindir = os.path.join(path, 'lib', 'bin_darwin')
-    elif platform.system() == 'Linux':
-        bindir = os.path.join(path, 'lib', 'bin_tacc') if '.tacc.utexas.edu' in platform.node() else 'bin_linux'
-    else:
-        logger.warning("System Could Not Be Resolved. C Binaries Not Found.")
-        return
-    bin_lst = [os.path.join(bindir, 'iavg'),
-               os.path.join(bindir, 'iscale2'),
-               os.path.join(bindir, 'mir'),
-               os.path.join(bindir, 'remod'),
-               os.path.join(bindir, 'swim')
-               ]
-    for f in bin_lst:
-        if os.path.isfile(f):  print(u'\u2713 FOUND: ' + f)
-        else:  logger.warning('BINARY FILE NOT FOUND, PLEASE COMPILE: ' + f)
-
-
 def reorder_tasks(task_list, z_stride) -> list:
     tasks=[]
     for x in range(0, z_stride): #chunk z_dim
@@ -679,10 +579,10 @@ def reorder_tasks(task_list, z_stride) -> list:
         #     tasks.append(t)
     return tasks
 
+
 def imgToNumpy(img):
     '''Proper way to convert between images and numpy arrays as of PIL 1.1.6'''
     return np.array(img)
-
 
 
 @contextmanager
@@ -705,12 +605,6 @@ def print_exception():
     logger.warning(traceback.format_exc())
     # Todo Pipe these into a logs directory
 
-
-def natural_sort(l):
-    '''Natural sort a list of strings regardless of zero padding'''
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(l, key=alphanum_key)
 
 
 def get_img_filenames(path) -> list[str]:
@@ -758,16 +652,7 @@ def percentage(part, whole) -> str:
     return str(round(percentage, 2)) + "%"
 
 
-def get_best_path(file_path):
-    '''Normalize path for different OS'''
-    return os.path.abspath(os.path.normpath(file_path))
-
-
 def make_relative(file_path, proj_path):
-    # logger.info('Called by %s' % inspect.stack()[1].function)
-    # logger.info('make_relative:')
-    # logger.info('arg1, file_path=%s' % str(file_path))
-    # logger.info('arg1, proj_path=%s' % str(proj_path))
     rel_path = os.path.relpath(file_path, start=os.path.split(proj_path)[0])
     return rel_path
 
@@ -775,24 +660,6 @@ def make_relative(file_path, proj_path):
 def make_absolute(file_path, proj_path):
     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
     return abs_path
-
-def create_scale_one_symlinks(src, dest, imgs):
-    for img in imgs:
-        fn = os.path.join(src, img)
-        ofn = os.path.join(dest, 'scale_1', 'img_src', os.path.split(fn)[1])
-        if get_best_path(fn) != get_best_path(ofn):
-            try:
-                os.unlink(ofn)
-            except:
-                pass
-            try:
-                os.symlink(fn, ofn)
-            except:
-                logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
-                try:
-                    shutil.copy(fn, ofn)
-                except:
-                    logger.warning("Unable to link or copy from " + fn + " to " + ofn)
 
 
 def create_project_structure_directories(destination, scales) -> None:
@@ -827,53 +694,6 @@ def print_project_tree() -> None:
         print(path.displayable())
 
 
-
-#
-# def print_dat_files() -> None:
-#     '''Prints the .dat files for the current s, if they exist .'''
-#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale(), 'bias_data')
-#     if are_images_imported():
-#         logger.info('Printing .dat Files')
-#         try:
-#             logger.info("_____________________BIAS DATA_____________________")
-#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale()))
-#             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
-#                 snr_1 = f.read()
-#                 logger.info('snr_1               : %s' % snr_1)
-#             with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
-#                 bias_x_1 = f.read()
-#                 logger.info('bias_x_1            : %s' % bias_x_1)
-#             with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
-#                 bias_y_1 = f.read()
-#                 logger.info('bias_y_1            : %s' % bias_y_1)
-#             with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
-#                 bias_rot_1 = f.read()
-#                 logger.info('bias_rot_1          : %s' % bias_rot_1)
-#             with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
-#                 bias_scale_x_1 = f.read()
-#                 logger.info('bias_scale_x_1      : %s' % bias_scale_x_1)
-#             with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
-#                 bias_scale_y_1 = f.read()
-#                 logger.info('bias_scale_y_1      : %s' % bias_scale_y_1)
-#             with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
-#                 bias_skew_x_1 = f.read()
-#                 logger.info('bias_skew_x_1       : %s' % bias_skew_x_1)
-#             with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
-#                 bias_det_1 = f.read()
-#                 logger.info('bias_det_1          : %s' % bias_det_1)
-#             with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
-#                 afm_1 = f.read()
-#                 logger.info('afm_1               : %s' % afm_1)
-#             with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
-#                 c_afm_1 = f.read()
-#                 logger.info('c_afm_1             : %s' % c_afm_1)
-#         except:
-#             logger.info('Is this s aligned? No .dat files were found at this s.')
-#             pass
-
-
-
-
 def module_debug() -> None:
     '''Simple helper function to debug available modules.'''
     import sys, os
@@ -900,28 +720,11 @@ def module_debug() -> None:
     except:
         pass
 
-def show_process_diagnostics():
-    nthreadpool = cfg.main_window.threadpool.activeThreadCount()
-    cfg.main_window.hud.post('\n\nmain_window.threadpool Active thread count: %d' % nthreadpool)
-
-
-# def print_snr_list() -> None:
-#     try:
-#         snr_list = cfg.datamodel['data']['scales'][cfg.datamodel.scale()]['alignment_stack'][cfg.datamodel.layer()][
-#             'align_to_ref_method']['method_results']['snr_report']
-#         logger.debug('snr_list:  %s' % str(snr_list))
-#         mean_snr = sum(snr_list) / len(snr_list)
-#         logger.debug('mean(snr_list):  %s' % mean_snr)
-#         snr_report = cfg.datamodel['data']['scales'][cfg.datamodel.scale()]['alignment_stack'][cfg.datamodel.layer()][
-#             'align_to_ref_method']['method_results']['snr_report']
-#         logger.info('snr_report:  %s' % str(snr_report))
-#         logger.debug('All Mean SNRs for current s:  %s' % str(cfg.datamodel.snr_list()))
-#     except:
-#         logger.info('An Exception Was Raised trying to Print the SNR List')
 
 def print_scratch(msg):
     with open('~/Logs/scratchlog', "w") as f:
         f.write(str(msg))
+
 
 def makedirs_exist_ok(path_to_build, exist_ok=False):
     # Needed for old python which doesn't have the exist_ok option!!!
@@ -1009,6 +812,66 @@ def create_paged_tiff():
     image_sequence.shape
     Out[29]: (34, 4096, 4096)
     '''
+
+
+# def show_mp_queue_results(task_queue, dt):
+#
+#     logger.info('Checking Status of Tasks...')
+#     n_tasks = len(task_queue.task_dict.keys())
+#     n_success, n_queued, n_failed = 0, 0, 0
+#     for k in task_queue.task_dict.keys():
+#         task_item = task_queue.task_dict[k]
+#         if task_item['statusBar'] == 'completed':
+#             logger.debug('\nCompleted:')
+#             logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
+#             logger.debug('   ARGS:   %s' % (str(task_item['args'])))
+#             logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             n_success += 1
+#         elif task_item['statusBar'] == 'queued':
+#             logger.warning('\nQueued:')
+#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             n_queued += 1
+#         elif task_item['statusBar'] == 'task_error':
+#             logger.warning('\nTask Error:')
+#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
+#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
+#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             n_failed += 1
+#
+#     # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
+#
+#     if n_failed > 0:
+#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
+#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
+#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
+#         # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
+#         # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
+#         if n_queued > 0:
+#             cfg.main_window.warning(f'  Queued       = {n_queued}')
+#         else:
+#             cfg.main_window.hud(f'  Queued       = {n_queued}')
+#         cfg.main_window.err(f'  Failed       = {n_failed}')
+#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+#     else:
+#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
+#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
+#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
+#         # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
+#         # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
+#         cfg.main_window.hud(f'  Queued       = {n_queued}')
+#         cfg.main_window.hud(f'  Failed       = {n_failed}')
+#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+
+# def load():
+#     try:
+#         with open('datamodel.json', 'r') as f:
+#             self.previewmodel.todos = json.load(f)
+#     except Exception:
+#         pass
 
 
 #
@@ -1115,3 +978,50 @@ def create_paged_tiff():
 # def crop_mode_callback():
 #     return
 #     # return view_match_crop.get_value()
+
+
+
+
+
+# def print_dat_files() -> None:
+#     '''Prints the .dat files for the current s, if they exist .'''
+#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale(), 'bias_data')
+#     if are_images_imported():
+#         logger.info('Printing .dat Files')
+#         try:
+#             logger.info("_____________________BIAS DATA_____________________")
+#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale()))
+#             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
+#                 snr_1 = f.read()
+#                 logger.info('snr_1               : %s' % snr_1)
+#             with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
+#                 bias_x_1 = f.read()
+#                 logger.info('bias_x_1            : %s' % bias_x_1)
+#             with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
+#                 bias_y_1 = f.read()
+#                 logger.info('bias_y_1            : %s' % bias_y_1)
+#             with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
+#                 bias_rot_1 = f.read()
+#                 logger.info('bias_rot_1          : %s' % bias_rot_1)
+#             with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
+#                 bias_scale_x_1 = f.read()
+#                 logger.info('bias_scale_x_1      : %s' % bias_scale_x_1)
+#             with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
+#                 bias_scale_y_1 = f.read()
+#                 logger.info('bias_scale_y_1      : %s' % bias_scale_y_1)
+#             with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
+#                 bias_skew_x_1 = f.read()
+#                 logger.info('bias_skew_x_1       : %s' % bias_skew_x_1)
+#             with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
+#                 bias_det_1 = f.read()
+#                 logger.info('bias_det_1          : %s' % bias_det_1)
+#             with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
+#                 afm_1 = f.read()
+#                 logger.info('afm_1               : %s' % afm_1)
+#             with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
+#                 c_afm_1 = f.read()
+#                 logger.info('c_afm_1             : %s' % c_afm_1)
+#         except:
+#             logger.info('Is this s aligned? No .dat files were found at this s.')
+#             pass
+

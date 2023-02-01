@@ -30,7 +30,7 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, QObject, Slot, Signal
 import src.config as cfg
 from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
-from src.helpers import print_exception, get_scale_val, exist_aligned_zarr, obj_to_string, find_allocated_widgets
+from src.helpers import print_exception, get_scale_val, exist_aligned_zarr_cur_scale, obj_to_string
 from src.shaders import ann_shader
 
 __all__ = ['NgHost']
@@ -69,7 +69,6 @@ class NgHost(QRunnable):
         self.created = datetime.datetime.now()
         self._layer = None
         self._crossSectionScale = 1.0
-        self.url_viewer = None
         self.ref_pts = []
         self.base_pts = []
         self.bind = bind
@@ -149,18 +148,17 @@ class NgHost(QRunnable):
         )
         logger.info('Instantiating Viewer...')
         cfg.viewer = ng.Viewer()
-        self.url_viewer = str(cfg.viewer)
         image_size = cfg.data.image_size()
         widget_size = cfg.main_window.globTabs.size()
         logger.critical(f'cfg.main_window.globTabs.size() = {cfg.main_window.globTabs.size()}')
         logger.critical(f'widget_size = {widget_size}')
 
         widget_height = widget_size[3]
-        tissue_height = 2 * image_size[1]  # nm
-        cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-        tissue_width = 2 * image_size[0]  # nm
-        cross_section_width = (tissue_width / image_size[0]) * 1e-9  # nm/pixel
-        cross_section_scale = max(cross_section_height, cross_section_width)
+        tissue_h = 2 * image_size[1]  # nm
+        scale_h = (tissue_h / widget_height) * 1e-9  # nm/pixel
+        tissue_w = 2 * image_size[0]  # nm
+        scale_w = (tissue_w / image_size[0]) * 1e-9  # nm/pixel
+        cross_section_scale = max(scale_h, scale_w)
         css = '%.2E' % Decimal(cross_section_scale)
         # logger.info(f'cross_section_scale: {css}')
 
@@ -193,7 +191,7 @@ class NgHost(QRunnable):
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         self.scale = cfg.data.scale()
         logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
-        is_aligned = exist_aligned_zarr(self.scale)
+        is_aligned = exist_aligned_zarr_cur_scale(self.scale)
         sf = get_scale_val(self.scale)
         self.ref_l, self.base_l, self.aligned_l  = 'ref_%d'%sf, 'base_%d'%sf, 'aligned_%d'%sf
 
@@ -227,17 +225,13 @@ class NgHost(QRunnable):
                 self.initViewerMendenhall()
                 return
 
-        # coord_space = [cfg.data.res_z(s=self.scale), cfg.data.res_y(s=self.scale), cfg.data.res_x(s=self.scale)]
-        coord_space = list(cfg.data.resolution(s=cfg.data.scale()))
-        # logger.info(f'coordinate space: {coord_space}')
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
-            units=['nm','nm','nm'],
-            scales=coord_space,
+            units=['nm', 'nm', 'nm'],
+            scales=list(cfg.data.resolution(s=cfg.data.scale())),
         )
         # cfg.viewer = ng.UnsynchronizedViewer()
         cfg.viewer = ng.Viewer()
-        self.url_viewer = str(cfg.viewer)
 
         self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -256,8 +250,7 @@ class NgHost(QRunnable):
             # widget_size = cfg.project_tab.geometry().getRect()
             widget_size = cfg.main_window.globTabs.geometry().getRect()
         logger.critical(f'widget size: {str(widget_size)}')
-        # widget_height = widget_size[3] - 36 # subtract pixel height of Neuroglancer toolbar
-        widget_height = widget_size[3] - 54 # subtract pixel height of Neuroglancer toolbar
+        widget_height = widget_size[3] - 50 # subtract pixel height of Neuroglancer toolbar
 
         if self.arrangement == 1:
             if is_aligned: widget_width = widget_size[2] / 3
@@ -267,24 +260,11 @@ class NgHost(QRunnable):
 
         res_z, res_y, res_x = cfg.data.resolution(s=self.scale)
 
-        tissue_height = res_y * frame[0]  # nm
-        cross_section_height = (tissue_height / widget_height) * 1e-9  # nm/pixel
-        tissue_width = res_x * frame[1]  # nm
-        cross_section_width = (tissue_width / widget_width) * 1e-9  # nm/pixel
-        cross_section_scale = max(cross_section_height, cross_section_width)
+        tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm
+        scale_h = (tissue_h / widget_height) * 1e-9  # nm/pixel
+        scale_w = (tissue_w / widget_width) * 1e-9  # nm/pixel
+        cross_section_scale = max(scale_h, scale_w)
 
-        # print('frame[0], frame[1]           =%d,%d' % (frame[0], frame[1]))
-        # print('widget size                  =%s' % str(widget_size))
-        # print('arrangement                  =%d' % self.arrangement)
-        # print('is aligned                   =%s' % is_aligned)
-        # print('has bounding box             =%s' % cfg.data.has_bb(s=self.scale))
-        # print('nudge_x,nudge_y              =%d,%d' % (x_nudge, y_nudge))
-        # print('frame width,height           =%d,%d' % (frame[1], frame[0]))
-        # print('x_nudge,y_nudge              =%d,%d' % (x_nudge, y_nudge))
-        # print('widget width,height          =%d,%d' % (widget_width, widget_height))
-        # print('tissue width,height          =%d,%d' % (tissue_width, tissue_height))
-        # print('cross_section width,height   =%.10f,%.10f' % (cross_section_width, cross_section_height))
-        # print('cross_section_scale          =%.10f' % cross_section_scale)
 
         with cfg.viewer.txn() as s:
             adjustment = 1.05
@@ -296,13 +276,21 @@ class NgHost(QRunnable):
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
             # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
             # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
-            # s.relative_display_scales = {"z":25}
             # s.relative_display_scales = OrderedDict([['z', 42],['y', 1],['x', 1]])
             # s.relative_display_scales = [['z', 42],['y', 1],['x', 1],]
             # s.perspective_orientation
-            # s.relative_display_scales = [48, 1, 1]
-            # s.relative_display_scales = typed_string_map([48, 1, 1])
             # s.display_dimensions = [1000,1,1]
+
+            s.relativeDisplayScales = {"z": 25}
+            s.displayDimensions = ["z", "y", "x"]
+
+            logger.critical(type(s))
+            logger.critical(str(s))
+
+
+            # s.relative_display_scales = {"z": 25}
+            # s.display_dimensions = ["z", "y", "x"]
+            #
 
             s.layout.type = self.nglayout
             cfg.refLV = ng.LocalVolume(
@@ -433,11 +421,7 @@ class NgHost(QRunnable):
                 s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
                 s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
-            if cfg.THEME == 0:    s.crossSectionBackgroundColor = '#808080'
-            elif cfg.THEME == 1:  s.crossSectionBackgroundColor = '#FFFFE0'
-            elif cfg.THEME == 2:  s.crossSectionBackgroundColor = '#808080'  # 128 grey
-            elif cfg.THEME == 3:  s.crossSectionBackgroundColor = '#0C0C0C'
-            else:                 s.crossSectionBackgroundColor = '#004060'
+            s.crossSectionBackgroundColor = '#808080'
 
         if self.mp_mode:
             mp_key_bindings = [
@@ -457,17 +441,13 @@ class NgHost(QRunnable):
             s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
             s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
-
-
         self._layer = self.request_layer()
         self.clear_mp_buffer()
-        cfg.url = str(cfg.viewer)
+
         if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=cfg.url)
+            cfg.main_window.detachedNg.open(url=cfg.viewer.get_viewer_url())
         if cfg.HEADLESS:
             cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
-
-
 
 
     def on_state_changed(self):
@@ -484,10 +464,11 @@ class NgHost(QRunnable):
                 if self.mp_mode:
                     self.clear_mp_buffer()
             zoom = cfg.viewer.state.cross_section_scale
-            if zoom != self._crossSectionScale:
-                logger.info(f'emitting Zoom Changed: {zoom}')
-                self.signals.zoomChanged.emit(zoom)
-            self._crossSectionScale = zoom
+            if zoom:
+                if zoom != self._crossSectionScale:
+                    logger.info(f'emitting Zoom Changed: {zoom}')
+                    self.signals.zoomChanged.emit(zoom)
+                self._crossSectionScale = zoom
 
 
         except:
@@ -625,7 +606,7 @@ class NgHost(QRunnable):
 
     def url(self):
         # str(cfg.viewer)
-        return cfg.url
+        return cfg.viewer.get_viewer_url()
 
 
     def show_state(self):
@@ -636,6 +617,95 @@ class NgHost(QRunnable):
         logger.info(f'Selected Values:\n{s.selected_values}')
         logger.info(f'Current Layer:\n{cfg.viewer.state.position[0]}')
         logger.info(f'Viewer State:\n{cfg.viewer.state}')
+
+
+    def initViewerSlim(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'Initializing viewer (caller: {caller})....')
+        cfg.al_tensor = None
+        cfg.unal_tensor = None
+        ng.server.debug = cfg.DEBUG_NEUROGLANCER
+        cfg.viewer = ng.Viewer()
+        self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
+        sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        self.nglayout = sw[self.nglayout]
+        zd = ('img_src.zarr', 'img_aligned.zarr')[exist_aligned_zarr_cur_scale()]
+        path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
+        logger.info(f'tensor: {path}')
+        if not os.path.exists(path):
+            cfg.main_window.warn('Zarr Not Found: %s' % path)
+            return
+        try:
+            if cfg.USE_TENSORSTORE:
+                # logger.info('Getting Tensorstore Result...')
+                cfg.tensor = store = get_zarr_tensor(path).result()
+            else:
+                logger.info('Opening Zarr...')
+                store = zarr.open(path)
+        except:
+            print_exception()
+            cfg.main_window.warn('There was a problem loading tensor at %s' % path)
+            cfg.main_window.warn('Trying with regular Zarr datastore...')
+            try:     store = zarr.open(path)
+            except:  cfg.main_window.warn('Unable to load Zarr'); return
+            else:    print('Zarr Loaded Successfully!')
+        else:
+            print('TensorStore Loaded Successfully!')
+        if cfg.data.is_aligned_and_generated():
+            cfg.al_tensor = cfg.tensor
+        else:
+            cfg.unal_tensor = cfg.tensor
+
+        cfg.main_window.updateToolbar()
+
+        shape = store.shape
+
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=list(cfg.data.resolution(s=cfg.data.scale())), )
+
+        with cfg.viewer.txn() as s:
+
+            cfg.LV = ng.LocalVolume(
+                data=store,
+                volume_type='image',
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, 0, 0],
+                # downsampling=None
+            )
+            s.layout.type = self.nglayout
+            adjustment = 1.04
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            # s.concurrent_downloads = 512
+            # s.cross_section_scale = cross_section_scale * adjustment
+            s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
+            s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
+            s.relative_display_scales = {"z": 25}
+            s.display_dimensions = ["z", "y", "x"]
+            s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
+            s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
+            s.crossSectionBackgroundColor = '#808080' # 128 grey
+
+
+        with cfg.viewer.config_state.txn() as s:
+            s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
+            s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
+            # s.viewer_size = [100,100]
+
+        self._layer = self.request_layer()
+
+        cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
+        # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+
+        if cfg.main_window.detachedNg.view.isVisible():
+            cfg.main_window.detachedNg.open(url=cfg.viewer.get_viewer_url())
+
+        if cfg.HEADLESS:
+            cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
+
 
 
 if __name__ == '__main__':
