@@ -21,7 +21,7 @@ import dis
 import stat
 import psutil
 import resource
-from collections import namedtuple
+import multiprocessing
 import numpy as np
 # from guppy import hpy; h=hpy()
 import neuroglancer as ng
@@ -427,10 +427,12 @@ class MainWindow(QMainWindow):
         #Todo This should check for existence of original source files before doing anything
         self.stopNgServer()
         self.tell('Generating TIFF Scale Image Hierarchy...')
-        self.showZeroedPbar()
         cfg.nTasks = 3
         cfg.nCompleted = 0
+        cfg.CancelProcesses = False
+        cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.showZeroedPbar()
         self.set_status('Autoscaling...')
         self._disableGlobTabs()
         try:
@@ -527,7 +529,6 @@ class MainWindow(QMainWindow):
             else:
                 generate_aligned(scale=scale, start=0, end=None, renew_od=True, reallocate_zarr=True)
 
-            self.tell('Generating Aligned Thumbnails...')
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
@@ -555,6 +556,7 @@ class MainWindow(QMainWindow):
             self._autosave()
 
         finally:
+            self.pbarLabel.setText('')
             dir = cfg.data.dest()
             scale = cfg.data.scale()
             cfg.project_tab._onTabChange()
@@ -628,6 +630,8 @@ class MainWindow(QMainWindow):
         else:
             cfg.nTasks = 3
         cfg.nCompleted = 0
+        cfg.CancelProcesses = False
+        cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
         self.stopNgServer()
@@ -649,28 +653,29 @@ class MainWindow(QMainWindow):
             renew_od=True,
             reallocate_zarr=True
         )
-        if is_realign:
-            logger.info('Calculating SNR Diff Values...')
-            diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
-            diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
-            no_chg = [i for i, x in enumerate(diff) if x == 0]
-            pos = [i for i, x in enumerate(diff) if x > 0]
-            neg = [i for i, x in enumerate(diff) if x < 0]
-            self.tell('Re-alignment Results:')
-            self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
-            self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
-            self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-            if abs(diff_avg) < .001:
-                self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
-            elif diff_avg > 0:
-                self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
-            else:
-                self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
-        self.onAlignmentEnd()
-        self.hardRestartNg()
-        if exist_aligned_zarr_cur_scale():
-            self.tell('The Stack is Aligned!')
-            logger.info('Alignment seems successful')
+        if not cfg.CancelProcesses:
+            if is_realign:
+                logger.info('Calculating SNR Diff Values...')
+                diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
+                diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
+                no_chg = [i for i, x in enumerate(diff) if x == 0]
+                pos = [i for i, x in enumerate(diff) if x > 0]
+                neg = [i for i, x in enumerate(diff) if x < 0]
+                self.tell('Re-alignment Results:')
+                self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
+                self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
+                self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
+                if abs(diff_avg) < .001:
+                    self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
+                elif diff_avg > 0:
+                    self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
+                else:
+                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
+            self.onAlignmentEnd()
+            self.hardRestartNg()
+            if exist_aligned_zarr_cur_scale():
+                self.tell('The Stack is Aligned!')
+                logger.info('Alignment seems successful')
 
 
     def alignForward(self):
@@ -732,41 +737,47 @@ class MainWindow(QMainWindow):
                 self.threadpool.start(self.worker)
             else: compute_affines(scale, start, end)
         except:   print_exception(); self.err('An Exception Was Raised During Alignment.')
-        else:     logger.info('Affine Computation Succeeded')
+        # else:     logger.info('Affine Computation Finished')
 
-        self.tell('Generating Correlation Spot Thumbnails...')
+
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
                 self.threadpool.start(self.worker)
             else: cfg.thumb.generate_corr_spot(start=start, end=end)
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
-        else:   logger.info('Correlation Spot Thumbnail Generation Succeeded')
+        # else:   logger.info('Correlation Spot Thumbnail Generation Finished')
 
         # if cfg.project_tab._tabs.currentIndex() == 1:
         #     cfg.project_tab.project_table.setScaleData()
 
         if self._toggleAutogenerate.isChecked():
-            self.tell('Generating Aligned Images...')
             try:
                 if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(fn=generate_aligned(
                         scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr))
                     self.threadpool.start(self.worker)
-                else: generate_aligned(
-                    scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr)
+                else: generate_aligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr)
+            except:
+                print_exception()
+            finally:
+                logger.info('Generate Alignment Finished')
 
-                self.tell('Generating Aligned Thumbnails...')
-                try:
-                    if cfg.USE_EXTRA_THREADING:
-                        self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
-                        self.threadpool.start(self.worker)
-                    else: cfg.thumb.generate_aligned(start=start, end=end)
-                except:  print_exception(); self.warn('Something Unexpected Happened While Generating Thumbnails')
-                finally: logger.info('Thumbnail Generation Complete')
-            except:  print_exception(); self.err('Alignment Succeeded But Image Generation Failed Unexpectedly.')
-        else:
-            self.pbarLabel.setText('')
+            try:
+                if cfg.USE_EXTRA_THREADING:
+                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
+                    self.threadpool.start(self.worker)
+                else: cfg.thumb.generate_aligned(start=start, end=end)
+            except:
+                print_exception()
+                # self.warn('Something Unexpected Happened While Generating Thumbnails')
+            finally:
+                logger.info('Generate Aligned Thumbnails Finished')
+
+        self.pbarLabel.setText('')
+        self.pbar_widget.hide()
+        cfg.nCompleted = 0
+        cfg.nTasks = 0
 
 
     def rescale(self):
@@ -776,14 +787,24 @@ class MainWindow(QMainWindow):
         if not cfg.data:
             self.warn('No data yet!')
             return
-        msg ='Warning: Rescaling resets project data.\nAll progress will be lost. Continue?'
+        msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
         dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
         if not dlg.exec():
             logger.info('Rescale Canceled')
             return
 
+        cfg.nTasks = 3
+        cfg.nCompleted = 0
+        cfg.CancelProcesses = False
+        cfg.event = multiprocessing.Event()
+        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.showZeroedPbar()
         self.stopNgServer()
         self._disableGlobTabs()
+
+        for scale in cfg.data.scales():
+            logger.info('Clearing Method Results, %s' % cfg.data.scale_pretty(s=scale))
+            cfg.data.clear_method_results(scale=scale, start=0, end=None)
 
         # self.initView()
         # self.shutdownNeuroglancer()
@@ -4631,13 +4652,24 @@ class MainWindow(QMainWindow):
         self.pbar_widget = QWidget(self)
         self.status_bar_layout = QHBoxLayout()
         self.status_bar_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.pbar_cancel_button = QPushButton('Stop')
+        self.pbar_cancel_button.setStatusTip('Force Stop Multiprocessing Tasks')
+        self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
+        self.pbar_cancel_button.setStyleSheet("font-size: 10px;")
+        self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
+
         self.pbar_widget.setLayout(self.status_bar_layout)
         self.pbarLabel = QLabel('Processing... ')
         self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)
+        self.status_bar_layout.addWidget(self.pbar_cancel_button)
         self.statusBar.addPermanentWidget(self.pbar_widget)
         self.pbar_widget.hide()
 
+    def forceStopMultiprocessing(self):
+        cfg.CancelProcesses = True
+        cfg.event.set()
 
     def pbar_max(self, x):
         self.pbar.setMaximum(x)

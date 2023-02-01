@@ -26,31 +26,52 @@ class Thumbnailer:
 
 
     def generate_main(self):
-        logger.info('Generating Source Thumbnails...')
-        coarsest_scale = cfg.data.smallest_scale()
-        src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
-        od = os.path.join(cfg.data.dest(), 'thumbnails')
-        dt = self.generate_thumbnails(src=src, od=od, rmdir=True, prefix='', start=0, end=None)
-        cfg.data.set_t_thumbs(dt)
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+        pbar_text = 'Generating Source Image Thumbnails (%d Cores)...' % cpus
+        if cfg.CancelProcesses:
+            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        else:
+            logger.info('Generating Source Thumbnails...')
+            coarsest_scale = cfg.data.smallest_scale()
+            src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
+            od = os.path.join(cfg.data.dest(), 'thumbnails')
+            dt = self.generate_thumbnails(
+                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, cpus=cpus)
+            cfg.data.set_t_thumbs(dt)
 
 
     def generate_aligned(self, start, end):
-        src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'img_aligned')
-        od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
-        dt = self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
-        cfg.data.set_t_thumbs_aligned(dt)
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+        pbar_text = 'Generating Aligned Image Thumbnails (%d Cores)...' % cpus
+        if cfg.CancelProcesses:
+            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        else:
+            src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'img_aligned')
+            od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
+            dt = self.generate_thumbnails(
+                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, cpus=cpus)
+            cfg.data.set_t_thumbs_aligned(dt)
 
 
     def generate_corr_spot(self, start, end):
-        src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
-        od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
-        dt = self.generate_thumbnails(src=src, od=od, rmdir=False, prefix='', start=start, end=end)
-        cfg.data.set_t_thumbs_spot(dt)
-        shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
-        shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+        pbar_text = 'Generating Correlation Spot Thumbnails (%d Cores)...' % cpus
+        if cfg.CancelProcesses:
+            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        else:
+            src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
+            od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
+            dt = self.generate_thumbnails(
+                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, cpus=cpus)
+            cfg.data.set_t_thumbs_spot(dt)
+            cfg.main_window.tell('Discarding full scale correlation spots...')
+            shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
+            shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
 
 
-    def generate_thumbnails(self, src, od, rmdir=False, prefix='', start=0, end=None):
+    def generate_thumbnails(self, src, od, rmdir=False, prefix='', start=0, end=None, pbar_text='', cpus=None):
+        if cpus == None:
+            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         caller = inspect.stack()[1].function
         logger.critical('Thumbnail Source Directory: %s (caller : %s)' % (src, caller))
         try:
@@ -76,7 +97,6 @@ class Thumbnailer:
         filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
         logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-        pbar_text = 'Generating Thumbnails (%d Cores)...' % cpus
         task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
 

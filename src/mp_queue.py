@@ -5,6 +5,7 @@ import multiprocessing as mp
 import subprocess as sp
 import sys
 import time
+import queue
 
 import psutil
 from qtpy.QtCore import QObject
@@ -58,6 +59,19 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     logger.debug('<<<< Worker %d Finished' % (worker_id))
 
 
+def watchdog(wd_queue):
+    """
+    This check the queue for updates and send a signal to it
+    when the child process isn't sending anything for too long
+    """
+    while True:
+        try:
+            msg = wd_queue.get(timeout=10.0)
+        except queue.Empty as e:
+            logger.critical('Watchdog Alert! Killing Worker!')
+            wd_queue.put("KILL WORKER")
+
+
 class TaskQueue(QObject):
     def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None, pbar_text=None):
         QObject.__init__(self)
@@ -75,12 +89,26 @@ class TaskQueue(QObject):
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=1) -> None:
+
+        if cfg.CancelProcesses == True:
+            cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
+            logger.warning('Canceling Tasks: %s' % self.pbar_text)
+            return
+
         if cfg.DEBUG_MP:
             logger.info('Multiprocessing Module Debugging is ENABLED')
             mpl = mp.log_to_stderr()
             mpl.setLevel(logging.DEBUG)
         # else:
         #     mpl.setLevel(logging.INFO)
+
+        self.work_queue = self.ctx.JoinableQueue()
+        self.result_queue = self.ctx.Queue()
+        self.task_dict = {}
+        self.task_id = 0
+        self.n_workers = min(self.n_tasks, n_workers)
+        self.retries = retries
+
 
         cfg.main_window.shutdownNeuroglancer()
         # cfg.main_window.showZeroedPbar()
@@ -95,12 +123,7 @@ class TaskQueue(QObject):
         except:
             logger.error('An exception was raised while setting up progress bar')
 
-        self.work_queue = self.ctx.JoinableQueue()
-        self.result_queue = self.ctx.Queue()
-        self.task_dict = {}
-        self.task_id = 0
-        self.n_workers = min(self.n_tasks, n_workers)
-        self.retries = retries
+
         logger.info(f'Starting Task Queue: {self.pbar_text}...')
         cfg.main_window.hud(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores...')
         # cfg.main_window.hud(f'{self.pbar_text}')
@@ -120,6 +143,26 @@ class TaskQueue(QObject):
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
+
+                # wdog = mp.Process(target=watchdog, args=(self.work_queue,))
+                # wdog.daemon = True
+                # wdog.start()
+                #
+                # # Poll the queue
+                # while True:
+                #     msg = self.work_queue.get()
+                #     if msg == "KILL WORKER":
+                #         logger.warning("Terminating hung worker %d..." % i)
+                #         p.terminate()
+                #         time.sleep(0.1)
+                #         if not p.is_alive():
+                #             logger.warning("(!) Worker %d is no longer alive" % i)
+                #             p.join(timeout=1.0)
+                #             logger.info("Worker %d joined successfully" % i)
+                #             q.close()
+                #             break  # watchdog process daemon gets terminated
+
+
             except:
                 logger.warning('Original Worker # %d Triggered An Exception' % i)
         logger.debug('<<<< Exiting TaskQueue.start <<<<')
@@ -220,8 +263,10 @@ class TaskQueue(QObject):
         #     self.parent.pbar_widget.show()
         # except:
         #     logger.error('An exception was raised while setting up progress bar')
+        logger.info('Collecting Results...')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
+
 
                 self.end_tasks() # Add end sentinels (one/worker)
 
@@ -233,6 +278,18 @@ class TaskQueue(QObject):
                 for j in range(n_pending):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
                     # logger.info(task_str)
+                    if cfg.event.is_set():
+                        logger.critical('Terminating Running Processes...')
+                        cfg.main_window.tell('Terminating Running Processes...')
+                        cfg.CancelProcesses = True
+                        for w in self.workers:
+                            logger.info('Terminating Process %s...' % w.name)
+                            w.terminate()
+                        cfg.main_window.hud.done()
+                        cfg.main_window.warn('Canceling Future Tasks...')
+                        sys.exit(1)
+
+
                     try:
                         self.parent.pbar_update(self.n_tasks - realtime)
                         QApplication.processEvents()

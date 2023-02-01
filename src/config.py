@@ -128,5 +128,7 @@ USE_DELAY = False
 
 nTasks = 0
 nCompleted = 0
+CancelProcesses = False
+event = None
 
 
