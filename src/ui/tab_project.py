@@ -58,8 +58,9 @@ class ProjectTab(QWidget):
         # if index == 0:
         #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain viewer state
         if index == 1:
-            self.project_table.setScaleData()
-            self.project_table.setScaleData() #not sure why this is needed twice
+            # self.project_table.setScaleData()
+            # self.project_table.setScaleData() #not sure why this is needed twice
+            pass
         if index == 2:
             self.updateJsonWidget()
         if index == 3:
@@ -318,7 +319,7 @@ class ProjectTab(QWidget):
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.ZdisplaySlider)
-        vbl.addWidget(VerticalLabel('Z-display:'))
+        vbl.addWidget(VerticalLabel('Z-Mag:'))
         self.ZdisplaySliderAndLabel.setLayout(vbl)
 
 

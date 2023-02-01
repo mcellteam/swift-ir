@@ -191,7 +191,8 @@ class NgHost(QRunnable):
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
         self.scale = cfg.data.scale()
         logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
-        is_aligned = exist_aligned_zarr_cur_scale(self.scale)
+        is_aligned = cfg.data.is_aligned_and_generated()
+        logger.info('Aligned? %r' % is_aligned)
         sf = get_scale_val(self.scale)
         self.ref_l, self.base_l, self.aligned_l  = 'ref_%d'%sf, 'base_%d'%sf, 'aligned_%d'%sf
 
@@ -250,7 +251,7 @@ class NgHost(QRunnable):
             # widget_size = cfg.project_tab.geometry().getRect()
             widget_size = cfg.main_window.globTabs.geometry().getRect()
         # logger.info(f'widget size: {str(widget_size)}')
-        widget_height = widget_size[3] - 50 # subtract pixel height of Neuroglancer toolbar
+        widget_height = widget_size[3] - 34 # subtract pixel height of Neuroglancer toolbar
 
         if self.arrangement == 1:
             if is_aligned: widget_width = widget_size[2] / 3
@@ -626,7 +627,7 @@ class NgHost(QRunnable):
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         self.nglayout = sw[self.nglayout]
-        zd = ('img_src.zarr', 'img_aligned.zarr')[exist_aligned_zarr_cur_scale()]
+        zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
         path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
         logger.info(f'tensor: {path}')
         if not os.path.exists(path):
@@ -672,7 +673,7 @@ class NgHost(QRunnable):
                 # downsampling=None
             )
             s.layout.type = self.nglayout
-            adjustment = 1.04
+            adjustment = 1.05
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             # s.concurrent_downloads = 512
