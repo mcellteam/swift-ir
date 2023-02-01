@@ -399,6 +399,12 @@ class DataModel:
             self.set_layer(0)
             return self._data['data']['current_layer']
 
+    def method_results(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']
+
+
 
     def snr(self, s=None, l=None) -> float:
         if s == None: s = self.curScale
@@ -406,12 +412,18 @@ class DataModel:
         if l == 0:
             return 0.0
         try:
-            value = self._data['data']['scales'][s]['alignment_stack'][l][
+            if self.method_results(s=s, l=l):
+                value = self._data['data']['scales'][s]['alignment_stack'][l][
                                                     'align_to_ref_method']['method_results']['snr']
-            if isinstance(value, list):
-                return statistics.fmean(map(float, value))
+                if value:
+                    logger.warning(f'No SNR Data for {s}, Layer #{l} - Returning 0.0...')
+                    # if isinstance(value, list):
+                    #     return statistics.fmean(map(float, value))
+                    return statistics.fmean(map(float, value))
+                else:
+                    return 0.0
         except:
-            logger.warning(f'Unexpected Token For Layer #{l} - Returning 0.0...')
+            logger.warning(f'Unexpected Token For {s}, Layer #{l} - Returning 0.0...')
             return 0.0
 
     def snr_prev(self, s=None, l=None) -> float:
@@ -433,11 +445,15 @@ class DataModel:
     def snr_list(self, s=None) -> list[float]:
         # logger.info('caller: %s...' % inspect.stack()[1].function)
         ''' n is 4 for a 2x2 SWIM'''
-        try:
-            return [self.snr(s=s, l=i) for i in range(len(self))]
-        except:
-            print_exception()
-            logger.error('Unable To Determine SNR List')
+        if self.method_results():
+            try:
+                return [self.snr(s=s, l=i) for i in range(len(self))]
+            except:
+                print_exception()
+                logger.error('Unable To Determine SNR List')
+        else:
+            logger.warning('No Method Results, No SNR List - Returning Empty List')
+            return []
 
 
     def snr_prev_list(self, s=None, l=None):
@@ -1590,7 +1606,8 @@ class DataModel:
     #             l['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
     #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
 
-    def clear_method_results(self, scale, start, end):
+    def clear_method_results(self, scale=None, start=0, end=None):
+        if scale == None: scale = cfg.data.scale()
         logger.info("Clearing 'method_results'...")
         for layer in self._data['data']['scales'][scale]['alignment_stack'][start:end]:
             layer['align_to_ref_method']['method_results'] = {}
