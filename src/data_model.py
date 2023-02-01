@@ -402,7 +402,21 @@ class DataModel:
     def method_results(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']
+        except:
+            return {}
+
+
+    def previous_method_results(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['previous_method_results']
+        except:
+            return {}
 
 
 
@@ -412,18 +426,9 @@ class DataModel:
         if l == 0:
             return 0.0
         try:
-            if self.method_results(s=s, l=l):
-                value = self._data['data']['scales'][s]['alignment_stack'][l][
-                                                    'align_to_ref_method']['method_results']['snr']
-                if value:
-                    # if isinstance(value, list):
-                    #     return statistics.fmean(map(float, value))
-                    return statistics.fmean(map(float, value))
-                else:
-                    # logger.warning(f'No SNR Data for {s}, Layer #{l} - Returning 0.0...')
-                    return 0.0
+            value = self.method_results(s=s, l=l)['snr']
+            return statistics.fmean(map(float, value))
         except:
-            logger.warning(f'Unexpected Token For {s}, Layer #{l} - Returning 0.0...')
             return 0.0
 
     def snr_prev(self, s=None, l=None) -> float:
@@ -432,13 +437,9 @@ class DataModel:
         if l == 0:
             return 0.0
         try:
-            value = self._data['data']['scales'][s]['alignment_stack'][l][
-                                                    'align_to_ref_method']['previous_method_results']['snr']
-            if isinstance(value, list):
-                return statistics.fmean(map(float, value))
-        except KeyError:
-            print_exception()
-            logger.warning(f'Unexpected Token For Layer #{l} - Returning 0.0...')
+            value = self.previous_method_results(s=s, l=l)['snr']
+            return statistics.fmean(map(float, value))
+        except:
             return 0.0
 
 

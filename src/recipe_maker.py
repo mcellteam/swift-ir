@@ -4,12 +4,22 @@
 
 afm = affine forward matrix
 aim = affine inverse matrix
+pa = point array
+wwx_f = window width x - full
+sx = size x
+wwy_f = window width y - full
+sy = size y
+wsf = window scaling factor (example 0.8125)
+psta = stationary points (ref image)
+sx_2x2 = size of windows for 2x2
 
 o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
 ^ multi_swim_arg_string: an optional
 
 
 swim_results: stdout/err get appended to this, one line for each SWIM in a multi-SWIM
+
+
 
 
 '''
@@ -428,16 +438,6 @@ class alignment_process:
         pa[1, 0] = cy
         psta_1 = pa
 
-
-
-        # pa = point array
-        # wwx_f = window width x - full
-        # sx = size x
-        # wwy_f = window width y - full
-        # sy = size y
-        # wsf = window scaling factor (example 0.8125)
-        # psta = stationary points (ref image)
-        # sx_2x2 = size of windows for 2x2
 
         # Set up 2x2 points and windows
         nx = 2

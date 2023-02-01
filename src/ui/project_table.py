@@ -8,7 +8,7 @@ import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider
-from qtpy.QtCore import Qt, QRect
+from qtpy.QtCore import Qt, QRect, QAbstractTableModel
 from qtpy.QtGui import QPixmap, QPainter
 from src.helpers import absFilePaths
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
@@ -30,7 +30,10 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         self.INITIAL_ROW_HEIGHT = 100
+        self.data = None
         self.table = QTableWidget()
+        # self.model = TableModel(data='')
+        # self.table.setModel(self.model)
         self.table.verticalHeader().hide()
         self.table.setWordWrap(True)
         self.table.setSortingEnabled(True)
@@ -67,12 +70,17 @@ class ProjectTable(QWidget):
 
     def set_column_headers(self):
         if cfg.data.is_aligned():
-            labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned', 'Q0', 'Q1', 'Q2', 'Q3',
+            labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned',
+                       # 'Q0', 'Q1', 'Q2', 'Q3',
+                       'Top, Left', 'Top, Right', 'Bottom, Left', 'Bottom, Right',
                        'Scale', 'Skip?', 'Method', 'SNR Report']
         else:
             labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
         self.table.setHorizontalHeaderLabels(labels)
         self.table.setColumnCount(len(labels))
+
+    def setScaleRowData(self):
+        pass
 
 
     def setScaleData(self):
@@ -82,15 +90,17 @@ class ProjectTable(QWidget):
         cur_scroll_pos = self.table.verticalScrollBar().value()
         self.setUpdatesEnabled(False)
         self.table.clearContents()
-        # self.table.clear()
+        self.table.clear()
         self.table.setRowCount(0)
+        self.set_column_headers()
         try:
-            data = self.get_data()
+            self.get_data()
         except:
             print_exception()
         try:
             if cfg.data.is_aligned():
-                for i, row in enumerate(data):
+                for i, row in enumerate(self.data):
+                    # logger.info('Inserting row %d' % i)
                     self.table.insertRow(i)
                     snr_4x = cfg.data.snr_components(l=i)
                     for j, item in enumerate(row):
@@ -117,7 +127,7 @@ class ProjectTable(QWidget):
                         else:
                             self.table.setItem(i, j, QTableWidgetItem(str(item)))
             else:
-                for i, row in enumerate(data):
+                for i, row in enumerate(self.data):
                     self.table.insertRow(i)
                     for j, item in enumerate(row):
                         if j == 0:
@@ -140,9 +150,9 @@ class ProjectTable(QWidget):
             self.setUpdatesEnabled(True)
             self.setColumnWidths()
             self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
-            self.set_column_headers()
+            # self.set_column_headers()
 
-            if cur_selection != 0:
+            if cur_selection != -1:
                 self.table.selectRow(cur_selection)
             self.table.verticalScrollBar().setValue(cur_scroll_pos)
             logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
@@ -219,16 +229,16 @@ class ProjectTable(QWidget):
                 except:  snr_report.append('<No SNR Report>')
 
         if is_aligned:
-            zipped = list(zip(cfg.data.basefilenames(), indexes, cfg.data.snr_list(),
+            self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.snr_list(),
                               cfg.data.thumbnails(), ref, cfg.data.thumbnails_aligned(),
                               cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
                               cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(),
                               scale, skips, method, snr_report))
         else:
-            zipped = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),
+            self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),
                               ref, scale, skips, method))
         # print(str(list(zipped)))
-        return zipped
+        # return self.data
 
 
     # def updateSliderMaxVal(self):
@@ -399,18 +409,18 @@ class Slider(QSlider):
 #             painter.drawText(option.rect.x(), option.rect.y() - 5, '<SNR>')
 
 
-# class TableModel(QAbstractTableModel):
-#     def __init__(self, data):
-#         super().__init__()
-#         self._data = data
-#
-#     def data(self, index, role):
-#         if role == Qt.DisplayRole:
-#             return self._data[index.row()][index.column()]
-#
-#     def rowCount(self, parent=None):
-#         return len(self._data)
-#
-#     def columnCount(self, parent=None):
-#         return len(self._data[0])
+class TableModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            return self._data[index.row()][index.column()]
+
+    def rowCount(self, parent=None):
+        return len(self._data)
+
+    def columnCount(self, parent=None):
+        return len(self._data[0])
 
