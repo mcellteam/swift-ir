@@ -252,8 +252,9 @@ class SnrPlot(QWidget):
             for s in cfg.data.scales()[::-1]:
                 # if exist_aligned_zarr(scale=s):
                 #     self.plotSingleScale(s=s)
-                if cfg.data.is_aligned(s=s):
-                    self.plotSingleScale(s=s)
+
+                # if cfg.data.is_aligned(s=s): #0201-
+                self.plotSingleScale(s=s)
 
             if cfg.data.nScalesAlignedAndGenerated:
                 if cfg.data.nScalesAlignedAndGenerated > 0:

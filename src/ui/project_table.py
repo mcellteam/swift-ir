@@ -198,7 +198,7 @@ class ProjectTable(QWidget):
     def get_data(self):
         logger.info('')
         is_aligned = cfg.data.is_aligned()
-        logger.critical('is aligned? %r' % is_aligned)
+        # logger.critical('is aligned? %r' % is_aligned)
         try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
         except:  scale = ['Unknown'] * cfg.data.nSections; print_exception()
         try:     ref = cfg.data.thumbnails_ref()
