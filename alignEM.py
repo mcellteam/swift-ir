@@ -184,7 +184,7 @@ def main():
     # app = QGuiApplication(['--style', 'material'])
 
     app = QApplication([])
-    # app.setStyle('Fusion')
+    app.setStyle('Fusion')
     cfg.main_window = MainWindow()
 
 

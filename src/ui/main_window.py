@@ -4700,7 +4700,7 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.addWidget(self._wdg_demos)           # (2)
         self.main_stack_widget.addWidget(self._wdg_remote_viewer)   # (3)
         self.main_panel.setLayout(vbl)
-        self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
+        # self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
         self.setCentralWidget(self.main_stack_widget)
 
 
