@@ -112,7 +112,7 @@ class ProjectTab(QWidget):
         cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         cfg.emViewer.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
         # self.resetCrossSectionScaleSlider()
-        self.resetSliderZdisplay()
+        self.resetSliderZmag()
         self.ng_browser.setFocus()
         self.ng_browser.reload()
 
@@ -282,7 +282,7 @@ class ProjectTab(QWidget):
         self.ZdisplaySlider.setMaximum(100.)
         self.ZdisplaySlider.setMinimum(1.0)
         # self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
-        self.ZdisplaySlider.sliderMoved.connect(self.onSliderZdisplay)
+        self.ZdisplaySlider.sliderMoved.connect(self.onSliderZmag)
         self.ZdisplaySlider.setValue(1.0)
 
         self.ZdisplaySliderAndLabel = QWidget()
@@ -338,7 +338,7 @@ class ProjectTab(QWidget):
                 print_exception()
 
 
-    def onSliderZdisplay(self):
+    def onSliderZmag(self):
         # caller = inspect.stack()[1].function
         try:
             val = self.ZdisplaySlider.value()
@@ -349,11 +349,14 @@ class ProjectTab(QWidget):
             print_exception()
 
 
-    def resetSliderZdisplay(self):
+    def resetSliderZmag(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
-            self.ZdisplaySlider.setValue(1)
+            if cfg.main_window.rb1.isChecked():
+                self.ZdisplaySlider.setValue(5)
+            else:
+                self.ZdisplaySlider.setValue(1)
         except:
             print_exception()
 
