@@ -2610,27 +2610,16 @@ class MainWindow(QMainWindow):
         cfg.SHADER = src.shaders.shader_test2
         cfg.project_tab.initNeuroglancer()
 
-    # def update(self):
-    #     # get the radio button the send the signal
-    #     rb = self.sender()
-    #
-    #     # check if the radio button is checked
-    #     if rb.isChecked():
-    #         self.result_label.setText(f'You selected {rb.text()}')
-
     def onProfilingTimer(self):
         cpu_percent = psutil.cpu_percent()
         psutil.virtual_memory()
         percent_ram = psutil.virtual_memory().percent
         num_widgets = len(QApplication.allWidgets())
-
         # memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
         # memory_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-
         print('CPU Usage: %.3f%% | RAM Usage: %.3f%%' % (cpu_percent, percent_ram))
         print('Neuoglancer Running? %r' % isNeuroglancerRunning())
         print('# Allocated Widgets: %d' % num_widgets)
-
         # print(f'CPU Usage    : {cpu_percent:.3f}%')
         # print(f'RAM Usage    : {percent_ram:.3f}%')
         # print(f'Memory Used  : {memory_mb:.3f}MB')

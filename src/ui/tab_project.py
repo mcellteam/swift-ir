@@ -87,7 +87,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         # self.shutdownNeuroglancer()
         if caller != '_onGlobTabChange':
-            logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
+            logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
             if cfg.data:
                 cfg.emViewer = EMViewer()
                 self.updateNeuroglancer(matchpoint=matchpoint)
@@ -114,6 +114,7 @@ class ProjectTab(QWidget):
         # self.resetCrossSectionScaleSlider()
         self.resetSliderZdisplay()
         self.ng_browser.setFocus()
+        self.ng_browser.reload()
 
     def addToState(self):
         state = copy.deepcopy(cfg.emViewer.state)

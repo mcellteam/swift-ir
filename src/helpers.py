@@ -509,7 +509,7 @@ def get_scales_with_generated_alignments(scales) -> list:
 def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
     caller = inspect.stack()[1].function
-    logger.info('called by %s' % inspect.stack()[1].function)
+    # logger.info('called by %s' % inspect.stack()[1].function)
     if cfg.data:
         zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
