@@ -85,7 +85,7 @@ class ProjectTable(QWidget):
 
     def setScaleData(self):
         caller = inspect.stack()[1].function
-        logger.info('Setting Table Data (caller: %s)...' % caller)
+        logger.critical('Setting Table Data (caller: %s)...' % caller)
         cur_selection = self.table.currentIndex().row()
         cur_scroll_pos = self.table.verticalScrollBar().value()
         self.setUpdatesEnabled(False)

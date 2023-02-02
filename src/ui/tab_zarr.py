@@ -55,22 +55,22 @@ class ZarrTab(QWidget):
         cfg.main_window.comboboxNgLayout.setCurrentText(layout)
         # cfg.main_window.reload_ng_layout_combobox(initial_layout='4panel')
         logger.info(f'caller: {inspect.stack()[1].function}')
-        cfg.ng_worker = NgHostSlim(self, project=False)
-        cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        cfg.emViewer = NgHostSlim(self, project=False)
+        cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         cfg.main_window.updateMenus()
 
     def updateNgLayer(self):
-        state = copy.deepcopy(cfg.viewer.state)
+        state = copy.deepcopy(cfg.emViewer.state)
         state.position[0] = cfg.data.layer()
-        cfg.viewer.set_state(state)
+        cfg.emViewer.set_state(state)
 
 
     def updateNeuroglancer(self, matchpoint=None):
         logger.critical(f'Updating Neuroglancer Viewer (caller: {inspect.stack()[1].function})')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        cfg.ng_worker.initViewer()
-        self._webEngine.setUrl(QUrl(cfg.ng_worker.url()))
+        cfg.emViewer.initViewer()
+        self._webEngine.setUrl(QUrl(cfg.emViewer.url()))
         self._webEngine.setFocus()
 
 
@@ -93,13 +93,13 @@ class ZarrTab(QWidget):
         logger.info(f'array shape: {self.shape}, chunk shape: {self.chunkshape} ')
 
         cfg.main_window._sectionSlider.setRange(0, self.nSections - 1)
-        cfg.ng_worker.path = path
-        cfg.ng_worker.initViewer()
+        cfg.emViewer.path = path
+        cfg.emViewer.initViewer()
         cur_index = cfg.main_window.globTabs.currentIndex()
         cfg.main_window.globTabs.setTabText(cur_index, 'File: ' + os.path.basename(path))
         cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
         cfg.main_window._jumpToLineedit.setText('0')
-        self._webEngine.setUrl(QUrl(str(cfg.viewer)))
+        self._webEngine.setUrl(QUrl(str(cfg.emViewer)))
         self._webEngine.show()
         self._webEngine.setFocus()
         # self.fb.hideFb()

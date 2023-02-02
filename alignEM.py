@@ -159,12 +159,12 @@ def main():
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
     # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=2'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     # if qtpy.QT5:
     #     logger.info('Setting Qt.AA_EnableHighDpiScaling')

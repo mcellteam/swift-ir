@@ -58,7 +58,7 @@ class Config():
         self.dtype = 'uint8'
         self.driver = 'zarr'
 
-        # Neuroglancer viewer options, configurable from here
+        # Neuroglancer emViewer options, configurable from here
         self.show_panel_borders = False
         self.show_ui_controls = False
         self.show_scale_bar = True
@@ -103,7 +103,7 @@ class NgBootstrap():
         self.webdriver = None
 
     def __del__(self):
-        log.info('__del__ was called by [%s] on NgHost, created:%s' % (inspect.stack()[1].function, self.created))
+        log.info('__del__ was called by [%s] on EMViewer, created:%s' % (inspect.stack()[1].function, self.created))
 
     def __repr__(self):
         return copy.deepcopy(self.viewer.state)
