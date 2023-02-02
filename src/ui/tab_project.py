@@ -98,17 +98,23 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
-        if cfg.main_window.rb0.isChecked():
-            # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+        if matchpoint:
+            cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            self._widgetArea_details.hide()
+            self.resetSliderZmag()
+            cfg.emViewer.initViewer(matchpoint=matchpoint)
+        elif cfg.main_window.rb0.isChecked():
+            cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
             cfg.emViewer.initViewerSlim()
         elif cfg.main_window.rb1.isChecked():
-            # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             cfg.emViewer.initViewer(matchpoint=matchpoint)
         url = cfg.emViewer.get_viewer_url()
         logger.info(f'URL:\n{url}')
         self.ng_browser.setUrl(QUrl(url))
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
-        self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+        if not matchpoint:
+            self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
         cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         cfg.emViewer.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
         # self.resetCrossSectionScaleSlider()

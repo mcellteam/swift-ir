@@ -1305,7 +1305,8 @@ class MainWindow(QMainWindow):
                             #     cfg.project_tab._overlayRect.hide()
                             #     cfg.project_tab._overlayLab.hide()
                                 # QApplication.processEvents()
-                            cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+                            if not cfg.MP_MODE:
+                                cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
                             QApplication.processEvents()
 
 
@@ -2571,8 +2572,8 @@ class MainWindow(QMainWindow):
                             cfg.project_tab._tabs.setTabEnabled(i, False)
                     # cfg.project_tab.ng_layout = 'xy'
                     self.updateMatchpointThumbnails()
-                    # cfg.project_tab.initNeuroglancer(matchpoint=True, layout='xy')
-                    self.hardRestartNg(matchpoint=True)
+                    cfg.project_tab.initNeuroglancer(matchpoint=True)
+                    # self.hardRestartNg(matchpoint=True)
                     # self.neuroglancer_configuration_1()
                     cfg.project_tab._widgetArea_details.setVisible(False)
                     cfg.project_tab.ng_browser.setFocus()
@@ -2592,7 +2593,8 @@ class MainWindow(QMainWindow):
                     # self.extra_header_text_label.setText('')
                     # self.extra_header_text_label.hide()
                     self._forceShowControls()
-                    self.hardRestartNg(matchpoint=False)
+                    # self.hardRestartNg(matchpoint=False)
+                    cfg.project_tab.initNeuroglancer(matchpoint=False)
                     # self.neuroglancer_configuration_0()
                 self.updateToolbar()
                 # cfg.project_tab.updateNeuroglancer()

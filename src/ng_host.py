@@ -119,7 +119,6 @@ class EMViewer(neuroglancer.Viewer):
     def initViewer(self, matchpoint=False, ):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer (caller: {caller})....')
-        cfg.MP_MODE = matchpoint
         cfg.tensor = cfg.unal_tensor = cfg.al_tensor = None
         scale = cfg.data.scale()
         is_aligned = cfg.data.is_aligned_and_generated()
@@ -183,7 +182,8 @@ class EMViewer(neuroglancer.Viewer):
             s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            s.relativeDisplayScales = {"z": 5}
+            if cfg.MP_MODE:
+                s.relativeDisplayScales = {"z": 10}
             # s.displayDimensions = ["z", "y", "x"]
             # s.perspective_orientation
 
