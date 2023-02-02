@@ -38,7 +38,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication
+    QApplication, QPlainTextEdit
 
 import src.config as cfg
 import src.shaders
@@ -99,7 +99,6 @@ class MainWindow(QMainWindow):
         self.app = QApplication.instance()
         self.setObjectName('mainwindow')
         self.setWindowTitle('AlignEM-SWiFT')
-        self._mainVSplitterSizes = [800, 160, 160, 160]
         cfg.thumb = Thumbnailer()
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
@@ -396,20 +395,35 @@ class MainWindow(QMainWindow):
 
 
 
+    def _callbk_showHideNotes(self):
+        if self.notes.isHidden():
+            label  = 'Hide Notes'
+            icon   = 'fa.caret-down'
+            self.notes.show()
+        else:
+            label  = ' Notes'
+            icon   = 'mdi.notebook-edit'
+            self.notes.hide()
+
+        self._btn_show_hide_notes.setIcon(qta.icon(icon, color='#f3f6fb'))
+        self._btn_show_hide_notes.setText(label)
+        self.updateNotes()
+
+
+
+
     def _callbk_showHidePython(self):
         # con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
         con = self._dev_console
         if con.isHidden():
             label  = 'Hide Python'
             icon   = 'fa.caret-down'
-            color  = '#f3f6fb'
             con.show()
         else:
             label  = ' Python'
             icon   = 'mdi.language-python'
-            color  = '#f3f6fb'
             con.hide()
-        self._btn_show_hide_console.setIcon(qta.icon(icon, color=color))
+        self._btn_show_hide_console.setIcon(qta.icon(icon, color='#f3f6fb'))
         self._btn_show_hide_console.setText(label)
         # if cfg.project_tab:
         #     if cfg.project_tab._tabs.currentIndex() == 0:
@@ -1106,6 +1120,27 @@ class MainWindow(QMainWindow):
             print_exception()
 
 
+    def layer_right(self):
+        logger.info('')
+        if cfg.data:
+            if cfg.project_tab:
+                requested = cfg.data.layer() + 1
+                if requested < len(cfg.data):
+                    cfg.data.set_layer(requested)
+                    self.dataUpdateWidgets()
+
+
+    def layer_left(self):
+        logger.info('')
+        if cfg.data:
+            if cfg.project_tab:
+                requested = cfg.data.layer() - 1
+                if requested >= 0:
+                    cfg.data.set_layer(requested)
+                    self.dataUpdateWidgets()
+
+
+
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
         logger.info('')
@@ -1273,7 +1308,9 @@ class MainWindow(QMainWindow):
                             cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
                             QApplication.processEvents()
 
+
                 cur = cfg.data.layer()
+                self.updateNotes()
 
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.updateLayerLinePos()
@@ -1307,6 +1344,22 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.resetCrossSectionScaleSlider()
 
 
+    def updateNotes(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
+        if self.notes.isVisible():
+            self.notesTextEdit.clear()
+            if cfg.project_tab:
+                cur = cfg.data.layer()
+                self.notesTextEdit.setPlaceholderText('Enter notes about %s here...'
+                                                      % cfg.data.base_image_name(s=cfg.data.curScale, l=cur))
+                if cfg.data.notes(s=cfg.data.curScale, l=cur):
+                    self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cur))
+
+            else:
+                self.notesTextEdit.clear()
+                self.notesTextEdit.setPlaceholderText('Enter any notes here...')
+            self.notes.update()
 
     def updateLayerDetails(self, s=None, l=None):
         if s == None: s = cfg.data.curScale
@@ -1904,6 +1957,7 @@ class MainWindow(QMainWindow):
         self.updateMenus()
         self.updateToolbar()
         self.enableAllTabs()
+        self.updateNotes()
         self.hud.done()
         self.tell('Updating Table Data...')
         cfg.project_tab.project_table.setScaleData()
@@ -2263,8 +2317,10 @@ class MainWindow(QMainWindow):
     def initShortcuts(self):
         logger.info('')
         events = (
-            (QKeySequence.MoveToPreviousChar, self.scale_down),
-            (QKeySequence.MoveToNextChar, self.scale_up),
+            (QKeySequence.MoveToPreviousChar, self.layer_left),
+            (QKeySequence.MoveToNextChar, self.layer_right),
+            # (QKeySequence.MoveToPreviousChar, self.scale_down),
+            # (QKeySequence.MoveToNextChar, self.scale_up),
             (Qt.Key_K, self._callbk_skipChanged),
             (Qt.Key_P, self.startStopTimer)
         )
@@ -2662,6 +2718,8 @@ class MainWindow(QMainWindow):
         height = int(18)
 
         self._btn_refreshNg = QPushButton('Refresh')
+        self._btn_refreshNg.setFixedHeight(18)
+        self._btn_refreshNg.setFixedWidth(68)
         self._btn_refreshNg.setIcon(qta.icon('ei.refresh', color=cfg.ICON_COLOR))
         # self._btn_refreshNg.setFixedSize(QSize(22,22))
         self._btn_refreshNg.clicked.connect(self.refreshTab)
@@ -2873,8 +2931,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self._fps_spinbox)
         self.toolbar.addWidget(self._ngLayoutWidget)
         self.toolbar.addWidget(self._changeScaleWidget)
-        if cfg.DEV_MODE:
-            self.toolbar.addWidget(self.profilingTimerButton)
+        # if cfg.DEV_MODE:
+        #     self.toolbar.addWidget(self.profilingTimerButton)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
 
@@ -2936,6 +2994,8 @@ class MainWindow(QMainWindow):
     def _onGlobTabChange(self):
         logger.info('')
         caller = inspect.stack()[1].function
+
+        self.updateNotes()
 
         if self.globTabs.count() == 0:
             return
@@ -3358,15 +3418,15 @@ class MainWindow(QMainWindow):
         ngLayoutActionGroup.addAction(self.ngLayout6Action)
         ngLayoutActionGroup.addAction(self.ngLayout7Action)
         ngLayoutActionGroup.addAction(self.ngLayout8Action)
-        self.ngLayout1Action.setCheckable(True)
-        self.ngLayout1Action.setChecked(True)
-        self.ngLayout2Action.setCheckable(True)
-        self.ngLayout3Action.setCheckable(True)
-        self.ngLayout4Action.setCheckable(True)
-        self.ngLayout5Action.setCheckable(True)
-        self.ngLayout6Action.setCheckable(True)
-        self.ngLayout7Action.setCheckable(True)
-        self.ngLayout8Action.setCheckable(True)
+        # self.ngLayout1Action.setCheckable(True)
+        # self.ngLayout1Action.setChecked(True)
+        # self.ngLayout2Action.setCheckable(True)
+        # self.ngLayout3Action.setCheckable(True)
+        # self.ngLayout4Action.setCheckable(True)
+        # self.ngLayout5Action.setCheckable(True)
+        # self.ngLayout6Action.setCheckable(True)
+        # self.ngLayout7Action.setCheckable(True)
+        # self.ngLayout8Action.setCheckable(True)
         #
         # ngArrangementMenu = ngMenu.addMenu("Arrangement")
         #
@@ -4395,13 +4455,50 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_console.setFixedSize(show_hide_button_sizes)
         self._btn_show_hide_console.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
 
+
+        def f():
+            caller = inspect.stack()[1].function
+            # logger.info(f'caller: {caller}')
+            if caller != 'updateNotes':
+                if cfg.project_tab:
+                    if cfg.data:
+                        cfg.data.save_notes(text=self.notesTextEdit.toPlainText())
+                else:
+                    cfg.settings['notes']['global_notes'] = self.notesTextEdit.toPlainText()
+                self.notes.update()
+
+        self.notes = QWidget()
+        # self.notesTextEdit = QPlainTextEdit()
+        self.notesTextEdit = QTextEdit()
+        self.notesTextEdit.setStyleSheet('font-size: 11px; border-width: 0px; border-radius: 0px;')
+        self.notesTextEdit.setPlaceholderText('Type any notes here...')
+        self.notesTextEdit.textChanged.connect(f)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self.notesTextEdit)
+        self.notes.setLayout(hbl)
+        self.notes.hide()
+
+
+        tip = 'Show/Hide Project Notes'
+        self._btn_show_hide_notes = QPushButton(' Notes')
+        self._btn_show_hide_notes.setObjectName('_btn_show_hide_console')
+        self._btn_show_hide_notes.setStyleSheet(lower_controls_style)
+        self._btn_show_hide_notes.setStatusTip(tip)
+        self._btn_show_hide_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._btn_show_hide_notes.clicked.connect(self._callbk_showHideNotes)
+        self._btn_show_hide_notes.setFixedSize(show_hide_button_sizes)
+        self._btn_show_hide_notes.setIcon(qta.icon('mdi.notebook-edit', color='#f3f6fb'))
+
+
         self._showHideFeatures = QWidget()
         self._showHideFeatures.setObjectName('_showHideFeatures')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
         hbl.addStretch()
-        hbl.addWidget(self._btn_show_hide_ctls, alignment=Qt.AlignCenter | Qt.AlignBottom)
-        hbl.addWidget(self._btn_show_hide_console, alignment=Qt.AlignCenter| Qt.AlignBottom)
+        hbl.addWidget(self._btn_show_hide_ctls, alignment=Qt.AlignCenter)
+        hbl.addWidget(self._btn_show_hide_console, alignment=Qt.AlignCenter)
+        hbl.addWidget(self._btn_show_hide_notes, alignment=Qt.AlignCenter)
         hbl.addStretch()
         self._showHideFeatures.setLayout(hbl)
         self._showHideFeatures.setMaximumHeight(26)
@@ -4474,7 +4571,6 @@ class MainWindow(QMainWindow):
         self._buttonOpen.setEnabled(False)
         self._buttonDelete.setEnabled(False)
 
-
         self._actions_widget = QWidget()
         self._actions_widget.setFixedHeight(30)
         self._actions_widget.setLayout(hbl)
@@ -4493,13 +4589,16 @@ class MainWindow(QMainWindow):
 
         '''Main Vertical Splitter'''
         self._splitter = QSplitter(Qt.Orientation.Vertical)    # __SPLITTER INDEX__
-        self._splitter.addWidget(self.globTabs)               # (0)
+        self._splitter.addWidget(self.globTabs)                # (0)
         self._splitter.addWidget(self._controlPanelAndHud)     # (1)
         self._splitter.addWidget(self.matchpointControlPanel)  # (2)
         self._splitter.addWidget(self._py_console)             # (3)
+        self._splitter.addWidget(self.notes)                   # (4)
+        self._mainVSplitterSizes = [800, 160, 160, 160, 160]
         self._splitter.setSizes(self._mainVSplitterSizes)
 
         self._dev_console = PythonConsole()
+        self._dev_console.setStyleSheet('font-size: 11px; border-width: 0px; border-radius: 0px;')
         self._splitter.addWidget(self._dev_console)  # (5)
         self._dev_console.hide()
         # if cfg.DEV_MODE:
@@ -4754,7 +4853,7 @@ class MainWindow(QMainWindow):
 
         # self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button = QPushButton('Stop')
-        self.pbar_cancel_button.setFixedSize(48,22)
+        self.pbar_cancel_button.setFixedSize(48,20)
         self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("font-size: 10px;")
@@ -4829,15 +4928,3 @@ class MainWindow(QMainWindow):
 
 
 
-class CheckableComboBox(QComboBox):
-    def __init__(self):
-        super(CheckableComboBox, self).__init__()
-        self.view().pressed.connect(self.handleItemPressed)
-        self.setModel(QStandardItemModel(self))
-
-    def handleItemPressed(self, index):
-        item = self.model().itemFromIndex(index)
-        if item.checkState() == Qt.Checked:
-            item.setCheckState(Qt.Unchecked)
-        else:
-            item.setCheckState(Qt.Checked)

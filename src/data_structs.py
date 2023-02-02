@@ -58,7 +58,8 @@ layer_template = \
             }
         },
         "images": {},
-        "skipped": False
+        "skipped": False,
+        "notes": ""
     }
 
 image_template = \
