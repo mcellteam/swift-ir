@@ -13,6 +13,7 @@ from qtpy.QtCore import Qt, QSize, QRect, QUrl
 from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
+from src.helpers import getOpt
 from src.ng_host import EMViewer
 from src.ng_host_slim import NgHostSlim
 from src.helpers import print_exception
@@ -82,66 +83,37 @@ class ProjectTab(QWidget):
             time.sleep(cfg.DELAY_AFTER)
 
 
-    def initNeuroglancer(self, layout=None, matchpoint=False):
+    def initNeuroglancer(self, matchpoint=False):
         caller = inspect.stack()[1].function
-
         # self.shutdownNeuroglancer()
-
         if caller != '_onGlobTabChange':
             logger.critical(f'Initializing Neuroglancer Object (caller: {inspect.stack()[1].function})...')
-            # self.shutdownNeuroglancer()
             if cfg.data:
-                if layout:
-                    cfg.main_window.comboboxNgLayout.setCurrentText(layout)
-                # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
-
-
-                # if cfg.main_window.rb0.isChecked():
-                #     # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-                #     logger.info('Instantiating NgHostSlim...')
-                #     cfg.emViewer = NgHostSlim(parent=self, project=True)
-                # elif cfg.main_window.rb1.isChecked():
-                #     logger.info('Instantiating EMViewer...')
-                #     # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-                #     cfg.emViewer = EMViewer(parent=self)
-
-
-                # cfg.emViewer = EMViewer(parent=self)
                 cfg.emViewer = EMViewer()
-
-
-                # cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 self.updateNeuroglancer(matchpoint=matchpoint)
 
 
 
-    def updateNeuroglancer(self, matchpoint=False, layout=None):
+    def updateNeuroglancer(self, matchpoint=False):
         caller = inspect.stack()[1].function
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
-        if layout: cfg.main_window.comboboxNgLayout.setCurrentText(layout)
-        cfg.emViewer.initViewer(matchpoint=matchpoint)
-
         if cfg.main_window.rb0.isChecked():
             cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
             cfg.emViewer.initViewerSlim()
         elif cfg.main_window.rb1.isChecked():
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             cfg.emViewer.initViewer(matchpoint=matchpoint)
-
-
-
-
-        logger.critical(f'URL:\n{cfg.emViewer.get_viewer_url()}')
-        self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
-        self.ng_browser.setFocus()
+        url = cfg.emViewer.get_viewer_url()
+        logger.info(f'URL:\n{url}')
+        self.ng_browser.setUrl(QUrl(url))
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
-        # when to connect this signal is very important
+        self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
         cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-        # cfg.emViewer.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
         cfg.emViewer.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
         # self.resetCrossSectionScaleSlider()
         self.resetSliderZdisplay()
+        self.ng_browser.setFocus()
 
     def addToState(self):
         state = copy.deepcopy(cfg.emViewer.state)
@@ -209,7 +181,7 @@ class ProjectTab(QWidget):
             layer.setStyleSheet(
                 'color: #ffe135;'
                 'font-size: 9px;'
-                'background-color: rgba(0,0,0,.32);'
+                'background-color: rgba(0,0,0,.36);'
                 'margin: 1px 1px 1px 1px;'
                 'border-width: 0px;'
                 'border-style: solid;'

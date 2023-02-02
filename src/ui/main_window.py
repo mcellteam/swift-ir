@@ -193,6 +193,8 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.initNeuroglancer()
                     self.hardRestartNg()
                     # cfg.project_tab.updateNeuroglancer()
+                    # cfg.emViewer.initViewerSlim()
+                    # cfg.project_tab.ng_browser.reload()
 
                 elif self.rb1.isChecked() or self.rb2.isChecked():
                     logger.critical('rb1/2 is checked!')
@@ -202,6 +204,8 @@ class MainWindow(QMainWindow):
                     self.hardRestartNg()
                     # cfg.emViewer.initViewer()
                     # cfg.project_tab.updateNeuroglancer()
+                    # cfg.emViewer.initViewer()
+                    # cfg.project_tab.ng_browser.reload()
             QApplication.processEvents()
 
 
@@ -248,9 +252,10 @@ class MainWindow(QMainWindow):
             if cfg.project_tab:
                 if not self._working:
                     if cfg.project_tab._tabs.currentIndex() == 0:
-                        self.hardRestartNg()
+                        # self.hardRestartNg()
                         # cfg.project_tab.initNeuroglancer()
                         # cfg.project_tab.updateNeuroglancer()
+                        cfg.project_tab.ng_browser.reload()
                     if cfg.project_tab._tabs.currentIndex() == 1:
                         logger.critical('Refreshing Table...')
                         self.tell('Refreshing Table...')
@@ -321,7 +326,6 @@ class MainWindow(QMainWindow):
         logger.info('')
         self._unsaved_changes = False
         self._working = False
-        self._is_mp_mode = False
         self._scales_combobox_switch = 0 #1125
         self._isPlayingBack = 0
         self._isProfiling = 0
@@ -375,9 +379,7 @@ class MainWindow(QMainWindow):
         except:
             pass
         self.viewer_stack_widget.setCurrentIndex(0)
-        if cfg.project_tab:
-            self._is_mp_mode = False
-            self.matchpointControlPanel.hide()
+
 
 
     def _callbk_showHidePython(self):
@@ -395,9 +397,9 @@ class MainWindow(QMainWindow):
             con.hide()
         self._btn_show_hide_console.setIcon(qta.icon(icon, color=color))
         self._btn_show_hide_console.setText(label)
-        if cfg.project_tab:
-            if cfg.project_tab._tabs.currentIndex() == 0:
-                cfg.project_tab.updateNeuroglancer()
+        # if cfg.project_tab:
+        #     if cfg.project_tab._tabs.currentIndex() == 0:
+        #         cfg.project_tab.updateNeuroglancer()
 
 
     def _forceShowControls(self):
@@ -1092,11 +1094,11 @@ class MainWindow(QMainWindow):
         self._cpanel.setStyleSheet(style)
         # self.hud.set_theme_default()
         self.hud.set_theme_light()
-        if inspect.stack()[1].function != 'initStyle':
-            if cfg.project_tab:
-                cfg.project_tab.updateNeuroglancer()
-            elif cfg.zarr_tab:
-                cfg.zarr_tab.updateNeuroglancer()
+        # if inspect.stack()[1].function != 'initStyle':
+        #     if cfg.project_tab:
+        #         cfg.project_tab.updateNeuroglancer()
+        #     elif cfg.zarr_tab:
+        #         cfg.zarr_tab.updateNeuroglancer()
 
 
     def reset_groupbox_styles(self):
@@ -1246,7 +1248,7 @@ class MainWindow(QMainWindow):
 
                 try:
                     self.updateLayerDetails()
-                    if self._is_mp_mode:
+                    if cfg.MP_MODE:
                         try:
                             self.matchpoint_text_snr.setText(cfg.data.snr_report())
                             self.updateMatchpointThumbnails()
@@ -1536,7 +1538,7 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         if cfg.project_tab:
             if self._scales_combobox_switch == 1:
-                if self._is_mp_mode != True:
+                if cfg.MP_MODE != True:
                     logger.info('')
                     cfg.data.set_scale(self._changeScaleCombo.currentText())
                     self.onScaleChange() #0129-
@@ -1568,9 +1570,9 @@ class MainWindow(QMainWindow):
                                 layout_actions[choice].setChecked(True)
 
                                 if cfg.project_tab:
-                                    cfg.project_tab.updateNeuroglancer()
+                                    self.hardRestartNg()
                                 elif cfg.zarr_tab:
-                                    cfg.zarr_tab.updateNeuroglancer()
+                                    self.hardRestartNg()
                                  # cfg.project_tab.refreshNeuroglancerURL()
                             except:
                                 print_exception()
@@ -1781,7 +1783,7 @@ class MainWindow(QMainWindow):
 
         filename = cfg.selected_file
         logger.critical(f'Opening Project {filename}...')
-        self.tell('Opening A Project...')
+        self.tell('Loading Project "%s"...' % filename)
         self.stopPlaybackTimer()
 
         try:
@@ -1987,8 +1989,10 @@ class MainWindow(QMainWindow):
         #     logger.warning('Caller was not main! (%s)' % caller)
 
     def update_ng(self):
-        if cfg.project_tab:  cfg.project_tab.updateNeuroglancer()
-        if cfg.zarr_tab:     cfg.zarr_tab.updateNeuroglancer()
+        if cfg.project_tab:
+            cfg.project_tab.initNeuroglancer()
+        if cfg.zarr_tab:
+            cfg.zarr_tab.initNeuroglancer()
 
     def import_multiple_images(self):
         ''' Import images into data '''
@@ -2447,13 +2451,13 @@ class MainWindow(QMainWindow):
                 return
 
             if cfg.project_tab:
-                if self._is_mp_mode == False:
+                if cfg.MP_MODE == False:
                     logger.critical('Entering Match Point Mode...')
                     self.rb1.setChecked(True)
 
 
                     self.tell('Entering Match Point Mode...')
-                    self._is_mp_mode = True
+                    cfg.MP_MODE = True
                     self._changeScaleCombo.setEnabled(False)
                     self.rb0.setEnabled(False)
                     self.rb1.setChecked(True)
@@ -2482,7 +2486,7 @@ class MainWindow(QMainWindow):
                 else:
                     logger.critical('Exiting Match Point Mode...')
                     self.tell('Exiting Match Point Mode...')
-                    self._is_mp_mode = False
+                    cfg.MP_MODE = False
                     self.rb0.setEnabled(True)
                     self._changeScaleCombo.setEnabled(True)
                     # self.extra_header_text_label.setText('')
@@ -2581,22 +2585,6 @@ class MainWindow(QMainWindow):
             self._dev_console.hide()
 
 
-    # def set_mp_marker_lineweight(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.info('caller: %s' % caller)
-    #     cfg.data['user_settings']['mp_marker_lineweight'] = self.mp_marker_size_spinbox.value()
-    #     if inspect.stack()[1].function != 'enterExitMatchPointMode':
-    #         cfg.project_tab.updateNeuroglancer()
-    #
-    #
-    # def set_mp_marker_size(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.info('caller: %s' % caller)
-    #     cfg.data['user_settings']['mp_marker_size'] = self.mp_marker_lineweight_spinbox.value()
-    #     if inspect.stack()[1].function != 'enterExitMatchPointMode':
-    #         cfg.project_tab.updateNeuroglancer()
-
-
     def set_opacity(self, obj, val):
         op = QGraphicsOpacityEffect(self)
         op.setOpacity(val)  # 0 to 1 -> fade effect
@@ -2608,19 +2596,19 @@ class MainWindow(QMainWindow):
         cfg.SHADER = '''void main () {
           emitGrayscale(toNormalized(getDataValue()));
         }'''
-        cfg.project_tab.updateNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
 
     def set_shader_colormapJet(self):
         cfg.SHADER = src.shaders.colormapJet
-        cfg.project_tab.updateNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
 
     def set_shader_test1(self):
         cfg.SHADER = src.shaders.shader_test1
-        cfg.project_tab.updateNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
 
     def set_shader_test2(self):
         cfg.SHADER = src.shaders.shader_test2
-        cfg.project_tab.updateNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
 
     # def update(self):
     #     # get the radio button the send the signal
@@ -3038,7 +3026,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_paths_absolute(filename=filename) #+
         self.mendenhall = Mendenhall(parent=self, data=cfg.data)
         self.mendenhall.start_watching()
-        cfg.project_tab.updateNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
 
 
     def stop_mendenhall_protocol(self):
@@ -3046,9 +3034,8 @@ class MainWindow(QMainWindow):
 
 
     def aligned_mendenhall_protocol(self):
-        cfg.MV = not cfg.MV
-        logger.info(f'cfg.MA: {cfg.MV}')
-        cfg.project_tab.updateNeuroglancer()
+        # cfg.MV = not cfg.MV
+        cfg.project_tab.initNeuroglancer()
 
 
     def import_mendenhall_protocol(self):
@@ -3434,6 +3421,13 @@ class MainWindow(QMainWindow):
         self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
         self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
         ngMenu.addAction(self.ngShowPanelBordersAction)
+
+        self.ngShowAlignmentDetailsAction = QAction('Show Alignment Details', self)
+        self.ngShowAlignmentDetailsAction.setCheckable(True)
+        self.ngShowAlignmentDetailsAction.setChecked(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+        self.ngShowAlignmentDetailsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS', val))
+        self.ngShowAlignmentDetailsAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowAlignmentDetailsAction)
 
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
