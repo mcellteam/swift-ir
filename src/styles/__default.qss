@@ -1,6 +1,22 @@
 
 
 
+QSpinBox {
+	color: #d3dae3;
+	background-color: #222b2e;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #4fa08b;
+}
+QDoubleSpinBox {
+	color: #d3dae3;
+	background-color: #222b2e;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #4fa08b;
+}
+
+
 
 QTableWidget{
 
@@ -248,6 +264,121 @@ QScrollBar:horizontal {
 }
 
 
+ /* ---- QSlider  ---- */
+QSlider::handle:horizontal {
+	background: #f3f6fb;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #1b1e23;
+	border-radius: 2px;
+}
+QSlider::handle:vertical {
+	background: #f3f6fb;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #1b1e23;
+	border-radius: 2px;
+}
+
+QDockWidget {
+	background-color: #ffe135;
+	/*color: #d3dae3;*/  /* light off-white */
+	color: #151a1e;
+	margin: 0px 0px 0px 0px;
+}
+
+
+QToolTip {
+    background-color: #8ad4ff;
+    color: #141414;
+    border: #8ad4ff solid 1px;
+}
+
+
+QGroupBox {
+  font-weight: bold;
+  border: 0px;
+  padding: 0px; /* #0529 */
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: #f3f6fb;  /* snow white */
+}
+
+/*
+QTextEdit {
+	border-width: 1px;
+	border-style: solid;
+	border-color: #4fa08b;
+	background-color: #f3f6fb;
+	color: #151a1e;
+}
+*/
+
+QPlainTextEdit {
+	border-width: 0px;
+	border-style: solid;
+	border-color: #4fa08b;
+	background-color: #f3f6fb;
+	/*color: #d3dae3;*/
+	color: #151a1e;
+}
+QPushButton{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	/*border-color: #808080;*/
+	background-color: #f3f6fb;
+}
+QPushButton:pressed{
+	border-style: inset;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+
+}
+
+QPushButton:hover{
+	border-style: solid;
+
+	border-width: 1px;
+	border-radius: 2px;
+	color: #000000;
+	padding: 2px;
+	background-color: #ede9e8;
+	/*border-color: #1b1e23;*/
+	border-color: #778899;
+
+}
+QPushButton:disabled{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	color: #808086;
+	padding: 2px;
+	background-color: #ebecf0;
+}
+QPushButton::default{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	color: #000000;
+	padding: 2px;
+	background-color: #daebfe;
+}
 
 QLineEdit {
     background-color: #1b1e23;*/

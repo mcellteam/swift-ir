@@ -6,6 +6,7 @@ import subprocess as sp
 import sys
 import time
 import queue
+import inspect
 
 import psutil
 from qtpy.QtCore import QObject
@@ -123,13 +124,9 @@ class TaskQueue(QObject):
         except:
             logger.error('An exception was raised while setting up progress bar')
 
-
-        logger.info(f'Starting Task Queue: {self.pbar_text}...')
-        cfg.main_window.hud(f'Running {self.n_tasks} Tasks On {self.n_workers} Cores...')
-        # cfg.main_window.hud(f'{self.pbar_text}')
-        logger.critical(f'{self.pbar_text}')
-        logger.info(f'{self.n_workers} Workers Are Processing {self.n_tasks} Tasks...')
-        logger.info(f'start method: {self.ctx.get_start_method()}')
+        logger.info('Starting Task Queue: %s...' % self.pbar_text)
+        cfg.main_window.tell('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
+        logger.critical('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
@@ -143,25 +140,6 @@ class TaskQueue(QObject):
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
-
-                # wdog = mp.Process(target=watchdog, args=(self.work_queue,))
-                # wdog.daemon = True
-                # wdog.start()
-                #
-                # # Poll the queue
-                # while True:
-                #     msg = self.work_queue.get()
-                #     if msg == "KILL WORKER":
-                #         logger.warning("Terminating hung worker %d..." % i)
-                #         p.terminate()
-                #         time.sleep(0.1)
-                #         if not p.is_alive():
-                #             logger.warning("(!) Worker %d is no longer alive" % i)
-                #             p.join(timeout=1.0)
-                #             logger.info("Worker %d joined successfully" % i)
-                #             q.close()
-                #             break  # watchdog process daemon gets terminated
-
 
             except:
                 logger.warning('Original Worker # %d Triggered An Exception' % i)
@@ -288,6 +266,7 @@ class TaskQueue(QObject):
                             w.terminate()
                         cfg.main_window.hud.done()
                         cfg.main_window.warn('Canceling Future Tasks...')
+                        cfg.main_window.cancelMultiprocessing.emit()
                         sys.exit(1)
 
 
@@ -338,6 +317,7 @@ class TaskQueue(QObject):
                 retries_tot += 1
 
 
+            cfg.main_window.tell('caller: %s' % inspect.stack()[1].function)
             logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
             logger.debug('    Failed Tasks: %d\n' % (n_pending))
             logger.debug('    Retries: %d\n\n' % (retries_tot - 1))
@@ -353,12 +333,14 @@ class TaskQueue(QObject):
                 cfg.main_window.tell('══════ Complete ══════')
             else:
                 cfg.main_window.warn('Something Went Wrong')
-                cfg.main_window.warn('Failed Tasks     : %d' % n_pending)
+                cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
+                cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
                 # logger.warning('Retries          : %d' % (retries_tot - 1))
                 cfg.main_window.warn('══════ Complete ══════')
 
                 logger.warning('Something Went Wrong')
-                logger.warning('Failed Tasks     : %d' % n_pending)
+                logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))
+                logger.warning('Failed Tasks      : %d' % n_pending)
                 # logger.warning('Retries          : %d' % (retries_tot - 1))
                 logger.warning('══════ Complete ══════')
         except:

@@ -194,6 +194,15 @@ class SnrPlot(QWidget):
         try:
             if caller != 'initUI_plot':
                 self.wipePlot()
+
+            n_aligned = 0
+            for s in cfg.data.scales():
+                if cfg.data.is_aligned(s=s):
+                    n_aligned += 1
+            if n_aligned == 0:
+                logger.info('0 scales are aligned, Nothing to Plot - Returning')
+                return
+
             self._snr_checkboxes = dict()
             for i, s in enumerate(cfg.data.scales()):
                 self._snr_checkboxes[s] = QCheckBox()
@@ -209,17 +218,15 @@ class SnrPlot(QWidget):
                     f'border-color: {color}; '
                     f'border-width: 3px; '
                     f'border-style: outset;')
-                if s in cfg.data.scalesAlignedAndGenerated:
+                if cfg.data.is_aligned(s=s):
                     self._snr_checkboxes[s].show()
                 else:
                     self._snr_checkboxes[s].hide()
             self.checkboxes_hlayout.addStretch()
             self.updateLayerLinePos()
-
             styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
             # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
             self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
-
         except:
             print_exception()
         try:
@@ -248,39 +255,29 @@ class SnrPlot(QWidget):
         if cfg.data:
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
-
             for s in cfg.data.scales()[::-1]:
-                # if exist_aligned_zarr(scale=s):
-                #     self.plotSingleScale(s=s)
-
-                # if cfg.data.is_aligned(s=s): #0201-
-                self.plotSingleScale(s=s)
-
-            if cfg.data.nScalesAlignedAndGenerated:
-                if cfg.data.nScalesAlignedAndGenerated > 0:
-                    max_snr = cfg.data.snr_max_all_scales()
-                    assert max_snr is not None
-                    assert type(max_snr) is float
-                    # self.plot.setLimits(xMin=0, xMax=cfg.datamodel.n_sections(), yMin=0, yMax=ceil(max_snr) + 1)
-                    # self.plot.setXRange(0, cfg.datamodel.n_sections(), padding=0)
-                    # self.plot.setYRange(0, ceil(max_snr) + 1, padding=0)
-                    # self.plot.setRange(xRange=[0, cfg.datamodel.n_sections() + 0.5])
-                    # self.plot.setRange(yRange=[0, ceil(max_snr)])
-                    xmax = cfg.data.nSections + 1
-                    ymax = ceil(max_snr) + 5
-                    self.plot.setLimits(
-                        minXRange=1,
-                        xMin=0,
-                        xMax=xmax,
-                        maxXRange=xmax,
-                        yMin=0,
-                        yMax=ymax,
-                        minYRange=ymax,
-                        maxYRange=ymax,
-                    )
-                    ax = self.plot.getAxis('bottom')  # This is the trick
-                    dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
-                    ax.setTicks([dx, []])
+                if cfg.data.is_aligned(s=s):
+                    if self._snr_checkboxes[s].isChecked():
+                        self.plotSingleScale(s=s)
+            max_snr = cfg.data.snr_max_all_scales()
+            if not max_snr:
+                logger.warning('No max SNR, Nothing to plot - Returning')
+                return
+            xmax = cfg.data.nSections + 1
+            ymax = ceil(max_snr) + 5
+            self.plot.setLimits(
+                minXRange=1,
+                xMin=0,
+                xMax=xmax,
+                maxXRange=xmax,
+                yMin=0,
+                yMax=ymax,
+                minYRange=ymax,
+                maxYRange=ymax,
+            )
+            ax = self.plot.getAxis('bottom')  # This is the trick
+            dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
+            ax.setTicks([dx, []])
 
             self.updateSpecialLayerLines()
             self.plot.autoRange() # !!!

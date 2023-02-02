@@ -528,22 +528,21 @@ class DataModel:
 
 
     def snr_max_all_scales(self) -> float:
+        #Todo refactor, store local copy, this is a bottleneck
+        max_snr = []
+        # logger.critical(f'self.scalesAlignedAndGenerated: {self.scalesAlignedAndGenerated}')
         try:
-            #Todo refactor, store local copy, this is a bottleneck
-            max_snr = []
-            # logger.critical(f'self.scalesAlignedAndGenerated: {self.scalesAlignedAndGenerated}')
-            for scale in self.scalesAlignedAndGenerated:
-                logger.info(f'scale={scale}')
-                try:
-                    m = max(self.snr_list(s=scale))
+            for s in cfg.data.scales():
+                if cfg.data.is_aligned(s=s):
+                    m = max(self.snr_list(s=s))
                     # logger.critical(f'm: {m}')
                     max_snr.append(m)
-                except:
-                    logger.warning('Unable to append maximum SNR, none found')
-            # logger.info(f'Returning Max SNR: {max(max_snr)}')
             return max(max_snr)
         except:
-            print_exception()
+            caller = inspect.stack()[1].function
+            logger.warning('Unable to append maximum SNR, none found (%s) - Returning Empty List' % caller)
+            return []
+
 
 
     def snr_average(self, scale=None) -> float:

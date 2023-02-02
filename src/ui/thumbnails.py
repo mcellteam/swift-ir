@@ -62,7 +62,7 @@ class Thumbnail(QWidget):
         self.thumbnail.setPixmap(self.pixmap)
         self.thumbnail.setScaledContents(True)
         self.layout = QGridLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(1, 1, 1, 1)
         self.layout.addWidget(self.thumbnail, 0, 0)
         self.setLayout(self.layout)
 
