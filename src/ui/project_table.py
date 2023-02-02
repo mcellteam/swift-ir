@@ -92,7 +92,7 @@ class ProjectTable(QWidget):
         self.table.clearContents()
         self.table.clear()
         self.table.setRowCount(0)
-        self.set_column_headers()
+        self.set_column_headers() #Critical
         try:
             self.get_data()
         except:
@@ -150,7 +150,7 @@ class ProjectTable(QWidget):
             self.setUpdatesEnabled(True)
             self.setColumnWidths()
             self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
-            # self.set_column_headers()
+            self.set_column_headers()
 
             if cur_selection != -1:
                 self.table.selectRow(cur_selection)

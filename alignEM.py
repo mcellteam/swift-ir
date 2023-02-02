@@ -161,16 +161,15 @@ def main():
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=2'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
-    # if qtpy.QT5:
-    #     logger.info('Setting Qt.AA_EnableHighDpiScaling')
-    #     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    #     logger.info('Setting Qt.AA_UseHighDpiPixmaps')
-    #     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    if qtpy.QT5:
+        logger.info('Setting Qt.AA_EnableHighDpiScaling')
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     # 2230-
     # logger.info('Setting Qt.AA_ShareOpenGLContexts')
@@ -185,7 +184,7 @@ def main():
     # app = QGuiApplication(['--style', 'material'])
 
     app = QApplication([])
-    app.setStyle('Fusion')
+    # app.setStyle('Fusion')
     cfg.main_window = MainWindow()
 
 

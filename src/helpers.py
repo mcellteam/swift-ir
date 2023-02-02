@@ -433,7 +433,7 @@ def renew_directory(directory:str) -> None:
     '''Remove and re-create a directory, if it exists.'''
     if os.path.exists(directory):
         d = os.path.basename(directory)
-        cfg.main_window.hud.post("Regenerating Directory '%s'..." % directory)
+        cfg.main_window.hud.post("Overwriting Directory '%s'..." % directory)
         try:     shutil.rmtree(directory, ignore_errors=True)
         except:  print_exception()
         try:     os.makedirs(directory, exist_ok=True)

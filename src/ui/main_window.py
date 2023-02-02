@@ -62,6 +62,7 @@ from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDial
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
+from src.ui.sliders import RangeSlider
 from src.ui.widget_area import WidgetArea
 from src.ui.control_panel import ControlPanel
 from src.ui.file_browser import FileBrowser
@@ -90,6 +91,7 @@ class MainWindow(QMainWindow):
     alignmentFinished = Signal()
     updateTable = Signal()
     setInteractive = Signal()
+    cancelMultiprocessing = Signal()
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
@@ -126,6 +128,7 @@ class MainWindow(QMainWindow):
         self.alignmentFinished.connect(self.updateMenus)
         self.updateTable.connect(self.updateProjectTable)
         self.setInteractive.connect(self.restore_interactivity)
+        self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
         self.tell('To Relaunch:\n\n  cd $WORK/swift-ir\n  source tacc_boostrap\n')
 
@@ -225,6 +228,18 @@ class MainWindow(QMainWindow):
     #             # cfg.project_tab._tabs.setCurrentIndex(0) #0124-
     #             # cfg.project_tab.updateNeuroglancer()
     #             cfg.project_tab.initNeuroglancer()
+
+
+    def cleanupAfterCancel(self):
+        logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
+        cfg.project_tab.snr_plot.initSnrPlot()
+        cfg.project_tab.project_table.setScaleData()
+        cfg.project_tab.updateJsonWidget()
+        self.updateToolbar()
+        self.dataUpdateWidgets()
+        self.updateEnabledButtons()
+
+
 
 
     def hardRestartNg(self, matchpoint=False):
@@ -332,7 +347,7 @@ class MainWindow(QMainWindow):
 
     def initStyle(self):
         logger.info('')
-        self.main_stylesheet = os.path.abspath('styles/default.qss')
+        self.main_stylesheet = os.path.abspath('styles/__default.qss')
         self.apply_default_style()
 
 
@@ -436,7 +451,7 @@ class MainWindow(QMainWindow):
         logger.info('>>>> autoscale >>>>')
 
         #Todo This should check for existence of original source files before doing anything
-        self.stopNgServer()
+        # self.stopNgServer() #0202-
         self.tell('Generating TIFF Scale Image Hierarchy...')
         cfg.nTasks = 3
         cfg.nCompleted = 0
@@ -607,7 +622,11 @@ class MainWindow(QMainWindow):
         logger.info('SLOT: Updating SNR Plot...')
         cfg.project_tab.snr_plot.initSnrPlot()
 
+    @Slot()
+    def updateProjectDict(self):
+        cfg.project_tab.updateJsonWidget()
 
+    @Slot()
     def restore_interactivity(self):
         self._working = False
         self.enableAllButtons()
@@ -660,7 +679,7 @@ class MainWindow(QMainWindow):
         cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
-        self.stopNgServer()
+        # self.stopNgServer() #0202-
         self._disableGlobTabs()
         self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
@@ -670,7 +689,7 @@ class MainWindow(QMainWindow):
 
 
     def alignAll(self):
-
+        self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
         is_realign = cfg.data.is_aligned(s=cfg.data.curScale)
         self.align(
             scale=cfg.data.curScale,
@@ -708,11 +727,13 @@ class MainWindow(QMainWindow):
         self.tell('**** Processes Complete ****')
 
 
-    def alignForward(self):
+    def alignRange(self):
+        start, end = self.sectionRangeSlider.getRange()
+        self.tell('Re-aligning Sections #%d through #%d (%s)...' % (start, end, cfg.data.scale_pretty()))
         self.align(
             scale=cfg.data.curScale,
-            start=cfg.data.layer(),
-            end=None,
+            start=start,
+            end=end,
             renew_od=False,
             reallocate_zarr=False
         )
@@ -723,7 +744,7 @@ class MainWindow(QMainWindow):
 
 
     def alignOne(self):
-        self.tell('Re-aligning Section #%d' % cfg.data.layer())
+        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.layer(), cfg.data.scale_pretty()))
         layer = cfg.data.layer()
         self.align(
             scale=cfg.data.curScale,
@@ -741,7 +762,7 @@ class MainWindow(QMainWindow):
         self.tell('**** Processes Complete ****')
 
     def alignOneMp(self):
-        self.tell('Re-aligning Section #%d' % cfg.data.layer())
+        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.layer(), cfg.data.scale_pretty()))
         layer = cfg.data.layer()
         self.align(
             scale=cfg.data.curScale,
@@ -834,7 +855,7 @@ class MainWindow(QMainWindow):
         cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
-        self.stopNgServer()
+        # self.stopNgServer() #0202-
         self._disableGlobTabs()
 
         for scale in cfg.data.scales():
@@ -957,7 +978,7 @@ class MainWindow(QMainWindow):
     def enableAllButtons(self):
         self._btn_alignAll.setEnabled(True)
         self._btn_alignOne.setEnabled(True)
-        self._btn_alignForward.setEnabled(True)
+        self._btn_alignRange.setEnabled(True)
         self._btn_regenerate.setEnabled(True)
         self._scaleDownButton.setEnabled(True)
         self._scaleUpButton.setEnabled(True)
@@ -970,6 +991,8 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.setEnabled(True)
         self._btn_clear_skips.setEnabled(True)
         self._toggleAutogenerate.setEnabled(True)
+        self.startRangeInput.setEnabled(True)
+        self.endRangeInput.setEnabled(True)
 
 
     def updateEnabledButtons(self) -> None:
@@ -979,7 +1002,7 @@ class MainWindow(QMainWindow):
         (3) Sets the input validator on the jump-to lineedit widget'''
         logger.info('')
         if cfg.data:
-            self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
+            # self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
             self._ctlpanel_applyAllButton.setEnabled(True)
             self._skipCheckbox.setEnabled(True)
             self._toggleAutogenerate.setEnabled(True)
@@ -999,27 +1022,45 @@ class MainWindow(QMainWindow):
             self._btn_clear_skips.setEnabled(False)
 
         if cfg.data:
-            if cfg.data.is_aligned_and_generated():
+            # if cfg.data.is_aligned_and_generated(): #0202-
+            if cfg.data.is_aligned():
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
-                self._btn_alignForward.setEnabled(True)
+                self._btn_alignRange.setEnabled(True)
                 self._btn_regenerate.setEnabled(True)
-            else:
-                self._btn_alignOne.setEnabled(False)
-                self._btn_alignForward.setEnabled(False)
-                if cfg.data.is_aligned():
-                    self._btn_regenerate.setEnabled(True)
-                else:
-                    self._btn_regenerate.setEnabled(False)
-            if cfg.data.is_alignable():
+                self.startRangeInput.setEnabled(True)
+                self.endRangeInput.setEnabled(True)
+            elif cfg.data.is_alignable():
                 self._btn_alignAll.setEnabled(True)
+                self._btn_alignOne.setEnabled(False)
+                self._btn_alignRange.setEnabled(False)
+                self._btn_regenerate.setEnabled(False)
+                self.startRangeInput.setEnabled(False)
+                self.endRangeInput.setEnabled(False)
             else:
                 self._btn_alignAll.setEnabled(False)
+                self._btn_alignOne.setEnabled(False)
+                self._btn_alignRange.setEnabled(False)
+                self._btn_regenerate.setEnabled(False)
+                self.startRangeInput.setEnabled(False)
+                self.endRangeInput.setEnabled(False)
             if cfg.data.nscales == 1:
                 self._scaleUpButton.setEnabled(False)
                 self._scaleDownButton.setEnabled(False)
-                self._btn_alignAll.setEnabled(True)
-                self._btn_regenerate.setEnabled(True)
+                if cfg.data.is_aligned():
+                    self._btn_alignAll.setEnabled(True)
+                    self._btn_alignOne.setEnabled(True)
+                    self._btn_alignRange.setEnabled(True)
+                    self._btn_regenerate.setEnabled(True)
+                    self.startRangeInput.setEnabled(True)
+                    self.endRangeInput.setEnabled(True)
+                else:
+                    self._btn_alignAll.setEnabled(True)
+                    self._btn_alignOne.setEnabled(False)
+                    self._btn_alignRange.setEnabled(False)
+                    self._btn_regenerate.setEnabled(False)
+                    self.startRangeInput.setEnabled(False)
+                    self.endRangeInput.setEnabled(False)
             else:
                 cur_index = self._changeScaleCombo.currentIndex()
                 if cur_index == 0:
@@ -1031,21 +1072,23 @@ class MainWindow(QMainWindow):
                 else:
                     self._scaleDownButton.setEnabled(True)
                     self._scaleUpButton.setEnabled(True)
-            self._btn_regenerate.setStatusTip('Re-generate Images, But Do Not Compute Alignment,  %s' %
-                                              cfg.data.scale_pretty())
-            self._btn_alignForward.setStatusTip('Align and Generate %d -> End,  %s' %
-                                                (cfg.data.layer(), cfg.data.scale_pretty()))
-            self._btn_alignAll.setStatusTip('Align and Generate All,  %s' %
-                                            cfg.data.scale_pretty())
-            self._btn_alignOne.setStatusTip('Align and Generate the Current One Only %d,  Scale %d' %
-                                            (cfg.data.layer(), cfg.data.scale_val()))
+            # self._btn_regenerate.setStatusTip('Re-generate All Aligned Images, '
+            #                                   'But Keep Current Affines,  %s' % cfg.data.scale_pretty())
+            # self._btn_alignRange.setStatusTip('Re-compute Affines for Sections in the Range #%d to End, '
+            #                                     'then Generate Them  %s' % (cfg.data.layer(), cfg.data.scale_pretty()))
+            # self._btn_alignAll.setStatusTip('Compute Affines for All Sections, '
+            #                                 'then Generate Them,  %s' % cfg.data.scale_pretty())
+            # self._btn_alignOne.setStatusTip('Compute Affine for the Current Section Only, '
+            #                                 'then Generate It,  Scale %d' % cfg.data.scale_val())
         else:
             self._scaleUpButton.setEnabled(False)
             self._scaleDownButton.setEnabled(False)
             self._btn_alignAll.setEnabled(False)
             self._btn_alignOne.setEnabled(False)
-            self._btn_alignForward.setEnabled(False)
+            self._btn_alignRange.setEnabled(False)
             self._btn_regenerate.setEnabled(False)
+            self.startRangeInput.setEnabled(False)
+            self.endRangeInput.setEnabled(False)
 
 
     def scale_up(self) -> None:
@@ -1159,7 +1202,7 @@ class MainWindow(QMainWindow):
             # self.rb1.hide()
         if self.globTabs.currentWidget().__class__.__name__ in ('ProjectTab', 'ZarrTab'):
             if cfg.tensor:
-                self._resetSliderAndJumpInput()  # future changes to image importing will require refactor
+                self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
                 self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
                 self.label_toolbar_resolution.show()
             else:
@@ -1427,7 +1470,7 @@ class MainWindow(QMainWindow):
         return layer
 
 
-    def _resetSliderAndJumpInput(self):
+    def _resetSlidersAndJumpInput(self):
         '''Requires Neuroglancer '''
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
@@ -1439,6 +1482,12 @@ class MainWindow(QMainWindow):
                         self._jumpToLineedit.setValidator(QIntValidator(0, cfg.data.n_sections() - 1))
                         self._sectionSlider.setRange(0, cfg.data.n_sections() - 1)
                         self._sectionSlider.setValue(cfg.data.layer())
+                        self.sectionRangeSlider.setMin(0)
+                        self.sectionRangeSlider.setStart(0)
+                        self.sectionRangeSlider.setMax(len(cfg.data))
+                        self.sectionRangeSlider.setEnd(len(cfg.data))
+                        self.startRangeInput.setValidator(QIntValidator(0, cfg.data.n_sections() - 1))
+                        self.endRangeInput.setValidator(QIntValidator(0, cfg.data.n_sections() - 1))
                     if cfg.zarr_tab:
                         if not cfg.tensor:
                             logger.warning('No tensor!')
@@ -1447,6 +1496,7 @@ class MainWindow(QMainWindow):
                         self._jumpToLineedit.setText(str(0))
                         self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
                         self._sectionSlider.setValue(0)
+                    cfg.main_window.update()
             except:
                 print_exception()
 
@@ -1491,7 +1541,7 @@ class MainWindow(QMainWindow):
         # if cfg.data:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if caller in ('dataUpdateWidgets', '_resetSliderAndJumpInput'):
+        if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
         if not cfg.project_tab:
             if not cfg.zarr_tab:
@@ -1874,7 +1924,7 @@ class MainWindow(QMainWindow):
         self.hud.done()
 
         cfg.main_window._sectionSlider.setValue(int(cfg.data.n_sections() / 2))
-        self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
+        # self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
         QApplication.processEvents()
 
     # def initNeuroglancer(self, layout=None, matchpoint=None):
@@ -2206,12 +2256,12 @@ class MainWindow(QMainWindow):
 
 
     def stopNgServer(self):
-
+        # caller = inspect.stack()[1].function
+        # logger.critical(caller)
         if ng.is_server_running():
             logger.info('Stopping Neuroglancer...')
             try:    ng.stop()
             except: print_exception()
-            else:   self.hud.done()
         else:
             logger.info('Neuroglancer Is Not Running')
 
@@ -2959,6 +3009,12 @@ class MainWindow(QMainWindow):
             elif self.rb1.isChecked():
                 self.set_nglayout_combo_text(layout='xy')  # must be before initNeuroglancer
 
+            self.sectionRangeSlider.setMin(0)
+            self.sectionRangeSlider.setStart(0)
+            self.sectionRangeSlider.setMax(len(cfg.data))
+            self.sectionRangeSlider.setEnd(len(cfg.data))
+
+
             # cfg.project_tab.initNeuroglancer() #!!!!
             self.hardRestartNg()
 
@@ -3223,6 +3279,11 @@ class MainWindow(QMainWindow):
         self.resetPreferencesAction.triggered.connect(self.resetUserPreferences)
         fileMenu.addAction(self.resetPreferencesAction)
 
+        self.refreshAction = QAction('&Refresh', self)
+        self.refreshAction.triggered.connect(self.refreshTab)
+        self.refreshAction.setShortcut('Ctrl+R')
+        fileMenu.addAction(self.refreshAction)
+
         self.exitAppAction = QAction('&Quit', self)
         self.exitAppAction.triggered.connect(self.exit_app)
         self.exitAppAction.setShortcut('Ctrl+Q')
@@ -3246,7 +3307,7 @@ class MainWindow(QMainWindow):
         alignMenu.addAction(self.alignOneAction)
 
         self.alignForwardAction = QAction('Align Forward', self)
-        self.alignForwardAction.triggered.connect(self.alignForward)
+        self.alignForwardAction.triggered.connect(self.alignRange)
         alignMenu.addAction(self.alignForwardAction)
 
         self.alignMatchPointAction = QAction('Match Point Align', self)
@@ -3450,12 +3511,6 @@ class MainWindow(QMainWindow):
 
 
         configMenu = self.menu.addMenu('Configure')
-
-
-        self.refreshTabAction = QAction('Refresh', self)
-        self.refreshTabAction.triggered.connect(self.refreshTab)
-        self.refreshTabAction.setShortcut('Ctrl+R')
-        configMenu.addAction(self.refreshTabAction)
 
         self.rescaleAction = QAction('Project...', self)
         self.rescaleAction.triggered.connect(self.rescale)
@@ -3700,7 +3755,7 @@ class MainWindow(QMainWindow):
         button_size = QSize(54, 20)
         std_input_size = QSize(74, 20)
         std_button_size = QSize(96, 20)
-        normal_button_size = QSize(64, 24)
+        normal_button_size = QSize(64, 22)
         baseline = Qt.AlignmentFlag.AlignBaseline
         vcenter  = Qt.AlignmentFlag.AlignVCenter
         hcenter  = Qt.AlignmentFlag.AlignHCenter
@@ -3740,7 +3795,7 @@ class MainWindow(QMainWindow):
         lab.setAlignment(right)
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         self._whiteningControl = QDoubleSpinBox(self)
-        self._whiteningControl.setFixedHeight(22)
+        self._whiteningControl.setFixedHeight(24)
         self._whiteningControl.valueChanged.connect(self._callbk_unsavedChanges)
         self._whiteningControl.valueChanged.connect(self._valueChangedWhitening)
         self._whiteningControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3749,7 +3804,7 @@ class MainWindow(QMainWindow):
         self._whiteningControl.setDecimals(2)
         self._whiteningControl.setMinimum(-0.99)
         self._whiteningControl.setMaximum(0.99)
-        self._whiteningControl.setEnabled(False)
+        # self._whiteningControl.setEnabled(False)
 
         lab.setStatusTip(tip)
         self._whiteningControl.setStatusTip(tip)
@@ -3767,14 +3822,14 @@ class MainWindow(QMainWindow):
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         self._swimWindowControl = QDoubleSpinBox(self)
         self._swimWindowControl.setSuffix('%')
-        self._swimWindowControl.setFixedHeight(22)
+        self._swimWindowControl.setFixedHeight(24)
         self._swimWindowControl.valueChanged.connect(self._callbk_unsavedChanges)
         self._swimWindowControl.valueChanged.connect(self._valueChangedSwimWindow)
         self._swimWindowControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # self._swimWindowControl.setValue(cfg.DEFAULT_SWIM_WINDOW)
         self._swimWindowControl.setFixedSize(std_input_size)
         self._swimWindowControl.setDecimals(2)
-        self._swimWindowControl.setEnabled(False)
+        # self._swimWindowControl.setEnabled(False)
         lab.setStatusTip(tip)
         self._swimWindowControl.setStatusTip(tip)
         lay = QHBoxLayout()
@@ -3794,12 +3849,11 @@ class MainWindow(QMainWindow):
         # self._ctlpanel_applyAllButton.setFixedSize(QSize(54, 20))
         self._ctlpanel_applyAllButton.setFixedSize(normal_button_size)
 
-        self._gb_alignmentSettings = QGroupBox()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
-        hbl.addWidget(self._ctlpanel_inp_swimWindow)
-        hbl.addWidget(self._ctlpanel_whitening)
-        hbl.addWidget(self._ctlpanel_applyAllButton)
+        # hbl = QHBoxLayout()
+        # hbl.setContentsMargins(0, 0, 0, 0)
+        # hbl.addWidget(self._ctlpanel_inp_swimWindow)
+        # hbl.addWidget(self._ctlpanel_whitening)
+        # hbl.addWidget(self._ctlpanel_applyAllButton)
 
         tip = 'Go To Next Scale.'
         self._scaleUpButton = QPushButton()
@@ -3832,38 +3886,68 @@ class MainWindow(QMainWindow):
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         self._ctlpanel_changeScale = QWidget()
         lay = QHBoxLayout()
+        lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(lab, alignment=right)
         lay.addWidget(self._scaleSetWidget, alignment=left)
         self._ctlpanel_changeScale.setLayout(lay)
 
-        tip = 'Align + Generate All Layers For Current Scale'
-        self._btn_alignAll = QPushButton('Align This\nScale')
+        tip = 'Align and Generate All Sections'
+        self._btn_alignAll = QPushButton('Align All')
         self._btn_alignAll.setEnabled(False)
-        self._btn_alignAll.setStyleSheet("font-size: 9px;")
+        self._btn_alignAll.setStyleSheet("font-size: 10px;")
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignAll.setStatusTip(tip)
         self._btn_alignAll.clicked.connect(self.alignAll)
         self._btn_alignAll.setFixedSize(normal_button_size)
 
-        tip = 'Align and Generate This Layer'
-        self._btn_alignOne = QPushButton('Align This\nSection')
+        tip = 'Align and Generate the Current Section Only'
+        self._btn_alignOne = QPushButton('Align One')
         self._btn_alignOne.setEnabled(False)
-        self._btn_alignOne.setStyleSheet("font-size: 9px;")
+        self._btn_alignOne.setStyleSheet("font-size: 10px;")
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.setStatusTip(tip)
         self._btn_alignOne.clicked.connect(self.alignOne)
         self._btn_alignOne.setFixedSize(normal_button_size)
 
-        tip = 'Align and Generate From Layer Current Layer to End'
-        self._btn_alignForward = QPushButton('Align\nForward')
-        self._btn_alignForward.setEnabled(False)
-        self._btn_alignForward.setStyleSheet("font-size: 9px;")
-        self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignForward.setStatusTip(tip)
-        self._btn_alignForward.clicked.connect(self.alignForward)
-        self._btn_alignForward.setFixedSize(normal_button_size)
+        self.sectionRangeSlider = RangeSlider()
+        self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.sectionRangeSlider.setFixedWidth(120)
+        self.sectionRangeSlider.setMin(0)
+        self.sectionRangeSlider.setStart(0)
 
-        tip = 'Automatically generate aligned images.'
+        self.startRangeInput = QLineEdit()
+        self.startRangeInput.setFixedSize(34,22)
+        self.startRangeInput.setEnabled(False)
+
+        self.endRangeInput = QLineEdit()
+        self.endRangeInput.setFixedSize(34,22)
+        self.endRangeInput.setEnabled(False)
+
+        self.rangeInputWidget = QWidget()
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(2, 0, 2, 0)
+        hbl.setSpacing(0)
+        hbl.addWidget(self.startRangeInput)
+        hbl.addWidget(QLabel(':'))
+        hbl.addWidget(self.endRangeInput)
+        self.rangeInputWidget.setLayout(hbl)
+
+        self.sectionRangeSlider.startValueChanged.connect(lambda val: self.startRangeInput.setText(str(val)))
+        self.sectionRangeSlider.endValueChanged.connect(lambda val: self.endRangeInput.setText(str(val)))
+        self.startRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setStart(int(val)))
+        self.endRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setEnd(int(val)))
+
+
+        tip = 'Align and Generate a Range of Sections'
+        self._btn_alignRange = QPushButton('Align Range')
+        self._btn_alignRange.setEnabled(False)
+        self._btn_alignRange.setStyleSheet("font-size: 10px;")
+        self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._btn_alignRange.setStatusTip(tip)
+        self._btn_alignRange.clicked.connect(self.alignRange)
+        self._btn_alignRange.setFixedSize(normal_button_size)
+
+        tip = 'Auto-generate aligned images.'
         lab = QLabel("Auto-generate:")
         lab.setAlignment(right)
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
@@ -3895,11 +3979,11 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.addItems(['None', '0', '1', '2', '3', '4'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(60, 18))
+        self._polyBiasCombo.setFixedSize(QSize(60, 20))
         self._polyBiasCombo.setEnabled(False)
         lay = QHBoxLayout()
         # lay.setSpacing(0)
-        lay.setContentsMargins(2,2,2,2)
+        lay.setContentsMargins(4, 0, 4, 0)
         lay.addWidget(lab, alignment=right)
         lay.addWidget(self._polyBiasCombo, alignment=left)
         self._ctlpanel_polyOrder = QWidget()
@@ -3918,8 +4002,7 @@ class MainWindow(QMainWindow):
         self._bbToggle.toggled.connect(self._callbk_bnding_box)
         self._bbToggle.setEnabled(False)
         lay = QHBoxLayout()
-        # hbl.setSpacing(1)
-        # hbl.setContentsMargins(0,0,0,0)
+        hbl.setContentsMargins(0,0,0,0)
         # hbl.addWidget(lab, alignment=baseline | Qt.AlignmentFlag.AlignRight)
         lay.addWidget(lab, alignment=right | vcenter)
         lay.addWidget(self._bbToggle, alignment=left | vcenter)
@@ -3928,7 +4011,8 @@ class MainWindow(QMainWindow):
 
         tip = "Recomputes the cumulative affine and generates new aligned images" \
               "based on the current Null Bias and Bounding Rectangle presets."
-        self._btn_regenerate = QPushButton('Generate')
+        self._btn_regenerate = QPushButton('Generate All')
+        self._btn_regenerate.setStyleSheet('font-size: 10px;')
         self._btn_regenerate.setEnabled(False)
         self._btn_regenerate.setStatusTip(tip)
         self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.curScale))
@@ -3937,47 +4021,41 @@ class MainWindow(QMainWindow):
 
         self._wdg_alignButtons = QWidget()
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(2,2,2,2)
-        hbl.addWidget(self._btn_regenerate, alignment=right)
-        hbl.addWidget(self._btn_alignOne, alignment=right)
-        hbl.addWidget(self._btn_alignForward, alignment=right)
-        hbl.addWidget(self._btn_alignAll, alignment=right)
+        hbl.setContentsMargins(0, 0, 0, 0)
+        # hbl.addWidget(self._btn_regenerate, alignment=right)
+        # hbl.addWidget(self._btn_alignOne, alignment=right)
+        # hbl.addWidget(self.sectionRangeSlider, alignment=right)
+        # hbl.addWidget(self.rangeInputWidget)
+        # hbl.addWidget(self._btn_alignRange, alignment=right)
+        # hbl.addWidget(self._btn_alignAll, alignment=right)
+        hbl.addWidget(self._btn_regenerate)
+        hbl.addWidget(self._btn_alignOne)
+        hbl.addWidget(self.sectionRangeSlider)
+        hbl.addWidget(self.rangeInputWidget)
+        hbl.addWidget(self._btn_alignRange)
+        hbl.addWidget(self._btn_alignAll)
         self._wdg_alignButtons.setLayout(hbl)
-        lay.setContentsMargins(2,2,2,2)
-        lab = QLabel('Actions\n(Highly Parallel):')
-        lab.setAlignment(right | vcenter)
+        # lab = QLabel('Actions\n(Highly Parallel):')
+        # lab.setAlignment(right | vcenter)
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lay = QHBoxLayout()
         # vbl.setSpacing(1)
-        lay.setContentsMargins(2,2,2,2)
-        lay.addWidget(lab, alignment=right)
+        lay.setContentsMargins(2, 2, 2, 2)
+        # lay.addWidget(lab, alignment=right)
         lay.addWidget(self._wdg_alignButtons, alignment=left)
         self._ctlpanel_alignRegenButtons = QWidget()
         self._ctlpanel_alignRegenButtons.setLayout(lay)
 
-        # wids = [
-        #     self._ctlpanel_skip,
-        #     self._ctlpanel_inp_swimWindow,
-        #     self._ctlpanel_whitening,
-        #     self._ctlpanel_applyAllButton,
-        #     self._ctlpanel_polyOrder,
-        #     self._ctlpanel_bb,
-        #     self._ctlpanel_alignRegenButtons,
-        #     self._ctlpanel_changeScale,
-        # ]
+        form_layout = QFormLayout()
 
-        self._cpanelVLayout = QVBoxLayout()
-        self._cpanelVLayout.setSpacing(1)
         hbl0 = QHBoxLayout()
         hbl1 = QHBoxLayout()
         hbl2 = QHBoxLayout()
         hbl0.setContentsMargins(0, 0, 0, 0)
         hbl1.setContentsMargins(0, 0, 0, 0)
         hbl2.setContentsMargins(0, 0, 0, 0)
-        self._cpanelVLayout.addLayout(hbl0)
-        self._cpanelVLayout.addLayout(hbl1)
-        self._cpanelVLayout.addLayout(hbl2)
 
+        hbl0.addStretch()
         hbl0.addWidget(self._ctlpanel_skip)
         hbl0.addWidget(self._ctlpanel_bb)
         hbl0.addWidget(self._ctlpanel_toggleAutogenerate)
@@ -3991,9 +4069,25 @@ class MainWindow(QMainWindow):
         hbl1.addWidget(self._ctlpanel_whitening)
         hbl1.addStretch()
         hbl1.addWidget(self._ctlpanel_applyAllButton)
-        hbl1.addStretch()
+        # hbl1.addStretch()
 
+        hbl2.addStretch()
         hbl2.addWidget(self._ctlpanel_alignRegenButtons)
+
+        w = QWidget()
+        w.setLayout(hbl0)
+        form_layout.addRow(w)
+
+        w = QWidget()
+        w.setLayout(hbl1)
+        form_layout.addRow(w)
+
+        w = QWidget()
+        w.setLayout(hbl2)
+        form_layout.addRow(w)
+
+        form_layout.setContentsMargins(0, 0, 0, 0)
+
 
         self._cpanel = ControlPanel(
             parent=self,
@@ -4002,7 +4096,8 @@ class MainWindow(QMainWindow):
             # items=wids,
             bg_color='#f3f6fb'
         )
-        self._cpanel.setCustomLayout(self._cpanelVLayout)
+        # self._cpanel.setCustomLayout(self._cpanelVLayout)
+        self._cpanel.setCustomLayout(form_layout)
         self._cpanel.setFixedWidth(520)
         self._cpanel.setMaximumHeight(120)
 

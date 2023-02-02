@@ -22,7 +22,7 @@ from src.ui.mini_view import MiniView
 from src.ui.widget_area import WidgetArea
 from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
-from src.ui.doubleslider import DoubleSlider
+from src.ui.sliders import DoubleSlider
 
 
 
@@ -54,10 +54,8 @@ class ProjectTab(QWidget):
 
 
     def _onTabChange(self, index=None):
-        logger.info(f'index = {str(index)}')
         if index == None:
             index = self._tabs.currentIndex()
-        logger.info(f'index = {index}')
         # if index == 0:
         #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain emViewer state
         if index == 1:
