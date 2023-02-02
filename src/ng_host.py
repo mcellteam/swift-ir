@@ -203,7 +203,7 @@ class EMViewer(neuroglancer.Viewer):
             if is_aligned:
                 cfg.alLV = ng.LocalVolume(
                     volume_type='image',
-                    data=cfg.unal_tensor[:, :, :],
+                    data=cfg.al_tensor[:, :, :],
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, ] * 3,
                 )

@@ -294,7 +294,6 @@ class MainWindow(QMainWindow):
             # self.tell('Stopping Neuroglancer...')
             ng.server.stop()
             time.sleep(.1)
-            self.hud.done()
 
 
     def tell(self, message):
@@ -347,7 +346,7 @@ class MainWindow(QMainWindow):
 
     def initStyle(self):
         logger.info('')
-        self.main_stylesheet = os.path.abspath('styles/__default.qss')
+        self.main_stylesheet = os.path.abspath('styles/default.qss')
         self.apply_default_style()
 
 
@@ -470,8 +469,6 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             self.warn('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
-        else:
-            self.hud.done()
 
         show_status_report(results=cfg.results, dt=cfg.dt)
 
@@ -1915,6 +1912,12 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.setCurrentText(cfg.data.curScale)
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         self.updateEnabledButtons()
+        self._resetSlidersAndJumpInput()
+        # self.sectionRangeSlider.setMin(0)
+        # self.sectionRangeSlider.setStart(0)
+        # self.sectionRangeSlider.setMax(len(cfg.data))
+        # self.sectionRangeSlider.setEnd(len(cfg.data))
+        # cfg.main_window.update()
         self.updateMenus()
         self.updateToolbar()
         self.enableAllTabs()
@@ -3013,6 +3016,7 @@ class MainWindow(QMainWindow):
             self.sectionRangeSlider.setStart(0)
             self.sectionRangeSlider.setMax(len(cfg.data))
             self.sectionRangeSlider.setEnd(len(cfg.data))
+            cfg.main_window.update()
 
 
             # cfg.project_tab.initNeuroglancer() #!!!!
@@ -4001,13 +4005,13 @@ class MainWindow(QMainWindow):
         self._bbToggle.setStatusTip(tip)
         self._bbToggle.toggled.connect(self._callbk_bnding_box)
         self._bbToggle.setEnabled(False)
-        lay = QHBoxLayout()
+        hbl = QHBoxLayout()
         hbl.setContentsMargins(0,0,0,0)
         # hbl.addWidget(lab, alignment=baseline | Qt.AlignmentFlag.AlignRight)
-        lay.addWidget(lab, alignment=right | vcenter)
-        lay.addWidget(self._bbToggle, alignment=left | vcenter)
+        hbl.addWidget(lab, alignment=right)
+        hbl.addWidget(self._bbToggle, alignment=left)
         self._ctlpanel_bb = QWidget()
-        self._ctlpanel_bb.setLayout(lay)
+        self._ctlpanel_bb.setLayout(hbl)
 
         tip = "Recomputes the cumulative affine and generates new aligned images" \
               "based on the current Null Bias and Bounding Rectangle presets."
@@ -4057,9 +4061,13 @@ class MainWindow(QMainWindow):
 
         hbl0.addStretch()
         hbl0.addWidget(self._ctlpanel_skip)
+        hbl0.addStretch()
         hbl0.addWidget(self._ctlpanel_bb)
+        hbl0.addStretch()
         hbl0.addWidget(self._ctlpanel_toggleAutogenerate)
+        hbl0.addStretch()
         hbl0.addWidget(self._ctlpanel_changeScale)
+        hbl0.addStretch()
 
         hbl1.addStretch()
         hbl1.addWidget(self._ctlpanel_polyOrder)
@@ -4088,16 +4096,31 @@ class MainWindow(QMainWindow):
 
         form_layout.setContentsMargins(0, 0, 0, 0)
 
+        gb = QGroupBox()
+        gb.setContentsMargins(0, 0, 0, 0)
+        gb.setLayout(form_layout)
 
-        self._cpanel = ControlPanel(
-            parent=self,
-            name='ctl_panel',
-            title='Control Panel',
-            # items=wids,
-            bg_color='#f3f6fb'
-        )
-        # self._cpanel.setCustomLayout(self._cpanelVLayout)
-        self._cpanel.setCustomLayout(form_layout)
+        self._cpanel = QWidget()
+        self._cpanel.setStyleSheet('border-radius: 5px;')
+        lab = QLabel('Control Panel')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        vbl = QVBoxLayout()
+        vbl.setSpacing(0)
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(lab, alignment=baseline)
+        vbl.addWidget(gb)
+        self._cpanel.setLayout(vbl)
+
+
+        # self._cpanel = ControlPanel(
+        #     parent=self,
+        #     name='ctl_panel',
+        #     title='Control Panel',
+        #     # items=wids,
+        #     bg_color='#f3f6fb'
+        # )
+        # # self._cpanel.setCustomLayout(self._cpanelVLayout)
+        # self._cpanel.setCustomLayout(form_layout)
         self._cpanel.setFixedWidth(520)
         self._cpanel.setMaximumHeight(120)
 
