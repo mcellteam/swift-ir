@@ -99,10 +99,10 @@ class ProjectTab(QWidget):
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
         if cfg.main_window.rb0.isChecked():
-            cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+            # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
             cfg.emViewer.initViewerSlim()
         elif cfg.main_window.rb1.isChecked():
-            cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             cfg.emViewer.initViewer(matchpoint=matchpoint)
         url = cfg.emViewer.get_viewer_url()
         logger.info(f'URL:\n{url}')

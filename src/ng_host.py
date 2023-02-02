@@ -66,8 +66,8 @@ class EMViewer(neuroglancer.Viewer):
         except:
             logger.warning('Lost Track Of Caller')
 
-    def __str__(self):
-        return obj_to_string(self)
+    # def __str__(self):
+    #     return obj_to_string(self)
 
     def __repr__(self):
         return copy.deepcopy(self.state)
@@ -388,6 +388,15 @@ class EMViewer(neuroglancer.Viewer):
             s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
             s.crossSectionBackgroundColor = '#808080' # 128 grey
+            # s.layout = {
+            #     "type": "4panel",
+            #     "crossSections": {
+            #       "a": {
+            #         "width": store.shape[1],
+            #         "height": store.shape[2]
+            #       }
+            #     }
+            #   }
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
