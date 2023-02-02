@@ -64,7 +64,7 @@ class Thumbnailer:
             dt = self.generate_thumbnails(
                 src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, cpus=cpus)
             cfg.data.set_t_thumbs_spot(dt)
-            cfg.main_window.tell('Discarding full scale correlation spots...')
+            cfg.main_window.tell('Discarding Full Size Correlation Spots...')
             shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
             shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
 

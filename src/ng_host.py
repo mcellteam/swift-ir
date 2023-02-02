@@ -322,7 +322,7 @@ class EMViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             for key, command in mp_key_bindings:
-                s.input_event_bindings[key] = command
+                s.input_event_bindings.viewer[key] = command
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
 

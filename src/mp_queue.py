@@ -253,6 +253,7 @@ class TaskQueue(QObject):
         '''Run All Tasks and Collect Results'''
         logger.info(f'Running Multiprocessing Tasks ({self.retries} retries allowed)...')
         n_pending = len(self.task_dict) # <-- # images in the stack
+        n_tasks = len(self.task_dict)
         realtime = n_pending
         retries_tot = 0
         # try:
@@ -341,14 +342,25 @@ class TaskQueue(QObject):
             logger.debug('    Failed Tasks: %d\n' % (n_pending))
             logger.debug('    Retries: %d\n\n' % (retries_tot - 1))
             if n_pending == 0:
-                logger.info('Failed Tasks      : %d' % n_pending)
-                logger.info('Retries           : %d' % (retries_tot - 1))
+                logger.info('Tasks Successful  : %d' % (n_tasks - n_pending))
+                logger.info('Tasks Failed      : %d' % n_pending)
+                # logger.info('Retries           : %d' % (retries_tot - 1))
                 logger.info('══════ Complete ══════')
+
+                cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
+                cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
+                # cfg.main_window.tell('Retries           : %d' % (retries_tot - 1))
+                cfg.main_window.tell('══════ Complete ══════')
             else:
-                logger.info('Something Went Wrong')
-                logger.info('Failed Tasks     : %d' % n_pending)
-                logger.info('Retries          : %d' % (retries_tot - 1))
-                logger.info('══════ Complete ══════')
+                cfg.main_window.warn('Something Went Wrong')
+                cfg.main_window.warn('Failed Tasks     : %d' % n_pending)
+                # logger.warning('Retries          : %d' % (retries_tot - 1))
+                cfg.main_window.warn('══════ Complete ══════')
+
+                logger.warning('Something Went Wrong')
+                logger.warning('Failed Tasks     : %d' % n_pending)
+                # logger.warning('Retries          : %d' % (retries_tot - 1))
+                logger.warning('══════ Complete ══════')
         except:
             print_exception()
         finally:

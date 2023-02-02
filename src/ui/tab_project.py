@@ -50,11 +50,13 @@ class ProjectTab(QWidget):
         self.initUI_tab_widget()
         self._tabs.currentChanged.connect(self._onTabChange)
         self.ng_browser.setFocusPolicy(Qt.StrongFocus)
+        self.bookmark_tab = 0
 
 
     def _onTabChange(self, index=None):
         logger.info(f'index = {str(index)}')
-        if index == None: index = self._tabs.currentIndex()
+        if index == None:
+            index = self._tabs.currentIndex()
         logger.info(f'index = {index}')
         # if index == 0:
         #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain emViewer state
@@ -115,11 +117,11 @@ class ProjectTab(QWidget):
         self.resetSliderZmag()
         self.ng_browser.setFocus()
 
-    def addToState(self):
-        state = copy.deepcopy(cfg.emViewer.state)
-        state.relative_display_scales = {"z": 25}
-        cfg.emViewer.set_state(state)
-        cfg.LV.invalidate()
+    # def addToState(self):
+    #     state = copy.deepcopy(cfg.emViewer.state)
+    #     state.relative_display_scales = {"z": 10}
+    #     cfg.emViewer.set_state(state)
+    #     cfg.LV.invalidate()
 
     def setNeuroglancerUrl(self):
         self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
@@ -223,7 +225,7 @@ class ProjectTab(QWidget):
         vbl.addWidget(self.__widgetArea_details)
         self._widgetArea_details.setLayout(vbl)
 
-        self._widgetArea_details.hide()
+        self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
         self._overlayBottomLeft = QLabel()
         self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
         self._overlayBottomLeft.hide()
@@ -233,8 +235,8 @@ class ProjectTab(QWidget):
         # gl.addWidget(cfg.main_window._tool_afmCafm, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.ng_browser_container.setLayout(gl)
         gl.setContentsMargins(0, 0, 0, 0)
-        lab = VerticalLabel('Neuroglancer 3DEM View')
-        lab.setObjectName('label_ng')
+        self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
+        self.ngVertLab.setObjectName('label_ng')
 
 
         # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
@@ -271,8 +273,6 @@ class ProjectTab(QWidget):
         vbl.addWidget(VerticalLabel('Zoom:'))
         self.crossSectionScaleSliderAndLabel.setLayout(vbl)
 
-
-
         # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
         self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
         # self.crossSectionScaleSlider.set
@@ -292,10 +292,9 @@ class ProjectTab(QWidget):
         vbl.addWidget(VerticalLabel('Z-Mag:'))
         self.ZdisplaySliderAndLabel.setLayout(vbl)
 
-
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
-        hbl.addWidget(lab)
+        hbl.addWidget(self.ngVertLab)
         hbl.addWidget(self.ng_browser_container)
         # hbl.addWidget(self.crossSectionScaleSlider)
         # hbl.addWidget(self.crossSectionOrientationSliderAndLabel)
@@ -353,7 +352,7 @@ class ProjectTab(QWidget):
         # logger.info(f'caller: {caller}')
         try:
             if cfg.main_window.rb1.isChecked():
-                self.ZdisplaySlider.setValue(5)
+                self.ZdisplaySlider.setValue(10)
             else:
                 self.ZdisplaySlider.setValue(1)
         except:
@@ -634,6 +633,9 @@ class VerticalLabel(QLabel):
             style += f'font-size: {str(font_size)};'
         if style != '':
             self.setStyleSheet(style)
+
+    def setText(self, p_str):
+        self.text = p_str
 
     def paintEvent(self, event):
         p = QPainter(self)
