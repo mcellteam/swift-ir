@@ -114,7 +114,6 @@ class ProjectTab(QWidget):
         # self.resetCrossSectionScaleSlider()
         self.resetSliderZmag()
         self.ng_browser.setFocus()
-        self.ng_browser.reload()
 
     def addToState(self):
         state = copy.deepcopy(cfg.emViewer.state)
