@@ -6,52 +6,30 @@ can connect to the web server'''
 
 import os
 import copy
-import json
-import pprint
+import math
 import inspect
 import logging
 import datetime
 import argparse
-import traceback
-from decimal import Decimal
-from math import floor
 import numpy as np
 import numcodecs
-numcodecs.blosc.use_threads = False
 import zarr
 import neuroglancer
 import neuroglancer as ng
-import neuroglancer.webdriver
-from neuroglancer.json_wrappers import typed_string_map
-from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
-                            typed_map, typed_set, typed_string_map, wrapped_property,
-                            number_or_string)
-from collections import OrderedDict
-from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QRunnable, QObject, Slot, Signal
-import src.config as cfg
-from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_from_tiff
-from src.helpers import print_exception, get_scale_val, exist_aligned_zarr_cur_scale, obj_to_string
+# from neuroglancer import ScreenshotSaver
+from qtpy.QtCore import QObject, Signal
+from src.funcs_zarr import get_zarr_tensor
+from src.helpers import getOpt, obj_to_string, print_exception
 from src.shaders import ann_shader
+import src.config as cfg
+
+numcodecs.blosc.use_threads = False
 
 __all__ = ['EMViewer']
 
-import sys
-import logging
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler(stream=sys.stdout)
-logger.addHandler(handler)
-
-# def handle_exception(exc_type, exc_value, exc_traceback):
-#     if issubclass(exc_type, KeyboardInterrupt):
-#         sys.__excepthook__(exc_type, exc_value, exc_traceback)
-#         return
-#
-#     logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-#
-# sys.excepthook = handle_exception
-
-logger = logging.getLogger(__name__)
+# handler = logging.StreamHandler(stream=sys.stdout)
+# logger.addHandler(handler)
 
 class WorkerSignals(QObject):
     result = Signal(str)
@@ -69,72 +47,39 @@ class EMViewer(neuroglancer.Viewer):
         self._crossSectionScale = 1.0
         self.ref_pts = []
         self.base_pts = []
-        # self.bind = bind
-        # self.port = port
-        # self.zarr_addr = "zarr://http://localhost:" + str(self.port)
         self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
                           '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74']
         self._mpCount = 0
-        self._is_fullscreen = False
         self.arrangement = 1
-        self.mp_mode = False
-
-        # self.parent().callFn()
+        # self.bind = bind
+        # self.port = port
+        # self.zarr_addr = "zarr://http://localhost:" + str(self.port)
+        ng.server.debug = cfg.DEBUG_NEUROGLANCER
 
     def __del__(self):
         try:
             caller = inspect.stack()[1].function
-            logger.warning('__del__ was called by [%s] on EMViewer - created: %s'
+            logger.warning('__del__ called by [%s] on EMViewer (created: %s)'
                            % (caller, self.created))
         except:
             logger.warning('Lost Track Of Caller')
-
 
     def __str__(self):
         return obj_to_string(self)
 
     def __repr__(self):
-        # return copy.deepcopy(cfg.emViewer.state)
         return copy.deepcopy(self.state)
 
-    # @Slot()
-    async def run(self):
-        print('\nrun:\n')
-        try:
-            cfg.emViewer = ng.Viewer()
-        except:
-            # traceback.print_exc()
-            logger.error('ERROR')
-
-    def get_loading_progress(self):
-        return neuroglancer.webdriver.driver.execute_script('''
-    const userLayer = emViewer.layerManager.getLayerByName("segmentation").layer;
-    return userLayer.renderLayers.map(x => x.layerChunkProgressInfo)
-     ''')
-
     def request_layer(self):
-        # return floor(cfg.emViewer.state.position[0])
-        return floor(self.state.position[0])
+        return math.floor(self.state.position[0])
 
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
 
-    def invalidateAllLayers(self):
-        if cfg.data.is_mendenhall():
-            cfg.menLV.invalidate()
-            return
-
-        cfg.refLV.invalidate()
-        cfg.baseLV.invalidate()
-        try:
-            cfg.alLV.invalidate()
-        except:
-            pass
-
     def initViewerMendenhall(self):
-        logger.critical('Initializing Neuroglancer emViewer (Mendenhall)...')
+        logger.critical('Initializing Neuroglancer EMViewer (Mendenhall)...')
         path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
         scales = [50, 2, 2]
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
@@ -147,7 +92,6 @@ class EMViewer(neuroglancer.Viewer):
             voxel_offset=[0, 0, 0],
         )
         logger.info('Instantiating Viewer...')
-        cfg.emViewer = ng.Viewer()
         image_size = cfg.data.image_size()
         widget_size = cfg.main_window.globTabs.size()
         logger.critical(f'cfg.main_window.globTabs.size() = {cfg.main_window.globTabs.size()}')
@@ -159,78 +103,53 @@ class EMViewer(neuroglancer.Viewer):
         tissue_w = 2 * image_size[0]  # nm
         scale_w = (tissue_w / image_size[0]) * 1e-9  # nm/pixel
         cross_section_scale = max(scale_h, scale_w)
-        css = '%.2E' % Decimal(cross_section_scale)
-        # logger.info(f'cross_section_scale: {css}')
 
-        with cfg.emViewer.txn() as s:
+        with self.txn() as s:
             s.layers['layer'] = ng.ImageLayer(source=cfg.menLV)
             s.crossSectionBackgroundColor = '#808080'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
-        # self.webdriver = neuroglancer.webdriver.Webdriver(cfg.emViewer, headless=True)
 
     def rowArrangement(self):
         self.arrangement = 2
         self.initViewer()
 
 
-    def initViewer(self,
-                   matchpoint=False,
-                   widget_size=None,
-                   ):
+    def initViewer(self, matchpoint=False, ):
         caller = inspect.stack()[1].function
-        logger.critical(f'Initializing emViewer (caller: {caller})....')
-        if matchpoint: self.mp_mode = matchpoint
-        if cfg.main_window._is_mp_mode:
-            self.mp_mode = True
-        else:
-            self.mp_mode = False
-        ng.server.debug = cfg.DEBUG_NEUROGLANCER
+        logger.critical(f'Initializing EMViewer (caller: {caller})....')
+        cfg.MP_MODE = matchpoint
+        cfg.tensor = cfg.unal_tensor = cfg.al_tensor = None
         scale = cfg.data.scale()
-        logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=scale)})...')
         is_aligned = cfg.data.is_aligned_and_generated()
-        logger.info('Aligned? %r' % is_aligned)
-        sf = get_scale_val(scale)
+        sf = cfg.data.scale_val(s=scale)
         self.ref_l, self.base_l, self.aligned_l  = 'ref_%d'%sf, 'base_%d'%sf, 'aligned_%d'%sf
 
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         self.nglayout = mapping[cfg.main_window.comboboxNgLayout.currentText()]
-        self.al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-        self.unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+        al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+        unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
         try:
-            self.unal_tensor = cfg.unal_tensor = cfg.tensor = get_zarr_tensor(self.unal_path).result()
+            cfg.unal_tensor = cfg.tensor = get_zarr_tensor(unal_path).result()
+            if is_aligned:
+                cfg.al_tensor = cfg.tensor = get_zarr_tensor(al_path).result()
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
             raise e
-            return
-        cfg.main_window.updateToolbar()
-        if is_aligned:
-            try:
-                self.al_tensor = cfg.al_tensor = cfg.tensor = get_zarr_tensor(self.al_path).result()
-            except:
-                print_exception()
-                cfg.main_window.err(f'Invalid Zarr For Tensor, Aligned, Scale {sf}'); print_exception()
-        else:
-            cfg.al_tensor=None
 
         if cfg.data.is_mendenhall():
-            self.unal_path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
-            is_aligned = True  # Force, was below the conditional
-            if cfg.MV:
-                logger.warning('Transferring control to initViewerMendenhall...')
-                self.initViewerMendenhall()
-                return
+            logger.warning('Initializing Mendenhall Viewer Protocol...')
+            self.initViewerMendenhall()
+            return
 
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale())),
+            scales=list(cfg.data.resolution(s=cfg.data.curScale)),
         )
-        # cfg.emViewer = ng.UnsynchronizedViewer()
-        # cfg.emViewer = ng.Viewer()
 
         self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -245,74 +164,53 @@ class EMViewer(neuroglancer.Viewer):
             frame = cfg.unal_tensor.shape[1:]
             x_nudge, y_nudge = 0, 0
 
-        if widget_size is None:
-            # widget_size = cfg.project_tab.geometry().getRect()
-            widget_size = cfg.main_window.globTabs.geometry().getRect()
-        # logger.info(f'widget size: {str(widget_size)}')
-        widget_height = widget_size[3] - 34 # subtract pixel height of Neuroglancer toolbar
-
+        area = cfg.main_window.globTabs.geometry().getRect()
         if self.arrangement == 1:
-            if is_aligned: widget_width = widget_size[2] / 3
-            else:          widget_width = widget_size[2] / 2
+            widget_w = (area[2] / 2, area[2] / 3)[is_aligned]
         else:
-            widget_width = widget_size[2] / 2
-
+            widget_w = area[2] / 2
         res_z, res_y, res_x = cfg.data.resolution(s=scale)
-
         tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm
-        scale_h = (tissue_h / widget_height) * 1e-9  # nm/pixel
-        scale_w = (tissue_w / widget_width) * 1e-9  # nm/pixel
+        scale_h = (tissue_h / (area[3] - 34)) * 1e-9  # nm/pixel (subtract height of ng toolbar)
+        scale_w = (tissue_w / (widget_w - 20)) * 1e-9  # nm/pixel (subtract width of sliders)
         cross_section_scale = max(scale_h, scale_w)
 
-
-        # with cfg.emViewer.txn() as s:
         with self.txn() as s:
-            adjustment = 1.05
+            adjustment = 1.08
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             # s.concurrent_downloads = 512
             s.cross_section_scale = cross_section_scale * adjustment
-            s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
-            s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
-            # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
+            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             # s.relativeDisplayScales = {"z": 25}
             # s.displayDimensions = ["z", "y", "x"]
             # s.perspective_orientation
 
             s.layout.type = self.nglayout
             cfg.refLV = ng.LocalVolume(
-                data=cfg.unal_tensor[:, :, :],
-                # data=(cfg.unal_tensor[:, :, :],
-                #       cfg.unal_tensor[cfg.data.layer()-1:cfg.data.layer(), :, :])[self.mp_mode],
                 volume_type='image',
+                data=cfg.unal_tensor[0:cfg.data.nSections - 1, :, :],
                 dimensions=self.coordinate_space,
-                voxel_offset=([1, y_nudge, x_nudge], [0, y_nudge, x_nudge])[self.mp_mode],
-                # voxel_offset=[1, y_nudge, x_nudge],
-                # max_downsampling=1, # 13824,
+                voxel_offset=[1, y_nudge, x_nudge],
             )
             cfg.baseLV = ng.LocalVolume(
-                data=cfg.unal_tensor[:, :, :],
-                # data=(cfg.unal_tensor[:, :, :],
-                #       cfg.unal_tensor[cfg.data.layer():cfg.data.layer()+1, :, :])[self.mp_mode],
                 volume_type='image',
+                data=cfg.unal_tensor[:, :, :],
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, y_nudge, x_nudge],
-                # max_downsampling=1, # 13824,
             )
             if is_aligned:
                 cfg.alLV = ng.LocalVolume(
-                    data=cfg.unal_tensor[:, :, :],
-                    # data=(cfg.unal_tensor[:, :, :],
-                    #       cfg.unal_tensor[cfg.data.layer():cfg.data.layer()+1, :, :])[self.mp_mode],
                     volume_type='image',
+                    data=cfg.unal_tensor[:, :, :],
                     dimensions=self.coordinate_space,
                     voxel_offset=[0, ] * 3,
-                    # max_downsampling=1, # 13824,
                 )
 
             # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
-            # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{self.unal_path}'
-            # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{self.al_path}'
+            # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{unal_path}'
+            # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{al_path}'
 
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER,
                                                  # tool_bindings={
@@ -333,7 +231,7 @@ class EMViewer(neuroglancer.Viewer):
                                                          #     'B': neuroglancer.OpacityTool(),
                                                          # },
                                                          )
-            if self.mp_mode:
+            if cfg.MP_MODE:
                 s.layers['mp_ref'] = ng.LocalAnnotationLayer(
                     dimensions=self.coordinate_space,
                     annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
@@ -358,7 +256,7 @@ class EMViewer(neuroglancer.Viewer):
                 )
 
             grps = []
-            if self.mp_mode:
+            if cfg.MP_MODE:
                 grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout))
                 grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=self.nglayout))
                 if is_aligned:
@@ -371,14 +269,14 @@ class EMViewer(neuroglancer.Viewer):
 
             s.position = [cfg.data.layer(), frame[0]/2, frame[1]/2]
 
-            # Columnar Arrangment
+            # column arrangement
             if self.arrangement == 1:
                 s.layout = ng.row_layout(grps)
 
-            # Ref/base one on-top Arrangement
+            # ref/base one-on-top arrangement
             if self.arrangement == 2:
                 if is_aligned:
-                    if self.mp_mode:
+                    if cfg.MP_MODE:
                         s.layout = ng.row_layout([
                             ng.column_layout([
                                 ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=self.nglayout),
@@ -401,18 +299,18 @@ class EMViewer(neuroglancer.Viewer):
                 else:
                     s.layout = ng.row_layout(grps)
 
-            # cfg.emViewer.shared_state.add_changed_callback(self.on_state_changed)
             self.shared_state.add_changed_callback(self.on_state_changed)
-            # cfg.emViewer.shared_state.add_changed_callback(lambda: cfg.emViewer.defer_callback(self.on_state_changed))
+            # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
             # ?
-            # if self.mp_mode:
+            # if cfg.MP_MODE:
             #     s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
             #     s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
             s.crossSectionBackgroundColor = '#808080'
 
-        if self.mp_mode:
+        mp_key_bindings = []
+        if cfg.MP_MODE:
             mp_key_bindings = [
                 ['enter', 'add_matchpoint'],
                 ['keys', 'save_matchpoints'],
@@ -421,35 +319,96 @@ class EMViewer(neuroglancer.Viewer):
             self.actions.add('add_matchpoint', self.add_matchpoint)
             self.actions.add('save_matchpoints', self.save_matchpoints)
             self.actions.add('clear_matchpoints', self.clear_matchpoints)
-        else:
-            mp_key_bindings = []
 
-        # with cfg.emViewer.config_state.txn() as s:
         with self.config_state.txn() as s:
             for key, command in mp_key_bindings:
-                s.input_event_bindings.emViewer[key] = command
-            s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
-            s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
+                s.input_event_bindings[key] = command
+            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
 
         self._layer = self.request_layer()
         self.clear_mp_buffer()
 
         if cfg.main_window.detachedNg.view.isVisible():
-            # cfg.main_window.detachedNg.open(url=cfg.emViewer.get_viewer_url())
             cfg.main_window.detachedNg.open(url=self.get_viewer_url())
-        # if cfg.HEADLESS:
-        #     cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.emViewer, headless=False, browser='chrome')
-        # if cfg.HEADLESS:
-        # cfg.webdriver = neuroglancer.webdriver.Webdriver(self, headless=True, browser='chrome',
-        #                                                  debug=True, docker=True
-        #                                                  # extra_command_line_args='-disable-gpu',)
+
+        cfg.main_window.updateToolbar()
+
+
+    def initViewerSlim(self):
+        caller = inspect.stack()[1].function
+        logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
+        cfg.al_tensor = cfg.unal_tensor = None
+        self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
+        sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        self.nglayout = sw[self.nglayout]
+        zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
+        path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
+        if not os.path.exists(path):
+            cfg.main_window.warn('Zarr Not Found: %s' % path)
+            return
+        try:
+            if cfg.USE_TENSORSTORE:
+                cfg.tensor = store = get_zarr_tensor(path).result()
+            else:
+                logger.info('Opening Zarr...')
+                store = zarr.open(path)
+        except:
+            print_exception()
+            cfg.main_window.warn('There was a problem loading tensor at %s' % path)
+            cfg.main_window.warn('Trying with regular Zarr datastore...')
+            try:
+                store = zarr.open(path)
+            except:
+                print_exception()
+                cfg.main_window.warn('Unable to load Zarr')
+                return
+            else:    print('Zarr Loaded Successfully!')
+        else:
+            print('TensorStore Loaded Successfully!')
+
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=list(cfg.data.resolution(s=cfg.data.scale())), )
+
+        with self.txn() as s:
+            cfg.LV = ng.LocalVolume(
+                volume_type='image',
+                data=store,
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, 0, 0],
+            )
+            s.layout.type = self.nglayout
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
+            s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
+            s.crossSectionBackgroundColor = '#808080' # 128 grey
+
+        with self.config_state.txn() as s:
+            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
+            # s.viewer_size = [100,100]
+
+        self._layer = self.request_layer()
+        self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+
+        if cfg.main_window.detachedNg.view.isVisible():
+            cfg.main_window.detachedNg.open(url=self.get_viewer_url())
+
+        cfg.main_window.updateToolbar()
 
 
     def on_state_changed(self):
         try:
-            # print('requested layer: %s' % str(cfg.emViewer.state.position[0]))
-            # request_layer = floor(cfg.emViewer.state.position[0])
-            # request_layer = int(cfg.emViewer.state.position[0])
+            # print('requested layer: %s' % str(self.state.position[0]))
+            # request_layer = floor(self.state.position[0])
+            # request_layer = int(self.state.position[0])
             request_layer = int(self.state.position[0])
             if request_layer == self._layer:
                 logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
@@ -457,9 +416,8 @@ class EMViewer(neuroglancer.Viewer):
                 self._layer = request_layer
                 logger.info(f'emitting request_layer: {request_layer}')
                 self.signals.stateChanged.emit(request_layer)
-                if self.mp_mode:
+                if cfg.MP_MODE:
                     self.clear_mp_buffer()
-            # zoom = cfg.emViewer.state.cross_section_scale
             zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
@@ -475,7 +433,7 @@ class EMViewer(neuroglancer.Viewer):
 
     def add_matchpoint(self, s):
         logger.info('add_matchpoint:')
-        assert self.mp_mode == True
+        assert cfg.MP_MODE == True
         coords = np.array(s.mouse_voxel_coordinates)
         if coords.ndim == 0:
             logger.warning('Coordinates are dimensionless!')
@@ -493,13 +451,11 @@ class EMViewer(neuroglancer.Viewer):
         except:
             print_exception()
 
-        n_mp_pairs = floor(self._mpCount / 2)
-
+        n_mp_pairs = math.floor(self._mpCount / 2)
 
         props = [self.mp_colors[n_mp_pairs],
                  cfg.main_window.mp_marker_lineweight_spinbox.value(),
                  cfg.main_window.mp_marker_size_spinbox.value(), ]
-        # with cfg.emViewer.txn() as s:
         with self.txn() as s:
             if self._mpCount in range(0, 100, 2):
                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
@@ -521,7 +477,6 @@ class EMViewer(neuroglancer.Viewer):
                                      f'Left img has: {len(self.ref_pts)}\n'
                                      f'Right img has: {len(self.base_pts)}', logging.WARNING)
             return
-
         cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
         p_r = [p.point.tolist() for p in self.ref_pts]
         p_b = [p.point.tolist() for p in self.base_pts]
@@ -552,7 +507,7 @@ class EMViewer(neuroglancer.Viewer):
 
 
     def clear_mp_buffer(self):
-        if self.mp_mode:
+        if cfg.MP_MODE:
             # logger.info('Clearing match point buffer...')
             self._mpCount = 0
             self.ref_pts.clear()
@@ -600,108 +555,18 @@ class EMViewer(neuroglancer.Viewer):
         return annotations
 
 
-    def take_screenshot(self, directory=None):
-        if directory is None:
-            directory = cfg.data.dest()
-        ss = ScreenshotSaver(viewer=self, directory=directory)
-        ss.capture()
+    # def take_screenshot(self, directory=None):
+    #     if directory is None:
+    #         directory = cfg.data.dest()
+    #     ss = ScreenshotSaver(viewer=self, directory=directory)
+    #     ss.capture()
 
 
     def url(self):
-        # str(cfg.emViewer)
-        # return cfg.emViewer.get_viewer_url()
         return self.get_viewer_url()
 
 
 
-    def initViewerSlim(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'Initializing emViewer Slim (caller: {caller})....')
-        cfg.al_tensor = None
-        cfg.unal_tensor = None
-        ng.server.debug = cfg.DEBUG_NEUROGLANCER
-        # cfg.emViewer = ng.Viewer()
-        self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
-        sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
-              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        self.nglayout = sw[self.nglayout]
-        zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
-        path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
-        logger.info(f'tensor: {path}')
-        if not os.path.exists(path):
-            cfg.main_window.warn('Zarr Not Found: %s' % path)
-            return
-        try:
-            if cfg.USE_TENSORSTORE:
-                # logger.info('Getting Tensorstore Result...')
-                cfg.tensor = store = get_zarr_tensor(path).result()
-            else:
-                logger.info('Opening Zarr...')
-                store = zarr.open(path)
-        except:
-            print_exception()
-            cfg.main_window.warn('There was a problem loading tensor at %s' % path)
-            cfg.main_window.warn('Trying with regular Zarr datastore...')
-            try:     store = zarr.open(path)
-            except:  cfg.main_window.warn('Unable to load Zarr'); return
-            else:    print('Zarr Loaded Successfully!')
-        else:
-            print('TensorStore Loaded Successfully!')
-        if cfg.data.is_aligned_and_generated():
-            cfg.al_tensor = cfg.tensor
-        else:
-            cfg.unal_tensor = cfg.tensor
-
-        cfg.main_window.updateToolbar()
-
-        shape = store.shape
-
-        self.coordinate_space = ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
-            units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale())), )
-
-        with self.txn() as s:
-
-            cfg.LV = ng.LocalVolume(
-                data=store,
-                volume_type='image',
-                dimensions=self.coordinate_space,
-                voxel_offset=[0, 0, 0],
-                # downsampling=None
-            )
-            s.layout.type = self.nglayout
-            adjustment = 1.05
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            # s.concurrent_downloads = 512
-            # s.cross_section_scale = cross_section_scale * adjustment
-            s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
-            s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
-            # s.relative_display_scales = {"z": 25}
-            # s.display_dimensions = ["z", "y", "x"]
-            s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
-            s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
-            s.crossSectionBackgroundColor = '#808080' # 128 grey
-
-
-        with self.config_state.txn() as s:
-            s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
-            s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
-            # s.viewer_size = [100,100]
-
-        self._layer = self.request_layer()
-
-        self.shared_state.add_changed_callback(self.on_state_changed)
-        # cfg.emViewer.shared_state.add_changed_callback(lambda: cfg.emViewer.defer_callback(self.on_state_changed))
-
-        if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=self.get_viewer_url())
-
-        # if cfg.HEADLESS:
-        # cfg.webdriver = neuroglancer.webdriver.Webdriver(self, headless=True, browser='chrome',
-        #                                                  debug=True, docker=True
-        #                                                  # extra_command_line_args='-disable-gpu',)
 
 
 
@@ -712,4 +577,5 @@ if __name__ == '__main__':
     ap.add_argument('-p', '--port', type=int, default=9000, help='TCP port to listen on')
     args = ap.parse_args()
 
-    EMViewer(args.source, args.bind, args.port)
+    EMViewer()
+    EMViewer.initViewerSlim()

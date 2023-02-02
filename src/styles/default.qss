@@ -172,11 +172,10 @@ QTreeView#treeview {
 }
 
 
-
 QTextEdit#_tool_afmCafm {
     font-size: 10px;
     color: #ffe135;
-    background-color: rgba(0,0,0,.32);
+    background-color: rgba(0,0,0,.36);
     border-radius: 1px;
     /*padding: 0px;*/
     margin-right: 10px;
