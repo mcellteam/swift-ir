@@ -47,9 +47,6 @@ import qtpy
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ["BLOSC_NOLOCK"] = "1"
 os.environ["BLOSC_NTHREADS"] = "1"
-# os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-# os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --enable-logging --log-level=0'
-# os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 import sys, signal, logging, argparse
 import faulthandler
 
@@ -155,7 +152,6 @@ def main():
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
-
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
     # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'

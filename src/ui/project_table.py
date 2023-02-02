@@ -60,12 +60,13 @@ class ProjectTable(QWidget):
 
     def selection_changed(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         if caller != 'setScaleData':
-            row = self.table.currentIndex().row()
-            # cfg.main_window.tell('Section #%d' % row)
-            cfg.data.set_layer(row)
-            cfg.main_window.dataUpdateWidgets()
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                row = self.table.currentIndex().row()
+                # cfg.main_window.tell('Section #%d' % row)
+                cfg.data.set_layer(row)
+                cfg.main_window.dataUpdateWidgets()
 
 
     def set_column_headers(self):
@@ -85,7 +86,7 @@ class ProjectTable(QWidget):
 
     def setScaleData(self):
         caller = inspect.stack()[1].function
-        logger.critical('Setting Table Data (caller: %s)...' % caller)
+        logger.info('Setting Table Data (caller: %s)...' % caller)
         cur_selection = self.table.currentIndex().row()
         cur_scroll_pos = self.table.verticalScrollBar().value()
         self.setUpdatesEnabled(False)

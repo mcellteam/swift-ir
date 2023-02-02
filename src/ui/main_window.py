@@ -57,8 +57,9 @@ from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_selection, \
     configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, count_widgets, \
     find_allocated_widgets, cleanup_project_list, update_preferences_model
-from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, QFileDialogPreview, \
-    import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, mendenhall_dialog
+from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
+    QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
+    mendenhall_dialog
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
@@ -243,7 +244,8 @@ class MainWindow(QMainWindow):
 
 
     def hardRestartNg(self, matchpoint=False):
-        logger.info('Restarting Neuroglancer...')
+        caller = inspect.stack()[1].function
+        logger.info('Force Restarting Neuroglancer (caller: %s)...' % caller)
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_BEFORE)
         if self._isProjectTab() or self._isZarrTab():
@@ -450,7 +452,7 @@ class MainWindow(QMainWindow):
         logger.info('>>>> autoscale >>>>')
 
         #Todo This should check for existence of original source files before doing anything
-        # self.stopNgServer() #0202-
+        self.stopNgServer() #0202-
         self.tell('Generating TIFF Scale Image Hierarchy...')
         cfg.nTasks = 3
         cfg.nCompleted = 0
@@ -676,7 +678,7 @@ class MainWindow(QMainWindow):
         cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
-        # self.stopNgServer() #0202-
+        self.stopNgServer() #0202-
         self._disableGlobTabs()
         self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
@@ -725,7 +727,8 @@ class MainWindow(QMainWindow):
 
 
     def alignRange(self):
-        start, end = self.sectionRangeSlider.getRange()
+        start = int(self.startRangeInput.text())
+        end = int(self.endRangeInput.text())
         self.tell('Re-aligning Sections #%d through #%d (%s)...' % (start, end, cfg.data.scale_pretty()))
         self.align(
             scale=cfg.data.curScale,
@@ -852,7 +855,7 @@ class MainWindow(QMainWindow):
         cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
-        # self.stopNgServer() #0202-
+        self.stopNgServer() #0202-
         self._disableGlobTabs()
 
         for scale in cfg.data.scales():
@@ -894,7 +897,7 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
-        recipe_dialog = ConfigProjectDialog(parent=self)
+        recipe_dialog = ScaleProjectDialog(parent=self)
         if recipe_dialog.exec():
             logger.info('ConfigProjectDialog - Passing...')
             pass
@@ -917,7 +920,6 @@ class MainWindow(QMainWindow):
             self.pbar_widget.hide()
             self.enableAllTabs()
             self.onStartProject()
-            self.onAlignmentEnd()
         self.tell('**** Processes Complete ****')
 
 
@@ -1271,57 +1273,39 @@ class MainWindow(QMainWindow):
                             cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
                             QApplication.processEvents()
 
+                cur = cfg.data.layer()
 
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.updateLayerLinePos()
                     cfg.project_tab.updatePlotThumbnail()
-
                     styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
                     # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
                     cfg.project_tab.snr_plot.plot.setLabel('top', cfg.data.base_image_name(), **styles)
 
-                self._sectionSlider.setValue(cfg.data.layer())
-                self._jumpToLineedit.setText(str(cfg.data.layer())) #0131+
+                cfg.project_tab.project_table.table.selectRow(cur)
+                self._sectionSlider.setValue(cur)
+                self._jumpToLineedit.setText(str(cur)) #0131+
+                self.updateLayerDetails()
+                if cfg.MP_MODE:
+                    self.matchpoint_text_snr.setText(cfg.data.snr_report())
+                    self.updateMatchpointThumbnails()
+                else:
+                    try:     self._jumpToLineedit.setText(str(cur))
+                    except:  logger.warning('Current Layer Widget Failed to Update')
+                    try:     self._skipCheckbox.setChecked(cfg.data.skipped())
+                    except:  logger.warning('Skip Toggle Widget Failed to Update')
+                    try:     self._whiteningControl.setValue(cfg.data.whitening())
+                    except:  logger.warning('Whitening Input Widget Failed to Update')
+                    try:     self._swimWindowControl.setValue(cfg.data.swim_window() * 100.)
+                    except:  logger.warning('Swim Input Widget Failed to Update')
+                    try:
+                        if cfg.data.null_cafm():
+                            self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
+                        else:
+                            self._polyBiasCombo.setCurrentText('None')
+                    except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+                    # cfg.project_tab.resetCrossSectionScaleSlider()
 
-                # try:
-                #     if self.detachedNg.view.isVisible():
-                #         if cfg.project_tab:
-                #             cfg.project_tab.updateNgLayer()
-                #         if cfg.zarr_tab:
-                #             cfg.zarr_tab.updateNgLayer()
-                # except:
-                #     print_exception()
-
-                try:
-                    self.updateLayerDetails()
-                    if cfg.MP_MODE:
-                        try:
-                            self.matchpoint_text_snr.setText(cfg.data.snr_report())
-                            self.updateMatchpointThumbnails()
-                        except:
-                            print_exception()
-                    else:
-
-                        try:     self._jumpToLineedit.setText(str(cfg.data.layer()))
-                        except:  logger.warning('Current Layer Widget Failed to Update')
-                        try:     self._skipCheckbox.setChecked(cfg.data.skipped())
-                        except:  logger.warning('Skip Toggle Widget Failed to Update')
-                        try:     self._whiteningControl.setValue(cfg.data.whitening())
-                        except:  logger.warning('Whitening Input Widget Failed to Update')
-                        try:     self._swimWindowControl.setValue(cfg.data.swim_window() * 100.)
-                        except:  logger.warning('Swim Input Widget Failed to Update')
-                        try:
-                            if cfg.data.null_cafm():
-                                self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
-                            else:
-                                self._polyBiasCombo.setCurrentText('None')
-                        except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
-
-                        # cfg.project_tab.resetCrossSectionScaleSlider()
-
-                except:
-                    print_exception()
-                    logger.warning('dataUpdateWidgets bugging out')
 
 
     def updateLayerDetails(self, s=None, l=None):
@@ -1603,7 +1587,7 @@ class MainWindow(QMainWindow):
         if caller != 'set_nglayout_combo_text':
             if caller in ('main', '<lambda>'):
                 if caller != 'onStartProject':
-                    if not cfg.data:
+                    if cfg.data:
                         if cfg.project_tab or cfg.zarr_tab:
                             logger.info(f'3')
                             choice = self.comboboxNgLayout.currentText()
@@ -1623,7 +1607,7 @@ class MainWindow(QMainWindow):
                                 layout_actions[choice].setChecked(True)
 
                                 if cfg.project_tab:
-                                    self.hardRestartNg()
+                                    cfg.project_tab.initNeuroglancer()
                                 elif cfg.zarr_tab:
                                     self.hardRestartNg()
                                  # cfg.project_tab.refreshNeuroglancerURL()
@@ -1730,7 +1714,7 @@ class MainWindow(QMainWindow):
                 print_exception()
                 return
 
-            recipe_dialog = ConfigProjectDialog(parent=self)
+            recipe_dialog = ScaleProjectDialog(parent=self)
             if recipe_dialog.exec():
                 logger.info('ConfigProjectDialog - Passing...')
                 pass
@@ -1900,10 +1884,9 @@ class MainWindow(QMainWindow):
         # logger.critical('caller: %s' % caller)
         logger.critical('Loading project...')
         cfg.data.update_cache()
-        cfg.data.set_defaults()  # BEFORE dataUpdateWidgets
-        # cfg.project_tab.initNeuroglancer()
+        cfg.data.set_defaults()
         # self.hardRestartNg()
-        self.shutdownNeuroglancer()
+        # self.shutdownNeuroglancer()
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
         self.dataUpdateWidgets()
@@ -1925,26 +1908,8 @@ class MainWindow(QMainWindow):
         self.tell('Updating Table Data...')
         cfg.project_tab.project_table.setScaleData()
         self.hud.done()
-
         cfg.main_window._sectionSlider.setValue(int(cfg.data.n_sections() / 2))
-        # self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
-        QApplication.processEvents()
-
-    # def initNeuroglancer(self, layout=None, matchpoint=None):
-    #     caller = inspect.stack()[1].function
-    #     logger.info(f'caller: {caller}')
-    #     if cfg.data:
-    #         if layout:
-    #             cfg.main_window.comboboxNgLayout.setCurrentText(layout)
-    #         # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
-    #         if cfg.main_window.rb0.isChecked():
-    #             cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-    #             cfg.emViewer = NgHostSlim(parent=self, project=True)
-    #         elif cfg.main_window.rb1.isChecked():
-    #             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-    #             cfg.emViewer = EMViewer(parent=self)
-    #         cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-    #         self.updateNeuroglancer(matchpoint=matchpoint)
+        self.update()
 
 
 
@@ -2971,21 +2936,20 @@ class MainWindow(QMainWindow):
     def _onGlobTabChange(self):
         logger.info('')
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
 
         if self.globTabs.count() == 0:
             return
-        if caller == 'onStartProject':
+        # if caller in ('onStartProject','_setLastTab'):
+        if caller in ('onStartProject'):
             return
+
+        logger.critical('Changing global tab (caller: %s)...' % caller)
+
 
         cfg.selected_file = None
         self.globTabs.show()
         self.stopPlaybackTimer()
         tabtype = self._getTabType()
-
-
-        if caller == 'initLaunchTab':
-            return
 
         if tabtype == 'OpenProject':
             self._actions_widget.show()
@@ -2994,18 +2958,13 @@ class MainWindow(QMainWindow):
         else:
             self._actions_widget.hide()
 
-        # #0124- !!!!
-        # if (caller == 'main') or (caller == '_onGlobTabClose') or (caller == '_setLastTab'):
-        #     self.shutdownNeuroglancer()
 
-        # if caller != 'new_project':
         if self._isProjectTab():
             # logger.info('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = self.globTabs.currentWidget()
             cfg.zarr_tab = None
             self.dataUpdateWidgets()
-
             # self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)  # must be before initNeuroglancer
             if self.rb0.isChecked():
                 self.set_nglayout_combo_text(layout='4panel')  # must be before initNeuroglancer
@@ -3017,11 +2976,8 @@ class MainWindow(QMainWindow):
             self.sectionRangeSlider.setMax(len(cfg.data))
             self.sectionRangeSlider.setEnd(len(cfg.data))
             cfg.main_window.update()
-
-
-            # cfg.project_tab.initNeuroglancer() #!!!!
-            self.hardRestartNg()
-
+            cfg.project_tab.initNeuroglancer()
+            # self.hardRestartNg()
         else:
             cfg.data = None
             cfg.project_tab = None
@@ -3516,19 +3472,19 @@ class MainWindow(QMainWindow):
 
         configMenu = self.menu.addMenu('Configure')
 
-        self.rescaleAction = QAction('Project...', self)
+        self.rescaleAction = QAction('Rescale...', self)
         self.rescaleAction.triggered.connect(self.rescale)
         configMenu.addAction(self.rescaleAction)
 
-        # self.projectConfigAction = QAction('Project...', self)
-        # self.projectConfigAction.triggered.connect(self._dlg_cfg_project)
-        # configMenu.addAction(self.projectConfigAction)
+        self.projectConfigAction = QAction('Configure Project...', self)
+        self.projectConfigAction.triggered.connect(self._dlg_cfg_project)
+        configMenu.addAction(self.projectConfigAction)
 
-        self.appConfigAction = QAction('Application...', self)
+        self.appConfigAction = QAction('Configure Debugging...', self)
         self.appConfigAction.triggered.connect(self._dlg_cfg_application)
         configMenu.addAction(self.appConfigAction)
 
-        self.setPlaybackSpeedAction = QAction('Playback...', self)
+        self.setPlaybackSpeedAction = QAction('Configure Playback...', self)
         self.setPlaybackSpeedAction.triggered.connect(self.setPlaybackSpeed)
         configMenu.addAction(self.setPlaybackSpeedAction)
 
@@ -3806,10 +3762,10 @@ class MainWindow(QMainWindow):
         # self._whiteningControl.setValue(cfg.DEFAULT_WHITENING)
         self._whiteningControl.setFixedSize(std_input_size)
         self._whiteningControl.setDecimals(2)
-        self._whiteningControl.setMinimum(-0.99)
-        self._whiteningControl.setMaximum(0.99)
+        self._whiteningControl.setSingleStep(.02)
+        self._whiteningControl.setMinimum(-2)
+        self._whiteningControl.setMaximum(2)
         # self._whiteningControl.setEnabled(False)
-
         lab.setStatusTip(tip)
         self._whiteningControl.setStatusTip(tip)
         lay = QHBoxLayout()
@@ -4015,7 +3971,7 @@ class MainWindow(QMainWindow):
 
         tip = "Recomputes the cumulative affine and generates new aligned images" \
               "based on the current Null Bias and Bounding Rectangle presets."
-        self._btn_regenerate = QPushButton('Generate All')
+        self._btn_regenerate = QPushButton('Regenerate')
         self._btn_regenerate.setStyleSheet('font-size: 10px;')
         self._btn_regenerate.setEnabled(False)
         self._btn_regenerate.setStatusTip(tip)
@@ -4798,6 +4754,7 @@ class MainWindow(QMainWindow):
 
         # self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button = QPushButton('Stop')
+        self.pbar_cancel_button.setFixedSize(48,22)
         self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("font-size: 10px;")
