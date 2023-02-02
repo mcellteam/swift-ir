@@ -439,7 +439,10 @@ class EMViewer(neuroglancer.Viewer):
             cfg.main_window.detachedNg.open(url=self.get_viewer_url())
         # if cfg.HEADLESS:
         #     cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.emViewer, headless=False, browser='chrome')
-        cfg.webdriver = neuroglancer.webdriver.Webdriver(self, headless=True, browser='chrome')
+        # if cfg.HEADLESS:
+        # cfg.webdriver = neuroglancer.webdriver.Webdriver(self, headless=True, browser='chrome',
+        #                                                  debug=True, docker=True
+        #                                                  # extra_command_line_args='-disable-gpu',)
 
 
     def on_state_changed(self):
@@ -696,14 +699,9 @@ class EMViewer(neuroglancer.Viewer):
             cfg.main_window.detachedNg.open(url=self.get_viewer_url())
 
         # if cfg.HEADLESS:
-        cfg.webdriver = neuroglancer.webdriver.Webdriver(self,
-                                                         headless=True,
-                                                         browser='chrome',
-                                                         debug=True,
-                                                         docker=True
-                                                         # extra_command_line_args='-disable-gpu',
-
-                                                         )
+        # cfg.webdriver = neuroglancer.webdriver.Webdriver(self, headless=True, browser='chrome',
+        #                                                  debug=True, docker=True
+        #                                                  # extra_command_line_args='-disable-gpu',)
 
 
 
