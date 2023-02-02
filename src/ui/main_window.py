@@ -2218,11 +2218,17 @@ class MainWindow(QMainWindow):
     def html_view(self):
         app_root = self.get_application_root()
         html_f = os.path.join(app_root, 'src', 'resources', 'remod.html')
-        print(html_f)
         with open(html_f, 'r') as f:
             html = f.read()
         self.browser_web.setHtml(html)
         self.main_stack_widget.setCurrentIndex(1)
+
+    def html_resource(self, resource='features.html'):
+        html_f = os.path.join(self.get_application_root(), 'src', 'resources', resource)
+        with open(html_f, 'r') as f:
+            html = f.read()
+        self.browser_html.setHtml(html)
+        self.main_stack_widget.setCurrentIndex(4)
 
 
     def documentation_view(self):
@@ -3699,6 +3705,10 @@ class MainWindow(QMainWindow):
         action.triggered.connect(self.html_view)
         helpMenu.addAction(action)
 
+        self.featuresAction = QAction('AlignEM-SWiFT Features', self)
+        self.featuresAction.triggered.connect(lambda: self.html_resource(resource='features.html'))
+        helpMenu.addAction(self.featuresAction)
+
         self.documentationAction = QAction('Documentation', self)
         self.documentationAction.triggered.connect(self.documentation_view)
         helpMenu.addAction(self.documentationAction)
@@ -4620,16 +4630,34 @@ class MainWindow(QMainWindow):
         self._splitter.setStretchFactor(3, 1)
         self._splitter.setStretchFactor(4, 1)
 
+        self.browser_html_widget = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        self.browser_html = QWebEngineView()
+        vbl.addWidget(self.browser_html)
+        self.browser_html_widget.setLayout(vbl)
+
+        btn = QPushButton()
+        btn.setStatusTip('Go Back')
+        btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        btn.clicked.connect(lambda: self.main_stack_widget.setCurrentIndex(0))
+        btn.setFixedSize(QSize(20, 20))
+        btn.setIcon(qta.icon('fa.arrow-left', color=ICON_COLOR))
+
         '''Documentation Panel'''
         self.browser_web = QWebEngineView()
         # self.browser = WebPage(self)
-        self._buttonExitBrowserWeb = QPushButton("Exit")
-        self._buttonExitBrowserWeb.setFixedSize(64, 20)
+        self._buttonExitBrowserWeb = QPushButton()
+        self._buttonExitBrowserWeb.setFixedSize(18, 18)
+        self._buttonExitBrowserWeb.setIcon(qta.icon('fa.arrow-left', color=ICON_COLOR))
+        self._buttonExitBrowserWeb.setStyleSheet('font-size: 9px;')
         self._buttonExitBrowserWeb.setFixedSize(std_button_size)
         self._buttonExitBrowserWeb.clicked.connect(self.exit_docs)
-        self._readmeButton = QPushButton("README.md")
-        self._readmeButton.setFixedSize(std_button_size)
-        self._readmeButton.clicked.connect(self.documentation_view)
+        # self._readmeButton = QPushButton("README.md")
+        # self._readmeButton.setFixedSize(50, 18)
+        # self._readmeButton.setStyleSheet('font-size: 9px;')
+        # self._readmeButton.setFixedSize(std_button_size)
+        # self._readmeButton.clicked.connect(self.documentation_view)
         self.browser_widget = QWidget()
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -4651,6 +4679,8 @@ class MainWindow(QMainWindow):
 
         def browser_paste():
             self.browser_web.page().triggerAction(QWebEnginePage.Paste)
+
+
 
         buttonBrowserBack = QPushButton()
         buttonBrowserBack.setStatusTip('Go Back')
@@ -4725,10 +4755,10 @@ class MainWindow(QMainWindow):
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self._buttonExitBrowserWeb, alignment=Qt.AlignmentFlag.AlignLeft)
-        hbl.addWidget(self._readmeButton, alignment=Qt.AlignmentFlag.AlignLeft)
+        # hbl.addWidget(self._readmeButton, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(w)
         browser_bottom_controls = QWidget()
-        browser_bottom_controls.setFixedHeight(24)
+        browser_bottom_controls.setFixedHeight(20)
         browser_bottom_controls.setLayout(hbl)
         # self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         # hbl.addSpacerItem(self.spacer_item_docs)
@@ -4774,9 +4804,10 @@ class MainWindow(QMainWindow):
         #Todo keep this main_stack_widget for now, repurpose later
         self.main_stack_widget = QStackedWidget(self)               #____INDEX____
         self.main_stack_widget.addWidget(self.main_panel)           # (0)
-        self.main_stack_widget.addWidget(self.browser_widget)           # (1)
+        self.main_stack_widget.addWidget(self.browser_widget)       # (1)
         self.main_stack_widget.addWidget(self._wdg_demos)           # (2)
         self.main_stack_widget.addWidget(self._wdg_remote_viewer)   # (3)
+        self.main_stack_widget.addWidget(self.browser_html_widget)  # (4)
         self.main_panel.setLayout(vbl)
         # self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
         self.setCentralWidget(self.main_stack_widget)
