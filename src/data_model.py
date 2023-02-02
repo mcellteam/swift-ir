@@ -214,24 +214,15 @@ class DataModel:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
 
+    def notes(self, s=None, l=None):
+        return self._data['data']['scales'][s]['alignment_stack'][l]['notes']
 
-    # def set_defaults_alignment_stack(self, s=None):
-    #     if s == None: s = self.scale()
-    #     logger.critical(f'caller: {inspect.stack()[1].function}')
-    #
-    #     for s in self.scales():
-    #         scale = self._data['data']['scales'][s]
-    #
-    #         for layer_index in range(len(scale['alignment_stack'])):
-    #             layer = scale['alignment_stack'][layer_index]
-    #             layer.setdefault('align_to_ref_method', {})
-    #             layer['align_to_ref_method'].setdefault('method_data', {})
-    #             layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-    #             layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-    #             if s == self.coarsest_scale_key():
-    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
-    #             else:
-    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+
+    def save_notes(self, text, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        self._data['data']['scales'][s]['alignment_stack'][l]['notes'] = text
+
 
     def sl(self):
         return (self.curScale, self.layer())
