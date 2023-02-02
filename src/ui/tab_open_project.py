@@ -210,7 +210,6 @@ class UserProjects(QWidget):
         n_sections, img_dimensions, bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
         for p in self.project_paths:
-            logger.info('Getting datamodel...')
             try:
                 with open(p, 'r') as f:
                     dm = DataModel(data=json.load(f), quitely=True)
@@ -226,9 +225,9 @@ class UserProjects(QWidget):
             except: img_dimensions.append('Unknown')
             try:    projects.append(os.path.basename(p))
             except: projects.append('Unknown')
-            logger.info('Getting project size...')
             project_dir = os.path.splitext(p)[0]
             try:
+                # logger.info('Getting project size...')
                 # _bytes = get_bytes(project_dir)
                 # bytes.append(_bytes)
                 bytes.append('N/A')

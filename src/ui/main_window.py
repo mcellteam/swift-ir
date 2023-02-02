@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
     resized = Signal()
     keyPressed = Signal(int)
     alignmentFinished = Signal()
-    syncAll = Signal()
+    updateTable = Signal()
     setInteractive = Signal()
 
     def __init__(self, data=None):
@@ -124,8 +124,7 @@ class MainWindow(QMainWindow):
         self.alignmentFinished.connect(self.updateToolbar)
         self.alignmentFinished.connect(self.dataUpdateWidgets)
         self.alignmentFinished.connect(self.updateMenus)
-
-
+        self.updateTable.connect(self.updateProjectTable)
         self.setInteractive.connect(self.restore_interactivity)
 
         self.tell('To Relaunch:\n\n  cd $WORK/swift-ir\n  source tacc_boostrap\n')
@@ -160,7 +159,7 @@ class MainWindow(QMainWindow):
 
 
     def setAppropriateNgLayout(self):
-        logger.critical('')
+        logger.info('')
         current_text = self.comboboxNgLayout.currentText()
         if self.rb0.isChecked():
             if current_text != '4panel':
@@ -178,18 +177,17 @@ class MainWindow(QMainWindow):
 
     # def ngRadiobuttonChanged(self, checked):
     def ngRadiobuttonChanged(self, checked):
-        logger.critical('')
+        # logger.critical('')
         if checked:
             if self._isProjectTab():
                 if self.rb0.isChecked():
-                    logger.critical('rb0 is checked!')
+                    logger.info('rb0 has been checked')
                     self.setAppropriateNgLayout()
                     cfg.project_tab._overlayBottomLeft.hide()
                     cfg.project_tab._overlayLab.hide()
                     cfg.project_tab._overlayRect.hide()
                     self.comboboxNgLayout.setCurrentText('4panel')
                     # cfg.project_tab._overlayNotification.show()
-                    cfg.project_tab._widgetArea_details.show()
                     # cfg.project_tab.initNeuroglancer()
                     self.hardRestartNg()
                     # cfg.project_tab.updateNeuroglancer()
@@ -197,9 +195,8 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.ng_browser.reload()
 
                 elif self.rb1.isChecked() or self.rb2.isChecked():
-                    logger.critical('rb1/2 is checked!')
+                    logger.info('rb1/rb2 has been checked')
                     self.setAppropriateNgLayout()
-                    cfg.project_tab._widgetArea_details.show()
                     # cfg.project_tab.initNeuroglancer()
                     self.hardRestartNg()
                     # cfg.emViewer.initViewer()
@@ -241,6 +238,7 @@ class MainWindow(QMainWindow):
             if cfg.project_tab:
                 cfg.project_tab.initNeuroglancer(matchpoint=matchpoint)
                 # cfg.project_tab.resetCrossSectionScaleSlider()
+                # cfg.project_tab.ng_browser.setFocus()
             if cfg.zarr_tab:
                 cfg.zarr_tab.initNeuroglancer()
         if cfg.USE_DELAY:
@@ -255,7 +253,8 @@ class MainWindow(QMainWindow):
                         # self.hardRestartNg()
                         # cfg.project_tab.initNeuroglancer()
                         # cfg.project_tab.updateNeuroglancer()
-                        cfg.project_tab.ng_browser.reload()
+                        cfg.project_tab.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
+                        # cfg.project_tab.ng_browser.reload()
                     if cfg.project_tab._tabs.currentIndex() == 1:
                         logger.critical('Refreshing Table...')
                         self.tell('Refreshing Table...')
@@ -279,8 +278,7 @@ class MainWindow(QMainWindow):
             logger.critical('Stopping Neuroglancer...')
             # self.tell('Stopping Neuroglancer...')
             ng.server.stop()
-            logger.info('Is server running? %r ' % ng.is_server_running())
-            time.sleep(1)
+            time.sleep(.1)
             self.hud.done()
 
 
@@ -506,6 +504,7 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()
         # cfg.project_tab.initNeuroglancer()
         self.pbarLabel.setText('')
+        self.tell('**** Processes Complete ****')
         logger.info('<<<< autoscale <<<<')
 
 
@@ -574,12 +573,12 @@ class MainWindow(QMainWindow):
             scale = cfg.data.scale()
             cfg.project_tab._onTabChange()
             if are_aligned_images_generated(dir=dir, scale=scale):
-                self.tell('Regenerate Succeeded')
+                pass
             else:
                 self.err('Image Generation Failed Unexpectedly. Try Re-aligning.')
             self.pbar_widget.hide()
             cfg.project_tab.initNeuroglancer()
-            QApplication.processEvents()
+            self.tell('**** Processes Complete ****')
 
 
     def verify_alignment_readiness(self) -> bool:
@@ -681,6 +680,11 @@ class MainWindow(QMainWindow):
             reallocate_zarr=True
         )
         if not cfg.CancelProcesses:
+            if exist_aligned_zarr_cur_scale():
+                self.tell('The Stack is Aligned!')
+                logger.info('Alignment seems successful')
+            else:
+                self.warn('Something Went Wrong')
             if is_realign:
                 logger.info('Calculating SNR Diff Values...')
                 diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
@@ -700,10 +704,8 @@ class MainWindow(QMainWindow):
                     self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
             self.onAlignmentEnd()
             self.hardRestartNg()
-            if exist_aligned_zarr_cur_scale():
-                self.tell('The Stack is Aligned!')
-                logger.info('Alignment seems successful')
         self.setInteractive.emit()
+        self.tell('**** Processes Complete ****')
 
 
     def alignForward(self):
@@ -717,6 +719,7 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd()
         self.hardRestartNg()
         self.setInteractive.emit()
+        self.tell('**** Processes Complete ****')
 
 
     def alignOne(self):
@@ -731,10 +734,11 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd()
         self.hardRestartNg()
-        self.tell('Section #%d is Re-aligned!' % layer)
+        self.tell('Section #%d Alignment Complete' % layer)
         self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
                                                              cfg.data.snr(l=layer)))
         self.setInteractive.emit()
+        self.tell('**** Processes Complete ****')
 
     def alignOneMp(self):
         self.tell('Re-aligning Section #%d' % cfg.data.layer())
@@ -748,10 +752,11 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd()
         self.hardRestartNg()
-        self.tell('Section #%d is Re-aligned!' % layer)
+        self.tell('Section #%d Alignment Complete' % layer)
         self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
                                                              cfg.data.snr(l=layer)))
         self.setInteractive.emit()
+        self.tell('**** Processes Complete ****')
 
 
     def align(self, scale, start, end, renew_od=False, reallocate_zarr=False):
@@ -895,6 +900,7 @@ class MainWindow(QMainWindow):
             self.enableAllTabs()
             self.onStartProject()
             self.onAlignmentEnd()
+        self.tell('**** Processes Complete ****')
 
 
     def generate_multiscale_zarr(self):
@@ -1222,7 +1228,7 @@ class MainWindow(QMainWindow):
                             #     cfg.project_tab._overlayRect.hide()
                             #     cfg.project_tab._overlayLab.hide()
                                 # QApplication.processEvents()
-                            cfg.project_tab._widgetArea_details.show()
+                            cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
                             QApplication.processEvents()
 
 
@@ -1424,7 +1430,7 @@ class MainWindow(QMainWindow):
     def _resetSliderAndJumpInput(self):
         '''Requires Neuroglancer '''
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.info(f'caller: {caller}')
         if cfg.data:
             try:
                 if self._isProjectTab() or self._isZarrTab():
@@ -1772,6 +1778,8 @@ class MainWindow(QMainWindow):
         # logger.info(f'caller: {caller}')
         logger.info('')
 
+        self.stopPlaybackTimer()
+
         if self._getTabType() == 'ZarrTab':
             self.open_zarr()
             return
@@ -1783,8 +1791,7 @@ class MainWindow(QMainWindow):
 
         filename = cfg.selected_file
         logger.critical(f'Opening Project {filename}...')
-        self.tell('Loading Project "%s"...' % filename)
-        self.stopPlaybackTimer()
+        self.tell('Loading Project "%s"' % filename)
 
         try:
             with open(filename, 'r') as f:
@@ -1810,11 +1817,10 @@ class MainWindow(QMainWindow):
         # self.rb0.setChecked(True)
         # self._jumpToLineedit.setText(str(cfg.data.layer())) #0123-
 
-        if cfg.data.is_aligned():
-            self._showSNRcheck()
+        # if cfg.data.is_aligned():
+        #     self._showSNRcheck()
 
         # self.onStartProject()
-        self.hud.done()
 
 
     def open_zarr(self):
@@ -1848,23 +1854,27 @@ class MainWindow(QMainWindow):
         logger.critical('Loading project...')
         cfg.data.update_cache()
         cfg.data.set_defaults()  # BEFORE dataUpdateWidgets
-        self._changeScaleCombo.setCurrentText(cfg.data.curScale)
-        self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         # cfg.project_tab.initNeuroglancer()
-        self.hardRestartNg()
-        # cfg.project_tab.initNeuroglancer()
-        cfg.project_tab.project_table.setScaleData()
-        # cfg.project_tab.project_table.setScaleData()
+        # self.hardRestartNg()
+        self.shutdownNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
+        self.tell('Updating UI...')
         self.dataUpdateWidgets()
         try:    self._bbToggle.setChecked(cfg.data.has_bb())
         except: logger.warning('Bounding Rect Widget Failed to Update')
+        self._changeScaleCombo.setCurrentText(cfg.data.curScale)
+        self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         self.updateEnabledButtons()
         self.updateMenus()
         self.updateToolbar()
         self.enableAllTabs()
+        self.hud.done()
+        self.tell('Updating Table Data...')
+        cfg.project_tab.project_table.setScaleData()
+        self.hud.done()
+
         cfg.main_window._sectionSlider.setValue(int(cfg.data.n_sections() / 2))
         self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
-        cfg.project_tab._widgetArea_details.show()
         QApplication.processEvents()
 
     # def initNeuroglancer(self, layout=None, matchpoint=None):
@@ -2452,28 +2462,29 @@ class MainWindow(QMainWindow):
 
             if cfg.project_tab:
                 if cfg.MP_MODE == False:
-                    logger.critical('Entering Match Point Mode...')
-                    self.rb1.setChecked(True)
-
-
                     self.tell('Entering Match Point Mode...')
+                    logger.critical('Entering Match Point Mode...')
                     cfg.MP_MODE = True
-                    self._changeScaleCombo.setEnabled(False)
+                    cfg.project_tab.bookmark_tab = cfg.project_tab._tabs.currentIndex()
+                    cfg.project_tab._tabs.setCurrentIndex(0)
+                    cfg.project_tab._tabs.currentWidget().setStyleSheet(
+                        'background-color: #1b1e23; '
+                        'color: #f3f6fb;'
+                    )
+                    cfg.project_tab.ngVertLab.setText('Match Point Mode')
+                    cfg.project_tab._widgetArea_details.setVisible(False)
+                    self.rb1.setChecked(True)
                     self.rb0.setEnabled(False)
                     self.rb1.setChecked(True)
-                    self.extra_header_text_label.setText('Match Point Mode')
+                    self._changeScaleCombo.setEnabled(False)
+                    # self.extra_header_text_label.setText('Match Point Mode')
+                    # self.extra_header_text_label.show()
                     self._forceHideControls()
                     self.matchpointControlPanel.show()
                     if cfg.data.is_aligned_and_generated():
                         self.update_match_point_snr()
-                    self.extra_header_text_label.show()
                     self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
                     self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                    # self.rb0.setEnabled(False)
-
-
-                    self.extra_header_text_label.show()
-                    cfg.project_tab._tabs.setCurrentIndex(0)
                     self._disableGlobTabs()
                     if cfg.project_tab:
                         for i in range(1, 4):
@@ -2483,26 +2494,26 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.initNeuroglancer(matchpoint=True, layout='xy')
                     self.hardRestartNg(matchpoint=True)
                     # self.neuroglancer_configuration_1()
+                    cfg.project_tab._widgetArea_details.setVisible(False)
+                    cfg.project_tab.ng_browser.setFocus()
                 else:
                     logger.critical('Exiting Match Point Mode...')
-                    self.tell('Exiting Match Point Mode...')
+                    self.tell('Returning to Normal Mode...')
                     cfg.MP_MODE = False
+                    cfg.project_tab._tabs.currentWidget().setStyleSheet('')
+                    cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
+                    cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+                    self.matchpointControlPanel.hide()
+                    self.enableAllTabs()
+                    cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
+                    self.rb0.setEnabled(True)
                     self.rb0.setEnabled(True)
                     self._changeScaleCombo.setEnabled(True)
                     # self.extra_header_text_label.setText('')
-                    self.extra_header_text_label.hide()
+                    # self.extra_header_text_label.hide()
                     self._forceShowControls()
-                    # self.updateSkipMatchWidget()s
-                    self.initView()
-                    cfg.project_tab.ng_layout = '4panel'
-                    self.rb0.setEnabled(True)
-                    self.enableAllTabs()
-                    # cfg.project_tab.updateNeuroglancer(matchpoint=False, layout='4panel')
-                    # cfg.project_tab.initNeuroglancer(matchpoint=False)
                     self.hardRestartNg(matchpoint=False)
                     # self.neuroglancer_configuration_0()
-                    if cfg.project_tab._tabs.currentIndex() == 3:
-                        cfg.project_tab.snr_plot.updateSpecialLayerLines()
                 self.updateToolbar()
                 # cfg.project_tab.updateNeuroglancer()
 
@@ -3285,8 +3296,10 @@ class MainWindow(QMainWindow):
         # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
         ngMenu.hovered.connect(self.updateNgMenuStateWidgets)
         self.ngStateMenu.addAction(action)
-
         self.clearNgStateMenus()
+
+        self.tensorMenu = ngMenu.addMenu('Tensors')
+        self.clearTensorMenu()
 
         ngPerspectiveMenu = ngMenu.addMenu("Perspective")
 
@@ -3435,9 +3448,6 @@ class MainWindow(QMainWindow):
         self.hardRestartNgNgAction.triggered.connect(self.hardRestartNg)
         ngMenu.addAction(self.hardRestartNgNgAction)
 
-
-        self.tensorMenu = self.menu.addMenu('Tensors')
-        self.clearTensorMenu()
 
         configMenu = self.menu.addMenu('Configure')
 
@@ -4669,7 +4679,7 @@ class MainWindow(QMainWindow):
         self.status_bar_layout.setContentsMargins(0, 0, 0, 0)
 
         # self.pbar_cancel_button = QPushButton('Stop')
-        self.pbar_cancel_button = QPushButton()
+        self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("font-size: 10px;")

@@ -8,9 +8,10 @@ https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 import time
 import random
 import logging
+import inspect
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtCore import QObject, QThread, Qt, Signal, Slot, QSize
-from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
+from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
 
 
 logger = logging.getLogger("hud")
@@ -134,12 +135,15 @@ class HeadupDisplay(QWidget):
 
 
     def done(self):
+        caller = inspect.stack()[1].function
+
         txt = self.textedit.toPlainText()
         self.textedit.undo()
         last_line = txt.split('[INFO]')[-1].lstrip()
         if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
             return
-        self.post(last_line + 'done.')
+        # self.post(last_line + 'done.')
+        self.post(last_line + 'done(%s).' % caller)
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 

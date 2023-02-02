@@ -63,7 +63,7 @@ class ProjectTable(QWidget):
         logger.info(f'caller: {caller}')
         if caller != 'setScaleData':
             row = self.table.currentIndex().row()
-            cfg.main_window.tell('Section #%d' % row)
+            # cfg.main_window.tell('Section #%d' % row)
             cfg.data.set_layer(row)
             cfg.main_window.dataUpdateWidgets()
 
