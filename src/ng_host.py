@@ -183,7 +183,7 @@ class EMViewer(neuroglancer.Viewer):
             s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            # s.relativeDisplayScales = {"z": 25}
+            s.relativeDisplayScales = {"z": 5}
             # s.displayDimensions = ["z", "y", "x"]
             # s.perspective_orientation
 
