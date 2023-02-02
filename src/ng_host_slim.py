@@ -114,7 +114,7 @@ class NgHostSlim(QRunnable):
     def __del__(self):
         try:
             caller = inspect.stack()[1].function
-            print('__del__ was called by [%s] on NgHost, created:%s' % (caller, self.created))
+            print('__del__ was called by [%s] on EMViewer, created:%s' % (caller, self.created))
         except:
             print('Unable to decipher who caller is')
 
@@ -122,32 +122,32 @@ class NgHostSlim(QRunnable):
         return obj_to_string(self)
 
     def __repr__(self):
-        return copy.deepcopy(cfg.viewer.state)
+        return copy.deepcopy(cfg.emViewer.state)
 
     # @Slot()
     # def run(self):
     #     try:
-    #         cfg.viewer = ng.Viewer()
+    #         cfg.emViewer = ng.Viewer()
     #     except:
     #         traceback.print_exc()
 
     def get_loading_progress(self):
         return neuroglancer.webdriver.driver.execute_script('''
-    const userLayer = viewer.layerManager.getLayerByName("segmentation").layer;
+    const userLayer = emViewer.layerManager.getLayerByName("segmentation").layer;
     return userLayer.renderLayers.map(x => x.layerChunkProgressInfo)
      ''')
 
     def request_layer(self):
-        return floor(cfg.viewer.state.position[0])
+        return floor(cfg.emViewer.state.position[0])
 
     def initViewer(self,
                    matchpoint=None):
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
-        logger.info(f'Initializing viewer (caller: {caller})....')
+        logger.info(f'Initializing emViewer (caller: {caller})....')
 
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
-        cfg.viewer = ng.Viewer()
+        cfg.emViewer = ng.Viewer()
         # ng.set_server_bind_address(bind_address=self.bind, bind_port=self.port)
 
         self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
@@ -223,7 +223,7 @@ class NgHostSlim(QRunnable):
 
 
 
-        with cfg.viewer.txn() as s:
+        with cfg.emViewer.txn() as s:
 
             cfg.LV = ng.LocalVolume(
                 data=store,
@@ -266,7 +266,7 @@ class NgHostSlim(QRunnable):
             logger.critical(str(s))
 
 
-        with cfg.viewer.config_state.txn() as s:
+        with cfg.emViewer.config_state.txn() as s:
             s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
             s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
@@ -274,42 +274,42 @@ class NgHostSlim(QRunnable):
         self._layer = self.request_layer()
 
 
-        cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
-        # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+        cfg.emViewer.shared_state.add_changed_callback(self.on_state_changed)
+        # cfg.emViewer.shared_state.add_changed_callback(lambda: cfg.emViewer.defer_callback(self.on_state_changed))
 
         if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=cfg.viewer.get_viewer_url())
+            cfg.main_window.detachedNg.open(url=cfg.emViewer.get_viewer_url())
 
         if cfg.HEADLESS:
-            cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
+            cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.emViewer, headless=False, browser='chrome')
 
-        state = copy.deepcopy(cfg.viewer.state)
+        state = copy.deepcopy(cfg.emViewer.state)
         state.relative_display_scales = {"z": 25}
-        cfg.viewer.set_state(state)
-        # logger.critical('cfg.viewer.state = ' + str(cfg.viewer.state))
-        # logger.critical(f'url: {cfg.viewer.get_viewer_url()}')
-        # logger.critical(f'id(cfg.viewer) = {id(cfg.viewer)}')
+        cfg.emViewer.set_state(state)
+        # logger.critical('cfg.emViewer.state = ' + str(cfg.emViewer.state))
+        # logger.critical(f'url: {cfg.emViewer.get_viewer_url()}')
+        # logger.critical(f'id(cfg.emViewer) = {id(cfg.emViewer)}')
         cfg.LV.invalidate()
 
 
 
     def url(self):
-        return cfg.viewer.get_viewer_url()
+        return cfg.emViewer.get_viewer_url()
 
 
     def on_state_changed(self):
         logger.info('----------------State Changed!----------------')
-        logger.info('cfg.viewer.state = ' + str(cfg.viewer.state))
-        logger.info(f'url: {cfg.viewer.get_viewer_url()}')
+        logger.info('cfg.emViewer.state = ' + str(cfg.emViewer.state))
+        logger.info(f'url: {cfg.emViewer.get_viewer_url()}')
         logger.info('----------------------------------------------')
-        request_layer = int(cfg.viewer.state.position[0])
+        request_layer = int(cfg.emViewer.state.position[0])
         if request_layer == self._layer:
             logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
         else:
             self._layer = request_layer
             logger.info(f'emitting request_layer: {request_layer}')
             self.signals.stateChanged.emit(request_layer)
-        zoom = cfg.viewer.state.cross_section_scale
+        zoom = cfg.emViewer.state.cross_section_scale
         if zoom != self._crossSectionScale:
             logger.info(f'emitting Zoom Changed: {zoom}')
             if zoom:

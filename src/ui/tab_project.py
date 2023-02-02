@@ -13,7 +13,7 @@ from qtpy.QtCore import Qt, QSize, QRect, QUrl
 from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
-from src.ng_host import NgHost
+from src.ng_host import EMViewer
 from src.ng_host_slim import NgHostSlim
 from src.helpers import print_exception
 from src.ui.snr_plot import SnrPlot
@@ -56,7 +56,7 @@ class ProjectTab(QWidget):
         if index == None: index = self._tabs.currentIndex()
         logger.info(f'index = {index}')
         # if index == 0:
-        #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain viewer state
+        #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain emViewer state
         if index == 1:
             # self.project_table.setScaleData()
             # self.project_table.setScaleData() #not sure why this is needed twice
@@ -99,17 +99,18 @@ class ProjectTab(QWidget):
                 # if cfg.main_window.rb0.isChecked():
                 #     # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
                 #     logger.info('Instantiating NgHostSlim...')
-                #     cfg.ng_worker = NgHostSlim(parent=self, project=True)
+                #     cfg.emViewer = NgHostSlim(parent=self, project=True)
                 # elif cfg.main_window.rb1.isChecked():
-                #     logger.info('Instantiating NgHost...')
+                #     logger.info('Instantiating EMViewer...')
                 #     # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-                #     cfg.ng_worker = NgHost(parent=self)
+                #     cfg.emViewer = EMViewer(parent=self)
 
 
-                cfg.ng_worker = NgHost(parent=self)
+                # cfg.emViewer = EMViewer(parent=self)
+                cfg.emViewer = EMViewer()
 
 
-                # cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+                # cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 self.updateNeuroglancer(matchpoint=matchpoint)
 
 
@@ -119,46 +120,43 @@ class ProjectTab(QWidget):
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
         if layout: cfg.main_window.comboboxNgLayout.setCurrentText(layout)
-
-
-
-        cfg.ng_worker.initViewer(matchpoint=matchpoint)
+        cfg.emViewer.initViewer(matchpoint=matchpoint)
 
         if cfg.main_window.rb0.isChecked():
             cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-            cfg.ng_worker.initViewerSlim()
+            cfg.emViewer.initViewerSlim()
         elif cfg.main_window.rb1.isChecked():
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            cfg.ng_worker.initViewer(matchpoint=matchpoint)
+            cfg.emViewer.initViewer(matchpoint=matchpoint)
 
 
 
 
-        logger.critical(f'URL:\n{cfg.viewer.get_viewer_url()}')
-        self.ng_browser.setUrl(QUrl(cfg.viewer.get_viewer_url()))
+        logger.critical(f'URL:\n{cfg.emViewer.get_viewer_url()}')
+        self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
         self.ng_browser.setFocus()
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
         # when to connect this signal is very important
-        cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-        # cfg.ng_worker.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
-        cfg.ng_worker.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
+        cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        # cfg.emViewer.signals.stateChanged.connect(self.resetCrossSectionScaleSlider)
+        cfg.emViewer.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
         # self.resetCrossSectionScaleSlider()
         self.resetSliderZdisplay()
 
     def addToState(self):
-        state = copy.deepcopy(cfg.viewer.state)
+        state = copy.deepcopy(cfg.emViewer.state)
         state.relative_display_scales = {"z": 25}
-        cfg.viewer.set_state(state)
+        cfg.emViewer.set_state(state)
         cfg.LV.invalidate()
 
     def setNeuroglancerUrl(self):
-        self.ng_browser.setUrl(QUrl(cfg.viewer.get_viewer_url()))
+        self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
 
 
     def updateNgLayer(self):
-        state = copy.deepcopy(cfg.viewer.state)
+        state = copy.deepcopy(cfg.emViewer.state)
         state.position[0] = cfg.data.layer()
-        cfg.viewer.set_state(state)
+        cfg.emViewer.set_state(state)
 
 
     def getBrowserSize(self):
@@ -177,11 +175,11 @@ class ProjectTab(QWidget):
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
 
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
@@ -340,7 +338,7 @@ class ProjectTab(QWidget):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
-            val = cfg.viewer.state.cross_section_scale
+            val = cfg.emViewer.state.cross_section_scale
 
             if val:
                 if val != 0:
@@ -357,12 +355,12 @@ class ProjectTab(QWidget):
             # logger.info(f'caller: {caller}')
             try:
                 val = self.crossSectionScaleSlider.value()
-                state = copy.deepcopy(cfg.viewer.state)
+                state = copy.deepcopy(cfg.emViewer.state)
                 # new_val = log2(1 + val)
                 # new_val = val * val
                 # logger.info(f'val = {val}, new_val = {new_val}')
                 state.cross_section_scale = val * val
-                cfg.viewer.set_state(state)
+                cfg.emViewer.set_state(state)
             except:
                 print_exception()
 
@@ -371,9 +369,9 @@ class ProjectTab(QWidget):
         # caller = inspect.stack()[1].function
         try:
             val = self.ZdisplaySlider.value()
-            state = copy.deepcopy(cfg.viewer.state)
+            state = copy.deepcopy(cfg.emViewer.state)
             state.relative_display_scales = {'z': val}
-            cfg.viewer.set_state(state)
+            cfg.emViewer.set_state(state)
         except:
             print_exception()
 
@@ -390,15 +388,15 @@ class ProjectTab(QWidget):
     #     caller = inspect.stack()[1].function
     #     # if caller not in ('resetCrossSectionScaleSlider', 'setValue'):
     #     #     # logger.info(f'caller: {caller}')
-    #     if cfg.viewer.state.cross_section_scale:
-    #         state = copy.deepcopy(cfg.viewer.state)
+    #     if cfg.emViewer.state.cross_section_scale:
+    #         state = copy.deepcopy(cfg.emViewer.state)
     #         val = self.crossSectionOrientationSlider.value()
     #         logger.info(f'val={val}')
     #         # cur_val = state.cross_section_orientation
     #         state.cross_section_orientation = [0,0,0,val]
-    #         cfg.viewer.set_state(state)
+    #         cfg.emViewer.set_state(state)
     #     else:
-    #         logger.warning('cfg.viewer.state.cross_section_scale does not exist!')
+    #         logger.warning('cfg.emViewer.state.cross_section_scale does not exist!')
 
 
 
@@ -550,9 +548,9 @@ class ProjectTab(QWidget):
 
 
     # def upateSnrPlotBrowser(self):
-    #     cfg.ng_worker = NgHost(parent=self)
-    #     cfg.ng_worker.initViewerSlim()
-    #     url = cfg.viewer.get_viewer_url()
+    #     cfg.emViewer = EMViewer(parent=self)
+    #     cfg.emViewer.initViewerSlim()
+    #     url = cfg.emViewer.get_viewer_url()
     #     self.snr_plot_browser.setUrl(QUrl(url))
 
 

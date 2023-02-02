@@ -69,7 +69,7 @@ from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
-from src.ng_host import NgHost
+from src.ng_host import EMViewer
 from src.ng_host_slim import NgHostSlim
 from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._widgetArea_details.show()
                     # cfg.project_tab.initNeuroglancer()
                     self.hardRestartNg()
-                    # cfg.ng_worker.initViewer()
+                    # cfg.emViewer.initViewer()
                     # cfg.project_tab.updateNeuroglancer()
             QApplication.processEvents()
 
@@ -243,9 +243,6 @@ class MainWindow(QMainWindow):
             time.sleep(cfg.DELAY_AFTER)
 
 
-
-
-
     def refreshTab(self):
         if cfg.data:
             if cfg.project_tab:
@@ -253,6 +250,7 @@ class MainWindow(QMainWindow):
                     if cfg.project_tab._tabs.currentIndex() == 0:
                         self.hardRestartNg()
                         # cfg.project_tab.initNeuroglancer()
+                        # cfg.project_tab.updateNeuroglancer()
                     if cfg.project_tab._tabs.currentIndex() == 1:
                         logger.critical('Refreshing Table...')
                         self.tell('Refreshing Table...')
@@ -344,7 +342,7 @@ class MainWindow(QMainWindow):
             'np': np,
             'cfg': src.config,
             'mw': src.config.main_window,
-            'viewer': cfg.viewer,
+            'emViewer': cfg.emViewer,
             'ng': ng,
         }
         text = """
@@ -747,7 +745,7 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False
         )
         self.onAlignmentEnd()
-        cfg.ng_worker.initViewer()
+        self.hardRestartNg()
         self.tell('Section #%d is Re-aligned!' % layer)
         self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
                                                              cfg.data.snr(l=layer)))
@@ -1176,8 +1174,8 @@ class MainWindow(QMainWindow):
                 self._sectionSlider.setValue(ng_layer)
                 self._jumpToLineedit.setText(str(ng_layer))
             else:
-                self._sectionSlider.setValue(cfg.ng_worker._layer)
-                self._jumpToLineedit.setText(str(cfg.ng_worker._layer))
+                self._sectionSlider.setValue(cfg.emViewer._layer)
+                self._jumpToLineedit.setText(str(cfg.emViewer._layer))
             return
         if cfg.project_tab:
             if cfg.data:
@@ -1407,7 +1405,7 @@ class MainWindow(QMainWindow):
     def ng_layer(self):
         '''The idea behind this was to cache the current layer. Not Being Used Currently'''
         try:
-            index = cfg.ng_worker.cur_index
+            index = cfg.emViewer.cur_index
             assert isinstance(index, int)
             return index
         except:
@@ -1416,7 +1414,7 @@ class MainWindow(QMainWindow):
 
     def request_ng_layer(self):
         '''Returns The Currently Shown Layer Index In Neuroglancer'''
-        layer = cfg.ng_worker.request_layer()
+        layer = cfg.emViewer.request_layer()
         logger.info(f'Layer Requested From NG Worker Thread: {layer}')
         return layer
 
@@ -1494,29 +1492,29 @@ class MainWindow(QMainWindow):
         requested = self._sectionSlider.value()
         if cfg.project_tab:
             cfg.data.set_layer(requested)
-        cfg.ng_worker._layer = requested
+        cfg.emViewer._layer = requested
         # logger.info(f'slider, requested: {requested}')
         if cfg.project_tab:
             if requested in range(cfg.data.n_sections()):
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     logger.info('Jumping To Section #%d' % requested)
-                    state = copy.deepcopy(cfg.viewer.state)
+                    state = copy.deepcopy(cfg.emViewer.state)
                     state.position[0] = requested
-                    cfg.viewer.set_state(state)
+                    cfg.emViewer.set_state(state)
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.table.selectRow(requested)
                 # elif self.detachedNg:
                 #     if self.detachedNg.view.isVisible():
-                #         state = copy.deepcopy(cfg.viewer.state)
+                #         state = copy.deepcopy(cfg.emViewer.state)
                 #         state.position[0] = requested
-                #         cfg.viewer.set_state(state)
+                #         cfg.emViewer.set_state(state)
             self.dataUpdateWidgets()
 
         elif cfg.zarr_tab:
             logger.info('Jumping To Section #%d' % requested)
-            state = copy.deepcopy(cfg.viewer.state)
+            state = copy.deepcopy(cfg.emViewer.state)
             state.position[0] = requested
-            cfg.viewer.set_state(state)
+            cfg.emViewer.set_state(state)
 
         try:     self._jumpToLineedit.setText(str(requested))
         except:  logger.warning('Current Layer Widget Failed to Update')
@@ -1830,7 +1828,7 @@ class MainWindow(QMainWindow):
     def openDetatchedZarr(self):
         if cfg.project_tab or cfg.zarr_tab:
             # self.detachedNg = WebPage()
-            self.detachedNg.open(url=str(cfg.viewer))
+            self.detachedNg.open(url=str(cfg.emViewer))
             self.detachedNg.show()
         else:
             if not ng.server.is_server_running():
@@ -1854,7 +1852,7 @@ class MainWindow(QMainWindow):
         self.hardRestartNg()
         # cfg.project_tab.initNeuroglancer()
         cfg.project_tab.project_table.setScaleData()
-        cfg.project_tab.project_table.setScaleData()
+        # cfg.project_tab.project_table.setScaleData()
         self.dataUpdateWidgets()
         try:    self._bbToggle.setChecked(cfg.data.has_bb())
         except: logger.warning('Bounding Rect Widget Failed to Update')
@@ -1876,11 +1874,11 @@ class MainWindow(QMainWindow):
     #         # cfg.main_window.reload_ng_layout_combobox(initial_layout=self.ng_layout)
     #         if cfg.main_window.rb0.isChecked():
     #             cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-    #             cfg.ng_worker = NgHostSlim(parent=self, project=True)
+    #             cfg.emViewer = NgHostSlim(parent=self, project=True)
     #         elif cfg.main_window.rb1.isChecked():
     #             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-    #             cfg.ng_worker = NgHost(parent=self)
-    #         cfg.ng_worker.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+    #             cfg.emViewer = EMViewer(parent=self)
+    #         cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
     #         self.updateNeuroglancer(matchpoint=matchpoint)
 
 
@@ -2185,7 +2183,7 @@ class MainWindow(QMainWindow):
         if ng.is_server_running():
             if s == None: s = cfg.data.curScale
             if cfg.data.is_mendenhall():
-                cfg.ng_worker.menLV.invalidate()
+                cfg.emViewer.menLV.invalidate()
             else:
                 cfg.refLV.invalidate()
                 cfg.baseLV.invalidate()
@@ -2258,7 +2256,7 @@ class MainWindow(QMainWindow):
     def detachNeuroglancer(self):
         if cfg.project_tab or cfg.zarr_tab:
             # self.detachedNg = WebPage()
-            self.detachedNg.open(url=str(cfg.viewer))
+            self.detachedNg.open(url=str(cfg.emViewer))
 
         else:
             if not ng.server.is_server_running():
@@ -2299,7 +2297,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             try:
                 if ng.is_server_running():
-                    txt = json.dumps(cfg.viewer.state.to_json(), indent=2)
+                    txt = json.dumps(cfg.emViewer.state.to_json(), indent=2)
                     return f"Viewer State:\n{txt}"
                 else:
                     return f"Neuroglancer Is Not Running."
@@ -2312,7 +2310,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             try:
                 if ng.is_server_running():
-                    return f"Raw Viewer State:\n{cfg.viewer.config_state.raw_state}"
+                    return f"Raw Viewer State:\n{cfg.emViewer.config_state.raw_state}"
                 else:
                     return f"Neuroglancer Is Not Running."
             except:
@@ -2332,7 +2330,7 @@ class MainWindow(QMainWindow):
             if not ng.is_server_running():
                 logger.warning('Neuroglancer is not running')
                 return
-            v = cfg.viewer
+            v = cfg.emViewer
             self.tell("v.position: %s\n" % str(v.state.position))
             self.tell("v.config_state: %s\n" % str(v.config_state))
 
@@ -4091,7 +4089,7 @@ class MainWindow(QMainWindow):
         self._processMonitorWidget.setLayout(vbl)
 
         # self._btn_refresh = QPushButton('Refresh')
-        # self._btn_refresh.clicked.connect(cfg.ng_worker.ini)
+        # self._btn_refresh.clicked.connect(cfg.emViewer.ini)
 
 
         # self.initControlPanel()

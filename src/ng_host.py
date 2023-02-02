@@ -19,6 +19,7 @@ import numpy as np
 import numcodecs
 numcodecs.blosc.use_threads = False
 import zarr
+import neuroglancer
 import neuroglancer as ng
 import neuroglancer.webdriver
 from neuroglancer.json_wrappers import typed_string_map
@@ -33,7 +34,7 @@ from src.funcs_zarr import get_zarr_tensor, get_zarr_tensor_layer, get_tensor_fr
 from src.helpers import print_exception, get_scale_val, exist_aligned_zarr_cur_scale, obj_to_string
 from src.shaders import ann_shader
 
-__all__ = ['NgHost']
+__all__ = ['EMViewer']
 
 import sys
 import logging
@@ -58,28 +59,24 @@ class WorkerSignals(QObject):
     zoomChanged = Signal(float)
     mpUpdate = Signal()
 
-# class NgHost(QObject):
-class NgHost(QRunnable):
-# class NgHost:
-    # def __init__(self, parent, src, scale, src, scale, bind='127.0.0.1', port=9000):
-    def __init__(self, parent=None, bind='127.0.0.1', port=9000):
-        QRunnable.__init__(self)
-        # QObject.__init__(self)
+
+class EMViewer(neuroglancer.Viewer):
+    def __init__(self):
+        super().__init__()
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
         self._crossSectionScale = 1.0
         self.ref_pts = []
         self.base_pts = []
-        self.bind = bind
-        self.port = port
-        self.scale = None
-        self.zarr_addr = "zarr://http://localhost:" + str(self.port)
+        # self.bind = bind
+        # self.port = port
+        # self.zarr_addr = "zarr://http://localhost:" + str(self.port)
         self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
                           '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
                           '#aaa672', '#152c74', '#404f74']
-        self.mp_count = 0
+        self._mpCount = 0
         self._is_fullscreen = False
         self.arrangement = 1
         self.mp_mode = False
@@ -89,7 +86,8 @@ class NgHost(QRunnable):
     def __del__(self):
         try:
             caller = inspect.stack()[1].function
-            logger.warning('__del__ was called by [%s] on NgHost for s %s created:%s' % (caller, self.scale, self.created))
+            logger.warning('__del__ was called by [%s] on EMViewer - created: %s'
+                           % (caller, self.created))
         except:
             logger.warning('Lost Track Of Caller')
 
@@ -98,25 +96,27 @@ class NgHost(QRunnable):
         return obj_to_string(self)
 
     def __repr__(self):
-        return copy.deepcopy(cfg.viewer.state)
+        # return copy.deepcopy(cfg.emViewer.state)
+        return copy.deepcopy(self.state)
 
     # @Slot()
     async def run(self):
         print('\nrun:\n')
         try:
-            cfg.viewer = ng.Viewer()
+            cfg.emViewer = ng.Viewer()
         except:
             # traceback.print_exc()
             logger.error('ERROR')
 
     def get_loading_progress(self):
         return neuroglancer.webdriver.driver.execute_script('''
-    const userLayer = viewer.layerManager.getLayerByName("segmentation").layer;
+    const userLayer = emViewer.layerManager.getLayerByName("segmentation").layer;
     return userLayer.renderLayers.map(x => x.layerChunkProgressInfo)
      ''')
 
     def request_layer(self):
-        return floor(cfg.viewer.state.position[0])
+        # return floor(cfg.emViewer.state.position[0])
+        return floor(self.state.position[0])
 
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
@@ -134,7 +134,7 @@ class NgHost(QRunnable):
             pass
 
     def initViewerMendenhall(self):
-        logger.critical('Initializing Neuroglancer viewer (Mendenhall)...')
+        logger.critical('Initializing Neuroglancer emViewer (Mendenhall)...')
         path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
         scales = [50, 2, 2]
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
@@ -147,7 +147,7 @@ class NgHost(QRunnable):
             voxel_offset=[0, 0, 0],
         )
         logger.info('Instantiating Viewer...')
-        cfg.viewer = ng.Viewer()
+        cfg.emViewer = ng.Viewer()
         image_size = cfg.data.image_size()
         widget_size = cfg.main_window.globTabs.size()
         logger.critical(f'cfg.main_window.globTabs.size() = {cfg.main_window.globTabs.size()}')
@@ -162,13 +162,13 @@ class NgHost(QRunnable):
         css = '%.2E' % Decimal(cross_section_scale)
         # logger.info(f'cross_section_scale: {css}')
 
-        with cfg.viewer.txn() as s:
+        with cfg.emViewer.txn() as s:
             s.layers['layer'] = ng.ImageLayer(source=cfg.menLV)
             s.crossSectionBackgroundColor = '#808080'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
-        # self.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=True)
+        # self.webdriver = neuroglancer.webdriver.Webdriver(cfg.emViewer, headless=True)
 
     def rowArrangement(self):
         self.arrangement = 2
@@ -176,24 +176,22 @@ class NgHost(QRunnable):
 
 
     def initViewer(self,
-                   matchpoint=None,
+                   matchpoint=False,
                    widget_size=None,
-                   show_panel_borders=False,
-                   show_axis_lines=False
                    ):
         caller = inspect.stack()[1].function
-        logger.info(f'Initializing viewer (caller: {caller})....')
-        # if matchpoint: self.mp_mode = matchpoint
+        logger.critical(f'Initializing emViewer (caller: {caller})....')
+        if matchpoint: self.mp_mode = matchpoint
         if cfg.main_window._is_mp_mode:
             self.mp_mode = True
         else:
             self.mp_mode = False
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
-        self.scale = cfg.data.scale()
-        logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=self.scale)})...')
+        scale = cfg.data.scale()
+        logger.info(f'Initializing Neuroglancer Viewer ({cfg.data.scale_pretty(s=scale)})...')
         is_aligned = cfg.data.is_aligned_and_generated()
         logger.info('Aligned? %r' % is_aligned)
-        sf = get_scale_val(self.scale)
+        sf = get_scale_val(scale)
         self.ref_l, self.base_l, self.aligned_l  = 'ref_%d'%sf, 'base_%d'%sf, 'aligned_%d'%sf
 
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -231,8 +229,8 @@ class NgHost(QRunnable):
             units=['nm', 'nm', 'nm'],
             scales=list(cfg.data.resolution(s=cfg.data.scale())),
         )
-        # cfg.viewer = ng.UnsynchronizedViewer()
-        cfg.viewer = ng.Viewer()
+        # cfg.emViewer = ng.UnsynchronizedViewer()
+        # cfg.emViewer = ng.Viewer()
 
         self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -259,7 +257,7 @@ class NgHost(QRunnable):
         else:
             widget_width = widget_size[2] / 2
 
-        res_z, res_y, res_x = cfg.data.resolution(s=self.scale)
+        res_z, res_y, res_x = cfg.data.resolution(s=scale)
 
         tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm
         scale_h = (tissue_h / widget_height) * 1e-9  # nm/pixel
@@ -267,7 +265,8 @@ class NgHost(QRunnable):
         cross_section_scale = max(scale_h, scale_w)
 
 
-        with cfg.viewer.txn() as s:
+        # with cfg.emViewer.txn() as s:
+        with self.txn() as s:
             adjustment = 1.05
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
@@ -276,18 +275,9 @@ class NgHost(QRunnable):
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
             # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
-            # s.relative_display_scales = {'z':25, 'y':1, 'x':1}
-            # s.relative_display_scales = OrderedDict([['z', 42],['y', 1],['x', 1]])
-            # s.relative_display_scales = [['z', 42],['y', 1],['x', 1],]
+            # s.relativeDisplayScales = {"z": 25}
+            # s.displayDimensions = ["z", "y", "x"]
             # s.perspective_orientation
-            # s.display_dimensions = [1000,1,1]
-
-            s.relativeDisplayScales = {"z": 25}
-            s.displayDimensions = ["z", "y", "x"]
-
-            # s.relative_display_scales = {"z": 25}
-            # s.display_dimensions = ["z", "y", "x"]
-            #
 
             s.layout.type = self.nglayout
             cfg.refLV = ng.LocalVolume(
@@ -411,12 +401,14 @@ class NgHost(QRunnable):
                 else:
                     s.layout = ng.row_layout(grps)
 
-            cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
-            # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+            # cfg.emViewer.shared_state.add_changed_callback(self.on_state_changed)
+            self.shared_state.add_changed_callback(self.on_state_changed)
+            # cfg.emViewer.shared_state.add_changed_callback(lambda: cfg.emViewer.defer_callback(self.on_state_changed))
 
-            if self.mp_mode:
-                s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
-                s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
+            # ?
+            # if self.mp_mode:
+            #     s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
+            #     s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))
 
             s.crossSectionBackgroundColor = '#808080'
 
@@ -426,15 +418,16 @@ class NgHost(QRunnable):
                 ['keys', 'save_matchpoints'],
                 ['keyc', 'clear_matchpoints'],
             ]
-            cfg.viewer.actions.add('add_matchpoint', self.add_matchpoint)
-            cfg.viewer.actions.add('save_matchpoints', self.save_matchpoints)
-            cfg.viewer.actions.add('clear_matchpoints', self.clear_matchpoints)
+            self.actions.add('add_matchpoint', self.add_matchpoint)
+            self.actions.add('save_matchpoints', self.save_matchpoints)
+            self.actions.add('clear_matchpoints', self.clear_matchpoints)
         else:
             mp_key_bindings = []
 
-        with cfg.viewer.config_state.txn() as s:
+        # with cfg.emViewer.config_state.txn() as s:
+        with self.config_state.txn() as s:
             for key, command in mp_key_bindings:
-                s.input_event_bindings.viewer[key] = command
+                s.input_event_bindings.emViewer[key] = command
             s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
             s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
 
@@ -442,16 +435,19 @@ class NgHost(QRunnable):
         self.clear_mp_buffer()
 
         if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=cfg.viewer.get_viewer_url())
-        if cfg.HEADLESS:
-            cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
+            # cfg.main_window.detachedNg.open(url=cfg.emViewer.get_viewer_url())
+            cfg.main_window.detachedNg.open(url=self.get_viewer_url())
+        # if cfg.HEADLESS:
+        #     cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.emViewer, headless=False, browser='chrome')
+        cfg.webdriver = neuroglancer.webdriver.Webdriver(self, headless=True, browser='chrome')
 
 
     def on_state_changed(self):
         try:
-            # print('requested layer: %s' % str(cfg.viewer.state.position[0]))
-            # request_layer = floor(cfg.viewer.state.position[0])
-            request_layer = int(cfg.viewer.state.position[0])
+            # print('requested layer: %s' % str(cfg.emViewer.state.position[0]))
+            # request_layer = floor(cfg.emViewer.state.position[0])
+            # request_layer = int(cfg.emViewer.state.position[0])
+            request_layer = int(self.state.position[0])
             if request_layer == self._layer:
                 logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
             else:
@@ -460,7 +456,8 @@ class NgHost(QRunnable):
                 self.signals.stateChanged.emit(request_layer)
                 if self.mp_mode:
                     self.clear_mp_buffer()
-            zoom = cfg.viewer.state.cross_section_scale
+            # zoom = cfg.emViewer.state.cross_section_scale
+            zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
                     logger.info(f'emitting Zoom Changed: {zoom}')
@@ -493,20 +490,23 @@ class NgHost(QRunnable):
         except:
             print_exception()
 
-        n_mp_pairs = floor(self.mp_count / 2)
+        n_mp_pairs = floor(self._mpCount / 2)
+
+
         props = [self.mp_colors[n_mp_pairs],
                  cfg.main_window.mp_marker_lineweight_spinbox.value(),
                  cfg.main_window.mp_marker_size_spinbox.value(), ]
-        with cfg.viewer.txn() as s:
-            if self.mp_count in range(0, 100, 2):
+        # with cfg.emViewer.txn() as s:
+        with self.txn() as s:
+            if self._mpCount in range(0, 100, 2):
                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
                 s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
                 logger.info(f"Ref Match Point Added: {coords}")
-            elif self.mp_count in range(1, 100, 2):
+            elif self._mpCount in range(1, 100, 2):
                 self.base_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
                 s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base')) + self.base_pts
                 logger.info(f"Base Match Point Added: {coords}")
-        self.mp_count += 1
+        self._mpCount += 1
 
 
     def save_matchpoints(self, s):
@@ -519,7 +519,7 @@ class NgHost(QRunnable):
                                      f'Right img has: {len(self.base_pts)}', logging.WARNING)
             return
 
-        cfg.data.clear_match_points(s=self.scale, l=layer)
+        cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
         p_r = [p.point.tolist() for p in self.ref_pts]
         p_b = [p.point.tolist() for p in self.base_pts]
         ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
@@ -537,10 +537,10 @@ class NgHost(QRunnable):
     def clear_matchpoints(self, s):
         logger.info('Clearing Match Points...')
         layer = self.request_layer()
-        cfg.data.clear_match_points(s=self.scale, l=layer)  # Note
+        cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)  # Note
         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
         self.clear_mp_buffer()  # Note
-        with cfg.viewer.txn() as s:
+        with self.txn() as s:
             s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
             s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
         cfg.refLV.invalidate()
@@ -551,7 +551,7 @@ class NgHost(QRunnable):
     def clear_mp_buffer(self):
         if self.mp_mode:
             # logger.info('Clearing match point buffer...')
-            self.mp_count = 0
+            self._mpCount = 0
             self.ref_pts.clear()
             self.base_pts.clear()
             try:
@@ -584,12 +584,15 @@ class NgHost(QRunnable):
 
     def pt2ann(self, points: list):
         annotations = []
+
+        lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
+        size = cfg.main_window.mp_marker_size_spinbox.value()
         for i, point in enumerate(points):
             annotations.append(ng.PointAnnotation(id=repr(point),
                                                   point=point,
                                                   props=[self.mp_colors[i % 3],
-                                                         self.mp_marker_size,
-                                                         self.mp_marker_lineweight]))
+                                                         size,
+                                                         lineweight]))
         self.annotations = annotations
         return annotations
 
@@ -597,32 +600,24 @@ class NgHost(QRunnable):
     def take_screenshot(self, directory=None):
         if directory is None:
             directory = cfg.data.dest()
-        ss = ScreenshotSaver(viewer=cfg.viewer, directory=directory)
+        ss = ScreenshotSaver(viewer=self, directory=directory)
         ss.capture()
 
 
     def url(self):
-        # str(cfg.viewer)
-        return cfg.viewer.get_viewer_url()
+        # str(cfg.emViewer)
+        # return cfg.emViewer.get_viewer_url()
+        return self.get_viewer_url()
 
-
-    def show_state(self):
-        cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))
-
-
-    def print_viewer_info(self, s):
-        logger.info(f'Selected Values:\n{s.selected_values}')
-        logger.info(f'Current Layer:\n{cfg.viewer.state.position[0]}')
-        logger.info(f'Viewer State:\n{cfg.viewer.state}')
 
 
     def initViewerSlim(self):
         caller = inspect.stack()[1].function
-        logger.info(f'Initializing viewer (caller: {caller})....')
+        logger.critical(f'Initializing emViewer Slim (caller: {caller})....')
         cfg.al_tensor = None
         cfg.unal_tensor = None
         ng.server.debug = cfg.DEBUG_NEUROGLANCER
-        cfg.viewer = ng.Viewer()
+        # cfg.emViewer = ng.Viewer()
         self.nglayout = cfg.main_window.comboboxNgLayout.currentText()
         sw = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
@@ -663,7 +658,7 @@ class NgHost(QRunnable):
             units=['nm', 'nm', 'nm'],
             scales=list(cfg.data.resolution(s=cfg.data.scale())), )
 
-        with cfg.viewer.txn() as s:
+        with self.txn() as s:
 
             cfg.LV = ng.LocalVolume(
                 data=store,
@@ -680,28 +675,35 @@ class NgHost(QRunnable):
             # s.cross_section_scale = cross_section_scale * adjustment
             s.show_scale_bar = bool(cfg.settings['neuroglancer']['SHOW_SCALE_BAR'])
             s.show_axis_lines = bool(cfg.settings['neuroglancer']['SHOW_AXIS_LINES'])
-            s.relative_display_scales = {"z": 25}
-            s.display_dimensions = ["z", "y", "x"]
+            # s.relative_display_scales = {"z": 25}
+            # s.display_dimensions = ["z", "y", "x"]
             s.position=[cfg.data.layer(), shape[1]/2, shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=cfg.LV, shader=cfg.SHADER)
             s.crossSectionBackgroundColor = '#808080' # 128 grey
 
 
-        with cfg.viewer.config_state.txn() as s:
+        with self.config_state.txn() as s:
             s.show_ui_controls = bool(cfg.settings['neuroglancer']['SHOW_UI_CONTROLS'])
             s.show_panel_borders = bool(cfg.settings['neuroglancer']['SHOW_PANEL_BORDERS'])
             # s.viewer_size = [100,100]
 
         self._layer = self.request_layer()
 
-        cfg.viewer.shared_state.add_changed_callback(self.on_state_changed)
-        # cfg.viewer.shared_state.add_changed_callback(lambda: cfg.viewer.defer_callback(self.on_state_changed))
+        self.shared_state.add_changed_callback(self.on_state_changed)
+        # cfg.emViewer.shared_state.add_changed_callback(lambda: cfg.emViewer.defer_callback(self.on_state_changed))
 
         if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=cfg.viewer.get_viewer_url())
+            cfg.main_window.detachedNg.open(url=self.get_viewer_url())
 
-        if cfg.HEADLESS:
-            cfg.webdriver = neuroglancer.webdriver.Webdriver(cfg.viewer, headless=False, browser='chrome')
+        # if cfg.HEADLESS:
+        cfg.webdriver = neuroglancer.webdriver.Webdriver(self,
+                                                         headless=True,
+                                                         browser='chrome',
+                                                         debug=True,
+                                                         docker=True
+                                                         # extra_command_line_args='-disable-gpu',
+
+                                                         )
 
 
 
@@ -712,4 +714,4 @@ if __name__ == '__main__':
     ap.add_argument('-p', '--port', type=int, default=9000, help='TCP port to listen on')
     args = ap.parse_args()
 
-    NgHost(args.source, args.bind, args.port)
+    EMViewer(args.source, args.bind, args.port)
