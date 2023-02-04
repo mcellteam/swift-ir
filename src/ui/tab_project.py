@@ -14,8 +14,7 @@ from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import getOpt
-from src.ng_host import EMViewer
-from src.ng_host_slim import NgHostSlim
+from src.viewer_em import EMViewer
 from src.helpers import print_exception
 from src.ui.snr_plot import SnrPlot
 from src.ui.mini_view import MiniView
@@ -42,6 +41,7 @@ class ProjectTab(QWidget):
         self.ng_layout = '4panel'
         self.setUpdatesEnabled(True)
         self.ng_browser = QWebEngineView()
+        self.ng_browser.setFocusPolicy(Qt.NoFocus)
         self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
@@ -90,8 +90,13 @@ class ProjectTab(QWidget):
             logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
             if cfg.data:
                 cfg.emViewer = EMViewer()
+                if cfg.main_window.rb0.isChecked():
+                    cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+                elif cfg.main_window.rb1.isChecked():
+                    cfg.main_window.comboboxNgLayout.setCurrentText('xy')
                 self.updateNeuroglancer(matchpoint=matchpoint)
-
+                cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+                cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
 
 
     def updateNeuroglancer(self, matchpoint=False):
@@ -102,24 +107,27 @@ class ProjectTab(QWidget):
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self._widgetArea_details.hide()
             self.resetSliderZmag()
-            cfg.emViewer.initViewer(matchpoint=matchpoint)
+            cfg.emViewer.initViewer(nglayout=self.get_layout(), matchpoint=True)
         elif cfg.main_window.rb0.isChecked():
-            cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-            cfg.emViewer.initViewerSlim()
+            cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
         elif cfg.main_window.rb1.isChecked():
-            cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            cfg.emViewer.initViewer(matchpoint=matchpoint)
+            cfg.emViewer.initViewer(nglayout=self.get_layout(), matchpoint=matchpoint)
         url = cfg.emViewer.get_viewer_url()
         logger.info(f'URL:\n{url}')
-        self.ng_browser.setUrl(QUrl(url))
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
         if not matchpoint:
             self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-        cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-        cfg.emViewer.signals.zoomChanged.connect(self.resetCrossSectionScaleSlider)
-        # self.resetCrossSectionScaleSlider()
-        self.resetSliderZmag()
-        self.ng_browser.setFocus()
+        # self.slotUpdateZoomSlider()
+        self.ng_browser.setUrl(QUrl(url))
+
+
+    def get_layout(self):
+
+        mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        val = mapping[cfg.main_window.comboboxNgLayout.currentText()]
+        logger.critical('RETURNING: %s' % val)
+        return val
 
     # def addToState(self):
     #     state = copy.deepcopy(cfg.emViewer.state)
@@ -147,7 +155,8 @@ class ProjectTab(QWidget):
         logger.info('')
 
         self.ng_browser.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
-        self.ng_browser.loadFinished.connect(self.resetCrossSectionScaleSlider)
+        self.ng_browser.loadFinished.connect(self.resetSliderZmag)
+        self.ng_browser.loadFinished.connect(self.slotUpdateZoomSlider)
         # self.ng_browser.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
         # self.ng_browser.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
@@ -243,20 +252,20 @@ class ProjectTab(QWidget):
         self.ngVertLab.setObjectName('label_ng')
 
 
-        # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
-        self.crossSectionScaleSlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        # self.crossSectionScaleSlider.set
-        # self.crossSectionScaleSlider.setMaximum(8.0)
-        # self.crossSectionScaleSlider.setMaximum(100)
-        self.crossSectionScaleSlider.setMaximum(5)
-        self.crossSectionScaleSlider.setMinimum(0.0)
-        # self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
-        self.crossSectionScaleSlider.sliderMoved.connect(self.onSliderCrossSectionScale)
-        self.crossSectionScaleSlider.setValue(4.0)
+        # self.zoomSlider = QSlider(Qt.Orientation.Vertical, self)
+        self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.zoomSlider.set
+        # self.zoomSlider.setMaximum(8.0)
+        # self.zoomSlider.setMaximum(100)
+        self.zoomSlider.setMaximum(5)
+        self.zoomSlider.setMinimum(0.1)
+        # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
+        self.zoomSlider.sliderMoved.connect(self.onZoomSlider)
+        self.zoomSlider.setValue(4.0)
 
         # self.crossSectionOrientationSlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        # # self.crossSectionScaleSlider.setMaximum(8.0)
-        # # self.crossSectionScaleSlider.setMaximum(100)
+        # # self.zoomSlider.setMaximum(8.0)
+        # # self.zoomSlider.setMaximum(100)
         # self.crossSectionOrientationSlider.setMaximum(5.0)
         # self.crossSectionOrientationSlider.setMinimum(-5.0)
         # self.crossSectionOrientationSlider.valueChanged.connect(self.onSliderCrossSectionOrientation)
@@ -269,27 +278,23 @@ class ProjectTab(QWidget):
         # vbl.addWidget(VerticalLabel('Rotation:'))
         # self.crossSectionOrientationSliderAndLabel.setLayout(vbl)
 
-        self.crossSectionScaleSliderAndLabel = QWidget()
-        self.crossSectionScaleSliderAndLabel.setFixedWidth(20)
+        self.zoomSliderAndLabel = QWidget()
+        self.zoomSliderAndLabel.setFixedWidth(16)
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.crossSectionScaleSlider)
+        vbl.addWidget(self.zoomSlider)
         vbl.addWidget(VerticalLabel('Zoom:'))
-        self.crossSectionScaleSliderAndLabel.setLayout(vbl)
+        self.zoomSliderAndLabel.setLayout(vbl)
 
-        # self.crossSectionScaleSlider = QSlider(Qt.Orientation.Vertical, self)
+        self.ZdisplaySlider = QSlider(Qt.Orientation.Vertical, self)
         self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        # self.crossSectionScaleSlider.set
-        # self.crossSectionScaleSlider.setMaximum(8.0)
-        # self.crossSectionScaleSlider.setMaximum(100)
-        self.ZdisplaySlider.setMaximum(100.)
-        self.ZdisplaySlider.setMinimum(1.0)
-        # self.crossSectionScaleSlider.valueChanged.connect(self.onSliderCrossSectionScale)
-        self.ZdisplaySlider.sliderMoved.connect(self.onSliderZmag)
+        self.ZdisplaySlider.setMaximum(20)
+        self.ZdisplaySlider.setMinimum(1)
+        self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
         self.ZdisplaySlider.setValue(1.0)
 
         self.ZdisplaySliderAndLabel = QWidget()
-        self.ZdisplaySliderAndLabel.setFixedWidth(20)
+        self.ZdisplaySliderAndLabel.setFixedWidth(16)
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.ZdisplaySlider)
@@ -297,39 +302,39 @@ class ProjectTab(QWidget):
         self.ZdisplaySliderAndLabel.setLayout(vbl)
 
         hbl = QHBoxLayout()
+        hbl.setSpacing(1)
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.ngVertLab)
         hbl.addWidget(self.ng_browser_container)
-        # hbl.addWidget(self.crossSectionScaleSlider)
+        # hbl.addWidget(self.zoomSlider)
         # hbl.addWidget(self.crossSectionOrientationSliderAndLabel)
         hbl.addWidget(self.ZdisplaySliderAndLabel)
-        hbl.addWidget(self.crossSectionScaleSliderAndLabel)
+        hbl.addWidget(self.zoomSliderAndLabel)
         self.ng_browser_container_outer = QWidget()
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
         self.ng_browser_container_outer.setLayout(hbl)
 
 
-    def resetCrossSectionScaleSlider(self):
+    def slotUpdateZoomSlider(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
             val = cfg.emViewer.state.cross_section_scale
-
             if val:
                 if val != 0:
                     new_val = float(sqrt(val))
                     # logger.info(f'val = {val}, new_val = {new_val}')
-                    self.crossSectionScaleSlider.setValue(new_val)
+                    self.zoomSlider.setValue(new_val)
         except:
             print_exception()
 
 
-    def onSliderCrossSectionScale(self):
+    def onZoomSlider(self):
         caller = inspect.stack()[1].function
-        if caller not in  ('resetCrossSectionScaleSlider', 'setValue'):
+        if caller not in  ('slotUpdateZoomSlider', 'setValue'):
             # logger.info(f'caller: {caller}')
             try:
-                val = self.crossSectionScaleSlider.value()
+                val = self.zoomSlider.value()
                 state = copy.deepcopy(cfg.emViewer.state)
                 # new_val = log2(1 + val)
                 # new_val = val * val
@@ -340,10 +345,22 @@ class ProjectTab(QWidget):
                 print_exception()
 
 
+    def setZmag(self):
+        logger.info('')
+        try:
+            state = copy.deepcopy(cfg.emViewer.state)
+            state.relative_display_scales = {'z': self.ZdisplaySlider.value()}
+            cfg.emViewer.set_state(state)
+        except:
+            print_exception()
+
+
     def onSliderZmag(self):
-        # caller = inspect.stack()[1].function
+        caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % caller)
         try:
             val = self.ZdisplaySlider.value()
+            logger.critical('val = %d' % val)
             state = copy.deepcopy(cfg.emViewer.state)
             state.relative_display_scales = {'z': val}
             cfg.emViewer.set_state(state)
@@ -359,12 +376,13 @@ class ProjectTab(QWidget):
                 self.ZdisplaySlider.setValue(10)
             else:
                 self.ZdisplaySlider.setValue(1)
+
         except:
             print_exception()
 
     # def onSliderCrossSectionOrientation(self):
     #     caller = inspect.stack()[1].function
-    #     # if caller not in ('resetCrossSectionScaleSlider', 'setValue'):
+    #     # if caller not in ('slotUpdateZoomSlider', 'setValue'):
     #     #     # logger.info(f'caller: {caller}')
     #     if cfg.emViewer.state.cross_section_scale:
     #         state = copy.deepcopy(cfg.emViewer.state)

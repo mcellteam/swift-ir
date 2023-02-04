@@ -4,28 +4,17 @@ import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
     QPushButton, QSizePolicy, QAbstractItemView
 from qtpy.QtCore import Slot, Qt, QSize, QDir
-import src.config as cfg
 from src.helpers import is_joel, is_tacc
+import src.config as cfg
 
-try:
-    import qtawesome as qta
-except ImportError:
-    pass
-# try:
-#     import src.config as cfg
-# except ImportError:
-#     pass
 
 
 logger = logging.getLogger(__name__)
 
 
 class FileBrowser(QWidget):
-    # def __init__(self):
-    #     super(FileBrowser, self).__init__()
-    def __init__(self, parent=None, *args, **kwargs):
-        super(QWidget, self).__init__(*args, **kwargs)
-
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.treeview = QTreeView()
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
@@ -42,17 +31,6 @@ class FileBrowser(QWidget):
         self.path_scratch = os.getenv('SCRATCH')
         self.path_work = os.getenv('WORK')
         self.path_special = '/Volumes/3dem_data'
-
-        # self.setSizePolicy(
-        #     QSizePolicy.MinimumExpanding,
-        #     QSizePolicy.MinimumExpanding
-        # )
-
-        '''
-        cfg.main_window._launchScreen.filebrowser.treeview.setRootIndex(cfg.main_window._launchScreen.filebrowser.fileSystemModel.index('/Users'))
-        cfg.main_window._launchScreen.filebrowser.treeview.setRootIndex(cfg.main_window._launchScreen.filebrowser.fileSystemModel.setRootPath('/Users'))
-        self.treeview.setRootIndex(self.fileSystemModel.index('/Users'))
-        '''
 
         self.treeview.setColumnWidth(0, 600)
         self.initUI()
@@ -172,19 +150,7 @@ class FileBrowser(QWidget):
         except:
             logger.warning('No Path Selected.')
 
-    def showFb(self):
-        self.treeview.show()
 
-    def hideFb(self):
-        self.treeview.hide()
-
-    def showFbButton(self):
-        self._btn_showFileBrowser.show()
-        self.controls.show()
-
-    def hideFbButton(self):
-        self._btn_showFileBrowser.hide()
-        self.controls.hide()
 
     def _showHideFb(self):
         if self.treeview.isHidden():

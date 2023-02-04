@@ -56,35 +56,15 @@ class DoubleSlider(QSlider):
 '''Source:
 https://stackoverflow.com/questions/47342158/porting-range-slider-widget-to-pyqt5'''
 
-
-
 DEFAULT_CSS = """
-RangeSlider * {
-    border: 0px;
-    padding: 0px;
-    font-size: 7px;
-}
-RangeSlider #Head {
-    background: #1b1e23;
-}
-RangeSlider #Tail {
-    background: #1b1e23;
-}
-RangeSlider #Span {
-    background: #ede9e8;
-}
-RangeSlider #Span:active {
-    background: #ede9e8;
-}
-RangeSlider > QSplitter::handle {
-    background: #141414;
-}
-RangeSlider > QSplitter::handle:vertical {
-    height: 4px;
-}
-RangeSlider > QSplitter::handle:pressed {
-    background: #dbfac7;
-}
+RangeSlider * { border: 0px; padding: 0px; font-size: 7px; }
+RangeSlider #Head { background: #f3f6fb; }
+RangeSlider #Tail { background: #f3f6fb; }
+RangeSlider #Span { background: #daebfe; }
+RangeSlider #Span:active { background: #daebfe; }
+RangeSlider > QSplitter::handle { background: #1b1e23; }
+RangeSlider > QSplitter::handle:vertical { height: 4px; }
+RangeSlider > QSplitter::handle:pressed { background: #969696; }
 """
 
 def scale(val, src, dst):
@@ -132,7 +112,7 @@ class Element(QtWidgets.QGroupBox):
         self.parent().setStyleSheet(style)
 
     def textColor(self):
-        return getattr(self, '__textColor', QtGui.QColor('#f3f6fb'))
+        return getattr(self, '__textColor', QtGui.QColor('#969696'))
 
     def setTextColor(self, color):
         if type(color) == tuple and len(color) == 3:

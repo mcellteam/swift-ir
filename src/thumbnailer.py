@@ -103,7 +103,7 @@ class Thumbnailer:
         filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-        task_queue = TaskQueue(n_tasks=cfg.data.n_sections(), parent=cfg.main_window, pbar_text=pbar_text)
+        task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
 
         for i, fn in enumerate(filenames):

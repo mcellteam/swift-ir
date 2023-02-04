@@ -40,7 +40,7 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
            'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets',
-           'absFilePaths'
+           'absFilePaths', 'validate_file', 'validate_project_selection', 'validate_zarr_selection'
            ]
 
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ def isNeuroglancerRunning():
    return ng.server.is_server_running()
 
 
-def validate_selection() -> bool:
+def validate_project_selection() -> bool:
     # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     path, extension = os.path.splitext(cfg.selected_file)
@@ -121,6 +121,17 @@ def validate_selection() -> bool:
         return False
     else:
         return True
+
+def validate_zarr_selection() -> bool:
+    logger.info('Validating selection %s...' % cfg.selected_file)
+    # called by setSelectionPathText
+    if os.path.isdir(cfg.selected_file):
+        logger.info('Path IS a directory')
+        if '.zarray' in os.listdir(cfg.selected_file):
+            logger.info('Directory DOES contain .zarray -> Returning True...')
+            return True
+    logger.info('Returning False...')
+    return False
 
 
 def validate_file(file) -> bool:

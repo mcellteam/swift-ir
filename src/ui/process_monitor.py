@@ -81,7 +81,6 @@ class HeadupDisplay(QWidget):
     def __call__(self, message, level=logging.INFO):
         logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
 
     def start_thread(self):
         self.hud_worker = HudWorker()
@@ -121,13 +120,11 @@ class HeadupDisplay(QWidget):
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
 
     @Slot()
     def warn(self, message):
         logger.log(logging.WARNING, message)
         self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
 
 
     # def done(self):
@@ -143,9 +140,9 @@ class HeadupDisplay(QWidget):
         if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
             return
         # self.post(last_line + 'done.')
-        self.post(last_line + 'done(%s).' % caller)
+        self.post(last_line + 'done.')
+        # self.post(last_line + 'done(%s).' % caller)
         self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
 
 
     # def cycle_text(self):

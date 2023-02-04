@@ -23,8 +23,7 @@ def generate_scales(dm):
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
 
-        n_tasks = dm.n_sections() * (dm.n_scales() - 1)  #0901 #Refactor
-
+        n_tasks = len(cfg.data) * (dm.n_scales() - 1)  #0901 #Refactor
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         create_project_structure_directories(dm.dest(), dm.scales())

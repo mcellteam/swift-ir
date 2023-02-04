@@ -54,9 +54,9 @@ from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_sort, make_affine_widget_HTML, \
     is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, show_status_report, exist_aligned_zarr_cur_scale, \
-    makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_selection, \
-    configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, count_widgets, \
-    find_allocated_widgets, cleanup_project_list, update_preferences_model
+    makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_project_selection, \
+    validate_zarr_selection, configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, \
+    count_widgets, find_allocated_widgets, cleanup_project_list, update_preferences_model
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
     QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
     mendenhall_dialog
@@ -71,8 +71,7 @@ from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
-from src.ng_host import EMViewer
-from src.ng_host_slim import NgHostSlim
+from src.viewer_em import EMViewer
 from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
 from src.mendenhall_protocol import Mendenhall
@@ -163,54 +162,43 @@ class MainWindow(QMainWindow):
 
     def setAppropriateNgLayout(self):
         logger.info('')
-        current_text = self.comboboxNgLayout.currentText()
-        if self.rb0.isChecked():
-            if current_text != '4panel':
-                logger.warning('Snapping current combobox text to 4panel')
-                self.comboboxNgLayout.setCurrentText('4panel')
-        elif self.rb1.isChecked():
-            if current_text != 'xy':
-                logger.warning('Snapping current combobox text to xy')
-                self.comboboxNgLayout.setCurrentText('xy')
-        elif self.rb2.isChecked():
-            if current_text != 'xy':
-                logger.warning('Snapping current combobox text to xy')
-                self.comboboxNgLayout.setCurrentText('xy')
+        # current_text = self.comboboxNgLayout.currentText()
+        # if self.rb0.isChecked():
+        #     if current_text != '4panel':
+        #         logger.warning('Snapping current combobox text to 4panel')
+        #         self.comboboxNgLayout.setCurrentText('4panel')
+        # elif self.rb1.isChecked():
+        #     if current_text != 'xy':
+        #         logger.warning('Snapping current combobox text to xy')
+        #         self.comboboxNgLayout.setCurrentText('xy')
+        # elif self.rb2.isChecked():
+        #     if current_text != 'xy':
+        #         logger.warning('Snapping current combobox text to xy')
+        #         self.comboboxNgLayout.setCurrentText('xy')
 
 
     # def ngRadiobuttonChanged(self, checked):
     def ngRadiobuttonChanged(self, checked):
-        # logger.critical('')
+        logger.info('')
         if checked:
             if self._isProjectTab():
                 if self.rb0.isChecked():
                     logger.info('rb0 has been checked')
-                    self.setAppropriateNgLayout()
                     cfg.project_tab._overlayBottomLeft.hide()
                     cfg.project_tab._overlayLab.hide()
                     cfg.project_tab._overlayRect.hide()
                     self.comboboxNgLayout.setCurrentText('4panel')
-                    # cfg.project_tab._overlayNotification.show()
-                    # cfg.project_tab.initNeuroglancer()
-                    self.hardRestartNg()
-                    # cfg.project_tab.updateNeuroglancer()
-                    # cfg.emViewer.initViewerSlim()
-                    # cfg.project_tab.ng_browser.reload()
-
+                    cfg.project_tab.updateNeuroglancer()
                 elif self.rb1.isChecked() or self.rb2.isChecked():
                     logger.info('rb1/rb2 has been checked')
-                    self.setAppropriateNgLayout()
-                    # cfg.project_tab.initNeuroglancer()
-                    self.hardRestartNg()
-                    # cfg.emViewer.initViewer()
-                    # cfg.project_tab.updateNeuroglancer()
-                    # cfg.emViewer.initViewer()
-                    # cfg.project_tab.ng_browser.reload()
-            QApplication.processEvents()
+                    self.comboboxNgLayout.setCurrentText('xy')
+                    cfg.project_tab.updateNeuroglancer()
+
+
 
 
     # def neuroglancer_configuration_0(self):
-    #     logger.critical(f'caller:{inspect.stack()[1].function}')
+    #
     #     # logger.info('')
     #
     #
@@ -253,10 +241,10 @@ class MainWindow(QMainWindow):
                 ng.server.stop()
             if cfg.project_tab:
                 cfg.project_tab.initNeuroglancer(matchpoint=matchpoint)
-                # cfg.project_tab.resetCrossSectionScaleSlider()
+                # cfg.project_tab.slotUpdateZoomSlider()
                 # cfg.project_tab.ng_browser.setFocus()
             if cfg.zarr_tab:
-                cfg.zarr_tab.initNeuroglancer()
+                cfg.zarr_tab.load()
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_AFTER)
 
@@ -266,9 +254,6 @@ class MainWindow(QMainWindow):
             if cfg.project_tab:
                 if not self._working:
                     if cfg.project_tab._tabs.currentIndex() == 0:
-                        # self.hardRestartNg()
-                        # cfg.project_tab.initNeuroglancer()
-                        # cfg.project_tab.updateNeuroglancer()
                         cfg.project_tab.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
                         # cfg.project_tab.ng_browser.reload()
                     if cfg.project_tab._tabs.currentIndex() == 1:
@@ -299,18 +284,22 @@ class MainWindow(QMainWindow):
 
     def tell(self, message):
         self.hud.post(message, level=logging.INFO)
+        self.update()
 
 
     def warn(self, message):
         self.hud.post(message, level=logging.WARNING)
+        self.update()
 
 
     def err(self, message):
         self.hud.post(message, level=logging.ERROR)
+        self.update()
 
 
     def bug(self, message):
         self.hud.post(message, level=logging.DEBUG)
+        self.update()
 
 
     def initThreadpool(self, timeout=1000):
@@ -646,12 +635,35 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.pbar_widget.hide()
 
-    def onAlignmentEnd(self):
+
+    def present_snr_results(self, start=0, end=None):
+        if exist_aligned_zarr_cur_scale():
+            self.tell('The Stack is Aligned!')
+            logger.info('Alignment seems successful')
+        else:
+            self.warn('Something Went Wrong')
+        logger.info('Calculating SNR Diff Values...')
+        diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
+        delta_list = cfg.data.delta_snr_list()[start:end]
+        no_chg = [i for i, x in enumerate(delta_list) if x == 0]
+        pos = [i for i, x in enumerate(delta_list) if x > 0]
+        neg = [i for i, x in enumerate(delta_list) if x < 0]
+        self.tell('Re-alignment Results:')
+        self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
+        self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
+        self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
+        if abs(diff_avg) < .001: self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
+        elif diff_avg > 0:       self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
+        else:                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
+
+
+    def onAlignmentEnd(self, start, end):
         logger.info('Running Post-Alignment Tasks...')
         self.alignmentFinished.emit()
 
         try:
             self.pbarLabel.setText('')
+            self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
             self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
@@ -678,7 +690,6 @@ class MainWindow(QMainWindow):
             self._working = False
             self.enableAllTabs()
             self._autosave()
-            QApplication.processEvents()
 
 
     def onAlignmentStart(self, scale):
@@ -712,30 +723,9 @@ class MainWindow(QMainWindow):
             reallocate_zarr=True
         )
         if not cfg.CancelProcesses:
-            if exist_aligned_zarr_cur_scale():
-                self.tell('The Stack is Aligned!')
-                logger.info('Alignment seems successful')
-            else:
-                self.warn('Something Went Wrong')
-            if is_realign:
-                logger.info('Calculating SNR Diff Values...')
-                diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
-                diff = [a_i - b_i for a_i, b_i in zip(cfg.data.snr_prev_list(), cfg.data.snr_list())]
-                no_chg = [i for i, x in enumerate(diff) if x == 0]
-                pos = [i for i, x in enumerate(diff) if x > 0]
-                neg = [i for i, x in enumerate(diff) if x < 0]
-                self.tell('Re-alignment Results:')
-                self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
-                self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
-                self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-                if abs(diff_avg) < .001:
-                    self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
-                elif diff_avg > 0:
-                    self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
-                else:
-                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
-            self.onAlignmentEnd()
-            self.hardRestartNg()
+            self.present_snr_results()
+        self.onAlignmentEnd(start=0, end=None)
+        self.hardRestartNg()
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
@@ -751,7 +741,8 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
-        self.onAlignmentEnd()
+
+        self.onAlignmentEnd(start=start, end=end)
         self.hardRestartNg()
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
@@ -759,19 +750,20 @@ class MainWindow(QMainWindow):
 
     def alignOne(self):
         self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.layer(), cfg.data.scale_pretty()))
-        layer = cfg.data.layer()
+        start = cfg.data.layer()
+        end = cfg.data.layer() + 1
         self.align(
             scale=cfg.data.curScale,
-            start= layer,
-            end=cfg.data.layer() + 1,
+            start=start,
+            end=end,
             renew_od=False,
             reallocate_zarr=False
         )
-        self.onAlignmentEnd()
+        self.onAlignmentEnd(start=start, end=end)
         self.hardRestartNg()
-        self.tell('Section #%d Alignment Complete' % layer)
-        self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
-                                                             cfg.data.snr(l=layer)))
+        self.tell('Section #%d Alignment Complete' % start)
+        self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=start),
+                                                             cfg.data.snr(l=start)))
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
@@ -1127,6 +1119,7 @@ class MainWindow(QMainWindow):
                 requested = cfg.data.layer() + 1
                 if requested < len(cfg.data):
                     cfg.data.set_layer(requested)
+                    cfg.emViewer.set_layer(requested)
                     self.dataUpdateWidgets()
 
 
@@ -1137,6 +1130,7 @@ class MainWindow(QMainWindow):
                 requested = cfg.data.layer() - 1
                 if requested >= 0:
                     cfg.data.set_layer(requested)
+                    cfg.emViewer.set_layer(requested)
                     self.dataUpdateWidgets()
 
 
@@ -1254,14 +1248,14 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info(f'Updating widgets (caller: {caller})...')
         # logger.info(f'caller: {caller}')
-        if cfg.zarr_tab:
-            if ng_layer:
-                self._sectionSlider.setValue(ng_layer)
-                self._jumpToLineedit.setText(str(ng_layer))
-            else:
-                self._sectionSlider.setValue(cfg.emViewer._layer)
-                self._jumpToLineedit.setText(str(cfg.emViewer._layer))
-            return
+        # if cfg.zarr_tab:
+        #     if ng_layer:
+        #         self._sectionSlider.setValue(ng_layer)
+        #         self._jumpToLineedit.setText(str(ng_layer))
+        #     else:
+        #         self._sectionSlider.setValue(cfg.emViewer._layer)
+        #         self._jumpToLineedit.setText(str(cfg.emViewer._layer))
+        #     return
         if cfg.project_tab:
             if cfg.data:
                 if self._working == True:
@@ -1271,7 +1265,7 @@ class MainWindow(QMainWindow):
 
                 if isinstance(ng_layer, int):
                     try:
-                        if 0 <= ng_layer < cfg.data.n_sections():
+                        if 0 <= ng_layer < len(cfg.data):
                             logger.debug(f'Setting Layer: {ng_layer}')
                             cfg.data.set_layer(ng_layer)
                             # self._sectionSlider.setValue(ng_layer)
@@ -1281,17 +1275,12 @@ class MainWindow(QMainWindow):
                         if self.rb1.isChecked():
                             cfg.project_tab._overlayRect.hide()
                             cfg.project_tab._overlayLab.hide()
-                            if ng_layer == cfg.data.n_sections():
-                                cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 1.0);')
-                                cfg.project_tab._overlayLab.setText('End Of Image Stack')
-                                cfg.project_tab._overlayLab.show()
-                                cfg.project_tab._overlayRect.show()
+                            if ng_layer == len(cfg.data):
                                 self.layer_details.setText('')
                                 self.clearAffineWidget()
                                 cfg.project_tab._widgetArea_details.hide()
                                 self._sectionSlider.setValue(cfg.main_window._sectionSlider.maximum()) #0119+
                                 self._jumpToLineedit.setText('-1')
-                                QApplication.processEvents()
                                 return
                             elif cfg.data.skipped():
                                 cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
@@ -1301,17 +1290,13 @@ class MainWindow(QMainWindow):
                             elif ng_layer == 0:
                                 cfg.project_tab._overlayLab.setText('No Reference')
                                 cfg.project_tab._overlayLab.show()
-                            # else:
-                            #     cfg.project_tab._overlayRect.hide()
-                            #     cfg.project_tab._overlayLab.hide()
-                                # QApplication.processEvents()
                             if not cfg.MP_MODE:
                                 cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-                            QApplication.processEvents()
 
 
                 cur = cfg.data.layer()
-                self.updateNotes()
+                if self.notes.isVisible():
+                    self.updateNotes()
 
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.updateLayerLinePos()
@@ -1342,25 +1327,24 @@ class MainWindow(QMainWindow):
                         else:
                             self._polyBiasCombo.setCurrentText('None')
                     except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
-                    # cfg.project_tab.resetCrossSectionScaleSlider()
+                    # cfg.project_tab.slotUpdateZoomSlider()
 
 
     def updateNotes(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        if self.notes.isVisible():
-            self.notesTextEdit.clear()
-            if cfg.project_tab:
-                cur = cfg.data.layer()
-                self.notesTextEdit.setPlaceholderText('Enter notes about %s here...'
-                                                      % cfg.data.base_image_name(s=cfg.data.curScale, l=cur))
-                if cfg.data.notes(s=cfg.data.curScale, l=cur):
-                    self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cur))
+        # caller = inspect.stack()[1].function
+        logger.info('')
+        self.notesTextEdit.clear()
+        if cfg.project_tab:
+            cur = cfg.data.layer()
+            self.notesTextEdit.setPlaceholderText('Enter notes about %s here...'
+                                                  % cfg.data.base_image_name(s=cfg.data.curScale, l=cur))
+            if cfg.data.notes(s=cfg.data.curScale, l=cur):
+                self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cur))
 
-            else:
-                self.notesTextEdit.clear()
-                self.notesTextEdit.setPlaceholderText('Enter any notes here...')
-            self.notes.update()
+        else:
+            self.notesTextEdit.clear()
+            self.notesTextEdit.setPlaceholderText('Enter project notes here...')
+        self.notes.update()
 
     def updateLayerDetails(self, s=None, l=None):
         if s == None: s = cfg.data.curScale
@@ -1508,29 +1492,29 @@ class MainWindow(QMainWindow):
     def _resetSlidersAndJumpInput(self):
         '''Requires Neuroglancer '''
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         if cfg.data:
             try:
                 if self._isProjectTab() or self._isZarrTab():
                     logger.info('Setting section slider and jump input validators...')
                     if cfg.project_tab:
-                        self._jumpToLineedit.setValidator(QIntValidator(0, cfg.data.n_sections() - 1))
-                        self._sectionSlider.setRange(0, cfg.data.n_sections() - 1)
+                        self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                        self._sectionSlider.setRange(0, len(cfg.data) - 1)
                         self._sectionSlider.setValue(cfg.data.layer())
                         self.sectionRangeSlider.setMin(0)
                         self.sectionRangeSlider.setStart(0)
-                        self.sectionRangeSlider.setMax(len(cfg.data))
-                        self.sectionRangeSlider.setEnd(len(cfg.data))
-                        self.startRangeInput.setValidator(QIntValidator(0, cfg.data.n_sections() - 1))
-                        self.endRangeInput.setValidator(QIntValidator(0, cfg.data.n_sections() - 1))
-                    if cfg.zarr_tab:
-                        if not cfg.tensor:
-                            logger.warning('No tensor!')
-                            return
-                        self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
-                        self._jumpToLineedit.setText(str(0))
-                        self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
-                        self._sectionSlider.setValue(0)
+                        self.sectionRangeSlider.setMax(len(cfg.data) - 1)
+                        self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
+                        self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                        self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                    # if cfg.zarr_tab:
+                    #     if not cfg.tensor:
+                    #         logger.warning('No tensor!')
+                    #         return
+                    #     self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
+                    #     self._jumpToLineedit.setText(str(0))
+                    #     self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
+                    #     self._sectionSlider.setValue(0)
                     cfg.main_window.update()
             except:
                 print_exception()
@@ -1551,7 +1535,7 @@ class MainWindow(QMainWindow):
     def jump_to(self, requested) -> None:
         logger.info('')
         if cfg.project_tab:
-            if requested not in range(cfg.data.n_sections()):
+            if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
             cfg.data.set_layer(requested)
@@ -1563,7 +1547,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if cfg.project_tab:
             requested = int(self._jumpToLineedit.text())
-            if requested not in range(cfg.data.n_sections()):
+            if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
             cfg.data.set_layer(requested)
@@ -1588,7 +1572,7 @@ class MainWindow(QMainWindow):
         cfg.emViewer._layer = requested
         # logger.info(f'slider, requested: {requested}')
         if cfg.project_tab:
-            if requested in range(cfg.data.n_sections()):
+            if requested in range(len(cfg.data)):
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     logger.info('Jumping To Section #%d' % requested)
                     state = copy.deepcopy(cfg.emViewer.state)
@@ -1603,11 +1587,11 @@ class MainWindow(QMainWindow):
                 #         cfg.emViewer.set_state(state)
             self.dataUpdateWidgets()
 
-        elif cfg.zarr_tab:
-            logger.info('Jumping To Section #%d' % requested)
-            state = copy.deepcopy(cfg.emViewer.state)
-            state.position[0] = requested
-            cfg.emViewer.set_state(state)
+        # elif cfg.zarr_tab:
+        #     logger.info('Jumping To Section #%d' % requested)
+        #     state = copy.deepcopy(cfg.emViewer.state)
+        #     state.position[0] = requested
+        #     cfg.emViewer.set_state(state)
 
         try:     self._jumpToLineedit.setText(str(requested))
         except:  logger.warning('Current Layer Widget Failed to Update')
@@ -1638,36 +1622,34 @@ class MainWindow(QMainWindow):
     def fn_ng_layout_combobox(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if caller != 'set_nglayout_combo_text':
-            if caller in ('main', '<lambda>'):
-                if caller != 'onStartProject':
-                    if cfg.data:
-                        if cfg.project_tab or cfg.zarr_tab:
-                            logger.info(f'3')
-                            choice = self.comboboxNgLayout.currentText()
+        if caller in ('main','<lambda>'):
+            if cfg.data:
+                if cfg.project_tab or cfg.zarr_tab:
+                    logger.info(f'3')
+                    choice = self.comboboxNgLayout.currentText()
 
-                            try:
-                                self.hud("Setting Neuroglancer Layout ['%s']... " % choice)
-                                layout_actions = {
-                                    'xy': self.ngLayout1Action,
-                                    'yz': self.ngLayout2Action,
-                                    'xz': self.ngLayout3Action,
-                                    'xy-3d': self.ngLayout4Action,
-                                    'yz-3d': self.ngLayout5Action,
-                                    'xz-3d': self.ngLayout6Action,
-                                    '3d': self.ngLayout7Action,
-                                    '4panel': self.ngLayout8Action
-                                }
-                                layout_actions[choice].setChecked(True)
-
-                                if cfg.project_tab:
-                                    cfg.project_tab.initNeuroglancer()
-                                elif cfg.zarr_tab:
-                                    self.hardRestartNg()
-                                 # cfg.project_tab.refreshNeuroglancerURL()
-                            except:
-                                print_exception()
-                                logger.error('Unable To Change Neuroglancer Layout')
+                    try:
+                        self.hud("Setting Neuroglancer Layout ['%s']... " % choice)
+                        layout_actions = {
+                            'xy': self.ngLayout1Action,
+                            'yz': self.ngLayout2Action,
+                            'xz': self.ngLayout3Action,
+                            'xy-3d': self.ngLayout4Action,
+                            'yz-3d': self.ngLayout5Action,
+                            'xz-3d': self.ngLayout6Action,
+                            '3d': self.ngLayout7Action,
+                            '4panel': self.ngLayout8Action
+                        }
+                        layout_actions[choice].setChecked(True)
+                        if cfg.project_tab:
+                            # cfg.project_tab.updateNeuroglancer(nglayout=choice)
+                            cfg.project_tab.updateNeuroglancer()
+                        elif cfg.zarr_tab:
+                            cfg.zarr_tab.load()
+                         # cfg.project_tab.refreshNeuroglancerURL()
+                    except:
+                        print_exception()
+                        logger.error('Unable To Change Neuroglancer Layout')
 
 
     def export_afms(self):
@@ -1795,7 +1777,7 @@ class MainWindow(QMainWindow):
         project_file = cfg.selected_file
         project = os.path.splitext(project_file)[0]
 
-        if not validate_selection():
+        if not validate_project_selection():
             logger.warning('Invalid Project For Deletion (!)\n%s' % project)
             return
         txt = "Are you sure you want to PERMANENTLY DELETE " \
@@ -1844,7 +1826,6 @@ class MainWindow(QMainWindow):
             logger.critical('Refreshing data...')
             try:
                 self.globTabs.currentWidget().user_projects.set_data()
-                QApplication.processEvents()
             except:
                 logger.warning('There was a problem updating the project list')
                 print_exception()
@@ -1858,65 +1839,64 @@ class MainWindow(QMainWindow):
         self._setLastTab()
 
 
+    def open_selected(self):
+        if self._isProjectTab():
+            self.open_project_selected()
+        if self._isZarrTab():
+            pass
+
+    def open_zarr_selected(self):
+        path = cfg.selected_file
+        logger.info("Opening Zarr '%s'..." % path)
+        try:
+            with open(os.path.join(path, '.zarray')) as j:
+                self.zarray = json.load(j)
+        except:
+            print_exception()
+            return
+
+        tab = ZarrTab(self, path=path)
+        self.globTabs.addTab(tab, os.path.basename(path))
+        self._setLastTab()
+
+
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         logger.info('')
-
         self.stopPlaybackTimer()
-
-        if self._getTabType() == 'ZarrTab':
-            self.open_zarr()
+        if validate_zarr_selection():
+            self.open_zarr_selected()
             return
+        elif validate_project_selection():
+            filename = cfg.selected_file
+            logger.critical(f'Opening Project {filename}...')
+            self.tell('Loading Project "%s"' % filename)
 
-        if not validate_selection():
-            self.warn("Invalid Path, extension must be '.swiftir'")
-            logger.warning('Invalid Path...')
-            return
+            try:
+                with open(filename, 'r') as f:
+                    cfg.data = DataModel(data=json.load(f))
+                self._autosave()
+            except:
+                self.warn(f'No Such File Found: {filename}')
+                logger.warning(f'No Such File Found: {filename}')
+                print_exception()
+                return
+            else:
+                logger.info(f'Project Opened!')
 
-        filename = cfg.selected_file
-        logger.critical(f'Opening Project {filename}...')
-        self.tell('Loading Project "%s"' % filename)
-
-        try:
-            with open(filename, 'r') as f:
-                cfg.data = DataModel(data=json.load(f))
-            self._autosave()
-        except:
-            self.warn(f'No Such File Found: {filename}')
-            logger.warning(f'No Such File Found: {filename}')
-            print_exception()
-            return
+            append_project_path(filename)
+            cfg.data.set_paths_absolute(filename=filename)
+            cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
+            cfg.dataById[id(cfg.project_tab)] = cfg.data
+            self.onStartProject()
+            tab_name = os.path.basename(cfg.data.dest() + '.swiftir')
+            self.globTabs.addTab(cfg.project_tab, tab_name)
+            self._setLastTab()
         else:
-            logger.info(f'Project Opened!')
-
-        append_project_path(filename)
-        cfg.data.set_paths_absolute(filename=filename)
-        cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
-        cfg.dataById[id(cfg.project_tab)] = cfg.data
-        self.onStartProject()
-        tab_name = os.path.basename(cfg.data.dest() + '.swiftir')
-        self.globTabs.addTab(cfg.project_tab, tab_name)
-        self._setLastTab()
-
-        # self.rb0.setChecked(True)
-        # self._jumpToLineedit.setText(str(cfg.data.layer())) #0123-
-
-        # if cfg.data.is_aligned():
-        #     self._showSNRcheck()
-
-        # self.onStartProject()
+            self.warn("Invalid Path")
 
 
-    def open_zarr(self):
-        caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
-        # self.label_toolbar_resolution.setText('[dims]')
-        cfg.zarr_tab = ZarrTab()
-        cfg.zarr_tab.initNeuroglancer()
-        self.globTabs.addTab(cfg.zarr_tab, 'Open Zarr ...')
-        self.set_status('Select Zarr...')
-        self._setLastTab()
 
     def openDetatchedZarr(self):
         if cfg.project_tab or cfg.zarr_tab:
@@ -1963,7 +1943,7 @@ class MainWindow(QMainWindow):
         self.tell('Updating Table Data...')
         cfg.project_tab.project_table.setScaleData()
         self.hud.done()
-        cfg.main_window._sectionSlider.setValue(int(cfg.data.n_sections() / 2))
+        cfg.main_window._sectionSlider.setValue(int(len(cfg.data) / 2))
         self.update()
 
 
@@ -2075,7 +2055,7 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             cfg.project_tab.initNeuroglancer()
         if cfg.zarr_tab:
-            cfg.zarr_tab.initNeuroglancer()
+            cfg.zarr_tab.load()
 
     def import_multiple_images(self):
         ''' Import images into data '''
@@ -2511,7 +2491,6 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.project_table.setScaleData()
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.initSnrPlot()
-                QApplication.processEvents()
 
 
     def skip_change_shortcut(self):
@@ -2754,7 +2733,7 @@ class MainWindow(QMainWindow):
         # self.rb0 = QRadioButton('Contiguous')
         # self.rb0 = QRadioButton('Default')
         self.rb0 = QRadioButton('Normal')
-        self.rb0.setChecked(True)
+        self.rb0.setChecked(False)
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.clicked.connect(self.ngRadiobuttonChanged)
         self.rb0.clicked.connect(self.updateMenus)
@@ -2765,7 +2744,7 @@ class MainWindow(QMainWindow):
         # self.rb1 = QRadioButton('Comparison')
         # self.rb1 = QRadioButton('Compare')
         # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
-        self.rb1.setChecked(False)
+        self.rb1.setChecked(True)
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb1.clicked.connect(self.ngRadiobuttonChanged)
         self.rb1.clicked.connect(self.updateMenus)
@@ -2793,6 +2772,7 @@ class MainWindow(QMainWindow):
         self._arrangeRadio.setLayout(hbl)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
+        self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.setFixedWidth(180)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
 
@@ -2839,7 +2819,6 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab:
                     if self._sectionSlider.value() < cfg.data.nSections - 1:
                         self._sectionSlider.setValue(self._sectionSlider.value() + 1)
-                        QApplication.processEvents()
                     else:
                         self._sectionSlider.setValue(0)
                         self.automaticPlayTimer.stop()
@@ -2924,6 +2903,7 @@ class MainWindow(QMainWindow):
         self._al_unal_label_widget.setLayout(hbl)
 
         self._detachNgButton = QPushButton()
+        self._detachNgButton.setFixedSize(18,18)
         self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color=ICON_COLOR))
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
         self._detachNgButton.setStatusTip('Detach Neuroglancer (open in a separate window)')
@@ -3019,7 +2999,7 @@ class MainWindow(QMainWindow):
         self.stopPlaybackTimer()
         tabtype = self._getTabType()
 
-        if tabtype == 'OpenProject':
+        if tabtype in ('OpenProject', 'ZarrTab'):
             self._actions_widget.show()
             self.clearSelectionPathText()
             configure_project_paths()
@@ -3052,12 +3032,11 @@ class MainWindow(QMainWindow):
             self._changeScaleCombo.clear()
             self.extra_header_text_label.hide()
 
-        if self._isZarrTab():
-            logger.info('Loading Zarr Tab...')
-            cfg.zarr_tab = self.globTabs.currentWidget()
-            self.set_nglayout_combo_text(layout=cfg.zarr_tab.ng_layout)  # must be before initNeuroglancer
-            # cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
-            self.hardRestartNg()
+        # if self._isZarrTab():
+        #     logger.info('Loading Zarr Tab...')
+        #     cfg.zarr_tab = self.globTabs.currentWidget()
+        #     self.set_nglayout_combo_text(layout='4panel')
+        #     # cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
 
         if self._isOpenProjTab():
             try:
@@ -3148,7 +3127,6 @@ class MainWindow(QMainWindow):
                f'Current Thread   : {threading.current_thread()}' \
                f'All Threads      : \n{threads}'
         self.menuTextActiveThreads.setText(text)
-        QApplication.processEvents()
 
 
     def updateMenus(self):
@@ -3181,10 +3159,10 @@ class MainWindow(QMainWindow):
                     txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
                     addTensorMenuInfo(label='Aligned Series', body=txt)
 
-        elif cfg.zarr_tab:
-            if cfg.tensor:
-                txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
-                addTensorMenuInfo(label='Zarr Series', body=txt)
+        # elif cfg.zarr_tab:
+        #     if cfg.tensor:
+        #         txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
+        #         addTensorMenuInfo(label='Zarr Series', body=txt)
 
         self.updateNgMenuStateWidgets()
 
@@ -3276,7 +3254,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.openAction)
 
         self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
-        self.openArbitraryZarrAction.triggered.connect(self.open_zarr)
+        self.openArbitraryZarrAction.triggered.connect(self.open_zarr_selected)
         self.openArbitraryZarrAction.setShortcut('Ctrl+Z')
         fileMenu.addAction(self.openArbitraryZarrAction)
 
@@ -3887,15 +3865,34 @@ class MainWindow(QMainWindow):
         # hbl.addWidget(self._ctlpanel_whitening)
         # hbl.addWidget(self._ctlpanel_applyAllButton)
 
-        tip = 'Go To Next Scale.'
-        self._scaleUpButton = QPushButton()
-        self._scaleUpButton.setEnabled(False)
-        self._scaleUpButton.setStyleSheet("font-size: 11px;")
-        self._scaleUpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._scaleUpButton.setStatusTip(tip)
-        self._scaleUpButton.clicked.connect(self.scale_up)
-        self._scaleUpButton.setFixedSize(QSize(18, 18))
-        self._scaleUpButton.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
+        tip = 'Go To Previous Section.'
+        self._prevSectionBtn = QPushButton()
+        self._prevSectionBtn.setStyleSheet("font-size: 11px;")
+        self._prevSectionBtn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._prevSectionBtn.setStatusTip(tip)
+        self._prevSectionBtn.clicked.connect(self.layer_left)
+        self._prevSectionBtn.setFixedSize(QSize(18, 18))
+        self._prevSectionBtn.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
+
+        tip = 'Go To Next Section.'
+        self._nextSectionBtn = QPushButton()
+        self._nextSectionBtn.setStyleSheet("font-size: 11px;")
+        self._nextSectionBtn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._nextSectionBtn.setStatusTip(tip)
+        self._nextSectionBtn.clicked.connect(self.layer_right)
+        self._nextSectionBtn.setFixedSize(QSize(18, 18))
+        self._nextSectionBtn.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
+
+        self._sectionChangeWidget = QWidget()
+        lab = QLabel('Section:')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(lab, alignment=right)
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self._prevSectionBtn, alignment=right)
+        hbl.addWidget(self._nextSectionBtn, alignment=left)
+        self._sectionChangeWidget.setLayout(hbl)
 
         tip = 'Go To Previous Scale.'
         self._scaleDownButton = QPushButton()
@@ -3907,21 +3904,34 @@ class MainWindow(QMainWindow):
         self._scaleDownButton.setFixedSize(QSize(18, 18))
         self._scaleDownButton.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
 
-        self._scaleSetWidget = QWidget()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
-        self._scaleSetWidget.setLayout(hbl)
-        hbl.addWidget(self._scaleDownButton, alignment=right)
-        hbl.addWidget(self._scaleUpButton, alignment=left)
+        tip = 'Go To Next Scale.'
+        self._scaleUpButton = QPushButton()
+        self._scaleUpButton.setEnabled(False)
+        self._scaleUpButton.setStyleSheet("font-size: 11px;")
+        self._scaleUpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._scaleUpButton.setStatusTip(tip)
+        self._scaleUpButton.clicked.connect(self.scale_up)
+        self._scaleUpButton.setFixedSize(QSize(18, 18))
+        self._scaleUpButton.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
 
+        self._scaleSetWidget = QWidget()
         lab = QLabel('Scale:')
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        self._ctlpanel_changeScale = QWidget()
-        lay = QHBoxLayout()
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(lab, alignment=right)
-        lay.addWidget(self._scaleSetWidget, alignment=left)
-        self._ctlpanel_changeScale.setLayout(lay)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(lab, alignment=right)
+        hbl.addWidget(self._scaleDownButton, alignment=right)
+        hbl.addWidget(self._scaleUpButton, alignment=left)
+        self._scaleSetWidget.setLayout(hbl)
+
+        # lab = QLabel('Scale:')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # self._ctlpanel_changeScale = QWidget()
+        # lay = QHBoxLayout()
+        # lay.setContentsMargins(0, 0, 0, 0)
+        # lay.addWidget(lab, alignment=right)
+        # lay.addWidget(self._scaleSetWidget, alignment=left)
+        # self._ctlpanel_changeScale.setLayout(lay)
 
         tip = 'Align and Generate All Sections'
         self._btn_alignAll = QPushButton('Align All')
@@ -4094,7 +4104,9 @@ class MainWindow(QMainWindow):
         hbl0.addStretch()
         hbl0.addWidget(self._ctlpanel_toggleAutogenerate)
         hbl0.addStretch()
-        hbl0.addWidget(self._ctlpanel_changeScale)
+        hbl0.addWidget(self._sectionChangeWidget)
+        hbl0.addStretch()
+        hbl0.addWidget(self._scaleSetWidget)
         hbl0.addStretch()
 
         hbl1.addStretch()
@@ -4552,7 +4564,8 @@ class MainWindow(QMainWindow):
         self.selectionReadout.returnPressed.connect(self.open_project_selected)
         # self.selectionReadout.textChanged.connect(lambda: print('Text Changed!'))
         # self.selectionReadout.textEdited.connect(lambda: print('Text Edited!'))
-        self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
+        # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
+        self.selectionReadout.textChanged.connect(self.validateUserEnteredPath)
         self.selectionReadout.setFixedHeight(22)
         # self.selectionReadout.setFixedWidth(600)
         # self.selectionReadout.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -4816,8 +4829,29 @@ class MainWindow(QMainWindow):
 
 
     def validateUserEnteredPath(self):
+        logger.info(f'caller:{inspect.stack()[1].function}')
         cfg.selected_file = self.selectionReadout.text()
-        if validate_selection():
+        # if self._isProjectTab():
+        #     logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
+        #     if validate_project_selection():
+        #         self.validity_label.hide()
+        #         self._buttonOpen.setEnabled(True)
+        #         self._buttonDelete.setEnabled(True)
+        #     else:
+        #         self.validity_label.show()
+        #         self._buttonOpen.setEnabled(False)
+        #         self._buttonDelete.setEnabled(False)
+        # elif self._isZarrTab():
+        #     logger.info('Evaluating whether path is Zarr...')
+        #     if validate_zarr_selection():
+        #         self.validity_label.hide()
+        #         self._buttonOpen.setEnabled(True)
+        #         self._buttonDelete.setEnabled(True)
+        #     else:
+        #         self.validity_label.show()
+        #         self._buttonOpen.setEnabled(False)
+        #         self._buttonDelete.setEnabled(False)
+        if validate_project_selection() or validate_zarr_selection():
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
             self._buttonDelete.setEnabled(True)
@@ -4826,16 +4860,31 @@ class MainWindow(QMainWindow):
             self._buttonOpen.setEnabled(False)
             self._buttonDelete.setEnabled(False)
 
+
+
     def setSelectionPathText(self, path):
+        logger.info(f'caller:{inspect.stack()[1].function}')
         self.selectionReadout.setText(path)
-        if validate_selection():
-            self.validity_label.hide()
-            self._buttonOpen.setEnabled(True)
-            self._buttonDelete.setEnabled(True)
-        else:
-            self.validity_label.show()
-            self._buttonOpen.setEnabled(False)
-            self._buttonDelete.setEnabled(False)
+        if self._isProjectTab():
+            logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
+            if validate_project_selection():
+                self.validity_label.hide()
+                self._buttonOpen.setEnabled(True)
+                self._buttonDelete.setEnabled(True)
+            else:
+                self.validity_label.show()
+                self._buttonOpen.setEnabled(False)
+                self._buttonDelete.setEnabled(False)
+        elif self._isZarrTab():
+            logger.info('Evaluating whether path is Zarr...')
+            if validate_zarr_selection():
+                self.validity_label.hide()
+                self._buttonOpen.setEnabled(True)
+                self._buttonDelete.setEnabled(True)
+            else:
+                self.validity_label.show()
+                self._buttonOpen.setEnabled(False)
+                self._buttonDelete.setEnabled(False)
 
 
     def clearSelectionPathText(self):

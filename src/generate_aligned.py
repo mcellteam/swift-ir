@@ -112,7 +112,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
                              group='s%d' % scale_val,
                              dimx=rect[2],
                              dimy=rect[3],
-                             dimz=dm.n_sections(),
+                             dimz=len(cfg.data),
                              dtype='uint8',
                              overwrite=True
                              )

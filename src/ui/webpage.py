@@ -15,7 +15,7 @@ class WebPage(QWidget):
         self.view = QWebEngineView()
         # self.view.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
         # self.view.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
-        # self.view.urlChanged.connect(lambda: print('QWebengineView URL Changed!'))
+        self.view.urlChanged.connect(lambda: print('QWebengineView URL Changed!'))
         # self.view.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
