@@ -68,7 +68,7 @@ def compute_affines(scale, start=0, end=None):
             layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
             if not layer['skipped']: n_tasks +=1
             else:                    n_skips +=1
-        logger.info('# Layers (total)           : %d' % dm.n_sections())
+        logger.info('# Sections (total)         : %d' % len(dm))
         logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
         logger.info('# Skipped Layers           : %d' % n_skips)
         temp_file = os.path.join(dm.dest(), "temp_project_file.json")

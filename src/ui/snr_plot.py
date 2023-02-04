@@ -174,7 +174,6 @@ class SnrPlot(QWidget):
         # for scale in cfg.data.scalesAlignedAndGenerated:
         #     self.updateErrBars(s=scale)
 
-        QApplication.processEvents()
 
 
 

@@ -457,6 +457,9 @@ class DataModel:
             print_exception()
             logger.error('Unable To Determine Previous SNR List')
 
+    def delta_snr_list(self):
+        return [a_i - b_i for a_i, b_i in zip(self.snr_prev_list(), self.snr_list())]
+
 
     def snr_components(self, s=None, l=None) -> list[float]:
         if s == None: s = self.curScale

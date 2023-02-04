@@ -267,12 +267,12 @@ class TaskQueue(QObject):
                         cfg.main_window.hud.done()
                         cfg.main_window.warn('Canceling Future Tasks...')
                         cfg.main_window.cancelMultiprocessing.emit()
+                        # QApplication.processEvents()
                         sys.exit(1)
 
 
                     try:
                         self.parent.pbar_update(self.n_tasks - realtime)
-                        QApplication.processEvents()
                     except:
                         # print_exception()
                         logger.warning('An exception was raised while updating progress bar')
