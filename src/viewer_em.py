@@ -80,6 +80,12 @@ class EMViewer(neuroglancer.Viewer):
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
 
+    def set_zmag(self):
+        if cfg.MP_MODE:
+            with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
+
+
     def set_layer(self, l:int):
         state = copy.deepcopy(self.state)
         state.position[0] = l
@@ -165,8 +171,8 @@ class EMViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            # if cfg.MP_MODE:
-            #     s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
+            if cfg.MP_MODE:
+                s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
             s.crossSectionBackgroundColor = '#808080'
             s.layout.type = nglayout
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER,)
@@ -287,11 +293,11 @@ class EMViewer(neuroglancer.Viewer):
             # s.viewer_size = [100,100]
 
         self._layer = self.request_layer()
-        self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
-        if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=self.get_viewer_url())
+        # if cfg.main_window.detachedNg.view.isVisible():
+        #     cfg.main_window.detachedNg.open(url=self.get_viewer_url())
 
         cfg.main_window.updateToolbar()
 
@@ -328,6 +334,10 @@ class EMViewer(neuroglancer.Viewer):
 
             with self.txn() as s:
                 s.crossSectionScale = cs_scale * 1.06
+    #
+    # def set_rds(self):
+    #     with self.txn() as s:
+    #         s.relative_display_scales = {'z': 14}
 
 
     def get_nudge(self):

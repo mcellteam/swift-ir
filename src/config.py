@@ -34,7 +34,7 @@ is_mendenhall = False
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1180, 680
-WIDTH, HEIGHT = 1320, 720
+WIDTH, HEIGHT = 1380, 720
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
@@ -67,6 +67,9 @@ if 'Joels-' in platform.node():
     DEV_MODE = True
 else:
     DEV_MODE = False
+PROFILING_MODE = False
+if 'Joels-' in platform.node():
+    PROFILING_MODE = True
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True
