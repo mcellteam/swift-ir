@@ -422,7 +422,7 @@ class MainWindow(QMainWindow):
         #     if cfg.project_tab._tabs.currentIndex() == 0:
         #         cfg.project_tab.updateNeuroglancer()
         if cfg.project_tab:
-            cfg.project_tab.inputNeuroglancer()
+            cfg.project_tab.initNeuroglancer()
         if cfg.zarr_tab:
             cfg.emViewer.bootstrap()
 
@@ -487,7 +487,7 @@ class MainWindow(QMainWindow):
             print_exception()
             self.warn('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
 
-        show_status_report(results=cfg.results, dt=cfg.dt)
+        # show_status_report(results=cfg.results, dt=cfg.dt)
 
         cfg.data.link_reference_sections() #Todo: check if this is necessary
         cfg.data.set_scale(cfg.data.scales()[-1])

@@ -72,8 +72,8 @@ def generate_scales(dm):
         cfg.data.set_t_scaling(dt)
         print(f'results : {results}')
         print(f'dt      : {dt}')
-        cfg.results = results
-        cfg.dt = dt
+        # cfg.results = results
+        # cfg.dt = dt
         logger.info('<<<< generate_scales <<<<')
 
 

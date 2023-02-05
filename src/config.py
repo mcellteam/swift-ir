@@ -16,9 +16,8 @@ main_window = None
 project_tab = None
 zarr_tab = None
 thumb = None
-opengllogger = None
-selected = None
 emViewer = None
+selected = None
 dms = {}
 refLV = None
 baseLV = None
@@ -29,15 +28,11 @@ tensor = None
 unal_tensor = None
 al_tensor = None
 men_tensor = None
-url = None
 webdriver = None
-results = None
-dt = None
 py_console = None
 is_mendenhall = False
 
 '''Default Window Size'''
-# WIDTH, HEIGHT = 1160, 680
 # WIDTH, HEIGHT = 1180, 680
 WIDTH, HEIGHT = 1320, 720
 
@@ -54,7 +49,6 @@ DEFAULT_INITIAL_SCALE     = float(1.0000)
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
 
 '''Default Zarr Chunk Shape'''
-# CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 3
 CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 # CHUNK_X, CHUNK_Y, CHUNK_Z = 64, 64, 64
 
@@ -92,6 +86,7 @@ TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
+MP_MODE = False
 # SHADER = '''
 # #define VOLUME_RENDERING true
 # void main () {
@@ -105,21 +100,12 @@ USE_FILE_IO = 0
 CODE_MODE = 'c'
 # HTTP_PORT = 9000
 ICON_COLOR = '#2774AE'
-
 MV = True
 
-# SHOW_UI_CONTROLS = False
-# SHOW_SCALE_BAR = True
-# SHOW_PANEL_BORDERS = True
-# SHOW_AXIS_LINES = False
-
 settings = None
-projects = None
 selected_file = None
 tasks_remaining = None
 tasks_total = None
-
-MP_MODE = False
 
 
 DELAY_BEFORE = 0
