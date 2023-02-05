@@ -2568,7 +2568,7 @@ class MainWindow(QMainWindow):
             if cfg.project_tab:
 
                 if cfg.MP_MODE == False:
-                    if cfg.data.is_aligned_and_generated()
+                    if cfg.data.is_aligned_and_generated():
                         self.tell('Entering Match Point Mode...')
                         logger.critical('Entering Match Point Mode...')
                         cfg.MP_MODE = True
