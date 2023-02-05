@@ -85,7 +85,7 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 7)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings.setdefault('ui', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_CORR_SPOTS', True)
+    cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', True)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
 
