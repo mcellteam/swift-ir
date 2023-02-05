@@ -703,6 +703,115 @@ class ConfigProjectDialog(QDialog):
 
 
 
+class RechunkDialog(QDialog):
+    def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
+        super().__init__()
+        self.parent = parent
+        self.setModal(True)
+        logger.info('Showing Project Configuration Dialog:')
+
+        self.initUI()
+        self.setWindowTitle("Rechunk - Select Chunk Shape")
+        cfg.main_window.hud('Select Chunk Shape:')
+        self.show()
+        cfg.main_window.set_status('Awaiting User Input...')
+
+    @Slot()
+    def on_apply(self):
+
+        logger.info('Setting chunk shape for rechunking...')
+        try:
+            cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
+                                              int(self.chunk_y_lineedit.text()),
+                                              int(self.chunk_x_lineedit.text()))
+
+        except Exception as e:
+            logger.warning(e)
+
+        self.chunkshape = (int(self.chunk_z_lineedit.text()),
+                           int(self.chunk_y_lineedit.text()),
+                           int(self.chunk_x_lineedit.text()))
+
+
+    @Slot()
+    def on_cancel(self):
+        logger.warning("Exiting On 'Cancel'...")
+        self.close()
+
+    def initUI(self):
+
+
+        '''Chunk Shape'''
+        self.chunk_shape_label = QLabel("Chunk Shape:")
+        self.chunk_x_label = QLabel("x:")
+        self.chunk_y_label = QLabel("y:")
+        self.chunk_z_label = QLabel("z:")
+        self.chunk_x_lineedit = QLineEdit(self)
+        self.chunk_y_lineedit = QLineEdit(self)
+        self.chunk_z_lineedit = QLineEdit(self)
+        # self.chunk_z_lineedit.setEnabled(False)
+        self.chunk_x_lineedit.setFixedWidth(40)
+        self.chunk_y_lineedit.setFixedWidth(40)
+        self.chunk_z_lineedit.setFixedWidth(40)
+        chunkshape = cfg.data.chunkshape()
+        self.chunk_x_lineedit.setText(str(chunkshape[2]))
+        self.chunk_y_lineedit.setText(str(chunkshape[1]))
+        self.chunk_z_lineedit.setText(str(chunkshape[0]))
+        self.chunk_x_lineedit.setValidator(QIntValidator())
+        self.chunk_y_lineedit.setValidator(QIntValidator())
+        self.chunk_z_lineedit.setValidator(QIntValidator())
+        self.chunk_x_layout = QHBoxLayout()
+        self.chunk_x_layout.setContentsMargins(0,0,0,0)
+        self.chunk_y_layout = QHBoxLayout()
+        self.chunk_y_layout.setContentsMargins(0,0,0,0)
+        self.chunk_z_layout = QHBoxLayout()
+        self.chunk_z_layout.setContentsMargins(0,0,0,0)
+        self.chunk_x_layout.addWidget(self.chunk_x_label, alignment=Qt.AlignRight)
+        self.chunk_y_layout.addWidget(self.chunk_y_label, alignment=Qt.AlignRight)
+        self.chunk_z_layout.addWidget(self.chunk_z_label, alignment=Qt.AlignRight)
+        self.chunk_x_layout.addWidget(self.chunk_x_lineedit, alignment=Qt.AlignLeft)
+        self.chunk_y_layout.addWidget(self.chunk_y_lineedit, alignment=Qt.AlignLeft)
+        self.chunk_z_layout.addWidget(self.chunk_z_lineedit, alignment=Qt.AlignLeft)
+        self.chunk_shape_layout = QHBoxLayout()
+        self.chunk_shape_layout.setContentsMargins(0,0,0,0)
+        self.chunk_shape_layout.addLayout(self.chunk_z_layout)
+        self.chunk_shape_layout.addLayout(self.chunk_y_layout)
+        self.chunk_shape_layout.addLayout(self.chunk_x_layout)
+        self.chunk_shape_widget = QWidget()
+        self.chunk_layout = QHBoxLayout()
+        self.chunk_layout.addWidget(self.chunk_shape_label, alignment=Qt.AlignLeft)
+        self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
+        self.chunk_shape_widget.setLayout(self.chunk_shape_layout)
+
+        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for " \
+              "rapid viewing of volumetric datamodel in Neuroglancer. These settings determine the way " \
+              "volumetric datamodel is stored on disk."
+        txt = '\n'.join(textwrap.wrap(txt, width=55))
+        self.storage_info_label = QLabel(txt)
+
+        self.cancelButton = QPushButton('Cancel')
+        self.cancelButton.setDefault(False)
+        self.cancelButton.setAutoDefault(False)
+        self.cancelButton.clicked.connect(self.on_cancel)
+        self.applyButton = QPushButton('Apply')
+        self.applyButton.setDefault(True)
+        self.applyButton.clicked.connect(self.on_apply)
+        hbl = QHBoxLayout()
+        hbl.addWidget(self.cancelButton)
+        hbl.addWidget(self.applyButton)
+        self.buttonWidget = QWidget()
+        self.buttonWidget.setLayout(hbl)
+
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0,0,0,0)
+        vbl.addWidget(self.chunk_shape_widget)
+        vbl.addWidget(self.buttonWidget)
+
+        self.setLayout(vbl)
+
+
+
+
 class ScaleProjectDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         super().__init__()
@@ -834,9 +943,9 @@ class ScaleProjectDialog(QDialog):
         self.chunk_layout.addWidget(self.chunk_shape_label, alignment=Qt.AlignLeft)
         self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
 
-        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for rapid viewing of " \
-              "volumetric datamodel in Neuroglancer. These settings determine the way volumetric datamodel is " \
-              "stored and retrieved from disk storage."
+        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for " \
+              "rapid viewing of volumetric datamodel in Neuroglancer. These settings determine the way " \
+              "volumetric datamodel is stored on disk."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
 

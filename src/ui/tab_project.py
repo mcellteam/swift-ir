@@ -103,7 +103,7 @@ class ProjectTab(QWidget):
                 self.updateNeuroglancer(matchpoint=matchpoint)
                 cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        self.ng_browser.reload()
+        self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
         cfg.main_window.dataUpdateWidgets() #0204+
 
 
@@ -115,11 +115,11 @@ class ProjectTab(QWidget):
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self._widgetArea_details.hide()
             self.resetSliderZmag()
-            cfg.emViewer.initViewer(nglayout=self.get_layout(), matchpoint=True)
+            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=True)
         elif cfg.main_window.rb0.isChecked():
             cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
         elif cfg.main_window.rb1.isChecked():
-            cfg.emViewer.initViewer(nglayout=self.get_layout(), matchpoint=matchpoint)
+            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=matchpoint)
         url = cfg.emViewer.get_viewer_url()
         logger.info(f'URL:\n{url}')
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
