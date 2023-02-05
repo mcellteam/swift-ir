@@ -85,7 +85,7 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 7)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings.setdefault('ui', {})
-    cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', True)
+    cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
 
@@ -101,7 +101,13 @@ def initialize_user_preferences():
         logger.info(f'Loading user settings from defaults...')
         cfg.settings = {}
     update_preferences_model()
-
+    '''save user preferences to file'''
+    try:
+        f = open(userpreferencespath, 'w')
+        json.dump(cfg.settings, f, indent=2)
+        f.close()
+    except:
+        logger.warning(f'Unable to save current user preferences')
 
 def reset_user_preferences():
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')

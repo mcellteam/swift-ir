@@ -107,12 +107,14 @@ class HeadupDisplay(QWidget):
         color = self.COLORS.get(record.levelno, 'black')
         s = '<pre><font color="%s">%s</font></pre>' % (color, status)
         self.textedit.appendHtml(s)
+        self.update()
 
     @Slot()
     def manual_update(self):
         level = logging.INFO
         extra = {'qThreadName': ctname()}
         logger.log(level, 'Manually logged!', extra=extra)
+        self.update()
 
     @Slot()
     def post(self, message, level=logging.INFO):
@@ -120,11 +122,13 @@ class HeadupDisplay(QWidget):
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
+        self.update()
 
     @Slot()
     def warn(self, message):
         logger.log(logging.WARNING, message)
         self.textedit.moveCursor(QTextCursor.End)
+        self.update()
 
 
     # def done(self):
@@ -143,6 +147,7 @@ class HeadupDisplay(QWidget):
         self.post(last_line + 'done.')
         # self.post(last_line + 'done(%s).' % caller)
         self.textedit.moveCursor(QTextCursor.End)
+        self.update()
 
 
     # def cycle_text(self):

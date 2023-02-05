@@ -372,7 +372,7 @@ class MainWindow(QMainWindow):
         self.setInteractive.emit()
         # self._tabs.show()
         self.enableAllTabs()
-        self._cpanel.show()
+        self.cpanel.show()
         self.matchpointControls.hide()
         cfg.MP_MODE = False
         self.main_stack_widget.setCurrentIndex(0)
@@ -1190,7 +1190,7 @@ class MainWindow(QMainWindow):
         with open(self.main_stylesheet, 'r') as f:
             style = f.read()
         self.setStyleSheet(style)
-        self._cpanel.setStyleSheet(style)
+        self.cpanel.setStyleSheet(style)
         # self.hud.set_theme_default()
         self.hud.set_theme_light()
         # if inspect.stack()[1].function != 'initStyle':
@@ -1365,13 +1365,12 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         logger.info('')
         self.notesTextEdit.clear()
-        if cfg.project_tab:
+        if self._isProjectTab():
             cur = cfg.data.layer()
             self.notesTextEdit.setPlaceholderText('Enter notes about %s here...'
                                                   % cfg.data.base_image_name(s=cfg.data.curScale, l=cur))
             if cfg.data.notes(s=cfg.data.curScale, l=cur):
                 self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cur))
-
         else:
             self.notesTextEdit.clear()
             self.notesTextEdit.setPlaceholderText('Enter project notes here...')
@@ -2001,12 +2000,8 @@ class MainWindow(QMainWindow):
             json.dump(cfg.settings, f, indent=2)
             f.close()
         except:
-            logger.warning(f'Unable to save current user settings. Using defaults...')
-            self.warn(f'Unable to save current user settings. Using defaults...')
-            f = open('defaults.json', 'r')
-            cfg.settings = json.load(f)
-        else:
-            self.tell(f'Application Settings Saved!')
+            logger.warning(f'Unable to save current user preferences. Using defaults')
+
 
 
     def resetUserPreferences(self):
@@ -2591,7 +2586,7 @@ class MainWindow(QMainWindow):
                         # self._forceHideControls()
 
 
-                        self._cpanel.hide()
+                        self.cpanel.hide()
 
 
                         self.corr_spot_thumbs.show()
@@ -2619,7 +2614,7 @@ class MainWindow(QMainWindow):
                     logger.critical('Exiting Match Point Mode...')
                     self.tell('Returning to Normal Mode...')
                     cfg.MP_MODE = False
-                    self._cpanel.show()
+                    self.cpanel.show()
                     cfg.project_tab._tabs.currentWidget().setStyleSheet('')
                     cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
                     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
@@ -2798,7 +2793,7 @@ class MainWindow(QMainWindow):
         self.rb0 = QRadioButton('Default')
         # self.rb0.setStyleSheet('font-size: 11px')
         self.rb0.setStatusTip(tip)
-        self.rb0.setChecked(False)
+        self.rb0.setChecked(True)
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.clicked.connect(self.ngRadiobuttonChanged)
         self.rb0.clicked.connect(self.updateMenus)
@@ -2812,7 +2807,7 @@ class MainWindow(QMainWindow):
         self.rb1 = QRadioButton('Side-by-side')
         # self.rb1.setStyleSheet('font-size: 11px')
         self.rb1.setStatusTip(tip)
-        self.rb1.setChecked(True)
+        self.rb1.setChecked(False)
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb1.clicked.connect(self.ngRadiobuttonChanged)
         self.rb1.clicked.connect(self.updateMenus)
@@ -3059,7 +3054,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         caller = inspect.stack()[1].function
 
-        self.updateNotes()
+        # self.updateNotes()
 
         if self.globTabs.count() == 0:
             return
@@ -3128,6 +3123,7 @@ class MainWindow(QMainWindow):
         self.updateToolbar()
         self.reload_scales_combobox()
         self.updateEnabledButtons()
+        self.updateNotes()
 
 
     def _onGlobTabClose(self, index):
@@ -3371,6 +3367,60 @@ class MainWindow(QMainWindow):
         self.exitAppAction.setShortcut('Ctrl+Q')
         fileMenu.addAction(self.exitAppAction)
 
+        viewMenu = self.menu.addMenu("View")
+
+        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
+        self.ngShowScaleBarAction.setCheckable(True)
+        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
+        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
+        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.ngShowScaleBarAction)
+
+        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
+        self.ngShowAxisLinesAction.setCheckable(True)
+        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
+        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
+        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.ngShowAxisLinesAction)
+
+        self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
+        self.ngShowUiControlsAction.setCheckable(True)
+        self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+        # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
+        self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
+        self.ngShowUiControlsAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.ngShowUiControlsAction)
+
+        self.showCorrSpotsAction = QAction('Show Correlation Spots', self)
+        self.showCorrSpotsAction.setCheckable(True)
+        self.showCorrSpotsAction.setChecked(getOpt('ui,SHOW_CORR_SPOTS'))
+        self.showCorrSpotsAction.triggered.connect(lambda val: setOpt('ui,SHOW_CORR_SPOTS', val))
+        self.showCorrSpotsAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.showCorrSpotsAction)
+
+        # self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
+        # self.ngShowPanelBordersAction.setCheckable(True)
+        # self.ngShowPanelBordersAction.setChecked(getOpt('neuroglancer,SHOW_PANEL_BORDERS'))
+        # self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
+        # self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
+        # ngMenu.addAction(self.ngShowPanelBordersAction)
+
+        self.ngShowAlignmentDetailsAction = QAction('Show Alignment Details', self)
+        self.ngShowAlignmentDetailsAction.setCheckable(True)
+        self.ngShowAlignmentDetailsAction.setChecked(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+        self.ngShowAlignmentDetailsAction.triggered.connect(
+            lambda val: setOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS', val))
+        self.ngShowAlignmentDetailsAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.ngShowAlignmentDetailsAction)
+
+        # self.colorMenu = ngMenu.addMenu('Select Background Color')
+        # from qtpy.QtWidgets import QColorDialog
+        # self.ngColorMenu= QColorDialog(self)
+        # action = QWidgetAction(self)
+        # action.setDefaultWidget(self.ngColorMenu)
+        # # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
+        # self.colorMenu.addAction(action)
+
 
         alignMenu = self.menu.addMenu('Align')
 
@@ -3507,50 +3557,6 @@ class MainWindow(QMainWindow):
         # self.rowViewAction.triggered.connect(lambda: self.rb2.setChecked(True))
         # self.rowViewAction.triggered.connect(self.updateMenus)
         # ngArrangementMenu.addAction(self.rowViewAction)
-
-        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
-        self.ngShowScaleBarAction.setCheckable(True)
-        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
-        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowScaleBarAction)
-
-        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
-        self.ngShowAxisLinesAction.setCheckable(True)
-        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
-        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
-        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowAxisLinesAction)
-
-        self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
-        self.ngShowUiControlsAction.setCheckable(True)
-        self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
-        self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
-        self.ngShowUiControlsAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowUiControlsAction)
-
-        # self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
-        # self.ngShowPanelBordersAction.setCheckable(True)
-        # self.ngShowPanelBordersAction.setChecked(getOpt('neuroglancer,SHOW_PANEL_BORDERS'))
-        # self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
-        # self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
-        # ngMenu.addAction(self.ngShowPanelBordersAction)
-
-        self.ngShowAlignmentDetailsAction = QAction('Show Alignment Details', self)
-        self.ngShowAlignmentDetailsAction.setCheckable(True)
-        self.ngShowAlignmentDetailsAction.setChecked(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-        self.ngShowAlignmentDetailsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS', val))
-        self.ngShowAlignmentDetailsAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowAlignmentDetailsAction)
-
-        # self.colorMenu = ngMenu.addMenu('Select Background Color')
-        # from qtpy.QtWidgets import QColorDialog
-        # self.ngColorMenu= QColorDialog(self)
-        # action = QWidgetAction(self)
-        # action.setDefaultWidget(self.ngColorMenu)
-        # # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
-        # self.colorMenu.addAction(action)
 
 
         ngShaderMenu = ngMenu.addMenu("Experimental Shaders")
@@ -4217,8 +4223,8 @@ class MainWindow(QMainWindow):
         gb.setContentsMargins(0, 0, 0, 0)
         gb.setLayout(form_layout)
 
-        self._cpanel = QWidget()
-        self._cpanel.setStyleSheet('border-radius: 5px;')
+        self.cpanel = QWidget()
+        self.cpanel.setStyleSheet('border-radius: 5px;')
         lab = QLabel('Control Panel')
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         vbl = QVBoxLayout()
@@ -4226,20 +4232,20 @@ class MainWindow(QMainWindow):
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(lab, alignment=baseline)
         vbl.addWidget(gb)
-        self._cpanel.setLayout(vbl)
+        self.cpanel.setLayout(vbl)
 
 
-        # self._cpanel = ControlPanel(
+        # self.cpanel = ControlPanel(
         #     parent=self,
         #     name='ctl_panel',
         #     title='Control Panel',
         #     # items=wids,
         #     bg_color='#f3f6fb'
         # )
-        # # self._cpanel.setCustomLayout(self._cpanelVLayout)
-        # self._cpanel.setCustomLayout(form_layout)
-        self._cpanel.setFixedWidth(520)
-        self._cpanel.setMaximumHeight(120)
+        # # self.cpanel.setCustomLayout(self._cpanelVLayout)
+        # self.cpanel.setCustomLayout(form_layout)
+        self.cpanel.setFixedWidth(520)
+        self.cpanel.setMaximumHeight(120)
 
 
     def initUI(self):
@@ -4530,6 +4536,7 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self.corrspot_q2)
         hbl.addWidget(self.corrspot_q3)
         self.corr_spot_thumbs.setLayout(hbl)
+        self.corr_spot_thumbs.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
         # hbl.addStretch()
         # self.matchpointControlPanel.setLayout(hbl)
         # self.matchpointControlPanel.hide()
@@ -4685,8 +4692,9 @@ class MainWindow(QMainWindow):
         hbl = QHBoxLayout()
         # hbl.setContentsMargins(4, 0, 4, 0)
         hbl.addWidget(self._processMonitorWidget)
-        hbl.addWidget(self._cpanel)
+        hbl.addWidget(self.cpanel)
         hbl.addWidget(self.matchpointControls)
+        hbl.addWidget(self.corr_spot_thumbs)
         vbl = QVBoxLayout()
         # vbl.setContentsMargins(6, 0, 6, 0)
         vbl.addWidget(self._actions_widget)
