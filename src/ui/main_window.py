@@ -428,19 +428,19 @@ class MainWindow(QMainWindow):
 
 
     def _forceShowControls(self):
-        self._controlPanelAndHud.show()
+        self.controlPanelBoxes.show()
         self._btn_show_hide_ctls.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
         self._btn_show_hide_ctls.setText('Hide Controls')
 
 
     def _forceHideControls(self):
-        self._controlPanelAndHud.hide()
+        self.controlPanelBoxes.hide()
         self._btn_show_hide_ctls.setIcon(qta.icon("ei.adjust-alt", color='#f3f6fb'))
         self._btn_show_hide_ctls.setText('Controls')
 
 
     def _callbk_showHideControls(self):
-        if self._controlPanelAndHud.isHidden():
+        if self.controlPanelBoxes.isHidden():
             self._forceShowControls()
         else:
             self._forceHideControls()
@@ -1337,9 +1337,9 @@ class MainWindow(QMainWindow):
                 self._sectionSlider.setValue(cur)
                 self._jumpToLineedit.setText(str(cur)) #0131+
                 self.updateLayerDetails()
-                if cfg.MP_MODE:
+                if cfg.MP_MODE or getOpt(lookup='ui,SHOW_CORR_SPOTS'):
                     self.matchpoint_text_snr.setText(cfg.data.snr_report())
-                    self.updateMatchpointThumbnails()
+                    self.updateCorrSpotThumbnails()
                 else:
                     try:     self._jumpToLineedit.setText(str(cur))
                     except:  logger.warning('Current Layer Widget Failed to Update')
@@ -2543,7 +2543,7 @@ class MainWindow(QMainWindow):
                 else:                              self._skipCheckbox.setChecked(True)
 
 
-    def updateMatchpointThumbnails(self, s=None, l=None):
+    def updateCorrSpotThumbnails(self, s=None, l=None):
         if s == None: s=cfg.data.curScale
         if l == None: l=cfg.data.layer()
         snr_vals = cfg.data.snr_components()
@@ -2582,7 +2582,8 @@ class MainWindow(QMainWindow):
                     # self.extra_header_text_label.setText('Match Point Mode')
                     # self.extra_header_text_label.show()
                     self._forceHideControls()
-                    self.matchpointControlPanel.show()
+                    # self.matchpointControlPanel.show()
+                    self.matchpointControls.show()
                     if cfg.data.is_aligned_and_generated():
                         self.update_match_point_snr()
                     self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
@@ -2592,7 +2593,7 @@ class MainWindow(QMainWindow):
                         for i in range(1, 4):
                             cfg.project_tab._tabs.setTabEnabled(i, False)
                     # cfg.project_tab.ng_layout = 'xy'
-                    self.updateMatchpointThumbnails()
+                    self.updateCorrSpotThumbnails()
                     cfg.project_tab.initNeuroglancer(matchpoint=True)
                     # self.hardRestartNg(matchpoint=True)
                     # self.neuroglancer_configuration_1()
@@ -2605,7 +2606,8 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._tabs.currentWidget().setStyleSheet('')
                     cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
                     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-                    self.matchpointControlPanel.hide()
+                    # self.matchpointControlPanel.hide()
+                    self.matchpointControls.hide()
                     self.enableAllTabs()
                     cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
                     self.rb0.setEnabled(True)
@@ -4395,7 +4397,7 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.addWidget(self.splash_widget)
         self.viewer_stack_widget.addWidget(self.permFileBrowser)
 
-        self._matchpt_ctls = QWidget()
+        self.matchpointControls = QWidget()
 
         mp_marker_lineweight_label = QLabel('Lineweight')
         self.mp_marker_lineweight_spinbox = QSpinBox()
@@ -4478,7 +4480,7 @@ class MainWindow(QMainWindow):
         vbl.addWidget(self.matchpoint_text_snr)
         vbl.addWidget(self.matchpoint_text_prompt)
         # vbl.addStretch()
-        self._matchpt_ctls.setLayout(vbl)
+        self.matchpointControls.setLayout(vbl)
 
         self.corrspot_q0 = SnrThumbnail(parent=self)
         self.corrspot_q1 = SnrThumbnail(parent=self)
@@ -4498,20 +4500,22 @@ class MainWindow(QMainWindow):
         # self.corrspot_q2.setMaximumWidth(128)
         # self.corrspot_q3.setMaximumWidth(128)
 
-        self.matchpointControlPanel = QWidget()
+        # self.matchpointControlPanel = QWidget()
+        # hbl = QHBoxLayout()
+        # hbl.setContentsMargins(4, 0, 4, 0)
+        # hbl.addWidget(self.matchpointControls)
+
+        self.corr_spot_thumbs = QWidget()
         hbl = QHBoxLayout()
-        # hbl.setSpacing(0)
-        hbl.setContentsMargins(4, 0, 4, 0)
-        hbl.addWidget(self._matchpt_ctls)
-        # hbl.addStretch()
         hbl.addWidget(self.corrspot_q0)
         hbl.addWidget(self.corrspot_q1)
         hbl.addWidget(self.corrspot_q2)
         hbl.addWidget(self.corrspot_q3)
+        self.corr_spot_thumbs.setLayout(hbl)
         # hbl.addStretch()
-        self.matchpointControlPanel.setLayout(hbl)
-        self.matchpointControlPanel.hide()
-        self.matchpointControlPanel.setMaximumHeight(160)
+        # self.matchpointControlPanel.setLayout(hbl)
+        # self.matchpointControlPanel.hide()
+        # self.matchpointControlPanel.setMaximumHeight(160)
 
 
         '''Show/Hide Primary Tools Buttons'''
@@ -4659,26 +4663,27 @@ class MainWindow(QMainWindow):
         self._actions_widget.setFixedHeight(30)
         self._actions_widget.setLayout(hbl)
 
-        self._controlPanelAndHud = QWidget()
+        self.controlPanelBoxes = QWidget()
         hbl = QHBoxLayout()
         # hbl.setContentsMargins(4, 0, 4, 0)
         hbl.addWidget(self._processMonitorWidget)
         hbl.addWidget(self._cpanel)
+        hbl.addWidget(self.matchpointControls)
         vbl = QVBoxLayout()
         # vbl.setContentsMargins(6, 0, 6, 0)
         vbl.addWidget(self._actions_widget)
         vbl.addLayout(hbl)
-        self._controlPanelAndHud.setLayout(vbl)
-        self._controlPanelAndHud.resize(QSize(1000, 10))
+        self.controlPanelBoxes.setLayout(vbl)
+        self.controlPanelBoxes.resize(QSize(1000, 10))
 
         '''Main Vertical Splitter'''
         self._splitter = QSplitter(Qt.Orientation.Vertical)    # __SPLITTER INDEX__
         self._splitter.addWidget(self.globTabs)                # (0)
-        self._splitter.addWidget(self._controlPanelAndHud)     # (1)
-        self._splitter.addWidget(self.matchpointControlPanel)  # (2)
+        self._splitter.addWidget(self.controlPanelBoxes)     # (1)
+        # self._splitter.addWidget(self.matchpointControlPanel)  # (2)
         self._splitter.addWidget(self._py_console)             # (3)
         self._splitter.addWidget(self.notes)                   # (4)
-        self._mainVSplitterSizes = [800, 160, 160, 160, 160]
+        self._mainVSplitterSizes = [800, 160, 160, 160]
         self._splitter.setSizes(self._mainVSplitterSizes)
 
         self._dev_console = PythonConsole()
