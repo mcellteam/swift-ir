@@ -121,6 +121,7 @@ class TaskQueue(QObject):
                 self.parent.setPbarText(text=self.pbar_text)
                 # self.parent.statusBar.showMessage(self.pbar_text)
             self.parent.pbar_widget.show()
+            self.parent.update()
         except:
             logger.error('An exception was raised while setting up progress bar')
 
@@ -266,6 +267,7 @@ class TaskQueue(QObject):
                             w.terminate()
                         cfg.main_window.hud.done()
                         cfg.main_window.warn('Canceling Future Tasks...')
+                        self.parent.update()
                         cfg.main_window.cancelMultiprocessing.emit()
                         # QApplication.processEvents()
                         sys.exit(1)

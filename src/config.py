@@ -38,7 +38,8 @@ is_mendenhall = False
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1160, 680
-WIDTH, HEIGHT = 1180, 680
+# WIDTH, HEIGHT = 1180, 680
+WIDTH, HEIGHT = 1320, 720
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
@@ -67,7 +68,7 @@ KEEP_ORIGINAL_SPOTS = False
 PROFILING_TIMER_SPEED = 5000
 PROFILING_TIMER_AUTOSTART = False
 DEFAULT_PLAYBACK_SPEED = 2.5 # playback speed (fps)
-TARGET_THUMBNAIL_SIZE = 300
+TARGET_THUMBNAIL_SIZE = 256
 if 'Joels-' in platform.node():
     DEV_MODE = True
 else:
@@ -75,7 +76,7 @@ else:
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True
-USE_EXTRA_THREADING = False
+USE_EXTRA_THREADING = True
 DEBUG_MP = False
 DEBUG_NEUROGLANCER = False
 # DEBUG_MP = (False,True)[DEV_MODE]

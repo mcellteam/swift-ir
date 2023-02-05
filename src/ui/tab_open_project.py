@@ -62,6 +62,8 @@ class OpenProject(QWidget):
 
         # self.user_projects.set_data()
 
+        # cfg.main_window.tell('Open a project (.swiftir) or a Zarr (a directory containing .zarray):')
+
 
 
 class UserProjects(QWidget):

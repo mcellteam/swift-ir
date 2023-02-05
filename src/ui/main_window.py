@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         self.setInteractive.connect(self.restore_interactivity)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
-        self.tell('To Relaunch:\n\n  cd $WORK/swift-ir\n  source tacc_boostrap\n')
+        self.tell('To Relaunch on Lonestar6:\n\n  cd $WORK/swift-ir\n  source tacc_boostrap\n')
 
         if not cfg.NO_SPLASH:
             self.show_splash()
@@ -397,6 +397,10 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_notes.setIcon(qta.icon(icon, color='#f3f6fb'))
         self._btn_show_hide_notes.setText(label)
         self.updateNotes()
+        if cfg.project_tab:
+            cfg.project_tab.inputNeuroglancer()
+        if cfg.zarr_tab:
+            cfg.emViewer.bootstrap()
 
 
 
@@ -417,6 +421,10 @@ class MainWindow(QMainWindow):
         # if cfg.project_tab:
         #     if cfg.project_tab._tabs.currentIndex() == 0:
         #         cfg.project_tab.updateNeuroglancer()
+        if cfg.project_tab:
+            cfg.project_tab.inputNeuroglancer()
+        if cfg.zarr_tab:
+            cfg.emViewer.bootstrap()
 
 
     def _forceShowControls(self):
@@ -436,6 +444,10 @@ class MainWindow(QMainWindow):
             self._forceShowControls()
         else:
             self._forceHideControls()
+        if cfg.project_tab:
+            cfg.project_tab.inputNeuroglancer()
+        if cfg.zarr_tab:
+            cfg.emViewer.bootstrap()
 
 
     def _forceHidePython(self):
@@ -725,7 +737,8 @@ class MainWindow(QMainWindow):
         if not cfg.CancelProcesses:
             self.present_snr_results()
         self.onAlignmentEnd(start=0, end=None)
-        self.hardRestartNg()
+        # self.hardRestartNg()
+        cfg.project_tab.initNeuroglancer()
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
@@ -733,7 +746,8 @@ class MainWindow(QMainWindow):
     def alignRange(self):
         start = int(self.startRangeInput.text())
         end = int(self.endRangeInput.text())
-        self.tell('Re-aligning Sections #%d through #%d (%s)...' % (start, end, cfg.data.scale_pretty()))
+        self.tell('Re-aligning Sections #%d through #%d (%s)...' %
+                  (start, end, cfg.data.scale_pretty()))
         self.align(
             scale=cfg.data.curScale,
             start=start,
@@ -743,13 +757,15 @@ class MainWindow(QMainWindow):
         )
 
         self.onAlignmentEnd(start=start, end=end)
-        self.hardRestartNg()
+        # self.hardRestartNg()
+        cfg.project_tab.initNeuroglancer()
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
 
     def alignOne(self):
-        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.layer(), cfg.data.scale_pretty()))
+        self.tell('Re-aligning Section #%d (%s)...' %
+                  (cfg.data.layer(), cfg.data.scale_pretty()))
         start = cfg.data.layer()
         end = cfg.data.layer() + 1
         self.align(
@@ -760,15 +776,17 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False
         )
         self.onAlignmentEnd(start=start, end=end)
-        self.hardRestartNg()
+        # self.hardRestartNg()
+        cfg.project_tab.initNeuroglancer()
         self.tell('Section #%d Alignment Complete' % start)
-        self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=start),
-                                                             cfg.data.snr(l=start)))
+        self.tell('SNR Before: %.3f  SNR After: %.3f' %
+                  (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
     def alignOneMp(self):
-        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.layer(), cfg.data.scale_pretty()))
+        self.tell('Re-aligning Section #%d (%s)...' %
+                  (cfg.data.layer(), cfg.data.scale_pretty()))
         layer = cfg.data.layer()
         self.align(
             scale=cfg.data.curScale,
@@ -778,10 +796,11 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False
         )
         self.onAlignmentEnd()
-        self.hardRestartNg()
+        # self.hardRestartNg()
+        cfg.project_tab.initNeuroglancer()
         self.tell('Section #%d Alignment Complete' % layer)
-        self.tell('SNR Before: %.3f  SNR After: %.3f' % (cfg.data.snr_prev(l=layer),
-                                                             cfg.data.snr(l=layer)))
+        self.tell('SNR Before: %.3f  SNR After: %.3f' %
+                  (cfg.data.snr_prev(l=layer), cfg.data.snr(l=layer)))
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
@@ -1194,6 +1213,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.project_table.setScaleData()
                 self.updateToolbar()
                 self._showSNRcheck()
+
                 try:
                     self._bbToggle.setChecked(cfg.data.has_bb())
                 except:
@@ -1209,18 +1229,26 @@ class MainWindow(QMainWindow):
         # logger.info(f'caller: {caller}')
         if self.globTabs.currentWidget().__class__.__name__ == 'ProjectTab':
             self._changeScaleCombo.show()
-            self.rb0.show()
-            self.rb1.show()
-            self.reload_scales_combobox()
+
             if cfg.data.is_aligned_and_generated():
+                self.rb0.setText('Aligned')
+                self.rb1.setText('Comparison')
+                self.rb0.show()
+                self.rb1.show()
                 self.aligned_label.show()
                 self.generated_label.show()
                 self.unaligned_label.hide()
             elif cfg.data.is_aligned():
+                self.rb0.setText('Unaligned')
+                self.rb0.show()
+                self.rb1.hide()
                 self.aligned_label.show()
                 self.generated_label.hide()
                 self.unaligned_label.hide()
             else:
+                self.rb0.setText('Unaligned')
+                self.rb0.show()
+                self.rb1.hide()
                 self.aligned_label.hide()
                 self.generated_label.hide()
                 self.unaligned_label.show()
@@ -1599,14 +1627,25 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        # logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
-        self._scales_combobox_switch = 0
         self._changeScaleCombo.clear()
-        self._changeScaleCombo.addItems(cfg.data.scales())
-        index = self._changeScaleCombo.findText(cfg.data.curScale, Qt.MatchFixedString)
-        if index >= 0:
-            self._changeScaleCombo.setCurrentIndex(index)
-        self._scales_combobox_switch = 1
+        if cfg.project_tab:
+            if cfg.data:
+                logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
+                self._scales_combobox_switch = 0
+                def pretty_scales():
+                    lst = []
+                    for s in cfg.data.scales():
+                        siz = cfg.data.image_size(s=s)
+                        lst.append('%s %dx%d' % (cfg.data.scale_pretty(s=s), siz[0], siz[1]))
+                    return lst
+
+                self._changeScaleCombo.addItems(pretty_scales())
+                # self._changeScaleCombo.addItems(items)
+                # index = self._changeScaleCombo.findText(cfg.data.curScale, Qt.MatchFixedString)
+                # if index >= 0:
+                #     logger.critical(f'index = {index}')
+                #     self._changeScaleCombo.setCurrentIndex(index)
+                self._scales_combobox_switch = 1
 
 
     def fn_scales_combobox(self) -> None:
@@ -1615,7 +1654,9 @@ class MainWindow(QMainWindow):
             if self._scales_combobox_switch == 1:
                 if cfg.MP_MODE != True:
                     logger.info('')
-                    cfg.data.set_scale(self._changeScaleCombo.currentText())
+                    # cfg.data.set_scale(self._changeScaleCombo.currentText())
+                    index = cfg.main_window._changeScaleCombo.currentIndex()
+                    cfg.data.set_scale(cfg.data.scales()[index])
                     self.onScaleChange() #0129-
 
 
@@ -1937,6 +1978,7 @@ class MainWindow(QMainWindow):
         # cfg.main_window.update()
         self.updateMenus()
         self.updateToolbar()
+        self.reload_scales_combobox()
         self.enableAllTabs()
         self.updateNotes()
         self.hud.done()
@@ -2705,6 +2747,7 @@ class MainWindow(QMainWindow):
         height = int(18)
 
         self._btn_refreshNg = QPushButton('Refresh')
+        self._btn_refreshNg.setStyleSheet('font-size: 12px;')
         self._btn_refreshNg.setFixedHeight(18)
         self._btn_refreshNg.setFixedWidth(68)
         self._btn_refreshNg.setIcon(qta.icon('ei.refresh', color=cfg.ICON_COLOR))
@@ -2713,7 +2756,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
 
         self.toolbar = QToolBar()
-        self.toolbar.setFixedHeight(34)
+        self.toolbar.setFixedHeight(30)
         # self.toolbar.setFixedHeight(64)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
@@ -2732,29 +2775,36 @@ class MainWindow(QMainWindow):
         # self.rb0 = QRadioButton('Stack')
         # self.rb0 = QRadioButton('Contiguous')
         # self.rb0 = QRadioButton('Default')
-        self.rb0 = QRadioButton('Normal')
+        tip = 'View image stack in default layout'
+        self.rb0 = QRadioButton('Default')
+        # self.rb0.setStyleSheet('font-size: 11px')
+        self.rb0.setStatusTip(tip)
         self.rb0.setChecked(False)
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.clicked.connect(self.ngRadiobuttonChanged)
         self.rb0.clicked.connect(self.updateMenus)
+        self.rb0.hide()
 
-
+        tip = 'View reference image, next to current image, [next to aligned image]'
         # self.rb1 = QRadioButton('Ref | Curr')
-        self.rb1 = QRadioButton('Side-by-side')
         # self.rb1 = QRadioButton('Comparison')
         # self.rb1 = QRadioButton('Compare')
         # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
+        self.rb1 = QRadioButton('Side-by-side')
+        # self.rb1.setStyleSheet('font-size: 11px')
+        self.rb1.setStatusTip(tip)
         self.rb1.setChecked(True)
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb1.clicked.connect(self.ngRadiobuttonChanged)
         self.rb1.clicked.connect(self.updateMenus)
+        self.rb1.hide()
 
         self.rb2 = QRadioButton('Ref|Base|Aligned, Row')
         self.rb2.setChecked(False)
         self.rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb2.hide()
         self.rb2.clicked.connect(self.ngRadiobuttonChanged)
         self.rb2.clicked.connect(self.updateMenus)
+        self.rb2.hide()
 
         self.ngRbGroup.addButton(self.rb0)
         self.ngRbGroup.addButton(self.rb1)
@@ -2789,14 +2839,16 @@ class MainWindow(QMainWindow):
 
         tip = 'Jump To Image #'
         lab = QLabel('Section #: ')
+        # lab.setStyleSheet('font-size: 11px;')
         lab.setObjectName('toolbar_layer_label')
 
         '''section # / jump-to lineedit'''
         self._jumpToLineedit = QLineEdit(self)
+        self._jumpToLineedit.setStyleSheet('font-size: 11px;')
         self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
         self._jumpToLineedit.setStatusTip(tip)
         self._jumpToLineedit.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self._jumpToLineedit.setFixedSize(QSize(46, height))
+        self._jumpToLineedit.setFixedSize(QSize(36, 18))
         self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -2824,8 +2876,6 @@ class MainWindow(QMainWindow):
                         self.automaticPlayTimer.stop()
                         self._isPlayingBack = 0
                         self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
-                        # self._sectionSlider.setValue(0)
-                        # self._sectionSlider.setValue(1)
 
         self.automaticPlayTimer.timeout.connect(onTimer)
         self._sectionSliderWidget = QWidget()
@@ -2837,7 +2887,8 @@ class MainWindow(QMainWindow):
 
         lab = QLabel('Speed:')
         self._fps_spinbox = QDoubleSpinBox()
-        self._fps_spinbox.setFixedHeight(22)
+        # self._fps_spinbox.setStyleSheet('font-size: 11px')
+        self._fps_spinbox.setFixedHeight(20)
         self._fps_spinbox.setMinimum(.5)
         self._fps_spinbox.setMaximum(10)
         self._fps_spinbox.setSingleStep(.2)
@@ -2847,10 +2898,13 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.clear()
 
         '''NG arrangement/layout combobox'''
-        self.comboboxNgLayout = QComboBox()
+        self.comboboxNgLayout = QComboBox(self)
+        self.comboboxNgLayout.setStyleSheet('font-size: 11px')
+        self.comboboxNgLayout.resize(QSize(76, 20))
+        self.comboboxNgLayout.setFixedHeight(20)
 
         self.comboboxNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.comboboxNgLayout.setFixedSize(QSize(76, 20))
+        # self.comboboxNgLayout.setFixedSize(QSize(76, 20))
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         self.comboboxNgLayout.addItems(items)
         self.comboboxNgLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
@@ -2862,8 +2916,11 @@ class MainWindow(QMainWindow):
         self._ngLayoutWidget = QWidget()
         self._ngLayoutWidget.setLayout(hbl)
         self._changeScaleCombo = QComboBox(self)
+        self._changeScaleCombo.setStyleSheet('font-size: 11px')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._changeScaleCombo.setFixedSize(QSize(90, 20))
+        # self._changeScaleCombo.setFixedSize(QSize(160, 20))
+        self._changeScaleCombo.resize(QSize(160, 18))
+        self._changeScaleCombo.setFixedHeight(20)
         self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -2993,7 +3050,6 @@ class MainWindow(QMainWindow):
 
         logger.critical('Changing global tab (caller: %s)...' % caller)
 
-
         cfg.selected_file = None
         self.globTabs.show()
         self.stopPlaybackTimer()
@@ -3051,6 +3107,7 @@ class MainWindow(QMainWindow):
             self.clearNgStateMenus()
 
         self.updateToolbar()
+        self.reload_scales_combobox()
         self.updateEnabledButtons()
 
 
@@ -3247,16 +3304,16 @@ class MainWindow(QMainWindow):
         self.newAction.setShortcut('Ctrl+N')
         fileMenu.addAction(self.newAction)
 
-        self.openAction = QAction('&Open Project...', self)
+        self.openAction = QAction('&Open...', self)
         # self.openAction.triggered.connect(self.open_project)
         self.openAction.triggered.connect(self.open_project_new)
         self.openAction.setShortcut('Ctrl+O')
         fileMenu.addAction(self.openAction)
 
-        self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
-        self.openArbitraryZarrAction.triggered.connect(self.open_zarr_selected)
-        self.openArbitraryZarrAction.setShortcut('Ctrl+Z')
-        fileMenu.addAction(self.openArbitraryZarrAction)
+        # self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
+        # self.openArbitraryZarrAction.triggered.connect(self.open_zarr_selected)
+        # self.openArbitraryZarrAction.setShortcut('Ctrl+Z')
+        # fileMenu.addAction(self.openArbitraryZarrAction)
 
         exportMenu = fileMenu.addMenu('Export')
 
@@ -3432,6 +3489,51 @@ class MainWindow(QMainWindow):
         # self.rowViewAction.triggered.connect(self.updateMenus)
         # ngArrangementMenu.addAction(self.rowViewAction)
 
+        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
+        self.ngShowScaleBarAction.setCheckable(True)
+        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
+        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
+        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowScaleBarAction)
+
+        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
+        self.ngShowAxisLinesAction.setCheckable(True)
+        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
+        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
+        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowAxisLinesAction)
+
+        self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
+        self.ngShowUiControlsAction.setCheckable(True)
+        self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+        # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
+        self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
+        self.ngShowUiControlsAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowUiControlsAction)
+
+        # self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
+        # self.ngShowPanelBordersAction.setCheckable(True)
+        # self.ngShowPanelBordersAction.setChecked(getOpt('neuroglancer,SHOW_PANEL_BORDERS'))
+        # self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
+        # self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
+        # ngMenu.addAction(self.ngShowPanelBordersAction)
+
+        self.ngShowAlignmentDetailsAction = QAction('Show Alignment Details', self)
+        self.ngShowAlignmentDetailsAction.setCheckable(True)
+        self.ngShowAlignmentDetailsAction.setChecked(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+        self.ngShowAlignmentDetailsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS', val))
+        self.ngShowAlignmentDetailsAction.triggered.connect(self.update_ng)
+        ngMenu.addAction(self.ngShowAlignmentDetailsAction)
+
+        # self.colorMenu = ngMenu.addMenu('Select Background Color')
+        # from qtpy.QtWidgets import QColorDialog
+        # self.ngColorMenu= QColorDialog(self)
+        # action = QWidgetAction(self)
+        # action.setDefaultWidget(self.ngColorMenu)
+        # # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
+        # self.colorMenu.addAction(action)
+
+
         ngShaderMenu = ngMenu.addMenu("Experimental Shaders")
 
         self.shader1Action = QAction('None', self)
@@ -3461,50 +3563,6 @@ class MainWindow(QMainWindow):
         self.shader2Action.setCheckable(True)
         self.shader3Action.setCheckable(True)
         self.shader4Action.setCheckable(True)
-
-        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
-        self.ngShowScaleBarAction.setCheckable(True)
-        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
-        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowScaleBarAction)
-
-        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
-        self.ngShowAxisLinesAction.setCheckable(True)
-        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
-        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
-        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowAxisLinesAction)
-
-        self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
-        self.ngShowUiControlsAction.setCheckable(True)
-        self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
-        self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
-        self.ngShowUiControlsAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowUiControlsAction)
-
-        self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
-        self.ngShowPanelBordersAction.setCheckable(True)
-        self.ngShowPanelBordersAction.setChecked(getOpt('neuroglancer,SHOW_PANEL_BORDERS'))
-        self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
-        self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowPanelBordersAction)
-
-        self.ngShowAlignmentDetailsAction = QAction('Show Alignment Details', self)
-        self.ngShowAlignmentDetailsAction.setCheckable(True)
-        self.ngShowAlignmentDetailsAction.setChecked(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-        self.ngShowAlignmentDetailsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS', val))
-        self.ngShowAlignmentDetailsAction.triggered.connect(self.update_ng)
-        ngMenu.addAction(self.ngShowAlignmentDetailsAction)
-
-        # self.colorMenu = ngMenu.addMenu('Select Background Color')
-        # from qtpy.QtWidgets import QColorDialog
-        # self.ngColorMenu= QColorDialog(self)
-        # action = QWidgetAction(self)
-        # action.setDefaultWidget(self.ngColorMenu)
-        # # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
-        # self.colorMenu.addAction(action)
 
 
         self.detachNgAction = QAction('Detach Neuroglancer...', self)
@@ -3805,7 +3863,7 @@ class MainWindow(QMainWindow):
         lab.setAlignment(right)
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         self._whiteningControl = QDoubleSpinBox(self)
-        self._whiteningControl.setFixedHeight(24)
+        self._whiteningControl.setFixedHeight(26)
         self._whiteningControl.valueChanged.connect(self._callbk_unsavedChanges)
         self._whiteningControl.valueChanged.connect(self._valueChangedWhitening)
         self._whiteningControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3832,7 +3890,7 @@ class MainWindow(QMainWindow):
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         self._swimWindowControl = QDoubleSpinBox(self)
         self._swimWindowControl.setSuffix('%')
-        self._swimWindowControl.setFixedHeight(24)
+        self._swimWindowControl.setFixedHeight(26)
         self._swimWindowControl.valueChanged.connect(self._callbk_unsavedChanges)
         self._swimWindowControl.valueChanged.connect(self._valueChangedSwimWindow)
         self._swimWindowControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -3990,7 +4048,7 @@ class MainWindow(QMainWindow):
         self._btn_alignRange.setFixedSize(normal_button_size)
 
         tip = 'Auto-generate aligned images.'
-        lab = QLabel("Auto-generate:")
+        lab = QLabel("Auto-\ngenerate:")
         lab.setAlignment(right)
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lab.setStatusTip(tip)
@@ -4491,6 +4549,7 @@ class MainWindow(QMainWindow):
                     cfg.settings['notes']['global_notes'] = self.notesTextEdit.toPlainText()
                 self.notes.update()
 
+
         self.notes = QWidget()
         # self.notesTextEdit = QPlainTextEdit()
         self.notesTextEdit = QTextEdit()
@@ -4893,7 +4952,7 @@ class MainWindow(QMainWindow):
 
     def initLaunchTab(self):
         self._launchScreen = OpenProject()
-        self.globTabs.addTab(self._launchScreen, 'Welcome')
+        self.globTabs.addTab(self._launchScreen, 'Open...')
         self._setLastTab()
 
 
@@ -4959,17 +5018,20 @@ class MainWindow(QMainWindow):
 
     def pbar_update(self, x):
         self.pbar.setValue(x)
+        self.update()
 
 
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
+        self.update()
 
 
     def showZeroedPbar(self):
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
+        self.update()
 
 
     def back_callback(self):

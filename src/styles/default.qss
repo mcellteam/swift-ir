@@ -83,6 +83,7 @@ QLabel#validity_label{
 
 QTabWidget#project_tabs{
     height: 10px;
+    font-size: 12px;
 }
 
 QHeaderView

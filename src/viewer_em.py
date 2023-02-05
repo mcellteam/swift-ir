@@ -318,7 +318,7 @@ class EMViewer(neuroglancer.Viewer):
             # logger.info('zoom factor          : %.11f' % cs_scale)
 
             with self.txn() as s:
-                s.crossSectionScale = cs_scale * 1.08
+                s.crossSectionScale = cs_scale * 1.06
 
 
     def get_nudge(self):
@@ -358,11 +358,9 @@ class EMViewer(neuroglancer.Viewer):
             # logger.info('self.state.cross_section_scale = %s' % str(zoom))
             if zoom:
                 if zoom != self._crossSectionScale:
-                    logger.critical(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
+                    logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
                     self.signals.zoomChanged.emit(zoom)
                 self._crossSectionScale = zoom
-            logger.critical(f' (!) emitting state.cross_section_scale: {self.state.cross_section_scale}...')
-            self.signals.zoomChanged.emit(self.state.cross_section_scale)
         except:
             print_exception()
             logger.error('ERROR on_state_change')
