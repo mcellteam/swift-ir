@@ -728,8 +728,14 @@ class MainWindow(QMainWindow):
 
 
     def alignAll(self):
+        '''MUST handle bounding box for partial-stack alignments.'''
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
-        is_realign = cfg.data.is_aligned(s=cfg.data.curScale)
+        scale = cfg.data.curScale
+        is_realign = cfg.data.is_aligned(s=scale)
+        # This SHOULD always work. Only set bounding box here. Then, during a single or partial alignment,
+        # generate_aligned will use the correct value that is consistent with the other images
+        # at the same scale
+        cfg.data['data']['scales'][scale]['use_bounding_rect'] = self._bbToggle.isChecked()
         self.align(
             scale=cfg.data.curScale,
             start=0,
@@ -739,6 +745,7 @@ class MainWindow(QMainWindow):
         )
         if not cfg.CancelProcesses:
             self.present_snr_results()
+
         self.onAlignmentEnd(start=0, end=None)
         # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
@@ -810,6 +817,7 @@ class MainWindow(QMainWindow):
 
     def align(self, scale, start, end, renew_od=False, reallocate_zarr=False):
         #Todo change printout based upon alignment scope, i.e. for single layer
+        caller = inspect.stack()[1].function
         logger.info('')
         if not self.verify_alignment_readiness(): return
         self.onAlignmentStart(scale=scale)
@@ -4120,7 +4128,7 @@ class MainWindow(QMainWindow):
         self._ctlpanel_polyOrder.setLayout(lay)
 
 
-        tip = 'Bounding rectangle (default=ON). Caution: Turning this ON may ' \
+        tip = 'Bounding rectangle (only applies to "Align All"). Caution: Turning this ON may ' \
               'significantly increase the size of your aligned images.'
         lab = QLabel("Bounding Box:")
         # lab.setAlignment(right | vcenter)
