@@ -42,6 +42,7 @@ class WorkerSignals(QObject):
 class EMViewer(neuroglancer.Viewer):
     def __init__(self):
         super().__init__()
+        logger.info('')
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
@@ -56,6 +57,7 @@ class EMViewer(neuroglancer.Viewer):
         self._mpCount = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        logger.info('viewer constructed!')
 
 
     def __del__(self):
@@ -115,15 +117,21 @@ class EMViewer(neuroglancer.Viewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
+    def initViewer(self, matchpoint=False):
 
-    def initViewer(self, nglayout='3d',matchpoint=False):
+        if cfg.main_window.rb0.isChecked():
+            self.initViewerSlim(nglayout='4panel')
+        elif cfg.main_window.rb1.isChecked():
+            self.initViewerSbs(nglayout='xy', matchpoint=matchpoint)
+
+
+    def initViewerSbs(self, nglayout='xy', matchpoint=False):
 
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer (caller: {caller})....')
         if cfg.data.is_mendenhall(): self.initViewerMendenhall(); return
-        # self._crossSectionScale = None
-        self.clear_layers()
 
+        self.clear_layers()
         self.make_local_volumes()
 
         is_aligned = cfg.data.is_aligned_and_generated()
@@ -213,11 +221,12 @@ class EMViewer(neuroglancer.Viewer):
         cfg.main_window.updateToolbar()
 
 
-    def initViewerSlim(self, nglayout='3d'):
+    def initViewerSlim(self, nglayout='4panel'):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
 
         self.clear_layers()
+        self.make_local_volumes()
 
         zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
         path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
@@ -332,7 +341,7 @@ class EMViewer(neuroglancer.Viewer):
 
     def on_state_changed(self):
         caller = inspect.stack()[1].function
-        # logger.info('caller: %s' % caller)
+        logger.info('caller: %s' % caller)
 
         if not self.cs_scale:
             if self.state.cross_section_scale:

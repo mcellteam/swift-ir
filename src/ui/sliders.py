@@ -5,9 +5,12 @@ __all__ = ['DoubleSlider', 'RangeSlider']
 Source: https://gist.github.com/dennis-tra/994a65d6165a328d4eabaadbaedac2cc
 '''
 
-import sys, os
+import sys
+import logging
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtWidgets import QSlider
+
+logger = logging.getLogger(__name__)
 
 class DoubleSlider(QSlider):
 
@@ -68,7 +71,10 @@ RangeSlider > QSplitter::handle:pressed { background: #969696; }
 """
 
 def scale(val, src, dst):
-    return int(((val - src[0]) / float(src[1]-src[0])) * (dst[1]-dst[0]) + dst[0])
+    try:
+        return int(((val - src[0]) / float(src[1]-src[0])) * (dst[1]-dst[0]) + dst[0])
+    except ZeroDivisionError:
+        logger.warning('cannot divide by 0')
 
 
 class Ui_Form(object):

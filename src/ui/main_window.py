@@ -59,7 +59,7 @@ from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_
     count_widgets, find_allocated_widgets, cleanup_project_list, update_preferences_model
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
     QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
-    mendenhall_dialog
+    mendenhall_dialog, RechunkDialog
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
@@ -1206,7 +1206,7 @@ class MainWindow(QMainWindow):
 
     def onScaleChange(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'Changing Scales...')
+        logger.critical(f'Changing Scales (caller: {caller})...')
         if not self._working:
             if caller != 'OnStartProject':
                 # self.jump_to(cfg.data.layer())
@@ -1223,6 +1223,7 @@ class MainWindow(QMainWindow):
                     logger.warning('Bounding Rect Widget Failed to Update')
                 # cfg.project_tab.initNeuroglancer()
                 self.hardRestartNg()
+                # self.hardRestartNg()
         else:
             self.warn('The application is busy, cant change scales now...')
 
@@ -1599,7 +1600,8 @@ class MainWindow(QMainWindow):
         requested = self._sectionSlider.value()
         if cfg.project_tab:
             cfg.data.set_layer(requested)
-        cfg.emViewer._layer = requested
+        if cfg.emViewer: # ? check this
+            cfg.emViewer._layer = requested
         # logger.info(f'slider, requested: {requested}')
         if cfg.project_tab:
             if requested in range(len(cfg.data)):
@@ -1629,11 +1631,11 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        self._changeScaleCombo.clear()
         if cfg.project_tab:
             if cfg.data:
                 logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
                 self._scales_combobox_switch = 0
+                self._changeScaleCombo.clear()
                 def pretty_scales():
                     lst = []
                     for s in cfg.data.scales():
@@ -1642,16 +1644,12 @@ class MainWindow(QMainWindow):
                     return lst
 
                 self._changeScaleCombo.addItems(pretty_scales())
-                # self._changeScaleCombo.addItems(items)
-                # index = self._changeScaleCombo.findText(cfg.data.curScale, Qt.MatchFixedString)
-                # if index >= 0:
-                #     logger.critical(f'index = {index}')
-                #     self._changeScaleCombo.setCurrentIndex(index)
                 self._scales_combobox_switch = 1
 
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if cfg.project_tab:
             if self._scales_combobox_switch == 1:
                 if cfg.MP_MODE != True:
@@ -1963,7 +1961,6 @@ class MainWindow(QMainWindow):
         cfg.data.update_cache()
         cfg.data.set_defaults()
         # self.hardRestartNg()
-        # self.shutdownNeuroglancer()
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
         self.dataUpdateWidgets()
@@ -1973,11 +1970,6 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         self.updateEnabledButtons()
         self._resetSlidersAndJumpInput()
-        # self.sectionRangeSlider.setMin(0)
-        # self.sectionRangeSlider.setStart(0)
-        # self.sectionRangeSlider.setMax(len(cfg.data))
-        # self.sectionRangeSlider.setEnd(len(cfg.data))
-        # cfg.main_window.update()
         self.updateMenus()
         self.updateToolbar()
         self.reload_scales_combobox()
@@ -2790,7 +2782,7 @@ class MainWindow(QMainWindow):
         # self.rb0 = QRadioButton('Contiguous')
         # self.rb0 = QRadioButton('Default')
         tip = 'View image stack in default layout'
-        self.rb0 = QRadioButton('Default')
+        self.rb0 = QRadioButton()
         # self.rb0.setStyleSheet('font-size: 11px')
         self.rb0.setStatusTip(tip)
         self.rb0.setChecked(True)
@@ -2801,10 +2793,9 @@ class MainWindow(QMainWindow):
 
         tip = 'View reference image, next to current image, [next to aligned image]'
         # self.rb1 = QRadioButton('Ref | Curr')
-        # self.rb1 = QRadioButton('Comparison')
         # self.rb1 = QRadioButton('Compare')
         # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
-        self.rb1 = QRadioButton('Side-by-side')
+        self.rb1 = QRadioButton('Comparison')
         # self.rb1.setStyleSheet('font-size: 11px')
         self.rb1.setStatusTip(tip)
         self.rb1.setChecked(False)
@@ -3598,12 +3589,18 @@ class MainWindow(QMainWindow):
         self.hardRestartNgNgAction.triggered.connect(self.hardRestartNg)
         ngMenu.addAction(self.hardRestartNgNgAction)
 
-
-        configMenu = self.menu.addMenu('Configure')
+        actionsMenu = self.menu.addMenu('Actions')
 
         self.rescaleAction = QAction('Rescale...', self)
         self.rescaleAction.triggered.connect(self.rescale)
-        configMenu.addAction(self.rescaleAction)
+        actionsMenu.addAction(self.rescaleAction)
+
+        self.rechunkAction = QAction('Rechunk...', self)
+        self.rechunkAction.triggered.connect(self.rechunk)
+        actionsMenu.addAction(self.rechunkAction)
+
+
+        configMenu = self.menu.addMenu('Configure')
 
         self.projectConfigAction = QAction('Configure Project...', self)
         self.projectConfigAction.triggered.connect(self._dlg_cfg_project)
@@ -3841,6 +3838,14 @@ class MainWindow(QMainWindow):
             self.tell('Images will be generated automatically after alignment')
         else:
             self.tell('Images will not be generated automatically after alignment')
+
+
+    def rechunk(self):
+        dlg = RechunkDialog()
+        if dlg.exec():
+            logger.info('Rechunking...')
+        else:
+            logger.info('Rechunking Canceled')
 
 
     def initControlPanel(self):
@@ -4919,7 +4924,7 @@ class MainWindow(QMainWindow):
 
 
     def validateUserEnteredPath(self):
-        logger.info(f'caller:{inspect.stack()[1].function}')
+        # logger.info(f'caller:{inspect.stack()[1].function}')
         cfg.selected_file = self.selectionReadout.text()
         # if self._isProjectTab():
         #     logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
@@ -4953,7 +4958,7 @@ class MainWindow(QMainWindow):
 
 
     def setSelectionPathText(self, path):
-        logger.info(f'caller:{inspect.stack()[1].function}')
+        # logger.info(f'caller:{inspect.stack()[1].function}')
         self.selectionReadout.setText(path)
         if self._isProjectTab():
             logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
