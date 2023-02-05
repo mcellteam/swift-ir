@@ -92,17 +92,17 @@ class ProjectTab(QWidget):
         else:
             cfg.main_window.corr_spot_thumbs.hide()
 
-        if caller != '_onGlobTabChange':
-            logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
-            if cfg.data:
-                cfg.emViewer = EMViewer()
-                if cfg.main_window.rb0.isChecked():
-                    cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-                elif cfg.main_window.rb1.isChecked():
-                    cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-                self.updateNeuroglancer(matchpoint=matchpoint)
-                cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-                cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+        # if caller != '_onGlobTabChange':
+        logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
+        if cfg.data:
+            cfg.emViewer = EMViewer()
+            if cfg.main_window.rb0.isChecked():
+                cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+            elif cfg.main_window.rb1.isChecked():
+                cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            self.updateNeuroglancer(matchpoint=matchpoint)
+            cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
         cfg.main_window.dataUpdateWidgets() #0204+
 
@@ -111,22 +111,34 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
-        if matchpoint:
+        # if matchpoint or cfg.MP_MODE:
+        if cfg.MP_MODE:
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self._widgetArea_details.hide()
-            self.resetSliderZmag()
+            # self.resetSliderZmag()
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=True)
+            self.setZmag(val=15)
         elif cfg.main_window.rb0.isChecked():
             cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
+            # self.setZmag(val=1)
         elif cfg.main_window.rb1.isChecked():
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=matchpoint)
+            # self.setZmag(val=1)
+
         url = cfg.emViewer.get_viewer_url()
         logger.info(f'URL:\n{url}')
         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
         if not matchpoint:
             self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
         # self.slotUpdateZoomSlider()
+        logger.info('setting URL...')
         self.ng_browser.setUrl(QUrl(url))
+        if cfg.MP_MODE:
+            self.setZmag(val=15)
+            self.ng_browser.setUrl(QUrl(url))
+        #     self.setZmag()
+        #     cfg.emViewer.set_rds()
+
 
 
     def get_layout(self):
@@ -134,7 +146,7 @@ class ProjectTab(QWidget):
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         val = mapping[cfg.main_window.comboboxNgLayout.currentText()]
-        logger.critical('RETURNING: %s' % val)
+        # logger.info('Returing: %s' % val)
         return val
 
     # def addToState(self):
@@ -163,8 +175,14 @@ class ProjectTab(QWidget):
         logger.info('')
 
         self.ng_browser.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
-        self.ng_browser.loadFinished.connect(self.resetSliderZmag)
-        self.ng_browser.loadFinished.connect(self.slotUpdateZoomSlider)
+
+
+
+        # self.ng_browser.loadFinished.connect(self.resetSliderZmag)
+        # self.ng_browser.loadFinished.connect(self.slotUpdateZoomSlider)
+        # self.ng_browser.loadFinished.connect(lambda val=21: self.setZmag(val=val))
+
+
         # self.ng_browser.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
         # self.ng_browser.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
@@ -324,8 +342,8 @@ class ProjectTab(QWidget):
 
 
     def slotUpdateZoomSlider(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         try:
             val = cfg.emViewer.state.cross_section_scale
             if val:
@@ -338,6 +356,7 @@ class ProjectTab(QWidget):
 
 
     def onZoomSlider(self):
+        logger.info('')
         caller = inspect.stack()[1].function
         if caller not in  ('slotUpdateZoomSlider', 'setValue'):
             # logger.info(f'caller: {caller}')
@@ -353,12 +372,13 @@ class ProjectTab(QWidget):
                 print_exception()
 
 
-    def setZmag(self):
-        logger.info('')
+    def setZmag(self, val):
+        logger.critical(f'Setting Z-mag to {val}...')
         try:
             state = copy.deepcopy(cfg.emViewer.state)
-            state.relative_display_scales = {'z': self.ZdisplaySlider.value()}
+            state.relative_display_scales = {'z': val}
             cfg.emViewer.set_state(state)
+            cfg.main_window.update()
         except:
             print_exception()
 
@@ -372,13 +392,14 @@ class ProjectTab(QWidget):
             state = copy.deepcopy(cfg.emViewer.state)
             state.relative_display_scales = {'z': val}
             cfg.emViewer.set_state(state)
+            cfg.main_window.update()
         except:
             print_exception()
 
 
     def resetSliderZmag(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         try:
             if cfg.main_window.rb1.isChecked():
                 self.ZdisplaySlider.setValue(10)

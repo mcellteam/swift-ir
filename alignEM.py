@@ -60,6 +60,56 @@ from src.helpers import check_for_binaries, is_tacc, print_exception, \
 import src.config as cfg
 
 
+
+
+WHITE_LIST = {'src'}      # Look for these words in the file path.
+EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
+
+
+def tracefunc(frame, event, arg):
+    # https://stackoverflow.com/questions/8315389/how-do-i-print-functions-as-they-are-called
+    if event == "call":
+        tracefunc.stack_level += 1
+
+        unique_id = frame.f_code.co_filename + str(frame.f_lineno)
+        if unique_id in tracefunc.memorized:
+            return
+
+        # Part of filename MUST be in white list.
+        if any(x in frame.f_code.co_filename for x in WHITE_LIST) \
+                and \
+                not any(x in frame.f_code.co_name for x in EXCLUSIONS):
+
+            if 'self' in frame.f_locals:
+                class_name = frame.f_locals['self'].__class__.__name__
+                func_name = class_name + '.' + frame.f_code.co_name
+            else:
+                func_name = frame.f_code.co_name
+
+            func_name = '{name:->{indent}s}()'.format(
+                indent=tracefunc.stack_level * 2, name=func_name)
+            txt = '{: <40} # {}, {}'.format(
+                func_name, frame.f_code.co_filename, frame.f_lineno)
+            print(txt)
+
+            tracefunc.memorized.add(unique_id)
+
+    elif event == "return":
+        tracefunc.stack_level -= 1
+
+
+tracefunc.memorized = set()
+tracefunc.stack_level = 0
+
+
+
+
+
+
+
+
+
+
 class CustomFormatter(logging.Formatter):
 
     grey = "\x1b[38;20m"
@@ -81,12 +131,6 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
         return formatter.format(record)
-
-def start_profiler():
-    if cfg.PROFILER == True:
-        if not is_tacc():
-            from scalene import scalene_profiler
-            scalene_profiler.start()
 
 
 def main():
@@ -138,9 +182,8 @@ def main():
     if args.opencv: cfg.USE_PYTHON = True
     if args.dummy: cfg.DUMMY = True
     if args.profile:
-        cfg.PROFILER = True
+        cfg.PROFILING_MODE = True
 
-    # start_profiler()
 
     # https://doc.qt.io/qtforpython-5/PySide2/QtCore/Qt.html
     QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
@@ -150,12 +193,19 @@ def main():
     if cfg.FAULT_HANDLER:
         faulthandler.enable(file=sys.stderr, all_threads=True)
 
+    if cfg.PROFILING_MODE:
+        sys.setprofile(tracefunc)
+
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
     # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
+
+    # ***************
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
+    # ***************
+
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -174,6 +224,22 @@ def main():
 
     initialize_user_preferences()
     configure_project_paths()
+
+
+
+    # def tracefunc(frame, event, arg, indent=[0]):
+    #     if event == "call":
+    #         indent[0] += 2
+    #         print("-" * indent[0] + "> call function", frame.f_code.co_name)
+    #     elif event == "return":
+    #         print("<" + "-" * indent[0], "exit function", frame.f_code.co_name)
+    #         indent[0] -= 2
+    #     return tracefunc
+    # sys.setprofile(tracefunc)
+
+
+
+
 
     # sys_argv = sys.argv
     # sys_argv += ['--style', 'material']

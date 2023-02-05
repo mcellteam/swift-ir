@@ -230,7 +230,8 @@ class MainWindow(QMainWindow):
 
 
 
-    def hardRestartNg(self, matchpoint=False):
+    # def hardRestartNg(self, matchpoint=False):
+    def hardRestartNg(self):
         caller = inspect.stack()[1].function
         logger.info('Force Restarting Neuroglancer (caller: %s)...' % caller)
         if cfg.USE_DELAY:
@@ -240,7 +241,8 @@ class MainWindow(QMainWindow):
                 logger.info('Stopping Neuroglancer...')
                 ng.server.stop()
             if cfg.project_tab:
-                cfg.project_tab.initNeuroglancer(matchpoint=matchpoint)
+                # cfg.project_tab.initNeuroglancer(matchpoint=matchpoint)
+                cfg.project_tab.initNeuroglancer()
                 # cfg.project_tab.slotUpdateZoomSlider()
                 # cfg.project_tab.ng_browser.setFocus()
             if cfg.zarr_tab:
@@ -1244,7 +1246,7 @@ class MainWindow(QMainWindow):
 
             if cfg.data.is_aligned_and_generated():
                 self.rb0.setText('Aligned')
-                self.rb1.setText('Comparison')
+                # self.rb1.setText('Comparison')
                 self.rb0.show()
                 self.rb1.show()
                 self.aligned_label.show()
@@ -1253,14 +1255,16 @@ class MainWindow(QMainWindow):
             elif cfg.data.is_aligned():
                 self.rb0.setText('Unaligned')
                 self.rb0.show()
-                self.rb1.hide()
+                # self.rb1.hide()
+                self.rb1.show()
                 self.aligned_label.show()
                 self.generated_label.hide()
                 self.unaligned_label.hide()
             else:
                 self.rb0.setText('Unaligned')
                 self.rb0.show()
-                self.rb1.hide()
+                # self.rb1.hide()
+                self.rb1.show()
                 self.aligned_label.hide()
                 self.generated_label.hide()
                 self.unaligned_label.show()
@@ -1270,7 +1274,6 @@ class MainWindow(QMainWindow):
             # self.rb1.hide()
         if self.globTabs.currentWidget().__class__.__name__ in ('ProjectTab', 'ZarrTab'):
             if cfg.tensor:
-                self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
                 self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
                 self.label_toolbar_resolution.show()
             else:
@@ -1418,6 +1421,13 @@ class MainWindow(QMainWindow):
         cfg.project_tab.afm_widget_.setText(make_affine_widget_HTML(afm, cafm))
 
 
+    def update_displayed_controls(self):
+        if getOpt('ui,SHOW_CORR_SPOTS'):
+            self.corr_spot_thumbs.show()
+        else:
+            self.corr_spot_thumbs.hide()
+
+
     def setPlaybackSpeed(self):
         dlg = QInputDialog(self)
         dlg.setInputMode(QInputDialog.IntInput)
@@ -1531,7 +1541,7 @@ class MainWindow(QMainWindow):
     def _resetSlidersAndJumpInput(self):
         '''Requires Neuroglancer '''
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.info(f'caller: {caller}')
         if cfg.data:
             try:
                 if self._isProjectTab() or self._isZarrTab():
@@ -1977,8 +1987,8 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.setCurrentText(cfg.data.curScale)
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         self.updateEnabledButtons()
-        self._resetSlidersAndJumpInput()
         self.updateMenus()
+        self._resetSlidersAndJumpInput()
         self.updateToolbar()
         self.reload_scales_combobox()
         self.enableAllTabs()
@@ -2202,21 +2212,6 @@ class MainWindow(QMainWindow):
                 self.warn(f'Having trouble shutting down threadpool')
             finally:
                 time.sleep(.4)
-
-        if not is_tacc():
-            if cfg.PROFILER:
-                self.tell('Stopping Profiler...')
-                logger.info('Stopping Profiler...')
-                try:
-                    if cfg.PROFILER == True:
-                        from scalene import scalene_profiler
-                        scalene_profiler.stop()
-
-                except:
-                    print_exception()
-                    self.warn('Having trouble stopping profiler')
-                finally:
-                    time.sleep(.4)
 
         # if cfg.DEV_MODE:
         self.tell('Shutting Down Python Console Kernel...')
@@ -2603,11 +2598,12 @@ class MainWindow(QMainWindow):
                                 cfg.project_tab._tabs.setTabEnabled(i, False)
                         # cfg.project_tab.ng_layout = 'xy'
                         self.updateCorrSpotThumbnails()
-                        cfg.project_tab.initNeuroglancer(matchpoint=True)
+                        # cfg.project_tab.initNeuroglancer(matchpoint=True)
+                        cfg.project_tab.initNeuroglancer()
                         # self.hardRestartNg(matchpoint=True)
                         # self.neuroglancer_configuration_1()
                         cfg.project_tab._widgetArea_details.setVisible(False)
-                        cfg.project_tab.ng_browser.setFocus()
+                        # cfg.project_tab.ng_browser.setFocus()
                     else:
                         self.warn('Alignment must be generated before using Match Point Alignment method.')
                 else:
@@ -2628,8 +2624,15 @@ class MainWindow(QMainWindow):
                     # self.extra_header_text_label.setText('')
                     # self.extra_header_text_label.hide()
                     self._forceShowControls()
+
+                    if getOpt('ui,SHOW_CORR_SPOTS'):
+                        self.corr_spot_thumbs.show()
+                    else:
+                        self.corr_spot_thumbs.hide()
+
                     # self.hardRestartNg(matchpoint=False)
-                    cfg.project_tab.initNeuroglancer(matchpoint=False)
+                    # cfg.project_tab.initNeuroglancer(matchpoint=False)
+                    cfg.project_tab.initNeuroglancer()
                     # self.neuroglancer_configuration_0()
                 self.updateToolbar()
                 # cfg.project_tab.updateNeuroglancer()
@@ -2790,7 +2793,7 @@ class MainWindow(QMainWindow):
         # self.rb0 = QRadioButton('Contiguous')
         # self.rb0 = QRadioButton('Default')
         tip = 'View image stack in default layout'
-        self.rb0 = QRadioButton()
+        self.rb0 = QRadioButton('Unaligned')
         # self.rb0.setStyleSheet('font-size: 11px')
         self.rb0.setStatusTip(tip)
         self.rb0.setChecked(True)
@@ -2842,13 +2845,13 @@ class MainWindow(QMainWindow):
         tip = 'Show Neuroglancer key bindings'
         self.info_button_buffer_label = QLabel(' ')
 
-        self.profilingTimerButton = QPushButton('P')
-        self.profilingTimerButton.setFixedSize(20,20)
-        self.profilingTimerButton.clicked.connect(self.startStopProfiler)
-        self.profilingTimer = QTimer(self)
-        self.profilingTimer.timeout.connect(self.onProfilingTimer)
-        if cfg.PROFILING_TIMER_AUTOSTART:
-            self.profilingTimerButton.click()
+        # self.profilingTimerButton = QPushButton('P')
+        # self.profilingTimerButton.setFixedSize(20,20)
+        # self.profilingTimerButton.clicked.connect(self.startStopProfiler)
+        # self.profilingTimer = QTimer(self)
+        # self.profilingTimer.timeout.connect(self.onProfilingTimer)
+        # if cfg.PROFILING_TIMER_AUTOSTART:
+        #     self.profilingTimerButton.click()
 
         tip = 'Jump To Image #'
         lab = QLabel('Section #: ')
@@ -3081,18 +3084,15 @@ class MainWindow(QMainWindow):
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = self.globTabs.currentWidget()
             cfg.zarr_tab = None
+            self.rb0.show()
+            self.rb1.show()
             self.dataUpdateWidgets()
-            # self.set_nglayout_combo_text(layout=cfg.project_tab.ng_layout)  # must be before initNeuroglancer
             if self.rb0.isChecked():
                 self.set_nglayout_combo_text(layout='4panel')  # must be before initNeuroglancer
             elif self.rb1.isChecked():
                 self.set_nglayout_combo_text(layout='xy')  # must be before initNeuroglancer
 
-            self.sectionRangeSlider.setMin(0)
-            self.sectionRangeSlider.setStart(0)
-            self.sectionRangeSlider.setMax(len(cfg.data))
-            self.sectionRangeSlider.setEnd(len(cfg.data))
-            cfg.main_window.update()
+
             cfg.project_tab.initNeuroglancer()
             # self.hardRestartNg()
         else:
@@ -3100,29 +3100,27 @@ class MainWindow(QMainWindow):
             cfg.project_tab = None
             self._changeScaleCombo.clear()
             self.extra_header_text_label.hide()
+            self.corr_spot_thumbs.hide()
 
-        # if self._isZarrTab():
-        #     logger.info('Loading Zarr Tab...')
-        #     cfg.zarr_tab = self.globTabs.currentWidget()
-        #     self.set_nglayout_combo_text(layout='4panel')
-        #     # cfg.zarr_tab.initNeuroglancer() #!!!!!!!!!!
+        if self._isZarrTab():
+            logger.info('Loading Zarr Tab...')
 
-        if self._isOpenProjTab():
-            try:
-                self.getCurrentTabWidget().user_projects.set_data()
-            except:
-                logger.warning('No data to set!')
+            cfg.zarr_tab = self.globTabs.currentWidget()
+            cfg.emViewer = cfg.zarr_tab.viewer
+            self.set_nglayout_combo_text(layout='4panel')
+            cfg.zarr_tab.viewer.bootstrap() #!!!!!!!!!!
 
-        if self._isProjectTab() or self._isZarrTab():
-            self.updateMenus()
-        else:
-            self.tensorMenu.clear()
-            self.clearNgStateMenus()
+        # if self._isOpenProjTab():
+        #     try:    self.getCurrentTabWidget().user_projects.set_data()
+        #     except: logger.warning('No data to set!')
 
+        self.updateMenus()
+        self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
         self.updateToolbar()
         self.reload_scales_combobox()
         self.updateEnabledButtons()
         self.updateNotes()
+        cfg.main_window.update()
 
 
     def _onGlobTabClose(self, index):
@@ -3204,38 +3202,39 @@ class MainWindow(QMainWindow):
         '''NOTE: This should always be run AFTER initializing Neuroglancer!'''
         caller = inspect.stack()[1].function
         logger.info('')
-        if (not self._isProjectTab()) and (not self._isZarrTab()):
-            return
-        # logger.info('Clearing menus...')
         self.tensorMenu.clear()
+        if self._isProjectTab() or self._isZarrTab():
+            # logger.info('Clearing menus...')
 
-        def addTensorMenuInfo(label, body):
-            menu = self.tensorMenu.addMenu(label)
-            textedit = QTextEdit(self)
-            textedit.setFixedSize(QSize(600,600))
-            textedit.setReadOnly(True)
-            textedit.setText(body)
-            action = QWidgetAction(self)
-            action.setDefaultWidget(textedit)
-            menu.addAction(action)
 
-        if cfg.project_tab:
-            if cfg.unal_tensor:
-                # logger.info('Adding Raw Series tensor to menu...')
-                txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
-                addTensorMenuInfo(label='Raw Series', body=txt)
-            if cfg.data.is_aligned():
-                if cfg.al_tensor:
-                    # logger.info('Adding Aligned Series tensor to menu...')
-                    txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
-                    addTensorMenuInfo(label='Aligned Series', body=txt)
+            def addTensorMenuInfo(label, body):
+                menu = self.tensorMenu.addMenu(label)
+                textedit = QTextEdit(self)
+                textedit.setFixedSize(QSize(600,600))
+                textedit.setReadOnly(True)
+                textedit.setText(body)
+                action = QWidgetAction(self)
+                action.setDefaultWidget(textedit)
+                menu.addAction(action)
 
-        # elif cfg.zarr_tab:
-        #     if cfg.tensor:
-        #         txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
-        #         addTensorMenuInfo(label='Zarr Series', body=txt)
+            if self._isProjectTab():
+                if cfg.unal_tensor:
+                    # logger.info('Adding Raw Series tensor to menu...')
+                    txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
+                    addTensorMenuInfo(label='Raw Series', body=txt)
+                if cfg.data.is_aligned():
+                    if cfg.al_tensor:
+                        # logger.info('Adding Aligned Series tensor to menu...')
+                        txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
+                        addTensorMenuInfo(label='Aligned Series', body=txt)
+            if self._isZarrTab():
+                txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
+                addTensorMenuInfo(label='Zarr Series', body=txt)
 
-        self.updateNgMenuStateWidgets()
+            self.updateNgMenuStateWidgets()
+        else:
+            self.clearNgStateMenus()
+
 
     def clearTensorMenu(self):
         self.tensorMenu.clear()
@@ -3394,7 +3393,7 @@ class MainWindow(QMainWindow):
         self.showCorrSpotsAction.setCheckable(True)
         self.showCorrSpotsAction.setChecked(getOpt('ui,SHOW_CORR_SPOTS'))
         self.showCorrSpotsAction.triggered.connect(lambda val: setOpt('ui,SHOW_CORR_SPOTS', val))
-        self.showCorrSpotsAction.triggered.connect(self.update_ng)
+        self.showCorrSpotsAction.triggered.connect(self.update_displayed_controls)
         viewMenu.addAction(self.showCorrSpotsAction)
 
         # self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
@@ -4174,8 +4173,9 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self._btn_alignAll)
         self._wdg_alignButtons.setLayout(hbl)
         # lab = QLabel('Actions\n(Highly Parallel):')
+
         # lab.setAlignment(right | vcenter)
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lay = QHBoxLayout()
         # vbl.setSpacing(1)
         lay.setContentsMargins(2, 2, 2, 2)
@@ -4185,7 +4185,6 @@ class MainWindow(QMainWindow):
         self._ctlpanel_alignRegenButtons.setLayout(lay)
 
         form_layout = QFormLayout()
-
         hbl0 = QHBoxLayout()
         hbl1 = QHBoxLayout()
         hbl2 = QHBoxLayout()
@@ -4232,20 +4231,24 @@ class MainWindow(QMainWindow):
 
         form_layout.setContentsMargins(0, 0, 0, 0)
 
-        gb = QGroupBox()
+        # gb = QGroupBox()
+        gb = QGroupBox('Control Panel')
+        gb.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         gb.setContentsMargins(0, 0, 0, 0)
         gb.setLayout(form_layout)
 
         self.cpanel = QWidget()
-        self.cpanel.setStyleSheet('border-radius: 5px;')
-        lab = QLabel('Control Panel')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # self.cpanel.setStyleSheet('border-radius: 5px;')
+        # lab = QLabel('Control Panel')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         vbl = QVBoxLayout()
         vbl.setSpacing(0)
         vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(lab, alignment=baseline)
+        # vbl.addWidget(lab, alignment=baseline)
         vbl.addWidget(gb)
         self.cpanel.setLayout(vbl)
+
+
 
 
         # self.cpanel = ControlPanel(
@@ -4257,8 +4260,10 @@ class MainWindow(QMainWindow):
         # )
         # # self.cpanel.setCustomLayout(self._cpanelVLayout)
         # self.cpanel.setCustomLayout(form_layout)
-        self.cpanel.setFixedWidth(520)
-        self.cpanel.setMaximumHeight(120)
+
+        # self.cpanel.setFixedWidth(520)
+        # self.cpanel.setMaximumHeight(120)
+        self.cpanel.setFixedSize(QSize(520,128))
 
 
     def initUI(self):
@@ -4273,6 +4278,8 @@ class MainWindow(QMainWindow):
 
         '''Headup Display'''
         self.hud = HeadupDisplay(self.app)
+        self.hud.resize(QSize(400,128))
+        self.hud.setMinimumWidth(300)
         self.hud.setObjectName('hud')
         # path = 'src/resources/KeyboardCommands1.html'
         # with open(path) as f:
@@ -4544,6 +4551,7 @@ class MainWindow(QMainWindow):
 
         self.corr_spot_thumbs = QWidget()
         hbl = QHBoxLayout()
+        hbl.setContentsMargins(0,0,0,0)
         hbl.addWidget(self.corrspot_q0)
         hbl.addWidget(self.corrspot_q1)
         hbl.addWidget(self.corrspot_q2)

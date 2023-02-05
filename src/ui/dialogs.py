@@ -330,14 +330,14 @@ class ConfigAppDialog(QDialog):
         mpdebugLayout.addWidget(QLabel('Enable Python Multiprocessing Debugging: '))
         mpdebugLayout.addWidget(self.mpdebugCheckbox, alignment=Qt.AlignRight)
 
-        useprofilerWidget = QWidget()
-        useprofilerLayout = QHBoxLayout()
-        useprofilerLayout.setContentsMargins(4, 2, 4, 2)
-        useprofilerWidget.setLayout(useprofilerLayout)
-        self.useprofilerCheckbox = QCheckBox()
-        self.useprofilerCheckbox.setChecked(cfg.PROFILER)
-        useprofilerLayout.addWidget(QLabel('Enable Scalene Profiler: '))
-        useprofilerLayout.addWidget(self.useprofilerCheckbox, alignment=Qt.AlignRight)
+        # useprofilerWidget = QWidget()
+        # useprofilerLayout = QHBoxLayout()
+        # useprofilerLayout.setContentsMargins(4, 2, 4, 2)
+        # useprofilerWidget.setLayout(useprofilerLayout)
+        # self.useprofilerCheckbox = QCheckBox()
+        # self.useprofilerCheckbox.setChecked(cfg.PROFILER)
+        # useprofilerLayout.addWidget(QLabel('Enable Scalene Profiler: '))
+        # useprofilerLayout.addWidget(self.useprofilerCheckbox, alignment=Qt.AlignRight)
 
         faultWidget = QWidget()
         faultLayout = QHBoxLayout()
@@ -370,7 +370,7 @@ class ConfigAppDialog(QDialog):
         layout.addWidget(headlessWidget)
         layout.addWidget(ngdebugWidget)
         layout.addWidget(mpdebugWidget)
-        layout.addWidget(useprofilerWidget)
+        # layout.addWidget(useprofilerWidget)
         layout.addWidget(faultWidget)
         layout.addWidget(buttonWidget)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -397,11 +397,6 @@ class ConfigAppDialog(QDialog):
                 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 
             cfg.DEBUG_MP = self.mpdebugCheckbox.isChecked()
-            cfg.PROFILER = self.useprofilerCheckbox.isChecked()
-            if cfg.PROFILER:
-                pass
-                # from scalene import scalene_profiler
-                # scalene_profiler.start()
             cfg.FAULT_HANDLER = self.faultCheckbox.isChecked()
             if cfg.FAULT_HANDLER:
                 if not faulthandler.is_enabled():
