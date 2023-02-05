@@ -86,6 +86,12 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self, matchpoint=False):
         caller = inspect.stack()[1].function
         # self.shutdownNeuroglancer()
+        if cfg.data.is_aligned_and_generated():
+            if getOpt('ui,SHOW_CORR_SPOTS'):
+                cfg.main_window.corr_spot_thumbs.show()
+        else:
+            cfg.main_window.corr_spot_thumbs.hide()
+
         if caller != '_onGlobTabChange':
             logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
             if cfg.data:
@@ -97,6 +103,8 @@ class ProjectTab(QWidget):
                 self.updateNeuroglancer(matchpoint=matchpoint)
                 cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+        self.ng_browser.reload()
+        cfg.main_window.dataUpdateWidgets() #0204+
 
 
     def updateNeuroglancer(self, matchpoint=False):
