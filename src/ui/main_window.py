@@ -372,6 +372,9 @@ class MainWindow(QMainWindow):
         self.setInteractive.emit()
         # self._tabs.show()
         self.enableAllTabs()
+        self._cpanel.show()
+        self.matchpointControls.hide()
+        cfg.MP_MODE = False
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
         cfg.SHADER = ''
@@ -2563,46 +2566,60 @@ class MainWindow(QMainWindow):
                 return
 
             if cfg.project_tab:
+
                 if cfg.MP_MODE == False:
-                    self.tell('Entering Match Point Mode...')
-                    logger.critical('Entering Match Point Mode...')
-                    cfg.MP_MODE = True
-                    cfg.project_tab.bookmark_tab = cfg.project_tab._tabs.currentIndex()
-                    cfg.project_tab._tabs.setCurrentIndex(0)
-                    cfg.project_tab._tabs.currentWidget().setStyleSheet(
-                        'background-color: #1b1e23; '
-                        'color: #f3f6fb;'
-                    )
-                    cfg.project_tab.ngVertLab.setText('Match Point Mode')
-                    cfg.project_tab._widgetArea_details.setVisible(False)
-                    self.rb1.setChecked(True)
-                    self.rb0.setEnabled(False)
-                    self.rb1.setChecked(True)
-                    self._changeScaleCombo.setEnabled(False)
-                    # self.extra_header_text_label.setText('Match Point Mode')
-                    # self.extra_header_text_label.show()
-                    self._forceHideControls()
-                    # self.matchpointControlPanel.show()
-                    self.matchpointControls.show()
-                    if cfg.data.is_aligned_and_generated():
-                        self.update_match_point_snr()
-                    self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
-                    self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                    self._disableGlobTabs()
-                    if cfg.project_tab:
-                        for i in range(1, 4):
-                            cfg.project_tab._tabs.setTabEnabled(i, False)
-                    # cfg.project_tab.ng_layout = 'xy'
-                    self.updateCorrSpotThumbnails()
-                    cfg.project_tab.initNeuroglancer(matchpoint=True)
-                    # self.hardRestartNg(matchpoint=True)
-                    # self.neuroglancer_configuration_1()
-                    cfg.project_tab._widgetArea_details.setVisible(False)
-                    cfg.project_tab.ng_browser.setFocus()
+                    if cfg.data.is_aligned_and_generated()
+                        self.tell('Entering Match Point Mode...')
+                        logger.critical('Entering Match Point Mode...')
+                        cfg.MP_MODE = True
+                        cfg.project_tab.bookmark_tab = cfg.project_tab._tabs.currentIndex()
+                        cfg.project_tab._tabs.setCurrentIndex(0)
+                        cfg.project_tab._tabs.currentWidget().setStyleSheet(
+                            'background-color: #1b1e23; '
+                            'color: #f3f6fb;'
+                        )
+                        cfg.project_tab.ngVertLab.setText('Match Point Mode')
+                        cfg.project_tab._widgetArea_details.setVisible(False)
+                        self.rb1.setChecked(True)
+                        self.rb0.setEnabled(False)
+                        self.rb1.setChecked(True)
+                        self._changeScaleCombo.setEnabled(False)
+                        # self.extra_header_text_label.setText('Match Point Mode')
+                        # self.extra_header_text_label.show()
+
+
+                        # self._forceHideControls()
+
+
+                        self._cpanel.hide()
+
+
+                        self.corr_spot_thumbs.show()
+
+
+                        self.matchpointControls.show()
+                        if cfg.data.is_aligned_and_generated():
+                            self.update_match_point_snr()
+                        self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
+                        self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
+                        self._disableGlobTabs()
+                        if cfg.project_tab:
+                            for i in range(1, 4):
+                                cfg.project_tab._tabs.setTabEnabled(i, False)
+                        # cfg.project_tab.ng_layout = 'xy'
+                        self.updateCorrSpotThumbnails()
+                        cfg.project_tab.initNeuroglancer(matchpoint=True)
+                        # self.hardRestartNg(matchpoint=True)
+                        # self.neuroglancer_configuration_1()
+                        cfg.project_tab._widgetArea_details.setVisible(False)
+                        cfg.project_tab.ng_browser.setFocus()
+                    else:
+                        self.warn('Alignment must be generated before using Match Point Alignment method.')
                 else:
                     logger.critical('Exiting Match Point Mode...')
                     self.tell('Returning to Normal Mode...')
                     cfg.MP_MODE = False
+                    self._cpanel.show()
                     cfg.project_tab._tabs.currentWidget().setStyleSheet('')
                     cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
                     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
@@ -4398,6 +4415,7 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.addWidget(self.permFileBrowser)
 
         self.matchpointControls = QWidget()
+        self.matchpointControls.hide()
 
         mp_marker_lineweight_label = QLabel('Lineweight')
         self.mp_marker_lineweight_spinbox = QSpinBox()
