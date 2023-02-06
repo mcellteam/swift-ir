@@ -56,7 +56,7 @@ class OpenProject(QWidget):
         self._splitter.setSizes([650, 350])
 
         self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(4, 4, 4, 4)
+        self.layout.setContentsMargins(4, 0, 4, 0)
         self.layout.addWidget(self._splitter)
         self.setLayout(self.layout)
 
