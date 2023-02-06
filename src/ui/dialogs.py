@@ -8,7 +8,7 @@ import neuroglancer as ng
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
-    QColorDialog, QWidgetAction, QMenu, QToolButton
+    QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
@@ -699,10 +699,12 @@ class ConfigProjectDialog(QDialog):
 
 
 class RechunkDialog(QDialog):
-    def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
+    def __init__(self, parent=None, target=None): # parent=None allows passing in MainWindow if needed
         super().__init__()
         self.parent = parent
+        self.target=target
         self.setModal(True)
+        self.setFixedSize(400, 240)
         logger.info('Showing Project Configuration Dialog:')
 
         self.initUI()
@@ -715,17 +717,19 @@ class RechunkDialog(QDialog):
     def on_apply(self):
 
         logger.info('Setting chunk shape for rechunking...')
+        z = min(int(self.chunk_z_lineedit.text()), len(cfg.data))
+        y = int(self.chunk_y_lineedit.text())
+        x = int(self.chunk_x_lineedit.text())
         try:
-            cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
-                                              int(self.chunk_y_lineedit.text()),
-                                              int(self.chunk_x_lineedit.text()))
+
+            cfg.data['data']['chunkshape'] = (z, y, x)
+            self.chunkshape = (z, y, x)
 
         except Exception as e:
             logger.warning(e)
 
-        self.chunkshape = (int(self.chunk_z_lineedit.text()),
-                           int(self.chunk_y_lineedit.text()),
-                           int(self.chunk_x_lineedit.text()))
+        finally:
+            self.accept()
 
 
     @Slot()
@@ -756,11 +760,11 @@ class RechunkDialog(QDialog):
         self.chunk_y_lineedit.setValidator(QIntValidator())
         self.chunk_z_lineedit.setValidator(QIntValidator())
         self.chunk_x_layout = QHBoxLayout()
-        self.chunk_x_layout.setContentsMargins(0,0,0,0)
+        self.chunk_x_layout.setContentsMargins(4,4,4,4)
         self.chunk_y_layout = QHBoxLayout()
-        self.chunk_y_layout.setContentsMargins(0,0,0,0)
+        self.chunk_y_layout.setContentsMargins(4,4,4,4)
         self.chunk_z_layout = QHBoxLayout()
-        self.chunk_z_layout.setContentsMargins(0,0,0,0)
+        self.chunk_z_layout.setContentsMargins(4,4,4,4)
         self.chunk_x_layout.addWidget(self.chunk_x_label, alignment=Qt.AlignRight)
         self.chunk_y_layout.addWidget(self.chunk_y_label, alignment=Qt.AlignRight)
         self.chunk_z_layout.addWidget(self.chunk_z_label, alignment=Qt.AlignRight)
@@ -768,10 +772,13 @@ class RechunkDialog(QDialog):
         self.chunk_y_layout.addWidget(self.chunk_y_lineedit, alignment=Qt.AlignLeft)
         self.chunk_z_layout.addWidget(self.chunk_z_lineedit, alignment=Qt.AlignLeft)
         self.chunk_shape_layout = QHBoxLayout()
-        self.chunk_shape_layout.setContentsMargins(0,0,0,0)
+        self.chunk_shape_layout.setContentsMargins(4,4,4,4)
         self.chunk_shape_layout.addLayout(self.chunk_z_layout)
         self.chunk_shape_layout.addLayout(self.chunk_y_layout)
         self.chunk_shape_layout.addLayout(self.chunk_x_layout)
+        w = QWidget()
+        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.chunk_shape_layout.addWidget(w)
         self.chunk_shape_widget = QWidget()
         self.chunk_layout = QHBoxLayout()
         self.chunk_layout.addWidget(self.chunk_shape_label, alignment=Qt.AlignLeft)
@@ -783,6 +790,10 @@ class RechunkDialog(QDialog):
               "volumetric datamodel is stored on disk."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
+
+        txt = "Rechunk '%s'..." %self.target
+        txt = '\n'.join(textwrap.wrap(txt, width=55))
+        self.main_text = QLabel(txt)
 
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
@@ -798,9 +809,11 @@ class RechunkDialog(QDialog):
         self.buttonWidget.setLayout(hbl)
 
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(0,0,0,0)
+        vbl.setContentsMargins(4,4,4,4)
+        vbl.addWidget(self.main_text)
         vbl.addWidget(self.chunk_shape_widget)
         vbl.addWidget(self.buttonWidget)
+        vbl.addWidget(self.storage_info_label)
 
         self.setLayout(vbl)
 
