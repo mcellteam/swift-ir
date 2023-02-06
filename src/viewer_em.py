@@ -411,6 +411,8 @@ class EMViewer(neuroglancer.Viewer):
                      cfg.main_window.mp_marker_lineweight_spinbox.value(),
                      cfg.main_window.mp_marker_size_spinbox.value(), ]
             with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
+
                 if self._mpCount in range(0, 100, 2):
                     self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
                     s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
@@ -427,52 +429,53 @@ class EMViewer(neuroglancer.Viewer):
             layer = self.request_layer()
             logger.info('Saving Match Points for Layer %d\nBase Name: %s' % (layer, cfg.data.base_image_name(l=layer)))
             n_ref, n_base = len(self.ref_pts), len(self.base_pts)
-            if n_ref != n_base:
+            if n_ref == n_base:
+                cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
+                p_r = [p.point.tolist() for p in self.ref_pts]
+                p_b = [p.point.tolist() for p in self.base_pts]
+                ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
+                base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
+                cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)
+                cfg.data.set_match_points(role='base', matchpoints=base_mps, l=layer)
+                cfg.data.set_selected_method(method="Match Point Align", l=layer)
+                self.clear_mp_buffer()
+                # cfg.refLV.invalidate()
+                # cfg.baseLV.invalidate()
+                cfg.data.print_all_match_points()
+                cfg.main_window.hud.post('Match Points Saved!')
+            else:
                 cfg.main_window.hud.post(f'Each image must have the same # points\n'
                                          f'Left img has: {len(self.ref_pts)}\n'
                                          f'Right img has: {len(self.base_pts)}', logging.WARNING)
-                return
-            cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
-            p_r = [p.point.tolist() for p in self.ref_pts]
-            p_b = [p.point.tolist() for p in self.base_pts]
-            ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
-            base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
-            cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)
-            cfg.data.set_match_points(role='base', matchpoints=base_mps, l=layer)
-            cfg.data.set_selected_method(method="Match Point Align", l=layer)
-            self.clear_mp_buffer()
-            cfg.refLV.invalidate()
-            cfg.baseLV.invalidate()
-            cfg.data.print_all_match_points()
-            cfg.main_window.hud.post('Match Points Saved!')
-
 
     def clear_matchpoints(self, s):
         if cfg.MP_MODE:
-            logger.info('Clearing Match Points...')
             layer = self.request_layer()
+            logger.info('Clearing %d match points for section #%d...' %(self._mpCount,layer))
+            cfg.main_window.hud.post('Clearing %d match points for section #%d...' %(self._mpCount,layer))
             cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)  # Note
             cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
             self.clear_mp_buffer()  # Note
             with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
                 s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
                 s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
-            cfg.refLV.invalidate()
-            cfg.baseLV.invalidate()
+            # cfg.refLV.invalidate()
+            # cfg.baseLV.invalidate()
             cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
 
 
     def clear_mp_buffer(self):
         if cfg.MP_MODE:
-            # logger.info('Clearing match point buffer...')
+            logger.info('Clearing match point buffer of %d match points...' % self._mpCount)
             self._mpCount = 0
             self.ref_pts.clear()
             self.base_pts.clear()
-            try:
-                cfg.refLV.invalidate()
-                cfg.baseLV.invalidate()
-            except:
-                pass
+            # try:
+            #     cfg.refLV.invalidate()
+            #     cfg.baseLV.invalidate()
+            # except:
+            #     pass
 
 
     def count_saved_points_ref(self):

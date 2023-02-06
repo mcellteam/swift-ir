@@ -133,6 +133,7 @@ class ProjectTab(QWidget):
         # self.slotUpdateZoomSlider()
         logger.info('setting URL...')
         self.ng_browser.setUrl(QUrl(url))
+        QApplication.processEvents()
         if cfg.MP_MODE:
             self.setZmag(val=15)
             self.ng_browser.setUrl(QUrl(url))
