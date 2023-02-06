@@ -433,6 +433,8 @@ class EMViewer(neuroglancer.Viewer):
                 cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
                 p_r = [p.point.tolist() for p in self.ref_pts]
                 p_b = [p.point.tolist() for p in self.base_pts]
+                logger.critical('p_r: %s' %str(p_r))
+                logger.critical('p_b: %s' %str(p_b))
                 ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
                 base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
                 cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)

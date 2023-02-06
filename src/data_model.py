@@ -556,8 +556,10 @@ class DataModel:
     def print_all_matchpoints(self):
         logger.info('Match Points:')
         for i, l in enumerate(self.alstack()):
-            r = l['images']['ref']['metadata']['match_points']
-            b = l['images']['base']['metadata']['match_points']
+            r = self._data['data']['scales'][cfg.data.scale()]['alignment_stack'][
+                l]['align_to_ref_method']['match_points']['ref']
+            b = self._data['data']['scales'][cfg.data.scale()]['alignment_stack'][
+                l]['align_to_ref_method']['match_points']['base']
             if r != []:
                 logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
             if b != []:
@@ -578,11 +580,11 @@ class DataModel:
         '''
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
+        # logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
             coordinates)
         if role == 'base':
-            self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['src'].append(
+            self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['base'].append(
                 coordinates)
         elif role == 'ref':
             self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref'].append(
@@ -595,7 +597,9 @@ class DataModel:
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
         r = layer['images']['ref']['metadata']['match_points']
         b = layer['images']['base']['metadata']['match_points']
-        combined ={'ref': r, 'base': b }
+        # ref = self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref']
+        # base = self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['base']
+        combined = {'ref': r, 'base': b}
         # logger.info(f'Ref, Match Points: {str(r)}')
         # logger.info(f'Base, Match Points: {str(b)}')
         return combined
@@ -608,6 +612,8 @@ class DataModel:
             for i,layer in enumerate(self.alstack()):
                 r = layer['images']['ref']['metadata']['match_points']
                 b = layer['images']['base']['metadata']['match_points']
+                # r = layer['align_to_ref_method']['match_points']['ref']
+                # b = layer['align_to_ref_method']['match_points']['base']
                 if (r != []) or (b != []):
                     indexes.append(i)
                     names.append(os.path.basename(layer['images']['base']['filename']))
@@ -617,39 +623,37 @@ class DataModel:
             logger.warning('Unable to To Return List of Match Point Layers')
             return []
 
-        lst = []
-        for i, l in enumerate(self.alstack()):
-            r = l['images']['ref']['metadata']['match_points']
-            b = l['images']['base']['metadata']['match_points']
-            if (r != []) or (b != []):
-                lst.append(i)
-        return lst
 
     def print_all_match_points(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         for i,layer in enumerate(self.alstack()):
+            # r = layer['align_to_ref_method']['match_points']['ref']
+            # b = layer['align_to_ref_method']['match_points']['base']
             r = layer['images']['ref']['metadata']['match_points']
             b = layer['images']['base']['metadata']['match_points']
-            if r != [] or b!= []:
-                combined = {'ref': r, 'base': b}
+            if r != [] or b != []:
+                # combined = {'ref': r, 'base': b}
                 logger.info('____Layer %d Matchpoints____\n  Ref: %s\n  Base: %s' % (i, str(r), str(b)))
 
 
     def match_points_ref(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
+        # return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref']
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['metadata']['match_points']
 
     def match_points_base(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
+        # return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['base']
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['metadata']['match_points']
 
     def all_match_points_ref(self, s=None):
         if s == None: s = self.curScale
         lst = []
         for i, layer in enumerate(self.alstack(s=s)):
+            # mp = layer['align_to_ref_method']['match_points']['ref']
             mp = layer['images']['ref']['metadata']['match_points']
             if mp != []:
                 for p in mp:
@@ -660,6 +664,7 @@ class DataModel:
         if s == None: s = self.curScale
         lst = []
         for i, layer in enumerate(self.alstack(s=s)):
+            # mp = layer['align_to_ref_method']['match_points']['base']
             mp = layer['images']['base']['metadata']['match_points']
             if mp != []:
                 for p in mp:
@@ -670,6 +675,7 @@ class DataModel:
         if s == None: s = self.curScale
         lst = []
         for i, layer in enumerate(self.alstack(s=s)):
+            # mp = layer['align_to_ref_method']['match_points'][role]
             mp = layer['images'][role]['metadata']['match_points']
             if mp != []:
                 for p in mp:
@@ -693,6 +699,8 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
+        layer['align_to_ref_method']['match_points']['ref'] = []
+        layer['align_to_ref_method']['match_points']['base'] = []
         for role in layer['images'].keys():
             if 'metadata' in layer['images'][role]:
                 layer['images'][role]['metadata']['match_points'] = []
@@ -700,6 +708,8 @@ class DataModel:
 
     def clear_all_match_points(self, s=None, l=None):
         for layer in self.alstack():
+            layer['align_to_ref_method']['match_points']['ref'] = []
+            layer['align_to_ref_method']['match_points']['base'] = []
             for role in layer['images'].keys():
                 if 'metadata' in layer['images'][role]:
                     layer['images'][role]['metadata']['match_points'] = []
@@ -720,7 +730,12 @@ class DataModel:
         if role not in ('ref', 'base', 'aligned'):
             logger.warning('Invalid Role Argument- Returning')
             return
+        if role == 'base':
+            self.alstack()[l]['align_to_ref_method']['match_points']['base'] = matchpoints
+        if role == 'ref':
+            self.alstack()[l]['align_to_ref_method']['match_points']['ref'] = matchpoints
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'] = matchpoints
+
 
     def afm(self, s=None, l=None) -> list:
         if s == None: s = self.curScale
@@ -1173,6 +1188,7 @@ class DataModel:
     def set_selected_method(self, method, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
+        logger.critical(f'Setting section #{l}, {s} to {method}...')
         self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method'] = method
 
 
