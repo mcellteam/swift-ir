@@ -1837,14 +1837,13 @@ class MainWindow(QMainWindow):
         logger.critical('')
         project_file = cfg.selected_file
         project = os.path.splitext(project_file)[0]
-
         if not validate_project_selection():
             logger.warning('Invalid Project For Deletion (!)\n%s' % project)
             return
+        self.warn("Delete the following project?\n\nProject: %s" % project)
         txt = "Are you sure you want to PERMANENTLY DELETE " \
               "the following project?\n\n" \
               "Project: %s" % project
-
         msgbox = QMessageBox(QMessageBox.Warning, 'Confirm Delete Project', txt,
                           buttons=QMessageBox.Abort | QMessageBox.Yes)
         msgbox.setIcon(QMessageBox.Critical)
@@ -1861,7 +1860,9 @@ class MainWindow(QMainWindow):
             logger.warning('Executing Delete Project Permanently Instruction...')
 
         try:
-            logger.critical(f'Deleting Project File: {project_file}')
+            logger.critical(f'Deleting Project File: {project_file}...')
+            self.warn(f'Deleting Project File: {project_file}...')
+            self.update()
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
         except:
@@ -1873,6 +1874,7 @@ class MainWindow(QMainWindow):
         try:
             logger.info('Deleting Project Directory %s...' % project)
             self.warn('Deleting Project Directory %s...' % project)
+            self.update()
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
