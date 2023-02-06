@@ -749,9 +749,8 @@ class MainWindow(QMainWindow):
             renew_od=True,
             reallocate_zarr=True
         )
-        if not cfg.CancelProcesses:
-            self.present_snr_results()
-
+        # if not cfg.CancelProcesses:
+        #     self.present_snr_results()
         self.onAlignmentEnd(start=0, end=None)
         # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()

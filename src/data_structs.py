@@ -50,7 +50,7 @@ layer_template = \
             "selected_method": "Auto Swim Align",
             "match_points": {
                 "src": [],
-                'ref': []
+                'base': []
             },
             "method_results": {
                 "snr": [0.0, 0.0, 0.0, 0.0],
