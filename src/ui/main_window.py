@@ -3851,6 +3851,38 @@ class MainWindow(QMainWindow):
         dlg = RechunkDialog()
         if dlg.exec():
             logger.info('Rechunking...')
+            chunkshape = cfg.data['data']['chunkshape']
+
+
+            intermediate = "intermediate.zarr"
+
+            from rechunker import rechunk
+            if cfg.data.is_aligned_and_generated():
+                source = target = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' %cfg.data.get_scale_val())
+            else:
+                source = target = os.path.join(cfg.data.dest(), 'img_src.zarr', 's%d' %cfg.data.get_scale_val())
+
+            self.tell('Configuring rechunking operation. Target: %s. New chunk shape: %s...' %(target,str(chunkshape)))
+            logger.info('Configuring rechunk operation (target: %s)...' %target)
+            rechunked = rechunk(
+                source=source,
+                target_chunks=chunkshape,
+                target_store=target,
+                max_mem=100_000_000_000,
+                temp_store=intermediate
+            )
+            self.tell('Rechunk plan:\n%s' % str(rechunked))
+            self.tell('Rechunking...')
+            logger.info('Rechunking...')
+            rechunked.execute()
+            self.hud.done()
+
+            logger.info('Removing %s...' %intermediate)
+            self.tell('Removing %s...' %intermediate)
+            shutil.rmtree(intermediate, ignore_errors=True)
+            shutil.rmtree(intermediate, ignore_errors=True)
+            self.hud.done()
+
         else:
             logger.info('Rechunking Canceled')
 
