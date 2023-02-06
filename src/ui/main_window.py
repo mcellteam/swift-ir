@@ -1243,8 +1243,7 @@ class MainWindow(QMainWindow):
     def updateToolbar(self):
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        if self.globTabs.currentWidget().__class__.__name__ == 'ProjectTab':
-            self._changeScaleCombo.show()
+        if self._isProjectTab():
 
             if cfg.data.is_aligned_and_generated():
                 self.rb0.setText('Aligned')
@@ -1270,11 +1269,11 @@ class MainWindow(QMainWindow):
                 self.aligned_label.hide()
                 self.generated_label.hide()
                 self.unaligned_label.show()
-        else:
-            self._changeScaleCombo.hide()
-            # self.rb0.hide()
-            # self.rb1.hide()
-        if self.globTabs.currentWidget().__class__.__name__ in ('ProjectTab', 'ZarrTab'):
+        # else:
+        #     # self._changeScaleCombo.hide()
+        #     # self.rb0.hide()
+        #     # self.rb1.hide()
+        if self._isProjectTab() or self._isZarrTab():
             if cfg.tensor:
                 self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
                 self.label_toolbar_resolution.show()
@@ -1651,20 +1650,25 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        if cfg.project_tab:
-            if cfg.data:
-                logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
-                self._scales_combobox_switch = 0
-                self._changeScaleCombo.clear()
-                def pretty_scales():
-                    lst = []
-                    for s in cfg.data.scales():
-                        siz = cfg.data.image_size(s=s)
-                        lst.append('%s %dx%d' % (cfg.data.scale_pretty(s=s), siz[0], siz[1]))
-                    return lst
+        logger.critical('')
+        if self._isProjectTab():
+            self._changeScaleCombo.show()
+            logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
+            self._scales_combobox_switch = 0
+            self._changeScaleCombo.clear()
+            def pretty_scales():
+                lst = []
+                for s in cfg.data.scales():
+                    siz = cfg.data.image_size(s=s)
+                    lst.append('%s %dx%d' % (cfg.data.scale_pretty(s=s), siz[0], siz[1]))
+                return lst
 
-                self._changeScaleCombo.addItems(pretty_scales())
-                self._scales_combobox_switch = 1
+            self._changeScaleCombo.addItems(pretty_scales())
+            self._scales_combobox_switch = 1
+
+        else:
+            self._changeScaleCombo.hide()
+
 
 
     def fn_scales_combobox(self) -> None:
@@ -1840,7 +1844,7 @@ class MainWindow(QMainWindow):
         if not validate_project_selection():
             logger.warning('Invalid Project For Deletion (!)\n%s' % project)
             return
-        self.warn("Delete the following project?\n\nProject: %s" % project)
+        self.warn("Delete the following project?\nProject: %s" % project)
         txt = "Are you sure you want to PERMANENTLY DELETE " \
               "the following project?\n\n" \
               "Project: %s" % project
@@ -1859,10 +1863,9 @@ class MainWindow(QMainWindow):
             self.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
             logger.warning('Executing Delete Project Permanently Instruction...')
 
+        logger.critical(f'Deleting Project File: {project_file}...')
+        self.warn(f'Deleting Project File: {project_file}...')
         try:
-            logger.critical(f'Deleting Project File: {project_file}...')
-            self.warn(f'Deleting Project File: {project_file}...')
-            self.update()
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
         except:
@@ -1871,10 +1874,9 @@ class MainWindow(QMainWindow):
         else:
             self.hud.done()
 
+        logger.info('Deleting Project Directory %s...' % project)
+        self.warn('Deleting Project Directory %s...' % project)
         try:
-            logger.info('Deleting Project Directory %s...' % project)
-            self.warn('Deleting Project Directory %s...' % project)
-            self.update()
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
             shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
@@ -1886,7 +1888,7 @@ class MainWindow(QMainWindow):
         self.tell('Wrapping up...')
         configure_project_paths()
         if self.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
-            logger.critical('Refreshing data...')
+            logger.critical('Reloading table of projects data...')
             try:
                 self.globTabs.currentWidget().user_projects.set_data()
             except:
@@ -3064,8 +3066,8 @@ class MainWindow(QMainWindow):
 
         if self.globTabs.count() == 0:
             return
-        if caller in ('onStartProject','_setLastTab'):
-        # if caller in ('onStartProject'):
+        # if caller in ('onStartProject','_setLastTab'):
+        if caller in ('onStartProject'):
             return
 
         logger.critical('Changing global tab (caller: %s)...' % caller)
