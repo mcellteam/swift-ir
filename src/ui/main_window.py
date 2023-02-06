@@ -682,6 +682,7 @@ class MainWindow(QMainWindow):
 
         try:
             self.pbarLabel.setText('')
+            self.updateCorrSpotThumbnails()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
@@ -693,6 +694,7 @@ class MainWindow(QMainWindow):
             cfg.data.nScalesAlignedAndGenerated = len(cfg.data.scalesAlignedAndGenerated)
             # self.updateHistoryListWidget(s=s)
             cfg.data.update_cache()
+
             # self.dataUpdateWidgets()
             # self.updateEnabledButtons()
             # self.updateToolbar()
@@ -798,23 +800,25 @@ class MainWindow(QMainWindow):
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
+
     def alignOneMp(self):
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.layer(), cfg.data.scale_pretty()))
-        layer = cfg.data.layer()
+        start = cfg.data.layer()
+        end = cfg.data.layer() + 1
         self.align(
             scale=cfg.data.curScale,
-            start= layer,
-            end=cfg.data.layer() + 1,
+            start=start,
+            end=end,
             renew_od=False,
             reallocate_zarr=False
         )
-        self.onAlignmentEnd()
+        self.onAlignmentEnd(start=start, end=end)
         # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
-        self.tell('Section #%d Alignment Complete' % layer)
+        self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
-                  (cfg.data.snr_prev(l=layer), cfg.data.snr(l=layer)))
+                  (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
         self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
@@ -843,6 +847,9 @@ class MainWindow(QMainWindow):
             else: cfg.thumb.generate_corr_spot(start=start, end=end)
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
         # else:   logger.info('Correlation Spot Thumbnail Generation Finished')
+
+        if self.corr_spot_thumbs.isVisible():
+            self.updateCorrSpotThumbnails()
 
         # if cfg.project_tab._tabs.currentIndex() == 1:
         #     cfg.project_tab.project_table.setScaleData()
@@ -1386,7 +1393,7 @@ class MainWindow(QMainWindow):
                 self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cur))
         else:
             self.notesTextEdit.clear()
-            self.notesTextEdit.setPlaceholderText('Enter project notes here...')
+            self.notesTextEdit.setPlaceholderText('Enter notes about anything here...')
         self.notes.update()
 
     def updateLayerDetails(self, s=None, l=None):
@@ -1664,6 +1671,7 @@ class MainWindow(QMainWindow):
                 return lst
 
             self._changeScaleCombo.addItems(pretty_scales())
+            self._changeScaleCombo.setCurrentIndex(cfg.data.scales().index(cfg.data.scale()))
             self._scales_combobox_switch = 1
 
         else:

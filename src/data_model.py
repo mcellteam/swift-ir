@@ -716,7 +716,7 @@ class DataModel:
     def set_match_points(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.info("Writing match point to project dictionary")
+        logger.critical(f"Writing match point to project dictionary, s={s}, l={l}")
         if role not in ('ref', 'base', 'aligned'):
             logger.warning('Invalid Role Argument- Returning')
             return

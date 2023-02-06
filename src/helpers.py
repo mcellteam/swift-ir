@@ -83,7 +83,7 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_ALIGNMENT_DETAILS', True)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 7)
-    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
+    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 2)
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings.setdefault('notes', {})
