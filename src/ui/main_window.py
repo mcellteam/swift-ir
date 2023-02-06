@@ -3062,8 +3062,8 @@ class MainWindow(QMainWindow):
 
         if self.globTabs.count() == 0:
             return
-        # if caller in ('onStartProject','_setLastTab'):
-        if caller in ('onStartProject'):
+        if caller in ('onStartProject','_setLastTab'):
+        # if caller in ('onStartProject'):
             return
 
         logger.critical('Changing global tab (caller: %s)...' % caller)
@@ -3856,7 +3856,6 @@ class MainWindow(QMainWindow):
             else:
                 target = os.path.join(cfg.data.dest(), 'img_src.zarr', 's%d' % cfg.data.scale_val())
                 _src = os.path.join(cfg.data.dest(), 'img_src.zarr', '_s%d' % cfg.data.scale_val())
-            os.rename(target,_src)
 
             dlg = RechunkDialog(self, target=target)
             if dlg.exec():
@@ -3867,11 +3866,11 @@ class MainWindow(QMainWindow):
                 chunkshape = cfg.data['data']['chunkshape']
                 intermediate = "intermediate.zarr"
 
-                source = zarr.open(store=_src)
-                self.tell('Configuring rechunking (target: %s). New chunk shape: %s...' %(target,str(chunkshape)))
-                logger.info('Configuring rechunk operation (target: %s)...' %target)
-
+                os.rename(target, _src)
                 try:
+                    source = zarr.open(store=_src)
+                    self.tell('Configuring rechunking (target: %s). New chunk shape: %s...' % (target, str(chunkshape)))
+                    logger.info('Configuring rechunk operation (target: %s)...' % target)
                     rechunked = rechunk(
                         source=source,
                         target_chunks=chunkshape,
@@ -3883,6 +3882,7 @@ class MainWindow(QMainWindow):
                 except:
                     self.warn('Unable to rechunk the array')
                     print_exception()
+                    os.rename(_src, target) # set name back to original name
                     return
 
                 self.tell('Rechunking...')
@@ -3905,8 +3905,14 @@ class MainWindow(QMainWindow):
 
                 dt = t_end - t_start
 
+                z = zarr.open(store=target)
+                info = str(z.info)
+                self.tell('\n%s' %info)
+
                 self.tell('Rechunking Time: %.2f' % dt)
                 logger.info('Rechunking Time: %.2f' % dt)
+
+
 
                 cfg.project_tab.initNeuroglancer()
 

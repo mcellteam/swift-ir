@@ -92,19 +92,19 @@ class ProjectTab(QWidget):
         else:
             cfg.main_window.corr_spot_thumbs.hide()
 
-        # if caller != '_onGlobTabChange':
-        logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
-        if cfg.data:
-            cfg.emViewer = EMViewer()
-            if cfg.main_window.rb0.isChecked():
-                cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-            elif cfg.main_window.rb1.isChecked():
-                cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            self.updateNeuroglancer(matchpoint=matchpoint)
-            cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
-        cfg.main_window.dataUpdateWidgets() #0204+
+        if caller != '_onGlobTabChange':
+            logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
+            if cfg.data:
+                cfg.emViewer = EMViewer()
+                if cfg.main_window.rb0.isChecked():
+                    cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
+                elif cfg.main_window.rb1.isChecked():
+                    cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+                self.updateNeuroglancer(matchpoint=matchpoint)
+                cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+                cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
+            cfg.main_window.dataUpdateWidgets() #0204+
 
 
     def updateNeuroglancer(self, matchpoint=False):
