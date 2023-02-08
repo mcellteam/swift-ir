@@ -37,8 +37,8 @@ class ProjectTab(QWidget):
         logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
+        self.viewer = None
         self.datamodel = datamodel
-        self.ng_layout = '4panel'
         self.setUpdatesEnabled(True)
         self.ng_browser = QWebEngineView()
         self.ng_browser.setFocusPolicy(Qt.NoFocus)
@@ -87,19 +87,14 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         # self.shutdownNeuroglancer()
         if cfg.data.is_aligned_and_generated():
-            if getOpt('ui,SHOW_CORR_SPOTS'):
-                cfg.main_window.corr_spot_thumbs.show()
+            cfg.main_window.corr_spot_thumbs.setVisible(getOpt('ui,SHOW_CORR_SPOTS'))
         else:
             cfg.main_window.corr_spot_thumbs.hide()
 
         if caller != '_onGlobTabChange':
             logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
             if cfg.data:
-                cfg.emViewer = EMViewer()
-                if cfg.main_window.rb0.isChecked():
-                    cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
-                elif cfg.main_window.rb1.isChecked():
-                    cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+                cfg.emViewer = self.viewer = EMViewer(name=os.path.basename(cfg.data.dest()))
                 self.updateNeuroglancer(matchpoint=matchpoint)
                 cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
@@ -117,12 +112,18 @@ class ProjectTab(QWidget):
             self._widgetArea_details.hide()
             # self.resetSliderZmag()
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=True)
+            # cfg.emViewer.initViewerSbs(nglayout=cfg.data['ui']['arrangement'], matchpoint=True)
+            # cfg.emViewer.initViewerSbs(matchpoint=True)
             self.setZmag(val=15)
         elif cfg.main_window.rb0.isChecked():
             cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
+            # cfg.emViewer.initViewerSlim(nglayout=cfg.data['ui']['arrangement'])
+            # cfg.emViewer.initViewerSlim()
             # self.setZmag(val=1)
         elif cfg.main_window.rb1.isChecked():
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=matchpoint)
+            # cfg.emViewer.initViewerSbs(nglayout=cfg.data['ui']['arrangement'], matchpoint=matchpoint)
+            # cfg.emViewer.initViewerSbs(matchpoint=matchpoint)
             # self.setZmag(val=1)
 
         url = cfg.emViewer.get_viewer_url()
@@ -140,13 +141,24 @@ class ProjectTab(QWidget):
         #     self.setZmag()
         #     cfg.emViewer.set_rds()
 
+        state = copy.deepcopy(cfg.emViewer.state)
+        for layer in state.layers:
+            # layer.shaderControls['normalized'] = {
+            #     'range': np.array(cfg.main_window.normalizedSlider.getRange())
+            # }
+            layer.shaderControls['normalized'] = {'range': np.array(cfg.data.normalize())}
+            layer.shaderControls['brightness'] = cfg.data.brightness()
+            layer.shaderControls['contrast'] = cfg.data.contrast()
+            # layer.volumeRendering = True
+        cfg.emViewer.set_state(state)
+
 
 
     def get_layout(self):
 
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        val = mapping[cfg.main_window.comboboxNgLayout.currentText()]
+        val = mapping[cfg.data['ui']['ng_layout']]
         # logger.info('Returing: %s' % val)
         return val
 
@@ -252,6 +264,8 @@ class ProjectTab(QWidget):
         self._transformationWidget.setLayout(vbl)
 
         self.__widgetArea_details = WidgetArea(parent=self, title='Details', labels=self._layer_details)
+        self.__widgetArea_details.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.__widgetArea_details.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.__widgetArea_details.hideTitle()
         self.__widgetArea_details.setFixedWidth(160)
         self.__widgetArea_details.setFixedHeight(80)

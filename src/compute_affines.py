@@ -63,9 +63,9 @@ def compute_affines(scale, start=0, end=None):
         substack = alstack[start:end]
         n_tasks = n_skips = 0
         for layer in substack: # Operating on the Copy!
-            # layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
-            # layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
-            layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
+            # # layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
+            # # layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
+            # layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
             if not layer['skipped']: n_tasks +=1
             else:                    n_skips +=1
         logger.info('# Sections (total)         : %d' % len(dm))

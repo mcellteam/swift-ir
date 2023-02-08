@@ -193,10 +193,6 @@ class RangeSlider(QtWidgets.QWidget, Ui_Form):
     maxValueChanged = QtCore.Signal(int)
     minValueChanged = QtCore.Signal(int)
     startValueChanged = QtCore.Signal(int)
-    minValueChanged = QtCore.Signal(int)
-    maxValueChanged = QtCore.Signal(int)
-    startValueChanged = QtCore.Signal(int)
-    endValueChanged = QtCore.Signal(int)
 
     _SPLIT_START = 1
     _SPLIT_END = 2

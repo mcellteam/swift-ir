@@ -6,8 +6,17 @@ data_template = \
         "version": 0.50,
         "created": '',
         "method": "None",
-        "user_settings": {
-            "use_c_version": True
+        "system": {
+            "node": None,
+        },
+        "rendering": {
+            "normalize": [1,255],
+            "brightness": 0,
+            "contrast": 0,
+        },
+        "ui": {
+            "ng_layout": '4panel',
+            "arrangement": 'stack'
         },
         "data": {
             "source_path": "",
@@ -35,11 +44,8 @@ data_template = \
                     "thumb_scaling_factor_corr_spot": None,
                 }
             },
-            "system":{
-                "node": None,
+        },
 
-            }
-        }
     }
 
 layer_template = \

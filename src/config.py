@@ -3,6 +3,7 @@
 '''This file is for initializing global config and 'data' the dictionary datamodel state in memory.'''
 
 import platform
+# from src import shaders
 
 __all__ = ['data']
 
@@ -90,12 +91,13 @@ SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
 MP_MODE = False
-# SHADER = '''
-# #define VOLUME_RENDERING true
-# void main () {
-# emitGrayscale(toNormalized(getDataValue()));
+# SHADER =
+# SHADER = shaders.shader_default_
+# SHADER = '''#uicontrol invlerp normalized
+# void main() {
+#   emitGrayscale(normalized());
 # }'''
-SHADER = ''
+# SHADER = '#define VOLUME_RENDERING true'
 THEME = 0
 MP_LINEWEIGHT = 3
 MP_SIZE = 6
@@ -120,4 +122,13 @@ nCompleted = 0
 CancelProcesses = False
 event = None
 
+SHADER = shader_default_ = '''#uicontrol vec3 color color(default="white")
+#uicontrol float brightness slider(min=-1, max=1, step=0.01)
+#uicontrol float contrast slider(min=-1, max=1, step=0.01)
+void main() {
+  emitRGB(color *
+          (toNormalized(getDataValue()) + brightness) *
+          exp(contrast));
+}
+'''
 

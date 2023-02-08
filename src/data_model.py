@@ -185,13 +185,35 @@ class DataModel:
     def set_thumb_scaling_factor_corr_spot(self, factor:int, s:str):
         self._data['data']['scales'][s]['thumb_scaling_factor_corr_spot'] = factor
 
+    def normalize(self):
+        return self._data['rendering']['normalize']
+
+    def set_normalize(self, range):
+        self._data['rendering']['normalize'] = range
+
+    def brightness(self):
+        return self._data['rendering']['brightness']
+
+    def contrast(self):
+        return self._data['rendering']['contrast']
+
+    def set_brightness(self, val):
+        self._data['rendering']['brightness'] = val
+
+    def set_contrast(self, val):
+        self._data['rendering']['contrast'] = val
+
     def set_defaults(self):
         # logger.info(f'caller: {inspect.stack()[1].function}')
-        self._data['user_settings'].setdefault('mp_marker_size', cfg.MP_SIZE)
-        self._data['user_settings'].setdefault('mp_marker_lineweight', cfg.MP_LINEWEIGHT)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+        self._data['rendering'].setdefault('normalize', [1,255])
+        self._data['rendering'].setdefault('brightness', 0)
+        self._data['rendering'].setdefault('contrast', 0)
+        self._data.setdefault('ui', {})
+        self._data['ui'].setdefault('ng_layout', '4panel')
+        self._data['ui'].setdefault('arrangement', 'stack')
 
         # for s in self.scales():
         for s in self._data['data']['scales'].keys():
@@ -242,8 +264,8 @@ class DataModel:
 
     def set_system_info(self):
         logger.info('')
-        try:    self._data['data']['system']['node'] = platform.node()
-        except: self._data['data']['system']['node'] = 'Unknown'
+        try:    self._data['system']['node'] = platform.node()
+        except: self._data['system']['node'] = 'Unknown'
 
 
     def base_image_name(self, s=None, l=None):
@@ -468,7 +490,7 @@ class DataModel:
             return self._data['data']['scales'][s]['alignment_stack'][l][
                             'align_to_ref_method']['method_results']['snr']
         except:
-            print_exception()
+            logger.warning('No SNR data for %s, layer %d' %(s,l))
             return [0.0, 0.0, 0.0, 0.0]
 
 
@@ -479,7 +501,7 @@ class DataModel:
             return self._data['data']['scales'][s]['alignment_stack'][l][
                 'align_to_ref_method']['previous_method_results']['snr_prev']
         except:
-            print_exception()
+            logger.warning('No Previous SNR data for %s, layer %d' %(s,l))
             return [0.0, 0.0, 0.0, 0.0]
 
 
@@ -1536,7 +1558,7 @@ class DataModel:
                 print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.29))
                 # Need to modify the datamodel previewmodel from 0.28 up to 0.29
                 # The "use_c_version" was added to the "user_settings" dictionary
-                self._data['user_settings']['use_c_version'] = True
+                # self._data['user_settings']['use_c_version'] = True #0206-
                 # Now the datamodel previewmodel is at 0.29, so give it the appropriate version
                 self._data['version'] = 0.29
 
