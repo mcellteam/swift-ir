@@ -43,7 +43,7 @@ class OpenProject(QWidget):
 
         # User Files Widget
         self.userFilesWidget = QWidget()
-        lab = QLabel('<h3>Import Project:</h3>')
+        lab = QLabel('<h3>Import:</h3>')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(lab)

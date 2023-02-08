@@ -61,7 +61,7 @@ https://stackoverflow.com/questions/47342158/porting-range-slider-widget-to-pyqt
 
 DEFAULT_CSS = """
 RangeSlider * { border: 0px; padding: 0px; font-size: 7px; }
-RangeSlider #Head { background: #f3f6fb; }
+RangeSlider #Head { background: #ffffff; }
 RangeSlider #Tail { background: #f3f6fb; }
 RangeSlider #Span { background: #daebfe; }
 RangeSlider #Span:active { background: #daebfe; }
@@ -213,7 +213,8 @@ class RangeSlider(QtWidgets.QWidget, Ui_Form):
         self._handle_layout.setContentsMargins(0, 0, 0, 0)
         self._handle.setLayout(self._handle_layout)
         self.handle = Handle(self._handle, main=self)
-        self.handle.setTextColor(QtGui.QColor('#1b1e23'))
+        # self.handle.setTextColor(QtGui.QColor('#1b1e23'))
+        self.handle.setTextColor(QtGui.QColor('#f3f6fb'))
         self._handle_layout.addWidget(self.handle)
         self._tail_layout = QtWidgets.QHBoxLayout()
         self._tail_layout.setSpacing(0)
