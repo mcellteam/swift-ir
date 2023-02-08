@@ -112,7 +112,7 @@ class TaskQueue(QObject):
 
 
         cfg.main_window.shutdownNeuroglancer()
-        # cfg.main_window.showZeroedPbar()
+        cfg.main_window.showZeroedPbar() #0208+
 
         cfg.nCompleted += 1
         try:
