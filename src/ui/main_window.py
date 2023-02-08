@@ -184,7 +184,6 @@ class MainWindow(QMainWindow):
         logger.info('')
         caller = inspect.stack()[1].function
         if caller =='main':
-
             if checked:
                 if self._isProjectTab():
                     if self.rb0.isChecked():
@@ -202,7 +201,8 @@ class MainWindow(QMainWindow):
                         # self.comboboxNgLayout.setCurrentText('xy')
                     elif self.rb2.isChecked():
                         pass
-                    cfg.project_tab.updateNeuroglancer()
+                    # cfg.project_tab.updateNeuroglancer()
+                    cfg.project_tab.initNeuroglancer() #0208+
 
         else:
             logger.critical(f'caller was {caller}')
@@ -446,6 +446,35 @@ class MainWindow(QMainWindow):
             cfg.project_tab.initNeuroglancer()
         if cfg.zarr_tab:
             cfg.emViewer.bootstrap()
+
+
+    def _callbk_showHideDetails(self):
+
+        if self.shaderCodeWidget.isHidden():
+            label  = 'Hide Details'
+            icon   = 'fa.caret-down'
+            self.detailsWidget.show()
+
+
+        else:
+            label  = ' Details'
+            icon   = 'fa.info-circle'
+            self.detailsWidget.hide()
+        self._btn_show_hide_details.setIcon(qta.icon(icon, color='#f3f6fb'))
+        self._btn_show_hide_details.setText(label)
+        self.updateProjectDetails()
+        self.dataUpdateWidgets()
+        # if cfg.project_tab:
+        #     cfg.project_tab.initNeuroglancer()
+        # if cfg.zarr_tab:
+        #     cfg.emViewer.bootstrap()
+
+    def updateProjectDetails(self):
+        self.detailsLabel.setText(
+            'Filename   : %s\n'
+            'SNR        : %.3f\n'
+            'Prev. SNR  : %.3f' %(cfg.data.base_image_name(), cfg.data.snr(), cfg.data.snr_prev()))
+
 
 
     def fn_shader_control(self):
@@ -1418,6 +1447,9 @@ class MainWindow(QMainWindow):
 
                 if not cfg.MP_MODE:
                     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+
+                if self.detailsWidget.isVisible():
+                    self.updateProjectDetails()
 
                 cur = cfg.data.layer()
                 if self.notes.isVisible():
@@ -3233,7 +3265,10 @@ class MainWindow(QMainWindow):
             #     cfg.data['ui']['ng_layout'] = 'xy'
             #     # logger.info('rb1/rb2 has been checked')
             #     # self.comboboxNgLayout.setCurrentText('xy')
-            cfg.project_tab.updateNeuroglancer()
+
+
+            # cfg.project_tab.updateNeuroglancer()
+            cfg.project_tab.initNeuroglancer() #0208+
 
 
             self.rb0.show()
@@ -4793,7 +4828,6 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Alignment Controls'
         self._btn_show_hide_ctls = QPushButton('Hide Controls')
-        self._btn_show_hide_ctls.setObjectName('_btn_show_hide_ctls')
         self._btn_show_hide_ctls.setStyleSheet(lower_controls_style)
         self._btn_show_hide_ctls.setStatusTip(tip)
         self._btn_show_hide_ctls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4803,7 +4837,6 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Python Console'
         self._btn_show_hide_console = QPushButton(' Python')
-        self._btn_show_hide_console.setObjectName('_btn_show_hide_console')
         self._btn_show_hide_console.setStyleSheet(lower_controls_style)
         self._btn_show_hide_console.setStatusTip(tip)
         self._btn_show_hide_console.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4839,7 +4872,6 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Project Notes'
         self._btn_show_hide_notes = QPushButton(' Notes')
-        self._btn_show_hide_notes.setObjectName('_btn_show_hide_console')
         self._btn_show_hide_notes.setStyleSheet(lower_controls_style)
         self._btn_show_hide_notes.setStatusTip(tip)
         self._btn_show_hide_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4849,7 +4881,6 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Shader Code'
         self._btn_show_hide_shader = QPushButton(' Shader')
-        self._btn_show_hide_shader.setObjectName('_btn_show_hide_console')
         self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
         self._btn_show_hide_shader.setStatusTip(tip)
         self._btn_show_hide_shader.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4861,11 +4892,28 @@ class MainWindow(QMainWindow):
         self._btn_applyShader = QPushButton('Apply')
         self._btn_applyShader.clicked.connect(self.onShaderApply)
 
+        tip = 'Show/Hide Project Details'
+        self._btn_show_hide_details = QPushButton(' Details')
+        self._btn_show_hide_details.setStyleSheet(lower_controls_style)
+        self._btn_show_hide_details.setStatusTip(tip)
+        self._btn_show_hide_details.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._btn_show_hide_details.clicked.connect(self._callbk_showHideDetails)
+        self._btn_show_hide_details.setFixedSize(show_hide_button_sizes)
+        self._btn_show_hide_details.setIcon(qta.icon('fa.info-circle', color='#f3f6fb'))
+
+        self.detailsWidget = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        self.detailsLabel = QLabel('<label>')
+        vbl.addWidget(self.detailsLabel)
+        self.detailsWidget.setLayout(vbl)
+        self.detailsWidget.hide()
+
+
+
+
         self.shaderText = QPlainTextEdit()
-
         shaderSideButtons = QWidget()
-
-
         self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
         vbl = QVBoxLayout()
         vbl.addWidget(self._btn_volumeRendering)
@@ -4995,6 +5043,7 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self._btn_show_hide_console, alignment=Qt.AlignCenter)
         hbl.addWidget(self._btn_show_hide_notes, alignment=Qt.AlignCenter)
         hbl.addWidget(self._btn_show_hide_shader, alignment=Qt.AlignCenter)
+        hbl.addWidget(self._btn_show_hide_details, alignment=Qt.AlignCenter)
         # hbl.addStretch()
         self._showHideFeatures.setLayout(hbl)
         self._showHideFeatures.setMaximumHeight(26)
@@ -5089,8 +5138,9 @@ class MainWindow(QMainWindow):
         self._splitter.addWidget(self.controlPanelBoxes)         # (1)
         self._splitter.addWidget(self._py_console)               # (2)
         self._splitter.addWidget(self.notes)                     # (3)
-        self._splitter.addWidget(self.shaderCodeWidget)                # (4)
-        self._mainVSplitterSizes = [800, 160, 160, 160, 160]
+        self._splitter.addWidget(self.shaderCodeWidget)          # (4)
+        self._splitter.addWidget(self.detailsWidget)             # (5)
+        self._mainVSplitterSizes = [800, 160, 160, 160, 160, 160]
         self._splitter.setSizes(self._mainVSplitterSizes)
 
         self._dev_console = PythonConsole()

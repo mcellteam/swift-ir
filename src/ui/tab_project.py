@@ -85,6 +85,7 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self, matchpoint=False):
         caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
         if cfg.data.is_aligned_and_generated():
             cfg.main_window.corr_spot_thumbs.setVisible(getOpt('ui,SHOW_CORR_SPOTS'))
@@ -115,12 +116,15 @@ class ProjectTab(QWidget):
             # cfg.emViewer.initViewerSbs(nglayout=cfg.data['ui']['arrangement'], matchpoint=True)
             # cfg.emViewer.initViewerSbs(matchpoint=True)
             self.setZmag(val=15)
-        elif cfg.main_window.rb0.isChecked():
+        elif cfg.data['ui']['arrangement'] == 'stack':
+        # elif cfg.main_window.rb0.isChecked():
+            cfg.main_window.rb0.setChecked(True)
             cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
             # cfg.emViewer.initViewerSlim(nglayout=cfg.data['ui']['arrangement'])
             # cfg.emViewer.initViewerSlim()
             # self.setZmag(val=1)
-        elif cfg.main_window.rb1.isChecked():
+        elif cfg.data['ui']['arrangement'] == 'comparison':
+            cfg.main_window.rb1.setChecked(True)
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=matchpoint)
             # cfg.emViewer.initViewerSbs(nglayout=cfg.data['ui']['arrangement'], matchpoint=matchpoint)
             # cfg.emViewer.initViewerSbs(matchpoint=matchpoint)
