@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
     # def hardRestartNg(self, matchpoint=False):
     def hardRestartNg(self):
         caller = inspect.stack()[1].function
-        logger.info('Force Restarting Neuroglancer (caller: %s)...' % caller)
+        logger.critical('**HARD** Restarting Neuroglancer (caller: %s)...' % caller)
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_BEFORE)
         if self._isProjectTab() or self._isZarrTab():
@@ -265,13 +265,23 @@ class MainWindow(QMainWindow):
 
 
     def refreshTab(self):
+
         if not self._working:
             logger.critical('Refreshing...')
             if self._isProjectTab():
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     # cfg.project_tab.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
                     # cfg.project_tab.ng_browser.reload()
-                    cfg.project_tab.initNeuroglancer()
+                    logger.critical('time.time() = %s' % str(time.time()) )
+                    logger.critical('self._lastRefresh = %s' % str(self._lastRefresh))
+
+                    delay = time.time() - self._lastRefresh
+                    logger.critical('delay: %s' % str(delay))
+                    if self._lastRefresh and (delay < 1):
+                        self.hardRestartNg()
+                    else:
+                        cfg.project_tab.initNeuroglancer()
+                    self._lastRefresh = time.time()
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     logger.critical('Refreshing Table...')
                     self.tell('Refreshing Table...')
@@ -351,6 +361,7 @@ class MainWindow(QMainWindow):
         self._isPlayingBack = 0
         self._isProfiling = 0
         self.detachedNg = WebPage(self)
+        self._lastRefresh = 0
 
 
     def initStyle(self):
@@ -450,12 +461,10 @@ class MainWindow(QMainWindow):
 
     def _callbk_showHideDetails(self):
 
-        if self.shaderCodeWidget.isHidden():
+        if self.detailsWidget.isHidden():
             label  = 'Hide Details'
             icon   = 'fa.caret-down'
             self.detailsWidget.show()
-
-
         else:
             label  = ' Details'
             icon   = 'fa.info-circle'
@@ -3243,6 +3252,7 @@ class MainWindow(QMainWindow):
             cfg.project_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.project_tab.viewer
             cfg.zarr_tab = None
+            self._lastRefresh = 0
 
             if cfg.data['ui']['arrangement'] == 'stack':
                 cfg.data['ui']['ng_layout'] = '4panel'
