@@ -108,6 +108,9 @@ class Thumbnailer:
 
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
+            if os.path.exists(ofn):
+                logger.info('Removing file %s' % ofn)
+                os.remove(ofn)
             task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):

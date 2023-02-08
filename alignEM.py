@@ -42,6 +42,9 @@ $ qtpy mypy-args
 import os
 import json
 import platform
+import threading
+import cProfile
+import pstats
 import qtpy
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
@@ -50,13 +53,12 @@ os.environ["BLOSC_NTHREADS"] = "1"
 import sys, signal, logging, argparse
 import faulthandler
 
-from qtpy import QtCore,QtWebEngineCore
-from qtpy.QtCore import QCoreApplication, Qt, QUrl, QDir
+from qtpy import QtCore
+from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-from src.helpers import check_for_binaries, is_tacc, print_exception, \
-    configure_project_paths, initialize_user_preferences
+from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences
 import src.config as cfg
 
 
@@ -100,13 +102,6 @@ def tracefunc(frame, event, arg):
 
 tracefunc.memorized = set()
 tracefunc.stack_level = 0
-
-
-
-
-
-
-
 
 
 
@@ -225,8 +220,6 @@ def main():
     initialize_user_preferences()
     configure_project_paths()
 
-
-
     # def tracefunc(frame, event, arg, indent=[0]):
     #     if event == "call":
     #         indent[0] += 2
@@ -236,10 +229,6 @@ def main():
     #         indent[0] -= 2
     #     return tracefunc
     # sys.setprofile(tracefunc)
-
-
-
-
 
     # sys_argv = sys.argv
     # sys_argv += ['--style', 'material']
@@ -252,8 +241,26 @@ def main():
 
     logger.info('Showing AlignEM-SWiFT...')
     cfg.main_window.show()
-    sys.exit(app.exec())
+
+
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    app.exec()
+
+    profiler.disable()
+    profiler.dump_stats("results.prof")
+    stats = pstats.Stats(profiler).sort_stats('cumtime')
+    stats.print_stats()
+
+    # sys.exit(app.exec())
 
 
 if __name__ == "__main__":
+
     main()
+
+
+
+
+

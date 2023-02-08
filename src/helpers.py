@@ -77,7 +77,7 @@ def count_widgets(name_or_type) -> int:
 def update_preferences_model():
     logger.info('Updating user preferences model...')
     cfg.settings.setdefault('neuroglancer', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', True)
+    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_PANEL_BORDERS', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)

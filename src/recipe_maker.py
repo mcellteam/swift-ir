@@ -171,7 +171,9 @@ def run_json_project(project,
 
             # set alignment option
             md['alignment_option'] = alignment_option
-            atrm['selected_method'] = 'Auto Swim Align'  # seleted_method typo
+
+            #0205-
+            # atrm['selected_method'] = 'Auto Swim Align'  # seleted_method typo
 
             md.setdefault('bias_x_per_image', 0)
             md.setdefault('bias_y_per_image', 0)
@@ -739,6 +741,8 @@ class align_ingredient:
 
     # offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None):
     def run_swim_c(self):
+        ''' Returns affine matrix '''
+
         logger.info('run_swim_c >>>>')
 
         #    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
@@ -751,27 +755,17 @@ class align_ingredient:
         base_y = str(cy)
         adjust_x = '%.6f' % (cx + self.afm[0, 2])
         adjust_y = '%.6f' % (cy + self.afm[1, 2])
-
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         logger.critical('afm_arg =  %s' % afm_arg)
-
-
         # if keep != None:
         #  karg = '-k %s' % (keep)
-
         rota_arg = ''
         # if rota!=None:
         #  rota_arg = '%s' % (rota)
-
-        swim_ww_arg = '1024'
         if type(self.ww) == type((1, 2)):
             swim_ww_arg = str(self.ww[0]) + "x" + str(self.ww[1])
         else:
             swim_ww_arg = str(self.ww)
-
-        logger.debug("--------------------------")
-        logger.debug(str(self))
-
         swim_results = []
         logger.debug("psta = " + str(self.psta))
         multi_swim_arg_string = ""
@@ -856,8 +850,13 @@ class align_ingredient:
             if len(swim_out_lines) == 1:
                 logger.info("SWIM OUT: " + str(l))
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
+
+
+                # if self.align_mode != 'match_point_align': #0205+
                 dx = float(toks[8])
                 dy = float(toks[9])
+
+
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 mir_script += ' '.join(mir_toks) + '\n'
                 logger.info("SNR: " + str(toks[0]))
@@ -884,7 +883,8 @@ class align_ingredient:
         afm = np.eye(2, 3, dtype=np.float32)
         aim = np.eye(2, 3, dtype=np.float32)
 
-        if len(swim_out_lines) == 1:
+        if len(swim_out_lines) == 1: #0205-
+        # if (len(swim_out_lines) == 1) and (self.align_mode != 'match_point_align'):
             # aim[0, 2] = dx + 0.5 #0809
             # aim[1, 2] = dy + 0.5
             aim = copy.deepcopy(self.afm)
@@ -927,24 +927,25 @@ class align_ingredient:
     def execute(self):
         logger.info('align_ingredient.execute >>>>')
 
-        # If ww==None then this is a Matching Point ingredient of a recipe
-        # Calculate afm directly using psta and pmov as the matching points
-        if self.align_mode == 'match_point_align':
-            logger.info("Alignment Mode is 'Match Point Affine'")
-            (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-            self.ww = (0.0, 0.0)
-            self.snr = np.zeros(len(self.psta[0]))
-            snr_array = self.snr
-            self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-                snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-            return self.afm
-        elif self.align_mode == 'apply_affine_align':
-            logger.info("Alignment Mode is 'Apply Affine'")
-            self.snr = np.zeros(1)
-            snr_array = self.snr
-            self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-                snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-            return self.afm
+        #0205-
+        # # If ww==None then this is a Matching Point ingredient of a recipe
+        # # Calculate afm directly using psta and pmov as the matching points
+        # if self.align_mode == 'match_point_align':
+        #     logger.info("Alignment Mode is 'Match Point Affine'")
+        #     (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+        #     self.ww = (0.0, 0.0)
+        #     self.snr = np.zeros(len(self.psta[0]))
+        #     snr_array = self.snr
+        #     self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+        #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+        #     return self.afm
+        # elif self.align_mode == 'apply_affine_align':
+        #     logger.info("Alignment Mode is 'Apply Affine'")
+        #     self.snr = np.zeros(1)
+        #     snr_array = self.snr
+        #     self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+        #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+        #     return self.afm
 
         #  Otherwise, this is a swim window match ingredient
         #  Refine the afm via swim and mir
@@ -952,26 +953,28 @@ class align_ingredient:
         if afm is None:
             afm = swiftir.identityAffine()
 
-        if self.recipe.swiftir_mode == 'c':
-            afm = self.run_swim_c()
-        else:
-            pass
-            # 0720
-            logger.info("Running python version of swim")
-            self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-            sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
-            for i in range(self.iters):
-                logger.debug('psta = ' + str(self.psta))
-                logger.debug('pmov = ' + str(self.pmov))
-                mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
-                (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-                logger.debug('  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
-                self.pmov = self.pmov + dp
-                (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-                self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-                logger.debug('  Affine err:  %g' % (err))
-                logger.debug('  SNR:  ' + str(snr))
-            self.snr = snr
+        afm = self.run_swim_c()
+
+        # if self.recipe.swiftir_mode == 'c':
+        #     afm = self.run_swim_c()
+        # else:
+        #     pass
+        #     # 0720
+        #     logger.info("Running python version of swim")
+        #     self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+        #     sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
+        #     for i in range(self.iters):
+        #         logger.debug('psta = ' + str(self.psta))
+        #         logger.debug('pmov = ' + str(self.pmov))
+        #         mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
+        #         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
+        #         logger.debug('  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
+        #         self.pmov = self.pmov + dp
+        #         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+        #         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+        #         logger.debug('  Affine err:  %g' % (err))
+        #         logger.debug('  SNR:  ' + str(snr))
+        #     self.snr = snr
 
         snr_array = np.array(self.snr)
         self.snr = snr_array

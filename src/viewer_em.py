@@ -22,6 +22,9 @@ from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, obj_to_string, print_exception
 from src.shaders import ann_shader
 import src.config as cfg
+from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
+                                        typed_map, typed_set, typed_string_map, wrapped_property,
+                                        number_or_string)
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
@@ -40,9 +43,10 @@ class WorkerSignals(QObject):
 
 
 class EMViewer(neuroglancer.Viewer):
-    def __init__(self):
+    def __init__(self, name=''):
         super().__init__()
         logger.info('')
+        self.name=name
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._layer = None
@@ -131,7 +135,13 @@ class EMViewer(neuroglancer.Viewer):
             self.initViewerSbs(nglayout='xy', matchpoint=matchpoint)
 
 
-    def initViewerSbs(self, nglayout='xy', matchpoint=False):
+    def initViewerSbs(self, nglayout=None, matchpoint=False):
+
+        logger.critical(f'passed arg: {nglayout}')
+        if nglayout == None:
+            nglayout = cfg.data['ui']['ng_layout']
+
+        logger.critical(f'arg: {nglayout}')
 
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer (caller: {caller})....')
@@ -179,6 +189,7 @@ class EMViewer(neuroglancer.Viewer):
             s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER,)
             if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER,)
             # if matchpoint:
+            s.showSlices=False
 
 
             # if cfg.main_window.rb2.isChecked():
@@ -227,9 +238,11 @@ class EMViewer(neuroglancer.Viewer):
         cfg.main_window.updateToolbar()
 
 
-    def initViewerSlim(self, nglayout='4panel'):
+    def initViewerSlim(self, nglayout=None):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
+        if nglayout == None:
+            nglayout = cfg.data['ui']['ng_layout']
 
         self.clear_layers()
         self.make_local_volumes()
@@ -273,9 +286,21 @@ class EMViewer(neuroglancer.Viewer):
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
             if cfg.data.is_aligned_and_generated():
-                s.layers['layer'] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER)
+                s.layers['layer'] = ng.ImageLayer(
+                    source=cfg.alLV,
+                    shader=cfg.SHADER,
+                    # tool_bindings={
+                    #     'A': neuroglancer.ShaderControlTool(control='normalized'),
+                    #     'B': neuroglancer.OpacityTool(),
+                    # },
+                )
             else:
-                s.layers['layer'] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER)
+                s.layers['layer'] = ng.ImageLayer(
+                    source=cfg.baseLV,
+                    shader=cfg.SHADER,
+                    # shaderControls=typed_string_map({"normalized": typed_string_map({"range": [31, 255]})})
+                    # shaderControls = typed_string_map({"normalized": {"range": [31, 255]}})
+                )
             s.crossSectionBackgroundColor = '#808080' # 128 grey
             # s.layout = {
             #     "type": "4panel",
@@ -620,7 +645,7 @@ class EMViewer(neuroglancer.Viewer):
             volume_type='image',
             data=cfg.unal_tensor[0:cfg.data.nSections - 1, :, :],
             dimensions=self.coordinate_space,
-            voxel_offset=[1, y_nudge, x_nudge],
+            voxel_offset=[1, y_nudge, x_nudge]
         )
         cfg.baseLV = ng.LocalVolume(
             volume_type='image',
