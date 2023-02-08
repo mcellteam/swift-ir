@@ -47,12 +47,11 @@ def compute_affines(scale, start=0, end=None):
         # if checkForTiffs(path):
         #     # al_substack = dm['data']['scales'][scale]['alignment_stack'][start:]
         #     # remove_aligned(al_substack) #0903 Moved into conditional
-        #     dm.remove_aligned(scale, start)
+        #     dm.remove_aligned(scale, start, end)
 
         corr_spots_dir = os.path.join(dm.dest(), scale, 'corr_spots')
-        if os.path.exists(corr_spots_dir):
-            shutil.rmtree(corr_spots_dir)
-        os.mkdir(corr_spots_dir)
+        if not os.path.exists(corr_spots_dir):
+            os.mkdir(corr_spots_dir)
 
         dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
         if rename_switch:
@@ -84,9 +83,7 @@ def compute_affines(scale, start=0, end=None):
         # ADD ALIGNMENT TASKS TO QUEUE
         for layer in substack:
             index = alstack.index(layer)
-            if layer['skipped']:
-                logger.info(f'Layer {index} is skipped')
-            else:
+            if not layer['skipped']:
                 task_args = [sys.executable,
                              align_job,            # Python program to run (single_alignment_job)
                              temp_file,            # Temp project file name
@@ -102,15 +99,15 @@ def compute_affines(scale, start=0, end=None):
                 # if index == 8:
                 #     task_args[1] = 'bogus_script.py'
                 task_queue.add_task(task_args)
-                # if cfg.PRINT_EXAMPLE_ARGS:
-                #     if index in range(start, start + 3):
-                e = [str(p) for p in task_args] # example
-                logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
+                if cfg.PRINT_EXAMPLE_ARGS:
+                    if index in range(start, start + 3):
+                        e = [str(p) for p in task_args] # example
+                        logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
 
         # task_queue.work_q.join()
         # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
-        # BEGIN COMPUTATIONS
         dt = task_queue.collect_results()
+        dm.set_t_align(dt, s=scale)
 
         if cfg.CancelProcesses:
             return

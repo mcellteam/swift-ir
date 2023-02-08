@@ -32,7 +32,7 @@ import qtawesome as qta
 from rechunker import rechunk
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-    QKeySequence, QMovie, QStandardItemModel
+    QKeySequence, QMovie, QStandardItemModel, QColor
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
@@ -40,7 +40,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication, QPlainTextEdit
+    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem
 
 import src.config as cfg
 import src.shaders
@@ -58,7 +58,7 @@ from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_project_selection, \
     validate_zarr_selection, configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, \
-    count_widgets, find_allocated_widgets, cleanup_project_list, update_preferences_model
+    count_widgets, find_allocated_widgets, cleanup_project_list, update_preferences_model, delete_recursive
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
     QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
     mendenhall_dialog, RechunkDialog
@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
     # def hardRestartNg(self, matchpoint=False):
     def hardRestartNg(self):
         caller = inspect.stack()[1].function
-        logger.critical('**HARD** Restarting Neuroglancer (caller: %s)...' % caller)
+        logger.critical('\n\n\n**HARD** Restarting Neuroglancer (caller: %s)...\n\n' % caller)
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_BEFORE)
         if self._isProjectTab() or self._isZarrTab():
@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
 
                     delay = time.time() - self._lastRefresh
                     logger.critical('delay: %s' % str(delay))
-                    if self._lastRefresh and (delay < 1):
+                    if self._lastRefresh and (delay < 3):
                         self.hardRestartNg()
                     else:
                         cfg.project_tab.initNeuroglancer()
@@ -366,7 +366,6 @@ class MainWindow(QMainWindow):
 
     def initStyle(self):
         logger.info('')
-        self.main_stylesheet = os.path.abspath('styles/default.qss')
         self.apply_default_style()
 
 
@@ -471,18 +470,20 @@ class MainWindow(QMainWindow):
             self.detailsWidget.hide()
         self._btn_show_hide_details.setIcon(qta.icon(icon, color='#f3f6fb'))
         self._btn_show_hide_details.setText(label)
-        self.updateProjectDetails()
+        self.updateDetailsWidget()
         self.dataUpdateWidgets()
         # if cfg.project_tab:
         #     cfg.project_tab.initNeuroglancer()
         # if cfg.zarr_tab:
         #     cfg.emViewer.bootstrap()
 
-    def updateProjectDetails(self):
+    def updateDetailsWidget(self):
         self.detailsLabel.setText(
             'Filename   : %s\n'
             'SNR        : %.3f\n'
             'Prev. SNR  : %.3f' %(cfg.data.base_image_name(), cfg.data.snr(), cfg.data.snr_prev()))
+
+
 
 
 
@@ -1315,11 +1316,12 @@ class MainWindow(QMainWindow):
     def apply_default_style(self):
         cfg.THEME = 0
         # self.tell('Setting Default Theme')
+        # self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         with open(self.main_stylesheet, 'r') as f:
             style = f.read()
         self.setStyleSheet(style)
-        self.cpanel.setStyleSheet(style)
+        # self.cpanel.setStyleSheet(style)
         # self.hud.set_theme_default()
         self.hud.set_theme_light()
         # if inspect.stack()[1].function != 'initStyle':
@@ -1344,6 +1346,7 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.setScaleData()
                 self.updateToolbar()
+                self.updateEnabledButtons()
                 self._showSNRcheck()
 
                 try:
@@ -1458,7 +1461,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
 
                 if self.detailsWidget.isVisible():
-                    self.updateProjectDetails()
+                    self.updateDetailsWidget()
 
                 cur = cfg.data.layer()
                 if self.notes.isVisible():
@@ -1812,7 +1815,7 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         if self._isProjectTab():
-            if caller == 'main':
+            if caller in ('main', 'scale_up', 'scale_down'):
                 if self._scales_combobox_switch == 1:
                     if cfg.MP_MODE != True:
                         logger.info('')
@@ -1942,7 +1945,7 @@ class MainWindow(QMainWindow):
         cfg.dataById[id(cfg.project_tab)] = cfg.data
         self.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
         self._setLastTab()
-        makedirs_exist_ok(path, exist_ok=True)
+        # makedirs_exist_ok(path, exist_ok=True)
 
         if not mendenhall:
             try:
@@ -1961,6 +1964,8 @@ class MainWindow(QMainWindow):
                 logger.info('ConfigProjectDialog - Returning...')
                 return
 
+            makedirs_exist_ok(path, exist_ok=True)
+            self._autosave(silently=True)
             self.autoscale()
             self.onStartProject()
         else:
@@ -2004,10 +2009,8 @@ class MainWindow(QMainWindow):
         logger.critical(f'Deleting Project File: {project_file}...')
         self.warn(f'Deleting Project File: {project_file}...')
         try:
-            shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
-            shutil.rmtree(project_file, ignore_errors=True, onerror=handleError)
+            os.remove(project_file)
         except:
-            self.warn('An Error Was Encountered During Deletion of the Project File')
             print_exception()
         else:
             self.hud.done()
@@ -2015,8 +2018,10 @@ class MainWindow(QMainWindow):
         logger.info('Deleting Project Directory %s...' % project)
         self.warn('Deleting Project Directory %s...' % project)
         try:
-            shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-            shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+
+            delete_recursive(dir=project)
+            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
             self.warn('An Error Was Encountered During Deletion of the Project Directory')
             print_exception()
@@ -2197,18 +2202,18 @@ class MainWindow(QMainWindow):
                 self.hud.done()
 
 
-    def _autosave(self):
+    def _autosave(self, silently=False):
         if cfg.data:
             if cfg.AUTOSAVE:
                 logger.info('Autosaving...')
                 try:
-                    self._saveProjectToFile()
+                    self._saveProjectToFile(silently=silently)
                 except:
                     self._unsaved_changes = True
                     print_exception()
 
 
-    def _saveProjectToFile(self, saveas=None):
+    def _saveProjectToFile(self, saveas=None, silently=False):
         if cfg.data:
             if self._isProjectTab():
                 try:
@@ -2218,7 +2223,8 @@ class MainWindow(QMainWindow):
                     data_cp = copy.deepcopy(cfg.data)
                     # data_cp.make_paths_relative(start=cfg.data.dest())
                     data_cp_json = data_cp.to_dict()
-                    logger.info('---- SAVING DATA TO PROJECT FILE ----')
+                    if not silently:
+                        logger.info('---- SAVING DATA TO PROJECT FILE ----')
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     proj_json = jde.encode(data_cp_json)
                     name = cfg.data.dest()
@@ -3091,10 +3097,12 @@ class MainWindow(QMainWindow):
         self._ngLayoutWidget = QWidget()
         self._ngLayoutWidget.setLayout(hbl)
         self._changeScaleCombo = QComboBox(self)
+        self._changeScaleCombo.setMinimumWidth(140)
         self._changeScaleCombo.setStyleSheet('font-size: 11px')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
-        self._changeScaleCombo.resize(QSize(160, 18))
+        self._changeScaleCombo.resize(QSize(140, 20))
+        self._changeScaleCombo.setMinimumWidth(140)
         self._changeScaleCombo.setFixedHeight(20)
         self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
@@ -4139,7 +4147,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Set Whether to Use or Reject the Current Layer'
         self._lab_keep_reject = QLabel('Reject:')
-        self._lab_keep_reject.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414; color: #141414')
+        # self._lab_keep_reject.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414; color: #141414')
+        self._lab_keep_reject.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         self._lab_keep_reject.setStatusTip(tip)
         self._skipCheckbox = QCheckBox()
         self._skipCheckbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4167,7 +4176,8 @@ class MainWindow(QMainWindow):
         tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
         lab = QLabel("Whitening\nFactor:")
         lab.setAlignment(right)
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         self._whiteningControl = QDoubleSpinBox(self)
         self._whiteningControl.setFixedHeight(26)
         self._whiteningControl.valueChanged.connect(self._callbk_unsavedChanges)
@@ -4193,7 +4203,8 @@ class MainWindow(QMainWindow):
               "width. (default=81.25%)"
         lab = QLabel("SWIM\nWindow:")
         lab.setAlignment(right)
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         self._swimWindowControl = QDoubleSpinBox(self)
         self._swimWindowControl.setSuffix('%')
         self._swimWindowControl.setFixedHeight(26)
@@ -4249,7 +4260,8 @@ class MainWindow(QMainWindow):
 
         self._sectionChangeWidget = QWidget()
         lab = QLabel('Section:')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(lab, alignment=right)
@@ -4280,7 +4292,8 @@ class MainWindow(QMainWindow):
 
         self._scaleSetWidget = QWidget()
         lab = QLabel('Scale:')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(lab, alignment=right)
@@ -4316,6 +4329,7 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.setFixedSize(normal_button_size)
 
         self.sectionRangeSlider = RangeSlider()
+        self.sectionRangeSlider.setStyleSheet('border-radius: 2px;')
         self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sectionRangeSlider.setFixedWidth(120)
         self.sectionRangeSlider.setMin(0)
@@ -4356,7 +4370,8 @@ class MainWindow(QMainWindow):
         tip = 'Auto-generate aligned images.'
         lab = QLabel("Auto-\ngenerate:")
         lab.setAlignment(right)
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         lab.setStatusTip(tip)
         self._toggleAutogenerate = ToggleSwitch()
         self._toggleAutogenerate.stateChanged.connect(self._toggledAutogenerate)
@@ -4375,7 +4390,8 @@ class MainWindow(QMainWindow):
               ' option is set at the coarsest s, in order to form a contiguous dataset.'
         lab = QLabel("Corrective\nPolynomial:")
         lab.setAlignment(right)
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         lab.setStatusTip(tip)
         self._polyBiasCombo = QComboBox(self)
         self._polyBiasCombo.setStyleSheet("font-size: 11px;")
@@ -4400,7 +4416,8 @@ class MainWindow(QMainWindow):
               'significantly increase the size of your aligned images.'
         lab = QLabel("Bounding Box:")
         # lab.setAlignment(right | vcenter)
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         lab.setStatusTip(tip)
         self._bbToggle = ToggleSwitch()
         # self._bbToggle.setChecked(True)
@@ -4423,7 +4440,6 @@ class MainWindow(QMainWindow):
         self._btn_regenerate.setStatusTip(tip)
         self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.curScale))
         self._btn_regenerate.setFixedSize(normal_button_size)
-        self._btn_regenerate.setStyleSheet("font-size: 10px;")
 
         self._wdg_alignButtons = QWidget()
         hbl = QHBoxLayout()
@@ -4481,10 +4497,17 @@ class MainWindow(QMainWindow):
         hbl1.addWidget(self._ctlpanel_whitening)
         hbl1.addStretch()
         hbl1.addWidget(self._ctlpanel_applyAllButton)
-        # hbl1.addStretch()
+        hbl1.addStretch()
 
         hbl2.addStretch()
         hbl2.addWidget(self._ctlpanel_alignRegenButtons)
+        hbl2.addStretch()
+
+        lab = QLabel('Control Panel')
+        lab.setContentsMargins(4,4,0,0)
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
+        form_layout.addRow(lab)
 
         w = QWidget()
         w.setLayout(hbl0)
@@ -4500,13 +4523,21 @@ class MainWindow(QMainWindow):
 
         form_layout.setContentsMargins(0, 0, 0, 0)
 
-        # gb = QGroupBox()
-        gb = QGroupBox('Control Panel')
-        gb.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+
+        with open('src/styles/cpanel.qss', 'r') as f:
+            style = f.read()
+
+        gb = QGroupBox()
+        # gb = QGroupBox('Control Panel')
+        # gb.setStyleSheet('background-color: #141414; border-radius: 5px;')
+        # gb.setStyleSheet(style)
         gb.setContentsMargins(0, 0, 0, 0)
         gb.setLayout(form_layout)
 
+
+
         self.cpanel = QWidget()
+        self.cpanel.setStyleSheet(style)
         # self.cpanel.setStyleSheet('border-radius: 5px;')
         # lab = QLabel('Control Panel')
         # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
@@ -4514,6 +4545,7 @@ class MainWindow(QMainWindow):
         vbl.setSpacing(0)
         vbl.setContentsMargins(0, 0, 0, 0)
         # vbl.addWidget(lab, alignment=baseline)
+        # vbl.addWidget(lab)
         vbl.addWidget(gb)
         self.cpanel.setLayout(vbl)
 
@@ -4912,10 +4944,39 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_details.setIcon(qta.icon('fa.info-circle', color='#f3f6fb'))
 
         self.detailsWidget = QWidget()
+        colors = [("Red", "#FF0000"),
+                  ("Green", "#00FF00"),
+                  ("Blue", "#0000FF"),
+                  ("Black", "#000000"),
+                  ("White", "#FFFFFF"),
+                  ("Electric Green", "#41CD52"),
+                  ("Dark Blue", "#222840"),
+                  ("Yellow", "#F9E56d")]
+
+        def get_rgb_from_hex(code):
+            code_hex = code.replace("#", "")
+            rgb = tuple(int(code_hex[i:i + 2], 16) for i in (0, 2, 4))
+            return QColor.fromRgb(rgb[0], rgb[1], rgb[2])
+
+        self.detailsTable = QTableWidget()
+        self.detailsTable.setRowCount(len(colors))
+        self.detailsTable.setColumnCount(len(colors[0]) + 1)
+        self.detailsTable.setHorizontalHeaderLabels(["Name", "Hex Code", "Color"])
+        for i, (name, code) in enumerate(colors):
+            item_name = QTableWidgetItem(name)
+            item_code = QTableWidgetItem(code)
+            item_color = QTableWidgetItem()
+            item_color.setBackground(get_rgb_from_hex(code))
+            self.detailsTable.setItem(i, 0, item_name)
+            self.detailsTable.setItem(i, 1, item_code)
+            self.detailsTable.setItem(i, 2, item_color)
+
+
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         self.detailsLabel = QLabel('<label>')
         vbl.addWidget(self.detailsLabel)
+        vbl.addWidget(self.detailsTable)
         self.detailsWidget.setLayout(vbl)
         self.detailsWidget.hide()
 
@@ -4965,6 +5026,7 @@ class MainWindow(QMainWindow):
         # self.brightnessSlider.setSingleStep(.02)
         self.brightnessSlider.setSingleStep(0.01)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
+        self.brightnessSlider.valueChanged.connect(self._callbk_unsavedChanges)
         self.brightnessSlider.valueChanged.connect(
             lambda: self.brightnessLE.setText('%.2f' %self.brightnessSlider.value()))
         w = QWidget()
@@ -5001,6 +5063,7 @@ class MainWindow(QMainWindow):
         # self.contrastSlider.setSingleStep(.02)
         self.contrastSlider.setSingleStep(0.01)
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
+        self.contrastSlider.valueChanged.connect(self._callbk_unsavedChanges)
         self.contrastSlider.valueChanged.connect(
             lambda: self.contrastLE.setText('%.2f' %self.contrastSlider.value()))
         w = QWidget()
@@ -5482,11 +5545,11 @@ class MainWindow(QMainWindow):
         cfg.CancelProcesses = True
         cfg.event.set()
 
-    def pbar_max(self, x):
+    def setPbarMax(self, x):
         self.pbar.setMaximum(x)
 
 
-    def pbar_update(self, x):
+    def updatePbar(self, x):
         self.pbar.setValue(x)
         self.update()
 

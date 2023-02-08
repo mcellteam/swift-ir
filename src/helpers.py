@@ -35,7 +35,7 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries',
+__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
@@ -72,6 +72,53 @@ def find_allocated_widgets(filter) -> list:
 
 def count_widgets(name_or_type) -> int:
     return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
+
+
+def delete_recursive(dir):
+    # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
+    cfg.main_window.showZeroedPbar()
+
+    to_delete = []
+    to_delete.extend(glob(dir +'/img_aligned.zarr/s*'))
+    to_delete.extend(glob(dir +'/img_src.zarr/s*'))
+    to_delete.append(dir +'/thumbnails')
+    scales = glob(dir + '/scale_*')
+    for s in scales:
+        if os.path.exists(os.path.join(dir, s, 'thumbnails_corr_spots')):
+            to_delete.append(os.path.join(dir, s, 'thumbnails_corr_spots'))
+        if os.path.exists(os.path.join(dir, s, 'bias_data')):
+            to_delete.append(os.path.join(dir, s, 'bias_data'))
+        if os.path.exists(os.path.join(dir, s, 'img_aligned')):
+            to_delete.append(os.path.join(dir, s, 'img_aligned'))
+        if os.path.exists(os.path.join(dir, s, 'thumbnails_aligned')):
+            to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
+        if os.path.exists(os.path.join(dir, s, 'img_src')):
+            to_delete.append(os.path.join(dir, s, 'img_src'))
+        if os.path.exists(os.path.join(dir, s, 'history')):
+            to_delete.append(os.path.join(dir, s, 'history'))
+    to_delete.append(dir)
+    to_delete.append(dir) #delete twice
+    cfg.nCompleted = 0
+    cfg.nTasks = len(to_delete)
+    logger.critical('# directories to delete: %d' % len(to_delete))
+
+    cfg.main_window.showZeroedPbar()
+    cfg.main_window.setPbarText('Deleting Files...')
+    cfg.main_window.setPbarMax(cfg.nTasks)
+    logger.critical(f'To Delete: {to_delete}')
+    for d in to_delete:
+        cfg.nCompleted += 1
+        shutil.rmtree(d, ignore_errors=True, onerror=handleError)
+        cfg.main_window.setPbarText('Deleting %s...' % os.path.basename(d))
+        cfg.main_window.updatePbar(cfg.nCompleted)
+
+    cfg.main_window.pbar_widget.hide()
+
+
+
+
+
+
 
 
 def update_preferences_model():

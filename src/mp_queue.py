@@ -116,7 +116,7 @@ class TaskQueue(QObject):
 
         cfg.nCompleted += 1
         try:
-            self.parent.pbar_max(self.n_tasks)
+            self.parent.setPbarMax(self.n_tasks)
             if self.pbar_text:
                 self.parent.setPbarText(text=self.pbar_text)
                 # self.parent.statusBar.showMessage(self.pbar_text)
@@ -236,7 +236,7 @@ class TaskQueue(QObject):
         realtime = n_pending
         retries_tot = 0
         # try:
-        #     self.parent.pbar_max(self.n_tasks)
+        #     self.parent.setPbarMax(self.n_tasks)
         #     if self.pbar_text:
         #         self.parent.setPbarText(text=self.pbar_text)
         #         # self.parent.statusBar.showMessage(self.pbar_text)
@@ -274,7 +274,7 @@ class TaskQueue(QObject):
 
 
                     try:
-                        self.parent.pbar_update(self.n_tasks - realtime)
+                        self.parent.updatePbar(self.n_tasks - realtime)
                     except:
                         # print_exception()
                         logger.warning('An exception was raised while updating progress bar')

@@ -1159,7 +1159,7 @@ class DataModel:
         except:
             logger.warning('Unable to set alignment dict')
 
-    def remove_aligned(self, scale, start_layer):
+    def remove_aligned(self, scale, start, end):
         '''
         Removes previously generated aligned images for the current s, starting at l 'start_layer'.
         :param use_scale: The s to remove aligned images from.
@@ -1170,7 +1170,7 @@ class DataModel:
         '''
         cfg.main_window.hud.post(f'Removing Aligned for Current Scale...')
         try:
-            for layer in self._data['data']['scales'][scale]['alignment_stack'][start_layer:]:
+            for layer in self._data['data']['scales'][scale]['alignment_stack'][start:end]:
                 ifn = layer['images'].get('filename', None)
                 layer['images'].pop('aligned', None)
                 if ifn != None:

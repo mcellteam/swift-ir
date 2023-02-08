@@ -85,7 +85,7 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self, matchpoint=False):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}\n\n\n')
+        # logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
         if cfg.data.is_aligned_and_generated():
             cfg.main_window.corr_spot_thumbs.setVisible(getOpt('ui,SHOW_CORR_SPOTS'))
@@ -93,7 +93,7 @@ class ProjectTab(QWidget):
             cfg.main_window.corr_spot_thumbs.hide()
 
         if caller != '_onGlobTabChange':
-            logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
+            logger.critical(f'\n\nInitializing Neuroglancer (caller: {inspect.stack()[1].function})...\n')
             if cfg.data:
                 cfg.emViewer = self.viewer = EMViewer(name=os.path.basename(cfg.data.dest()))
                 self.updateNeuroglancer(matchpoint=matchpoint)
