@@ -4526,7 +4526,7 @@ class MainWindow(QMainWindow):
         form_layout.setContentsMargins(0, 0, 0, 0)
 
 
-        with open(os.path.join(get_appdir(), 'src/styles/cpanel.qss'), 'r') as f:
+        with open(os.path.join(get_appdir(), 'styles/cpanel.qss'), 'r') as f:
             style = f.read()
 
         gb = QGroupBox()
