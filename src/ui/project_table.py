@@ -107,17 +107,20 @@ class ProjectTable(QWidget):
                     for j, item in enumerate(row):
                         if j == 0:
                             item = '<h4>' + item + '</h4>'
-                            lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            lab.setWordWrap(True)
-                            self.table.setCellWidget(i, j, lab)
+                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
+                            # lab.setWordWrap(True)
+                            # self.table.setCellWidget(i, j, lab)
+                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(item, 20))))
                         elif j == 1:
                             item = '<h3>' + str(item).zfill(5) + '</h3>'
-                            lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            self.table.setCellWidget(i, j, lab)
+                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
+                            # self.table.setCellWidget(i, j, lab)
+                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(item, 20))))
                         elif j == 2:
                             item = '<h3>' + ('%.3f' % item).zfill(5) + '</h3>'
-                            lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            self.table.setCellWidget(i, j, lab)
+                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
+                            # self.table.setCellWidget(i, j, lab)
+                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(item, 20))))
                         elif j in (3, 4, 5):
                             thumbnail = Thumbnail(self, path=item)
                             self.table.setCellWidget(i, j, thumbnail)
@@ -133,13 +136,15 @@ class ProjectTable(QWidget):
                     for j, item in enumerate(row):
                         if j == 0:
                             item = '<h4>' + item + '</h4>'
-                            lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            lab.setWordWrap(True)
-                            self.table.setCellWidget(i, j, lab)
+                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
+                            # lab.setWordWrap(True)
+                            # self.table.setCellWidget(i, j, lab)
+                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(item, 20))))
                         elif j == 1:
                             item = '<h3>' + str(item).zfill(5) + '</h3>'
-                            lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            self.table.setCellWidget(i, j, lab)
+                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
+                            # self.table.setCellWidget(i, j, lab)
+                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(item, 20))))
                         elif j in (2, 3):
                             thumbnail = Thumbnail(self, path=item)
                             self.table.setCellWidget(i, j, thumbnail)

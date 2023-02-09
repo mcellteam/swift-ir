@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
 
                     delay = time.time() - self._lastRefresh
                     logger.critical('delay: %s' % str(delay))
-                    if self._lastRefresh and (delay < 3):
+                    if self._lastRefresh and (delay < 2):
                         self.hardRestartNg()
                     else:
                         cfg.project_tab.initNeuroglancer()
@@ -1943,8 +1943,7 @@ class MainWindow(QMainWindow):
 
         cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
         cfg.dataById[id(cfg.project_tab)] = cfg.data
-        self.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
-        self._setLastTab()
+
         # makedirs_exist_ok(path, exist_ok=True)
 
         if not mendenhall:
@@ -1964,9 +1963,12 @@ class MainWindow(QMainWindow):
                 logger.info('ConfigProjectDialog - Returning...')
                 return
 
+
             makedirs_exist_ok(path, exist_ok=True)
             self._autosave(silently=True)
             self.autoscale()
+            self.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
+            self._setLastTab()
             self.onStartProject()
         else:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
@@ -3286,7 +3288,7 @@ class MainWindow(QMainWindow):
 
 
             # cfg.project_tab.updateNeuroglancer()
-            cfg.project_tab.initNeuroglancer() #0208+
+            # cfg.project_tab.initNeuroglancer() #0208+
 
 
             self.rb0.show()
@@ -5561,6 +5563,7 @@ class MainWindow(QMainWindow):
 
 
     def showZeroedPbar(self):
+        logger.critical('')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
