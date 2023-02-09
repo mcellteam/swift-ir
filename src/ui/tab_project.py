@@ -283,7 +283,6 @@ class ProjectTab(QWidget):
         vbl.addWidget(self.__widgetArea_details)
         self._widgetArea_details.setLayout(vbl)
 
-        self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
         self._overlayBottomLeft = QLabel()
         self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
         self._overlayBottomLeft.hide()
