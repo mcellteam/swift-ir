@@ -272,11 +272,8 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     # cfg.project_tab.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
                     # cfg.project_tab.ng_browser.reload()
-                    logger.critical('time.time() = %s' % str(time.time()) )
-                    logger.critical('self._lastRefresh = %s' % str(self._lastRefresh))
-
                     delay = time.time() - self._lastRefresh
-                    logger.critical('delay: %s' % str(delay))
+                    logger.info('delay: %s' % str(delay))
                     if self._lastRefresh and (delay < 2):
                         self.hardRestartNg()
                     else:
@@ -836,13 +833,13 @@ class MainWindow(QMainWindow):
         cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
-        self.stopNgServer() #0202-
         self._disableGlobTabs()
         self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.curScale)
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
         self._autosave()
+        self.stopNgServer()  # 0202-
 
 
     def alignAll(self):
@@ -5026,7 +5023,7 @@ class MainWindow(QMainWindow):
         self.brightnessSlider.setMaximum(1.0)
         self.brightnessSlider.setValue(0)
         # self.brightnessSlider.setSingleStep(.02)
-        self.brightnessSlider.setSingleStep(0.01)
+        # self.brightnessSlider.setSingleStep(0.01)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         self.brightnessSlider.valueChanged.connect(self._callbk_unsavedChanges)
         self.brightnessSlider.valueChanged.connect(
@@ -5063,7 +5060,7 @@ class MainWindow(QMainWindow):
         self.contrastSlider.setMaximum(1.0)
         self.contrastSlider.setValue(0)
         # self.contrastSlider.setSingleStep(.02)
-        self.contrastSlider.setSingleStep(0.01)
+        # self.contrastSlider.setSingleStep(0.01)
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
         self.contrastSlider.valueChanged.connect(self._callbk_unsavedChanges)
         self.contrastSlider.valueChanged.connect(
