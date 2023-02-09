@@ -55,7 +55,7 @@ from src.thumbnailer import Thumbnailer
 from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_sort, make_affine_widget_HTML, \
     is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
-    tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, \
+    tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, get_appdir, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_project_selection, \
     validate_zarr_selection, configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, \
     count_widgets, find_allocated_widgets, cleanup_project_list, update_preferences_model, delete_recursive
@@ -4526,7 +4526,7 @@ class MainWindow(QMainWindow):
         form_layout.setContentsMargins(0, 0, 0, 0)
 
 
-        with open('src/styles/cpanel.qss', 'r') as f:
+        with open(os.path.join(get_appdir(), 'src/styles/cpanel.qss'), 'r') as f:
             style = f.read()
 
         gb = QGroupBox()
