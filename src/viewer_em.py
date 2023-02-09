@@ -137,11 +137,11 @@ class EMViewer(neuroglancer.Viewer):
 
     def initViewerSbs(self, nglayout=None, matchpoint=False):
 
-        logger.critical(f'passed arg: {nglayout}')
+        # logger.critical(f'passed arg: {nglayout}')
         if nglayout == None:
             nglayout = cfg.data['ui']['ng_layout']
 
-        logger.critical(f'arg: {nglayout}')
+        # logger.critical(f'passed arg: {nglayout}')
 
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer (caller: {caller})....')

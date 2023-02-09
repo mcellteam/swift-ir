@@ -62,14 +62,13 @@ class DataModel:
         else:
             self._data = copy.deepcopy(data_template)
             current_time = datetime.now()
-            # self._data['created'] = current_time.strftime("%m/%d/%Y, %H:%M:%S")
-            self._data['created'] = current_time.strftime("%d-%m-%y %H:%M:%S")
+            self._data['created'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
             self.set_system_info()
         # if not self.layer():
         #     self.set_layer(0)
 
         if not self.quietly:
-            self._data['last_opened'] = datetime.now().strftime("%d-%m-%y %H:%M:%S")
+            self._data['last_opened'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             # self.set_defaults()
 
         if name:
