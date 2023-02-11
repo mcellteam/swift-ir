@@ -62,7 +62,7 @@ CLEVEL = 5
 KEEP_ORIGINAL_SPOTS = False
 PROFILING_TIMER_SPEED = 5000
 PROFILING_TIMER_AUTOSTART = False
-DEFAULT_PLAYBACK_SPEED = 2.5 # playback speed (fps)
+DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 256
 if 'Joels-' in platform.node():
     DEV_MODE = True
