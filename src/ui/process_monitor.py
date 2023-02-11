@@ -74,7 +74,7 @@ class HeadupDisplay(QWidget):
         h.setFormatter(formatter)
         logger.addHandler(h)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(te)
         self.start_thread()
 
@@ -175,6 +175,9 @@ class HeadupDisplay(QWidget):
             border-width: 0px;
             border-radius: 2px;
             font-size: 11px;
+            
+            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+            
             margin: 0px 0px 0px 0px;
         """)
 
@@ -185,13 +188,16 @@ class HeadupDisplay(QWidget):
             color: #ffa213;
             /*background-color:  #8bb8e8;*/
             /*background-color:  #ede9e8;*/
-            background-color:  #ffffff;
+            background-color:  #f3f6fb;
             /*border-style: solid;*/
             border-style: inset;
             border-color: #1b1e23;
             border-width: 1px;
             border-radius: 4px;  
-            font-size: 11px;          
+            font-size: 11px;
+            
+            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+                  
             margin: 0px 0px 0px 0px;
         """)
 

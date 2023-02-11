@@ -17,7 +17,8 @@ QDialog QLabel {
 }
 
 QMainWindow#mainwindow{
-    background-color: #f3f6fb;
+    /*background-color: #f3f6fb;*/
+    background-color: #ede9e8;
 }
 
 
@@ -123,7 +124,7 @@ QMenuBar::item:selected {
 }
 
 QMenuBar {
-	background: #141414;
+	background: #1b2328;
 	color: #f3f6fb;
 }
 

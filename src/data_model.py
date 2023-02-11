@@ -147,33 +147,33 @@ class DataModel:
         self.nSections = self.n_sections()
 
     def set_t_scaling(self, dt):
-        self._data['data']['t_scaling'] = '%.3f' % dt
+        self._data['data']['t_scaling'] = dt
 
     def set_t_scaling_convert_zarr(self, dt):
-        self._data['data']['t_scaling_convert_zarr'] = '%.3f' % dt
+        self._data['data']['t_scaling_convert_zarr'] = dt
 
     def set_t_thumbs(self, dt):
-        self._data['data']['t_thumbs'] = '%.3f' % dt
+        self._data['data']['t_thumbs'] = dt
 
     def set_t_align(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_align'] = '%.3f' % dt
+        self._data['data']['scales'][s]['t_align'] = dt
 
     def set_t_generate(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_generate'] = '%.3f' % dt
+        self._data['data']['scales'][s]['t_generate'] = dt
 
     def set_t_convert_zarr(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_convert_zarr'] = '%.3f' % dt
+        self._data['data']['scales'][s]['t_convert_zarr'] = dt
 
     def set_t_thumbs_aligned(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_thumbs_aligned'] = '%.3f' % dt
+        self._data['data']['scales'][s]['t_thumbs_aligned'] = dt
 
     def set_t_thumbs_spot(self, dt, s=None):
         if s == None: s = cfg.data.scale()
-        self._data['data']['scales'][s]['t_thumbs_spot'] = '%.3f' % dt
+        self._data['data']['scales'][s]['t_thumbs_spot'] = dt
 
     def set_thumb_scaling_factor_source(self, factor:int):
         self._data['data']['thumb_scaling_factor_source'] = factor
@@ -207,6 +207,10 @@ class DataModel:
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+        self._data['data'].setdefault('t_scaling', 0.0)
+        self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
+        self._data['data'].setdefault('t_thumbs', 0.0)
+
         self._data['rendering'].setdefault('normalize', [1,255])
         self._data['rendering'].setdefault('brightness', 0)
         self._data['rendering'].setdefault('contrast', 0)
@@ -222,6 +226,11 @@ class DataModel:
             scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
             scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
+            scale.setdefault('t_align', 0.0)
+            scale.setdefault('t_generate', 0.0)
+            scale.setdefault('t_convert_zarr', 0.0)
+            scale.setdefault('t_thumbs_aligned', 0.0)
+            scale.setdefault('t_thumbs_spot', 0.0)
 
             for layer_index in range(len(scale['alignment_stack'])):
                 layer = scale['alignment_stack'][layer_index]
@@ -420,6 +429,15 @@ class DataModel:
         except:
             return {}
 
+    def datetime(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['datetime']
+        except:
+            return ''
+
 
     def previous_method_results(self, s=None, l=None):
         if s == None: s = self.curScale
@@ -616,14 +634,31 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         layer = self._data['data']['scales'][s]['alignment_stack'][l]
-        r = layer['images']['ref']['metadata']['match_points']
-        b = layer['images']['base']['metadata']['match_points']
-        # ref = self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref']
-        # base = self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['base']
+        # r = layer['images']['ref']['metadata']['match_points']
+        # b = layer['images']['base']['metadata']['match_points']
+        r = layer['align_to_ref_method']['match_points']['ref']
+        b = layer['align_to_ref_method']['match_points']['base']
         combined = {'ref': r, 'base': b}
         # logger.info(f'Ref, Match Points: {str(r)}')
         # logger.info(f'Base, Match Points: {str(b)}')
         return combined
+
+    def match_points_pretty(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        ref = cfg.data.match_points()['ref']
+        base = cfg.data.match_points()['base']
+        return (['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in ref],
+                ['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in base])
+
+    def match_points_rounded(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        ref = cfg.data.match_points()['ref']
+        base = cfg.data.match_points()['base']
+        return zip([(round(x1), round(y1)) for x1, y1 in ref],
+                [(round(x1), round(y1)) for x1, y1 in base])
+
 
     def find_layers_with_matchpoints(self, s=None) -> list:
         '''Returns the list of layers that have match points'''
@@ -767,6 +802,18 @@ class DataModel:
         except:
             return [[0, 0, 0], [0, 0, 0]]
 
+    def afm_(self, s=None, l=None) -> zip:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            return zip(self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['affine_matrix'][0],
+                       self._data['data']['scales'][s]['alignment_stack'][l][
+                           'align_to_ref_method']['method_results']['affine_matrix'][1]
+                       )
+        except:
+            return zip([0, 0, 0], [0, 0, 0])
+
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
@@ -775,6 +822,18 @@ class DataModel:
                 'align_to_ref_method']['method_results']['cumulative_afm']
         except:
             return [[0, 0, 0], [0, 0, 0]]
+
+    def cafm_(self, s=None, l=None) -> zip:
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            return zip(self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['cumulative_afm'][0],
+                       self._data['data']['scales'][s]['alignment_stack'][l][
+                           'align_to_ref_method']['method_results']['cumulative_afm'][1]
+                       )
+        except:
+            return zip([0, 0, 0], [0, 0, 0])
 
     def afm_list(self, s=None, l=None) -> list:
         if s == None: s = self.curScale
@@ -985,16 +1044,16 @@ class DataModel:
                 logger.warning('Unable to return a bounding rect (s=%s)' % s)
                 return None
 
-    def image_size(self, s=None):
+    def image_size(self, s=None) -> tuple:
         if s == None: s = self.curScale
         logger.debug('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
-            return self._data['data']['scales'][s]['image_src_size']
+            return tuple(self._data['data']['scales'][s]['image_src_size'])
         except:
             logger.info(f"No key 'image_src_size' found (scale:{s}). Adding it now...")
             try:
                 self.set_image_size(s=s)
-                answer = self._data['data']['scales'][s]['image_src_size']
+                answer = tuple(self._data['data']['scales'][s]['image_src_size'])
                 logger.info(f'Returning {answer}')
                 return answer
             except:

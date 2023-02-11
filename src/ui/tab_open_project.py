@@ -25,8 +25,9 @@ class OpenProject(QWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.setMinimumHeight(256)
+        self.setMinimumHeight(200)
         self.filebrowser = FileBrowser(parent=self)
+        self.filebrowser.setStyleSheet('border-width: 0px;')
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects()
         self.initUI()

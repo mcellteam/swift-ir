@@ -441,32 +441,32 @@ def get_bytes(start_path = '.'):
     return total_size
 
 
-def make_affine_widget_HTML(afm, cafm):
+def make_affine_widget_HTML(afm, cafm, fs1=7, fs2=8):
     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
     text = f"<table table-layout='fixed' style='border-bottom: 1pt solid black;' cellspacing='2' cellpadding='2'>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='font-size: 7px;'>AFM</td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td rowspan=2 style='font-size: {fs1}px;'>AFM</td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='font-size: 7px;'>CAFM</td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td rowspan=2 style='font-size: {fs1}px;'>CAFM</td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='width:30px; font-size: 8px;'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
+           f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"</table>"
     return text

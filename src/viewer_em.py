@@ -375,8 +375,8 @@ class EMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
-        caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
+        # caller = inspect.stack()[1].function
+        # logger.info('caller: %s' % caller)
 
         if not self.cs_scale:
             if self.state.cross_section_scale:
@@ -412,6 +412,7 @@ class EMViewer(neuroglancer.Viewer):
 
     def add_matchpoint(self, s):
         if cfg.MP_MODE:
+            logger.critical(str(s))
             logger.info('add_matchpoint:')
             coords = np.array(s.mouse_voxel_coordinates)
             if coords.ndim == 0:
@@ -469,6 +470,8 @@ class EMViewer(neuroglancer.Viewer):
                 # cfg.refLV.invalidate()
                 # cfg.baseLV.invalidate()
                 cfg.data.print_all_match_points()
+                self.signals.mpUpdate.emit()
+                cfg.main_window._saveProjectToFile(silently=True)
                 cfg.main_window.hud.post('Match Points Saved!')
             else:
                 cfg.main_window.hud.post(f'Each image must have the same # points\n'
@@ -490,6 +493,7 @@ class EMViewer(neuroglancer.Viewer):
             # cfg.refLV.invalidate()
             # cfg.baseLV.invalidate()
             cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
+            cfg.main_window.updateDetailsWidget()
 
 
     def clear_mp_buffer(self):

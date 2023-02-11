@@ -243,15 +243,15 @@ def main():
     cfg.main_window.show()
 
 
-    profiler = cProfile.Profile()
-    profiler.enable()
+    # profiler = cProfile.Profile()
+    # profiler.enable()
 
     app.exec()
 
-    profiler.disable()
-    profiler.dump_stats("results.prof")
-    stats = pstats.Stats(profiler).sort_stats('cumtime')
-    stats.print_stats()
+    # profiler.disable()
+    # profiler.dump_stats("results.prof")
+    # stats = pstats.Stats(profiler).sort_stats('ncalls')
+    # stats.print_stats()
 
     # sys.exit(app.exec())
 
