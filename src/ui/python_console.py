@@ -82,7 +82,7 @@ class PythonConsole(RichJupyterWidget):
         self.set_default_style(colors='linux')
 
     def sizeHint(self):
-        return QSize(600, 100)
+        return QSize(200, 100)
 
 
 if __name__ == '__main__':

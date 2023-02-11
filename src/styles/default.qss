@@ -24,8 +24,10 @@ QMainWindow#mainwindow{
 
 
 QTabBar::tab {
-    height: 24px;
+    height: 18px;
     max-width: 200px;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 QWidget#self._tool_keyBindings{
@@ -34,7 +36,7 @@ QWidget#self._tool_keyBindings{
 
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);
-     subcontrol-position: left;
+     subcontrol-position: right;
      height: 12px;
      width: 12px;
  }
@@ -188,7 +190,7 @@ QTextEdit#_tool_afmCafm {
 
 QToolBar#toolbar {
     /*background-color: #141414;*/
-    background-color: #DAEBFE;
+    /*background-color: #DAEBFE;*/
     margin: 1px 1px 1px 1px;
 }
 

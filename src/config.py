@@ -35,7 +35,7 @@ is_mendenhall = False
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1180, 680
-WIDTH, HEIGHT = 1380, 760
+WIDTH, HEIGHT = 1380, 900
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
