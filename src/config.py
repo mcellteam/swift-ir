@@ -35,13 +35,13 @@ is_mendenhall = False
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1180, 680
-WIDTH, HEIGHT = 1380, 720
+WIDTH, HEIGHT = 1380, 760
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
 DEFAULT_POLY_ORDER        = int(0)
-DEFAULT_NULL_BIAS         = bool(True)
+DEFAULT_NULL_BIAS         = bool(False)
 DEFAULT_BOUNDING_BOX      = bool(False)
 DEFAULT_INITIAL_ROTATION  = float(0.0000)
 DEFAULT_INITIAL_SCALE     = float(1.0000)
@@ -74,7 +74,7 @@ if 'Joels-' in platform.node():
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True
-USE_EXTRA_THREADING = True
+USE_EXTRA_THREADING = False
 DEBUG_MP = False
 DEBUG_NEUROGLANCER = False
 # DEBUG_MP = (False,True)[DEV_MODE]

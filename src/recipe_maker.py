@@ -32,6 +32,7 @@ import json
 import errno
 import logging
 import platform
+import datetime
 import traceback
 import numpy as np
 import subprocess as sp
@@ -549,6 +550,9 @@ class alignment_process:
         atrm['method_results']['swim_str'] = self.recipe.ingredients[-1].swim_str
         atrm['method_results']['mir_script'] = self.recipe.ingredients[-1].mir_script
         atrm['method_results']['swim_pos'] = self.recipe.ingredients[-1].psta.tolist()
+
+        current_time = datetime.datetime.now()
+        atrm['method_results']['datetime'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
         atrm['method_data']['bias_x_per_image'] = 0  # x_bias
         atrm['method_data']['bias_y_per_image'] = 0  # y_bias

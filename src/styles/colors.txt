@@ -21,3 +21,6 @@
 #969696 - medium grey
 #0096ff - bright blue
 
+#161c20 - dark charcoal
+#003333 - dark green
+

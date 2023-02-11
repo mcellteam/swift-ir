@@ -40,8 +40,9 @@ class ProjectTab(QWidget):
         self.viewer = None
         self.datamodel = datamodel
         self.setUpdatesEnabled(True)
-        self.ng_browser = QWebEngineView()
-        self.ng_browser.setFocusPolicy(Qt.NoFocus)
+        self.webengine = QWebEngineView()
+        self.webengine.setMouseTracking(True)
+        self.webengine.setFocusPolicy(Qt.StrongFocus)
         self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
@@ -49,7 +50,7 @@ class ProjectTab(QWidget):
         # self.initUI_mini_view()
         self.initUI_tab_widget()
         self._tabs.currentChanged.connect(self._onTabChange)
-        self.ng_browser.setFocusPolicy(Qt.StrongFocus)
+
         self.bookmark_tab = 0
 
 
@@ -83,7 +84,7 @@ class ProjectTab(QWidget):
             time.sleep(cfg.DELAY_AFTER)
 
 
-    def initNeuroglancer(self, matchpoint=False):
+    def initNeuroglancer(self):
         caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
@@ -96,75 +97,62 @@ class ProjectTab(QWidget):
             logger.critical(f'\n\nInitializing Neuroglancer (caller: {inspect.stack()[1].function})...\n')
             if cfg.data:
                 cfg.emViewer = self.viewer = EMViewer(name=os.path.basename(cfg.data.dest()))
-                self.updateNeuroglancer(matchpoint=matchpoint)
+                self.updateNeuroglancer()
                 cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
+                cfg.emViewer.signals.mpUpdate.connect(cfg.main_window.dataUpdateWidgets)
+            self.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
             cfg.main_window.dataUpdateWidgets() #0204+
 
 
-    def updateNeuroglancer(self, matchpoint=False):
+    def updateNeuroglancer(self):
         caller = inspect.stack()[1].function
         if caller != 'initNeuroglancer':
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
-        # if matchpoint or cfg.MP_MODE:
         if cfg.MP_MODE:
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self._widgetArea_details.hide()
-            # self.resetSliderZmag()
-            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=True)
-            # cfg.emViewer.initViewerSbs(nglayout=cfg.data['ui']['arrangement'], matchpoint=True)
-            # cfg.emViewer.initViewerSbs(matchpoint=True)
+            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(requested='xy'), matchpoint=True)
             self.setZmag(val=15)
         elif cfg.data['ui']['arrangement'] == 'stack':
-        # elif cfg.main_window.rb0.isChecked():
             cfg.main_window.rb0.setChecked(True)
             cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
-            # cfg.emViewer.initViewerSlim(nglayout=cfg.data['ui']['arrangement'])
-            # cfg.emViewer.initViewerSlim()
-            # self.setZmag(val=1)
         elif cfg.data['ui']['arrangement'] == 'comparison':
             cfg.main_window.rb1.setChecked(True)
-            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=matchpoint)
-            # cfg.emViewer.initViewerSbs(nglayout=cfg.data['ui']['arrangement'], matchpoint=matchpoint)
-            # cfg.emViewer.initViewerSbs(matchpoint=matchpoint)
-            # self.setZmag(val=1)
+            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=False)
 
-        url = cfg.emViewer.get_viewer_url()
-        logger.info(f'URL:\n{url}')
-        self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
-        if not matchpoint:
-            self._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+
+        if not cfg.MP_MODE:
+            show = getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS')
+            self._widgetArea_details.setVisible(show)
+            if show:
+                self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
+
         # self.slotUpdateZoomSlider()
-        logger.info('setting URL...')
-        self.ng_browser.setUrl(QUrl(url))
-        QApplication.processEvents()
-        if cfg.MP_MODE:
-            self.setZmag(val=15)
-            self.ng_browser.setUrl(QUrl(url))
-        #     self.setZmag()
-        #     cfg.emViewer.set_rds()
 
         state = copy.deepcopy(cfg.emViewer.state)
         for layer in state.layers:
             # layer.shaderControls['normalized'] = {
-            #     'range': np.array(cfg.main_window.normalizedSlider.getRange())
+            #     'range': np.array(cfg.main_window.norFsource thumbsmalizedSlider.getRange())
             # }
             layer.shaderControls['normalized'] = {'range': np.array(cfg.data.normalize())}
             layer.shaderControls['brightness'] = cfg.data.brightness()
             layer.shaderControls['contrast'] = cfg.data.contrast()
             # layer.volumeRendering = True
+
         cfg.emViewer.set_state(state)
+        url = cfg.emViewer.get_viewer_url()
+        logger.info('setting URL...\n%s' % url)
+        self.webengine.setUrl(QUrl(url))
 
 
 
-    def get_layout(self):
-
+    def get_layout(self, requested=None):
+        if requested == None:
+            requested = cfg.data['ui']['ng_layout']
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        val = mapping[cfg.data['ui']['ng_layout']]
-        # logger.info('Returing: %s' % val)
-        return val
+        return mapping[requested]
 
     # def addToState(self):
     #     state = copy.deepcopy(cfg.emViewer.state)
@@ -173,7 +161,7 @@ class ProjectTab(QWidget):
     #     cfg.LV.invalidate()
 
     def setNeuroglancerUrl(self):
-        self.ng_browser.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
+        self.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
 
 
     def updateNgLayer(self):
@@ -183,7 +171,7 @@ class ProjectTab(QWidget):
 
 
     def getBrowserSize(self):
-        return self.ng_browser.geometry().getRect()
+        return self.webengine.geometry().getRect()
 
 
 
@@ -191,30 +179,30 @@ class ProjectTab(QWidget):
         '''NG Browser'''
         logger.info('')
 
-        self.ng_browser.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
+        self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
 
 
 
-        # self.ng_browser.loadFinished.connect(self.resetSliderZmag)
-        # self.ng_browser.loadFinished.connect(self.slotUpdateZoomSlider)
-        # self.ng_browser.loadFinished.connect(lambda val=21: self.setZmag(val=val))
+        # self.webengine.loadFinished.connect(self.resetSliderZmag)
+        # self.webengine.loadFinished.connect(self.slotUpdateZoomSlider)
+        # self.webengine.loadFinished.connect(lambda val=21: self.setZmag(val=val))
 
 
-        # self.ng_browser.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
-        # self.ng_browser.urlChanged.connect(lambda terminationStatus:
+        # self.webengine.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
+        # self.webengine.urlChanged.connect(lambda terminationStatus:
         #                              print(f'QWebengineView Render Process Terminated!'
         #                                    f' terminationStatus:{terminationStatus}'))
 
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        # self.ng_browser.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # self.webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
         gl = QGridLayout()
-        gl.addWidget(self.ng_browser, 0, 0)
+        gl.addWidget(self.webengine, 0, 0)
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
         self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -440,8 +428,6 @@ class ProjectTab(QWidget):
     #         cfg.emViewer.set_state(state)
     #     else:
     #         logger.warning('cfg.emViewer.state.cross_section_scale does not exist!')
-
-
 
 
     def initUI_table(self):
@@ -725,7 +711,7 @@ class VerticalLabel(QLabel):
         if hasattr(self, 'hint'):
             return QSize(self.hint.height(), self.hint.width() + 10)
         else:
-            return QSize(16, 48)
+            return QSize(10, 48)
 
 
     def minimumSizeHint(self):
