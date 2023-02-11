@@ -450,9 +450,9 @@ class MainWindow(QMainWindow):
                 # self.normalizedSlider.setEnd(rng[1])
                 self.brightnessSlider.setValue(cfg.data.brightness())
                 self.contrastSlider.setValue(cfg.data.contrast())
-                sizes = self._splitter.sizes()
-                sizes[1] = 200
-                self._splitter.setSizes(sizes)
+                # sizes = self._splitter.sizes()
+                # sizes[1] = 140
+                # self._splitter.setSizes(sizes)
         else:
             label  = ' Shader'
             icon   = 'mdi.format-paint'
@@ -494,7 +494,7 @@ class MainWindow(QMainWindow):
 
             s = cfg.data.curScale
 
-            self.detailsTitle.setText('Details - ' + cfg.data.base_image_name())
+            # self.detailsTitle.setText('Details - ' + cfg.data.base_image_name())
 
             txt = []
             txt.append('________Section________')
@@ -583,14 +583,14 @@ class MainWindow(QMainWindow):
 
 
             self.detailsTiming.setText(
-                '________Run Time (s)________\n'
-                'Generate Scales    :' + ('%.2fs\n' %cfg.data['data']['t_scaling']).rjust(9) +
-                'Convert Zarr       :' + ('%.2fs\n' %cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
-                'Source Thumbs      :' + ('%.2fs\n' %cfg.data['data']['t_thumbs']).rjust(9) +
-                'Compute Affines    :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_align']).rjust(9) +
-                'Generate Alignment :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
-                'Aligned Thumbs     :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-                'Corr Spot Thumbs   :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
+                '____Multiprocessing dt____\n'
+                'Gen. Scales      :' + ('%.2fs\n' %cfg.data['data']['t_scaling']).rjust(9) +
+                'Convert Zarr     :' + ('%.2fs\n' %cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
+                'Source Thumbs    :' + ('%.2fs\n' %cfg.data['data']['t_thumbs']).rjust(9) +
+                'Compute Affines  :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_align']).rjust(9) +
+                'Gen. Alignment   :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
+                'Aligned Thumbs   :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
+                'Corr Spot Thumbs :' + ('%.2fs\n' %cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
             )
 
             afm, cafm = cfg.data.afm(), cfg.data.cafm()
@@ -600,14 +600,14 @@ class MainWindow(QMainWindow):
             for x in range(2):
                 for y in range(3):
                     if y == 0:
-                        afm_txt.append(('%.3f' %afm[x][y]).ljust(8))
-                        cafm_txt.append(('%.3f'%cafm[x][y]).ljust(8))
+                        afm_txt.append(('%.3f' %afm[x][y]).ljust(7))
+                        cafm_txt.append(('%.3f'%cafm[x][y]).ljust(7))
                     elif y == 1:
-                        afm_txt.append(('%.3f' % afm[x][y]).rjust(8))
-                        cafm_txt.append(('%.3f' % afm[x][y]).rjust(8))
+                        afm_txt.append(('%.3f' % afm[x][y]).rjust(7))
+                        cafm_txt.append(('%.3f' % afm[x][y]).rjust(7))
                     else:
-                        afm_txt.append(('%.3f' % afm[x][y]).rjust(11))
-                        cafm_txt.append(('%.3f' % cafm[x][y]).rjust(11))
+                        afm_txt.append(('%.3f' % afm[x][y]).rjust(10))
+                        cafm_txt.append(('%.3f' % cafm[x][y]).rjust(10))
 
 
                     if (x == 0) and (y == 2):
@@ -615,9 +615,9 @@ class MainWindow(QMainWindow):
                         cafm_txt.append('\n')
             # self.detailsAFM.setText('<pre>____________Affine____________</pre>'
             #                         + make_affine_widget_HTML(afm, cafm, fs1=12, fs2=10))
-            self.detailsAFM.setText('__________Affine___________\n'
+            self.detailsAFM.setText('_________Affine_________\n'
                                     + ''.join(afm_txt) + '\n\n'
-                                    '_____Cumulative Affine_____\n'
+                                    '___Cumulative Affine____\n'
                                     + ''.join(cafm_txt))
 
             snr_vals = cfg.data.snr_components()
@@ -3785,12 +3785,12 @@ class MainWindow(QMainWindow):
         self.ngShowUiControlsAction.triggered.connect(self.update_ng)
         viewMenu.addAction(self.ngShowUiControlsAction)
 
-        self.showCorrSpotsAction = QAction('Show Correlation Spots', self)
-        self.showCorrSpotsAction.setCheckable(True)
-        self.showCorrSpotsAction.setChecked(getOpt('ui,SHOW_CORR_SPOTS'))
-        self.showCorrSpotsAction.triggered.connect(lambda val: setOpt('ui,SHOW_CORR_SPOTS', val))
-        self.showCorrSpotsAction.triggered.connect(self.update_displayed_controls)
-        viewMenu.addAction(self.showCorrSpotsAction)
+        # self.showCorrSpotsAction = QAction('Show Correlation Spots', self)
+        # self.showCorrSpotsAction.setCheckable(True)
+        # self.showCorrSpotsAction.setChecked(getOpt('ui,SHOW_CORR_SPOTS'))
+        # self.showCorrSpotsAction.triggered.connect(lambda val: setOpt('ui,SHOW_CORR_SPOTS', val))
+        # self.showCorrSpotsAction.triggered.connect(self.update_displayed_controls)
+        # viewMenu.addAction(self.showCorrSpotsAction)
 
         # self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
         # self.ngShowPanelBordersAction.setCheckable(True)
@@ -5225,70 +5225,67 @@ class MainWindow(QMainWindow):
         self._showHideFeatures.setLayout(hbl)
         self._showHideFeatures.setMaximumHeight(26)
 
-
-        self.detailsWidget = QWidget()
-        self.detailsWidget.setMinimumHeight(190)
-        self.detailsWidget.setStyleSheet("""background-color: #1b2328; color: #f3f6fb; border-radius: 5px; """)
+        dSize = 170
 
         self.detailsTitle = QLabel('Details')
         self.detailsTitle.setFixedHeight(12)
-        self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
+        self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 11px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
 
-        self.detailsSection = AutoResizingTextEdit()
+        self.detailsSection = QLabel()
         self.detailsSection.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsSection.setFixedWidth(200)
-        self.detailsSection.setReadOnly(True)
+        self.detailsSection.setFixedWidth(dSize)
+        # self.detailsSection.setReadOnly(True)
 
         #0210
-        self.detailsScales = AutoResizingTextEdit()
+        self.detailsScales = QLabel()
         self.detailsScales.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
         # self.detailsScales.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum) #???
-        self.detailsScales.setFixedWidth(200)
-        self.detailsScales.setReadOnly(True)
+        self.detailsScales.setFixedWidth(dSize)
+        # self.detailsScales.setReadOnly(True)
 
-        self.detailsSkips = AutoResizingTextEdit()
+        self.detailsSkips = QLabel()
         self.detailsSkips.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsSkips.setFixedWidth(200)
-        self.detailsSkips.setReadOnly(True)
+        self.detailsSkips.setFixedWidth(dSize)
+        # self.detailsSkips.setReadOnly(True)
 
-        self.detailsSNR = AutoResizingTextEdit()
+        self.detailsSNR = QLabel()
         self.detailsSNR.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsSNR.setFixedWidth(200)
-        self.detailsSNR.setReadOnly(True)
+        self.detailsSNR.setFixedWidth(dSize)
+        # self.detailsSNR.setReadOnly(True)
 
-        self.detailsMethod = AutoResizingTextEdit()
+        self.detailsMethod = QLabel()
         # self.detailsMethod.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.detailsMethod.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsMethod.setFixedWidth(200)
+        self.detailsMethod.setFixedWidth(dSize)
         # self.detailsMethod.setMinimumHeight(100)
         # self.detailsMethod.setFixedHeight(84)
-        self.detailsMethod.setReadOnly(True)
+        # self.detailsMethod.setReadOnly(True)
 
-        self.detailsManualpoints = AutoResizingTextEdit()
+        self.detailsManualpoints = QLabel()
         self.detailsManualpoints.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsManualpoints.setFixedWidth(200)
-        self.detailsManualpoints.setReadOnly(True)
+        self.detailsManualpoints.setFixedWidth(dSize)
+        # self.detailsManualpoints.setReadOnly(True)
         self.detailsManualpoints.hide()
 
-        self.detailsTiming = AutoResizingTextEdit()
+        self.detailsTiming = QLabel()
         self.detailsTiming.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsTiming.setFixedWidth(240)
-        self.detailsTiming.setReadOnly(True)
+        self.detailsTiming.setFixedWidth(dSize+20)
+        # self.detailsTiming.setReadOnly(True)
 
-        self.detailsAFM = AutoResizingTextEdit()
+        self.detailsAFM = QLabel()
         self.detailsAFM.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsAFM.setFixedWidth(240)
-        self.detailsAFM.setReadOnly(True)
+        self.detailsAFM.setFixedWidth(dSize)
+        # self.detailsAFM.setReadOnly(True)
 
         self.detailsCorrSpots = QWidget()
-        self.detailsCorrSpots.setFixedWidth(200)
+        self.detailsCorrSpots.setFixedSize(QSize(dSize,dSize))
         # self.detailsCorrSpots.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
         self.cs0 = SnrThumbnail(parent=self)
         self.cs1 = SnrThumbnail(parent=self)
         self.cs2 = SnrThumbnail(parent=self)
         self.cs3 = SnrThumbnail(parent=self)
         hbl = QGridLayout()
-        hbl.setSpacing(1)
+        hbl.setSpacing(4)
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.cs0, 0, 0)
         hbl.addWidget(self.cs1, 0, 1)
@@ -5297,22 +5294,22 @@ class MainWindow(QMainWindow):
         self.detailsCorrSpots.setLayout(hbl)
 
 
-        w = QWidget()
-        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
 
+        w = QWidget()
         vbl = QVBoxLayout()
         # vbl.setSpacing(1)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.detailsSection)
         # vbl.addWidget(self.detailsMethod)
         vbl.addWidget(self.detailsManualpoints)
-        hbl.addLayout(vbl)
+        w.setLayout(vbl)
 
-        hbl.addWidget(self.detailsAFM)
-        hbl.addWidget(self.detailsSNR)
+        hbl.addWidget(w, alignment=Qt.AlignTop)
+
+        hbl.addWidget(self.detailsAFM, alignment=Qt.AlignTop)
+        hbl.addWidget(self.detailsSNR, alignment=Qt.AlignTop)
 
         vbl = QVBoxLayout()
         # vbl.setSpacing(1)
@@ -5322,10 +5319,12 @@ class MainWindow(QMainWindow):
         vbl.addWidget(self.detailsSkips)
         hbl.addLayout(vbl)
 
-        hbl.addWidget(self.detailsTiming)
+        hbl.addWidget(self.detailsTiming, alignment=Qt.AlignTop)
 
-        hbl.addWidget(self.detailsCorrSpots)
+        hbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignTop)
 
+        w = QWidget()
+        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         hbl.addWidget(w)
 
         vbl = QVBoxLayout()
@@ -5335,9 +5334,16 @@ class MainWindow(QMainWindow):
         # vbl.addWidget(self.detailsImagename)
         vbl.addLayout(hbl)
 
-        self.detailsWidget.setLayout(vbl)
-        self.detailsWidget.hide()
+        w = QWidget()
+        w.setLayout(vbl)
 
+        self.detailsWidget = QScrollArea()
+        #Critical
+        self.detailsWidget.setStyleSheet("""font-size: 12px; background-color: #1b2328; color: #f3f6fb; border-radius: 5px; """)
+        self.detailsWidget.setWidget(w)
+        self.detailsWidget.hide()
+        self.detailsWidget.setMinimumHeight(200)
+        # self._scroll.setWidgetResizable(True)
 
         self._btn_volumeRendering = QPushButton('Volume')
         self._btn_applyShader = QPushButton('Apply')
@@ -5345,6 +5351,7 @@ class MainWindow(QMainWindow):
 
 
         self.shaderCodeWidget = QWidget()
+        self.shaderCodeWidget.setFixedHeight(128)
         self.shaderText = QPlainTextEdit()
         self.shaderText.setStyleSheet('background-color: #f3f6fb; color: #141414; border-radius: 5px;')
         self.shaderSideButtons = QWidget()
@@ -5400,7 +5407,7 @@ class MainWindow(QMainWindow):
         vbl.addWidget(lab)
         vbl.addWidget(self.brightnessSlider)
         w.setLayout(vbl)
-        w.setFixedHeight(50)
+        w.setMaximumHeight(36)
 
 
         self.brightnessSliderWidget = QWidget()
@@ -5437,7 +5444,7 @@ class MainWindow(QMainWindow):
         vbl.addWidget(lab)
         vbl.addWidget(self.contrastSlider)
         w.setLayout(vbl)
-        w.setFixedHeight(50)
+        w.setFixedHeight(30)
 
 
         self.contrastSliderWidget = QWidget()
