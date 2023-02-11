@@ -174,7 +174,7 @@ class HeadupDisplay(QWidget):
             border-color: #d3dae3; /* light off-white */
             border-width: 0px;
             border-radius: 2px;
-            font-size: 11px;
+            font-size: 9px;
             
             font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
             
@@ -194,7 +194,7 @@ class HeadupDisplay(QWidget):
             border-color: #1b1e23;
             border-width: 1px;
             border-radius: 4px;  
-            font-size: 11px;
+            font-size: 9px;
             
             font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
                   

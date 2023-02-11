@@ -35,7 +35,7 @@ class OpenProject(QWidget):
     def initUI(self):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
-        lab = QLabel('<h3>User Projects:</h3>')
+        lab = QLabel('<h3>Saved AlignEM-SWiFT Projects:</h3>')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(lab)
@@ -44,7 +44,7 @@ class OpenProject(QWidget):
 
         # User Files Widget
         self.userFilesWidget = QWidget()
-        lab = QLabel('<h3>Import:</h3>')
+        lab = QLabel('<h3>Open (Project or Zarr):</h3>')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(lab)
