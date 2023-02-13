@@ -49,8 +49,8 @@ class SnrThumbnail(QWidget):
             print_exception()
             logger.warning(f'WARNING path={self.path}, label={self.snr}')
 
-    def sizeHint(self):
-        return QSize(200, 200)
+    # def sizeHint(self):
+    #     return QSize(200, 200)
 
 
 class Thumbnail(QWidget):

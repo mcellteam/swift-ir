@@ -112,7 +112,7 @@ class ZarrViewer(neuroglancer.Viewer):
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[0, store.shape[1]/2, store.shape[2]/2]
-            s.layers['layer'] = neuroglancer.ImageLayer(source=LV, shader=cfg.SHADER)
+            s.layers['layer'] = neuroglancer.ImageLayer(source=LV, shader=cfg.data['data']['shader'])
             s.crossSectionBackgroundColor = '#808080' # 128 grey
 
         with self.config_state.txn() as s:

@@ -185,9 +185,9 @@ class EMViewer(neuroglancer.Viewer):
                 s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
             s.crossSectionBackgroundColor = '#808080'
             s.layout.type = nglayout
-            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.SHADER,)
-            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.SHADER,)
-            if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.SHADER,)
+            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['data']['shader'], )
+            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['data']['shader'],)
+            if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['data']['shader'],)
             # if matchpoint:
             s.showSlices=False
 
@@ -229,13 +229,13 @@ class EMViewer(neuroglancer.Viewer):
         if matchpoint:
             self.clear_mp_buffer()
 
-        if cfg.main_window.detachedNg.view.isVisible():
-            cfg.main_window.detachedNg.open(url=self.get_viewer_url())
-
-
         self._crossSectionScale = self.state.cross_section_scale
 
         cfg.main_window.updateToolbar()
+
+        if cfg.main_window.detachedNg.isVisible():
+            logger.critical('detached Neuroglancer is visible! Setting its page...')
+            cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
 
 
     def initViewerSlim(self, nglayout=None):
@@ -288,7 +288,7 @@ class EMViewer(neuroglancer.Viewer):
             if cfg.data.is_aligned_and_generated():
                 s.layers['layer'] = ng.ImageLayer(
                     source=cfg.alLV,
-                    shader=cfg.SHADER,
+                    shader=cfg.data['data']['shader'],
                     # tool_bindings={
                     #     'A': neuroglancer.ShaderControlTool(control='normalized'),
                     #     'B': neuroglancer.OpacityTool(),
@@ -297,7 +297,7 @@ class EMViewer(neuroglancer.Viewer):
             else:
                 s.layers['layer'] = ng.ImageLayer(
                     source=cfg.baseLV,
-                    shader=cfg.SHADER,
+                    shader=cfg.data['data']['shader'],
                     # shaderControls=typed_string_map({"normalized": typed_string_map({"range": [31, 255]})})
                     # shaderControls = typed_string_map({"normalized": {"range": [31, 255]}})
                 )
@@ -325,6 +325,10 @@ class EMViewer(neuroglancer.Viewer):
         #     cfg.main_window.detachedNg.open(url=self.get_viewer_url())
 
         cfg.main_window.updateToolbar()
+
+        if cfg.main_window.detachedNg.isVisible():
+            logger.critical('detached Neuroglancer is visible! Setting its page...')
+            cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
 
 
     def set_pos_and_zoom(self):
