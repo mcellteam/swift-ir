@@ -204,6 +204,7 @@ class DataModel:
 
     def set_defaults(self):
         # logger.info(f'caller: {inspect.stack()[1].function}')
+        self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
@@ -217,6 +218,7 @@ class DataModel:
         self._data.setdefault('ui', {})
         self._data['ui'].setdefault('ng_layout', '4panel')
         self._data['ui'].setdefault('arrangement', 'stack')
+
 
         # for s in self.scales():
         for s in self._data['data']['scales'].keys():
@@ -281,6 +283,33 @@ class DataModel:
         if l == None: l = self.layer()
         # logger.info(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+
+
+
+    '''NEW METHODS USING NEW DATA SCHEMA 2023'''
+
+    def filename(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['filename']
+
+    def reference(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['reference']
+
+    def filename_basename(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['filename'])
+
+    def reference_basename(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['reference'])
+
+
+    '''END OF NEW METHODS'''
 
     def filenames(self):
         '''Returns filenames as absolute paths'''

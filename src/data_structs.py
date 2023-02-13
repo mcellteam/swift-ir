@@ -16,9 +16,10 @@ data_template = \
         },
         "ui": {
             "ng_layout": '4panel',
-            "arrangement": 'stack'
+            "arrangement": 'stack',
         },
         "data": {
+            "shader": None,
             "source_path": "",
             "destination_path": "",
             "current_layer": 0,

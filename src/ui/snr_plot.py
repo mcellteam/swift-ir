@@ -203,25 +203,32 @@ class SnrPlot(QWidget):
                 return
 
             self._snr_checkboxes = dict()
+
+            for i in reversed(range(self.checkboxes_hlayout.count())):
+                self.checkboxes_hlayout.itemAt(i).widget().setParent(None)
+
             for i, s in enumerate(cfg.data.scales()):
-                self._snr_checkboxes[s] = QCheckBox()
-                self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
-                self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
-                                                  alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
-                self._snr_checkboxes[s].setChecked(True)
-                self._snr_checkboxes[s].clicked.connect(self.plotData)
-                self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
-                color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
-                self._snr_checkboxes[s].setStyleSheet(
-                    f'background-color: #F3F6FB;'
-                    f'border-color: {color}; '
-                    f'border-width: 3px; '
-                    f'border-style: outset;')
                 if cfg.data.is_aligned(s=s):
-                    self._snr_checkboxes[s].show()
-                else:
-                    self._snr_checkboxes[s].hide()
-            self.checkboxes_hlayout.addStretch()
+                    self._snr_checkboxes[s] = QCheckBox()
+                    self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
+                    self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
+                                                      alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+                    self._snr_checkboxes[s].setChecked(True)
+                    self._snr_checkboxes[s].clicked.connect(self.plotData)
+                    self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
+                    color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
+                    self._snr_checkboxes[s].setStyleSheet(
+                        f'background-color: #F3F6FB;'
+                        f'border-color: {color}; '
+                        f'border-width: 3px; '
+                        f'border-style: outset;')
+                # if cfg.data.is_aligned(s=s):
+                #     self._snr_checkboxes[s].show()
+                # else:
+                #     self._snr_checkboxes[s].hide()
+
+            # self.checkboxes_hlayout.addStretch()
+
             self.updateLayerLinePos()
             styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
             # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())

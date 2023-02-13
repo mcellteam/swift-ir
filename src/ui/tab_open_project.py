@@ -7,7 +7,7 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame
+    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton
 from qtpy.QtCore import Qt, QRect
 from qtpy.QtGui import QFont, QPixmap, QPainter
 
@@ -99,7 +99,8 @@ class UserProjects(QWidget):
         self.table.itemClicked.connect(self.userSelectionChanged)
         def onDoubleClick(): cfg.main_window.open_project_selected()
         self.table.itemDoubleClicked.connect(onDoubleClick)
-        self.table.setStyleSheet("border-radius: 12px; border-width: 3px;")
+        self.table.setStyleSheet("border-radius: 12px; border-width: 3px;"
+                                 "QPushButton{background-color: #ffe135;}")
         self.table.setColumnCount(10)
         self.set_headers()
         # self.setScaleData() # This is now called from _onGlobTabChange
@@ -183,6 +184,9 @@ class UserProjects(QWidget):
                 elif j in (1, 2):
                     thumbnail = Thumbnail(self, path=item)
                     self.table.setCellWidget(i, j, thumbnail)
+                elif j in (7, 8):
+
+                    self.table.setCellWidget(i, j, QPushButton('Test'))
                 else:
                     table_item = QTableWidgetItem(str(item))
                     font = QFont()

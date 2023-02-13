@@ -2,6 +2,40 @@
 '''
 Adapted from Qt Documentation:
 https://doc.qt.io/qtforpython/examples/example_widgets_itemviews_jsonmodel.html
+
+item = cfg.project_tab.treeview_model.itemData(cfg.project_tab.treeview_model.index(2,0)); print(item)
+
+a = cfg.project_tab.treeview.model().index(1, 0)
+b = a.child(0,0) # a is QModelIndex
+cfg.project_tab.treeview_model.itemData(b) #b is QModelIndex
+cfg.project_tab.treeview.setCurrentIndex(b) # select the item programmatically
+
+# returns the item count (8 here)
+cfg.project_tab.treeview_model._rootItem.childCount()
+
+# return the item data for all items
+# get QModelIndex of 'data' key
+lst = []
+for i in range(cfg.project_tab.treeview_model._rootItem.childCount()):
+    lst.append(cfg.project_tab.treeview_model.index(i,0).data())
+index_data = lst.index('data')
+modelindex_data = cfg.project_tab.treeview_model.index(index_data,0) #  QModelIndex of 'data' key
+
+def get_index(modelindex, findkeys):
+    # start w/ cfg.project_tab.treeview_model._rootItem
+    lst = []
+    for i in range(modelindex.childCount()):
+        lst.append(cfg.project_tab.treeview_model.index(i,0).data())
+
+    findkeys.pop(0)
+    if findkeys == []:
+        return modelindex
+    else:
+        get_index(modelindex, findkeys)
+
+# get QModelIndex of 'data key'
+
+
 '''
 import json
 import sys
