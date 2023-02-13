@@ -1643,15 +1643,16 @@ class MainWindow(QMainWindow):
                                 cfg.project_tab._overlayLab.setText('No Reference')
                                 cfg.project_tab._overlayLab.show()
 
-                # if not cfg.MP_MODE:
-                #     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+                if not cfg.MP_MODE:
+                    cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
 
                 if self.detailsWidget.isVisible():
                     self.updateDetailsWidget()
 
-                # if cfg.main_window.detachedNg.isVisible():
-                #     logger.critical('detached Neuroglancer is visible! Setting its page...')
-                #     cfg.main_window.detachedNg.setUrl(url=cfg.emViewer.get_viewer_url())
+                #0213+ not sure, just a guess
+                if cfg.main_window.detachedNg.isVisible():
+                    logger.critical('detached Neuroglancer is visible! Setting its page...')
+                    cfg.main_window.detachedNg.setUrl(url=cfg.emViewer.get_viewer_url())
 
                 cur = cfg.data.layer()
                 if self.notes.isVisible():
