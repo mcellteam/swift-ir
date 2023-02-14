@@ -13,25 +13,44 @@ cfg.project_tab.treeview.setCurrentIndex(b) # select the item programmatically
 # returns the item count (8 here)
 cfg.project_tab.treeview_model._rootItem.childCount()
 
+type(cfg.project_tab.treeview_model._rootItem):
+Out[10]: src.ui.models.json_tree.TreeItem
+
+
 # return the item data for all items
 # get QModelIndex of 'data' key
+
+
 lst = []
 for i in range(cfg.project_tab.treeview_model._rootItem.childCount()):
-    lst.append(cfg.project_tab.treeview_model.index(i,0).data())
+    # lst.append(cfg.project_tab.treeview_model.index(i,0).data())
+    lst.append(cfg.project_tab.treeview_model._rootItem.child(i).key)
+
+
+tree_data = cfg.project_tab.treeview_model._rootItem.child(1).childCount()
 index_data = lst.index('data')
 modelindex_data = cfg.project_tab.treeview_model.index(index_data,0) #  QModelIndex of 'data' key
 
-def get_index(modelindex, findkeys):
+def get_index(findkeys, treeitem=cfg.project_tab.treeview_model._rootItem):
+    print('\nRecursing...')
     # start w/ cfg.project_tab.treeview_model._rootItem
-    lst = []
-    for i in range(modelindex.childCount()):
-        lst.append(cfg.project_tab.treeview_model.index(i,0).data())
+    print('findkeys = %s' % str(findkeys))
+    print('childCount = %s' % str(treeitem.childCount()))
 
+    print('Finding key %s...' % str(findkeys[0]))
+    lst = []
+        for i in range(treeitem.childCount()):
+            # lst.append(cfg.project_tab.treeview_model.index(i,0).data())
+            lst.append(treeitem.child(i).key)
+
+    index = lst.index(findkeys[0])
     findkeys.pop(0)
     if findkeys == []:
-        return modelindex
+        print('Returning %s' % treeitem)
+        return cfg.project_tab.treeview_model.index(index,0).data()
+        # return treeitem
     else:
-        get_index(modelindex, findkeys)
+        get_index(findkeys, treeitem=treeitem.child(index))
 
 # get QModelIndex of 'data key'
 
@@ -47,6 +66,7 @@ from qtpy.QtCore import Qt, QAbstractItemModel, QAbstractTableModel, QModelIndex
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QHeaderView, QTableView
 
+import src.config as cfg
 
 class TreeItem:
     """A Json item corresponding to a line in QTreeView"""
@@ -324,6 +344,65 @@ class JsonModel(QAbstractItemModel):
 
         else:
             return item.value
+
+    def collapseIndex(self, s=None, l=None):
+        if s == None: s = cfg.data.curScale
+        if l == None: l = cfg.data.layer()
+        cfg.project_tab.treeview.collapseAll()
+        keys = ['data', 'scales', s, 'alignment_stack', l]
+        self.getIndex(findkeys=keys, jump=False, collapse=True)
+
+
+    def getIndex(self, findkeys, treeitem=None, jump=True, expand=False, collapse=False):
+        # start w/ cfg.project_tab.treeview_model._rootItem
+        print('\nRecursing...')
+        isRoot = 0
+        if treeitem == None:
+            isRoot = 1
+            treeitem = self._rootItem
+            self.count = treeitem.childCount()
+            self.lst = [self.index(i, 0).data() for i in range(self.count)]
+        else:
+            self.count = self.rowCount(treeitem)
+            self.lst = [treeitem.child(i,0).data() for i in range(self.count)]
+
+        self.idx = self.lst.index(findkeys[0])
+        print('found key %s in %s at location %d...' % (str(findkeys), str(self.lst), self.idx))
+
+        findkeys.pop(0)
+
+        if isRoot:
+            next_treeitem = self.index(self.idx, 0)  # b is QModelIndex
+        else:
+            next_treeitem = treeitem.child(self.idx, 0)
+
+        if findkeys == []:
+            print('Returning: %s' % str(next_treeitem))
+            if jump:
+                cfg.project_tab.treeview.setCurrentIndex(next_treeitem)
+            if expand:
+                cfg.project_tab.treeview.expandRecursively(next_treeitem)
+            if collapse:
+                cfg.project_tab.treeview.collapse(next_treeitem)
+
+            return next_treeitem
+
+        else:
+            print('next treeitem: %s, type: %s' % (next_treeitem, type(next_treeitem)))
+            self.getIndex(findkeys, treeitem=next_treeitem)
+
+    def jumpToLayer(self, s=None, l=None):
+        if s == None: s = cfg.data.curScale
+        if l == None: l = cfg.data.layer()
+        # cfg.project_tab.treeview.collapseAll()
+        keys = ['data', 'scales', s, 'alignment_stack', l, 'align_to_ref_method','method_results','snr']
+
+        if l !=0:
+            self.collapseIndex(l=l - 1)
+        self.getIndex(findkeys=keys, expand=True)
+
+
+
 
 
 

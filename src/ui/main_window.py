@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         if self.detailsWidget.isVisible():
             h = self.detailsWidget.geometry().height()
-            self.detailsCorrSpots.setFixedSize(h-44, h-44)
+            self.detailsCorrSpots.setFixedSize(max(10,h-44), max(10,h-44))
         # if not self._working:
         #     self.resized.emit()
         #     if cfg.project_tab:
@@ -633,7 +633,7 @@ class MainWindow(QMainWindow):
         self.detailsAFM.setText('')
         self.detailsManualpoints.setText('')
         self.detailsManualpoints.hide()
-        self.detailsCorrSpots.setLayout(QVBoxLayout())
+        # self.detailsCorrSpots.setLayout(QVBoxLayout())
 
 
 
@@ -957,6 +957,7 @@ class MainWindow(QMainWindow):
 
         try:
             self.pbarLabel.setText('')
+            cfg.project_tab.updateJsonWidget()
             self.updateCorrSpotThumbnails()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
@@ -989,6 +990,7 @@ class MainWindow(QMainWindow):
 
     def update_data_cache(self):
         cfg.data.update_cache()
+        cfg.project_tab.updateJsonWidget()
         s = cfg.data.scale()
         self.detailsScales.setText('\n'.join([cfg.data.scale_pretty(s=x).ljust(10) + '-' +
                                               ('%dx%d' % cfg.data.image_size(s=x)).rjust(12) for x in
@@ -1006,6 +1008,7 @@ class MainWindow(QMainWindow):
             self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
         except:
             pass
+
 
 
 
@@ -1535,6 +1538,8 @@ class MainWindow(QMainWindow):
                 self.updateEnabledButtons()
                 self._showSNRcheck()
 
+                self.update_data_cache() #0213+
+
                 try:
                     self._bbToggle.setChecked(cfg.data.has_bb())
                 except:
@@ -1667,6 +1672,9 @@ class MainWindow(QMainWindow):
                     self._nextSectionBtn.setEnabled(False)
                 else:
                     self._nextSectionBtn.setEnabled(True)
+
+                if cfg.project_tab._tabs.currentIndex() == 2:
+                    cfg.project_tab.treeview_model.jumpToLayer()
 
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.updateLayerLinePos()
@@ -2373,6 +2381,7 @@ class MainWindow(QMainWindow):
         except: logger.warning('Bounding Rect Widget Failed to Update')
         self._changeScaleCombo.setCurrentText(cfg.data.curScale)
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
+        cfg.project_tab.updateJsonWidget()
         self.updateEnabledButtons()
         self.updateMenus()
         self._resetSlidersAndJumpInput()
@@ -2897,10 +2906,11 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_skipChanged(self, state:int):  # 'state' is connected to skipped toggle
-        logger.debug(f'_callbk_skipChanged, sig:{state}:')
+        logger.critical('')
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
-        if cfg.project_tab:
+        if self._isProjectTab():
+
             if caller != 'dataUpdateWidgets':
                 skip_state = self._skipCheckbox.isChecked()
                 for s in cfg.data.scales():
@@ -4800,7 +4810,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self.detailsWidget.isVisible():
             h = self.detailsWidget.geometry().height()
-            self.detailsCorrSpots.setFixedSize(h-44, h-44)
+            self.detailsCorrSpots.setFixedSize(max(10,h-44), max(10,h-44))
 
         logger.info('pos: %s index: %s' % (str(pos),str(index)) )
         if self.detailsWidget.isHidden():
@@ -5272,7 +5282,7 @@ class MainWindow(QMainWindow):
         self._showHideFeatures.setLayout(hbl)
         self._showHideFeatures.setMaximumHeight(20)
 
-        dSize = 170
+        dSize = 166
 
         self.detailsTitle = QLabel('Details')
         self.detailsTitle.setFixedHeight(12)
@@ -5548,9 +5558,10 @@ class MainWindow(QMainWindow):
         vbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.setSpacing(0)
-        vbl.addWidget(self.btnDetailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        vbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        vbl.addWidget(self.btnDetailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
+        vbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
         w.setLayout(vbl)
+        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop)
 
         # hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop)
         # w = QWidget()
