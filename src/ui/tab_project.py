@@ -63,8 +63,8 @@ class ProjectTab(QWidget):
             # self.project_table.setScaleData()
             # self.project_table.setScaleData() #not sure why this is needed twice
             pass
-        if index == 2:
-            self.updateJsonWidget()
+        # if index == 2:
+        #     self.updateJsonWidget()
         if index == 3:
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()

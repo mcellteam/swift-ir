@@ -13,7 +13,7 @@ from qtpy.QtGui import QFont, QPixmap, QPainter
 
 from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
-from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths
+from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt
 from src.data_model import DataModel
 
 import src.config as cfg
@@ -36,20 +36,59 @@ class OpenProject(QWidget):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
         lab = QLabel('<h3>Saved AlignEM-SWiFT Projects:</h3>')
+
+
+        self.row_height_slider = Slider(self)
+        self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
+        # self.row_height_slider.setValue(self.initial_row_height)
+        # self.updateRowHeight(self.initial_row_height)
+
+
+
+        self.fetchSizesCheckbox = QCheckBox('Fetch Sizes')
+        self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
+        self.fetchSizesCheckbox.toggled.connect(
+            lambda: setOpt('ui,FETCH_PROJECT_SIZES', self.fetchSizesCheckbox.isChecked()))
+
+        self.fetchSizesCheckbox.toggled.connect(self.user_projects.set_data)
+
+
+        controls = QWidget()
+        controls.setFixedHeight(18)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
+        controls.setLayout(hbl)
+
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
-        vbl.addWidget(lab)
+        vbl.addWidget(controls)
         vbl.addWidget(self.user_projects)
         self.userProjectsWidget.setLayout(vbl)
+
+
 
         # User Files Widget
         self.userFilesWidget = QWidget()
         lab = QLabel('<h3>Open (Project or Zarr):</h3>')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
-        vbl.addWidget(lab)
+
+
+
+        w = QWidget()
+        w.setContentsMargins(0, 0, 0, 0)
+        hbl = QHBoxLayout()
+        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignRight)
+
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
+
+
 
         self._splitter = QSplitter()
         self._splitter.addWidget(self.userProjectsWidget)
@@ -60,6 +99,7 @@ class OpenProject(QWidget):
         self.layout.setContentsMargins(4, 0, 4, 0)
         self.layout.addWidget(self._splitter)
         self.setLayout(self.layout)
+
 
         # self.user_projects.set_data()
 
@@ -103,23 +143,25 @@ class UserProjects(QWidget):
                                  "QPushButton{background-color: #ffe135;}")
         self.table.setColumnCount(10)
         self.set_headers()
-        # self.setScaleData() # This is now called from _onGlobTabChange
-        self.row_height_slider = Slider(self)
-        self.row_height_slider.valueChanged.connect(self.updateRowHeight)
-        # self.row_height_slider.setValue(self.initial_row_height)
-        # self.updateRowHeight(self.initial_row_height)
 
-        controls = QWidget()
-        controls.setFixedHeight(18)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 0, 4, 0)
-        hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
-        controls.setLayout(hbl)
+
+        # self.row_height_slider = Slider(self)
+        # self.row_height_slider.valueChanged.connect(self.updateRowHeight)
+        # # self.row_height_slider.setValue(self.initial_row_height)
+        # # self.updateRowHeight(self.initial_row_height)
+        #
+        # controls = QWidget()
+        # controls.setFixedHeight(18)
+        # hbl = QHBoxLayout()
+        # hbl.setContentsMargins(4, 0, 4, 0)
+        # hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
+        # controls.setLayout(hbl)
+
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.table)
-        self.layout.addWidget(controls)
+        # self.layout.addWidget(controls)
         self.setLayout(self.layout)
         self.set_data()
         self.updateRowHeight(self.ROW_HEIGHT)
@@ -184,9 +226,6 @@ class UserProjects(QWidget):
                 elif j in (1, 2):
                     thumbnail = Thumbnail(self, path=item)
                     self.table.setCellWidget(i, j, thumbnail)
-                elif j in (7, 8):
-
-                    self.table.setCellWidget(i, j, QPushButton('Test'))
                 else:
                     table_item = QTableWidgetItem(str(item))
                     font = QFont()
@@ -234,12 +273,14 @@ class UserProjects(QWidget):
             except: projects.append('Unknown')
             project_dir = os.path.splitext(p)[0]
             try:
-                # logger.info('Getting project size...')
-                # _bytes = get_bytes(project_dir)
-                # bytes.append(_bytes)
-                bytes.append('N/A')
-                # gigabytes.append('%.4f' % float(_bytes / 1073741824))
-                gigabytes.append('N/A')
+                if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
+                    logger.info('Getting project size...')
+                    _bytes = get_bytes(project_dir)
+                    bytes.append(_bytes)
+                    gigabytes.append('%.4f' % float(_bytes / 1073741824))
+                else:
+                    bytes.append('N/A')
+                    gigabytes.append('N/A')
             except:
                 bytes.append('Unknown')
                 gigabytes.append('Unknown')
