@@ -76,7 +76,7 @@ from src.ui.tab_browser import WebBrowser
 from src.viewer_em import EMViewer
 from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
-from src.ui.components import AutoResizingTextEdit
+# from src.ui.components import AutoResizingTextEdit
 from src.mendenhall_protocol import Mendenhall
 import src.pairwise
 # if cfg.DEV_MODE:
