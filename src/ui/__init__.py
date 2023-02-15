@@ -4,10 +4,6 @@ from . import main_window
 from .main_window import *
 __all__.extend(main_window.__all__)
 
-from . import components
-from .components import *
-__all__.extend(components.__all__)
-
 # from . import heads_up_display
 # from .heads_up_display import *
 # __all__.extend(heads_up_display.__all__)
