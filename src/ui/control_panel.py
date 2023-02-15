@@ -7,6 +7,8 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QGroupBox, QFormL
 from qtpy.QtCore import Qt, QSize, QRect
 from qtpy.QtGui import QPainter
 
+__all__ = ['ControlPanel']
+
 logger = logging.getLogger(__name__)
 
 def makerows(lst, n):

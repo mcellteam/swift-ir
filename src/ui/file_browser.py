@@ -7,7 +7,7 @@ from qtpy.QtCore import Slot, Qt, QSize, QDir
 from src.helpers import is_joel, is_tacc
 import src.config as cfg
 
-
+__all__ = ['FileBrowser']
 
 logger = logging.getLogger(__name__)
 
