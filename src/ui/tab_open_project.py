@@ -19,6 +19,8 @@ from src.data_model import DataModel
 
 import src.config as cfg
 
+__all__ = ['OpenProject']
+
 logger = logging.getLogger(__name__)
 
 

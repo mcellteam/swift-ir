@@ -37,6 +37,8 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QTab
     QHBoxLayout, QFileDialog, QTableView, QErrorMessage, QGroupBox, QTextEdit, QSplitter, QStatusBar, \
     QAbstractItemView
 
+__all__ = ['DataTable']
+
 
 class DataTable(QMainWindow):
 

@@ -26,9 +26,7 @@ from src.ui.sliders import DoubleSlider
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
 
 
-
-
-
+__all__ = ['ProjectTab']
 
 logger = logging.getLogger(__name__)
 
@@ -283,15 +281,15 @@ class ProjectTab(QWidget):
         # self.detailsCorrSpots.setWindowFlags(Qt.FramelessWindowHint)
         # self.detailsCorrSpots.setAttribute(Qt.WA_TransparentForMouseEvents)
         # self.detailsCorrSpots.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.corrSpotClabel = ClickLabel("<b>Noise&nbsp;Plots</b>")
+        self.corrSpotClabel = ClickLabel("<b>Corr.&nbsp;Spot</b>")
         self.corrSpotClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0);color: #f3f6fb;")
         self.corrSpotClabel.setAutoFillBackground(False)
         self.corrSpotClabel.setAttribute(Qt.WA_TranslucentBackground, True)
         def fn():
             self.detailsCorrSpots.setVisible(self.detailsCorrSpots.isHidden())
             self.corrSpotClabel.setText(
-                ("<b><span style='color: #ffe135;'>Noise&nbsp;Plots</span></b>",
-                 "<b>Noise&nbsp;Plots</b>")[self.detailsCorrSpots.isHidden()])
+                ("<b><span style='color: #ffe135;'>Corr.&nbsp;Spot</span></b>",
+                 "<b>Corr.&nbsp;Spot</b>")[self.detailsCorrSpots.isHidden()])
             # if not cfg.data.is_aligned_and_generated():
             #     self.detailsCorrSpots.hide()
             #     self.corrSpotClabel.hide()

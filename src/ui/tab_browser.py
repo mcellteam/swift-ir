@@ -12,6 +12,8 @@ import src.config as cfg
 
 logger = logging.getLogger(__name__)
 
+__all__ = ['WebBrowser']
+
 class WebEnginePage(QWebEnginePage):
     def __init__(self, *args, **kwargs):
         QWebEnginePage.__init__(self, *args, **kwargs)
