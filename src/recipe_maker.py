@@ -190,7 +190,7 @@ def run_json_project(project,
             # put updated atrm into s_tbd
             s_tbd[i]['align_to_ref_method'] = atrm
 
-            # if there are match points, copy and s them for scale_tbd
+            # if there are match points, copy and scale them for scale_tbd
             if atrm['selected_method'] == 'Match Point Align':
                 mp_ref = (np.array(s_tbd[i]['images']['ref']['metadata']['match_points']) * upscale).tolist()
                 mp_base = (np.array(s_tbd[i]['images']['base']['metadata']['match_points']) * upscale).tolist()
@@ -478,6 +478,7 @@ class alignment_process:
         logger.info("  psta_2x2 = " + str(psta_2x2))
         logger.info("  psta_4x4 = " + str(psta_4x4))
 
+        #### CALL TO align_recipe ####
         # im_sta_fn is 'ref', im_mov_fn is 'base'
         #    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)  # tag
@@ -518,8 +519,10 @@ class alignment_process:
                 # self.recipe.add_ingredient(ingredient_4x4)
         elif atrm['selected_method'] == 'Match Point Align':
             # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
-            mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
-            mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
+            # mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
+            # mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
+            mp_base = np.array(self.layer_dict['align_to_ref_method']['match_points']['base']).transpose()
+            mp_ref = np.array(self.layer_dict['align_to_ref_method']['match_points']['ref']).transpose()
             # First ingredient is to calculate the Affine matrix from match points alone
             ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, ad=self.align_dir)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
@@ -550,6 +553,15 @@ class alignment_process:
         atrm['method_results']['swim_str'] = self.recipe.ingredients[-1].swim_str
         atrm['method_results']['mir_script'] = self.recipe.ingredients[-1].mir_script
         atrm['method_results']['swim_pos'] = self.recipe.ingredients[-1].psta.tolist()
+        if self.recipe.ingredients[0].mir_script_mp:
+            atrm['method_results']['mir_script_mp_first_ingredient'] = self.recipe.ingredients[0].mir_script_mp
+        if self.recipe.ingredients[-1].mir_script_mp:
+            atrm['method_results']['mir_script_mp_last_ingredient'] = self.recipe.ingredients[-1].mir_script_mp
+        if self.recipe.ingredients[0].mir_mp_out_lines:
+            atrm['method_results']['mir_mp_out_lines'] = self.recipe.ingredients[0].mir_mp_out_lines
+        if self.recipe.ingredients[0].mir_mp_err_lines:
+            atrm['method_results']['mir_mp_err_lines'] = self.recipe.ingredients[0].mir_mp_err_lines
+
 
         current_time = datetime.datetime.now()
         atrm['method_results']['datetime'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -697,6 +709,9 @@ class align_ingredient:
         self.ad = ad
         self.swim_str = None
         self.mir_script = None
+        self.mir_script_mp = None
+        self.mir_mp_out_lines = None
+        self.mir_mp_err_lines = None
 
         # mir has a -v flag for more output
 
@@ -846,6 +861,13 @@ class align_ingredient:
             f.write('swim_stdout: \n%s\n\n' % (o['out']))
             f.write('swim_stderr: \n%s\n\n' % (o['err']))
 
+        # with open('/Users/joelyancey/output.log', 'w+') as f:
+        #     f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
+        #     f.write('swim_stdout: \n%s\n\n' % (o['out']))
+        #     f.write('swim_stderr: \n%s\n\n' % (o['err']))
+        #     f.write('AFM:')
+        #     f.write(str(self.afm))
+
         mir_script = ""
         snr_list = []
         dx = dy = 0.0
@@ -855,11 +877,14 @@ class align_ingredient:
                 logger.info("SWIM OUT: " + str(l))
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
 
-
+                # with open('/Users/joelyancey/output.log', 'w+') as f:
+                #     f.write(str(toks))
                 # if self.align_mode != 'match_point_align': #0205+
-                dx = float(toks[8])
-                dy = float(toks[9])
-
+                try:
+                    dx = float(toks[8])
+                    dy = float(toks[9])
+                except:
+                    pass
 
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 mir_script += ' '.join(mir_toks) + '\n'
@@ -901,13 +926,19 @@ class align_ingredient:
             for line in mir_out_lines:
                 logger.info("Line: " + str(line))
                 toks = line.strip().split()
+                '''
+                Extract AFM from these lines:
+                AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
+                AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043
+                '''
+
                 if (toks[0] == 'AF'):
                     afm[0, 0] = float(toks[1])
                     afm[0, 1] = float(toks[2])
-                    afm[0, 2] = float(toks[3]) - self.swim_drift  # ???
+                    afm[0, 2] = float(toks[3]) - self.swim_drift
                     afm[1, 0] = float(toks[4])
                     afm[1, 1] = float(toks[5])
-                    afm[1, 2] = float(toks[6]) - self.swim_drift  # ???
+                    afm[1, 2] = float(toks[6]) - self.swim_drift
                 if (toks[0] == 'AI'):
                     aim[0, 0] = float(toks[1])
                     aim[0, 1] = float(toks[2])
@@ -929,67 +960,138 @@ class align_ingredient:
         return self.afm
 
     def execute(self):
+        '''RETURN AN AFFINE MATRIX'''
+
         logger.info('align_ingredient.execute >>>>')
 
-        #0205-
-        # # If ww==None then this is a Matching Point ingredient of a recipe
-        # # Calculate afm directly using psta and pmov as the matching points
-        # if self.align_mode == 'match_point_align':
-        #     logger.info("Alignment Mode is 'Match Point Affine'")
-        #     (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-        #     self.ww = (0.0, 0.0)
-        #     self.snr = np.zeros(len(self.psta[0]))
-        #     snr_array = self.snr
-        #     self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-        #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-        #     return self.afm
-        # elif self.align_mode == 'apply_affine_align':
-        #     logger.info("Alignment Mode is 'Apply Affine'")
-        #     self.snr = np.zeros(1)
-        #     snr_array = self.snr
-        #     self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-        #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-        #     return self.afm
+        '''---------------------------------NEW -------------------------------------'''
+        #0214
+        if self.align_mode == 'match_point_align':
+            mir_script_mp = ''
+            for i in range(len(self.psta[0])):
+                # mir_script_mp += f'{int(self.psta[0][i])} {int(self.psta[1][i])} {int(self.pmov[0][i])} {int(self.pmov[1][i])}\n'
+                mir_script_mp += f'{int(self.pmov[0][i])} {int(self.pmov[1][i])} {int(self.psta[0][i])} {int(self.psta[1][i])}\n'
 
-        #  Otherwise, this is a swim window match ingredient
-        #  Refine the afm via swim and mir
-        afm = self.afm
-        if afm is None:
-            afm = swiftir.identityAffine()
+            mir_script_mp += 'R'
+            self.mir_script_mp = mir_script_mp
 
-        afm = self.run_swim_c()
+            # with open('/Users/joelyancey/mir_script_mp.log', 'w+') as f:
+            #     f.write(self.mir_script_mp)
 
-        # if self.recipe.swiftir_mode == 'c':
-        #     afm = self.run_swim_c()
-        # else:
-        #     pass
-        #     # 0720
-        #     logger.info("Running python version of swim")
-        #     self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-        #     sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
-        #     for i in range(self.iters):
-        #         logger.debug('psta = ' + str(self.psta))
-        #         logger.debug('pmov = ' + str(self.pmov))
-        #         mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
-        #         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-        #         logger.debug('  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
-        #         self.pmov = self.pmov + dp
-        #         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-        #         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-        #         logger.debug('  Affine err:  %g' % (err))
-        #         logger.debug('  SNR:  ' + str(snr))
-        #     self.snr = snr
+            o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script_mp)
 
-        snr_array = np.array(self.snr)
-        self.snr = snr_array
-        self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-            snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-        logging.info(self.snr_report)
 
-        if self.align_mode == 'swim_align':
+            '''
+            Example std out:
+            ['AF  1.03643 -0.0030713 -44.2201  -0.00599598 0.972299 56.9541', 
+            ' AI  0.964866 0.00304782 42.4928  0.00595014 1.02851 -58.3147', 'P5', '0 0', '255']
+            '''
+
+            mir_mp_out_lines = o['out'].strip().split('\n')
+            mir_mp_err_lines = o['err'].strip().split('\n')
+            self.mir_mp_out_lines = mir_mp_out_lines
+            self.mir_mp_err_lines = mir_mp_err_lines
+
+
+            # with open('/Users/joelyancey/mir_mp_out_lines.log', 'w+') as f:
+            #     f.write(str(mir_mp_out_lines))
+            # with open('/Users/joelyancey/mir_mp_err_lines.log', 'w+') as f:
+            #     f.write(str(mir_mp_err_lines))
+
+            # Separate the results into a list of token lists
+            afm = np.eye(2, 3, dtype=np.float32)
+            self.ww = (0.0, 0.0)
+
+            for line in mir_mp_out_lines:
+                logger.info("Line: " + str(line))
+                toks = line.strip().split()
+                '''Extract AFM from these lines:
+                AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
+                AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043'''
+                if (toks[0] == 'AF'):
+                    afm[0, 0] = float(toks[1])
+                    afm[0, 1] = float(toks[2])
+                    afm[0, 2] = float(toks[3])
+                    afm[1, 0] = float(toks[4])
+                    afm[1, 1] = float(toks[5])
+                    afm[1, 2] = float(toks[6])
+
+
+
             self.afm = afm
+            self.snr = np.zeros(len(self.psta[0]))
+            snr_array = self.snr
+            self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+                snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+            # with open('/Users/joelyancey/output2.log', 'w+') as f:
+            #     f.write('AFM:\n' + str(afm))
+            #     f.write('snr_report:\n' + self.snr_report)
 
-        return self.afm
+            return self.afm
+
+
+            '''------------------------------ NEW END ----------------------------------'''
+        #NOTE made this conditional #2014+
+        else:
+            #0205-
+            # # If ww==None then this is a Matching Point ingredient of a recipe
+            # # Calculate afm directly using psta and pmov as the matching points
+            # if self.align_mode == 'match_point_align':
+            #     logger.info("Alignment Mode is 'Match Point Affine'")
+            #     (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+            #     self.ww = (0.0, 0.0)
+            #     self.snr = np.zeros(len(self.psta[0]))
+            #     snr_array = self.snr
+            #     self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+            #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+            #     return self.afm
+            # elif self.align_mode == 'apply_affine_align':
+            #     logger.info("Alignment Mode is 'Apply Affine'")
+            #     self.snr = np.zeros(1)
+            #     snr_array = self.snr
+            #     self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+            #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+            #     return self.afm
+
+            #  Otherwise, this is a swim window match ingredient
+            #  Refine the afm via swim and mir
+            afm = self.afm
+            if afm is None:
+                afm = swiftir.identityAffine()
+
+            afm = self.run_swim_c()
+
+            # if self.recipe.swiftir_mode == 'c':
+            #     afm = self.run_swim_c()
+            # else:
+            #     pass
+            #     # 0720
+            #     logger.info("Running python version of swim")
+            #     self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+            #     sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
+            #     for i in range(self.iters):
+            #         logger.debug('psta = ' + str(self.psta))
+            #         logger.debug('pmov = ' + str(self.pmov))
+            #         mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
+            #         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
+            #         logger.debug('  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
+            #         self.pmov = self.pmov + dp
+            #         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+            #         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+            #         logger.debug('  Affine err:  %g' % (err))
+            #         logger.debug('  SNR:  ' + str(snr))
+            #     self.snr = snr
+
+            snr_array = np.array(self.snr)
+            self.snr = snr_array
+            self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+                snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+            logging.info(self.snr_report)
+
+            if self.align_mode == 'swim_align':
+                self.afm = afm
+
+            return self.afm
 
 
 def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):

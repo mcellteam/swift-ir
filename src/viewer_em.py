@@ -233,9 +233,9 @@ class EMViewer(neuroglancer.Viewer):
 
         cfg.main_window.updateToolbar()
 
-        if cfg.main_window.detachedNg.isVisible():
-            logger.critical('detached Neuroglancer is visible! Setting its page...')
-            cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
+        # if cfg.main_window.detachedNg.isVisible():
+        #     logger.critical('detached Neuroglancer is visible! Setting its page...')
+        #     cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
 
 
     def initViewerSlim(self, nglayout=None):
@@ -326,9 +326,9 @@ class EMViewer(neuroglancer.Viewer):
 
         cfg.main_window.updateToolbar()
 
-        if cfg.main_window.detachedNg.isVisible():
-            logger.critical('detached Neuroglancer is visible! Setting its page...')
-            cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
+        # if cfg.main_window.detachedNg.isVisible():
+        #     logger.critical('detached Neuroglancer is visible! Setting its page...')
+        #     cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
 
 
     def set_pos_and_zoom(self):
@@ -584,8 +584,8 @@ class EMViewer(neuroglancer.Viewer):
                 annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=7)
+                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
                 ],
                 shader=copy.deepcopy(ann_shader),
             )
@@ -596,8 +596,8 @@ class EMViewer(neuroglancer.Viewer):
                     points=cfg.data.get_mps(role='base')) + self.base_pts,
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=3),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=7)
+                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
                 ],
                 shader=copy.deepcopy(ann_shader),
             )

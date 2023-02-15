@@ -509,11 +509,10 @@ class DataModel:
             try:
                 return [self.snr(s=s, l=i) for i in range(len(self))]
             except:
-                print_exception()
-                logger.error('Unable To Determine SNR List')
+                return [0.0, 0.0, 0.0, 0.0]
         else:
             logger.warning('No Method Results, No SNR List - Returning Empty List')
-            return []
+
 
 
     def snr_prev_list(self, s=None, l=None):
@@ -522,8 +521,8 @@ class DataModel:
         try:
             return [self.snr_prev(s=s, l=i) for i in range(self.n_sections())]
         except:
-            print_exception()
-            logger.error('Unable To Determine Previous SNR List')
+            return [0.0, 0.0, 0.0, 0.0]
+
 
     def delta_snr_list(self):
         return [a_i - b_i for a_i, b_i in zip(self.snr_prev_list(), self.snr_list())]
