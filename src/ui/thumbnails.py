@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QChec
 from qtpy.QtCore import Qt, QRect, QSize
 from qtpy.QtGui import QPixmap, QPainter
 from src.helpers import absFilePaths
-from src.helpers import print_exception
+from src.helpers import print_exception, get_appdir
 from src.funcs_image import ImageSize
 
 import src.config as cfg
@@ -30,6 +30,7 @@ class SnrThumbnail(QWidget):
         self.thumbnail.setScaledContents(True)
         self.label = QLabel('%.3f' % self.snr)
         self.label.setStyleSheet('color: #ff0000')
+        self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         layout = QGridLayout()
         layout.setContentsMargins(1, 1, 1, 1)
         layout.addWidget(self.thumbnail, 0, 0)
@@ -38,6 +39,19 @@ class SnrThumbnail(QWidget):
         if path:
             self.set_data(path=self.path, snr=self.snr)
 
+
+
+    def set_dummy_data(self, path, snr):
+        self.path = path
+        self.snr = snr
+        try:
+            pixmap = QPixmap(self.path)
+            self.thumbnail.setPixmap(pixmap)
+            self.label.setText('%.3f' % self.snr)
+        except:
+            print_exception()
+            logger.warning(f'WARNING path={self.path}, label={self.snr}')
+
     def set_data(self, path, snr):
         self.path = path
         self.snr = snr
@@ -45,6 +59,15 @@ class SnrThumbnail(QWidget):
             pixmap = QPixmap(self.path)
             self.thumbnail.setPixmap(pixmap)
             self.label.setText('%.3f' % self.snr)
+        except:
+            print_exception()
+            logger.warning(f'WARNING path={self.path}, label={self.snr}')
+
+    def set_no_image(self):
+        try:
+            pixmap = QPixmap(self.no_image_path)
+            self.thumbnail.setPixmap(pixmap)
+            self.label.setText('')
         except:
             print_exception()
             logger.warning(f'WARNING path={self.path}, label={self.snr}')

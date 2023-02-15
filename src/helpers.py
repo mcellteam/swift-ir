@@ -111,6 +111,8 @@ def delete_recursive(dir):
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
         cfg.main_window.setPbarText('Deleting %s...' % os.path.basename(d))
         cfg.main_window.updatePbar(cfg.nCompleted)
+        cfg.main_window.update()
+        QApplication.processEvents()
 
     cfg.main_window.pbar_widget.hide()
 

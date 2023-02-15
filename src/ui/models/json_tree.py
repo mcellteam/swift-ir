@@ -60,7 +60,7 @@ import json
 import sys
 from typing import Any, List, Dict, Union
 import qtpy
-from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
+from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView, QAbstractItemView
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 from qtpy.QtCore import Qt, QAbstractItemModel, QAbstractTableModel, QModelIndex
 from qtpy.QtGui import QColor
@@ -130,7 +130,7 @@ class TreeItem:
 
     @classmethod
     def load(
-        cls, value: Union[List, Dict], parent: "TreeItem" = None, sort=True
+        cls, value: Union[List, Dict], parent: "TreeItem" = None, sort=False
     ) -> "TreeItem":
         """Create a 'root' TreeItem from a nested list or a nested dictonary
 
@@ -376,14 +376,18 @@ class JsonModel(QAbstractItemModel):
         else:
             next_treeitem = treeitem.child(self.idx, 0)
 
+        self.next_treeitem = next_treeitem
+
         if findkeys == []:
             print('Returning: %s' % str(next_treeitem))
             if jump:
                 cfg.project_tab.treeview.setCurrentIndex(next_treeitem)
             if expand:
                 cfg.project_tab.treeview.expandRecursively(next_treeitem)
-            if collapse:
-                cfg.project_tab.treeview.collapse(next_treeitem)
+            # if collapse:
+            #     # cfg.project_tab.treeview.collapse(next_treeitem)
+            #     previous_index = cfg.project_tab.treeview.pr
+            #     cfg.project_tab.treeview.collapse(next_treeitem)
 
             return next_treeitem
 
@@ -395,11 +399,14 @@ class JsonModel(QAbstractItemModel):
         if s == None: s = cfg.data.curScale
         if l == None: l = cfg.data.layer()
         # cfg.project_tab.treeview.collapseAll()
-        keys = ['data', 'scales', s, 'alignment_stack', l, 'align_to_ref_method','method_results','snr']
+        # keys = ['data', 'scales', s, 'alignment_stack', l, 'align_to_ref_method','method_results','affine_matrix']
+        keys = ['data', 'scales', s, 'alignment_stack', l]
 
-        if l !=0:
-            self.collapseIndex(l=l - 1)
+
+        # if l !=0:
+        #     self.collapseIndex(l=l - 1)
         self.getIndex(findkeys=keys, expand=True)
+        cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
 
 

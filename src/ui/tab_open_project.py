@@ -7,7 +7,8 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton
+    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
+    QSizePolicy
 from qtpy.QtCore import Qt, QRect
 from qtpy.QtGui import QFont, QPixmap, QPainter
 
@@ -52,12 +53,15 @@ class OpenProject(QWidget):
 
         self.fetchSizesCheckbox.toggled.connect(self.user_projects.set_data)
 
+        w = QWidget()
+        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         controls = QWidget()
         controls.setFixedHeight(18)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
         hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.addWidget(w)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
         controls.setLayout(hbl)

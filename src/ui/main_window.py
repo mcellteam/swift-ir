@@ -526,9 +526,9 @@ class MainWindow(QMainWindow):
             if self.detailsSection.isVisible():
                 txt_ = f"""
                 <p>
-                Filename:  <b><td style='color: #ffe135;'>{cfg.data.filename_basename()}</td></b><br>
-                Reference:  <b><td style='color: #ffe135;'>{cfg.data.reference_basename()}</td></b><br>
-                Last Aligned: {cfg.data.datetime().rjust(23)}
+                Filename:  <b><span style='color: #ffe135;'>{cfg.data.filename_basename()}</span></b><br>
+                Reference:  <b><span style='color: #ffe135;'>{cfg.data.reference_basename()}</span></b><br>
+                Last Aligned: {cfg.data.datetime().rjust(23)}<br>
                 Reject: {('[ ]', '[X]')[cfg.data.skipped()]}<br>
                 </p>
                 """
@@ -543,21 +543,32 @@ class MainWindow(QMainWindow):
             #     'Prev. SNR  : %.3f' %(cfg.data.base_image_name(), cfg.data.snr(), cfg.data.snr_prev()))
             s = cfg.data.curScale
             snr = cfg.data.snr_components()
-            self.detailsSNR.setText(
-                'SNR       :%s\n'
-                'Prev.  SNR:%s\n\n'
-                'Components\n'
-                'Top,Left  :%s\n'
-                'Top,Right :%s\n'
-                'Btm,Left  :%s\n'
-                'Btm,Right :%s' %
-                (('%.3f' %cfg.data.snr()).rjust(9),
-                 ('%.3f' %cfg.data.snr_prev()).rjust(9),
-                 ('%.3f' %snr[0]).rjust(9),
-                 ('%.3f' %snr[1]).rjust(9),
-                 ('%.3f' %snr[2]).rjust(9),
-                 ('%.3f' %snr[3]).rjust(9))
-            )
+            if self.detailsSNR.isVisible():
+                if cfg.data.selected_method() == 'Auto Swim Align':
+                    self.detailsSNR.setText(
+                        "SNR       :%s\n"
+                        "Prev.  SNR:%s\n\n"
+                        "Components\n"
+                        "Top,Left  :%s\n"
+                        "Top,Right :%s\n"
+                        "Btm,Left  :%s\n"
+                        "Btm,Right :%s" %
+                        (('%.3f' %cfg.data.snr()).rjust(9),
+                         ('%.3f' %cfg.data.snr_prev()).rjust(9),
+                         ('%.3f' %snr[0]).rjust(9),
+                         ('%.3f' %snr[1]).rjust(9),
+                         ('%.3f' %snr[2]).rjust(9),
+                         ('%.3f' %snr[3]).rjust(9))
+                    )
+                elif cfg.data.selected_method == 'Match Point Align':
+                    txt = "SNR       :%s\n" \
+                          "Prev.  SNR:%s\n\n" \
+                          "Components"
+                    for i in range(len(snr)):
+                        txt += '\n%d: %s' % (i,str(snr[i]))
+
+                    self.detailsSNR.setText(txt)
+
 
             method = cfg.data.selected_method()
             try:
@@ -609,12 +620,13 @@ class MainWindow(QMainWindow):
                 self.detailsAFM.setText('Affine:\n' + ''.join(afm_txt) +
                                         '\n\nCumulative Affine:\n' + ''.join(cafm_txt))
 
-            if self.detailsCorrSpots.isVisible():
-                snr_vals = cfg.data.snr_components()
-                self.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
-                self.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
-                self.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
-                self.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
+
+            # if self.detailsCorrSpots.isVisible():
+            #     snr_vals = cfg.data.snr_components()
+            #     self.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
+            #     self.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
+            #     self.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
+            #     self.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
 
 
         else:
@@ -995,19 +1007,23 @@ class MainWindow(QMainWindow):
         self.detailsScales.setText('\n'.join([cfg.data.scale_pretty(s=x).ljust(10) + '-' +
                                               ('%dx%d' % cfg.data.image_size(s=x)).rjust(12) for x in
                                               cfg.data.scales()]))
-        self.detailsTiming.setText(
-            'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['t_scaling']).rjust(9) +
-            'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
-            'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['t_thumbs']).rjust(9) +
-            'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_align']).rjust(9) +
-            'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
-            'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-            'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
-        )
         try:
             self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
         except:
             pass
+        try:
+            self.detailsTiming.setText(
+                'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['t_scaling']).rjust(9) +
+                'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
+                'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['t_thumbs']).rjust(9) +
+                'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_align']).rjust(9) +
+                'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
+                'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
+                'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
+            )
+        except:
+            logger.warning('detailsTiming cant update')
+
 
 
 
@@ -1628,36 +1644,37 @@ class MainWindow(QMainWindow):
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
-                    if cfg.project_tab._tabs.currentIndex() == 0:
-                        if self.rb1.isChecked():
-                            cfg.project_tab._overlayRect.hide()
-                            cfg.project_tab._overlayLab.hide()
-                            if ng_layer == len(cfg.data):
-                                self.layer_details.setText('')
-                                self.clearAffineWidget()
-                                cfg.project_tab._widgetArea_details.hide()
-                                self._sectionSlider.setValue(self._sectionSlider.maximum()) #0119+
-                                self._jumpToLineedit.setText('-1')
-                                return
-                            elif cfg.data.skipped():
-                                cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                                cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
-                                cfg.project_tab._overlayLab.show()
-                                cfg.project_tab._overlayRect.show()
-                            elif ng_layer == 0:
-                                cfg.project_tab._overlayLab.setText('No Reference')
-                                cfg.project_tab._overlayLab.show()
 
-                if not cfg.MP_MODE:
-                    cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+
+                if cfg.project_tab._tabs.currentIndex() == 0:
+                    # if self.rb1.isChecked():
+                    cfg.project_tab._overlayRect.hide()
+                    cfg.project_tab._overlayLab.hide()
+                    if ng_layer == len(cfg.data):
+                        self.layer_details.setText('')
+                        self.clearAffineWidget()
+                        self._sectionSlider.setValue(self._sectionSlider.maximum()) #0119+
+                        self._jumpToLineedit.setText('-1')
+                        return
+                    elif cfg.data.skipped():
+                        cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+                        cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
+                        cfg.project_tab._overlayLab.show()
+                        cfg.project_tab._overlayRect.show()
+                    elif ng_layer == 0:
+                        cfg.project_tab._overlayLab.setText('No Reference')
+                        cfg.project_tab._overlayLab.show()
+
+                # if not cfg.MP_MODE:
+                #     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
 
                 if self.detailsWidget.isVisible():
                     self.updateDetailsWidget()
 
                 #0213+ not sure, just a guess
-                if cfg.main_window.detachedNg.isVisible():
-                    logger.critical('detached Neuroglancer is visible! Setting its page...')
-                    cfg.main_window.detachedNg.setUrl(url=cfg.emViewer.get_viewer_url())
+                # if cfg.main_window.detachedNg.isVisible():
+                #     logger.critical('detached Neuroglancer is visible! Setting its page...')
+                #     cfg.main_window.detachedNg.setUrl(url=cfg.emViewer.get_viewer_url())
 
                 cur = cfg.data.layer()
                 if self.notes.isVisible():
@@ -1686,12 +1703,102 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.project_table.table.selectRow(cur)
                 self._sectionSlider.setValue(cur)
                 self._jumpToLineedit.setText(str(cur)) #0131+
-                if getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'):
-                    self.updateLayerDetails()
+                # if getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'):
+                #     self.updateLayerDetails()
                 if cfg.MP_MODE:
                     self.matchpoint_text_snr.setText(cfg.data.snr_report())
                 if self.corr_spot_thumbs.isVisible():
                     self.updateCorrSpotThumbnails()
+
+                if cfg.project_tab.detailsCorrSpots.isVisible():
+                    if cfg.data.selected_method() == 'Auto Swim Align':
+                        snr_vals = cfg.data.snr_components()
+                        cfg.project_tab.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
+                        cfg.project_tab.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
+                        cfg.project_tab.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
+                        cfg.project_tab.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
+                    else:
+                        cfg.project_tab.cs0.set_no_image()
+                        cfg.project_tab.cs1.set_no_image()
+                        cfg.project_tab.cs2.set_no_image()
+                        cfg.project_tab.cs3.set_no_image()
+
+                if cfg.project_tab.detailsSection.isVisible():
+                    txt_ = f"""
+                    Filename:  <b><span style='color: #ffe135;'>{cfg.data.filename_basename()}</span></b><br>
+                    Reference:  <b><span style='color: #ffe135;'>{cfg.data.reference_basename()}</span></b><br>
+                    Last Aligned: {cfg.data.datetime().rjust(23)}
+                    """
+                    method = cfg.data.selected_method()
+                    if method in ('Auto Swim Align','Auto-SWIM'):
+                        txt_ += '<br>Method:&nbsp;Automatic SWIM'
+                    elif method in ('Match Point Align', 'Manual-Hint'):
+                        txt_ += '<br>Method:&nbsp;Manual, Hint'
+                    elif method == 'Manual-Strict':
+                        txt_ += '<br>Method:&nbsp;Manual, Strict'
+
+                    txt_ += f"""<br>Reject: {('[ ]', 
+                    "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
+
+                    cfg.project_tab.detailsSection.setText(txt_)
+
+                if cfg.project_tab.detailsAFM.isVisible():
+                    afm, cafm = cfg.data.afm(), cfg.data.cafm()
+                    afm_txt, cafm_txt = [], []
+                    for x in range(2):
+                        for y in range(3):
+                            if y == 0:
+                                afm_txt.append(('%.3f' % afm[x][y]).ljust(7))
+                                cafm_txt.append(('%.3f' % cafm[x][y]).ljust(7))
+                            elif y == 1:
+                                afm_txt.append(('%.3f' % afm[x][y]).rjust(7))
+                                cafm_txt.append(('%.3f' % afm[x][y]).rjust(7))
+                            else:
+                                afm_txt.append(('%.3f' % afm[x][y]).rjust(10))
+                                cafm_txt.append(('%.3f' % cafm[x][y]).rjust(10))
+
+                            if (x == 0) and (y == 2):
+                                afm_txt.append('\n')
+                                cafm_txt.append('\n')
+                    cfg.project_tab.detailsAFM.setText('Affine:\n' + ''.join(afm_txt) +
+                                            '\n\nCumulative Affine:\n' + ''.join(cafm_txt))
+
+
+                if cfg.project_tab.detailsSNR.isVisible():
+                    snr = cfg.data.snr_components()
+
+                    if cfg.data.selected_method() == 'Auto Swim Align':
+                        logger.critical('Updating detailsSNR for Auto Swim Align')
+                        cfg.project_tab.detailsSNR.setText(
+                            "Avg. SNR&nbsp;&nbsp;:<b><span style='color: #ffe135;'>%s</span></b><br>"
+                            "Prev.&nbsp;SNR&nbsp;:%s<br>"
+                            "Components<br>"
+                            "Top,Left&nbsp;&nbsp;:%s<br>"
+                            "Top,Right&nbsp;:%s<br>"
+                            "Btm,Left&nbsp;&nbsp;:%s<br>"
+                            "Btm,Right&nbsp;:%s" %
+                            (('%.3f' % cfg.data.snr()).rjust(9),
+                             ('%.3f' % cfg.data.snr_prev()).rjust(9),
+                             ('%.3f' % snr[0]).rjust(9),
+                             ('%.3f' % snr[1]).rjust(9),
+                             ('%.3f' % snr[2]).rjust(9),
+                             ('%.3f' % snr[3]).rjust(9))
+                        )
+                    elif cfg.data.selected_method() == 'Match Point Align':
+                        logger.critical('Updating detailsSNR for Match Point Align')
+
+                        txt = "Avg. SNR&nbsp;&nbsp;:<b><span style='color: #ffe135;'>%s</span></b><br>" \
+                              "Prev.&nbsp;SNR&nbsp;:%s<br>" \
+                              "Components" % (('%.3f' % cfg.data.snr()).rjust(9),
+                                              ('%.3f' % cfg.data.snr_prev()).rjust(9))
+                        for i in range(len(snr)):
+                            txt += '<br>%d:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%.3f' % (i, snr[i])
+
+                        cfg.project_tab.detailsSNR.setText(txt)
+
+
+
+
                 else:
                     try:     self._jumpToLineedit.setText(str(cur))
                     except:  logger.warning('Current Layer Widget Failed to Update')
@@ -1942,6 +2049,7 @@ class MainWindow(QMainWindow):
                 logger.warning('Requested layer is not a valid layer')
                 return
             cfg.data.set_layer(requested)
+            cfg.project_tab.updateNeuroglancer() #0214+ intentionally putting this before dataUpdateWidgets (!)
             self.dataUpdateWidgets()
 
 
@@ -2930,6 +3038,7 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.snr_plot.initSnrPlot()
 
 
+
     def skip_change_shortcut(self):
         logger.info('')
         if cfg.data:
@@ -3017,7 +3126,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.ngVertLab.setStyleSheet('')
                     # cfg.project_tab._tabs.currentWidget().setStyleSheet('')
                     cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
-                    cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
+                    # cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
                     # self.matchpointControlPanel.hide()
                     self.matchpointControls.hide()
                     self.enableAllTabs()
@@ -3832,6 +3941,11 @@ class MainWindow(QMainWindow):
         self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
         # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
         self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
+
+        def fn():
+            cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+            cfg.project_tab.updateUISpacing()
+        self.ngShowUiControlsAction.triggered.connect(fn)
         self.ngShowUiControlsAction.triggered.connect(self.update_ng)
         viewMenu.addAction(self.ngShowUiControlsAction)
 
@@ -4801,7 +4915,7 @@ class MainWindow(QMainWindow):
         # self.cpanel.setFixedWidth(520)
         # self.cpanel.setMaximumHeight(120)
         # self.cpanel.setFixedSize(QSize(520,128))
-        self.cpanel.setFixedHeight(128)
+        self.cpanel.setFixedHeight(120)
 
 
     def splittersHaveMoved(self, pos, index):
@@ -4851,7 +4965,7 @@ class MainWindow(QMainWindow):
 
         '''Headup Display'''
         self.hud = HeadupDisplay(self.app)
-        self.hud.resize(QSize(400,128))
+        self.hud.resize(QSize(400,120))
         # self.hud.setMinimumWidth(256)
         self.hud.setMinimumWidth(180)
         self.hud.setObjectName('hud')
@@ -5325,9 +5439,7 @@ class MainWindow(QMainWindow):
         self.btnDetailsScales.clicked.connect(fn)
         self.detailsScales.setWordWrap(True)
         self.detailsScales.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsScales.setStyleSheet("""
-        font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-        font-size: 11px;""")
+        self.detailsScales.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 11px;""")
         # self.detailsScales.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum) #???
         self.detailsScales.setFixedWidth(dSize)
         # self.detailsScales.setReadOnly(True)
@@ -6328,6 +6440,7 @@ class MainWindow(QMainWindow):
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
         self.pbar_widget.repaint()
+        self.update()
 
 
     def back_callback(self):

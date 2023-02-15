@@ -7,9 +7,10 @@ import os, sys, logging, inspect, copy, time, warnings
 from math import log2, sqrt
 import neuroglancer as ng
 import numpy as np
+import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
-    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider
-from qtpy.QtCore import Qt, QSize, QRect, QUrl
+    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy
+from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal
 from qtpy.QtGui import QPainter, QFont, QPixmap
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
@@ -22,6 +23,10 @@ from src.ui.widget_area import WidgetArea
 from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
 from src.ui.sliders import DoubleSlider
+from src.ui.thumbnails import Thumbnail, SnrThumbnail
+
+
+
 
 
 
@@ -63,8 +68,9 @@ class ProjectTab(QWidget):
             # self.project_table.setScaleData()
             # self.project_table.setScaleData() #not sure why this is needed twice
             pass
-        # if index == 2:
-        #     self.updateJsonWidget()
+        if index == 2:
+            # self.updateJsonWidget()
+            cfg.project_tab.treeview_model.jumpToLayer()
         if index == 3:
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()
@@ -111,7 +117,6 @@ class ProjectTab(QWidget):
             logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
         if cfg.MP_MODE:
             cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            self._widgetArea_details.hide()
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(requested='xy'), matchpoint=True)
             self.setZmag(val=15)
         elif cfg.data['ui']['arrangement'] == 'stack':
@@ -122,11 +127,11 @@ class ProjectTab(QWidget):
             cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=False)
 
 
-        if not cfg.MP_MODE:
-            show = getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS')
-            self._widgetArea_details.setVisible(show)
-            if show:
-                self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
+        # if not cfg.MP_MODE:
+        #     show = getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS')
+        #     self._widgetArea_details.setVisible(show)
+        #     if show:
+        #         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
 
         # self.slotUpdateZoomSlider()
 
@@ -180,6 +185,8 @@ class ProjectTab(QWidget):
         logger.info('')
 
         self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
+        # this fixes detailsSection not displaying immediately on start project
+        self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
 
 
 
@@ -201,13 +208,13 @@ class ProjectTab(QWidget):
 
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
-        gl = QGridLayout()
-        gl.addWidget(self.webengine, 0, 0)
+        self.ng_gl = QGridLayout()
+        self.ng_gl.addWidget(self.webengine, 0, 0, 4, 5)
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
         self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
-        gl.addWidget(self._overlayRect, 0, 0)
+        self.ng_gl.addWidget(self._overlayRect, 0, 0, 4, 5)
         self._overlayLab = QLabel()
         self._overlayLab.setObjectName('_overlayLab')
         self._overlayLab.hide()
@@ -224,17 +231,13 @@ class ProjectTab(QWidget):
             self.lab_match_point,
         )
         for layer in self._layer_details:
-            layer.setStyleSheet(
-                'color: #ffe135;'
-                'font-size: 9px;'
-                'background-color: rgba(0,0,0,.36);'
-                'margin: 1px 1px 1px 1px;'
-                'border-width: 0px;'
-                'border-style: solid;'
-                'border-color: #141414;'
-                'border-radius: 1px;'
-                'margin-right: 10px;'
-            )
+            layer.setStyleSheet('''
+                color: #ffe135;
+                font-size: 9px;
+                background-color: rgba(0,0,0,.36);
+                margin: 1px 1px 1px 1px;
+                border-width: 0px;
+            ''')
             layer.setFixedWidth(170)
             layer.setWordWrap(True)
             layer.setContentsMargins(0,0,0,0)
@@ -255,33 +258,241 @@ class ProjectTab(QWidget):
         vbl.addWidget(self.afm_widget_)
         self._transformationWidget.setLayout(vbl)
 
-        self.__widgetArea_details = WidgetArea(parent=self, title='Details', labels=self._layer_details)
-        self.__widgetArea_details.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.__widgetArea_details.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.__widgetArea_details.hideTitle()
-        self.__widgetArea_details.setFixedWidth(160)
-        self.__widgetArea_details.setFixedHeight(80)
-        self.__widgetArea_details.setStyleSheet('background-color: rgba(0,0,0,0);')
-        self.__widgetArea_details.setContentsMargins(0, 0, 0, 0)
-
-        self._widgetArea_details = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0,0,0,0)
-        vbl.addWidget(self._transformationWidget)
-        vbl.addWidget(self.__widgetArea_details)
-        self._widgetArea_details.setLayout(vbl)
 
         self._overlayBottomLeft = QLabel()
         self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
         self._overlayBottomLeft.hide()
-        gl.addWidget(self._overlayLab, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        gl.addWidget(self._overlayBottomLeft, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        gl.addWidget(self._widgetArea_details, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
-        # gl.addWidget(cfg.main_window._tool_afmCafm, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
-        self.ng_browser_container.setLayout(gl)
-        gl.setContentsMargins(0, 0, 0, 0)
+        self.ng_gl.addWidget(self._overlayLab, 0, 0, 4, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.ng_gl.addWidget(self._overlayBottomLeft, 0, 0, 4, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        # self.ng_gl.addWidget(cfg.main_window._tool_afmCafm, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
+        self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.ngVertLab.setObjectName('label_ng')
+
+        dSize = 120
+
+        self.DetailsContainer = QWidget()
+        # self.DetailsContainer.setWindowFlags(Qt.FramelessWindowHint)
+        # self.DetailsContainer.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.DetailsContainer.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.DetailsContainer.setAutoFillBackground(False)
+        self.DetailsContainer.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.DetailsContainer.setStyleSheet("""background-color: rgba(255, 255, 255, 0);""")
+
+        self.detailsCorrSpots = QWidget()
+        # self.detailsCorrSpots.setWindowFlags(Qt.FramelessWindowHint)
+        # self.detailsCorrSpots.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.detailsCorrSpots.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.corrSpotClabel = ClickLabel("<b>Noise&nbsp;Plots</b>")
+        self.corrSpotClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0);color: #f3f6fb;")
+        self.corrSpotClabel.setAutoFillBackground(False)
+        self.corrSpotClabel.setAttribute(Qt.WA_TranslucentBackground, True)
+        def fn():
+            self.detailsCorrSpots.setVisible(self.detailsCorrSpots.isHidden())
+            self.corrSpotClabel.setText(
+                ("<b><span style='color: #ffe135;'>Noise&nbsp;Plots</span></b>",
+                 "<b>Noise&nbsp;Plots</b>")[self.detailsCorrSpots.isHidden()])
+            # if not cfg.data.is_aligned_and_generated():
+            #     self.detailsCorrSpots.hide()
+            #     self.corrSpotClabel.hide()
+        self.corrSpotClabel.clicked.connect(fn)
+        self.corrSpotClabel.clicked.connect(cfg.main_window.dataUpdateWidgets)
+
+        self.cs0 = SnrThumbnail(parent=self)
+        self.cs1 = SnrThumbnail(parent=self)
+        self.cs2 = SnrThumbnail(parent=self)
+        self.cs3 = SnrThumbnail(parent=self)
+
+        gl = QGridLayout()
+        gl.setSpacing(0)
+        gl.setContentsMargins(0, 0, 0, 0)
+        gl.addWidget(self.cs0, 0, 0)
+        gl.addWidget(self.cs1, 0, 1)
+        gl.addWidget(self.cs2, 1, 0)
+        gl.addWidget(self.cs3, 1, 1)
+        self.csALL = QWidget()
+        self.csALL.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.csALL.setLayout(gl)
+
+        self.cspotSlider = QSlider(Qt.Orientation.Vertical, self)
+        self.cspotSlider.setRange(36,256)
+        start_size = 120
+        self.cspotSlider.setValue(start_size)
+        self.cspotSlider.setFixedSize(QSize(16,56))
+        self.csALL.setFixedSize(start_size, start_size)
+
+        self.cspotSlider.sliderReleased.connect(lambda: self.csALL.setFixedSize(
+            QSize(self.cspotSlider.value(), self.cspotSlider.value())))
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self.csALL, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(self.cspotSlider, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.detailsCorrSpots.setLayout(hbl)
+        self.detailsCorrSpots.hide()
+
+        self.detailsSection = QLabel()
+        self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
+        self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.detailsSection.setMaximumHeight(100)
+        self.detailsSection.setMinimumWidth(210)
+        # self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.detailsClabel = ClickLabel("<b><span style='color: #ffe135;'>Section</span></b>")
+        self.detailsClabel.setStyleSheet("color: #f3f6fb;")
+        self.detailsClabel.setAutoFillBackground(False)
+        self.detailsClabel.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.detailsClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        def fn():
+            self.detailsSection.setVisible(self.detailsSection.isHidden())
+            self.detailsClabel.setText(
+                ("<b><span style='color: #ffe135;'>Section</span></b>",
+                 "<b>Section</b>")[self.detailsSection.isHidden()])
+            cfg.main_window.dataUpdateWidgets()
+        self.detailsClabel.clicked.connect(fn)
+        self.detailsSection.setWordWrap(True)
+        self.detailsSection.setStyleSheet("""
+            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+            font-size: 10px;
+            background-color: rgba(0,0,0,.24);
+            color: #f3f6fb;
+            padding: 3px;
+            border-width: 1px;
+            """)
+        # self.detailsSection.hide()
+
+
+        self.detailsAFM = QLabel()
+        self.detailsAFM.setWindowFlags(Qt.FramelessWindowHint)
+        self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.detailsAFM.setMaximumHeight(100)
+        # self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.afmClabel = ClickLabel('<b>Affine</b>')
+        self.afmClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0); color: #f3f6fb;")
+        self.afmClabel.setAutoFillBackground(False)
+        self.afmClabel.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.afmClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        def fn():
+            self.detailsAFM.setVisible(self.detailsAFM.isHidden())
+            self.afmClabel.setText(
+                ("<b><span style='color: #ffe135;'>Affine</span></b>",
+                 "<b>Affine</b>")[self.detailsAFM.isHidden()])
+            cfg.main_window.dataUpdateWidgets()
+        self.afmClabel.clicked.connect(fn)
+        self.detailsAFM.setWordWrap(True)
+        self.detailsAFM.setStyleSheet("""
+            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+            font-size: 10px;
+            background-color: rgba(0,0,0,.24);
+            color: #f3f6fb;
+            padding: 3px;
+            border-width: 1px;
+            """)
+        self.detailsAFM.hide()
+
+
+        self.detailsSNR = QLabel()
+        self.detailsSNR.setWindowFlags(Qt.FramelessWindowHint)
+        self.detailsSNR.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.detailsSNR.setMaximumHeight(100)
+        self.snrClabel = ClickLabel('<b>SNR</b>')
+        self.snrClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0); color: #f3f6fb;")
+        self.snrClabel.setAutoFillBackground(False)
+        self.snrClabel.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.snrClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        def fn():
+            self.detailsSNR.setVisible(not self.detailsSNR.isVisible())
+            self.snrClabel.setText(
+                ("<b><span style='color: #ffe135;'>SNR</span></b>",
+                 "<b>SNR</b>")[self.detailsSNR.isHidden()])
+            cfg.main_window.dataUpdateWidgets()
+        self.snrClabel.clicked.connect(fn)
+        self.detailsSNR.setWordWrap(True)
+        self.detailsSNR.setStyleSheet("""
+            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+            font-size: 10px;
+            background-color: rgba(0,0,0,.24);
+            color: #f3f6fb;
+            padding: 3px;
+            border-width: 1px;
+            """)
+        # self.detailsSNR.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.detailsSNR.hide()
+
+        vbl = QVBoxLayout()
+        vbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.setSpacing(0)
+
+        self.labelsWidget = QWidget()
+        self.labelsWidget.setFixedHeight(20)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(8, 0, 8, 0)
+        hbl.addWidget(self.detailsClabel)
+        hbl.addWidget(QLabel("<span style='font-size: 15px; color: #f3f6fb; "
+                             "font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;'>&#183;</span>"))
+        hbl.addWidget(self.afmClabel)
+        hbl.addWidget(QLabel("<span style='font-size: 15px; color: #f3f6fb; "
+                             "font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;'>&#183;</span>"))
+        hbl.addWidget(self.snrClabel)
+        hbl.addWidget(QLabel("<span style='font-size: 15px; color: #f3f6fb; "
+                             "font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;'>&#183;</span>"))
+        hbl.addWidget(self.corrSpotClabel)
+        self.labelsWidget.setLayout(hbl)
+
+
+        # vbl = QVBoxLayout()
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # spreadW.setLayout(vbl)
+
+        self.detailsDetailsWidget = QWidget()
+        self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.detailsDetailsWidget.setWindowFlags(Qt.FramelessWindowHint)
+        self.detailsDetailsWidget.show()
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0,0,0,0)
+        hbl.addWidget(self.detailsSection, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.detailsDetailsWidget.setLayout(hbl)
+
+
+        # vbl.addWidget(self.spreadW, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        vbl.addWidget(self.labelsWidget, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        # vbl.addWidget(self.detailsDetailsWidget, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.DetailsContainer.setLayout(vbl)
+
+        self.spreadW = QWidget()
+        self.spreadW.setWindowFlags(Qt.FramelessWindowHint)
+        self.spreadW.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.spreadW.setFixedSize(1,12)
+        self.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+
+        self.spreadW2 = QWidget()
+        self.spreadW2.setWindowFlags(Qt.FramelessWindowHint)
+        self.spreadW2.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.spreadW2.setFixedSize(96,1)
+
+        self.spreadW3 = QWidget()
+        self.spreadW3.setWindowFlags(Qt.FramelessWindowHint)
+        self.spreadW3.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.spreadW3.setFixedSize(40,1)
+
+        self.ng_gl.addWidget(self.labelsWidget, 0, 2, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.ng_gl.addWidget(self.spreadW3, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.ng_gl.addWidget(self.spreadW2, 1, 3, 2, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.ng_gl.addWidget(self.spreadW, 1, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.ng_gl.addWidget(self.detailsDetailsWidget, 2, 0, 1, 4, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        self.ng_gl.setRowStretch(0, 0)
+        self.ng_gl.setRowStretch(1, 0)
+        self.ng_gl.setRowStretch(2, 100)
+        self.ng_gl.setColumnStretch(0, 24)
+        self.ng_gl.setColumnStretch(1, 0)
+        self.ng_gl.setColumnStretch(2, 5)
+        self.ng_gl.setColumnStretch(3, 1)
+        self.updateUISpacing()
+        self.ng_browser_container.setLayout(self.ng_gl)
+
+        # hbl.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
 
 
         # self.zoomSlider = QSlider(Qt.Orientation.Vertical, self)
@@ -346,6 +557,15 @@ class ProjectTab(QWidget):
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
         self.ng_browser_container_outer.setLayout(hbl)
 
+    def updateUISpacing(self):
+        isUiControls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+        self.spreadW.setVisible(isUiControls)
+        if isUiControls:
+            self.spreadW2.setFixedSize(96, 1)
+            self.spreadW3.setFixedSize(40, 1)
+        else:
+            self.spreadW2.setFixedSize(10, 1)
+            self.spreadW3.setFixedSize(10, 1)
 
     def slotUpdateZoomSlider(self):
         caller = inspect.stack()[1].function
@@ -453,12 +673,14 @@ class ProjectTab(QWidget):
         logger.info('')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.header().resizeSection(0, 300)
+        self.treeview.expandAll()
 
 
     def initUI_JSON(self):
         '''JSON Project View'''
         logger.info('')
         self.treeview = QTreeView()
+        self.treeview.setAnimated(True)
         self.treeview.setIndentation(20)
         self.treeview.header().resizeSection(0, 300)
         self.treeview_model = JsonModel()
@@ -719,6 +941,11 @@ class VerticalLabel(QLabel):
         return QSize(size.height(), size.width())
 
 
+class ClickLabel(QLabel):
+    clicked=Signal()
+
+    def mousePressEvent(self, ev):
+        self.clicked.emit()
 
 if __name__ == '__main__':
     app = QApplication([])
