@@ -146,6 +146,11 @@ class DataModel:
         self.nscales = len(self.scalesList)
         self.nSections = self.n_sections()
 
+    def numCorrSpots(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return len(self.snr_components())
+
     def set_t_scaling(self, dt):
         self._data['data']['t_scaling'] = dt
 
@@ -1164,6 +1169,7 @@ class DataModel:
 
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
+        logger.info('caller: %s...' % inspect.stack()[1].function)
         assert isinstance(index, int)
         logger.info(f'Setting Current Layer #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index

@@ -9,13 +9,15 @@ import neuroglancer as ng
 import numpy as np
 import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
-    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy
-from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal
-from qtpy.QtGui import QPainter, QFont, QPixmap
+    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
+    QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup
+from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent
+from qtpy.QtGui import QPainter, QFont, QPixmap, QColor
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import getOpt
 from src.viewer_em import EMViewer
+from src.viewer_ma import MAViewer
 from src.helpers import print_exception
 from src.ui.snr_plot import SnrPlot
 from src.ui.mini_view import MiniView
@@ -24,6 +26,7 @@ from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
 from src.ui.sliders import DoubleSlider
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
+from src.ui.toggle_switch import ToggleSwitch
 
 
 __all__ = ['ProjectTab']
@@ -44,18 +47,26 @@ class ProjectTab(QWidget):
         self.datamodel = datamodel
         self.setUpdatesEnabled(True)
         self.webengine = QWebEngineView()
-        self.webengine.setMouseTracking(True)
-        self.webengine.setFocusPolicy(Qt.StrongFocus)
+        # self.webengine.setMouseTracking(True)
+        # self.webengine.setFocusPolicy(Qt.StrongFocus)
         self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
         self.initUI_plot()
-        # self.initUI_mini_view()
         self.initUI_tab_widget()
         self._tabs.currentChanged.connect(self._onTabChange)
+        self.manAlignBufferRef = []
+        self.manAlignBufferBase = []
+        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
+                          '#aaa672', '#152c74', '#404f74',
+                          '#f3e375', '#5c4ccc', '#d6acd6',
+                          '#aaa672', '#152c74', '#404f74']
 
         self.bookmark_tab = 0
-
+        self.MA_ref_cscale = None
+        self.MA_ref_zoom = None
+        self.MA_base_cscale = None
+        self.MA_base_zoom = None
 
     def _onTabChange(self, index=None):
         if index == None:
@@ -68,7 +79,7 @@ class ProjectTab(QWidget):
             pass
         if index == 2:
             # self.updateJsonWidget()
-            cfg.project_tab.treeview_model.jumpToLayer()
+            self.treeview_model.jumpToLayer()
         if index == 3:
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()
@@ -90,6 +101,33 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self):
         caller = inspect.stack()[1].function
+        if cfg.MP_MODE:
+            # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
+            self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
+            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_Stage)
+            self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
+            self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
+            self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
+            self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+
+            #Critical Only connect to one of the two interconnected widgets. Do not connect stage.
+            self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            # self.MA_viewer_base.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            self.MA_viewer_stage.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
+            self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
+            self.MA_viewer_ref.signals.stateChanged.connect(self.updateMA_base_state)
+            self.MA_viewer_base.signals.stateChanged.connect(self.updateMA_ref_state)
+            self.MA_viewer_base.initViewer()
+            self.MA_viewer_ref.initViewer()
+            self.MA_viewer_stage.initViewer()
+            #----
+            # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
+            # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
+            # self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
+            return
         # logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
         if cfg.data.is_aligned_and_generated():
@@ -99,30 +137,34 @@ class ProjectTab(QWidget):
 
         if caller != '_onGlobTabChange':
             logger.critical(f'\n\nInitializing Neuroglancer (caller: {inspect.stack()[1].function})...\n')
-            if cfg.data:
-                cfg.emViewer = self.viewer = EMViewer(name=os.path.basename(cfg.data.dest()))
-                self.updateNeuroglancer()
-                cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-                cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-                cfg.emViewer.signals.mpUpdate.connect(cfg.main_window.dataUpdateWidgets)
-            self.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
+            cfg.emViewer = self.viewer = EMViewer(webengine=self.webengine)
+            self.updateNeuroglancer()
+            cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            # cfg.emViewer.signals.mpUpdate.connect(cfg.main_window.dataUpdateWidgets)
+            # self.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url())) #----
             cfg.main_window.dataUpdateWidgets() #0204+
 
 
     def updateNeuroglancer(self):
         caller = inspect.stack()[1].function
-        if caller != 'initNeuroglancer':
-            logger.critical(f'Updating Neuroglancer Viewer (caller: {caller})')
+        logger.info(f'Updating Neuroglancer Viewer (caller: {caller})')
         if cfg.MP_MODE:
-            cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(requested='xy'), matchpoint=True)
-            self.setZmag(val=15)
-        elif cfg.data['ui']['arrangement'] == 'stack':
-            cfg.main_window.rb0.setChecked(True)
-            cfg.emViewer.initViewerSlim(nglayout=self.get_layout())
-        elif cfg.data['ui']['arrangement'] == 'comparison':
-            cfg.main_window.rb1.setChecked(True)
-            cfg.emViewer.initViewerSbs(nglayout=self.get_layout(), matchpoint=False)
+            # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
+            # self.MA_viewer_ref = MAViewer(role='ref')
+            # self.MA_viewer_base = MAViewer(role='base')
+            # self.MA_viewer_stage = MAViewer(role='base')
+            self.MA_viewer_base.initViewer()
+            self.MA_viewer_ref.initViewer()
+            self.MA_viewer_stage.initViewer()
+            #----
+            # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
+            # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
+            # self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
+            return
+            # self.setZmag(val=15)
+        else:
+            cfg.emViewer.initViewer()
 
 
         # if not cfg.MP_MODE:
@@ -131,7 +173,8 @@ class ProjectTab(QWidget):
         #     if show:
         #         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
 
-        # self.slotUpdateZoomSlider()
+        # self.slotUpdate
+        # Slider()
 
         state = copy.deepcopy(cfg.emViewer.state)
         for layer in state.layers:
@@ -210,35 +253,14 @@ class ProjectTab(QWidget):
         self.ng_gl.addWidget(self.webengine, 0, 0, 4, 5)
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
+        self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
         self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 4, 5)
         self._overlayLab = QLabel()
-        self._overlayLab.setObjectName('_overlayLab')
+        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 28px;""")
         self._overlayLab.hide()
-        self.lab_name = QLabel('Name :')
-        self.lab_name.setStyleSheet('font-weight: 650;')
-        self.lab_snr = QLabel('SNR: :')
-        self.lab_skipped = QLabel('Skipped Layers : []')
-        self.lab_match_point = QLabel('Match Point Layers : []')
 
-        self._layer_details = (
-            self.lab_name,
-            self.lab_snr,
-            self.lab_skipped,
-            self.lab_match_point,
-        )
-        for layer in self._layer_details:
-            layer.setStyleSheet('''
-                color: #ffe135;
-                font-size: 9px;
-                background-color: rgba(0,0,0,.36);
-                margin: 1px 1px 1px 1px;
-                border-width: 0px;
-            ''')
-            layer.setFixedWidth(170)
-            layer.setWordWrap(True)
-            layer.setContentsMargins(0,0,0,0)
 
         '''AFM/CAFM Widget'''
         self.afm_widget_ = QTextEdit()
@@ -312,7 +334,7 @@ class ProjectTab(QWidget):
         self.csALL.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.csALL.setLayout(gl)
 
-        self.cspotSlider = QSlider(Qt.Orientation.Vertical, self)
+        self.cspotSlider = QSlider(Qt.Orientation.Vertical)
         self.cspotSlider.setRange(36,256)
         start_size = 120
         self.cspotSlider.setValue(start_size)
@@ -353,7 +375,6 @@ class ProjectTab(QWidget):
             background-color: rgba(0,0,0,.24);
             color: #f3f6fb;
             padding: 3px;
-            border-width: 1px;
             """)
         # self.detailsSection.hide()
 
@@ -382,7 +403,6 @@ class ProjectTab(QWidget):
             background-color: rgba(0,0,0,.24);
             color: #f3f6fb;
             padding: 3px;
-            border-width: 1px;
             """)
         self.detailsAFM.hide()
 
@@ -410,7 +430,6 @@ class ProjectTab(QWidget):
             background-color: rgba(0,0,0,.24);
             color: #f3f6fb;
             padding: 3px;
-            border-width: 1px;
             """)
         # self.detailsSNR.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.detailsSNR.hide()
@@ -490,15 +509,8 @@ class ProjectTab(QWidget):
         self.updateUISpacing()
         self.ng_browser_container.setLayout(self.ng_gl)
 
-        # hbl.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-
-
-        # self.zoomSlider = QSlider(Qt.Orientation.Vertical, self)
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        # self.zoomSlider.set
-        # self.zoomSlider.setMaximum(8.0)
-        # self.zoomSlider.setMaximum(100)
-        self.zoomSlider.setMaximum(5)
+        self.zoomSlider.setMaximum(4)
         self.zoomSlider.setMinimum(0.1)
         # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
         self.zoomSlider.sliderMoved.connect(self.onZoomSlider)
@@ -542,11 +554,212 @@ class ProjectTab(QWidget):
         vbl.addWidget(VerticalLabel('Z-Mag:'))
         self.ZdisplaySliderAndLabel.setLayout(vbl)
 
+        self.MA_webengine_ref = QWebEngineView()
+        self.MA_webengine_base = QWebEngineView()
+        self.MA_webengine_Stage = QWebEngineView()
+        # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
+        # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
+        # self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_Stage)
+        self.MA_webengine_ref.setMinimumWidth(200)
+        self.MA_webengine_base.setMinimumWidth(200)
+        self.MA_webengine_Stage.setMinimumWidth(128)
+        self.MA_webengine_Stage.setMinimumHeight(128)
+        # self.MA_webengine_ref.setMouseTracking(True)
+        # self.MA_webengine_base.setMouseTracking(True)
+        # self.MA_webengine_Stage.setMouseTracking(True)
+        # self.MA_webengine_ref.setMinimumSize(QSize(300,300))
+        # self.MA_webengine_base.setMinimumSize(QSize(300,300))
+        # self.MA_webengine_Stage.setMinimumSize(QSize(300,300))
+
+        # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
+        # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
+        # self.MA_webengine_Stage.setFocusPolicy(Qt.StrongFocus)
+
+        # DONT CHANGE----------------------
+        # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+        # self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
+        # self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
+        # self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
+        # self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+        # DONT CHANGE----------------------
+
+
+        # MA Stage Buffer Widget
+        self.MA_stageBufferRef = QLabel('Reference')
+        self.MA_stageBufferRef.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
+        self.MA_stageBufferBase = QLabel('Base')
+        self.MA_stageBufferBase.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
+
+        self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.installEventFilter(self)
+        self.MA_ptsListWidget_ref.itemClicked.connect(self.refListItemClicked)
+
+        self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.installEventFilter(self)
+        self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
+
+
+
+        self.gb_actionsMA = QGroupBox('Actions')
+        fl_actionsMA = QFormLayout()
+
+        self.gb_actionsMA.setLayout(fl_actionsMA)
+
+
+        lab = QLabel('Method: ')
+        tip = 'Automatic Alignment using SWIM'
+        self.rbAuto = QRadioButton('Automatic')
+        # self.rb0.setStyleSheet('font-size: 11px')
+        self.rbAuto.setStatusTip(tip)
+        self.rbAuto.setChecked(True)
+        self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def fn():
+            if self.rbAuto.isChecked():
+                cfg.data.set_selected_method('Auto SWIM Align')
+            else:
+                cfg.data.set_selected_method('Match Point Align')
+        self.rbAuto.clicked.connect(fn)
+
+        tip = 'Align by Manual Point Selection'
+        # self.rb1 = QRadioButton('Ref | Curr')
+        # self.rb1 = QRadioButton('Compare')
+        # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
+        self.rbMan = QRadioButton('Manual')
+        # self.rb1.setStyleSheet('font-size: 11px')
+        self.rbMan.setStatusTip(tip)
+        self.rbMan.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def fn():
+            if self.rbMan.isChecked():
+                cfg.data.set_selected_method('Match Point Align')
+            else:
+                cfg.data.set_selected_method('Auto SWIM Align')
+        self.rbMan.clicked.connect(fn)
+
+        self.rbMethodGroup = QButtonGroup()
+        self.rbMethodGroup.addButton(self.rbAuto)
+        self.rbMethodGroup.addButton(self.rbMan)
+        self.rbMethodGroup.setExclusive(True)
+
+        #tag
+        '''
+        Alignment Method (displayed):
+        Alignment Method (next run): '''
+
+        w = QWidget()
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(lab)
+        hbl.addWidget(self.rbAuto)
+        hbl.addWidget(self.rbMan)
+        w.setLayout(hbl)
+        fl_actionsMA.addWidget(w)
+
+
+
+
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        w = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.MA_stageBufferRef)
+        vbl.addWidget(self.MA_ptsListWidget_ref)
+        w.setLayout(vbl)
+        hbl.addWidget(w)
+        w = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.MA_stageBufferBase)
+        vbl.addWidget(self.MA_ptsListWidget_base)
+        w.setLayout(vbl)
+        hbl.addWidget(w)
+
+        self.MA_sbw = QWidget() # make the widget
+        self.MA_sbw.setLayout(hbl)
+
+
+        '''MA Stage area widgets'''
+        # MA Stage Widget
+        self.MA_stage = QWidget()
+        self.MA_stage.setMinimumWidth(32)
+        # self.MA_stage.setMaximumWidth(500)
+        # self.MA_stage.setMaximumWidth(200)
+
+        txt = '⇧ + Click - Select at least 3 and up to 7 corresponding points'
+        self.msg_MAinstruct = QLabel()
+        self.msg_MAinstruct.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.msg_MAinstruct.setAlignment(Qt.AlignCenter)
+        # self.msg_MAinstruct.setStyleSheet('color: #1b1e23; font-weight: 400;font-size:12px;')
+        self.msg_MAinstruct.setStyleSheet(
+            """
+            color: #ffe135; 
+            background-color: rgba(0,0,0,.24); 
+            font-weight: 600;
+            text-align: center;
+            padding: 3px;
+            """)
+        # self.afmClabel.setAutoFillBackground(False)
+        # self.afmClabel.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.msg_MAinstruct.setText(txt)
+        self.msg_MAinstruct.setFixedHeight(30)
+        self.msg_MAinstruct.setFixedWidth(430)
+
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.MA_webengine_Stage)
+        # vbl.addWidget(self.MA_sbw, alignment=Qt.AlignmentFlag.AlignBottom)
+        vbl.addWidget(self.MA_sbw)
+        #tag
+
+
+        self.MA_stage.setLayout(vbl)
+
+
+        self.MA_gl = QGridLayout()
+        self.MA_gl.setContentsMargins(0,0,0,0)
+
+        w = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.MA_webengine_ref)
+        w.setLayout(vbl)
+        self.MA_gl.addWidget(w, 0, 0, 4, 2)
+
+        w = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.MA_webengine_base)
+        w.setLayout(vbl)
+        self.MA_gl.addWidget(w, 0, 2, 4, 2)
+
+        self.MA_gl.addWidget(self.msg_MAinstruct, 2, 1, 1, 2)
+
+        # self.MA_gl.addWidget(self.MA_stage, alignment=Qt.AlignmentFlag.AlignBottom)
+
+        self.MA_widget = QWidget()
+        self.MA_widget.setLayout(self.MA_gl)
+        # self.MA_widget.hide()
+
+        self.MA_splitter = QSplitter()
+        self.MA_splitter.setHandleWidth(2)
+        self.MA_splitter.addWidget(self.MA_widget)
+        self.MA_splitter.addWidget(self.MA_stage)
+        self.MA_splitter.setCollapsible(0, False)
+        self.MA_splitter.setCollapsible(1, False)
+        self.MA_splitter.setSizes([.75*cfg.WIDTH, .25*cfg.WIDTH])
+        self.MA_splitter.hide()
+
+        self.weSplitter = QSplitter(Qt.Orientation.Horizontal)
+        self.weSplitter.addWidget(self.ng_browser_container)
+        self.weSplitter.addWidget(self.MA_splitter)
+        self.weSplitter.setCollapsible(0, False)
+        self.weSplitter.setCollapsible(1, False)
+
         hbl = QHBoxLayout()
         hbl.setSpacing(1)
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.ngVertLab)
-        hbl.addWidget(self.ng_browser_container)
+        hbl.addWidget(self.weSplitter)
         # hbl.addWidget(self.zoomSlider)
         # hbl.addWidget(self.crossSectionOrientationSliderAndLabel)
         hbl.addWidget(self.ZdisplaySliderAndLabel)
@@ -554,6 +767,226 @@ class ProjectTab(QWidget):
         self.ng_browser_container_outer = QWidget()
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
         self.ng_browser_container_outer.setLayout(hbl)
+
+    def refListItemClicked(self, qmodelindex):
+        item = self.MA_ptsListWidget_ref.currentItem()
+        logger.info(f"Selected {item.text()}")
+
+    def baseListItemClicked(self, qmodelindex):
+        item = self.MA_ptsListWidget_base.currentItem()
+        logger.info(f"Selected {item.text()}")
+
+
+    def updateMAlistRef(self):
+        caller = inspect.stack()[1].function
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        calname = str(calframe[1][3])
+        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+
+        # mps = [(p[1], p[2]) for p in [p.point.tolist() for p in self.MA_viewer_ref.pts.values()]]
+        self.MA_ptsListWidget_ref.clear()
+        for key in self.MA_viewer_ref.pts.keys():
+            p = self.MA_viewer_ref.pts[key]
+            _, x, y = p.point.tolist()
+            # item = QListWidgetItem('%.1f, %.1f' %(x,y))
+            item = QListWidgetItem('%.1f, %.1f' %(x,y))
+            item.setBackground(QColor(key))
+            self.MA_ptsListWidget_ref.addItem(item)
+
+    def updateMAlistBase(self):
+        caller = inspect.stack()[1].function
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        calname = str(calframe[1][3])
+        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+
+        # mps = [(p[1], p[2]) for p in [p.point.tolist() for p in self.MA_viewer_base.pts.values()]]
+        self.MA_ptsListWidget_base.clear()
+        for key in self.MA_viewer_base.pts.keys():
+            p = self.MA_viewer_base.pts[key]
+            _, x, y = p.point.tolist()
+            item = QListWidgetItem('%.1f, %.1f' % (x, y))
+            item.setBackground(QColor(key))
+            self.MA_ptsListWidget_base.addItem(item)
+
+
+    def updateMA_ref_state(self):
+        caller = inspect.stack()[1].function
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        calname = str(calframe[1][3])
+        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+
+        if caller != 'on_state_change':
+            if self.MA_webengine_ref.isVisible():
+                if self.MA_viewer_base.state.cross_section_scale:
+                    if self.MA_viewer_base.state.cross_section_scale < 10_000:
+                        pos = self.MA_viewer_base.state.position
+                        zoom = self.MA_viewer_base.state.cross_section_scale
+                        if isinstance(pos,np.ndarray) or isinstance(zoom,np.ndarray):
+                            state = copy.deepcopy(self.MA_viewer_ref.state)
+                            if isinstance(pos, np.ndarray):
+                                state.position = self.MA_viewer_base.state.position
+                            if isinstance(zoom, float):
+                                state.cross_section_scale = self.MA_viewer_base.state.cross_section_scale
+                            self.MA_viewer_ref.set_state(state)
+
+
+    def updateMA_base_state(self):
+        caller = inspect.stack()[1].function
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        calname = str(calframe[1][3])
+        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+
+        if caller != 'on_state_change':
+            if self.MA_webengine_base.isVisible():
+                if self.MA_viewer_ref.state.cross_section_scale:
+                    if self.MA_viewer_ref.state.cross_section_scale < 10_000:
+                        pos = self.MA_viewer_ref.state.position
+                        zoom = self.MA_viewer_ref.state.cross_section_scale
+                        if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
+                            state = copy.deepcopy(self.MA_viewer_base.state)
+                            if isinstance(pos, np.ndarray):
+                                state.position = self.MA_viewer_ref.state.position
+                            if isinstance(zoom, float):
+                                state.cross_section_scale = self.MA_viewer_ref.state.cross_section_scale
+                            self.MA_viewer_base.set_state(state)
+
+
+    def deleteMpRef(self):
+        logger.info('Deleting A Reference Image Manual Correspondence Point from Buffer...')
+        cfg.main_window.hud.post('Deleting A Reference Image Manual Correspondence Point from Buffer...')
+        for item in self.MA_ptsListWidget_ref.selectedItems():
+            self.MA_ptsListWidget_ref.takeItem(self.MA_ptsListWidget_ref.row(item))
+        if self.MA_ptsListWidget_ref.currentItem():
+            del_key = self.MA_ptsListWidget_ref.currentItem().background().color().name()
+            logger.info('del_key is %s' % del_key)
+            self.MA_viewer_ref.pts.pop(del_key)
+            self.MA_viewer_ref.update_annotations()
+
+    def deleteMpBase(self):
+        logger.info('Deleting A Base Image Manual Correspondence Point from Buffer...')
+        cfg.main_window.hud.post('Deleting A Base Image Manual Correspondence Point from Buffer...')
+        for item in self.MA_ptsListWidget_base.selectedItems():
+            self.MA_ptsListWidget_base.takeItem(self.MA_ptsListWidget_base.row(item))
+        if self.MA_ptsListWidget_base.currentItem():
+            del_key = self.MA_ptsListWidget_base.currentItem().background().color().name()
+            logger.info('del_key is %s' % del_key)
+            self.MA_viewer_base.pts.pop(del_key)
+            self.MA_viewer_base.update_annotations()
+
+    def deleteAllMpRef(self):
+        logger.info('Deleting All Reference Image Manual Correspondence Points from Buffer...')
+        cfg.main_window.hud.post('Deleting All Reference Image Manual Correspondence Points from Buffer...')
+        self.MA_viewer_ref.pts.clear()
+        self.MA_ptsListWidget_ref.clear()
+        self.MA_viewer_ref.update_annotations()
+
+    def deleteAllMpBase(self):
+        logger.info('Deleting All Base Image Manual Correspondence Points from Buffer...')
+        cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
+        self.MA_viewer_base.pts.clear()
+        self.MA_ptsListWidget_base.clear()
+        self.MA_viewer_base.update_annotations()
+
+    def deleteAllMp(self):
+        logger.info('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
+        cfg.main_window.hud.post('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
+        self.MA_viewer_ref.pts.clear()
+        self.MA_ptsListWidget_ref.clear()
+        self.MA_viewer_base.pts.clear()
+        self.MA_ptsListWidget_base.clear()
+        self.MA_viewer_ref.update_annotations()
+        self.MA_viewer_base.update_annotations()
+
+
+
+
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_ref:
+            menu = QMenu()
+            self.deleteMpRefAction = QAction('Delete')
+            self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
+            self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
+            menu.addAction(self.deleteMpRefAction)
+            self.deleteAllMpRefAction = QAction('Delete All Ref Pts')
+            self.deleteAllMpRefAction.setStatusTip('Delete all reference manual correspondence points')
+            self.deleteAllMpRefAction.triggered.connect(self.deleteAllMpRef)
+            menu.addAction(self.deleteAllMpRefAction)
+            self.deleteAllPtsAction0 = QAction('Delete All Pts')
+            self.deleteAllPtsAction0.setStatusTip('Delete all manual correspondence points')
+            self.deleteAllPtsAction0.triggered.connect(self.deleteAllMp)
+            menu.addAction(self.deleteAllPtsAction0)
+            if menu.exec_(event.globalPos()):
+                item = source.itemAt(event.pos())
+            return True
+        elif event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_base:
+            menu = QMenu()
+            self.deleteMpBaseAction = QAction('Delete')
+            self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
+            self.deleteMpBaseAction.triggered.connect(self.deleteMpBase)
+            menu.addAction(self.deleteMpBaseAction)
+            self.deleteAllMpBaseAction = QAction('Delete All Base Pts')
+            self.deleteAllMpBaseAction.setStatusTip('Delete all base manual correspondence points')
+            self.deleteAllMpBaseAction.triggered.connect(self.deleteAllMpBase)
+            menu.addAction(self.deleteAllMpBaseAction)
+            self.deleteAllPtsAction1 = QAction('Delete All Pts')
+            self.deleteAllPtsAction1.setStatusTip('Delete all manual correspondence points')
+            self.deleteAllPtsAction1.triggered.connect(self.deleteAllMp)
+            menu.addAction(self.deleteAllPtsAction1)
+            if menu.exec_(event.globalPos()):
+                item = source.itemAt(event.pos())
+            return True
+        return super().eventFilter(source, event)
+
+    def onEnterManualMode(self):
+        logger.critical('')
+        self.bookmark_tab = self._tabs.currentIndex()
+        self._tabs.setCurrentIndex(0)
+        self.ng_browser_container.hide()
+        self.MA_splitter.show()
+
+        #Todo update listwidgets before entering manual alignment mode
+        self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
+        self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
+        self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_Stage)
+        self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+        self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
+        self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
+        self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
+        self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+        self.MA_viewer_ref.initViewer()
+        self.MA_viewer_base.initViewer()
+        self.MA_viewer_stage.initViewer()
+
+        # self.updateMAviewers() #----
+        # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
+        # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
+        # self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
+        # self.MA_viewer_stage.initViewer(role='stage')
+        self.ngVertLab.setText('Manual Alignment Mode')
+        self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
+
+    def updateMAviewers(self):
+        self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
+        self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
+        self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
+
+
+    def onExitManualMode(self):
+        logger.critical('')
+        self.deleteAllMp()
+        self._tabs.setCurrentIndex(self.bookmark_tab)
+        self.ng_browser_container.show()
+        # self.MA_widget.hide()
+        self.MA_splitter.hide()
+        self.ngVertLab.setStyleSheet('')
+        self.ngVertLab.setText('Neuroglancer 3DEM View')
+        self.initNeuroglancer()
+
 
     def updateUISpacing(self):
         isUiControls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
@@ -566,34 +999,50 @@ class ProjectTab(QWidget):
             self.spreadW3.setFixedSize(10, 1)
 
     def slotUpdateZoomSlider(self):
+        # Lets only care about REF <--> slider
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
-            val = cfg.emViewer.state.cross_section_scale
-            if val:
-                if val != 0:
-                    new_val = float(sqrt(val))
-                    # logger.info(f'val = {val}, new_val = {new_val}')
-                    self.zoomSlider.setValue(new_val)
+            if cfg.MP_MODE:
+                val = self.MA_viewer_ref.state.cross_section_scale
+                if val:
+                    if val != 0:
+                        new_val = float(sqrt(val))
+                        # logger.info(f'val = {val}, new_val = {new_val}')
+                        self.zoomSlider.setValue(new_val)
+            else:
+                val = cfg.emViewer.state.cross_section_scale
+                if val:
+                    if val != 0:
+                        new_val = float(sqrt(val))
+                        # logger.info(f'val = {val}, new_val = {new_val}')
+                        self.zoomSlider.setValue(new_val)
         except:
             print_exception()
 
 
     def onZoomSlider(self):
-        logger.info('')
         caller = inspect.stack()[1].function
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        calname = str(calframe[1][3])
+
+        logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+
         if caller not in  ('slotUpdateZoomSlider', 'setValue'):
-            # logger.info(f'caller: {caller}')
-            try:
+            if cfg.MP_MODE:
                 val = self.zoomSlider.value()
-                state = copy.deepcopy(cfg.emViewer.state)
-                # new_val = log2(1 + val)
-                # new_val = val * val
-                # logger.info(f'val = {val}, new_val = {new_val}')
+                state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.cross_section_scale = val * val
-                cfg.emViewer.set_state(state)
-            except:
-                print_exception()
+                self.MA_viewer_ref.set_state(state)
+            else:
+                try:
+                    val = self.zoomSlider.value()
+                    state = copy.deepcopy(cfg.emViewer.state)
+                    state.cross_section_scale = val * val
+                    cfg.emViewer.set_state(state)
+                except:
+                    print_exception()
 
 
     def setZmag(self, val):

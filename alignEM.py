@@ -88,8 +88,7 @@ def tracefunc(frame, event, arg):
             else:
                 func_name = frame.f_code.co_name
 
-            func_name = '{name:->{indent}s}()'.format(
-                indent=tracefunc.stack_level * 2, name=func_name)
+            func_name = '{name:->{indent}s}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
             txt = '{: <40} # {}, {}'.format(
                 func_name, frame.f_code.co_filename, frame.f_lineno)
             print(txt)

@@ -132,6 +132,8 @@ class MainWindow(QMainWindow):
         self.setInteractive.connect(self.restore_interactivity)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
+        self.activateWindow()
+
         self.tell('To Relaunch on Lonestar6:\n\n  cd $WORK/swift-ir\n  source tacc_boostrap\n')
 
         if not cfg.NO_SPLASH:
@@ -146,7 +148,8 @@ class MainWindow(QMainWindow):
     def initSizeAndPos(self, width, height):
         self.resize(width, height)
         qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().center()
+        cp = QDesktopWidget().availableGeometry().center() # cp PyQt5.QtCore.QPoint
+        # cp.setX(cp.x() - 200)
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
@@ -258,12 +261,9 @@ class MainWindow(QMainWindow):
             if ng.is_server_running():
                 logger.info('Stopping Neuroglancer...')
                 ng.server.stop()
-            if cfg.project_tab:
-                # cfg.project_tab.initNeuroglancer(matchpoint=matchpoint)
+            elif cfg.project_tab:
                 cfg.project_tab.initNeuroglancer()
-                # cfg.project_tab.slotUpdateZoomSlider()
-                # cfg.project_tab.webengine.setFocus()
-            if cfg.zarr_tab:
+            elif cfg.zarr_tab:
                 cfg.zarr_tab.load()
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_AFTER)
@@ -1646,35 +1646,23 @@ class MainWindow(QMainWindow):
                         print_exception()
 
 
-                if cfg.project_tab._tabs.currentIndex() == 0:
+                # if cfg.project_tab._tabs.currentIndex() == 0:
                     # if self.rb1.isChecked():
+
+                elif cfg.data.skipped():
+                    cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+                    cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
+                    cfg.project_tab._overlayLab.show()
+                    cfg.project_tab._overlayRect.show()
+                elif ng_layer == 0:
+                    cfg.project_tab._overlayLab.setText('No Reference')
+                    cfg.project_tab._overlayLab.show()
+                else:
                     cfg.project_tab._overlayRect.hide()
                     cfg.project_tab._overlayLab.hide()
-                    if ng_layer == len(cfg.data):
-                        self.layer_details.setText('')
-                        self.clearAffineWidget()
-                        self._sectionSlider.setValue(self._sectionSlider.maximum()) #0119+
-                        self._jumpToLineedit.setText('-1')
-                        return
-                    elif cfg.data.skipped():
-                        cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                        cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
-                        cfg.project_tab._overlayLab.show()
-                        cfg.project_tab._overlayRect.show()
-                    elif ng_layer == 0:
-                        cfg.project_tab._overlayLab.setText('No Reference')
-                        cfg.project_tab._overlayLab.show()
-
-                # if not cfg.MP_MODE:
-                #     cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
 
                 if self.detailsWidget.isVisible():
                     self.updateDetailsWidget()
-
-                #0213+ not sure, just a guess
-                # if cfg.main_window.detachedNg.isVisible():
-                #     logger.critical('detached Neuroglancer is visible! Setting its page...')
-                #     cfg.main_window.detachedNg.setUrl(url=cfg.emViewer.get_viewer_url())
 
                 cur = cfg.data.layer()
                 if self.notes.isVisible():
@@ -1727,19 +1715,13 @@ class MainWindow(QMainWindow):
                     txt_ = f"""
                     Filename:  <b><span style='color: #ffe135;'>{cfg.data.filename_basename()}</span></b><br>
                     Reference:  <b><span style='color: #ffe135;'>{cfg.data.reference_basename()}</span></b><br>
-                    Last Aligned: {cfg.data.datetime().rjust(23)}
-                    """
+                    Last Aligned: {cfg.data.datetime().rjust(23)}"""
                     method = cfg.data.selected_method()
-                    if method in ('Auto Swim Align','Auto-SWIM'):
-                        txt_ += '<br>Method:&nbsp;Automatic SWIM'
-                    elif method in ('Match Point Align', 'Manual-Hint'):
-                        txt_ += '<br>Method:&nbsp;Manual, Hint'
-                    elif method == 'Manual-Strict':
-                        txt_ += '<br>Method:&nbsp;Manual, Strict'
-
+                    if method in ('Auto Swim Align','Auto-SWIM'):        txt_ += '<br>Method:&nbsp;Automatic SWIM'
+                    elif method in ('Match Point Align', 'Manual-Hint'): txt_ += '<br>Method:&nbsp;Manual, Hint'
+                    elif method == 'Manual-Strict':                      txt_ += '<br>Method:&nbsp;Manual, Strict'
                     txt_ += f"""<br>Reject: {('[ ]', 
                     "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
-
                     cfg.project_tab.detailsSection.setText(txt_)
 
                 if cfg.project_tab.detailsAFM.isVisible():
@@ -1796,25 +1778,21 @@ class MainWindow(QMainWindow):
 
                         cfg.project_tab.detailsSNR.setText(txt)
 
-
-
-
-                else:
-                    try:     self._jumpToLineedit.setText(str(cur))
-                    except:  logger.warning('Current Layer Widget Failed to Update')
-                    try:     self._skipCheckbox.setChecked(cfg.data.skipped())
-                    except:  logger.warning('Skip Toggle Widget Failed to Update')
-                    try:     self._whiteningControl.setValue(cfg.data.whitening())
-                    except:  logger.warning('Whitening Input Widget Failed to Update')
-                    try:     self._swimWindowControl.setValue(cfg.data.swim_window() * 100.)
-                    except:  logger.warning('Swim Input Widget Failed to Update')
-                    try:
-                        if cfg.data.null_cafm():
-                            self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
-                        else:
-                            self._polyBiasCombo.setCurrentText('None')
-                    except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
-                    # cfg.project_tab.slotUpdateZoomSlider()
+                try:     self._jumpToLineedit.setText(str(cur))
+                except:  logger.warning('Current Layer Widget Failed to Update')
+                try:     self._skipCheckbox.setChecked(cfg.data.skipped())
+                except:  logger.warning('Skip Toggle Widget Failed to Update')
+                try:     self._whiteningControl.setValue(cfg.data.whitening())
+                except:  logger.warning('Whitening Input Widget Failed to Update')
+                try:     self._swimWindowControl.setValue(cfg.data.swim_window() * 100.)
+                except:  logger.warning('Swim Input Widget Failed to Update')
+                try:
+                    if cfg.data.null_cafm():
+                        self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
+                    else:
+                        self._polyBiasCombo.setCurrentText('None')
+                except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+                # cfg.project_tab.slotUpdateZoomSlider()
 
 
     def updateNotes(self):
@@ -2044,7 +2022,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def jump_to(self, requested) -> None:
         logger.info('')
-        if cfg.project_tab:
+        if self._isProjectTab():
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
@@ -2056,7 +2034,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def jump_to_layer(self) -> None:
         logger.info('')
-        if cfg.project_tab:
+        if self._isProjectTab():
             requested = int(self._jumpToLineedit.text())
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
@@ -2065,6 +2043,14 @@ class MainWindow(QMainWindow):
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.table.selectRow(requested)
             self._sectionSlider.setValue(requested)
+
+    def jump_to_minimal(self):
+        logger.info('')
+        if self._isProjectTab():
+            cfg.data.set_layer(requested)
+
+    def setSlider(self, val:int):
+        self._sectionSlider.setValue(val)
 
 
     def jump_to_slider(self):
@@ -2083,7 +2069,7 @@ class MainWindow(QMainWindow):
         if cfg.emViewer: # ? check this
             cfg.emViewer._layer = requested
         # logger.info(f'slider, requested: {requested}')
-        if cfg.project_tab:
+        if self._isProjectTab():
             if requested in range(len(cfg.data)):
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     logger.info('Jumping To Section #%d' % requested)
@@ -3057,7 +3043,7 @@ class MainWindow(QMainWindow):
         self.corrspot_q3.set_data(path=cfg.data.corr_spot_q3_path(s=s, l=l), snr=snr_vals[3])
 
 
-    def enterExitMatchPointMode(self):
+    def enterExitManAlignMode(self):
         #Todo REFACTOR
         logger.info('')
         if cfg.data:
@@ -3071,77 +3057,49 @@ class MainWindow(QMainWindow):
                 if cfg.MP_MODE == False:
                     if cfg.data.is_aligned_and_generated():
                         self.tell('Entering Manual Alignment Mode...')
-                        logger.critical('Entering Manual Alignment Mode...')
+
+                        del cfg.emViewer #0216+
+
+                        self.shutdownNeuroglancer()
+
+                        self.alignMatchPointAction.setText('Exit Manual Align Mode')
+
+                        logger.critical('End Manual Align')
                         cfg.MP_MODE = True
-                        cfg.project_tab.bookmark_tab = cfg.project_tab._tabs.currentIndex()
-                        cfg.project_tab._tabs.setCurrentIndex(0)
-                        cfg.project_tab.ngVertLab.setStyleSheet(
-                            'background-color: #1b1e23; '
-                            'color: #f3f6fb;'
-                        )
-                        # cfg.project_tab._tabs.currentWidget().setStyleSheet(
-                        #     'background-color: #1b1e23; '
-                        #     'color: #f3f6fb;'
-                        # )
-                        cfg.project_tab.ngVertLab.setText('Manual Alignment Mode')
-                        # cfg.project_tab._widgetArea_details.setVisible(False)
+                        self.cpanel.setVisible(False)
+                        self.matchpointControls.setVisible(True)
                         self.rb1.setChecked(True)
-                        self.rb0.setEnabled(False)
-                        self.rb1.setChecked(True)
+                        # self.rb0.setEnabled(False)
                         self._changeScaleCombo.setEnabled(False)
-                        # self.extra_header_text_label.setText('Match Point Mode')
-                        # self.extra_header_text_label.show()
-
-
-                        # self._forceHideControls()
-
-
-
-                        # self.corr_spot_thumbs.show()
+                        self._disableGlobTabs()
+                        for i in range(1, 4):
+                            cfg.project_tab._tabs.setTabEnabled(i, False)
                         self.matchpoint_text_snr.setText(cfg.data.snr_report())
 
-                        self.cpanel.hide()
-                        self.matchpointControls.show()
-                        self.dataUpdateWidgets()
                         self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
                         self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                        self._disableGlobTabs()
-                        if cfg.project_tab:
-                            for i in range(1, 4):
-                                cfg.project_tab._tabs.setTabEnabled(i, False)
-                        # cfg.project_tab.ng_layout = 'xy'
-                        # cfg.project_tab.initNeuroglancer(matchpoint=True)
-                        cfg.project_tab.initNeuroglancer()
-                        # self.hardRestartNg(matchpoint=True)
-                        # self.neuroglancer_configuration_1()
-                        # cfg.project_tab._widgetArea_details.setVisible(False)
-                        # cfg.project_tab.webengine.setFocus()
+                        self.dataUpdateWidgets()
+                        cfg.project_tab.onEnterManualMode()
+
                     else:
                         self.warn('Alignment must be generated before using Manual Point Alignment method.')
                 else:
                     logger.critical('Exiting Match Point Mode...')
-                    self.tell('Returning to Normal Mode...')
+                    self.tell('Exiting Manual Alignment Mode...')
+
+                    self.shutdownNeuroglancer()
+
                     cfg.MP_MODE = False
-                    self.cpanel.show()
-                    cfg.project_tab.ngVertLab.setStyleSheet('')
-                    # cfg.project_tab._tabs.currentWidget().setStyleSheet('')
-                    cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
-                    # cfg.project_tab._widgetArea_details.setVisible(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-                    # self.matchpointControlPanel.hide()
-                    self.matchpointControls.hide()
+                    self.alignMatchPointAction.setText('Align Manually')
+                    self.cpanel.setVisible(True)
+                    self.matchpointControls.setVisible(False)
                     self.enableAllTabs()
-                    cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
-                    self.rb0.setEnabled(True)
+                    # self.rb0.setEnabled(True)
                     self._changeScaleCombo.setEnabled(True)
-                    # self.extra_header_text_label.setText('')
-                    # self.extra_header_text_label.hide()
-                    self._forceShowControls()
-                    # self.hardRestartNg(matchpoint=False)
-                    # cfg.project_tab.initNeuroglancer(matchpoint=False)
-                    cfg.project_tab.initNeuroglancer()
-                    # self.neuroglancer_configuration_0()
+                    self.dataUpdateWidgets()
+                    cfg.project_tab.onExitManualMode()
+
                 self.updateToolbar()
-                # cfg.project_tab.updateNeuroglancer()
 
 
     def clear_match_points(self):
@@ -3565,6 +3523,8 @@ class MainWindow(QMainWindow):
 
         # self.updateNotes()
 
+        self.enableAllTabs() #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
+
         if self.globTabs.count() == 0:
             return
         # if caller in ('onStartProject','_setLastTab'):
@@ -3861,21 +3821,28 @@ class MainWindow(QMainWindow):
     def initMenu(self):
         '''Initialize Menu'''
         logger.info('')
+        #
+        # self.scManualAlign = QShortcut(QKeySequence('Ctrl+M'), self)
+        # self.scManualAlign.activated.connect(self.enterExitManAlignMode)
+
+
         self.action_groups = {}
         self.menu = self.menuBar()
-        self.menu.setNativeMenuBar(False)  # Fix for non-native menubar on macOS
+        self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
 
         fileMenu = self.menu.addMenu('File')
 
         self.newAction = QAction('&New Project...', self)
         self.newAction.triggered.connect(self.new_project)
         self.newAction.setShortcut('Ctrl+N')
+        self.addAction(self.newAction)
         fileMenu.addAction(self.newAction)
 
         self.openAction = QAction('&Open...', self)
         # self.openAction.triggered.connect(self.open_project)
         self.openAction.triggered.connect(self.open_project_new)
         self.openAction.setShortcut('Ctrl+O')
+        self.addAction(self.openAction)
         fileMenu.addAction(self.openAction)
 
         # self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
@@ -3900,6 +3867,7 @@ class MainWindow(QMainWindow):
         self.saveAction = QAction('&Save Project', self)
         self.saveAction.triggered.connect(self.save)
         self.saveAction.setShortcut('Ctrl+S')
+        self.addAction(self.saveAction)
         fileMenu.addAction(self.saveAction)
 
         self.savePreferencesAction = QAction('Save User Preferences', self)
@@ -3913,11 +3881,13 @@ class MainWindow(QMainWindow):
         self.refreshAction = QAction('&Refresh', self)
         self.refreshAction.triggered.connect(self.refreshTab)
         self.refreshAction.setShortcut('Ctrl+R')
+        self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
         self.exitAppAction = QAction('&Quit', self)
         self.exitAppAction.triggered.connect(self.exit_app)
         self.exitAppAction.setShortcut('Ctrl+Q')
+        self.addAction(self.exitAppAction)
         fileMenu.addAction(self.exitAppAction)
 
         viewMenu = self.menu.addMenu("View")
@@ -3996,18 +3966,16 @@ class MainWindow(QMainWindow):
         self.alignOneAction.triggered.connect(self.alignOne)
         alignMenu.addAction(self.alignOneAction)
 
-        self.alignForwardAction = QAction('Align Forward', self)
-        self.alignForwardAction.triggered.connect(self.alignRange)
-        alignMenu.addAction(self.alignForwardAction)
-
         self.alignMatchPointAction = QAction('Align Manually', self)
-        self.alignMatchPointAction.triggered.connect(self.enterExitMatchPointMode)
+        self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
         self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
+        # self.addAction(self.alignMatchPointAction)
 
         self.skipChangeAction = QAction('Toggle Skip', self)
         self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
         self.skipChangeAction.setShortcut('Ctrl+K')
+        self.addAction(self.skipChangeAction)
         alignMenu.addAction(self.skipChangeAction)
 
         self.showMatchpointsAction = QAction('Show Matchpoints', self)
@@ -5134,7 +5102,7 @@ class MainWindow(QMainWindow):
         with open('src/styles/cpanel.qss', 'r') as f:
             self.matchpointControls.setStyleSheet(f.read())
 
-        self.matchpointControls.setFixedSize(QSize(560,128))
+        self.matchpointControls.setFixedSize(QSize(560,120))
         self.matchpointControls.hide()
 
         mp_marker_lineweight_label = QLabel('Lineweight')
@@ -5157,7 +5125,7 @@ class MainWindow(QMainWindow):
         self.exit_matchpoint_button = QPushButton('Exit')
         self.exit_matchpoint_button.setStatusTip('Exit Manual Alignment Mode')
         self.exit_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.exit_matchpoint_button.clicked.connect(self.enterExitMatchPointMode)
+        self.exit_matchpoint_button.clicked.connect(self.enterExitManAlignMode)
         self.exit_matchpoint_button.setFixedSize(normal_button_size)
 
         self.realign_matchpoint_button = QPushButton('Realign\nSection')
@@ -6292,6 +6260,7 @@ class MainWindow(QMainWindow):
         self.main_panel.setLayout(vbl)
         # self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
         self.setCentralWidget(self.main_stack_widget)
+        # QShortcut(QKeySequence('Ctrl+M'), self.main_stack_widget, self.enterExitManAlignMode)
 
 
     def validateUserEnteredPath(self):
@@ -6425,13 +6394,13 @@ class MainWindow(QMainWindow):
 
     def updatePbar(self, x):
         self.pbar.setValue(x)
-        self.update()
+        self.repaint()
 
 
     def setPbarText(self, text: str):
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
-        self.update()
+        self.repaint()
 
 
     def showZeroedPbar(self):
@@ -6440,7 +6409,7 @@ class MainWindow(QMainWindow):
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
         self.pbar_widget.repaint()
-        self.update()
+        self.repaint()
 
 
     def back_callback(self):

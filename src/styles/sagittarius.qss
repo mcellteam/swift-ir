@@ -51,13 +51,6 @@ QToolBar#toolbar {
     background-color: #141414;
 }
 
-QWidget#_overlayRect {
-    background-color: rgba(0, 0, 0, 0.5);
-}
-QLabel#_overlayLab {
-    color: #FF0000;
-    font-size: 28px;
-}
 
 /* These should be the same */
 QStackedWidget#viewer_stack_widget { background-color: #004060;  }
