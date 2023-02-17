@@ -472,7 +472,8 @@ class alignment_process:
         psta_4x4 = pa
 
         # Set up a window size for match point alignment (1/32 of x dimension)
-        s_mp = int(siz[0] / 32.0)
+        # s_mp = int(siz[0] / 32.0) # size match point #orig
+        s_mp = int(siz[0] / 128.0) # size match point
 
         logger.info("  psta_1   = " + str(psta_1))
         logger.info("  psta_2x2 = " + str(psta_2x2))
@@ -526,7 +527,7 @@ class alignment_process:
             # First ingredient is to calculate the Affine matrix from match points alone
             ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, ad=self.align_dir)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
-            ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir)
+            ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir) # <-- CALL TO SWIM
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
@@ -977,22 +978,16 @@ class align_ingredient:
 
             # with open('/Users/joelyancey/mir_script_mp.log', 'w+') as f:
             #     f.write(self.mir_script_mp)
-
             o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script_mp)
-
-
             '''
             Example std out:
             ['AF  1.03643 -0.0030713 -44.2201  -0.00599598 0.972299 56.9541', 
             ' AI  0.964866 0.00304782 42.4928  0.00595014 1.02851 -58.3147', 'P5', '0 0', '255']
             '''
-
             mir_mp_out_lines = o['out'].strip().split('\n')
             mir_mp_err_lines = o['err'].strip().split('\n')
             self.mir_mp_out_lines = mir_mp_out_lines
             self.mir_mp_err_lines = mir_mp_err_lines
-
-
             # with open('/Users/joelyancey/mir_mp_out_lines.log', 'w+') as f:
             #     f.write(str(mir_mp_out_lines))
             # with open('/Users/joelyancey/mir_mp_err_lines.log', 'w+') as f:
@@ -1000,7 +995,7 @@ class align_ingredient:
 
             # Separate the results into a list of token lists
             afm = np.eye(2, 3, dtype=np.float32)
-            self.ww = (0.0, 0.0)
+            # self.ww = (0.0, 0.0)
 
             for line in mir_mp_out_lines:
                 logger.info("Line: " + str(line))
@@ -1015,8 +1010,6 @@ class align_ingredient:
                     afm[1, 0] = float(toks[4])
                     afm[1, 1] = float(toks[5])
                     afm[1, 2] = float(toks[6])
-
-
 
             self.afm = afm
             self.snr = np.zeros(len(self.psta[0]))
@@ -1055,9 +1048,9 @@ class align_ingredient:
 
             #  Otherwise, this is a swim window match ingredient
             #  Refine the afm via swim and mir
-            afm = self.afm
-            if afm is None:
-                afm = swiftir.identityAffine()
+            # afm = self.afm
+            # if afm is None:
+            #     afm = swiftir.identityAffine()
 
             afm = self.run_swim_c()
 

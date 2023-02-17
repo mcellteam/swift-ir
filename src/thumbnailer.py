@@ -61,8 +61,29 @@ class Thumbnailer:
         else:
             src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
             od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
-            dt = self.generate_thumbnails(
-                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, cpus=cpus)
+            rmdir = True if (start == 0) and (end == None) else False
+
+            baseFileNames = cfg.data.basefilenames()
+            if not rmdir:
+                #Special handling for corrspot files since they are variable in # and never 1:1 with project files
+                for i in range(start,end):
+                    old_thumbnails = glob(os.path.join(od, '*' + baseFileNames[i]))
+                    for tn in old_thumbnails:
+                        try:
+                            os.remove(tn)
+                        except:
+                            logger.warning('Error removing expired thumbnail: %s' % tn)
+
+            filenames = []
+            for i in range(start, end):
+                filenames.append(glob(os.path.join(src, '*' + baseFileNames[i])))
+
+            dt = self.generate_thumbnails(src=src, od=od,
+                                          rmdir=rmdir, prefix='',
+                                          start=start, end=end,
+                                          pbar_text=pbar_text, cpus=cpus,
+                                          filenames=filenames
+                                          )
             cfg.data.set_t_thumbs_spot(dt)
             cfg.main_window.tell('Discarding Full Size Correlation Spots...')
             try:
@@ -75,7 +96,18 @@ class Thumbnailer:
 
 
 
-    def generate_thumbnails(self, src, od, rmdir=False, prefix='', start=0, end=None, pbar_text='', cpus=None):
+    def generate_thumbnails(self,
+                            src,
+                            od,
+                            rmdir=False,
+                            prefix='',
+                            start=0,
+                            end=None,
+                            pbar_text='',
+                            cpus=None,
+                            filenames=None,
+                            target_size=cfg.TARGET_THUMBNAIL_SIZE
+                            ):
         if cpus == None:
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         caller = inspect.stack()[1].function
@@ -98,9 +130,10 @@ class Thumbnailer:
         if not os.path.exists(od):
             os.mkdir(od)
 
-        logger.critical(f'Thumbnail Scaling Factor:{scale_factor}, Target : {cfg.TARGET_THUMBNAIL_SIZE}')
+        logger.critical(f'Thumbnail Scaling Factor:{scale_factor}, Target : {target_size}')
         logger.info(f'start={start}, end={end}')
-        filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
+        if filenames == None:
+            filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text)

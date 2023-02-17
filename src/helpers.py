@@ -119,20 +119,16 @@ def delete_recursive(dir):
 
 
 
-
-
-
-
 def update_preferences_model():
     logger.info('Updating user preferences model...')
     cfg.settings.setdefault('neuroglancer', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_PANEL_BORDERS', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_ALIGNMENT_DETAILS', True)
-    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 7)
-    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 2)
+    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
+    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
@@ -740,12 +736,14 @@ def create_project_structure_directories(destination, scales) -> None:
         cfg.main_window.hud('Creating directories for %s...' % scale)
         src_path = os.path.join(subdir_path, 'img_src')
         aligned_path = os.path.join(subdir_path, 'img_aligned')
+        staged_path = os.path.join(subdir_path, 'img_staged')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
         history_path = os.path.join(subdir_path, 'history')
         try:
             os.makedirs(subdir_path)
             os.makedirs(src_path)
             os.makedirs(aligned_path)
+            os.makedirs(staged_path)
             os.makedirs(bias_data_path)
             os.makedirs(history_path)
         except:

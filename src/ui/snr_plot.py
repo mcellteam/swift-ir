@@ -389,6 +389,9 @@ class SnrPlot(QWidget):
                 print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
                 pos_click = int(mouseClickEvent.pos()[0])
                 print('Position Clicked: %d' % pos_click)
+                cfg.data.set_layer(pos_click)
+                self.updateLayerLinePos()
+                cfg.main_window.dataUpdateWidgets()
             except:
                 pass
 

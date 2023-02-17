@@ -194,13 +194,7 @@ QToolBar#toolbar {
     margin: 1px 1px 1px 1px;
 }
 
-QWidget#_overlayRect {
-    background-color: rgba(0, 0, 0, 0.5);
-}
-QLabel#_overlayLab {
-    color: #FF0000;
-    font-size: 28px;
-}
+
 
 QLabel#toolbar_layer_label { color: #1B1E23; }
 QLabel#extra_header_text_label { color: #1B1E23; }
