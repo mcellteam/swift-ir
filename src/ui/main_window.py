@@ -100,7 +100,8 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.app = QApplication.instance()
         self.setObjectName('mainwindow')
-        self.setWindowTitle('AlignEM-SWiFT')
+        self.window_title = 'AlignEM-SWiFT'
+        self.setWindowTitle(self.window_title)
         cfg.thumb = Thumbnailer()
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
@@ -194,6 +195,15 @@ class MainWindow(QMainWindow):
             logger.info('')
             if checked:
                 if self._isProjectTab():
+                    if cfg.MP_MODE:
+                        cfg.project_tab.MA_viewer_stage.initViewerSbs()
+                        # if self.rb0.isChecked():
+                        #     cfg.project_tab.MA_viewer_stage.initViewerSlim(force_xy=True)
+                        # elif self.rb1.isChecked():
+                        #     cfg.project_tab.MA_viewer_stage.initViewerSbs()
+                        return
+
+
                     if self.rb0.isChecked():
                         cfg.data['ui']['arrangement'] = 'stack'
                         cfg.data['ui']['ng_layout'] = '4panel'
@@ -2059,6 +2069,9 @@ class MainWindow(QMainWindow):
         logger.info(f'caller: {caller}')
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
+
+        if cfg.MP_MODE:
+            return
         if not cfg.project_tab:
             if not cfg.zarr_tab:
                 return
@@ -3058,6 +3071,8 @@ class MainWindow(QMainWindow):
                     if cfg.data.is_aligned_and_generated():
                         self.tell('Entering Manual Alignment Mode...')
 
+                        self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
+
                         del cfg.emViewer #0216+
 
                         self.shutdownNeuroglancer()
@@ -3086,6 +3101,8 @@ class MainWindow(QMainWindow):
                 else:
                     logger.critical('Exiting Match Point Mode...')
                     self.tell('Exiting Manual Alignment Mode...')
+
+                    self.setWindowTitle(self.window_title)
 
                     self.shutdownNeuroglancer()
 

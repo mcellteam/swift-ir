@@ -20,7 +20,6 @@ from src.viewer_em import EMViewer
 from src.viewer_ma import MAViewer
 from src.helpers import print_exception
 from src.ui.snr_plot import SnrPlot
-from src.ui.mini_view import MiniView
 from src.ui.widget_area import WidgetArea
 from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
@@ -68,6 +67,9 @@ class ProjectTab(QWidget):
         self.MA_base_cscale = None
         self.MA_base_zoom = None
 
+        h = self.MA_webengine_ref.geometry().height()
+        self.MA_stageSplitter.setSizes([int(.6*h), int(.4*h)])
+
     def _onTabChange(self, index=None):
         if index == None:
             index = self._tabs.currentIndex()
@@ -105,7 +107,7 @@ class ProjectTab(QWidget):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
             self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
-            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_Stage)
+            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
             self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
@@ -126,7 +128,7 @@ class ProjectTab(QWidget):
             #----
             # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
             # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
-            # self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
+            # self.MA_webengine_stage.setUrl(QUrl(cfg.emViewer.url()))
             return
         # logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
@@ -160,7 +162,7 @@ class ProjectTab(QWidget):
             #----
             # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
             # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
-            # self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
+            # self.MA_webengine_stage.setUrl(QUrl(cfg.emViewer.url()))
             return
             # self.setZmag(val=15)
         else:
@@ -556,24 +558,24 @@ class ProjectTab(QWidget):
 
         self.MA_webengine_ref = QWebEngineView()
         self.MA_webengine_base = QWebEngineView()
-        self.MA_webengine_Stage = QWebEngineView()
+        self.MA_webengine_stage = QWebEngineView()
         # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
         # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
-        # self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_Stage)
+        # self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
         self.MA_webengine_ref.setMinimumWidth(200)
         self.MA_webengine_base.setMinimumWidth(200)
-        self.MA_webengine_Stage.setMinimumWidth(128)
-        self.MA_webengine_Stage.setMinimumHeight(128)
+        self.MA_webengine_stage.setMinimumWidth(160)
+        self.MA_webengine_stage.setMinimumHeight(160)
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
-        # self.MA_webengine_Stage.setMouseTracking(True)
+        # self.MA_webengine_stage.setMouseTracking(True)
         # self.MA_webengine_ref.setMinimumSize(QSize(300,300))
         # self.MA_webengine_base.setMinimumSize(QSize(300,300))
-        # self.MA_webengine_Stage.setMinimumSize(QSize(300,300))
+        # self.MA_webengine_stage.setMinimumSize(QSize(300,300))
 
         # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
-        # self.MA_webengine_Stage.setFocusPolicy(Qt.StrongFocus)
+        # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
 
         # DONT CHANGE----------------------
         # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
@@ -585,10 +587,18 @@ class ProjectTab(QWidget):
 
 
         # MA Stage Buffer Widget
-        self.MA_stageBufferRef = QLabel('Reference')
-        self.MA_stageBufferRef.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
-        self.MA_stageBufferBase = QLabel('Base')
-        self.MA_stageBufferBase.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
+        self.MA_refTitle = QLabel('Reference')
+        self.MA_refTitle.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
+        self.MA_baseTitle = QLabel('Base')
+        self.MA_baseTitle.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
+        self.MA_refNextLab = QLabel('Next:')
+        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
+        self.MA_baseNextLab = QLabel('Next:')
+        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
+        self.MA_refNextLab = QLabel('Next:')
+        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
+        self.MA_baseNextLab = QLabel('Next:')
+        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
 
         self.MA_ptsListWidget_ref = QListWidget()
         self.MA_ptsListWidget_ref.installEventFilter(self)
@@ -602,6 +612,7 @@ class ProjectTab(QWidget):
 
         self.gb_actionsMA = QGroupBox('Actions')
         fl_actionsMA = QFormLayout()
+        fl_actionsMA.setContentsMargins(0, 0, 0, 0)
 
         self.gb_actionsMA.setLayout(fl_actionsMA)
 
@@ -613,31 +624,35 @@ class ProjectTab(QWidget):
         self.rbAuto.setStatusTip(tip)
         self.rbAuto.setChecked(True)
         self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        tip = 'Align by Manual-Hint Point Selection'
+        self.rbManHint = QRadioButton('Manual, Hint')
+        self.rbManHint.setStatusTip(tip)
+        self.rbManHint.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        tip = 'Align by Manual-Strict Point Selection'
+        self.rbManStrict = QRadioButton('Manual, Strict')
+        self.rbManStrict.setStatusTip(tip)
+        self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
         def fn():
             if self.rbAuto.isChecked():
                 cfg.data.set_selected_method('Auto SWIM Align')
-            else:
+            if self.rbManHint.isChecked():
                 cfg.data.set_selected_method('Match Point Align')
-        self.rbAuto.clicked.connect(fn)
+            elif self.rbManStrict.isChecked():
+                cfg.data.set_selected_method('Manual-Strict')
 
-        tip = 'Align by Manual Point Selection'
-        # self.rb1 = QRadioButton('Ref | Curr')
-        # self.rb1 = QRadioButton('Compare')
-        # self.rb1 = QRadioButton('Ref|Base|Aligned, Column')
-        self.rbMan = QRadioButton('Manual')
-        # self.rb1.setStyleSheet('font-size: 11px')
-        self.rbMan.setStatusTip(tip)
-        self.rbMan.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        def fn():
-            if self.rbMan.isChecked():
-                cfg.data.set_selected_method('Match Point Align')
-            else:
-                cfg.data.set_selected_method('Auto SWIM Align')
-        self.rbMan.clicked.connect(fn)
+        self.rbAuto.clicked.connect(fn)
+        self.rbManHint.clicked.connect(fn)
+        self.rbManStrict.clicked.connect(fn)
+
+
 
         self.rbMethodGroup = QButtonGroup()
         self.rbMethodGroup.addButton(self.rbAuto)
-        self.rbMethodGroup.addButton(self.rbMan)
+        self.rbMethodGroup.addButton(self.rbManHint)
+        self.rbMethodGroup.addButton(self.rbManStrict)
         self.rbMethodGroup.setExclusive(True)
 
         #tag
@@ -650,11 +665,29 @@ class ProjectTab(QWidget):
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(lab)
         hbl.addWidget(self.rbAuto)
-        hbl.addWidget(self.rbMan)
+        hbl.addWidget(self.rbManHint)
+        hbl.addWidget(self.rbManStrict)
         w.setLayout(hbl)
         fl_actionsMA.addWidget(w)
 
 
+
+        btnExitManAlign = QPushButton('Exit Manual Alignment Mode')
+        with open('src/styles/controls.qss', 'r') as f:
+            btnExitManAlign.setStyleSheet(f.read())
+        btnExitManAlign.setMaximumHeight(20)
+        btnExitManAlign.clicked.connect(cfg.main_window.enterExitManAlignMode)
+
+        btnManSave = QPushButton('Save Manual Points')
+        with open('src/styles/controls.qss', 'r') as f:
+            btnManSave.setStyleSheet(f.read())
+        btnManSave.setMaximumHeight(20)
+        btnManSave.clicked.connect(lambda: print('Saving Points...'))
+
+
+
+        fl_actionsMA.addWidget(btnExitManAlign)
+        fl_actionsMA.addWidget(btnManSave)
 
 
         hbl = QHBoxLayout()
@@ -662,28 +695,29 @@ class ProjectTab(QWidget):
         w = QWidget()
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.MA_stageBufferRef)
+        vbl.addWidget(self.MA_refTitle)
         vbl.addWidget(self.MA_ptsListWidget_ref)
         w.setLayout(vbl)
         hbl.addWidget(w)
         w = QWidget()
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.MA_stageBufferBase)
+        vbl.addWidget(self.MA_baseTitle)
         vbl.addWidget(self.MA_ptsListWidget_base)
         w.setLayout(vbl)
         hbl.addWidget(w)
 
         self.MA_sbw = QWidget() # make the widget
+        # self.MA_sbw.setMaximumHeight(500)
         self.MA_sbw.setLayout(hbl)
 
 
-        '''MA Stage area widgets'''
-        # MA Stage Widget
-        self.MA_stage = QWidget()
-        self.MA_stage.setMinimumWidth(32)
-        # self.MA_stage.setMaximumWidth(500)
-        # self.MA_stage.setMaximumWidth(200)
+        self.MA_sbw_ext = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.MA_sbw)
+        vbl.addWidget(self.gb_actionsMA)
+        self.MA_sbw_ext.setLayout(vbl)
 
         txt = '⇧ + Click - Select at least 3 and up to 7 corresponding points'
         self.msg_MAinstruct = QLabel()
@@ -704,15 +738,18 @@ class ProjectTab(QWidget):
         self.msg_MAinstruct.setFixedHeight(30)
         self.msg_MAinstruct.setFixedWidth(430)
 
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.MA_webengine_Stage)
-        # vbl.addWidget(self.MA_sbw, alignment=Qt.AlignmentFlag.AlignBottom)
-        vbl.addWidget(self.MA_sbw)
-        #tag
 
+        self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
+        self.MA_stageSplitter.addWidget(self.MA_sbw_ext)
+        self.MA_stageSplitter.setCollapsible(0, False)
+        self.MA_stageSplitter.setCollapsible(1, False)
 
-        self.MA_stage.setLayout(vbl)
+        '''MA Stage area widgets'''
+        # MA Stage Widget
+        # self.MA_stageSplitter = QWidget()
+        # self.MA_stageSplitter.setMinimumWidth(32)
+        # self.MA_stageSplitter.setLayout(vbl)
 
 
         self.MA_gl = QGridLayout()
@@ -734,7 +771,7 @@ class ProjectTab(QWidget):
 
         self.MA_gl.addWidget(self.msg_MAinstruct, 2, 1, 1, 2)
 
-        # self.MA_gl.addWidget(self.MA_stage, alignment=Qt.AlignmentFlag.AlignBottom)
+        # self.MA_gl.addWidget(self.MA_stageSplitter, alignment=Qt.AlignmentFlag.AlignBottom)
 
         self.MA_widget = QWidget()
         self.MA_widget.setLayout(self.MA_gl)
@@ -743,10 +780,10 @@ class ProjectTab(QWidget):
         self.MA_splitter = QSplitter()
         self.MA_splitter.setHandleWidth(2)
         self.MA_splitter.addWidget(self.MA_widget)
-        self.MA_splitter.addWidget(self.MA_stage)
+        self.MA_splitter.addWidget(self.MA_stageSplitter)
         self.MA_splitter.setCollapsible(0, False)
         self.MA_splitter.setCollapsible(1, False)
-        self.MA_splitter.setSizes([.75*cfg.WIDTH, .25*cfg.WIDTH])
+        self.MA_splitter.setSizes([.65*cfg.WIDTH, .35*cfg.WIDTH])
         self.MA_splitter.hide()
 
         self.weSplitter = QSplitter(Qt.Orientation.Horizontal)
@@ -949,10 +986,17 @@ class ProjectTab(QWidget):
         self.ng_browser_container.hide()
         self.MA_splitter.show()
 
+        if cfg.data.selected_method() in ('Auto SWIM Align', 'Auto-SWIM'):
+            self.rbAuto.setChecked(True)
+        elif cfg.data.selected_method() in ('Match Point Align', 'Manual-Hint'):
+            self.rbManHint.setChecked(True)
+        elif cfg.data.selected_method() in ('Manual-Strict'):
+            self.rbManStrict.setChecked(True)
+
         #Todo update listwidgets before entering manual alignment mode
         self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
         self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
-        self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_Stage)
+        self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
         self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
@@ -962,18 +1006,8 @@ class ProjectTab(QWidget):
         self.MA_viewer_base.initViewer()
         self.MA_viewer_stage.initViewer()
 
-        # self.updateMAviewers() #----
-        # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
-        # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
-        # self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
-        # self.MA_viewer_stage.initViewer(role='stage')
         self.ngVertLab.setText('Manual Alignment Mode')
         self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
-
-    def updateMAviewers(self):
-        self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
-        self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
-        self.MA_webengine_Stage.setUrl(QUrl(cfg.emViewer.url()))
 
 
     def onExitManualMode(self):
@@ -1232,30 +1266,11 @@ class ProjectTab(QWidget):
         self.snr_plot_widget.setObjectName('snr_plot_widget')
 
 
-        # self.snr_plot_browser = QWebEngineView()
-        # w3 = QWidget()
-        # vbl = QVBoxLayout()
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.addWidget(self.snr_plot_browser)
-        # w3.setLayout(vbl)
-
 
         self.snr_plot_widget.addWidget(w1)
         self.snr_plot_widget.addWidget(w2)
         # self.snr_plot_widget.addWidget(w3)
 
-
-    # def upateSnrPlotBrowser(self):
-    #     cfg.emViewer = EMViewer(parent=self)
-    #     cfg.emViewer.initViewerSlim()
-    #     url = cfg.emViewer.get_viewer_url()
-    #     self.snr_plot_browser.setUrl(QUrl(url))
-
-
-
-
-    def initUI_mini_view(self):
-        self._mv = MiniView()
 
 
     def initUI_tab_widget(self):
@@ -1272,7 +1287,6 @@ class ProjectTab(QWidget):
         # self._tabs.addTab(self._wdg_treeview, ' Tree ')
         self._tabs.addTab(self._wdg_treeview, ' Data ')
         self._tabs.addTab(self.snr_plot_widget, ' SNR Plot ')
-        # self._addTab(widget=self._mv, name=' Miniview ')
         self._tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(1, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(2, QTabBar.RightSide, None)

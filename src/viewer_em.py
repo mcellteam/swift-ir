@@ -55,14 +55,7 @@ class EMViewer(neuroglancer.Viewer):
         self.created = datetime.datetime.now()
         self._layer = None
         self.cs_scale = None
-        self.ref_pts = []
-        self.base_pts = []
-        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
-                          '#aaa672', '#152c74', '#404f74',
-                          '#f3e375', '#5c4ccc', '#d6acd6',
-                          '#aaa672', '#152c74', '#404f74']
         self._crossSectionScale = 1
-        self._mpCount = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         logger.info('viewer constructed!')
@@ -90,10 +83,10 @@ class EMViewer(neuroglancer.Viewer):
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
 
-    def set_zmag(self):
-        if cfg.MP_MODE:
-            with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
+    # def set_zmag(self):
+    #     if cfg.MP_MODE:
+    #         with self.txn() as s:
+    #             s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
 
 
     def set_layer(self, l:int):
@@ -133,7 +126,7 @@ class EMViewer(neuroglancer.Viewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
-    def initViewer(self, matchpoint=False, force_xy=False):
+    def initViewer(self):
         if cfg.main_window.rb0.isChecked():
             cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
@@ -142,10 +135,9 @@ class EMViewer(neuroglancer.Viewer):
             self.initViewerSbs()
 
 
-    def initViewerSbs(self, nglayout=None, matchpoint=False):
+    def initViewerSbs(self):
         caller = inspect.stack()[1].function
         logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....')
-
 
         requested = cfg.data['ui']['ng_layout']
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -157,8 +149,28 @@ class EMViewer(neuroglancer.Viewer):
 
         if cfg.data.is_mendenhall(): self.initViewerMendenhall(); return
 
-        self.clear_layers()
-        self.make_local_volumes()
+        # self.clear_layers()
+
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=list(cfg.data.resolution(s=cfg.data.curScale)),
+        )
+
+        if cfg.MP_MODE:
+            sf = cfg.data.scale_val(s=cfg.data.scale())
+            al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+            self.store = cfg.tensor = cfg.al_tensor =  get_zarr_tensor(al_path).result()
+            self.index = cfg.data.layer()
+            self.LV = ng.LocalVolume(
+                volume_type='image',
+                data=self.store[self.index:self.index + 1, :, :],
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, 0, 0]
+            )
+        else:
+            self.make_local_volumes()
+
 
         is_aligned = cfg.data.is_aligned_and_generated()
         if is_aligned:
@@ -170,13 +182,11 @@ class EMViewer(neuroglancer.Viewer):
         sf = cfg.data.scale_val(s=cfg.data.scale())
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
-        self.grps = []
-        if matchpoint:
-            self.grps.append(ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=nglayout))
-            self.grps.append(ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=nglayout))
-            if is_aligned:
-                self.grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout))
+
+        if cfg.MP_MODE:
+            self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout)]
         else:
+            self.grps = []
             self.grps.append(ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout))
             self.grps.append(ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout))
             if is_aligned:
@@ -191,20 +201,15 @@ class EMViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            if cfg.MP_MODE:
-                s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
             s.crossSectionBackgroundColor = '#808080'
             s.layout.type = nglayout
-            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['data']['shader'], )
-            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['data']['shader'],)
-            if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['data']['shader'],)
-            # if matchpoint:
+            if cfg.MP_MODE:
+                s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['data']['shader'], )
+            else:
+                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['data']['shader'], )
+                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['data']['shader'],)
+                if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['data']['shader'],)
             s.showSlices=False
-
-
-            # if cfg.main_window.rb2.isChecked():
-            #     self.set_row_layout(nglayout=nglayout) # row
-            # else:
             s.layout = ng.row_layout(self.grps)  # col
             s.position = [cfg.data.layer(), tensor_y / 2, tensor_x / 2]
             # if matchpoint:
@@ -214,39 +219,30 @@ class EMViewer(neuroglancer.Viewer):
         mp_key_bindings = []
 
         # if cfg.MP_MODE:
-        self.add_matchpoint_layers()
-
-        if matchpoint:
-            mp_key_bindings = [
-                # ['enter', 'add_matchpoint'],
-                ['keyx', 'add_matchpoint'],
-                ['keys', 'save_matchpoints'],
-                ['keyc', 'clear_matchpoints'],
-            ]
-            self.actions.add('add_matchpoint', self.add_matchpoint)
-            self.actions.add('save_matchpoints', self.save_matchpoints)
-            self.actions.add('clear_matchpoints', self.clear_matchpoints)
+        # self.add_matchpoint_layers()
+        #
+        # if matchpoint:
+        #     mp_key_bindings = [
+        #         # ['enter', 'add_matchpoint'],
+        #         ['keyx', 'add_matchpoint'],
+        #         ['keys', 'save_matchpoints'],
+        #         ['keyc', 'clear_matchpoints'],
+        #     ]
+        #     self.actions.add('add_matchpoint', self.add_matchpoint)
+        #     self.actions.add('save_matchpoints', self.save_matchpoints)
+        #     self.actions.add('clear_matchpoints', self.clear_matchpoints)
 
 
         with self.config_state.txn() as s:
-            for key, command in mp_key_bindings:
-                s.input_event_bindings.viewer[key] = command
-            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            if self.force_xy:
+                s.show_ui_controls = False
+            else:
+                s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
 
         self._layer = math.floor(self.state.position[0])
 
-
-        if matchpoint:
-            self.clear_mp_buffer()
-
         self._crossSectionScale = self.state.cross_section_scale
-
-        # cfg.main_window.updateToolbar()
-
-        # if cfg.main_window.detachedNg.isVisible():
-        #     logger.critical('detached Neuroglancer is visible! Setting its page...')
-        #     cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -257,10 +253,13 @@ class EMViewer(neuroglancer.Viewer):
         logger.critical(f'\n\nInitializing EMViewer Slim (caller: {caller})....')
 
         if self.force_xy:
-            logger.critical('\n\nForcing xy...\n\n')
-            nglayout = 'xy'
+            logger.info('Forcing xy...')
+            requested = 'xy'
         else:
-            nglayout = cfg.data['ui']['ng_layout']
+            requested = cfg.data['ui']['ng_layout']
+        mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+          'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        nglayout = mapping[requested]
 
         zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
         path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
@@ -320,7 +319,10 @@ class EMViewer(neuroglancer.Viewer):
 
 
         with self.config_state.txn() as s:
-            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            if self.force_xy:
+                s.show_ui_controls = False
+            else:
+                s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
             # s.viewer_size = [100,100]
 
@@ -351,10 +353,21 @@ class EMViewer(neuroglancer.Viewer):
             else:
                 widget_w = area[2] / 2
             widget_h = area[3]
+
+            if cfg.MP_MODE:
+                widget_w = cfg.project_tab.MA_webengine_stage.geometry().width()
+                widget_h = cfg.project_tab.MA_webengine_stage.geometry().height()
+
+
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale()) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
-            scale_h = ((res_y*tensor_y) / (widget_h - 34)) * 1e-9  # nm/pixel (subtract height of ng toolbar)
-            scale_w = ((res_x*tensor_x) / (widget_w - 20)) * 1e-9  # nm/pixel (subtract width of sliders)
+
+            if cfg.MP_MODE:
+                scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
+                scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
+            else:
+                scale_h = ((res_y*tensor_y) / (widget_h - 34)) * 1e-9  # nm/pixel (subtract height of ng toolbar)
+                scale_w = ((res_x*tensor_x) / (widget_w - 20)) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 
             # logger.info('res_y    = %s' % str(res_y))
@@ -364,7 +377,10 @@ class EMViewer(neuroglancer.Viewer):
             # logger.info('zoom factor          : %.11f' % cs_scale)
 
             with self.txn() as s:
-                s.crossSectionScale = cs_scale * 1.06
+                if cfg.MP_MODE:
+                    s.crossSectionScale = cs_scale
+                else:
+                    s.crossSectionScale = cs_scale * 1.06
     #
     # def set_rds(self):
     #     with self.txn() as s:
@@ -381,13 +397,16 @@ class EMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
+        if cfg.MP_MODE:
+            return
+
         caller = inspect.stack()[1].function
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
         if calname == '<lambda>':
             return
-        logger.info('caller: %s, calname: %s' % (caller, calname))
+        # logger.info('caller: %s, calname: %s' % (caller, calname))
 
         if not self.cs_scale:
             if self.state.cross_section_scale:
@@ -406,8 +425,6 @@ class EMViewer(neuroglancer.Viewer):
                     self._layer = request_layer
                     logger.info(f'(!) emitting request_layer: {request_layer}')
                     self.signals.stateChanged.emit(request_layer)
-                    if cfg.MP_MODE:
-                        self.clear_mp_buffer()
 
             zoom = self.state.cross_section_scale
             # logger.info('self.state.cross_section_scale = %s' % str(zoom))
@@ -421,139 +438,139 @@ class EMViewer(neuroglancer.Viewer):
             logger.error('ERROR on_state_change')
 
 
-    def add_matchpoint(self, s):
-        if cfg.MP_MODE:
-            logger.critical(str(s))
-            logger.info('add_matchpoint:')
-            coords = np.array(s.mouse_voxel_coordinates)
-            if coords.ndim == 0:
-                logger.warning('Coordinates are dimensionless! =%s' % str(coords))
-                return
-            try:
-                bounds = cfg.unal_tensor.shape[1:]
-                if (coords[1] < 0) or (coords[2] < 0):
-                    logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
-                                   % (coords[1], coords[2], bounds[0], bounds[1]))
-                    return
-                if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
-                    logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
-                                   % (coords[1], coords[2], bounds[0], bounds[1]))
-                    return
-            except:
-                print_exception()
-
-            n_mp_pairs = math.floor(self._mpCount / 2)
-
-            props = [self.mp_colors[n_mp_pairs],
-                     cfg.main_window.mp_marker_lineweight_spinbox.value(),
-                     cfg.main_window.mp_marker_size_spinbox.value(), ]
-            with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
-
-                if self._mpCount in range(0, 100, 2):
-                    self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
-                    s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
-                    logger.info(f"Ref Match Point Added: {coords}")
-                elif self._mpCount in range(1, 100, 2):
-                    self.base_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
-                    s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base')) + self.base_pts
-                    logger.info(f"Base Match Point Added: {coords}")
-            self._mpCount += 1
-
-
-    def save_matchpoints(self, s):
-        if cfg.MP_MODE:
-            layer = self.request_layer()
-            logger.info('Saving Match Points for Layer %d\nBase Name: %s' % (layer, cfg.data.base_image_name(l=layer)))
-            n_ref, n_base = len(self.ref_pts), len(self.base_pts)
-            if n_ref == n_base:
-                cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
-                p_r = [p.point.tolist() for p in self.ref_pts]
-                p_b = [p.point.tolist() for p in self.base_pts]
-                logger.critical('p_r: %s' %str(p_r))
-                logger.critical('p_b: %s' %str(p_b))
-                ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
-                base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
-                cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)
-                cfg.data.set_match_points(role='base', matchpoints=base_mps, l=layer)
-                cfg.data.set_selected_method(method="Match Point Align", l=layer)
-                self.clear_mp_buffer()
-                # cfg.refLV.invalidate()
-                # cfg.baseLV.invalidate()
-                cfg.data.print_all_match_points()
-                self.signals.mpUpdate.emit()
-                cfg.main_window._saveProjectToFile(silently=True)
-                cfg.main_window.hud.post('Match Points Saved!')
-            else:
-                cfg.main_window.hud.post(f'Each image must have the same # points\n'
-                                         f'Left img has: {len(self.ref_pts)}\n'
-                                         f'Right img has: {len(self.base_pts)}', logging.WARNING)
-
-    def clear_matchpoints(self, s):
-        if cfg.MP_MODE:
-            layer = self.request_layer()
-            logger.info('Clearing %d match points for section #%d...' %(self._mpCount,layer))
-            cfg.main_window.hud.post('Clearing %d match points for section #%d...' %(self._mpCount,layer))
-            cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)  # Note
-            cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
-            self.clear_mp_buffer()  # Note
-            with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
-                s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
-                s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
-            # cfg.refLV.invalidate()
-            # cfg.baseLV.invalidate()
-            cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
-            cfg.main_window.updateDetailsWidget()
-
-
-    def clear_mp_buffer(self):
-        if cfg.MP_MODE:
-            logger.info('Clearing match point buffer of %d match points...' % self._mpCount)
-            self._mpCount = 0
-            self.ref_pts.clear()
-            self.base_pts.clear()
-            # try:
-            #     cfg.refLV.invalidate()
-            #     cfg.baseLV.invalidate()
-            # except:
-            #     pass
-
-
-    def count_saved_points_ref(self):
-        layer = self.request_layer()
-        points = self.pt2ann(points=cfg.data.get_mps(role='ref'))
-        points_ = [p.point.tolist() for p in points]
-        count = 0
-        for p in points_:
-            if p[0] == layer:
-                count += 1
-        return count
-
-
-    def count_saved_points_base(self):
-        layer = self.request_layer()
-        points = self.pt2ann(points=cfg.data.get_mps(role='base'))
-        points_ = [p.point.tolist() for p in points]
-        count = 0
-        for p in points_:
-            if p[0] == layer:
-                count += 1
-        return count
-
-    def pt2ann(self, points: list):
-        annotations = []
-
-        lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
-        size = cfg.main_window.mp_marker_size_spinbox.value()
-        for i, point in enumerate(points):
-            annotations.append(ng.PointAnnotation(id=repr(point),
-                                                  point=point,
-                                                  props=[self.mp_colors[i % 3],
-                                                         size,
-                                                         lineweight]))
-        self.annotations = annotations
-        return annotations
+    # def add_matchpoint(self, s):
+    #     if cfg.MP_MODE:
+    #         logger.critical(str(s))
+    #         logger.info('add_matchpoint:')
+    #         coords = np.array(s.mouse_voxel_coordinates)
+    #         if coords.ndim == 0:
+    #             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
+    #             return
+    #         try:
+    #             bounds = cfg.unal_tensor.shape[1:]
+    #             if (coords[1] < 0) or (coords[2] < 0):
+    #                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
+    #                                % (coords[1], coords[2], bounds[0], bounds[1]))
+    #                 return
+    #             if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
+    #                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
+    #                                % (coords[1], coords[2], bounds[0], bounds[1]))
+    #                 return
+    #         except:
+    #             print_exception()
+    #
+    #         n_mp_pairs = math.floor(self._mpCount / 2)
+    #
+    #         props = [self.mp_colors[n_mp_pairs],
+    #                  cfg.main_window.mp_marker_lineweight_spinbox.value(),
+    #                  cfg.main_window.mp_marker_size_spinbox.value(), ]
+    #         with self.txn() as s:
+    #             s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
+    #
+    #             if self._mpCount in range(0, 100, 2):
+    #                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
+    #                 s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
+    #                 logger.info(f"Ref Match Point Added: {coords}")
+    #             elif self._mpCount in range(1, 100, 2):
+    #                 self.base_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
+    #                 s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base')) + self.base_pts
+    #                 logger.info(f"Base Match Point Added: {coords}")
+    #         self._mpCount += 1
+    #
+    #
+    # def save_matchpoints(self, s):
+    #     if cfg.MP_MODE:
+    #         layer = self.request_layer()
+    #         logger.info('Saving Match Points for Layer %d\nBase Name: %s' % (layer, cfg.data.base_image_name(l=layer)))
+    #         n_ref, n_base = len(self.ref_pts), len(self.base_pts)
+    #         if n_ref == n_base:
+    #             cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
+    #             p_r = [p.point.tolist() for p in self.ref_pts]
+    #             p_b = [p.point.tolist() for p in self.base_pts]
+    #             logger.critical('p_r: %s' %str(p_r))
+    #             logger.critical('p_b: %s' %str(p_b))
+    #             ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
+    #             base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
+    #             cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)
+    #             cfg.data.set_match_points(role='base', matchpoints=base_mps, l=layer)
+    #             cfg.data.set_selected_method(method="Match Point Align", l=layer)
+    #             self.clear_mp_buffer()
+    #             # cfg.refLV.invalidate()
+    #             # cfg.baseLV.invalidate()
+    #             cfg.data.print_all_match_points()
+    #             self.signals.mpUpdate.emit()
+    #             cfg.main_window._saveProjectToFile(silently=True)
+    #             cfg.main_window.hud.post('Match Points Saved!')
+    #         else:
+    #             cfg.main_window.hud.post(f'Each image must have the same # points\n'
+    #                                      f'Left img has: {len(self.ref_pts)}\n'
+    #                                      f'Right img has: {len(self.base_pts)}', logging.WARNING)
+    #
+    # def clear_matchpoints(self, s):
+    #     if cfg.MP_MODE:
+    #         layer = self.request_layer()
+    #         logger.info('Clearing %d match points for section #%d...' %(self._mpCount,layer))
+    #         cfg.main_window.hud.post('Clearing %d match points for section #%d...' %(self._mpCount,layer))
+    #         cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)  # Note
+    #         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
+    #         self.clear_mp_buffer()  # Note
+    #         with self.txn() as s:
+    #             s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
+    #             s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
+    #             s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
+    #         # cfg.refLV.invalidate()
+    #         # cfg.baseLV.invalidate()
+    #         cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
+    #         cfg.main_window.updateDetailsWidget()
+    #
+    #
+    # def clear_mp_buffer(self):
+    #     if cfg.MP_MODE:
+    #         logger.info('Clearing match point buffer of %d match points...' % self._mpCount)
+    #         self._mpCount = 0
+    #         self.ref_pts.clear()
+    #         self.base_pts.clear()
+    #         # try:
+    #         #     cfg.refLV.invalidate()
+    #         #     cfg.baseLV.invalidate()
+    #         # except:
+    #         #     pass
+    #
+    #
+    # def count_saved_points_ref(self):
+    #     layer = self.request_layer()
+    #     points = self.pt2ann(points=cfg.data.get_mps(role='ref'))
+    #     points_ = [p.point.tolist() for p in points]
+    #     count = 0
+    #     for p in points_:
+    #         if p[0] == layer:
+    #             count += 1
+    #     return count
+    #
+    #
+    # def count_saved_points_base(self):
+    #     layer = self.request_layer()
+    #     points = self.pt2ann(points=cfg.data.get_mps(role='base'))
+    #     points_ = [p.point.tolist() for p in points]
+    #     count = 0
+    #     for p in points_:
+    #         if p[0] == layer:
+    #             count += 1
+    #     return count
+    #
+    # def pt2ann(self, points: list):
+    #     annotations = []
+    #
+    #     lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
+    #     size = cfg.main_window.mp_marker_size_spinbox.value()
+    #     for i, point in enumerate(points):
+    #         annotations.append(ng.PointAnnotation(id=repr(point),
+    #                                               point=point,
+    #                                               props=[self.mp_colors[i % 3],
+    #                                                      size,
+    #                                                      lineweight]))
+    #     self.annotations = annotations
+    #     return annotations
 
 
     # def take_screenshot(self, directory=None):
@@ -582,32 +599,6 @@ class EMViewer(neuroglancer.Viewer):
             state.layers.clear()
             self.set_state(state)
 
-    def add_matchpoint_layers(self):
-        logger.info('')
-
-        with self.txn() as s:
-            s.layers['mp_ref'] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotations=self.pt2ann(points=cfg.data.get_mps(role='ref')),
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                ],
-                shader=copy.deepcopy(ann_shader),
-            )
-
-            s.layers['mp_base'] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotations=self.pt2ann(
-                    points=cfg.data.get_mps(role='base')) + self.base_pts,
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                ],
-                shader=copy.deepcopy(ann_shader),
-            )
 
     def set_row_layout(self, nglayout):
 
@@ -615,10 +606,6 @@ class EMViewer(neuroglancer.Viewer):
             if cfg.data.is_aligned_and_generated():
                 if cfg.MP_MODE:
                     s.layout = ng.row_layout([
-                        ng.column_layout([
-                            ng.LayerGroupViewer(layers=[self.ref_l, 'mp_ref'], layout=nglayout),
-                            ng.LayerGroupViewer(layers=[self.base_l, 'mp_base'], layout=nglayout),
-                        ]),
                         ng.column_layout([
                             ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),
                         ]),
@@ -648,12 +635,6 @@ class EMViewer(neuroglancer.Viewer):
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
             raise e
-
-        self.coordinate_space = ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
-            units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.curScale)),
-        )
 
         x_nudge, y_nudge = self.get_nudge()
         cfg.refLV = ng.LocalVolume(

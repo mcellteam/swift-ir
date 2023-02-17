@@ -726,6 +726,23 @@ class DataModel:
                 logger.info('____Layer %d Matchpoints____\n  Ref: %s\n  Base: %s' % (i, str(r), str(b)))
 
 
+    def getmp(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        # return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref']
+        return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']
+
+    def getmpFlat(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        try:
+            mps = self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']
+            ref = [(0, x[0], x[1]) for x in mps['ref']]
+            base = [(0, x[0], x[1]) for x in mps['base']]
+            return {'ref': ref, 'base': base}
+        except:
+            return {'ref': [], 'base': []}
+
     def match_points_ref(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
@@ -1303,6 +1320,7 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         logger.critical(f'Setting section #{l}, {s} to {method}...')
+        cfg.main_window.hud.post(f'Setting section #{l}, {s} to {method}...')
         self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method'] = method
 
 
