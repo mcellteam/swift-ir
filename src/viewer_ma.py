@@ -268,6 +268,8 @@ class MAViewer(neuroglancer.Viewer):
 
     def update_annotations(self):
         anns = list(self.pts.values())
+        logger.critical('anns: \n%s' % anns)
+
         if anns:
             with self.txn() as s:
                 s.layers['ann'].annotations = anns
@@ -280,7 +282,7 @@ class MAViewer(neuroglancer.Viewer):
                 return c
 
 
-    def save_matchpoints(self, s):
+    def save_matchpoints(self):
         layer = cfg.data.layer()
         logger.info('Saving Match Points for Section #%d: %s' % (layer, cfg.data.base_image_name(l=layer)))
         p_ = [p.point.tolist() for p in self.pts.values()]
@@ -294,22 +296,11 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def clear_matchpoints(self, s):
-        layer = cfg.data.layer()
-        cfg.main_window.hud.post('Clearing Match points for section #%d...' %layer)
-        cfg.data.clear_match_points()
-        cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
-        self.clear_mp_buffer()  # Note
-        with self.txn() as s:
-            s.layers['ann'].annotations = self.pt2ann(cfg.data.get_mps(role=self.role))
-        cfg.main_window.hud.post('Manual alignment removed for section #%d' % layer)
-        cfg.main_window.hud.post('Method is now Auto SWIM Align for section #' % layer)
-        cfg.main_window.updateDetailsWidget()
-
-
-    def clear_mp_buffer(self):
-        logger.info('Clearing match point buffer of %d match points...' % self._mpCount)
+        cfg.main_window.hud.post('Clearing manual correspondence point buffer of %d match points...' % self._mpCount)
+        logger.warning('Clearing manual correspondence point buffer of %d match points...' % self._mpCount)
         self.pts.clear()
-
+        with self.txn() as s:
+            s.layers['ann'].annotations = self.pt2ann(cfg.data.getmpFlat()[self.role])
 
 
     def url(self):
@@ -324,12 +315,13 @@ class MAViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def add_matchpoint_layers(self):
-        logger.info('')
+        logger.critical('')
 
         with self.txn() as s:
             s.layers['ann'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
-                annotations=self.pt2ann(points=cfg.data.get_mps(role=self.role)),
+                annotations=self.pt2ann(points=cfg.data.getmpFlat()[self.role]),
+                # annotations=self.pt2ann(points=[(0,100,100)]),
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
                     ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
