@@ -48,7 +48,6 @@ class WorkerSignals(QObject):
 class EMViewer(neuroglancer.Viewer):
     def __init__(self, name=None, force_xy=False, webengine=None):
         super().__init__()
-        logger.info('')
         if name:
             self.name=name
         self.webengine = webengine
@@ -344,7 +343,7 @@ class EMViewer(neuroglancer.Viewer):
             if cfg.MP_MODE:
                 widget_w = cfg.project_tab.MA_webengine_stage.geometry().width()
                 widget_h = cfg.project_tab.MA_webengine_stage.geometry().height()
-                logger.critical('widget w/h: %d/%d' % (widget_w, widget_h))
+                logger.info('widget w/h: %d/%d' % (widget_w, widget_h))
 
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale()) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample

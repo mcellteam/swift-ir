@@ -47,7 +47,6 @@ class WorkerSignals(QObject):
 class MAViewer(neuroglancer.Viewer):
     def __init__(self, index, role=None, webengine=None):
         super().__init__()
-        logger.info('')
         self.index = index
         if role:
             self.role = role
@@ -148,8 +147,9 @@ class MAViewer(neuroglancer.Viewer):
             # s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV)
             s.crossSectionBackgroundColor = '#808080' # 128 grey
+            # s.cross_section_scale = 1
             _, y, x = self.store.shape
-            s.position = [0, y / 2, x / 2]
+            s.position = [0.5, y / 2, x / 2]
 
             s.layers['ann'].annotations = list(self.pts.values())
 
@@ -183,7 +183,7 @@ class MAViewer(neuroglancer.Viewer):
             # s.viewer_size = [100,100]
 
         # self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
         # if cfg.main_window.detachedNg.isVisible():
         #     logger.critical('detached Neuroglancer is visible! Setting its page...')
@@ -195,6 +195,7 @@ class MAViewer(neuroglancer.Viewer):
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+
     def get_layout(self, requested=None):
         if requested == None:
             requested = cfg.data['ui']['ng_layout']
@@ -205,32 +206,32 @@ class MAViewer(neuroglancer.Viewer):
 
     def on_state_changed(self):
         caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        if calname == '<lambda>':
-            return
-        # logger.info('caller: %s, calname: %s' % (caller, calname))
-
-        self.signals.stateChanged.emit()
-
-        # if not self.cs_scale:
-        #     if self.state.cross_section_scale:
-        #         if self.state.cross_section_scale > .0001:
-        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-        #             self.cs_scale = self.state.cross_section_scale
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 2)
+        # calname = str(calframe[1][3])
+        # if calname == '<lambda>':
+        #     return
+        # # logger.info('caller: %s, calname: %s' % (caller, calname))
         #
-        # try:
-        #     zoom = self.state.cross_section_scale
-        #     # logger.info('self.state.cross_section_scale = %s' % str(zoom))
-        #     if zoom:
-        #         if zoom != self._crossSectionScale:
-        #             logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
-        #             self.signals.zoomChanged.emit(zoom)
-        #         self._crossSectionScale = zoom
-        # except:
-        #     print_exception()
-        #     logger.error('ERROR on_state_change')
+        # self.signals.stateChanged.emit()
+        #
+        # # if not self.cs_scale:
+        # #     if self.state.cross_section_scale:
+        # #         if self.state.cross_section_scale > .0001:
+        # #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+        # #             self.cs_scale = self.state.cross_section_scale
+        # #
+        # # try:
+        # zoom = self.state.cross_section_scale
+        # # logger.info('self.state.cross_section_scale = %s' % str(zoom))
+        # if zoom:
+        #     if zoom != self._crossSectionScale:
+        #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
+        #         self.signals.zoomChanged.emit(zoom)
+        #     self._crossSectionScale = zoom
+        # # except:
+        # #     print_exception()
+        # #     logger.error('ERROR on_state_change')
 
 
     def pt2ann(self, points: list):
@@ -320,7 +321,7 @@ class MAViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def restoreManAlignPts(self):
-        logger.critical('')
+        logger.info('')
 
         for i, p in enumerate(cfg.data.getmpFlat()[self.role]):
             props = [self.mp_colors[i],

@@ -132,8 +132,6 @@ class Thumbnailer:
         if not os.path.exists(od):
             os.mkdir(od)
 
-        logger.critical(f'Thumbnail Scaling Factor:{scale_factor}, Target : {target_size}')
-        logger.info(f'start={start}, end={end}')
         if filenames == None:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
