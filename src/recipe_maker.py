@@ -96,12 +96,6 @@ def run_json_project(project,
             upscale = (float(next_scale) / float(scale_tbd))
             allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
 
-    # if ((not allow_scale_climb) & (alignment_option != 'init_affine')):
-    #     logger.warning('AlignEM SWiFT Error: '
-    #                    'Cannot perform alignment_option: %s at s: %d' % (alignment_option, scale_tbd))
-    #     logger.warning('                       Because next coarsest s is not fully aligned')
-    #
-    #     return (project, False)
 
     if scale_tbd:
         if use_scale:
@@ -166,7 +160,8 @@ def run_json_project(project,
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
                 # mr['snr'] = [0.0]
-                mr['snr'] = [0.0, 0.0, 0.0, 0.0] #jy for consistency
+                # mr['snr'] = [0.0, 0.0, 0.0, 0.0] #jy for consistency
+                mr['snr'] = [0.0]
                 mr['snr_report'] = 'SNR: --'
 
             # set alignment option

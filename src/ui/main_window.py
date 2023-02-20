@@ -2444,6 +2444,13 @@ class MainWindow(QMainWindow):
         if not os.path.exists(logpath):
             os.mkdir(logpath)
 
+        if cfg.data['ui']['arrangement'] == 'stack':
+            cfg.data['ui']['ng_layout'] = '4panel'
+            self.rb0.setChecked(True)
+        elif cfg.data['ui']['arrangement'] == 'comparison':
+            cfg.data['ui']['ng_layout'] = 'xy'
+            self.rb1.setChecked(True)
+
         self.update_data_cache()
         cfg.data.set_defaults()
         # self.hardRestartNg()
@@ -2984,16 +2991,16 @@ class MainWindow(QMainWindow):
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
         if self._isProjectTab():
-
             if caller != 'dataUpdateWidgets':
                 skip_state = self._skipCheckbox.isChecked()
                 for s in cfg.data.scales():
                     # layer = self.request_ng_layer()
                     layer = cfg.data.layer()
-                    if layer >= cfg.data.n_sections():
+                    if layer < cfg.data.n_sections():
+                        cfg.data.set_skip(skip_state, s=s, l=layer)
+                    else:
                         logger.warning(f'Request layer is out of range ({layer}) - Returning')
                         return
-                    cfg.data.set_skip(skip_state, s=s, l=layer)  # for checkbox
                 if skip_state:
                     self.tell("Flagged For Skip: %s" % cfg.data.name_base())
                 cfg.data.link_reference_sections()
@@ -3222,7 +3229,7 @@ class MainWindow(QMainWindow):
         self.rb0 = QRadioButton('Unaligned')
         # self.rb0.setStyleSheet('font-size: 11px')
         self.rb0.setStatusTip(tip)
-        self.rb0.setChecked(True)
+        # self.rb0.setChecked(True)
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.clicked.connect(self.ngRadiobuttonChanged)
         self.rb0.clicked.connect(self.updateMenus)
@@ -3234,13 +3241,13 @@ class MainWindow(QMainWindow):
         self.rb1 = QRadioButton('Comparison')
         # self.rb1.setStyleSheet('font-size: 11px')
         self.rb1.setStatusTip(tip)
-        self.rb1.setChecked(False)
+        # self.rb1.setChecked(False)
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb1.clicked.connect(self.ngRadiobuttonChanged)
         self.rb1.clicked.connect(self.updateMenus)
 
         self.rb2 = QRadioButton('Ref|Base|Aligned, Row')
-        self.rb2.setChecked(False)
+        # self.rb2.setChecked(False)
         self.rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb2.clicked.connect(self.ngRadiobuttonChanged)
         self.rb2.clicked.connect(self.updateMenus)
