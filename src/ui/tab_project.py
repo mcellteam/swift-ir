@@ -853,7 +853,7 @@ class ProjectTab(QWidget):
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
-        logger.critical('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_ref.isVisible():
                 if self.MA_viewer_base.state.cross_section_scale:
@@ -866,11 +866,8 @@ class ProjectTab(QWidget):
                                 if isinstance(pos, np.ndarray):
                                     state.position = self.MA_viewer_base.state.position
                                 if isinstance(zoom, float):
-                                    logger.critical(
-                                        'Setting Zoom to %s' % str(self.MA_viewer_base.state.cross_section_scale))
-                                    logger.critical(type(self.MA_viewer_base.state.cross_section_scale))
                                     state.cross_section_scale = self.MA_viewer_base.state.cross_section_scale
-                                    self.MA_viewer_ref.set_state(state)
+                                self.MA_viewer_ref.set_state(state)
 
 
     def updateMA_base_state(self):
@@ -878,7 +875,7 @@ class ProjectTab(QWidget):
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
-        logger.critical('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_base.isVisible():
                 if self.MA_viewer_ref.state.cross_section_scale:
@@ -891,9 +888,7 @@ class ProjectTab(QWidget):
                                 if isinstance(pos, np.ndarray):
                                     state.position = self.MA_viewer_ref.state.position
                                 if isinstance(zoom, float):
-                                    logger.critical('Setting Zoom to %s' %str(self.MA_viewer_ref.state.cross_section_scale))
                                     state.cross_section_scale = self.MA_viewer_ref.state.cross_section_scale
-                                    logger.critical(type(self.MA_viewer_ref.state.cross_section_scale))
                                 self.MA_viewer_base.set_state(state)
 
 
