@@ -110,11 +110,9 @@ class ProjectTab(QWidget):
             self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
             self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
-            self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
-            self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
-            self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
-            self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+
+
+
             #Critical Only connect to one of the two interconnected widgets. Do not connect stage.
             # self.MA_viewer_base.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             # self.MA_viewer_ref.signals.stateChanged.connect(self.updateMA_base_state)
@@ -122,6 +120,14 @@ class ProjectTab(QWidget):
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
+
+
+            self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
+            self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
+            self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
+            self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+
             return
         # logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
@@ -533,13 +539,13 @@ class ProjectTab(QWidget):
         # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
 
-        # DONT CHANGE----------------------
+        # NO CHANGE----------------------
         # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         # self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
         # self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
         # self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
         # self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
-        # DONT CHANGE----------------------
+        # NO CHANGE----------------------
 
 
         # MA Stage Buffer Widget
@@ -604,10 +610,9 @@ class ProjectTab(QWidget):
         self.rbMethodGroup.addButton(self.rbManStrict)
         self.rbMethodGroup.setExclusive(True)
 
-        #tag
-        '''
-        Alignment Method (displayed):
-        Alignment Method (next run): '''
+        '''Alignment Method (displayed):
+           Alignment Method (next run): 
+           '''
 
         w = QWidget()
         hbl = QHBoxLayout()
@@ -645,14 +650,6 @@ class ProjectTab(QWidget):
             cfg.main_window.alignAll()
         self.btnSaveAndRealignMA.clicked.connect(fn)
 
-
-        # btnManClear = QPushButton('Clear Manual Points')
-        # with open('src/styles/controls.qss', 'r') as f:
-        #     btnManClear.setStyleSheet(f.read())
-        # btnManClear.setMaximumHeight(20)
-        # btnManClear.clicked.connect(lambda: print('Clearing Points...'))
-
-
         self.btnSaveExitMA = QPushButton('Save && Exit Manual Alignment Mode')
         self.btnSaveExitMA.setMaximumHeight(20)
         def fn():
@@ -660,21 +657,17 @@ class ProjectTab(QWidget):
             cfg.main_window.enterExitManAlignMode(force_exit=True)
         self.btnSaveExitMA.clicked.connect(fn)
 
-
-
         self.btnExitMA = QPushButton('Exit Manual Alignment Mode')
         # with open('src/styles/controls.qss', 'r') as f:
         #     self.btnExitMA.setStyleSheet(f.read())
         self.btnExitMA.setMaximumHeight(20)
         self.btnExitMA.clicked.connect(cfg.main_window.enterExitManAlignMode)
 
-
         fl_actionsMA.addWidget(self.btnClearMA)
         fl_actionsMA.addWidget(self.btnSaveAndRealignMA)
         fl_actionsMA.addWidget(self.btnResetAllMA)
         fl_actionsMA.addWidget(self.btnSaveExitMA)
         fl_actionsMA.addWidget(self.btnExitMA)
-
 
 
         hbl = QHBoxLayout()
@@ -860,20 +853,24 @@ class ProjectTab(QWidget):
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
-        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        logger.critical('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_ref.isVisible():
                 if self.MA_viewer_base.state.cross_section_scale:
                     if self.MA_viewer_base.state.cross_section_scale < 10_000:
-                        pos = self.MA_viewer_base.state.position
-                        zoom = self.MA_viewer_base.state.cross_section_scale
-                        if isinstance(pos,np.ndarray) or isinstance(zoom,np.ndarray):
-                            state = copy.deepcopy(self.MA_viewer_ref.state)
-                            if isinstance(pos, np.ndarray):
-                                state.position = self.MA_viewer_base.state.position
-                            if isinstance(zoom, float):
-                                state.cross_section_scale = self.MA_viewer_base.state.cross_section_scale
-                            self.MA_viewer_ref.set_state(state)
+                        if self.MA_viewer_base.state.cross_section_scale != 1.0:
+                            pos = self.MA_viewer_base.state.position
+                            zoom = self.MA_viewer_base.state.cross_section_scale
+                            if isinstance(pos,np.ndarray) or isinstance(zoom,np.ndarray):
+                                state = copy.deepcopy(self.MA_viewer_ref.state)
+                                if isinstance(pos, np.ndarray):
+                                    state.position = self.MA_viewer_base.state.position
+                                if isinstance(zoom, float):
+                                    logger.critical(
+                                        'Setting Zoom to %s' % str(self.MA_viewer_base.state.cross_section_scale))
+                                    logger.critical(type(self.MA_viewer_base.state.cross_section_scale))
+                                    state.cross_section_scale = self.MA_viewer_base.state.cross_section_scale
+                                    self.MA_viewer_ref.set_state(state)
 
 
     def updateMA_base_state(self):
@@ -881,20 +878,23 @@ class ProjectTab(QWidget):
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
-        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        logger.critical('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_base.isVisible():
                 if self.MA_viewer_ref.state.cross_section_scale:
                     if self.MA_viewer_ref.state.cross_section_scale < 10_000:
-                        pos = self.MA_viewer_ref.state.position
-                        zoom = self.MA_viewer_ref.state.cross_section_scale
-                        if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-                            state = copy.deepcopy(self.MA_viewer_base.state)
-                            if isinstance(pos, np.ndarray):
-                                state.position = self.MA_viewer_ref.state.position
-                            if isinstance(zoom, float):
-                                state.cross_section_scale = self.MA_viewer_ref.state.cross_section_scale
-                            self.MA_viewer_base.set_state(state)
+                        if self.MA_viewer_ref.state.cross_section_scale != 1.0:
+                            pos = self.MA_viewer_ref.state.position
+                            zoom = self.MA_viewer_ref.state.cross_section_scale
+                            if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
+                                state = copy.deepcopy(self.MA_viewer_base.state)
+                                if isinstance(pos, np.ndarray):
+                                    state.position = self.MA_viewer_ref.state.position
+                                if isinstance(zoom, float):
+                                    logger.critical('Setting Zoom to %s' %str(self.MA_viewer_ref.state.cross_section_scale))
+                                    state.cross_section_scale = self.MA_viewer_ref.state.cross_section_scale
+                                    logger.critical(type(self.MA_viewer_ref.state.cross_section_scale))
+                                self.MA_viewer_base.set_state(state)
 
 
     def deleteMpRef(self):
@@ -1048,14 +1048,14 @@ class ProjectTab(QWidget):
         self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
         self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+        self.MA_viewer_ref.initViewer()
+        self.MA_viewer_base.initViewer()
+        self.MA_viewer_stage.initViewer()
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
         self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
         self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
         self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
-        self.MA_viewer_ref.initViewer()
-        self.MA_viewer_base.initViewer()
-        self.MA_viewer_stage.initViewer()
 
         self.ngVertLab.setText('Manual Alignment Mode')
         self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
