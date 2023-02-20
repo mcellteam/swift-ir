@@ -67,12 +67,11 @@ def run_json_project(project,
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
   
     '''
-    logger.critical('\n\nrun_json_project >>>>\n\n')
-    logger.info("alignment_option = %s" % str(alignment_option))
-    logger.info("s = %s" % str(use_scale))
-    logger.info("code_mode = %s" % str(swiftir_code_mode))
-    logger.info("alone = %s" % str(alone))
-    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'logger.log'))
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    logger.critical(f'run_json_project option:{alignment_option}, scale: {str(use_scale)} >>>>')
+
 
     # Evaluate Status of Project and set appropriate flags here:
     proj_status = evaluate_project_status(project)
@@ -97,12 +96,12 @@ def run_json_project(project,
             upscale = (float(next_scale) / float(scale_tbd))
             allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
 
-    if ((not allow_scale_climb) & (alignment_option != 'init_affine')):
-        logger.warning('AlignEM SWiFT Error: Cannot perform alignment_option: %s at s: %d' % (
-            alignment_option, scale_tbd))
-        logger.warning('                       Because next coarsest s is not fully aligned')
-
-        return (project, False)
+    # if ((not allow_scale_climb) & (alignment_option != 'init_affine')):
+    #     logger.warning('AlignEM SWiFT Error: '
+    #                    'Cannot perform alignment_option: %s at s: %d' % (alignment_option, scale_tbd))
+    #     logger.warning('                       Because next coarsest s is not fully aligned')
+    #
+    #     return (project, False)
 
     if scale_tbd:
         if use_scale:
@@ -174,7 +173,7 @@ def run_json_project(project,
             md['alignment_option'] = alignment_option
 
             #0205-
-            # atrm['selected_method'] = 'Auto Swim Align'  # seleted_method typo
+            # atrm['selected_method'] = 'Auto-SWIM'
 
             md.setdefault('bias_x_per_image', 0)
             md.setdefault('bias_y_per_image', 0)
@@ -191,7 +190,7 @@ def run_json_project(project,
             s_tbd[i]['align_to_ref_method'] = atrm
 
             # if there are match points, copy and scale them for scale_tbd
-            if atrm['selected_method'] == 'Match Point Align':
+            if atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
                 mp_ref = (np.array(s_tbd[i]['images']['ref']['metadata']['match_points']) * upscale).tolist()
                 mp_base = (np.array(s_tbd[i]['images']['base']['metadata']['match_points']) * upscale).tolist()
                 s_tbd[i]['images']['ref']['metadata']['match_points'] = mp_ref
@@ -222,24 +221,23 @@ def run_json_project(project,
 
         for i in range(1, len(s_tbd)):
             if not s_tbd[i]['skipped']:
-                #        im_sta_fn = s_tbd[i]['images']['ref']['filename']
-                #        im_mov_fn = s_tbd[i]['images']['base']['filename']
-                logger.info('Calling align_alignment_process >>>>')
-                # from alignment_process import alignment_process
-                '''refine_affine or apply_affine'''
                 if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
-                    atrm = s_tbd[i]['align_to_ref_method']
-
+                    '''refine_affine or apply_affine'''
                     logger.info('about to enter align_alignment_process...')
-                    # Align Forward Change:
-                    align_proc = alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
-                #          align_proc = alignment_process(im_sta_fn, im_mov_fn, align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
+                    align_proc = alignment_process(
+                        align_dir=align_dir,
+                        layer_dict=s_tbd[i],
+                        init_affine_matrix=afm_scaled[i],
+                        dest=project['data']['destination_path']
+                    )
                 else:
                     '''init_affine'''
-                    # Align Forward Change:
-                    align_proc = alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
-                #          align_proc = alignment_process(im_sta_fn, im_mov_fn, align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
-                # Align Forward Change:
+                    align_proc = alignment_process(
+                        align_dir=align_dir,
+                        layer_dict=s_tbd[i],
+                        init_affine_matrix=ident,
+                        dest=project['data']['destination_path']
+                    )
                 align_list.append({'i': i, 'proc': align_proc, 'do': (i in range_to_process)})
 
         c_afm = swiftir.identityAffine() # Initialize cafm to identity matrix
@@ -250,8 +248,6 @@ def run_json_project(project,
             logger.debug("Not starting at zero, initialize the cafm to non-identity from previous aligned image")
             logger.debug(80 * "@")
             # Set the cafm to the afm of the previously aligned image
-            # TODO: Check this for handling skips!!!
-            # TODO: Check this for handling skips!!!
             # TODO: Check this for handling skips!!!
             prev_aligned_index = range_to_process[0] - 1
             method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
@@ -327,14 +323,14 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     if arg_list != None:
         cmd_arg_list = [a for a in arg_list]
         cmd_arg_list.insert(0, cmd)
-    logger.debug("  Running command: " + str(cmd_arg_list))
-    logger.debug("   Passing Data\n==========================\n" + str(cmd_input) + "==========================\n")
+    logger.info("  Running command: " + str(cmd_arg_list))
+    logger.info("   Passing Data\n==========================\n" + str(cmd_input) + "==========================\n")
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    logger.debug("Command output: \n\n" + cmd_stdout + "==========================\n")
+    logger.info("Command output: \n\n" + cmd_stdout + "==========================\n")
     logger.error("Command error: \n\n" + cmd_stderr + "==========================\n")
-    logger.debug("=================================================\n")
+    logger.info("=================================================\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr})
 
 
@@ -344,11 +340,19 @@ def prefix_lines(i, s):
 
 class alignment_process:
 
-    def __init__(self, im_sta_fn=None, im_mov_fn=None, align_dir='./', layer_dict=None, init_affine_matrix=None, cumulative_afm=None):
+    def __init__(self, im_sta_fn=None,
+                 im_mov_fn=None, align_dir='./',
+                 layer_dict=None,
+                 init_affine_matrix=None,
+                 cumulative_afm=None,
+                 dest=None
+                 ):
+
         self.recipe = None
         self.im_sta_fn = im_sta_fn
         self.im_mov_fn = im_mov_fn
         self.align_dir = align_dir
+        self.dest = dest
 
         if layer_dict != None:
             self.layer_dict = layer_dict
@@ -361,7 +365,7 @@ class alignment_process:
                     "base": {"filename": im_mov_fn}
                 },
                 "align_to_ref_method": {
-                    "selected_method": "Auto Swim Align",
+                    "selected_method": "Auto-SWIM",
                     # "method_options": [
                     #     "Auto Swim Align",
                     #     "Match Point Align"
@@ -443,8 +447,7 @@ class alignment_process:
 
 
         # Set up 2x2 points and windows
-        nx = 2
-        ny = 2
+        nx, ny = 2, 2
         pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
         sx = int(wwx_f / 2.0)  # Initial Size of each window
         sy = int(wwy_f / 2.0)  # Initial Size of each window
@@ -457,8 +460,7 @@ class alignment_process:
         psta_2x2 = pa
 
         # Set up 4x4 points and windows
-        nx = 4
-        ny = 4
+        nx, ny = 4, 4
         pa = np.zeros((2, nx * ny))
         sx = int(wwx_f / 4.0)  # Initial Size of each window
         sy = int(wwy_f / 4.0)  # Initial Size of each window # THIS WAS MISSING
@@ -479,22 +481,18 @@ class alignment_process:
         logger.info("  psta_2x2 = " + str(psta_2x2))
         logger.info("  psta_4x4 = " + str(psta_4x4))
 
-        #### CALL TO align_recipe ####
-        # im_sta_fn is 'ref', im_mov_fn is 'base'
-        #    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-        self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)  # tag
+        self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn, dest=self.dest) # Call to align_recipe
 
         wht = atrm['method_data']['whitening_factor']
 
         # wwx, wwy = window width
         # psta = points stationary array
-        if atrm['selected_method'] == 'Auto Swim Align':
+        if atrm['selected_method'] == 'Auto-SWIM':
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
                 '''refine_affine'''
                 # self.init_affine_matrix - result from previous alignment at coarser scale
                 # ingredient_4x4 = align_ingredient(ww=int(sx_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
-
                 # ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 # self.recipe.add_ingredient(ingredient_4x4)
                 ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
@@ -508,31 +506,30 @@ class alignment_process:
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
-                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir )  # 0721
-                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
+                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest)  # 0721
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
-                ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
-                ingredient_2x2b = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
+                ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
+                ingredient_2x2b = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
                 # ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_2x2b)
                 # self.recipe.add_ingredient(ingredient_4x4)
-        elif atrm['selected_method'] == 'Match Point Align':
+        elif atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
             # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
             # mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
             # mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
             mp_base = np.array(self.layer_dict['align_to_ref_method']['match_points']['base']).transpose()
             mp_ref = np.array(self.layer_dict['align_to_ref_method']['match_points']['ref']).transpose()
             # First ingredient is to calculate the Affine matrix from match points alone
-            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, ad=self.align_dir)
+            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, ad=self.align_dir, dest=self.dest)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
-            ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir) # <-- CALL TO SWIM
+            ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir, dest=self.dest) # <-- CALL TO SWIM
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
-        ingredient_check_align = align_ingredient(ww=(wwx_f, wwy_f), psta=psta_1, iters=1, align_mode='check_align',
-                                                  wht=wht)
+        ingredient_check_align = \
+            align_ingredient(ww=(wwx_f, wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)
 
         # DISABLE CHECK_ALIGN INGREDIENT FOR PERFORMANCE TESTING
         #    self.recipe.add_ingredient(ingredient_check_align)
@@ -563,16 +560,15 @@ class alignment_process:
         if self.recipe.ingredients[0].mir_mp_err_lines:
             atrm['method_results']['mir_mp_err_lines'] = self.recipe.ingredients[0].mir_mp_err_lines
 
-
-        current_time = datetime.datetime.now()
-        atrm['method_results']['datetime'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
-
         atrm['method_data']['bias_x_per_image'] = 0  # x_bias
         atrm['method_data']['bias_y_per_image'] = 0  # y_bias
         atrm['method_data']['bias_rot_per_image'] = 0  # rot_bias
         atrm['method_data']['bias_scale_x_per_image'] = 0  # scale_x_bias
         atrm['method_data']['bias_scale_y_per_image'] = 0  # scale_y_bias
         atrm['method_data']['bias_skew_x_per_image'] = 0  # skew_x_bias
+
+        current_time = datetime.datetime.now()
+        atrm['method_results']['datetime'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
         if save:
             self.saveAligned()
@@ -621,7 +617,7 @@ class alignment_process:
 
 # Universal class for alignment recipes
 class align_recipe:
-    def __init__(self, im_sta_fn=None, im_mov_fn=None):
+    def __init__(self, im_sta_fn=None, im_mov_fn=None, dest=None):
         logger.info('align_recipe (constructor) >>>>')
         self.ingredients = []
         self.im_sta = None
@@ -631,8 +627,9 @@ class align_recipe:
         self.afm = swiftir.identityAffine()
         self.swiftir_mode = 'c'
         self.siz = ImageSize(self.im_sta_fn)
+        self.dest = dest
 
-        logger.info('<<<< align_recipe (constructor)')
+        logger.critical('align_recipe (constructor):')
 
     def __str__(self):
         s = "recipe: \n"
@@ -691,9 +688,18 @@ class align_ingredient:
     #        supplied afm matrix but do not refine the afm matrix
     #  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
     # def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None):
-    def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None, ad=None):
-        logger.info('\nalign_align_ingredient >>>>\n')
-
+    def __init__(self,
+                 ww=None,
+                 psta=None,
+                 pmov=None,
+                 afm=None,
+                 wht=-0.68,
+                 iters=2,
+                 align_mode='swim_align',
+                 rota=None,
+                 ad=None,
+                 dest=None
+                 ):
         self.swim_drift = 0.5
         self.afm = afm
         self.recipe = None
@@ -713,6 +719,7 @@ class align_ingredient:
         self.mir_script_mp = None
         self.mir_mp_out_lines = None
         self.mir_mp_err_lines = None
+        self.dest = dest
 
         # mir has a -v flag for more output
 
@@ -763,7 +770,7 @@ class align_ingredient:
     def run_swim_c(self):
         ''' Returns affine matrix '''
 
-        logger.info('run_swim_c >>>>')
+        logger.critical('run_swim_c...')
 
         #    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
         #    wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
@@ -850,19 +857,20 @@ class align_ingredient:
 
         '''SWIM'''
         self.swim_str = multi_swim_arg_string
-        o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
+        o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string)
+        logger.critical(self.swim_str)
 
         swim_out_lines = o['out'].strip().split('\n')
         swim_err_lines = o['err'].strip().split('\n')
         swim_results.append({'out': swim_out_lines, 'err': swim_err_lines})
 
-        path = os.path.join(os.path.dirname(os.path.dirname(self.recipe.im_sta_fn)), 'swim_log.dat')
-        with open(path, 'a+') as f:
-            f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
-            f.write('swim_stdout: \n%s\n\n' % (o['out']))
-            f.write('swim_stderr: \n%s\n\n' % (o['err']))
-
-        # with open('/Users/joelyancey/output.log', 'w+') as f:
+        # path = os.path.join(os.path.dirname(os.path.dirname(self.recipe.im_sta_fn)), 'swim_log.dat')
+        # with open(self.logpath, 'a+') as f:
+        #     f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
+        #     f.write('swim_stdout: \n%s\n\n' % (o['out']))
+        #     f.write('swim_stderr: \n%s\n\n' % (o['err']))
+        #
+        # with open(self.logpath, 'a+') as f:
         #     f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
         #     f.write('swim_stdout: \n%s\n\n' % (o['out']))
         #     f.write('swim_stderr: \n%s\n\n' % (o['err']))
@@ -875,11 +883,10 @@ class align_ingredient:
         # loop over SWIM output to build the MIR script:
         for l in swim_out_lines:
             if len(swim_out_lines) == 1:
-                logger.info("SWIM OUT: " + str(l))
+                logger.critical("SWIM OUT: " + str(l))
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
 
-                # with open('/Users/joelyancey/output.log', 'w+') as f:
-                #     f.write(str(toks))
+                logger.critical('Tokens: ' + str(toks) + '\n')
                 # if self.align_mode != 'match_point_align': #0205+
                 try:
                     dx = float(toks[8])
@@ -889,25 +896,27 @@ class align_ingredient:
 
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 mir_script += ' '.join(mir_toks) + '\n'
-                logger.info("SNR: " + str(toks[0]))
+                logger.critical("SNR: " + str(toks[0]))
                 snr_list.append(float(toks[0][0:-1]))
             else:
-                logger.info("SWIM OUT: " + str(l))
+                logger.critical("SWIM OUT: " + str(l))
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 mir_script += ' '.join(mir_toks) + '\n'
-                logger.info("SNR: " + str(toks[0]))
+                logger.critical("SNR: " + str(toks[0]))
                 snr_list.append(float(toks[0][0:-1]))
         mir_script += 'R\n'
 
         '''MIR'''
+
         self.mir_script = mir_script
         o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
+        logger.critical(self.mir_script)
 
         mir_out_lines = o['out'].strip().split('\n')
         mir_err_lines = o['err'].strip().split('\n')
-        logger.info(str(mir_out_lines))
-        logger.info(str(mir_err_lines))
+        # logger.info(str(mir_out_lines))
+        # logger.info(str(mir_err_lines))
 
         # Separate the results into a list of token lists
         afm = np.eye(2, 3, dtype=np.float32)
@@ -927,11 +936,9 @@ class align_ingredient:
             for line in mir_out_lines:
                 logger.info("Line: " + str(line))
                 toks = line.strip().split()
-                '''
-                Extract AFM from these lines:
+                ''' Extract AFM from these lines:
                 AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
-                AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043
-                '''
+                AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043 '''
 
                 if (toks[0] == 'AF'):
                     afm[0, 0] = float(toks[1])
@@ -963,7 +970,7 @@ class align_ingredient:
     def execute(self):
         '''RETURN AN AFFINE MATRIX'''
 
-        logger.info('align_ingredient.execute >>>>')
+        logger.critical('Executing ingredient...')
 
         '''---------------------------------NEW -------------------------------------'''
         #0214
@@ -971,13 +978,12 @@ class align_ingredient:
             mir_script_mp = ''
             for i in range(len(self.psta[0])):
                 # mir_script_mp += f'{int(self.psta[0][i])} {int(self.psta[1][i])} {int(self.pmov[0][i])} {int(self.pmov[1][i])}\n'
-                mir_script_mp += f'{int(self.pmov[0][i])} {int(self.pmov[1][i])} {int(self.psta[0][i])} {int(self.psta[1][i])}\n'
+                mir_script_mp += f'{int(self.psta[0][i])} {int(self.psta[1][i])} {int(self.pmov[0][i])} {int(self.pmov[1][i])}\n'
 
             mir_script_mp += 'R'
             self.mir_script_mp = mir_script_mp
 
-            # with open('/Users/joelyancey/mir_script_mp.log', 'w+') as f:
-            #     f.write(self.mir_script_mp)
+            logger.critical('\nMIR script: ' + self.mir_script_mp)
             o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script_mp)
             '''
             Example std out:
@@ -988,10 +994,9 @@ class align_ingredient:
             mir_mp_err_lines = o['err'].strip().split('\n')
             self.mir_mp_out_lines = mir_mp_out_lines
             self.mir_mp_err_lines = mir_mp_err_lines
-            # with open('/Users/joelyancey/mir_mp_out_lines.log', 'w+') as f:
-            #     f.write(str(mir_mp_out_lines))
-            # with open('/Users/joelyancey/mir_mp_err_lines.log', 'w+') as f:
-            #     f.write(str(mir_mp_err_lines))
+            logger.critical('\n\n(MANUAL ALIGN) MIR out: ' + str(mir_mp_out_lines))
+            logger.critical('\n\n(MANUAL ALIGN) MIR err: ' + str(mir_mp_err_lines))
+
 
             # Separate the results into a list of token lists
             afm = np.eye(2, 3, dtype=np.float32)
@@ -1016,9 +1021,8 @@ class align_ingredient:
             snr_array = self.snr
             self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
                 snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-            # with open('/Users/joelyancey/output2.log', 'w+') as f:
-            #     f.write('AFM:\n' + str(afm))
-            #     f.write('snr_report:\n' + self.snr_report)
+            logger.critical('AFM:\n' + str(afm))
+            logger.critical('snr_report:\n' + self.snr_report)
 
             return self.afm
 
@@ -1244,8 +1248,9 @@ if __name__ == '__main__':
                     "align_to_ref_method": {
                         "selected_method": "Match Point Align",
                         "method_options": [
-                            "Auto Swim Align",
-                            "Match Point Align"
+                            "Auto-SWIM",
+                            "Manual-Hint",
+                            "Manual-Strict"
                         ],
                         "method_data": {},
                         "method_results": {}

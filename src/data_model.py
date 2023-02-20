@@ -560,22 +560,25 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']['snr_report']
-        except KeyError:
-            logger.debug('An Exception Was Raised Trying To Get SNR of The Current Layer')
-            pass
+        except:
+            logger.warning('No SNR Report for Layer %d' % l)
+            return ''
 
 
     def snr_errorbar_size(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        if l == 0:
+        try:
+            if l == 0:
+                return 0.0
+            report = self.snr_report(s=s, l=l)
+            if not isinstance(report, str):
+                logger.debug(f'No SNR Report Available For Layer {l}, Returning 0.0...')
+                return 0.0
+            substr = '+-'
+            return float(report[report.index(substr) + 2: report.index(substr) + 5])
+        except:
             return 0.0
-        report = self.snr_report(s=s, l=l)
-        if not isinstance(report, str):
-            logger.debug(f'No SNR Report Available For Layer {l}, Returning 0.0...')
-            return 0.0
-        substr = '+-'
-        return float(report[report.index(substr) + 2: report.index(substr) + 5])
 
 
     def snr_errorbars(self, s=None):
@@ -645,6 +648,12 @@ class DataModel:
             logger.warning('WARNING: Scale Was An Empty String')
             self._data['data']['current_scale'] = self.scales()[-1]
         return self._data['data']['current_scale']
+
+    def clearMps(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points'] \
+            = {'ref': [], 'base': []}
 
     def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
         '''Example Usage:
@@ -836,10 +845,7 @@ class DataModel:
         if role not in ('ref', 'base', 'aligned'):
             logger.warning('Invalid Role Argument- Returning')
             return
-        if role == 'base':
-            self.alstack()[l]['align_to_ref_method']['match_points']['base'] = matchpoints
-        if role == 'ref':
-            self.alstack()[l]['align_to_ref_method']['match_points']['ref'] = matchpoints
+        self.alstack()[l]['align_to_ref_method']['match_points'][role] = matchpoints
         self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'] = matchpoints
 
 
@@ -1807,8 +1813,9 @@ layer_dict = {
     "align_to_ref_method": {
         "selected_method": "Match Point Align",
         "method_options": [
-            "Auto Swim Align",
-            "Match Point Align"
+            "Auto-SWIM",
+            "Manual-Hint",
+            "Manual-Strict"
         ],
         "method_data": {},
         "method_results": {}

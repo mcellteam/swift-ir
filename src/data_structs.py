@@ -54,7 +54,7 @@ layer_template = \
         "align_to_ref_method": {
             "method_data": {},
             "method_options": {},
-            "selected_method": "Auto Swim Align",
+            "selected_method": "Auto-SWIM",
             "match_points": {
                 "src": [],
                 'base': []

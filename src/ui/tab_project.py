@@ -102,33 +102,26 @@ class ProjectTab(QWidget):
 
 
     def initNeuroglancer(self):
+        logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...\n')
+
         caller = inspect.stack()[1].function
         if cfg.MP_MODE:
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
-            self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
+            self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
+            self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
-            self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
+            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
+            self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
             self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
-
             #Critical Only connect to one of the two interconnected widgets. Do not connect stage.
-            self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             # self.MA_viewer_base.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.MA_viewer_stage.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
-            self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
-            self.MA_viewer_ref.signals.stateChanged.connect(self.updateMA_base_state)
-            self.MA_viewer_base.signals.stateChanged.connect(self.updateMA_ref_state)
+            # self.MA_viewer_ref.signals.stateChanged.connect(self.updateMA_base_state)
+            # self.MA_viewer_base.signals.stateChanged.connect(self.updateMA_ref_state)
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
-            #----
-            # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
-            # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
-            # self.MA_webengine_stage.setUrl(QUrl(cfg.emViewer.url()))
             return
         # logger.critical(f'caller: {caller}\n\n\n')
         # self.shutdownNeuroglancer()
@@ -138,7 +131,7 @@ class ProjectTab(QWidget):
             cfg.main_window.corr_spot_thumbs.hide()
 
         if caller != '_onGlobTabChange':
-            logger.critical(f'\n\nInitializing Neuroglancer (caller: {inspect.stack()[1].function})...\n')
+
             cfg.emViewer = self.viewer = EMViewer(webengine=self.webengine)
             self.updateNeuroglancer()
             cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
@@ -152,22 +145,12 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'Updating Neuroglancer Viewer (caller: {caller})')
         if cfg.MP_MODE:
-            # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            # self.MA_viewer_ref = MAViewer(role='ref')
-            # self.MA_viewer_base = MAViewer(role='base')
-            # self.MA_viewer_stage = MAViewer(role='base')
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
-            #----
-            # self.MA_webengine_base.setUrl(QUrl(self.MA_viewer_base.url()))
-            # self.MA_webengine_ref.setUrl(QUrl(self.MA_viewer_ref.url()))
-            # self.MA_webengine_stage.setUrl(QUrl(cfg.emViewer.url()))
             return
-            # self.setZmag(val=15)
         else:
             cfg.emViewer.initViewer()
-
 
         # if not cfg.MP_MODE:
         #     show = getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS')
@@ -201,26 +184,6 @@ class ProjectTab(QWidget):
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         return mapping[requested]
-
-    # def addToState(self):
-    #     state = copy.deepcopy(cfg.emViewer.state)
-    #     state.relative_display_scales = {"z": 10}
-    #     cfg.emViewer.set_state(state)
-    #     cfg.LV.invalidate()
-
-    def setNeuroglancerUrl(self):
-        self.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
-
-
-    def updateNgLayer(self):
-        state = copy.deepcopy(cfg.emViewer.state)
-        state.position[0] = cfg.data.layer()
-        cfg.emViewer.set_state(state)
-
-
-    def getBrowserSize(self):
-        return self.webengine.geometry().getRect()
-
 
 
     def initUI_Neuroglancer(self):
@@ -559,20 +522,13 @@ class ProjectTab(QWidget):
         self.MA_webengine_ref = QWebEngineView()
         self.MA_webengine_base = QWebEngineView()
         self.MA_webengine_stage = QWebEngineView()
-        # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
-        # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
-        # self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
         self.MA_webengine_ref.setMinimumWidth(200)
         self.MA_webengine_base.setMinimumWidth(200)
-        self.MA_webengine_stage.setMinimumWidth(160)
-        self.MA_webengine_stage.setMinimumHeight(160)
+        self.MA_webengine_stage.setMinimumWidth(300)
+        self.MA_webengine_stage.setMinimumHeight(200)
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
         # self.MA_webengine_stage.setMouseTracking(True)
-        # self.MA_webengine_ref.setMinimumSize(QSize(300,300))
-        # self.MA_webengine_base.setMinimumSize(QSize(300,300))
-        # self.MA_webengine_stage.setMinimumSize(QSize(300,300))
-
         # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
@@ -592,13 +548,17 @@ class ProjectTab(QWidget):
         self.MA_baseTitle = QLabel('Base')
         self.MA_baseTitle.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
         self.MA_refNextLab = QLabel('Next:')
-        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
+        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:13px;')
         self.MA_baseNextLab = QLabel('Next:')
-        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
-        self.MA_refNextLab = QLabel('Next:')
-        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
-        self.MA_baseNextLab = QLabel('Next:')
-        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:14px;')
+        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:13px;')
+
+        self.MA_refNextColorLab = QLabel('Next')
+        self.MA_refNextColorLab.setFixedSize(100,16)
+        self.MA_refNextColorLab.setStyleSheet('background-color: #ffe135;')
+        self.MA_baseNextColorLab = QLabel('Next')
+        self.MA_baseNextColorLab.setFixedSize(100,16)
+        self.MA_baseNextColorLab.setStyleSheet('background-color: #ffe135;')
+
 
         self.MA_ptsListWidget_ref = QListWidget()
         self.MA_ptsListWidget_ref.installEventFilter(self)
@@ -609,13 +569,10 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
 
 
-
         self.gb_actionsMA = QGroupBox('Actions')
         fl_actionsMA = QFormLayout()
         fl_actionsMA.setContentsMargins(0, 0, 0, 0)
-
         self.gb_actionsMA.setLayout(fl_actionsMA)
-
 
         lab = QLabel('Method: ')
         tip = 'Automatic Alignment using SWIM'
@@ -635,18 +592,10 @@ class ProjectTab(QWidget):
         self.rbManStrict.setStatusTip(tip)
         self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        def fn():
-            if self.rbAuto.isChecked():
-                cfg.data.set_selected_method('Auto SWIM Align')
-            if self.rbManHint.isChecked():
-                cfg.data.set_selected_method('Match Point Align')
-            elif self.rbManStrict.isChecked():
-                cfg.data.set_selected_method('Manual-Strict')
 
-        self.rbAuto.clicked.connect(fn)
-        self.rbManHint.clicked.connect(fn)
-        self.rbManStrict.clicked.connect(fn)
-
+        self.rbAuto.setEnabled(False)
+        self.rbManHint.setEnabled(False)
+        self.rbManStrict.setEnabled(False)
 
 
         self.rbMethodGroup = QButtonGroup()
@@ -671,39 +620,83 @@ class ProjectTab(QWidget):
         fl_actionsMA.addWidget(w)
 
 
+        self.btnClearMA = QPushButton('Clear Manual Points')
+        self.btnClearMA.setMaximumHeight(20)
+        def fn():
+            self.deleteAllMp()
+            self.initNeuroglancer()
+        self.btnClearMA.clicked.connect(fn)
 
-        btnExitManAlign = QPushButton('Exit Manual Alignment Mode')
-        with open('src/styles/controls.qss', 'r') as f:
-            btnExitManAlign.setStyleSheet(f.read())
-        btnExitManAlign.setMaximumHeight(20)
-        btnExitManAlign.clicked.connect(cfg.main_window.enterExitManAlignMode)
+        self.btnResetAllMA = QPushButton('Set All To Automatic-SWIM && Realign')
+        self.btnResetAllMA.setMaximumHeight(20)
+        def fn():
+            s = cfg.data.scale()
+            for i in range(len(cfg.data)):
+                cfg.data['data']['scales'][s]['alignment_stack'][i]['align_to_ref_method']['selected_method'] = 'Auto-SWIM'
+            cfg.main_window.alignAll()
+            cfg.main_window.enterExitManAlignMode(force_exit=True)
+        self.btnResetAllMA.clicked.connect(fn)
 
-        btnManSave = QPushButton('Save Manual Points')
-        with open('src/styles/controls.qss', 'r') as f:
-            btnManSave.setStyleSheet(f.read())
-        btnManSave.setMaximumHeight(20)
-        btnManSave.clicked.connect(lambda: print('Saving Points...'))
+        self.btnSaveAndRealignMA = QPushButton('Save && Realign')
+        self.btnSaveAndRealignMA.setMaximumHeight(20)
+        def fn():
+            self.saveMps()
+            # cfg.main_window.alignOne()
+            cfg.main_window.alignAll()
+        self.btnSaveAndRealignMA.clicked.connect(fn)
+
+
+        # btnManClear = QPushButton('Clear Manual Points')
+        # with open('src/styles/controls.qss', 'r') as f:
+        #     btnManClear.setStyleSheet(f.read())
+        # btnManClear.setMaximumHeight(20)
+        # btnManClear.clicked.connect(lambda: print('Clearing Points...'))
+
+
+        self.btnSaveExitMA = QPushButton('Save && Exit Manual Alignment Mode')
+        self.btnSaveExitMA.setMaximumHeight(20)
+        def fn():
+            self.saveMps()
+            cfg.main_window.enterExitManAlignMode(force_exit=True)
+        self.btnSaveExitMA.clicked.connect(fn)
 
 
 
-        fl_actionsMA.addWidget(btnExitManAlign)
-        fl_actionsMA.addWidget(btnManSave)
+        self.btnExitMA = QPushButton('Exit Manual Alignment Mode')
+        # with open('src/styles/controls.qss', 'r') as f:
+        #     self.btnExitMA.setStyleSheet(f.read())
+        self.btnExitMA.setMaximumHeight(20)
+        self.btnExitMA.clicked.connect(cfg.main_window.enterExitManAlignMode)
+
+
+        fl_actionsMA.addWidget(self.btnClearMA)
+        fl_actionsMA.addWidget(self.btnSaveAndRealignMA)
+        fl_actionsMA.addWidget(self.btnResetAllMA)
+        fl_actionsMA.addWidget(self.btnSaveExitMA)
+        fl_actionsMA.addWidget(self.btnExitMA)
+
 
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
+
         w = QWidget()
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.MA_refTitle)
         vbl.addWidget(self.MA_ptsListWidget_ref)
+        # vbl.addWidget(self.MA_refNextLab)
+        vbl.addWidget(self.MA_refNextColorLab)
         w.setLayout(vbl)
         hbl.addWidget(w)
+
         w = QWidget()
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.MA_baseTitle)
         vbl.addWidget(self.MA_ptsListWidget_base)
+        # vbl.addWidget(self.MA_baseNextLab)
+        vbl.addWidget(self.MA_baseNextColorLab)
         w.setLayout(vbl)
         hbl.addWidget(w)
 
@@ -805,47 +798,61 @@ class ProjectTab(QWidget):
         self.ng_browser_container_outer.setObjectName('ng_browser_container_outer')
         self.ng_browser_container_outer.setLayout(hbl)
 
+
     def refListItemClicked(self, qmodelindex):
         item = self.MA_ptsListWidget_ref.currentItem()
         logger.info(f"Selected {item.text()}")
+
 
     def baseListItemClicked(self, qmodelindex):
         item = self.MA_ptsListWidget_base.currentItem()
         logger.info(f"Selected {item.text()}")
 
 
-    def updateMAlistRef(self):
-        caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+    def updateListWidgets(self):
+        self.updateMAlistRef()
+        self.updateMAlistBase()
+        isValid = self.checkMApoints()
+        self.btnSaveExitMA.setEnabled(isValid)
+        self.btnSaveAndRealignMA.setEnabled(isValid)
+        self.rbAuto.setEnabled(True)
+        self.rbManHint.setEnabled(isValid)
+        self.rbManStrict.setEnabled(isValid)
 
-        # mps = [(p[1], p[2]) for p in [p.point.tolist() for p in self.MA_viewer_ref.pts.values()]]
+
+    def checkMApoints(self):
+        return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys()) and \
+                                (len(self.MA_viewer_ref.pts.keys()) > 2)
+
+
+    def updateMAlistRef(self):
+        logger.info('')
         self.MA_ptsListWidget_ref.clear()
+        n = 0
         for key in self.MA_viewer_ref.pts.keys():
             p = self.MA_viewer_ref.pts[key]
             _, x, y = p.point.tolist()
-            # item = QListWidgetItem('%.1f, %.1f' %(x,y))
-            item = QListWidgetItem('%.1f, %.1f' %(x,y))
-            item.setBackground(QColor(key))
+            item = QListWidgetItem('(%.1f,  %.1f)' % (x, y))
+            item.setBackground(QColor(self.mp_colors[n]))
             self.MA_ptsListWidget_ref.addItem(item)
+            n += 1
+        self.MA_refNextColorLab.setStyleSheet(
+            f'''background-color: {self.MA_viewer_ref.getNextUnusedColor()}''')
+
 
     def updateMAlistBase(self):
-        caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-
-        # mps = [(p[1], p[2]) for p in [p.point.tolist() for p in self.MA_viewer_base.pts.values()]]
+        logger.info('')
         self.MA_ptsListWidget_base.clear()
+        n = 0
         for key in self.MA_viewer_base.pts.keys():
             p = self.MA_viewer_base.pts[key]
             _, x, y = p.point.tolist()
-            item = QListWidgetItem('%.1f, %.1f' % (x, y))
-            item.setBackground(QColor(key))
+            item = QListWidgetItem('(%.1f,  %.1f)' % (x, y))
+            item.setBackground(QColor(self.mp_colors[n]))
             self.MA_ptsListWidget_base.addItem(item)
+            n += 1
+        self.MA_baseNextColorLab.setStyleSheet(
+            f'''background-color: {self.MA_viewer_base.getNextUnusedColor()}''')
 
 
     def updateMA_ref_state(self):
@@ -854,7 +861,6 @@ class ProjectTab(QWidget):
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
         logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-
         if caller != 'on_state_change':
             if self.MA_webengine_ref.isVisible():
                 if self.MA_viewer_base.state.cross_section_scale:
@@ -876,7 +882,6 @@ class ProjectTab(QWidget):
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
         logger.info('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-
         if caller != 'on_state_change':
             if self.MA_webengine_base.isVisible():
                 if self.MA_viewer_ref.state.cross_section_scale:
@@ -902,6 +907,10 @@ class ProjectTab(QWidget):
             logger.info('del_key is %s' % del_key)
             self.MA_viewer_ref.pts.pop(del_key)
             self.MA_viewer_ref.update_annotations()
+        self.updateListWidgets()
+        self.updateNeuroglancer()
+
+
 
     def deleteMpBase(self):
         logger.info('Deleting A Base Image Manual Correspondence Point from Buffer...')
@@ -913,6 +922,9 @@ class ProjectTab(QWidget):
             logger.info('del_key is %s' % del_key)
             self.MA_viewer_base.pts.pop(del_key)
             self.MA_viewer_base.update_annotations()
+        self.updateListWidgets()
+        self.updateNeuroglancer()
+
 
     def deleteAllMpRef(self):
         logger.info('Deleting All Reference Image Manual Correspondence Points from Buffer...')
@@ -920,6 +932,9 @@ class ProjectTab(QWidget):
         self.MA_viewer_ref.pts.clear()
         self.MA_ptsListWidget_ref.clear()
         self.MA_viewer_ref.update_annotations()
+        self.updateListWidgets()
+        self.updateNeuroglancer()
+
 
     def deleteAllMpBase(self):
         logger.info('Deleting All Base Image Manual Correspondence Points from Buffer...')
@@ -927,17 +942,50 @@ class ProjectTab(QWidget):
         self.MA_viewer_base.pts.clear()
         self.MA_ptsListWidget_base.clear()
         self.MA_viewer_base.update_annotations()
+        self.updateListWidgets()
+        self.updateNeuroglancer()
+
 
     def deleteAllMp(self):
         logger.info('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
+        cfg.data.clearMps()
         self.MA_viewer_ref.pts.clear()
         self.MA_ptsListWidget_ref.clear()
         self.MA_viewer_base.pts.clear()
         self.MA_ptsListWidget_base.clear()
         self.MA_viewer_ref.update_annotations()
         self.MA_viewer_base.update_annotations()
+        self.updateListWidgets()
+        self.saveMps()
+        self.updateNeuroglancer()
 
+
+    def saveMps(self):
+        logger.info('')
+        if self.checkMApoints():
+            ref_pts, base_pts = [], []
+            for key in self.MA_viewer_ref.pts.keys():
+                p = self.MA_viewer_ref.pts[key]
+                _, x, y = p.point.tolist()
+                ref_pts.append((x, y))
+            for key in self.MA_viewer_base.pts.keys():
+                p = self.MA_viewer_base.pts[key]
+                _, x, y = p.point.tolist()
+                base_pts.append((x, y))
+            cfg.data.set_match_points('ref', ref_pts)
+            cfg.data.set_match_points('base', base_pts)
+
+            if self.rbAuto.isChecked():
+                cfg.data.set_selected_method('Auto-SWIM')
+            if self.rbManHint.isChecked():
+                cfg.data.set_selected_method('Manual-Hint')
+            elif self.rbManStrict.isChecked():
+                cfg.data.set_selected_method('Manual-Strict')
+            else:
+                cfg.data.set_selected_method('Auto-SWIM')
+
+            cfg.main_window.save()
 
 
 
@@ -980,26 +1028,29 @@ class ProjectTab(QWidget):
         return super().eventFilter(source, event)
 
     def onEnterManualMode(self):
-        logger.critical('')
+        # logger.critical('')
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         self.ng_browser_container.hide()
         self.MA_splitter.show()
 
-        if cfg.data.selected_method() in ('Auto SWIM Align', 'Auto-SWIM'):
+        method = cfg.data.selected_method()
+        if method == 'Auto-SWIM':
             self.rbAuto.setChecked(True)
-        elif cfg.data.selected_method() in ('Match Point Align', 'Manual-Hint'):
+        elif method == 'Manual-Hint':
             self.rbManHint.setChecked(True)
-        elif cfg.data.selected_method() in ('Manual-Strict'):
+        elif method == 'Manual-Strict':
             self.rbManStrict.setChecked(True)
+        else:
+            self.rbAuto.setChecked(True)
 
         #Todo update listwidgets before entering manual alignment mode
-        self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_base)
-        self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_ref)
+        self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
+        self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
-        self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
+        self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
+        self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
         self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
         self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
         self.MA_viewer_ref.initViewer()
@@ -1009,9 +1060,11 @@ class ProjectTab(QWidget):
         self.ngVertLab.setText('Manual Alignment Mode')
         self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
 
+        self.updateListWidgets()
+
 
     def onExitManualMode(self):
-        logger.critical('')
+        # logger.critical('')
         self.deleteAllMp()
         self._tabs.setCurrentIndex(self.bookmark_tab)
         self.ng_browser_container.show()

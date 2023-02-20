@@ -93,7 +93,6 @@ class MainWindow(QMainWindow):
     keyPressed = Signal(int)
     alignmentFinished = Signal()
     updateTable = Signal()
-    setInteractive = Signal()
     cancelMultiprocessing = Signal()
 
     def __init__(self, data=None):
@@ -130,7 +129,6 @@ class MainWindow(QMainWindow):
         self.alignmentFinished.connect(self.dataUpdateWidgets)
         self.alignmentFinished.connect(self.updateMenus)
         self.updateTable.connect(self.updateProjectTable)
-        self.setInteractive.connect(self.restore_interactivity)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
         self.activateWindow()
@@ -299,6 +297,9 @@ class MainWindow(QMainWindow):
                     self.tell('Refreshing Table...')
                     cfg.project_tab.project_table.setScaleData()
                     self.hud.done()
+                if cfg.project_tab._tabs.currentIndex() == 2:
+                    logger.critical('Refreshing JSON Tree...')
+                    cfg.project_tab.updateJsonWidget()
                 elif cfg.project_tab._tabs.currentIndex() == 3:
                     logger.critical('Refreshing SNR Plot...')
                     self.tell('Refreshing SNR Plot...')
@@ -413,7 +414,6 @@ class MainWindow(QMainWindow):
 
     def initView(self):
         logger.info('Making things look normal...')
-        self.setInteractive.emit()
         # self._tabs.show()
         self.enableAllTabs()
         self.cpanel.show()
@@ -554,7 +554,7 @@ class MainWindow(QMainWindow):
             s = cfg.data.curScale
             snr = cfg.data.snr_components()
             if self.detailsSNR.isVisible():
-                if cfg.data.selected_method() == 'Auto Swim Align':
+                if cfg.data.selected_method() == 'Auto-SWIM':
                     self.detailsSNR.setText(
                         "SNR       :%s\n"
                         "Prev.  SNR:%s\n\n"
@@ -570,7 +570,7 @@ class MainWindow(QMainWindow):
                          ('%.3f' %snr[2]).rjust(9),
                          ('%.3f' %snr[3]).rjust(9))
                     )
-                elif cfg.data.selected_method == 'Match Point Align':
+                elif cfg.data.selected_method in ('Match Point Align','Manual-Hint', 'Manual-Strict'):
                     txt = "SNR       :%s\n" \
                           "Prev.  SNR:%s\n\n" \
                           "Components"
@@ -582,13 +582,13 @@ class MainWindow(QMainWindow):
 
             method = cfg.data.selected_method()
             try:
-                if method == 'Auto Swim Align':
+                if method == 'Auto-SWIM':
                     self.detailsMethod.setText('Automatic SWIM  [X]\n'
                                                'Manual, Strict  [ ]\n'
                                                'Manual, Hint    [ ]\n')
                     self.detailsManualpoints.hide()
 
-                elif method == 'Match Point Align':
+                elif method == 'Manual-Strict':
                     pts = list(cfg.data.match_points_rounded())
                     mps = '\n'.join(['%d: %s\n%s' % (pts.index((p1,p2)), str(p1).ljust(21), str(p2).rjust(21)) for p1, p2 in pts])
                     self.detailsMethod.setText('Automatic SWIM  [ ]\n'
@@ -944,12 +944,12 @@ class MainWindow(QMainWindow):
     def updateProjectDict(self):
         cfg.project_tab.updateJsonWidget()
 
-    @Slot()
-    def restore_interactivity(self):
-        self._working = False
-        self.enableAllButtons()
-        self.updateEnabledButtons()
-        self.pbar_widget.hide()
+    # @Slot()
+    # def restore_interactivity(self):
+    #     self._working = False
+    #     self.enableAllButtons()
+    #     self.updateEnabledButtons()
+    #     self.pbar_widget.hide()
 
 
     def present_snr_results(self, start=0, end=None):
@@ -976,39 +976,27 @@ class MainWindow(QMainWindow):
     def onAlignmentEnd(self, start, end):
         logger.info('Running Post-Alignment Tasks...')
         self.alignmentFinished.emit()
-
         try:
             self.pbarLabel.setText('')
+            self.pbar_widget.hide()
+            self.enableAllTabs()
             cfg.project_tab.updateJsonWidget()
-            self.updateCorrSpotThumbnails()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
             self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
-            self.pbar_widget.hide()
-            # cfg.project_tab._onTabChange()
-            s = cfg.data.curScale
-            cfg.data.scalesAlignedAndGenerated = get_scales_with_generated_alignments(cfg.data.scales())
-            cfg.data.nScalesAlignedAndGenerated = len(cfg.data.scalesAlignedAndGenerated)
-            # self.updateHistoryListWidget(s=s)
+
             self.update_data_cache()
 
-            # self.dataUpdateWidgets()
-            # self.updateEnabledButtons()
-            # self.updateToolbar()
             self._showSNRcheck()
-            # cfg.project_tab.project_table.updateSliderMaxVal()
-            # self.hardRestartNg()
-            # if cfg.project_tab._tabs.currentIndex() == 1:
-            # cfg.project_tab.project_table.setScaleData()
-            # cfg.project_tab.project_table.setScaleData() #0201-
-            # self.updateMenus()
+
         except:
             print_exception()
         finally:
             self._working = False
-            self.enableAllTabs()
-            self._autosave()
+            if not cfg.MP_MODE:
+                self.enableAllTabs()
+                self._autosave()
 
     def update_data_cache(self):
         cfg.data.update_cache()
@@ -1033,9 +1021,6 @@ class MainWindow(QMainWindow):
             )
         except:
             logger.warning('detailsTiming cant update')
-
-
-
 
 
     def onAlignmentStart(self, scale):
@@ -1079,7 +1064,6 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd(start=0, end=None)
         # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
-        self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
 
@@ -1099,7 +1083,6 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd(start=start, end=end)
         # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
-        self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
 
@@ -1121,7 +1104,6 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
 
@@ -1143,7 +1125,6 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.setInteractive.emit()
         self.tell('**** Processes Complete ****')
 
 
@@ -1163,7 +1144,6 @@ class MainWindow(QMainWindow):
         except:   print_exception(); self.err('An Exception Was Raised During Alignment.')
         # else:     logger.info('Affine Computation Finished')
 
-
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
@@ -1171,9 +1151,6 @@ class MainWindow(QMainWindow):
             else: cfg.thumb.generate_corr_spot(start=start, end=end)
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
         # else:   logger.info('Correlation Spot Thumbnail Generation Finished')
-
-        if self.corr_spot_thumbs.isVisible():
-            self.updateCorrSpotThumbnails()
 
         # if cfg.project_tab._tabs.currentIndex() == 1:
         #     cfg.project_tab.project_table.setScaleData()
@@ -1214,6 +1191,10 @@ class MainWindow(QMainWindow):
         if not cfg.data:
             self.warn('No data yet!')
             return
+
+        if cfg.MP_MODE:
+            return
+
         msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
         dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
         if not dlg.exec():
@@ -1581,37 +1562,23 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         if self._isProjectTab():
-
             self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
-
             if cfg.data.is_aligned_and_generated():
                 self.rb0.setText('Aligned')
-                # self.rb1.setText('Comparison')
-                self.rb0.show()
-                self.rb1.show()
                 self.aligned_label.show()
                 self.generated_label.show()
                 self.unaligned_label.hide()
             elif cfg.data.is_aligned():
                 self.rb0.setText('Unaligned')
-                self.rb0.show()
-                # self.rb1.hide()
-                self.rb1.show()
                 self.aligned_label.show()
                 self.generated_label.hide()
                 self.unaligned_label.hide()
             else:
                 self.rb0.setText('Unaligned')
-                self.rb0.show()
-                # self.rb1.hide()
-                self.rb1.show()
                 self.aligned_label.hide()
                 self.generated_label.hide()
                 self.unaligned_label.show()
-        # else:
-        #     # self._changeScaleCombo.hide()
-        #     # self.rb0.hide()
-        #     # self.rb1.hide()
+
         if self._isProjectTab() or self._isZarrTab():
             if cfg.tensor:
                 self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
@@ -1630,22 +1597,13 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
         logger.info(f'Updating widgets (caller: {caller})...')
-        # logger.info(f'caller: {caller}')
-        # if cfg.zarr_tab:
-        #     if ng_layer:
-        #         self._sectionSlider.setValue(ng_layer)
-        #         self._jumpToLineedit.setText(str(ng_layer))
-        #     else:
-        #         self._sectionSlider.setValue(cfg.emViewer._layer)
-        #         self._jumpToLineedit.setText(str(cfg.emViewer._layer))
-        #     return
+
         if self._isProjectTab():
             if cfg.data:
                 if self._working == True:
                     logger.warning(f"Can't update GUI now - working (caller: {caller})...")
                     self.warn("Can't update GUI now - working...")
                     return
-
                 if isinstance(ng_layer, int):
                     try:
                         if 0 <= ng_layer < len(cfg.data):
@@ -1654,10 +1612,6 @@ class MainWindow(QMainWindow):
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
-
-
-                # if cfg.project_tab._tabs.currentIndex() == 0:
-                    # if self.rb1.isChecked():
 
                 elif cfg.data.skipped():
                     cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
@@ -1705,11 +1659,9 @@ class MainWindow(QMainWindow):
                 #     self.updateLayerDetails()
                 if cfg.MP_MODE:
                     self.matchpoint_text_snr.setText(cfg.data.snr_report())
-                if self.corr_spot_thumbs.isVisible():
-                    self.updateCorrSpotThumbnails()
 
                 if cfg.project_tab.detailsCorrSpots.isVisible():
-                    if cfg.data.selected_method() == 'Auto Swim Align':
+                    if cfg.data.selected_method() == 'Auto-SWIM':
                         snr_vals = cfg.data.snr_components()
                         cfg.project_tab.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
                         cfg.project_tab.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
@@ -1727,8 +1679,8 @@ class MainWindow(QMainWindow):
                     Reference:  <b><span style='color: #ffe135;'>{cfg.data.reference_basename()}</span></b><br>
                     Last Aligned: {cfg.data.datetime().rjust(23)}"""
                     method = cfg.data.selected_method()
-                    if method in ('Auto Swim Align','Auto-SWIM'):        txt_ += '<br>Method:&nbsp;Automatic SWIM'
-                    elif method in ('Match Point Align', 'Manual-Hint'): txt_ += '<br>Method:&nbsp;Manual, Hint'
+                    if method == 'Auto-SWIM':        txt_ += '<br>Method:&nbsp;Automatic&nbsp;SWIM'
+                    elif method == 'Manual-Hint': txt_ += '<br>Method:&nbsp;Manual,&nbsp;Hint'
                     elif method == 'Manual-Strict':                      txt_ += '<br>Method:&nbsp;Manual, Strict'
                     txt_ += f"""<br>Reject: {('[ ]', 
                     "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
@@ -1759,8 +1711,8 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab.detailsSNR.isVisible():
                     snr = cfg.data.snr_components()
 
-                    if cfg.data.selected_method() == 'Auto Swim Align':
-                        logger.critical('Updating detailsSNR for Auto Swim Align')
+                    if cfg.data.selected_method() == 'Auto-SWIM':
+                        logger.critical('Updating detailsSNR for Auto-SWIM')
                         cfg.project_tab.detailsSNR.setText(
                             "Avg. SNR&nbsp;&nbsp;:<b><span style='color: #ffe135;'>%s</span></b><br>"
                             "Prev.&nbsp;SNR&nbsp;:%s<br>"
@@ -1776,8 +1728,7 @@ class MainWindow(QMainWindow):
                              ('%.3f' % snr[2]).rjust(9),
                              ('%.3f' % snr[3]).rjust(9))
                         )
-                    elif cfg.data.selected_method() == 'Match Point Align':
-                        logger.critical('Updating detailsSNR for Match Point Align')
+                    elif cfg.data.selected_method() in ('Manual-Hint', 'Manual-Strict'):
 
                         txt = "Avg. SNR&nbsp;&nbsp;:<b><span style='color: #ffe135;'>%s</span></b><br>" \
                               "Prev.&nbsp;SNR&nbsp;:%s<br>" \
@@ -2054,10 +2005,10 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.project_table.table.selectRow(requested)
             self._sectionSlider.setValue(requested)
 
-    def jump_to_minimal(self):
-        logger.info('')
-        if self._isProjectTab():
-            cfg.data.set_layer(requested)
+    # def jump_to_minimal(self):
+    #     logger.info('')
+    #     if self._isProjectTab():
+    #         cfg.data.set_layer(requested)
 
     def setSlider(self, val:int):
         self._sectionSlider.setValue(val)
@@ -2135,6 +2086,8 @@ class MainWindow(QMainWindow):
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
+        if cfg.MP_MODE:
+            return
         if self._isProjectTab():
             if caller in ('main', 'scale_up', 'scale_down'):
                 if self._scales_combobox_switch == 1:
@@ -2149,6 +2102,8 @@ class MainWindow(QMainWindow):
     def fn_ng_layout_combobox(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
+        if cfg.MP_MODE:
+            return
         if caller in ('main','<lambda>'):
             if cfg.data:
                 if self._isProjectTab() or self._isZarrTab():
@@ -2361,11 +2316,16 @@ class MainWindow(QMainWindow):
                 logger.warning('There was a problem updating the project list')
                 print_exception()
 
+        self.clearSelectionPathText()
+
         self.tell('Deletion Complete!')
         logger.info('Deletion Complete')
 
 
     def open_project_new(self):
+        if cfg.MP_MODE:
+            return
+
         for i in range(self.globTabs.count()):
             if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
                 self.globTabs.setCurrentIndex(i)
@@ -2475,9 +2435,15 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
+
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
         logger.critical('Loading project...')
+
+        logpath = os.path.join(cfg.data.dest(),'logs')
+        if not os.path.exists(logpath):
+            os.mkdir(logpath)
+
         self.update_data_cache()
         cfg.data.set_defaults()
         # self.hardRestartNg()
@@ -2723,6 +2689,7 @@ class MainWindow(QMainWindow):
         self.tell('Shutting Down Python Console Kernel...')
         logger.info('Shutting Down Python Console Kernel...')
         try:
+
             self.pythonConsole.kernel_client.stop_channels()
             self.pythonConsole.kernel_manager.shutdown_kernel()
         except:
@@ -3046,19 +3013,19 @@ class MainWindow(QMainWindow):
                 else:                              self._skipCheckbox.setChecked(True)
 
 
-    def updateCorrSpotThumbnails(self, s=None, l=None):
-        if s == None: s=cfg.data.curScale
-        if l == None: l=cfg.data.layer()
-        snr_vals = cfg.data.snr_components()
-        self.corrspot_q0.set_data(path=cfg.data.corr_spot_q0_path(s=s, l=l), snr=snr_vals[0])
-        self.corrspot_q1.set_data(path=cfg.data.corr_spot_q1_path(s=s, l=l), snr=snr_vals[1])
-        self.corrspot_q2.set_data(path=cfg.data.corr_spot_q2_path(s=s, l=l), snr=snr_vals[2])
-        self.corrspot_q3.set_data(path=cfg.data.corr_spot_q3_path(s=s, l=l), snr=snr_vals[3])
+    # def updateCorrSpotThumbnails(self, s=None, l=None):
+    #     if s == None: s=cfg.data.curScale
+    #     if l == None: l=cfg.data.layer()
+    #     snr_vals = cfg.data.snr_components()
+    #     self.corrspot_q0.set_data(path=cfg.data.corr_spot_q0_path(s=s, l=l), snr=snr_vals[0])
+    #     self.corrspot_q1.set_data(path=cfg.data.corr_spot_q1_path(s=s, l=l), snr=snr_vals[1])
+    #     self.corrspot_q2.set_data(path=cfg.data.corr_spot_q2_path(s=s, l=l), snr=snr_vals[2])
+    #     self.corrspot_q3.set_data(path=cfg.data.corr_spot_q3_path(s=s, l=l), snr=snr_vals[3])
 
 
-    def enterExitManAlignMode(self):
+    def enterExitManAlignMode(self, force_exit=False):
         #Todo REFACTOR
-        logger.info('')
+
         if cfg.data:
             if not cfg.data.is_aligned_and_generated():
                 logger.warning('Cannot enter manual alignment mode until the series is aligned.')
@@ -3066,52 +3033,32 @@ class MainWindow(QMainWindow):
                 return
 
             if self._isProjectTab():
-
-                if cfg.MP_MODE == False:
+                # self.shutdownNeuroglancer()
+                if (cfg.MP_MODE == False) and (not force_exit):
                     if cfg.data.is_aligned_and_generated():
+                        logger.critical('Entering Manual Alignment Mode...')
                         self.tell('Entering Manual Alignment Mode...')
-
+                        # del cfg.emViewer  # 0216+
                         self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
-
-                        del cfg.emViewer #0216+
-
-                        self.shutdownNeuroglancer()
-
                         self.alignMatchPointAction.setText('Exit Manual Align Mode')
-
-                        logger.critical('End Manual Align')
-                        cfg.MP_MODE = True
                         self.cpanel.setVisible(False)
                         self.matchpointControls.setVisible(True)
-                        self.rb1.setChecked(True)
-                        # self.rb0.setEnabled(False)
                         self._changeScaleCombo.setEnabled(False)
-                        self._disableGlobTabs()
-                        for i in range(1, 4):
-                            cfg.project_tab._tabs.setTabEnabled(i, False)
                         self.matchpoint_text_snr.setText(cfg.data.snr_report())
-
                         self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
                         self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                        self.dataUpdateWidgets()
+                        cfg.MP_MODE = True
                         cfg.project_tab.onEnterManualMode()
-
                     else:
                         self.warn('Alignment must be generated before using Manual Point Alignment method.')
                 else:
                     logger.critical('Exiting Match Point Mode...')
                     self.tell('Exiting Manual Alignment Mode...')
-
                     self.setWindowTitle(self.window_title)
-
-                    self.shutdownNeuroglancer()
-
                     cfg.MP_MODE = False
                     self.alignMatchPointAction.setText('Align Manually')
                     self.cpanel.setVisible(True)
                     self.matchpointControls.setVisible(False)
-                    self.enableAllTabs()
-                    # self.rb0.setEnabled(True)
                     self._changeScaleCombo.setEnabled(True)
                     self.dataUpdateWidgets()
                     cfg.project_tab.onExitManualMode()
@@ -3252,7 +3199,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshNg.setStatusTip('Refresh Neuroglancer')
 
         self.toolbar = QToolBar()
-        self.toolbar.setFixedHeight(30)
+        self.toolbar.setFixedHeight(32)
         # self.toolbar.setFixedHeight(64)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
@@ -3279,7 +3226,6 @@ class MainWindow(QMainWindow):
         self.rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb0.clicked.connect(self.ngRadiobuttonChanged)
         self.rb0.clicked.connect(self.updateMenus)
-        self.rb0.hide()
 
         tip = 'View reference image, next to current image, [next to aligned image]'
         # self.rb1 = QRadioButton('Ref | Curr')
@@ -3292,7 +3238,6 @@ class MainWindow(QMainWindow):
         self.rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb1.clicked.connect(self.ngRadiobuttonChanged)
         self.rb1.clicked.connect(self.updateMenus)
-        self.rb1.hide()
 
         self.rb2 = QRadioButton('Ref|Base|Aligned, Row')
         self.rb2.setChecked(False)
@@ -3564,12 +3509,7 @@ class MainWindow(QMainWindow):
         else:
             self._actions_widget.hide()
 
-        if cfg.MP_MODE and self._isProjectTab():
-            self.cpanel.hide()
-            self.matchpointControls.show()
-        else:
-            self.cpanel.show()
-            self.matchpointControls.hide()
+
 
 
         if self._isProjectTab():
@@ -3580,6 +3520,8 @@ class MainWindow(QMainWindow):
             cfg.zarr_tab = None
             self._lastRefresh = 0
 
+            self.cpanel.show()
+            self.matchpointControls.hide()
 
             self.update_data_cache() # 0212
 
@@ -3594,27 +3536,7 @@ class MainWindow(QMainWindow):
                 self.rb1.setChecked(True)
 
 
-            # if self.rb0.isChecked():
-            #     cfg.data['ui']['ng_layout'] = '4panel'
-            #     cfg.data['ui']['arrangement'] = 'stack'
-            #     # logger.info('rb0 has been checked')
-            #     cfg.project_tab._overlayBottomLeft.hide()
-            #     cfg.project_tab._overlayLab.hide()
-            #     cfg.project_tab._overlayRect.hide()
-            #     # self.comboboxNgLayout.setCurrentText('4panel')
-            # elif self.rb1.isChecked():
-            #     cfg.data['ui']['arrangement'] = 'stack'
-            #     cfg.data['ui']['ng_layout'] = 'xy'
-            #     # logger.info('rb1/rb2 has been checked')
-            #     # self.comboboxNgLayout.setCurrentText('xy')
 
-
-            # cfg.project_tab.updateNeuroglancer()
-            # cfg.project_tab.initNeuroglancer() #0208+
-
-
-            self.rb0.show()
-            self.rb1.show()
             self.dataUpdateWidgets()
             if self.rb0.isChecked():
                 self.set_nglayout_combo_text(layout='4panel')  # must be before initNeuroglancer
@@ -6421,7 +6343,7 @@ class MainWindow(QMainWindow):
 
 
     def showZeroedPbar(self):
-        logger.critical('')
+        # logger.critical('')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()

@@ -10,6 +10,7 @@ https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/i
 import os, re, sys, stat, copy, json, time, signal, logging, inspect
 import platform, traceback, shutil, statistics, tracemalloc
 from time import time
+from datetime import datetime
 from typing import Dict, List, Tuple, Any, Union, Sequence
 from glob import glob
 from pathlib import Path
@@ -668,10 +669,16 @@ class TimeoutException(Exception): pass
 
 
 def print_exception():
+    tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
-    logger.warning(f"  Error Type/Value  : {exi[0]} {exi[1]}")
-    logger.warning(traceback.format_exc())
-    # Todo Pipe these into a logs directory
+    txt = f"  [{tstamp}] Error Type/Value  : {exi[0]} {exi[1]}\n{traceback.format_exc()}"
+    logger.warning(txt)
+
+    if cfg.data:
+        lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
+        with open(lf, 'a+') as f:
+            f.write('\n' + txt)
+
 
 
 
