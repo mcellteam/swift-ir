@@ -73,7 +73,7 @@ class MAViewer(neuroglancer.Viewer):
             units=['nm', 'nm', 'nm'],
             scales=list(cfg.data.resolution(s=cfg.data.scale())), )
 
-        self.restoreManAlignPts()
+        # self.restoreManAlignPts()
 
 
     def __del__(self):
@@ -105,7 +105,8 @@ class MAViewer(neuroglancer.Viewer):
         logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
         sf = cfg.data.scale_val(s=cfg.data.scale())
 
-        # self.clear_layers()
+        self.clear_layers()
+        self.restoreManAlignPts()
 
 
         if self.role == 'base':

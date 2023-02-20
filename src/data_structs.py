@@ -60,8 +60,8 @@ layer_template = \
                 'base': []
             },
             "method_results": {
-                "snr": [0.0, 0.0, 0.0, 0.0],
-                "snr_prev": [0.0, 0.0, 0.0, 0.0],
+                "snr": [0.0],
+                "snr_prev": [0.0],
             }
         },
         "images": {},

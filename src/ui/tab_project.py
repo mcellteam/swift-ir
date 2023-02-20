@@ -111,40 +111,22 @@ class ProjectTab(QWidget):
             self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
 
-
-
-            #Critical Only connect to one of the two interconnected widgets. Do not connect stage.
-            # self.MA_viewer_base.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            # self.MA_viewer_ref.signals.stateChanged.connect(self.updateMA_base_state)
-            # self.MA_viewer_base.signals.stateChanged.connect(self.updateMA_ref_state)
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
-
 
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
             self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
-
-            return
-        # logger.critical(f'caller: {caller}\n\n\n')
-        # self.shutdownNeuroglancer()
-        if cfg.data.is_aligned_and_generated():
-            cfg.main_window.corr_spot_thumbs.setVisible(getOpt('ui,SHOW_CORR_SPOTS'))
         else:
-            cfg.main_window.corr_spot_thumbs.hide()
-
-        if caller != '_onGlobTabChange':
-
-            cfg.emViewer = self.viewer = EMViewer(webengine=self.webengine)
-            self.updateNeuroglancer()
-            cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            # cfg.emViewer.signals.mpUpdate.connect(cfg.main_window.dataUpdateWidgets)
-            # self.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url())) #----
-            cfg.main_window.dataUpdateWidgets() #0204+
+            if caller != '_onGlobTabChange':
+                cfg.emViewer = self.viewer = EMViewer(webengine=self.webengine)
+                self.updateNeuroglancer()
+                cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+                cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+                cfg.main_window.dataUpdateWidgets() #0204+
 
 
     def updateNeuroglancer(self):
@@ -154,33 +136,19 @@ class ProjectTab(QWidget):
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
-            return
         else:
             cfg.emViewer.initViewer()
+            state = copy.deepcopy(cfg.emViewer.state)
+            for layer in state.layers:
+                # layer.shaderControls['normalized'] = {'range': np.array(cfg.data.normalize())}
+                layer.shaderControls['brightness'] = cfg.data.brightness()
+                layer.shaderControls['contrast'] = cfg.data.contrast()
+                # layer.volumeRendering = True
 
-        # if not cfg.MP_MODE:
-        #     show = getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS')
-        #     self._widgetArea_details.setVisible(show)
-        #     if show:
-        #         self._transformationWidget.setVisible(cfg.data.is_aligned_and_generated())
-
-        # self.slotUpdate
-        # Slider()
-
-        state = copy.deepcopy(cfg.emViewer.state)
-        for layer in state.layers:
-            # layer.shaderControls['normalized'] = {
-            #     'range': np.array(cfg.main_window.norFsource thumbsmalizedSlider.getRange())
-            # }
-            layer.shaderControls['normalized'] = {'range': np.array(cfg.data.normalize())}
-            layer.shaderControls['brightness'] = cfg.data.brightness()
-            layer.shaderControls['contrast'] = cfg.data.contrast()
-            # layer.volumeRendering = True
-
-        cfg.emViewer.set_state(state)
-        url = cfg.emViewer.get_viewer_url()
-        logger.info('setting URL...\n%s' % url)
-        self.webengine.setUrl(QUrl(url))
+            cfg.emViewer.set_state(state)
+            url = cfg.emViewer.get_viewer_url()
+            logger.info('setting URL...\n%s' % url)
+            self.webengine.setUrl(QUrl(url))
 
 
 

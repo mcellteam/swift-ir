@@ -130,15 +130,14 @@ class EMViewer(neuroglancer.Viewer):
     def initViewer(self):
         if cfg.MP_MODE:
             self.initViewerSbs(requested='xy')
-            return
+        else:
 
-
-        if cfg.main_window.rb0.isChecked():
-            cfg.data['ui']['ng_layout'] = '4panel'
-            self.initViewerSlim()
-        elif cfg.main_window.rb1.isChecked():
-            cfg.data['ui']['ng_layout'] = 'xy'
-            self.initViewerSbs()
+            if cfg.main_window.rb0.isChecked():
+                cfg.data['ui']['ng_layout'] = '4panel'
+                self.initViewerSlim()
+            elif cfg.main_window.rb1.isChecked():
+                cfg.data['ui']['ng_layout'] = 'xy'
+                self.initViewerSbs()
 
 
     def initViewerSbs(self, requested=None):
@@ -364,10 +363,11 @@ class EMViewer(neuroglancer.Viewer):
 
             with self.txn() as s:
                 if cfg.MP_MODE:
-                    s.crossSectionScale = cs_scale
+                    s.crossSectionScale = cs_scale *1.04
                 else:
                     s.crossSectionScale = cs_scale * 1.06
-    #
+
+
     # def set_rds(self):
     #     with self.txn() as s:
     #         s.relative_display_scales = {'z': 14}
@@ -424,157 +424,14 @@ class EMViewer(neuroglancer.Viewer):
             logger.error('ERROR on_state_change')
 
 
-    # def add_matchpoint(self, s):
-    #     if cfg.MP_MODE:
-    #         logger.critical(str(s))
-    #         logger.info('add_matchpoint:')
-    #         coords = np.array(s.mouse_voxel_coordinates)
-    #         if coords.ndim == 0:
-    #             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
-    #             return
-    #         try:
-    #             bounds = cfg.unal_tensor.shape[1:]
-    #             if (coords[1] < 0) or (coords[2] < 0):
-    #                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
-    #                                % (coords[1], coords[2], bounds[0], bounds[1]))
-    #                 return
-    #             if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
-    #                 logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
-    #                                % (coords[1], coords[2], bounds[0], bounds[1]))
-    #                 return
-    #         except:
-    #             print_exception()
-    #
-    #         n_mp_pairs = math.floor(self._mpCount / 2)
-    #
-    #         props = [self.mp_colors[n_mp_pairs],
-    #                  cfg.main_window.mp_marker_lineweight_spinbox.value(),
-    #                  cfg.main_window.mp_marker_size_spinbox.value(), ]
-    #         with self.txn() as s:
-    #             s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
-    #
-    #             if self._mpCount in range(0, 100, 2):
-    #                 self.ref_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
-    #                 s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref')) + self.ref_pts
-    #                 logger.info(f"Ref Match Point Added: {coords}")
-    #             elif self._mpCount in range(1, 100, 2):
-    #                 self.base_pts.append(ng.PointAnnotation(id=repr(coords), point=coords, props=props))
-    #                 s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base')) + self.base_pts
-    #                 logger.info(f"Base Match Point Added: {coords}")
-    #         self._mpCount += 1
-    #
-    #
-    # def save_matchpoints(self, s):
-    #     if cfg.MP_MODE:
-    #         layer = self.request_layer()
-    #         logger.info('Saving Match Points for Layer %d\nBase Name: %s' % (layer, cfg.data.base_image_name(l=layer)))
-    #         n_ref, n_base = len(self.ref_pts), len(self.base_pts)
-    #         if n_ref == n_base:
-    #             cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)
-    #             p_r = [p.point.tolist() for p in self.ref_pts]
-    #             p_b = [p.point.tolist() for p in self.base_pts]
-    #             logger.critical('p_r: %s' %str(p_r))
-    #             logger.critical('p_b: %s' %str(p_b))
-    #             ref_mps = [p_r[0][1::], p_r[1][1::], p_r[2][1::]]
-    #             base_mps = [p_b[0][1::], p_b[1][1::], p_b[2][1::]]
-    #             cfg.data.set_match_points(role='ref', matchpoints=ref_mps, l=layer)
-    #             cfg.data.set_match_points(role='base', matchpoints=base_mps, l=layer)
-    #             cfg.data.set_selected_method(method="Match Point Align", l=layer)
-    #             self.clear_mp_buffer()
-    #             # cfg.refLV.invalidate()
-    #             # cfg.baseLV.invalidate()
-    #             cfg.data.print_all_match_points()
-    #             self.signals.mpUpdate.emit()
-    #             cfg.main_window._saveProjectToFile(silently=True)
-    #             cfg.main_window.hud.post('Match Points Saved!')
-    #         else:
-    #             cfg.main_window.hud.post(f'Each image must have the same # points\n'
-    #                                      f'Left img has: {len(self.ref_pts)}\n'
-    #                                      f'Right img has: {len(self.base_pts)}', logging.WARNING)
-    #
-    # def clear_matchpoints(self, s):
-    #     if cfg.MP_MODE:
-    #         layer = self.request_layer()
-    #         logger.info('Clearing %d match points for section #%d...' %(self._mpCount,layer))
-    #         cfg.main_window.hud.post('Clearing %d match points for section #%d...' %(self._mpCount,layer))
-    #         cfg.data.clear_match_points(s=cfg.data.scale(), l=layer)  # Note
-    #         cfg.data.set_selected_method(method="Auto Swim Align", l=layer)
-    #         self.clear_mp_buffer()  # Note
-    #         with self.txn() as s:
-    #             s.relativeDisplayScales = {"z": 10}  # this should work, but does not work. ng bug.
-    #             s.layers['mp_ref'].annotations = self.pt2ann(cfg.data.get_mps(role='ref'))
-    #             s.layers['mp_base'].annotations = self.pt2ann(cfg.data.get_mps(role='base'))
-    #         # cfg.refLV.invalidate()
-    #         # cfg.baseLV.invalidate()
-    #         cfg.main_window.hud.post('Match Points for Layer %d Erased' % layer)
-    #         cfg.main_window.updateDetailsWidget()
-    #
-    #
-    # def clear_mp_buffer(self):
-    #     if cfg.MP_MODE:
-    #         logger.info('Clearing match point buffer of %d match points...' % self._mpCount)
-    #         self._mpCount = 0
-    #         self.ref_pts.clear()
-    #         self.base_pts.clear()
-    #         # try:
-    #         #     cfg.refLV.invalidate()
-    #         #     cfg.baseLV.invalidate()
-    #         # except:
-    #         #     pass
-    #
-    #
-    # def count_saved_points_ref(self):
-    #     layer = self.request_layer()
-    #     points = self.pt2ann(points=cfg.data.get_mps(role='ref'))
-    #     points_ = [p.point.tolist() for p in points]
-    #     count = 0
-    #     for p in points_:
-    #         if p[0] == layer:
-    #             count += 1
-    #     return count
-    #
-    #
-    # def count_saved_points_base(self):
-    #     layer = self.request_layer()
-    #     points = self.pt2ann(points=cfg.data.get_mps(role='base'))
-    #     points_ = [p.point.tolist() for p in points]
-    #     count = 0
-    #     for p in points_:
-    #         if p[0] == layer:
-    #             count += 1
-    #     return count
-    #
-    # def pt2ann(self, points: list):
-    #     annotations = []
-    #
-    #     lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
-    #     size = cfg.main_window.mp_marker_size_spinbox.value()
-    #     for i, point in enumerate(points):
-    #         annotations.append(ng.PointAnnotation(id=repr(point),
-    #                                               point=point,
-    #                                               props=[self.mp_colors[i % 3],
-    #                                                      size,
-    #                                                      lineweight]))
-    #     self.annotations = annotations
-    #     return annotations
-
-
-    # def take_screenshot(self, directory=None):
-    #     if directory is None:
-    #         directory = cfg.data.dest()
-    #     ss = ScreenshotSaver(viewer=self, directory=directory)
-    #     ss.capture()
-
-
     def url(self):
         return self.get_viewer_url()
 
-    def get_layout(self):
 
+    def get_layout(self):
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         val = mapping[cfg.main_window.comboboxNgLayout.currentText()]
-        # logger.critical('RETURNING: %s' % val)
         return val
 
 
@@ -608,6 +465,7 @@ class EMViewer(neuroglancer.Viewer):
                     ])
             else:
                 s.layout = ng.row_layout(self.grps)
+
 
     def make_local_volumes(self):
         sf = cfg.data.scale_val(s=cfg.data.scale())
