@@ -73,8 +73,8 @@ class ProjectTab(QWidget):
     def _onTabChange(self, index=None):
         if index == None:
             index = self._tabs.currentIndex()
-        # if index == 0:
-        #     self.updateNeuroglancer() # Don't update neuroglancer -> maintain emViewer state
+        if index == 0:
+            self.updateNeuroglancer() # Don't update neuroglancer -> maintain emViewer state
         if index == 1:
             # self.project_table.setScaleData()
             # self.project_table.setScaleData() #not sure why this is needed twice

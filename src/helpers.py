@@ -106,7 +106,7 @@ def delete_recursive(dir):
     cfg.main_window.showZeroedPbar()
     cfg.main_window.setPbarText('Deleting Files...')
     cfg.main_window.setPbarMax(cfg.nTasks)
-    logger.critical(f'To Delete: {to_delete}')
+    # logger.critical(f'To Delete: {to_delete}')
     for d in to_delete:
         cfg.nCompleted += 1
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
