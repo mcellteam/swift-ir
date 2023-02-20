@@ -206,32 +206,32 @@ class MAViewer(neuroglancer.Viewer):
 
     def on_state_changed(self):
         caller = inspect.stack()[1].function
-        # curframe = inspect.currentframe()
-        # calframe = inspect.getouterframes(curframe, 2)
-        # calname = str(calframe[1][3])
-        # if calname == '<lambda>':
-        #     return
-        # # logger.info('caller: %s, calname: %s' % (caller, calname))
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        calname = str(calframe[1][3])
+        if calname == '<lambda>':
+            return
+        # logger.info('caller: %s, calname: %s' % (caller, calname))
+
+        self.signals.stateChanged.emit()
+
+        # if not self.cs_scale:
+        #     if self.state.cross_section_scale:
+        #         if self.state.cross_section_scale > .0001:
+        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+        #             self.cs_scale = self.state.cross_section_scale
         #
-        # self.signals.stateChanged.emit()
-        #
-        # # if not self.cs_scale:
-        # #     if self.state.cross_section_scale:
-        # #         if self.state.cross_section_scale > .0001:
-        # #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-        # #             self.cs_scale = self.state.cross_section_scale
-        # #
-        # # try:
-        # zoom = self.state.cross_section_scale
-        # # logger.info('self.state.cross_section_scale = %s' % str(zoom))
-        # if zoom:
-        #     if zoom != self._crossSectionScale:
-        #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
-        #         self.signals.zoomChanged.emit(zoom)
-        #     self._crossSectionScale = zoom
-        # # except:
-        # #     print_exception()
-        # #     logger.error('ERROR on_state_change')
+        # try:
+        zoom = self.state.cross_section_scale
+        # logger.info('self.state.cross_section_scale = %s' % str(zoom))
+        if zoom:
+            if zoom != self._crossSectionScale:
+                logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
+                self.signals.zoomChanged.emit(zoom)
+            self._crossSectionScale = zoom
+        # except:
+        #     print_exception()
+        #     logger.error('ERROR on_state_change')
 
 
     def pt2ann(self, points: list):

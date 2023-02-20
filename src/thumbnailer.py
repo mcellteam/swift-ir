@@ -113,7 +113,6 @@ class Thumbnailer:
         caller = inspect.stack()[1].function
         logger.info('Thumbnail Source Directory: %s' % src)
 
-        logger.critical(str(os.listdir(src)))
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
