@@ -226,7 +226,7 @@ class alignment_process:
         self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
         wht = atrm['method_data']['whitening_factor']
-        if atrm['selected_method'] == 'Auto Swim Align':
+        if atrm['selected_method'] == 'Auto-SWIM':
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
                 ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht)

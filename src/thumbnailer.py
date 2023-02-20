@@ -75,8 +75,8 @@ class Thumbnailer:
                             logger.warning('Error removing expired thumbnail: %s' % tn)
 
             filenames = []
-            for i in range(start, end):
-                filenames.append(glob(os.path.join(src, '*' + baseFileNames[i])))
+            for name in baseFileNames[start:end]:
+                filenames.extend(glob(os.path.join(src, '*' + name)))
 
             dt = self.generate_thumbnails(src=src, od=od,
                                           rmdir=rmdir, prefix='',
@@ -112,6 +112,8 @@ class Thumbnailer:
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         caller = inspect.stack()[1].function
         logger.info('Thumbnail Source Directory: %s' % src)
+
+        logger.critical(str(os.listdir(src)))
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)

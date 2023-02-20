@@ -45,18 +45,19 @@ class WorkerSignals(QObject):
 
 
 class MAViewer(neuroglancer.Viewer):
-    def __init__(self, role=None, webengine=None):
+    def __init__(self, index, role=None, webengine=None):
         super().__init__()
         logger.info('')
+        self.index = index
         if role:
             self.role = role
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
-        self.index = None
         self._layer = None
         self.cs_scale = None
         self.pts = {}
+        self.points = {}
         self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
                           '#aaa672', '#152c74', '#404f74',
                           '#f3e375', '#5c4ccc', '#d6acd6',
@@ -65,7 +66,15 @@ class MAViewer(neuroglancer.Viewer):
         self._mpCount = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+
         logger.info('viewer constructed!')
+
+        self.coordinate_space = ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=list(cfg.data.resolution(s=cfg.data.scale())), )
+
+        self.restoreManAlignPts()
 
 
     def __del__(self):
@@ -97,12 +106,13 @@ class MAViewer(neuroglancer.Viewer):
         logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
         sf = cfg.data.scale_val(s=cfg.data.scale())
 
+        # self.clear_layers()
+
 
         if self.role == 'base':
             self.index = cfg.data.layer()
             path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
         elif self.role == 'ref':
-            self.index = max(cfg.data.layer() - 1, 0)
             path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
         elif self.role == 'stage':
             self.index = 0 #placeholder. this will be the index of staging area.
@@ -118,17 +128,15 @@ class MAViewer(neuroglancer.Viewer):
             cfg.main_window.warn('Unable to Load Data Store at %s' % path)
             raise e
 
-        self.coordinate_space = ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
-            units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale())), )
-
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[self.index:self.index+1, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0]
         )
+
+        # self.pts.clear()
+        # self.restoreManAlignPts()
 
         with self.txn() as s:
 
@@ -143,18 +151,20 @@ class MAViewer(neuroglancer.Viewer):
             _, y, x = self.store.shape
             s.position = [0, y / 2, x / 2]
 
+            s.layers['ann'].annotations = list(self.pts.values())
 
-        self.add_matchpoint_layers()
 
-        mp_key_bindings = [
-            # ['keyx', 'add_matchpoint'],
-            # ['dblclick0', 'add_matchpoint'],
-            # ['keys', 'save_matchpoints'],
-            # ['keyc', 'clear_matchpoints'],
-        ]
+
+
+        # mp_key_bindings = [
+        #     # ['keyx', 'add_matchpoint'],
+        #     # ['dblclick0', 'add_matchpoint'],
+        #     # ['keys', 'save_matchpoints'],
+        #     # ['keyc', 'clear_matchpoints'],
+        # ]
         self.actions.add('add_matchpoint', self.add_matchpoint)
-        self.actions.add('save_matchpoints', self.save_matchpoints)
-        self.actions.add('clear_matchpoints', self.clear_matchpoints)
+        # self.actions.add('save_matchpoints', self.save_matchpoints)
+        # self.actions.add('clear_matchpoints', self.clear_matchpoints)
 
 
         with self.config_state.txn() as s:
@@ -200,7 +210,7 @@ class MAViewer(neuroglancer.Viewer):
         calname = str(calframe[1][3])
         if calname == '<lambda>':
             return
-        logger.info('caller: %s, calname: %s' % (caller, calname))
+        # logger.info('caller: %s, calname: %s' % (caller, calname))
 
         self.signals.stateChanged.emit()
 
@@ -237,42 +247,33 @@ class MAViewer(neuroglancer.Viewer):
         return annotations
 
 
+    def addMp(self):
+
+        pass
+
     def add_matchpoint(self, s):
-        logger.critical('')
-        logger.info('add_matchpoint:')
         coords = np.array(s.mouse_voxel_coordinates)
+        logger.critical('coords: %s' %str(coords))
         if coords.ndim == 0:
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
-        try:
-            bounds = self.store.shape[1:]
-            if (coords[1] < 0) or (coords[2] < 0):
-                logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
-                               % (coords[1], coords[2], bounds[0], bounds[1]))
-                return
-            if (coords[1] > bounds[0]) or (coords[2] > bounds[1]):
-                logger.warning('Invalid match point (%.3fx%.3f), outside the image bounds(%dx%d)'
-                               % (coords[1], coords[2], bounds[0], bounds[1]))
-                return
-        except:
-            print_exception()
 
-        props = [self.mp_colors[len(self.pts)],
-                 cfg.main_window.mp_marker_lineweight_spinbox.value(),
-                 cfg.main_window.mp_marker_size_spinbox.value(), ]
-        pt = ng.PointAnnotation(id=repr(coords), point=coords, props=props)
-        self.pts[self.getNextUnusedColor()] = pt
-        self.signals.ptsChanged.emit()
+        z, y, x = s.mouse_voxel_coordinates
+
+        props = [self.mp_colors[len(self.pts)], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'), getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
+        self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr(coords), point=coords, props=props)
         self.update_annotations()
+        self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
+
+
 
     def update_annotations(self):
         anns = list(self.pts.values())
-        logger.critical('anns: \n%s' % anns)
-
         if anns:
             with self.txn() as s:
                 s.layers['ann'].annotations = anns
+
 
     def getNextUnusedColor(self):
         for c in self.mp_colors:
@@ -280,6 +281,10 @@ class MAViewer(neuroglancer.Viewer):
                 continue
             else:
                 return c
+
+
+    def getUsedColors(self):
+        return set(self.pts.keys())
 
 
     def save_matchpoints(self):
@@ -295,12 +300,12 @@ class MAViewer(neuroglancer.Viewer):
         cfg.main_window.hud.post('Match Points Saved!')
 
 
-    def clear_matchpoints(self, s):
-        cfg.main_window.hud.post('Clearing manual correspondence point buffer of %d match points...' % self._mpCount)
-        logger.warning('Clearing manual correspondence point buffer of %d match points...' % self._mpCount)
-        self.pts.clear()
-        with self.txn() as s:
-            s.layers['ann'].annotations = self.pt2ann(cfg.data.getmpFlat()[self.role])
+    # def clear_matchpoints(self, s):
+    #     cfg.main_window.hud.post('Clearing manual correspondence point buffer of %d match points...' % self._mpCount)
+    #     logger.warning('Clearing manual correspondence point buffer of %d match points...' % self._mpCount)
+    #     self.pts.clear()
+    #     with self.txn() as s:
+    #         s.layers['ann'].annotations = self.pt2ann(cfg.data.getmpFlat()[self.role])
 
 
     def url(self):
@@ -314,8 +319,14 @@ class MAViewer(neuroglancer.Viewer):
             state.layers.clear()
             self.set_state(state)
 
-    def add_matchpoint_layers(self):
+    def restoreManAlignPts(self):
         logger.critical('')
+
+        for i, p in enumerate(cfg.data.getmpFlat()[self.role]):
+            props = [self.mp_colors[i],
+                     getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
+                     getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
+            self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
 
         with self.txn() as s:
             s.layers['ann'] = ng.LocalAnnotationLayer(

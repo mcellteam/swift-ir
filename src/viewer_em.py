@@ -11,6 +11,8 @@ import inspect
 import logging
 import datetime
 import argparse
+import time
+
 import numpy as np
 import numcodecs
 import zarr
@@ -127,6 +129,11 @@ class EMViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
 
     def initViewer(self):
+        if cfg.MP_MODE:
+            self.initViewerSbs(requested='xy')
+            return
+
+
         if cfg.main_window.rb0.isChecked():
             cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
@@ -135,11 +142,12 @@ class EMViewer(neuroglancer.Viewer):
             self.initViewerSbs()
 
 
-    def initViewerSbs(self):
+    def initViewerSbs(self, requested=None):
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....')
+        logger.critical(f'Initializing EMViewer (caller: {caller})....')
 
-        requested = cfg.data['ui']['ng_layout']
+        if requested == None:
+            requested = cfg.data['ui']['ng_layout']
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
           'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         nglayout = mapping[requested]
@@ -149,7 +157,7 @@ class EMViewer(neuroglancer.Viewer):
 
         if cfg.data.is_mendenhall(): self.initViewerMendenhall(); return
 
-        # self.clear_layers()
+        self.clear_layers()
 
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
@@ -178,7 +186,7 @@ class EMViewer(neuroglancer.Viewer):
         else:
             tensor_z, tensor_y, tensor_x = cfg.unal_tensor.shape
 
-        self.set_pos_and_zoom()
+        self.set_zoom()
         sf = cfg.data.scale_val(s=cfg.data.scale())
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
@@ -211,27 +219,11 @@ class EMViewer(neuroglancer.Viewer):
                 if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['data']['shader'],)
             s.showSlices=False
             s.layout = ng.row_layout(self.grps)  # col
-            s.position = [cfg.data.layer(), tensor_y / 2, tensor_x / 2]
-            # if matchpoint:
-            # s.layers['mp_ref'].annotations = self.pt2ann(points=cfg.data.get_mps(role='ref'))
-            # s.layers['mp_base'].annotations = self.pt2ann(points=cfg.data.get_mps(role='base'))  # ???
 
-        mp_key_bindings = []
-
-        # if cfg.MP_MODE:
-        # self.add_matchpoint_layers()
-        #
-        # if matchpoint:
-        #     mp_key_bindings = [
-        #         # ['enter', 'add_matchpoint'],
-        #         ['keyx', 'add_matchpoint'],
-        #         ['keys', 'save_matchpoints'],
-        #         ['keyc', 'clear_matchpoints'],
-        #     ]
-        #     self.actions.add('add_matchpoint', self.add_matchpoint)
-        #     self.actions.add('save_matchpoints', self.save_matchpoints)
-        #     self.actions.add('clear_matchpoints', self.clear_matchpoints)
-
+            if cfg.MP_MODE:
+                s.position = [0, tensor_y / 2, tensor_x / 2]
+            else:
+                s.position = [cfg.data.layer(), tensor_y / 2, tensor_x / 2]
 
         with self.config_state.txn() as s:
             if self.force_xy:
@@ -241,16 +233,19 @@ class EMViewer(neuroglancer.Viewer):
             s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
 
         self._layer = math.floor(self.state.position[0])
-
         self._crossSectionScale = self.state.cross_section_scale
 
         if self.webengine:
+            self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            time.sleep(.25)
+            self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            time.sleep(.25)
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
 
     def initViewerSlim(self, nglayout=None):
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\nInitializing EMViewer Slim (caller: {caller})....')
+        logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
 
         if self.force_xy:
             logger.info('Forcing xy...')
@@ -299,22 +294,13 @@ class EMViewer(neuroglancer.Viewer):
         )
 
         with self.txn() as s:
-
             s.layout.type = nglayout
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[cfg.data.layer(), self.store.shape[1]/2, self.store.shape[2]/2]
-            if cfg.data.is_aligned_and_generated():
-                s.layers['layer'] = ng.ImageLayer(
-                    source=self.LV,
-                    shader=cfg.data['data']['shader'],
-                    # tool_bindings={
-                    #     'A': neuroglancer.ShaderControlTool(control='normalized'),
-                    #     'B': neuroglancer.OpacityTool(),
-                    # },
-                )
+            s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['data']['shader'], )
             s.crossSectionBackgroundColor = '#808080' # 128 grey
 
 
@@ -335,7 +321,8 @@ class EMViewer(neuroglancer.Viewer):
 
 
 
-    def set_pos_and_zoom(self):
+    def set_zoom(self):
+        logger.info('')
 
         if self.cs_scale:
             with self.txn() as s:
@@ -357,7 +344,7 @@ class EMViewer(neuroglancer.Viewer):
             if cfg.MP_MODE:
                 widget_w = cfg.project_tab.MA_webengine_stage.geometry().width()
                 widget_h = cfg.project_tab.MA_webengine_stage.geometry().height()
-
+                logger.critical('widget w/h: %d/%d' % (widget_w, widget_h))
 
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale()) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample

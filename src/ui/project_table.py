@@ -122,12 +122,17 @@ class ProjectTable(QWidget):
                             # self.table.setCellWidget(i, j, lab)
                             self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
                         elif j in (3, 4, 5):
-                            thumbnail = Thumbnail(self, path=item)
-                            self.table.setCellWidget(i, j, thumbnail)
+                            tn = Thumbnail(self, path=item)
+                            self.table.setCellWidget(i, j, tn)
                         elif j in (6, 7, 8, 9):
                             # logger.info(f'j={j}, item={str(item)}')
-                            thumbnail = SnrThumbnail(self, path=item, snr=snr_4x[j - 6])
-                            self.table.setCellWidget(i, j, thumbnail)
+                            try:
+                                tn = SnrThumbnail(self, path=item, snr=snr_4x[j - 6])
+                                self.table.setCellWidget(i, j, tn)
+                            except:
+                                tn = SnrThumbnail(self)
+                                tn.set_no_image()
+                                self.table.setCellWidget(i, j, tn)
                         else:
                             self.table.setItem(i, j, QTableWidgetItem(str(item)))
             else:
@@ -226,7 +231,7 @@ class ProjectTable(QWidget):
             except:  skips.append('?'); print_exception()
             try:
                 m = l['align_to_ref_method']['selected_method']
-                if m == 'Auto Swim Align': m = 'Automatic SWIM Alignment'
+                if m == 'Auto-SWIM': m = 'Automatic SWIM Alignment'
                 method.append(m)
             except:
                 method.append('Unknown')
