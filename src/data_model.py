@@ -1192,7 +1192,7 @@ class DataModel:
 
     def set_layer(self, index:int) -> None:
         '''Sets Current Layer To Index.'''
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s...' % inspect.stack()[1].function)
         assert isinstance(index, int)
         logger.info(f'Setting Current Layer #{index}, {self.curScale}')
         self._data['data']['current_layer'] = index

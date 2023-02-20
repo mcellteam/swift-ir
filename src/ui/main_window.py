@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
             if checked:
                 if self._isProjectTab():
                     if cfg.MP_MODE:
-                        cfg.project_tab.MA_viewer_stage.initViewerSbs()
+                        # cfg.project_tab.MA_viewer_stage.initViewerSbs()
                         # if self.rb0.isChecked():
                         #     cfg.project_tab.MA_viewer_stage.initViewerSlim(force_xy=True)
                         # elif self.rb1.isChecked():
@@ -2017,7 +2017,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
 
@@ -2061,7 +2061,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        logger.critical('')
+        logger.info('')
         if self._isProjectTab():
             self._changeScaleCombo.show()
             logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
@@ -3490,18 +3490,14 @@ class MainWindow(QMainWindow):
         logger.info('')
         caller = inspect.stack()[1].function
 
-        # self.updateNotes()
-
         self.enableAllTabs() #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
 
         if self.globTabs.count() == 0:
             return
         # if caller in ('onStartProject','_setLastTab'):
-        if caller in ('onStartProject'):
-            return
-
-        logger.critical('Changing global tab (caller: %s)...' % caller)
-
+        # if caller in ('onStartProject'):
+        #     return
+        # logger.critical('Changing global tab (caller: %s)...' % caller)
         cfg.selected_file = None
         self.globTabs.show()
         self.stopPlaybackTimer()
@@ -3517,8 +3513,6 @@ class MainWindow(QMainWindow):
             self._actions_widget.hide()
 
 
-
-
         if self._isProjectTab():
             logger.critical('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
@@ -3526,10 +3520,8 @@ class MainWindow(QMainWindow):
             cfg.emViewer = cfg.project_tab.viewer
             cfg.zarr_tab = None
             self._lastRefresh = 0
-
             self.cpanel.show()
             self.matchpointControls.hide()
-
             self.update_data_cache() # 0212
 
             if self.shaderCodeWidget.isVisible():
@@ -3541,40 +3533,25 @@ class MainWindow(QMainWindow):
             elif cfg.data['ui']['arrangement'] == 'comparison':
                 cfg.data['ui']['ng_layout'] = 'xy'
                 self.rb1.setChecked(True)
-
-
-
-            self.dataUpdateWidgets()
-            if self.rb0.isChecked():
-                self.set_nglayout_combo_text(layout='4panel')  # must be before initNeuroglancer
-            elif self.rb1.isChecked():
-                self.set_nglayout_combo_text(layout='xy')  # must be before initNeuroglancer
-
+            self.set_nglayout_combo_text(layout=cfg.data['ui']['arrangement'])  # must be before initNeuroglancer
             self.brightnessSlider.setValue(cfg.data.brightness())
             self.contrastSlider.setValue(cfg.data.contrast())
-
+            self.dataUpdateWidgets()
             cfg.project_tab.initNeuroglancer()
-            # self.hardRestartNg()
         else:
+            cfg.project_tab = None
             cfg.emViewer = None
             cfg.data = None
-            cfg.project_tab = None
             self._changeScaleCombo.clear()
-            # self.extra_header_text_label.hide()
             self.corr_spot_thumbs.hide()
             self.clearDetailsWidget()
 
         if self._isZarrTab():
             logger.critical('Loading Zarr Tab...')
-
             cfg.zarr_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.zarr_tab.viewer
             self.set_nglayout_combo_text(layout='4panel')
-            cfg.zarr_tab.viewer.bootstrap() #!!!!!!!!!!
-
-        # if self._isOpenProjTab():
-        #     try:    self.getCurrentTabWidget().user_projects.set_data()
-        #     except: logger.warning('No data to set!')
+            cfg.zarr_tab.viewer.bootstrap()
 
         self.updateMenus()
         self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
@@ -3829,6 +3806,14 @@ class MainWindow(QMainWindow):
         self.refreshAction.setShortcut('Ctrl+R')
         self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
+
+        def fn():
+            self.globTabs.removeTab(self.globTabs.currentIndex())
+        self.closeTabAction = QAction('Close Tab', self)
+        self.closeTabAction.triggered.connect(fn)
+        self.closeTabAction.setShortcut('Ctrl+W')
+        self.addAction(self.closeTabAction)
+        fileMenu.addAction(self.closeTabAction)
 
         self.exitAppAction = QAction('&Quit', self)
         self.exitAppAction.triggered.connect(self.exit_app)
@@ -4381,17 +4366,13 @@ class MainWindow(QMainWindow):
                 self.hud.done()
 
                 t_end = time.time()
-
                 dt = t_end - t_start
-
                 z = zarr.open(store=target)
                 info = str(z.info)
                 self.tell('\n%s' %info)
 
                 self.tell('Rechunking Time: %.2f' % dt)
                 logger.info('Rechunking Time: %.2f' % dt)
-
-
 
                 cfg.project_tab.initNeuroglancer()
 
@@ -4713,12 +4694,6 @@ class MainWindow(QMainWindow):
         self._wdg_alignButtons = QWidget()
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
-        # hbl.addWidget(self._btn_regenerate, alignment=right)
-        # hbl.addWidget(self._btn_alignOne, alignment=right)
-        # hbl.addWidget(self.sectionRangeSlider, alignment=right)
-        # hbl.addWidget(self.rangeInputWidget)
-        # hbl.addWidget(self._btn_alignRange, alignment=right)
-        # hbl.addWidget(self._btn_alignAll, alignment=right)
         hbl.addWidget(self._btn_regenerate)
         hbl.addWidget(self._btn_alignOne)
         hbl.addWidget(self.sectionRangeSlider)
@@ -5081,23 +5056,6 @@ class MainWindow(QMainWindow):
         self.realign_matchpoint_button.clicked.connect(self.alignOneMp)
         self.realign_matchpoint_button.setFixedSize(normal_button_size)
 
-        # class Slider(QSlider):
-        #     def __init__(self, parent):
-        #         super().__init__(parent)
-        #         self.setOrientation(Qt.Horizontal)
-        #         self.setMinimum(64)
-        #         self.setMaximum(512)
-        #         self.setSingleStep(1)
-        #         self.setPageStep(2)
-        #         self.setTickInterval(1)
-
-
-        # self.mpCorrspotSlider = Slider(parent=self)
-        # self.mpCorrspotSlider.setValue(128)
-        # self.mpCorrspotSlider.setFixedWidth(128)
-        # self.mpCorrspotSlider.valueChanged.connect(lambda value: print('lambda value: %d' % value))
-        # self.mpCorrspotSlider.valueChanged.connect(lambda value: self.set_corrspot_size(size=value))
-
         self.matchpoint_text_snr = QLabel()
         self.matchpoint_text_snr.setFixedHeight(26)
         self.matchpoint_text_snr.setWordWrap(True)
@@ -5115,9 +5073,7 @@ class MainWindow(QMainWindow):
         hbl.addWidget(mp_marker_size_label)
         hbl.addWidget(self.mp_marker_size_spinbox)
         hbl.addWidget(self.matchpoint_text_snr)
-        # hbl.addWidget(self.mpCorrspotSlider)
         hbl.addStretch()
-
 
         self.matchpoint_text_prompt = QTextEdit()
         # self.matchpoint_text_prompt.setMaximumWidth(600)
@@ -5154,11 +5110,7 @@ class MainWindow(QMainWindow):
         self.corrspot_q2 = SnrThumbnail(parent=self)
         self.corrspot_q3 = SnrThumbnail(parent=self)
 
-
-
         # self.set_corrspot_size(120)
-
-
 
         # self.corrspot_q0.resize(128,128)
         # self.corrspot_q1.resize(128,128)
@@ -5179,7 +5131,6 @@ class MainWindow(QMainWindow):
         # hbl.addWidget(self.matchpointControls)
 
         self.corr_spot_thumbs = QWidget()
-        # self.corr_spot_thumbs.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px; ')
         self.corr_spot_thumbs.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
         hbl = QHBoxLayout()
         # hbl.setContentsMargins(4,4,4,8)
@@ -5190,10 +5141,6 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self.corrspot_q3)
         self.corr_spot_thumbs.setLayout(hbl)
         self.corr_spot_thumbs.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
-        # hbl.addStretch()
-        # self.matchpointControlPanel.setLayout(hbl)
-        # self.matchpointControlPanel.hide()
-        # self.matchpointControlPanel.setMaximumHeight(160)
 
 
         '''Show/Hide Primary Tools Buttons'''
@@ -5204,28 +5151,18 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_ctls = QPushButton('Hide Controls')
         self._btn_show_hide_ctls.setStyleSheet(lower_controls_style)
         self._btn_show_hide_ctls.setStatusTip(tip)
-        # self._btn_show_hide_ctls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_show_hide_ctls.clicked.connect(self._callbk_showHideControls)
-        # self._btn_show_hide_ctls.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self._btn_show_hide_ctls.setMinimumSize(show_hide_button_sizes)
-        # self._btn_show_hide_ctls.setFixedHeight(18)
         self._btn_show_hide_ctls.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
 
         tip = 'Show/Hide Python Console'
         self._btn_show_hide_console = QPushButton(' Python')
         self._btn_show_hide_console.setStyleSheet(lower_controls_style)
         self._btn_show_hide_console.setStatusTip(tip)
-        # self._btn_show_hide_console.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_show_hide_console.clicked.connect(self._callbk_showHidePython)
-        # self._btn_show_hide_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self._btn_show_hide_console.setMinimumSize(show_hide_button_sizes)
-        # self._btn_show_hide_console.setFixedHeight(18)
         self._btn_show_hide_console.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
 
-
-        def f():
+        def fn():
             caller = inspect.stack()[1].function
-            # logger.info(f'caller: {caller}')
             if caller != 'updateNotes':
                 if self._isProjectTab():
                     if cfg.data:
@@ -5234,20 +5171,17 @@ class MainWindow(QMainWindow):
                     cfg.settings['notes']['global_notes'] = self.notesTextEdit.toPlainText()
                 self.notes.update()
 
-
         self.notes = QWidget()
         self.notes.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px; ')
         # self.notesTextEdit = QPlainTextEdit()
         self.notesTextEdit = QTextEdit()
         self.notesTextEdit.setStyleSheet('color: #f3f6fb; font-size: 11px; border-width: 0px; border-radius: 0px;')
         self.notesTextEdit.setPlaceholderText('Type any notes here...')
-        self.notesTextEdit.textChanged.connect(f)
+        self.notesTextEdit.textChanged.connect(fn)
         lab = QLabel('Notes')
         lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 2px; margin-top: 2px;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 0, 4, 0)
-        # vbl.setContentsMargins(1,1,1,1)
-        # vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(lab)
         vbl.addWidget(self.notesTextEdit)
         self.notes.setLayout(vbl)
@@ -5260,20 +5194,13 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_notes.setStatusTip(tip)
         self._btn_show_hide_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_show_hide_notes.clicked.connect(self._callbk_showHideNotes)
-        # self._btn_show_hide_notes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self._btn_show_hide_notes.setMinimumSize(show_hide_button_sizes)
-        # self._btn_show_hide_notes.setFixedHeight(18)
         self._btn_show_hide_notes.setIcon(qta.icon('mdi.notebook-edit', color='#f3f6fb'))
 
         tip = 'Show/Hide Shader Code'
         self._btn_show_hide_shader = QPushButton(' Shader')
         self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
         self._btn_show_hide_shader.setStatusTip(tip)
-        # self._btn_show_hide_shader.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_show_hide_shader.clicked.connect(self._callbk_showHideShader)
-        # self._btn_show_hide_shader.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self._btn_show_hide_shader.setMinimumSize(show_hide_button_sizes)
-        # self._btn_show_hide_shader.setFixedHeight(18)
         self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#f3f6fb'))
 
 
@@ -5281,11 +5208,7 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_details = QPushButton(' Details')
         self._btn_show_hide_details.setStyleSheet(lower_controls_style)
         self._btn_show_hide_details.setStatusTip(tip)
-        # self._btn_show_hide_details.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_show_hide_details.clicked.connect(self._callbk_showHideDetails)
-        # self._btn_show_hide_details.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self._btn_show_hide_details.setMinimumSize(show_hide_button_sizes)
-        # self._btn_show_hide_details.setFixedHeight(18)
         self._btn_show_hide_details.setIcon(qta.icon('fa.info-circle', color='#f3f6fb'))
 
 
@@ -5294,12 +5217,6 @@ class MainWindow(QMainWindow):
         hbl = QHBoxLayout()
         hbl.setSpacing(1)
         hbl.setContentsMargins(4, 0, 4, 0)
-        # hbl.addStretch()
-        # hbl.addWidget(self._btn_show_hide_ctls, alignment=Qt.AlignCenter)
-        # hbl.addWidget(self._btn_show_hide_console, alignment=Qt.AlignCenter)
-        # hbl.addWidget(self._btn_show_hide_notes, alignment=Qt.AlignCenter)
-        # hbl.addWidget(self._btn_show_hide_shader, alignment=Qt.AlignCenter)
-        # hbl.addWidget(self._btn_show_hide_details, alignment=Qt.AlignCenter)
         hbl.addWidget(self._btn_show_hide_ctls)
         hbl.addWidget(self._btn_show_hide_console)
         hbl.addWidget(self._btn_show_hide_notes)
@@ -5667,7 +5584,6 @@ class MainWindow(QMainWindow):
         vbl.addWidget(self._btn_resetBrightnessAndContrast, alignment=Qt.AlignVCenter)
         self.shaderSideButtons.setLayout(vbl)
 
-
         # self.normalizedSlider = RangeSlider()
         # self.normalizedSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # # self.normalizedSlider.setFixedWidth(120)
@@ -5756,8 +5672,6 @@ class MainWindow(QMainWindow):
         w.setFixedHeight(30)
         w.setMinimumWidth(140)
 
-
-
         self.contrastSliderWidget = QWidget()
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
@@ -5765,17 +5679,13 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self.contrastLE)
         self.contrastSliderWidget.setLayout(hbl)
 
-
         self.bcWidget = QWidget()
         self.bcWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding,)
-        # self.bcWidget.setFixedWidth(300)
         self.bcWidget.setMaximumWidth(180)
         vbl = QVBoxLayout()
-        # vbl.setContentsMargins(4, 4, 4, 4)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.brightnessSliderWidget)
         vbl.addWidget(self.contrastSliderWidget)
-        # vbl.addWidget(self._btn_resetBrightnessAndContrast)
         self.bcWidget.setLayout(vbl)
 
         self.bcWidgetAndSideButtons = QWidget()
@@ -5788,7 +5698,6 @@ class MainWindow(QMainWindow):
         self.bcWidgetAndSideButtons.setMaximumHeight(80)
         self.bcWidgetAndSideButtons.setMaximumWidth(320)
 
-
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self.shaderText)
@@ -5799,10 +5708,6 @@ class MainWindow(QMainWindow):
         self.shaderMainWidget = QWidget()
         self.shaderMainWidget.setLayout(hbl)
 
-
-
-
-
         lab = QLabel('Shader')
         lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
         vbl = QVBoxLayout()
@@ -5811,11 +5716,8 @@ class MainWindow(QMainWindow):
         vbl.addWidget(self.shaderMainWidget)
 
         self.shaderCodeWidget.setLayout(vbl)
-        # with open('src/styles/cpanel.qss', 'r') as f:
-        #     self.shaderCodeWidget.setStyleSheet(f.read())
         self.shaderCodeWidget.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
         self.shaderCodeWidget.hide()
-
 
 
         '''Tabs Global Widget'''
@@ -5853,8 +5755,6 @@ class MainWindow(QMainWindow):
         # self.selectionReadout = QLabel()
         self.selectionReadout = QLineEdit()
         self.selectionReadout.returnPressed.connect(self.open_project_selected)
-        # self.selectionReadout.textChanged.connect(lambda: print('Text Changed!'))
-        # self.selectionReadout.textEdited.connect(lambda: print('Text Edited!'))
         # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
         self.selectionReadout.textChanged.connect(self.validateUserEnteredPath)
         self.selectionReadout.setFixedHeight(22)
@@ -5882,13 +5782,11 @@ class MainWindow(QMainWindow):
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
 
-
         # self.cpanelMainWidgets = QWidget()
         self.cpanelMainSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.cpanelMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
 
         hbl = QHBoxLayout()
-        # hbl.setContentsMargins(0, 0, 0, 0)
         hbl.setContentsMargins(6, 0, 6, 0)
 
         # hbl.addWidget(self._processMonitorWidget)
@@ -5904,9 +5802,7 @@ class MainWindow(QMainWindow):
         self.cpanelMainSplitter.setCollapsible(1, False)
         self.cpanelMainSplitter.setCollapsible(2, False)
         self.cpanelMainSplitter.setCollapsible(3, False)
-
         hbl.addWidget(self.cpanelMainSplitter)
-
 
         self.cpanelMainWidgets = QWidget()
         self.cpanelMainWidgets.setLayout(hbl)
@@ -5925,8 +5821,6 @@ class MainWindow(QMainWindow):
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.pythonConsole)
         self.__dev_console.setLayout(vbl)
-
-
 
         self._dev_console = QWidget()
         self._dev_console.setStyleSheet("background-color: #003333; border-radius: 5px;")
@@ -5949,8 +5843,6 @@ class MainWindow(QMainWindow):
         vbl.addWidget(lab, alignment=Qt.AlignBaseline)
         vbl.addWidget(self.__dev_console)
         self._dev_console.setLayout(vbl)
-
-
         # self._dev_console.setStyleSheet('font-size: 11px; border-width: 0px; border-radius: 0px;')
 
         self._dev_console.hide()
@@ -5978,27 +5870,23 @@ class MainWindow(QMainWindow):
         self._splitter.addWidget(self.shaderCodeWidget)  # (1)
         self._splitter.addWidget(self.detailsWidget)     # (2)
         self._splitter.addWidget(self._dev_console)      # (3)
-        self._splitter.addWidget(self._showHideFeatures) # (4)
-        # self._splitter.addWidget(self._py_console)     # (5)
+        # self._splitter.addWidget(self._showHideFeatures) # (4)
         # self._mainVSplitterSizes = [1000, 128, 128, 128, 180, 128, 128]
         # self._splitter.setSizes(self._mainVSplitterSizes)
-        self._splitter.setContentsMargins(6,0,6,0)
-        # self._splitter.setContentsMargins(0,0,0,0)
-
+        self._splitter.setContentsMargins(6, 0, 6, 0)
 
         self._splitter.setHandleWidth(2)
         self._splitter.setCollapsible(0, False)
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)
         self._splitter.setCollapsible(3, False)
-        self._splitter.setCollapsible(4, True)
-        # self._splitter.setCollapsible(4, False)
+        # self._splitter.setCollapsible(4, True)
 
         self._splitter.setStretchFactor(0, 2)
         self._splitter.setStretchFactor(1, 2)
         self._splitter.setStretchFactor(2, 3)
         self._splitter.setStretchFactor(3, 1)
-        # self._splitter.setStretchFactor(4, 1)
+        # self._splitter.setStretchFactor(4, 0)
 
         self.browser_html_widget = QWidget()
         vbl = QVBoxLayout()
@@ -6049,8 +5937,6 @@ class MainWindow(QMainWindow):
 
         def browser_paste():
             self.browser_web.page().triggerAction(QWebEnginePage.Paste)
-
-
 
         buttonBrowserBack = QPushButton()
         buttonBrowserBack.setStatusTip('Go Back')
@@ -6194,7 +6080,6 @@ class MainWindow(QMainWindow):
         # vbl.addWidget(self._splitter)
         vbl.addWidget(self._splitterSplitter)
         vbl.addWidget(self._showHideFeatures)
-        # vbl.addWidget(self._showHideFeatures, alignment=Qt.AlignmentFlag.AlignLeft)
 
         #Todo keep this main_stack_widget for now, repurpose later
         self.main_stack_widget = QStackedWidget(self)               #____INDEX____
