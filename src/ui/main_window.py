@@ -1882,8 +1882,8 @@ class MainWindow(QMainWindow):
 
     def _resetSlidersAndJumpInput(self):
         '''Requires Neuroglancer '''
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         if cfg.data:
             try:
                 if self._isProjectTab() or self._isZarrTab():
@@ -2003,7 +2003,6 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        logger.info('')
         if self._isProjectTab():
             self._changeScaleCombo.show()
             logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)

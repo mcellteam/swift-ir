@@ -564,7 +564,7 @@ def do_scales_exist() -> bool:
 
 
 def get_scales_with_generated_alignments(scales) -> list:
-    logger.info('called by %s' % inspect.stack()[1].function)
+    # logger.info('called by %s' % inspect.stack()[1].function)
     l = []
     for s in scales:
         if exist_aligned_zarr(s):

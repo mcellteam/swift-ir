@@ -41,7 +41,8 @@ class ProjectTab(QWidget):
                  path=None,
                  datamodel=None):
         super().__init__(parent)
-        logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
+        logger.info('')
+        # logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
         self.viewer = None
