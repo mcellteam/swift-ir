@@ -1654,7 +1654,7 @@ class MainWindow(QMainWindow):
                     snr = cfg.data.snr_components()
 
                     if cfg.data.selected_method() == 'Auto-SWIM':
-                        logger.critical('Updating detailsSNR for Auto-SWIM')
+                        # logger.info('Updating detailsSNR for Auto-SWIM')
                         cfg.project_tab.detailsSNR.setText(
                             "Avg. SNR&nbsp;&nbsp;:<b><span style='color: #ffe135;'>%s</span></b><br>"
                             "Prev.&nbsp;SNR&nbsp;:%s<br>"

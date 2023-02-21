@@ -229,8 +229,6 @@ class ProjectTab(QWidget):
         self.ng_gl.addWidget(w, 4, 2, 1, 3, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
 
 
-
-
         '''AFM/CAFM Widget'''
         self.afm_widget_ = QTextEdit()
         self.afm_widget_.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -547,7 +545,6 @@ class ProjectTab(QWidget):
         # self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
         # NO CHANGE----------------------
 
-
         # MA Stage Buffer Widget
         self.MA_refTitle = QLabel('Reference')
         self.MA_refTitle.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
@@ -627,7 +624,6 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.rbManStrict)
         w.setLayout(hbl)
         fl_actionsMA.addWidget(w)
-
 
         self.btnClearMA = QPushButton('Clear Manual Points')
         self.btnClearMA.setMaximumHeight(20)
