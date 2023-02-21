@@ -3443,6 +3443,8 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
 
         self.enableAllTabs() #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
+        if cfg.MP_MODE:
+            self.enterExitManAlignMode(force_exit=True)
 
         if self.globTabs.count() == 0:
             return

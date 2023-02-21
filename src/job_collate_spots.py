@@ -78,3 +78,6 @@ if __name__ == '__main__':
     # #R \n
     # W %s
     # ''' % (name0, name1, name2, name3, out)
+
+    sys.stdout.close()
+    sys.stderr.close()
