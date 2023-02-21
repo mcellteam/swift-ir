@@ -154,38 +154,21 @@ class MainWindow(QMainWindow):
 
 
     def resizeEvent(self, event):
-        if self.detailsWidget.isVisible():
-            h = self.detailsWidget.geometry().height()
-            self.detailsCorrSpots.setFixedSize(max(10,h-44), max(10,h-44))
+        # if self.detailsWidget.isVisible():
+        #     h = self.detailsWidget.geometry().height()
+        #     self.detailsCorrSpots.setFixedSize(max(10,h-44), max(10,h-44))
         # if not self._working:
         #     self.resized.emit()
         #     if cfg.project_tab:
         #         cfg.project_tab.initNeuroglancer()
         #     return super(MainWindow, self).resizeEvent(event)
+        pass
 
 
     def getNgLayout(self):
         return self.comboboxNgLayout.currentText()
 
 
-    def setAppropriateNgLayout(self):
-        logger.info('')
-        # current_text = self.comboboxNgLayout.currentText()
-        # if self.rb0.isChecked():
-        #     if current_text != '4panel':
-        #         logger.warning('Snapping current combobox text to 4panel')
-        #         self.comboboxNgLayout.setCurrentText('4panel')
-        # elif self.rb1.isChecked():
-        #     if current_text != 'xy':
-        #         logger.warning('Snapping current combobox text to xy')
-        #         self.comboboxNgLayout.setCurrentText('xy')
-        # elif self.rb2.isChecked():
-        #     if current_text != 'xy':
-        #         logger.warning('Snapping current combobox text to xy')
-        #         self.comboboxNgLayout.setCurrentText('xy')
-
-
-    # def ngRadiobuttonChanged(self, checked):
     def ngRadiobuttonChanged(self, checked):
 
         caller = inspect.stack()[1].function
@@ -257,9 +240,6 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
 
 
-
-
-    # def hardRestartNg(self, matchpoint=False):
     def hardRestartNg(self):
         caller = inspect.stack()[1].function
         logger.critical('\n\n\n**HARD** Restarting Neuroglancer (caller: %s)...\n\n' % caller)
@@ -589,7 +569,7 @@ class MainWindow(QMainWindow):
                     self.detailsManualpoints.hide()
 
                 elif method == 'Manual-Strict':
-                    pts = list(cfg.data.match_points_rounded())
+                    pts = list(cfg.data.manpoints_rounded())
                     mps = '\n'.join(['%d: %s\n%s' % (pts.index((p1,p2)), str(p1).ljust(21), str(p2).rjust(21)) for p1, p2 in pts])
                     self.detailsMethod.setText('Automatic SWIM  [ ]\n'
                                                'Manual, Strict  [X]\n'
@@ -597,7 +577,7 @@ class MainWindow(QMainWindow):
                     self.detailsManualpoints.setText('Manual Points:\n%s' % mps)
                     self.detailsManualpoints.show()
                 elif method == 'Manual-Hint':
-                    pts = list(cfg.data.match_points_rounded())
+                    pts = list(cfg.data.manpoints_rounded())
                     mps = '\n'.join(['%d: %s\n%s' % (pts.index((p1,p2)), str(p1).ljust(21), str(p2).rjust(21)) for p1, p2 in pts])
                     self.detailsMethod.setText('Automatic SWIM  [ ]\n'
                                                'Manual, Strict  [ ]\n'
@@ -768,7 +748,7 @@ class MainWindow(QMainWindow):
 
     def autoscale(self, make_thumbnails=True):
 
-        logger.info('>>>> autoscale >>>>')
+        logger.critical('>>>> autoscale >>>>')
 
         #Todo This should check for existence of original source files before doing anything
         self.stopNgServer() #0202-
@@ -800,7 +780,6 @@ class MainWindow(QMainWindow):
         for s in cfg.data.scales():
             cfg.data.set_image_size(s=s)
 
-        # self.set_status('Copy-converting TIFFs...')
         self.tell('Copy-converting TIFFs to NGFF-Compliant Zarr...')
         self.showZeroedPbar()
         try:
@@ -969,8 +948,8 @@ class MainWindow(QMainWindow):
         self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
         self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
         if abs(diff_avg) < .001: self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
-        elif diff_avg > 0:       self.tell('  Δ AVG. SNR : +%.3f (BETTER)' % diff_avg)
-        else:                    self.tell('  Δ AVG. SNR : -%.3f (WORSE)' % diff_avg)
+        elif diff_avg < 0:       self.tell('  Δ AVG. SNR : %.3f (WORSE)' % diff_avg)
+        else:                    self.tell('  Δ AVG. SNR : %.3f (BETTER)' % diff_avg)
 
 
     def onAlignmentEnd(self, start, end):
@@ -1062,7 +1041,6 @@ class MainWindow(QMainWindow):
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
         self.onAlignmentEnd(start=0, end=None)
-        # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
         self.tell('**** Processes Complete ****')
 
@@ -1079,9 +1057,7 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False
         )
-
         self.onAlignmentEnd(start=start, end=end)
-        # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
         self.tell('**** Processes Complete ****')
 
@@ -1099,7 +1075,6 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False
         )
         self.onAlignmentEnd(start=start, end=end)
-        # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
@@ -1120,7 +1095,6 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False
         )
         self.onAlignmentEnd(start=start, end=end)
-        # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
@@ -1324,8 +1298,8 @@ class MainWindow(QMainWindow):
             self.tell('  SWIM Window  : %.3f%%' % self._swimWindowControl.value())
             self.tell('  Whitening    : %.3f' % whitening_val)
             for layer in cfg.data.alstack(s=cfg.data.curScale):
-                layer['align_to_ref_method']['method_data']['win_scale_factor'] = swim_val
-                layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_val
+                layer['alignment']['method_data']['win_scale_factor'] = swim_val
+                layer['alignment']['method_data']['whitening_factor'] = whitening_val
 
 
     def enableAllButtons(self):
@@ -1520,42 +1494,11 @@ class MainWindow(QMainWindow):
         # self.cpanel.setStyleSheet(style)
         # self.hud.set_theme_default()
         self.hud.set_theme_light()
-        # if inspect.stack()[1].function != 'initStyle':
-        #     if cfg.project_tab:
-        #         cfg.project_tab.updateNeuroglancer()
-        #     elif cfg.zarr_tab:
-        #         cfg.zarr_tab.updateNeuroglancer()
+
 
 
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
-
-
-    def onScaleChange(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'Changing Scales (caller: {caller})...')
-        if not self._working:
-            if caller != 'OnStartProject':
-                # self.jump_to(cfg.data.layer())
-                self.dataUpdateWidgets()
-                self.updateEnabledButtons()
-                if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.setScaleData()
-                self.updateToolbar()
-                self.updateEnabledButtons()
-                self._showSNRcheck()
-
-                self.update_data_cache() #0213+
-
-                try:
-                    self._bbToggle.setChecked(cfg.data.has_bb())
-                except:
-                    logger.warning('Bounding Rect Widget Failed to Update')
-                # cfg.project_tab.initNeuroglancer()
-                self.hardRestartNg()
-                # self.hardRestartNg()
-        else:
-            self.warn('The application is busy, cant change scales now...')
 
 
     def updateToolbar(self):
@@ -1682,8 +1625,7 @@ class MainWindow(QMainWindow):
                     if method == 'Auto-SWIM':        txt_ += '<br>Method:&nbsp;Automatic&nbsp;SWIM'
                     elif method == 'Manual-Hint': txt_ += '<br>Method:&nbsp;Manual,&nbsp;Hint'
                     elif method == 'Manual-Strict':                      txt_ += '<br>Method:&nbsp;Manual, Strict'
-                    txt_ += f"""<br>Reject: {('[ ]', 
-                    "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
+                    txt_ += f"""<br>Reject: {('[ ]', "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
                     cfg.project_tab.detailsSection.setText(txt_)
 
                 if cfg.project_tab.detailsAFM.isVisible():
@@ -1758,7 +1700,7 @@ class MainWindow(QMainWindow):
 
     def updateNotes(self):
         # caller = inspect.stack()[1].function
-        logger.info('')
+        # logger.info('')
         self.notesTextEdit.clear()
         if self._isProjectTab():
             cur = cfg.data.layer()
@@ -2082,21 +2024,40 @@ class MainWindow(QMainWindow):
             self._changeScaleCombo.hide()
 
 
+    def onScaleChange(self):
+        caller = inspect.stack()[1].function
+        logger.critical(f'Changing Scales (caller: {caller})...')
+        if not self._working:
+            if caller != 'OnStartProject':
+                # self.jump_to(cfg.data.layer())
+                self.dataUpdateWidgets()
+                self.updateEnabledButtons()
+                if cfg.project_tab._tabs.currentIndex() == 1:
+                    cfg.project_tab.project_table.setScaleData()
+                self.updateToolbar()
+                self.updateEnabledButtons()
+                self._showSNRcheck()
+                self.update_data_cache() #0213+
+                try:
+                    self._bbToggle.setChecked(cfg.data.has_bb())
+                except:
+                    logger.warning('Bounding Rect Widget Failed to Update')
+                cfg.project_tab.initNeuroglancer()
+                # self.hardRestartNg() #0220-
+        else:
+            self.warn('The application is busy, cant change scales now...')
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         if cfg.MP_MODE:
             return
         if self._isProjectTab():
             if caller in ('main', 'scale_up', 'scale_down'):
-                if self._scales_combobox_switch == 1:
-                    if cfg.MP_MODE != True:
-                        logger.info('')
-                        # cfg.data.set_scale(self._changeScaleCombo.currentText())
-                        index = self._changeScaleCombo.currentIndex()
-                        cfg.data.set_scale(cfg.data.scales()[index])
-                        self.onScaleChange() #0129-
+                if self._scales_combobox_switch:
+                    index = self._changeScaleCombo.currentIndex()
+                    cfg.data.set_scale(cfg.data.scales()[index])
+                    self.onScaleChange() #0129-
 
 
     def fn_ng_layout_combobox(self) -> None:
@@ -2453,7 +2414,6 @@ class MainWindow(QMainWindow):
 
         self.update_data_cache()
         cfg.data.set_defaults()
-        # self.hardRestartNg()
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
         self.dataUpdateWidgets()
@@ -3043,9 +3003,10 @@ class MainWindow(QMainWindow):
                 # self.shutdownNeuroglancer()
                 if (cfg.MP_MODE == False) and (not force_exit):
                     if cfg.data.is_aligned_and_generated():
-                        logger.critical('Entering Manual Alignment Mode...')
-                        self.tell('Entering Manual Alignment Mode...')
-                        # del cfg.emViewer  # 0216+
+                        logger.critical('Entering Manual Align Mode...')
+                        self.tell('Entering Manual Align Mode...')
+                        self.stopPlaybackTimer()
+                        del cfg.emViewer  # 0216+
                         self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                         self.alignMatchPointAction.setText('Exit Manual Align Mode')
                         self.cpanel.setVisible(False)
@@ -3059,8 +3020,8 @@ class MainWindow(QMainWindow):
                     else:
                         self.warn('Alignment must be generated before using Manual Point Alignment method.')
                 else:
-                    logger.critical('Exiting Match Point Mode...')
-                    self.tell('Exiting Manual Alignment Mode...')
+                    logger.critical('Exiting Manual Align Mode...')
+                    self.tell('Exiting Manual Align Mode...')
                     self.setWindowTitle(self.window_title)
                     cfg.MP_MODE = False
                     self.alignMatchPointAction.setText('Align Manually')
@@ -3076,7 +3037,7 @@ class MainWindow(QMainWindow):
     def clear_match_points(self):
         if cfg.project_tab:
             logger.info('Clearing Match Points...')
-            cfg.data.clear_match_points()
+            cfg.data.clearMps()
             self.dataUpdateWidgets()
 
 
@@ -3089,8 +3050,8 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             no_mps = True
             for i, l in enumerate(cfg.data.alstack()):
-                r = l['images']['ref']['metadata']['match_points']
-                b = l['images']['base']['metadata']['match_points']
+                r = l['images']['ref']['metadata']['man_points']
+                b = l['images']['base']['metadata']['man_points']
                 if r != []:
                     no_mps = False
                     self.tell(f'Layer: {i}, Ref, Match Points: {str(r)}')
@@ -3276,14 +3237,6 @@ class MainWindow(QMainWindow):
         tip = 'Show Neuroglancer key bindings'
         self.info_button_buffer_label = QLabel(' ')
 
-        # self.profilingTimerButton = QPushButton('P')
-        # self.profilingTimerButton.setFixedSize(20,20)
-        # self.profilingTimerButton.clicked.connect(self.startStopProfiler)
-        # self.profilingTimer = QTimer(self)
-        # self.profilingTimer.timeout.connect(self.onProfilingTimer)
-        # if cfg.PROFILING_TIMER_AUTOSTART:
-        #     self.profilingTimerButton.click()
-
         tip = 'Jump To Image #'
         lab = QLabel('Section: ')
         # lab.setStyleSheet('font-size: 11px;')
@@ -3365,12 +3318,12 @@ class MainWindow(QMainWindow):
         self._ngLayoutWidget.setLayout(hbl)
         self._changeScaleCombo = QComboBox(self)
         self._changeScaleCombo.setMinimumWidth(140)
+        self._changeScaleCombo.setFixedHeight(20)
+        self._changeScaleCombo.resize(QSize(140, 20))
         self._changeScaleCombo.setStyleSheet('font-size: 11px')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
-        self._changeScaleCombo.resize(QSize(140, 20))
-        self._changeScaleCombo.setMinimumWidth(140)
-        self._changeScaleCombo.setFixedHeight(20)
+
         self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -3686,7 +3639,6 @@ class MainWindow(QMainWindow):
 
 
     def updateNgMenuStateWidgets(self):
-        # logger.info('')
         if not cfg.data:
             self.clearNgStateMenus()
             return
@@ -3698,15 +3650,6 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textedit)
         self.ngStateMenu.clear()
         self.ngStateMenu.addAction(action)
-
-        # textedit = QTextEdit(self)
-        # textedit.setFixedSize(QSize(600, 600))
-        # textedit.setReadOnly(True)
-        # textedit.setText(self.get_ng_state_raw())
-        # action = QWidgetAction(self)
-        # action.setDefaultWidget(textedit)
-        # self.ngRawStateMenu.clear()
-        # self.ngRawStateMenu.addAction(action)
 
 
     def clearNgStateMenus(self):

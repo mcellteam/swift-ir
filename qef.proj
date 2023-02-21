@@ -37,14 +37,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy1.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -66,14 +66,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy2.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy1.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -95,14 +95,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy3.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/dummy2.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -141,14 +141,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_2/img_src/dummy1.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -170,14 +170,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_2/img_src/dummy2.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_2/img_src/dummy1.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -199,14 +199,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_2/img_src/dummy3.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_2/img_src/dummy2.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -245,14 +245,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_4/img_src/dummy1.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -274,14 +274,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_4/img_src/dummy2.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_4/img_src/dummy1.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -303,14 +303,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_4/img_src/dummy3.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/alignEM/qef/scale_4/img_src/dummy2.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },

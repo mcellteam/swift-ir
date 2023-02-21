@@ -50,23 +50,33 @@ class HeadupDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: '#F3F6FB',
-        # logging.INFO: '#41FF00',
-        # logging.INFO: '#f3f6fb',
         logging.INFO: '#1b1e23',
         logging.WARNING: '#8B4000',
         logging.ERROR: '#FD001B',
         logging.CRITICAL: '#decfbe',
     }
 
-    def __init__(self, app):
+    COLORS_OVERLAY = {
+        logging.DEBUG: '#F3F6FB',
+        logging.INFO: '#f3f6fb',
+        logging.WARNING: '#8B4000',
+        logging.ERROR: '#FD001B',
+        logging.CRITICAL: '#decfbe',
+    }
+
+    def __init__(self, app, overlay=False):
         super(HeadupDisplay, self).__init__()
         self.app = app
+        self._overlay = overlay
         self.setFocusPolicy(Qt.NoFocus)
         # self.setMinimumHeight(64)
         self.textedit = te = QPlainTextEdit(self)
         # f = QFont()
         # f.setStyleHint(QFont.Monospace)
         # te.setFont(f)
+        if overlay:
+            # te.verticalScrollBar().setDisabled(True)
+            te.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         te.setReadOnly(True)
         self.handler = h = QtHandler(self.update_status)
         fs = '%(asctime)s [%(levelname)s] %(message)s'
@@ -104,9 +114,13 @@ class HeadupDisplay(QWidget):
 
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
-        color = self.COLORS.get(record.levelno, 'black')
+        if self._overlay:
+            color = self.COLORS_OVERLAY.get(record.levelno, 'black')
+        else:
+            color = self.COLORS.get(record.levelno, 'black')
         s = '<pre><font color="%s">%s</font></pre>' % (color, status)
         self.textedit.appendHtml(s)
+        self.textedit.moveCursor(QTextCursor.End)
         self.update()
 
     @Slot()
@@ -114,6 +128,7 @@ class HeadupDisplay(QWidget):
         level = logging.INFO
         extra = {'qThreadName': ctname()}
         logger.log(level, 'Manually logged!', extra=extra)
+        self.textedit.moveCursor(QTextCursor.End)
         self.update()
 
     @Slot()

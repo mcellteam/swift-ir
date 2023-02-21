@@ -75,19 +75,19 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
         for ID, layer in enumerate(iter(alstack[start:end])):
-            base_name = layer['images']['base']['filename']
+            base_name = layer['filename']
             _ , fn = os.path.split(base_name)
             al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
-            layer['images']['aligned'] = {}
-            layer['images']['aligned']['filename'] = al_name
-            cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
+            # layer['images']['aligned'] = {}
+            # layer['images']['aligned']['filename'] = al_name
+            cafm = layer['alignment']['method_results']['cumulative_afm']
             args = [sys.executable, job_script, '-gray', '-rect',
                     str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
                     str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
             task_queue.add_task(args)
             if cfg.PRINT_EXAMPLE_ARGS:
                 if ID in [0,1,2]:
-                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
+                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, '    '.join(map(str,args))))
                 # if ID is 7:
 
         # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
@@ -127,14 +127,14 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
             task_list = []
             for ID, layer in enumerate(iter(alstack[start:end])):
-                _ , fn = os.path.split(layer['images']['base']['filename'])
+                _ , fn = os.path.split(layer['filename'])
                 al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
                 zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
                 args = [sys.executable, job_script, str(ID), al_name, zarr_group]
                 task_queue.add_task(args)
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if ID in [0,1,2]:
-                        logger.info('generate_aligned/job_convert_zarr Example Arguments (ID: %d):\n%s' % (ID, str(args)))
+                        logger.info('Example Arguments (ID: %d):\n%s' % (ID, '    '.join(map(str,args))))
                 # task_queue.add_task(args)
             logger.info('Adding Tasks To Multiprocessing Queue...')
             try:
@@ -155,19 +155,19 @@ def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
         # if ID in [0,1,2]:
         #     logger.info('afm = %s\n' % ' '.join(map(str, datamodel.afm(l=ID))))
         #     logger.info('cafm = %s\n' % ' '.join(map(str, datamodel.cafm(l=ID))))
-        base_name = layer['images']['base']['filename']
+        base_name = layer['filename']
         _ , fn = os.path.split(base_name)
         al_name = os.path.join(dest, scale, 'img_aligned', fn)
-        layer['images']['aligned'] = {}
-        layer['images']['aligned']['filename'] = al_name
-        cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
+        # layer['images']['aligned'] = {}
+        # layer['images']['aligned']['filename'] = al_name
+        cafm = layer['alignment']['method_results']['cumulative_afm']
         args = [sys.executable, job_script, '-gray', '-rect',
                 str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
                 str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name,
                 zarr_group, str(ID)]
         if cfg.PRINT_EXAMPLE_ARGS:
             if ID in [0,1,2]:
-                logger.info('Example Arguments (ID: %d):\n%s' % (ID, str(args)))
+                logger.info('Example Arguments (ID: %d):\n%s' % (ID, '    '.join(map(str,args))))
             # if ID is 7:
             #     args[2] = '-bogus_option'
             # if ID is 11:

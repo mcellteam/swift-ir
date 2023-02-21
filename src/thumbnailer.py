@@ -138,15 +138,15 @@ class Thumbnailer:
         task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
 
+        logger.info('Removing up to %d files...' %len(filenames))
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
             if os.path.exists(ofn):
-                logger.info('Removing file %s' % ofn)
                 os.remove(ofn)
             task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
-                logger.info('\nTQ Params: (1) %s (2) %s (3) %s (4) %s' % task)
+                logger.info('\nTQ Params:\n(1) %s\n(2) %s\n(3) %s\n(4) %s' % task)
 
         dt = task_queue.collect_results()
 

@@ -151,8 +151,8 @@ def compute_affines(scale, start=0, end=None):
                 layer_index = int(task_list[tnum]['args'][5]) # may differ from tnum!
                 al_stack_old[layer_index] = al_stack_new[layer_index]
                 if task_list[tnum]['statusBar'] == 'task_error':
-                    ref_fn = al_stack_old[layer_index]['images']['ref']['filename']
-                    base_fn = al_stack_old[layer_index]['images']['base']['filename']
+                    ref_fn = al_stack_old[layer_index]['reference']
+                    base_fn = al_stack_old[layer_index]['filename']
                     cfg.main_window.hud.post('Alignment Task Error at: ' +
                                              str(task_list[tnum]['cmd']) + " " +
                                              str(task_list[tnum]['args']))

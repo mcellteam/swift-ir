@@ -24,7 +24,7 @@ def save_bias_analysis(layers, bias_path):
 
         if True or not layer['skipped']:
             try:
-                atrm = layer['align_to_ref_method']
+                atrm = layer['alignment']
                 c_afm = np.array(atrm['method_results']['cumulative_afm'])
                 # snr = np.array(atrm['method_results']['snr_report']) #1205-
                 try:

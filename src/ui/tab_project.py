@@ -26,6 +26,8 @@ from src.ui.models.json_tree import JsonModel
 from src.ui.sliders import DoubleSlider
 from src.ui.thumbnails import Thumbnail, SnrThumbnail
 from src.ui.toggle_switch import ToggleSwitch
+from src.ui.process_monitor import HeadupDisplay
+
 
 
 __all__ = ['ProjectTab']
@@ -68,7 +70,7 @@ class ProjectTab(QWidget):
         self.MA_base_zoom = None
 
         h = self.MA_webengine_ref.geometry().height()
-        self.MA_stageSplitter.setSizes([int(.6*h), int(.4*h)])
+        self.MA_stageSplitter.setSizes([int(.5*h), int(.5*h)])
 
     def _onTabChange(self, index=None):
         if index == None:
@@ -102,7 +104,7 @@ class ProjectTab(QWidget):
 
 
     def initNeuroglancer(self):
-        logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...\n')
+        logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
 
         caller = inspect.stack()[1].function
         if cfg.MP_MODE:
@@ -124,9 +126,10 @@ class ProjectTab(QWidget):
             if caller != '_onGlobTabChange':
                 cfg.emViewer = self.viewer = EMViewer(webengine=self.webengine)
                 self.updateNeuroglancer()
+                cfg.main_window.dataUpdateWidgets()  # 0204+
                 cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
                 cfg.emViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-                cfg.main_window.dataUpdateWidgets() #0204+
+
 
 
     def updateNeuroglancer(self):
@@ -189,16 +192,43 @@ class ProjectTab(QWidget):
         self.ng_browser_container = QWidget()
         self.ng_browser_container.setObjectName('ng_browser_container')
         self.ng_gl = QGridLayout()
-        self.ng_gl.addWidget(self.webengine, 0, 0, 4, 5)
+        self.ng_gl.addWidget(self.webengine, 0, 0, 5, 5)
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
         self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
         self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
-        self.ng_gl.addWidget(self._overlayRect, 0, 0, 4, 5)
+        self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel()
         self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 28px;""")
         self._overlayLab.hide()
+
+        self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
+        self.hud_overlay.setFixedWidth(220)
+        self.hud_overlay.setFixedHeight(60)
+        self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.hud_overlay.setStyleSheet("""
+                    font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+                    font-size: 7px;
+                    background-color: rgba(0,0,0,0);
+                    color: #ffe135;
+                    padding: 1px;
+                    """)
+
+        w = QWidget()
+        w.setWindowFlags(Qt.FramelessWindowHint)
+        w.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # spcr = QWidget()
+        # spcr.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        vbl = QVBoxLayout()
+        # vbl.addWidget(spcr)
+        vbl.addWidget(self.hud_overlay)
+        w.setLayout(vbl)
+
+        # self.ng_gl.addWidget(self.hud_overlay, 4, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
+        self.ng_gl.addWidget(w, 4, 2, 1, 3, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
+
+
 
 
         '''AFM/CAFM Widget'''
@@ -221,8 +251,8 @@ class ProjectTab(QWidget):
         self._overlayBottomLeft = QLabel()
         self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
         self._overlayBottomLeft.hide()
-        self.ng_gl.addWidget(self._overlayLab, 0, 0, 4, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
-        self.ng_gl.addWidget(self._overlayBottomLeft, 0, 0, 4, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.ng_gl.addWidget(self._overlayBottomLeft, 0, 0, 5, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
         # self.ng_gl.addWidget(cfg.main_window._tool_afmCafm, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
@@ -438,9 +468,11 @@ class ProjectTab(QWidget):
         self.ng_gl.addWidget(self.spreadW2, 1, 3, 2, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW, 1, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.detailsDetailsWidget, 2, 0, 1, 4, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        self.ng_gl.setRowStretch(0, 0)
-        self.ng_gl.setRowStretch(1, 0)
+        self.ng_gl.setRowStretch(0, 1)
+        self.ng_gl.setRowStretch(1, 1)
         self.ng_gl.setRowStretch(2, 100)
+        self.ng_gl.setRowStretch(3, 25)
+        self.ng_gl.setRowStretch(4, 0)
         self.ng_gl.setColumnStretch(0, 24)
         self.ng_gl.setColumnStretch(1, 0)
         self.ng_gl.setColumnStretch(2, 5)
@@ -503,9 +535,9 @@ class ProjectTab(QWidget):
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
         # self.MA_webengine_stage.setMouseTracking(True)
-        # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
-        # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
-        # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
+        self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
+        self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
+        self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
 
         # NO CHANGE----------------------
         # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
@@ -543,7 +575,8 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
 
 
-        self.gb_actionsMA = QGroupBox('Actions')
+        # self.gb_actionsMA = QGroupBox('Actions')
+        self.gb_actionsMA = QGroupBox()
         fl_actionsMA = QFormLayout()
         fl_actionsMA.setContentsMargins(0, 0, 0, 0)
         self.gb_actionsMA.setLayout(fl_actionsMA)
@@ -551,7 +584,6 @@ class ProjectTab(QWidget):
         lab = QLabel('Method: ')
         tip = 'Automatic Alignment using SWIM'
         self.rbAuto = QRadioButton('Automatic')
-        # self.rb0.setStyleSheet('font-size: 11px')
         self.rbAuto.setStatusTip(tip)
         self.rbAuto.setChecked(True)
         self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -565,6 +597,10 @@ class ProjectTab(QWidget):
         self.rbManStrict = QRadioButton('Manual, Strict')
         self.rbManStrict.setStatusTip(tip)
         self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        self.rbAuto.toggled.connect(self.updateListWidgets)
+        self.rbManHint.toggled.connect(self.updateListWidgets)
+        self.rbManStrict.toggled.connect(self.updateListWidgets)
 
 
         self.rbAuto.setEnabled(False)
@@ -605,7 +641,7 @@ class ProjectTab(QWidget):
         def fn():
             s = cfg.data.scale()
             for i in range(len(cfg.data)):
-                cfg.data['data']['scales'][s]['alignment_stack'][i]['align_to_ref_method']['selected_method'] = 'Auto-SWIM'
+                cfg.data['data']['scales'][s]['alignment_stack'][i]['alignment']['selected_method'] = 'Auto-SWIM'
             cfg.main_window.alignAll()
             cfg.main_window.enterExitManAlignMode(force_exit=True)
         self.btnResetAllMA.clicked.connect(fn)
@@ -622,6 +658,7 @@ class ProjectTab(QWidget):
         self.btnSaveExitMA.setMaximumHeight(20)
         def fn():
             self.saveMps()
+
             cfg.main_window.enterExitManAlignMode(force_exit=True)
         self.btnSaveExitMA.clicked.connect(fn)
 
@@ -737,7 +774,7 @@ class ProjectTab(QWidget):
         self.MA_splitter.addWidget(self.MA_stageSplitter)
         self.MA_splitter.setCollapsible(0, False)
         self.MA_splitter.setCollapsible(1, False)
-        self.MA_splitter.setSizes([.65*cfg.WIDTH, .35*cfg.WIDTH])
+        self.MA_splitter.setSizes([.70*cfg.WIDTH, .30*cfg.WIDTH])
         self.MA_splitter.hide()
 
         self.weSplitter = QSplitter(Qt.Orientation.Horizontal)
@@ -775,7 +812,8 @@ class ProjectTab(QWidget):
         self.updateMAlistBase()
         isValid = self.checkMApoints()
         self.btnSaveExitMA.setEnabled(isValid)
-        self.btnSaveAndRealignMA.setEnabled(isValid)
+        if isValid or self.rbAuto:
+            self.btnSaveAndRealignMA.setEnabled(isValid)
         self.rbAuto.setEnabled(True)
         self.rbManHint.setEnabled(isValid)
         self.rbManStrict.setEnabled(isValid)
@@ -818,46 +856,50 @@ class ProjectTab(QWidget):
 
     def updateMA_ref_state(self):
         caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 2)
+        # calname = str(calframe[1][3])
+        # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_ref.isVisible():
                 if self.MA_viewer_base.state.cross_section_scale:
-                    if self.MA_viewer_base.state.cross_section_scale < 10_000:
-                        if self.MA_viewer_base.state.cross_section_scale != 1.0:
-                            pos = self.MA_viewer_base.state.position
-                            zoom = self.MA_viewer_base.state.cross_section_scale
-                            if isinstance(pos,np.ndarray) or isinstance(zoom,np.ndarray):
-                                state = copy.deepcopy(self.MA_viewer_ref.state)
-                                if isinstance(pos, np.ndarray):
-                                    state.position = self.MA_viewer_base.state.position
-                                if isinstance(zoom, float):
+                    # if self.MA_viewer_base.state.cross_section_scale < 10_000:
+                    #     if self.MA_viewer_base.state.cross_section_scale != 1.0:
+                    pos = self.MA_viewer_base.state.position
+                    zoom = self.MA_viewer_base.state.cross_section_scale
+                    if isinstance(pos,np.ndarray) or isinstance(zoom,np.ndarray):
+                        state = copy.deepcopy(self.MA_viewer_ref.state)
+                        if isinstance(pos, np.ndarray):
+                            state.position = self.MA_viewer_base.state.position
+                        if isinstance(zoom, float):
+                            if self.MA_viewer_base.state.cross_section_scale < 10_000:
+                                if self.MA_viewer_base.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = self.MA_viewer_base.state.cross_section_scale
-                                self.MA_viewer_ref.set_state(state)
+                        self.MA_viewer_ref.set_state(state)
 
 
     def updateMA_base_state(self):
         caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 2)
+        # calname = str(calframe[1][3])
+        # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_base.isVisible():
                 if self.MA_viewer_ref.state.cross_section_scale:
-                    if self.MA_viewer_ref.state.cross_section_scale < 10_000:
-                        if self.MA_viewer_ref.state.cross_section_scale != 1.0:
-                            pos = self.MA_viewer_ref.state.position
-                            zoom = self.MA_viewer_ref.state.cross_section_scale
-                            if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-                                state = copy.deepcopy(self.MA_viewer_base.state)
-                                if isinstance(pos, np.ndarray):
-                                    state.position = self.MA_viewer_ref.state.position
-                                if isinstance(zoom, float):
+                    # if self.MA_viewer_ref.state.cross_section_scale < 10_000:
+                    #     if self.MA_viewer_ref.state.cross_section_scale != 1.0:
+                    pos = self.MA_viewer_ref.state.position
+                    zoom = self.MA_viewer_ref.state.cross_section_scale
+                    if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
+                        state = copy.deepcopy(self.MA_viewer_base.state)
+                        if isinstance(pos, np.ndarray):
+                            state.position = self.MA_viewer_ref.state.position
+                        if isinstance(zoom, float):
+                            if self.MA_viewer_ref.state.cross_section_scale < 10_000:
+                                if self.MA_viewer_ref.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = self.MA_viewer_ref.state.cross_section_scale
-                                self.MA_viewer_base.set_state(state)
+                        self.MA_viewer_base.set_state(state)
 
 
     def deleteMpRef(self):
@@ -936,8 +978,10 @@ class ProjectTab(QWidget):
                 p = self.MA_viewer_base.pts[key]
                 _, x, y = p.point.tolist()
                 base_pts.append((x, y))
-            cfg.data.set_match_points('ref', ref_pts)
-            cfg.data.set_match_points('base', base_pts)
+            logger.critical('Setting ref manual points: %s' % str(ref_pts))
+            logger.critical('Setting base manual points: %s' % str(base_pts))
+            cfg.data.set_manual_points('ref', ref_pts)
+            cfg.data.set_manual_points('base', base_pts)
 
             if self.rbAuto.isChecked():
                 cfg.data.set_selected_method('Auto-SWIM')
@@ -948,9 +992,9 @@ class ProjectTab(QWidget):
             else:
                 cfg.data.set_selected_method('Auto-SWIM')
 
-            cfg.main_window.save()
-
-
+            cfg.data.print_all_match_points()
+            cfg.main_window._saveProjectToFile(silently=True)
+            cfg.main_window.hud.post('Match Points Saved!')
 
 
     def eventFilter(self, source, event):
@@ -1028,7 +1072,11 @@ class ProjectTab(QWidget):
 
     def onExitManualMode(self):
         # logger.critical('')
-        self.deleteAllMp()
+        # self.deleteAllMp()
+        self.MA_viewer_ref.pts.clear()
+        self.MA_ptsListWidget_ref.clear()
+        self.MA_viewer_base.pts.clear()
+        self.MA_ptsListWidget_base.clear()
         self._tabs.setCurrentIndex(self.bookmark_tab)
         self.ng_browser_container.show()
         # self.MA_widget.hide()
@@ -1110,11 +1158,20 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.critical('caller: %s' % caller)
         try:
-            val = self.ZdisplaySlider.value()
-            logger.critical('val = %d' % val)
-            state = copy.deepcopy(cfg.emViewer.state)
-            state.relative_display_scales = {'z': val}
-            cfg.emViewer.set_state(state)
+            if cfg.MP_MODE:
+                val = self.ZdisplaySlider.value()
+                state = copy.deepcopy(self.MA_viewer_ref.state)
+                state.relative_display_scales = {'z': val}
+                self.MA_viewer_ref.set_state(state)
+                state = copy.deepcopy(self.MA_viewer_base.state)
+                state.relative_display_scales = {'z': val}
+                self.MA_viewer_base.set_state(state)
+            else:
+                val = self.ZdisplaySlider.value()
+                logger.critical('val = %d' % val)
+                state = copy.deepcopy(cfg.emViewer.state)
+                state.relative_display_scales = {'z': val}
+                cfg.emViewer.set_state(state)
             cfg.main_window.update()
         except:
             print_exception()
@@ -1185,13 +1242,41 @@ class ProjectTab(QWidget):
         self.treeview.setAlternatingRowColors(True)
         self._wdg_treeview = QWidget()
         self._wdg_treeview.setObjectName('_wdg_treeview')
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(2, 0, 2, 0)
+        self.btnCollapseAll = QPushButton('Collapse All')
+        self.btnCollapseAll.setFixedSize(90,18)
+        self.btnCollapseAll.clicked.connect(self.treeview.collapseAll)
+        self.btnExpandAll = QPushButton('Expand All')
+        self.btnExpandAll.setFixedSize(90,18)
+        self.btnExpandAll.clicked.connect(self.treeview.expandAll)
+
+
+        self.treeHbl = QHBoxLayout()
+        self.treeHbl.setContentsMargins(2, 0, 2, 0)
         lab = VerticalLabel('Project Dictionary/JSON Tree View')
         lab.setObjectName('label_treeview')
-        hbl.addWidget(lab)
-        hbl.addWidget(self.treeview)
-        self._wdg_treeview.setLayout(hbl)
+        self.treeHbl.addWidget(lab)
+
+        spcr = QWidget()
+        spcr.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(self.btnCollapseAll)
+        hbl.addWidget(self.btnExpandAll)
+        hbl.addWidget(spcr)
+        btns = QWidget()
+        btns.setMaximumHeight(22)
+        btns.setLayout(hbl)
+
+        w = QWidget()
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl.addWidget(self.treeview)
+        vbl.addWidget(btns)
+
+        w.setLayout(vbl)
+        self.treeHbl.addWidget(w)
+        self._wdg_treeview.setLayout(self.treeHbl)
 
 
     def updatePlotThumbnail(self):
