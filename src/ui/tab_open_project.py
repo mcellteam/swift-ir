@@ -323,7 +323,7 @@ class Slider(QSlider):
         super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(16)
-        self.setMaximum(512)
+        self.setMaximum(256)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)
