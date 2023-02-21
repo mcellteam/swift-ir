@@ -39,4 +39,7 @@ if __name__ == '__main__':
 
     del img #flush datamodel in memory
 
+    sys.stdout.close()
+    sys.stderr.close()
+
 

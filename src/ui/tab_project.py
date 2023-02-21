@@ -123,6 +123,8 @@ class ProjectTab(QWidget):
             self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
             self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+
+            self.updateListWidgets()
         else:
             if caller != '_onGlobTabChange':
                 cfg.emViewer = self.viewer = EMViewer(webengine=self.webengine)
@@ -140,6 +142,7 @@ class ProjectTab(QWidget):
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
+            self.updateListWidgets()
         else:
             cfg.emViewer.initViewer()
             state = copy.deepcopy(cfg.emViewer.state)
@@ -548,13 +551,13 @@ class ProjectTab(QWidget):
 
         # MA Stage Buffer Widget
         self.MA_refTitle = QLabel('Reference')
-        self.MA_refTitle.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
-        self.MA_baseTitle = QLabel('Base')
-        self.MA_baseTitle.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:18px;')
+        self.MA_refTitle.setStyleSheet('color: #1b1e23; font-weight: 500;font-size:16px;')
+        self.MA_baseTitle = QLabel('Working')
+        self.MA_baseTitle.setStyleSheet('color: #1b1e23; font-weight: 500;font-size:16px;')
         self.MA_refNextLab = QLabel('Next:')
-        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:13px;')
+        self.MA_refNextLab.setStyleSheet('color: #1b1e23; font-weight: 700;font-size:13px;')
         self.MA_baseNextLab = QLabel('Next:')
-        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 600;font-size:13px;')
+        self.MA_baseNextLab.setStyleSheet('color: #1b1e23; font-weight: 700;font-size:13px;')
 
         self.MA_refNextColorLab = QLabel('Next')
         self.MA_refNextColorLab.setFixedSize(100,16)
@@ -804,6 +807,13 @@ class ProjectTab(QWidget):
         logger.info(f"Selected {item.text()}")
 
 
+
+
+
+    def checkMApoints(self):
+        return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys()) and \
+                                (len(self.MA_viewer_ref.pts.keys()) > 2)
+
     def updateListWidgets(self):
         self.updateMAlistRef()
         self.updateMAlistBase()
@@ -814,11 +824,6 @@ class ProjectTab(QWidget):
         self.rbAuto.setEnabled(True)
         self.rbManHint.setEnabled(isValid)
         self.rbManStrict.setEnabled(isValid)
-
-
-    def checkMApoints(self):
-        return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys()) and \
-                                (len(self.MA_viewer_ref.pts.keys()) > 2)
 
 
     def updateMAlistRef(self):

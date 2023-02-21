@@ -513,15 +513,24 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_2x2b)
                 # self.recipe.add_ingredient(ingredient_4x4)
-        elif atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
+        elif atrm['selected_method'] in ('Match Point Align', 'Manual-Hint'):
             mp_base = np.array(self.layer_dict['alignment']['manual_points']['base']).transpose()
             mp_ref = np.array(self.layer_dict['alignment']['manual_points']['ref']).transpose()
             # First ingredient is to calculate the Affine matrix from match points alone
             ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
             ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir, dest=self.dest) # <-- CALL TO SWIM
+            ingredient_2_mp_num2 = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir, dest=self.dest) #0221+
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
+            self.recipe.add_ingredient(ingredient_2_mp_num2)  # This one will use the previous Affine and refine it #0221+
+            # self.recipe.add_ingredient(ingredient_4x4)
+        elif atrm['selected_method'] == 'Manual-Strict':
+            mp_base = np.array(self.layer_dict['alignment']['manual_points']['base']).transpose()
+            mp_ref = np.array(self.layer_dict['alignment']['manual_points']['ref']).transpose()
+            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
+            self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
+
 
         # ingredient_check_align = \
         #     align_ingredient(ww=(wwx_f, wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)

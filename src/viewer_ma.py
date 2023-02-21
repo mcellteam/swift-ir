@@ -218,7 +218,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def add_matchpoint(self, s):
         coords = np.array(s.mouse_voxel_coordinates)
-        logger.critical('coords: %s' %str(coords))
+        logger.info('Coordinates: %s' %str(coords))
         if coords.ndim == 0:
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
