@@ -3784,6 +3784,15 @@ class MainWindow(QMainWindow):
         self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
         # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
         self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
+        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.ngShowUiControlsAction)
+
+        self.ngShowYellowFrameAction = QAction('Show Yellow Frame', self)
+        self.ngShowYellowFrameAction.setCheckable(True)
+        self.ngShowYellowFrameAction.setChecked(getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
+        self.ngShowYellowFrameAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_YELLOW_FRAME', val))
+        self.ngShowYellowFrameAction.triggered.connect(self.update_ng)
+        viewMenu.addAction(self.ngShowYellowFrameAction)
 
         def fn():
             cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))

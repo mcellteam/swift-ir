@@ -125,6 +125,7 @@ def update_preferences_model():
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_PANEL_BORDERS', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_ALIGNMENT_DETAILS', True)
