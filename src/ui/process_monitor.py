@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 '''
 Solid implementation of a thread-safe background GUI logger.
 
@@ -12,7 +13,7 @@ import inspect
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtCore import QObject, QThread, Qt, Signal, Slot, QSize
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
-
+import src.config as cfg
 
 logger = logging.getLogger("hud")
 logger.propagate = False # attempt to disable propogation to the root handler
@@ -75,9 +76,8 @@ class HeadupDisplay(QWidget):
         # f.setStyleHint(QFont.Monospace)
         # te.setFont(f)
         if overlay:
-            # te.verticalScrollBar().setDisabled(True)
-            te.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        te.setReadOnly(True)
+            self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.textedit.setReadOnly(True)
         self.handler = h = QtHandler(self.update_status)
         fs = '%(asctime)s [%(levelname)s] %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
@@ -151,17 +151,22 @@ class HeadupDisplay(QWidget):
 
 
     def done(self):
-        caller = inspect.stack()[1].function
-
+        # caller = inspect.stack()[1].function
         txt = self.textedit.toPlainText()
-        self.textedit.undo()
         last_line = txt.split('[INFO]')[-1].lstrip()
         if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
             return
-        # self.post(last_line + 'done.')
+
+        # if cfg.project_tab:
+        #     cfg.project_tab.hud_overlay.textedit.undo()
+        #     cfg.project_tab.hud_overlay.post(last_line + 'done.')
+        #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
+
+        self.textedit.undo()
         self.post(last_line + 'done.')
         # self.post(last_line + 'done(%s).' % caller)
         self.textedit.moveCursor(QTextCursor.End)
+
         self.update()
 
 
