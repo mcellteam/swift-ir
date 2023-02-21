@@ -32,7 +32,6 @@ if __name__ == '__main__':
 
     # LIBTIFF (pure Python module)
     # img = TIFFfile(fn)  # pylibtiff
-
     # img = tifffile.imread(fn)
 
     store[ID,:,:] = img # store: <zarr.core.Array (19, 1244, 1130) uint8>

@@ -213,7 +213,6 @@ def cleanup_project_list(paths: list) -> list:
                 if validate_file(path):
                     clean_paths.append(path)
     diff = list(set(paths) - set(clean_paths))
-    logger.info(f'diff: {diff}')
     if diff:
         txt = f'Some projects were not found and will be removed from the project cache:\n{diff}'
         logger.warning(txt)

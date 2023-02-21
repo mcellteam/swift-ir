@@ -61,11 +61,13 @@ def generate_scales(dm):
                 task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if i in [0, 1, 2]:
-                        logger.info('generate_scales/iscale2 TQ Params (Example ID %d):\n%s' % (i, str([iscale2_c, scale_arg, of_arg, if_arg])))
+                        logger.info('generate_scales/iscale2 TQ Params (Example ID %d):\n%s' %
+                                    (i, '\n'.join(map(str,[iscale2_c, scale_arg, of_arg, if_arg]))))
                 # if cfg.CODE_MODE == 'python':
                 #     task_queue.add_task(cmd=sys.executable,
                 #                         args=['src/job_single_scale.py', str(s), str(fn), str(ofn)], wd='.')
-                layer['images']['base']['filename'] = ofn
+                # layer['images']['base']['filename'] = ofn
+                layer['filename'] = ofn #0220+
         dt = task_queue.collect_results()
         results = task_queue.get_status_of_tasks()
         # show_mp_queue_results(task_queue=task_queue, dt=dt)

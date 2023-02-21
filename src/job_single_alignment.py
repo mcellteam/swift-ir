@@ -34,7 +34,6 @@ if __name__ == '__main__':
                 project=project_dict,
                 alignment_option=alignment_option,
                 use_scale=use_scale,
-                swiftir_code_mode=swiftir_code_mode,
                 start_layer=start_layer,
                 num_layers=num_layers)
         # Send the updated datamodel previewmodel and need_to_write_json back to the datamodel runner via stdout

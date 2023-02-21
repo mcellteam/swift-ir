@@ -51,12 +51,12 @@ data_template = \
 
 layer_template = \
     {
-        "align_to_ref_method": {
+        "alignment": {
             "method_data": {},
             "method_options": {},
             "selected_method": "Auto-SWIM",
-            "match_points": {
-                "src": [],
+            "manual_points": {
+                "ref": [],
                 'base': []
             },
             "method_results": {
@@ -74,6 +74,6 @@ image_template = \
         "filename": None,
         "metadata": {
             "annotations": [],
-            "match_points": []
+            "manual_points": []
         }
     }

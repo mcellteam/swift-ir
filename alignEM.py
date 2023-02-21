@@ -150,7 +150,6 @@ def main():
     # parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
-    parser.add_argument('--opencv', action='store_true', help='Use OpenCV to apply affines')
     parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
     parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
     args = parser.parse_args()
@@ -173,7 +172,6 @@ def main():
     # if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.headless:  cfg.HEADLESS = True
     if args.no_splash: cfg.NO_SPLASH = True
-    if args.opencv: cfg.USE_PYTHON = True
     if args.dummy: cfg.DUMMY = True
     if args.profile:
         cfg.PROFILING_MODE = True
@@ -219,33 +217,15 @@ def main():
     initialize_user_preferences()
     configure_project_paths()
 
-    # def tracefunc(frame, event, arg, indent=[0]):
-    #     if event == "call":
-    #         indent[0] += 2
-    #         print("-" * indent[0] + "> call function", frame.f_code.co_name)
-    #     elif event == "return":
-    #         print("<" + "-" * indent[0], "exit function", frame.f_code.co_name)
-    #         indent[0] -= 2
-    #     return tracefunc
-    # sys.setprofile(tracefunc)
-
-    # sys_argv = sys.argv
-    # sys_argv += ['--style', 'material']
-    # app = QGuiApplication(['--style', 'material'])
-
     app = QApplication([])
     app.setStyle('Fusion')
     cfg.main_window = MainWindow()
 
-
     logger.info('Showing AlignEM-SWiFT...')
     cfg.main_window.show()
 
-
-    # profiler = cProfile.Profile()
-    # profiler.enable()
-
-    app.exec()
+    sys.exit(app.exec())
+    # app.exec()
 
     # profiler.disable()
     # profiler.dump_stats("results.prof")

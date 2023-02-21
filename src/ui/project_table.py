@@ -198,7 +198,7 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         # logger.info(f'Updating table dimensions...')
-        logger.info('')
+        # logger.info('')
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
@@ -230,13 +230,13 @@ class ProjectTable(QWidget):
             try:     skips.append(l['skipped'])
             except:  skips.append('?'); print_exception()
             try:
-                m = l['align_to_ref_method']['selected_method']
+                m = l['alignment']['selected_method']
                 if m == 'Auto-SWIM': m = 'Automatic SWIM Alignment'
                 method.append(m)
             except:
                 method.append('Unknown')
             if is_aligned:
-                try:     snr_report.append(l['align_to_ref_method']['method_results']['snr_report'])
+                try:     snr_report.append(l['alignment']['method_results']['snr_report'])
                 except:  snr_report.append('<No SNR Report>')
 
         if is_aligned:

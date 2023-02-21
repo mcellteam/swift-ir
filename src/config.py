@@ -70,8 +70,8 @@ if 'Joels-' in platform.node():
 else:
     DEV_MODE = False
 PROFILING_MODE = False
-if 'Joels-' in platform.node():
-    PROFILING_MODE = True
+# if 'Joels-' in platform.node():
+#     PROFILING_MODE = True
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True

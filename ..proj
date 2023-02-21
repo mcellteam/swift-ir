@@ -37,14 +37,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.101.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -66,14 +66,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.102.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.101.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -95,14 +95,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.103.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.102.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -124,14 +124,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.104.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.103.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -153,14 +153,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.104.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -182,14 +182,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.106.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -211,14 +211,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.107.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.106.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -240,14 +240,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.108.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.107.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -269,14 +269,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.109.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.108.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -298,14 +298,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.110.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.109.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -327,14 +327,14 @@
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.111.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.110.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -373,14 +373,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.101.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -402,14 +402,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.102.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.101.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -431,14 +431,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.103.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.102.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -460,14 +460,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.104.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.103.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -489,14 +489,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.105.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.104.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -518,14 +518,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.106.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.105.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -547,14 +547,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.107.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.106.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -576,14 +576,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.108.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.107.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -605,14 +605,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.109.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.108.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -634,14 +634,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.110.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.109.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -663,14 +663,14 @@
                 "filename": "scale_2/img_src/R34CA1-BS12.111.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_2/img_src/R34CA1-BS12.110.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -737,14 +737,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.101.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -794,14 +794,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.102.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.101.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -851,14 +851,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.103.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.102.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -908,14 +908,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.104.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.103.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -965,14 +965,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.105.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.104.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -1022,14 +1022,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.106.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.105.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -1079,14 +1079,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.107.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.106.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -1136,14 +1136,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.108.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.107.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -1193,14 +1193,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.109.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.108.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -1250,14 +1250,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.110.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.109.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },
@@ -1307,14 +1307,14 @@
                 "filename": "scale_4/img_src/R34CA1-BS12.111.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               },
               "ref": {
                 "filename": "scale_4/img_src/R34CA1-BS12.110.tif",
                 "metadata": {
                   "annotations": [],
-                  "match_points": []
+                  "man_points": []
                 }
               }
             },

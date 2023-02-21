@@ -23,9 +23,6 @@ from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, obj_to_string, print_exception
 from src.shaders import ann_shader
 import src.config as cfg
-from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
-                                        typed_map, typed_set, typed_string_map, wrapped_property,
-                                        number_or_string)
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
@@ -33,8 +30,7 @@ numcodecs.blosc.use_threads = False
 __all__ = ['MAViewer']
 
 logger = logging.getLogger(__name__)
-# handler = logging.StreamHandler(stream=sys.stdout)
-# logger.addHandler(handler)
+
 
 class WorkerSignals(QObject):
     result = Signal(str)
@@ -57,10 +53,10 @@ class MAViewer(neuroglancer.Viewer):
         self.cs_scale = None
         self.pts = {}
         self.points = {}
-        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
-                          '#aaa672', '#152c74', '#404f74',
-                          '#f3e375', '#5c4ccc', '#d6acd6',
-                          '#aaa672', '#152c74', '#404f74']
+        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
+                          '#152c74', '#404f74', '#f3e375', '#5c4ccc',
+                          '#d6acd6', '#aaa672', '#152c74', '#404f74'
+                          ]
         self._crossSectionScale = 1
         self._mpCount = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
@@ -101,8 +97,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def initViewer(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
+        # caller = inspect.stack()[1].function
+        logger.info(f'Initializing Viewer (Role: %s)....' %self.role)
         sf = cfg.data.scale_val(s=cfg.data.scale())
 
         self.clear_layers()
@@ -135,9 +131,6 @@ class MAViewer(neuroglancer.Viewer):
             voxel_offset=[0, 0, 0]
         )
 
-        # self.pts.clear()
-        # self.restoreManAlignPts()
-
         with self.txn() as s:
 
             s.layout.type = 'yz'
@@ -148,48 +141,21 @@ class MAViewer(neuroglancer.Viewer):
             # s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV)
             s.crossSectionBackgroundColor = '#808080' # 128 grey
-            # s.cross_section_scale = 1
+            # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
             s.position = [0.5, y / 2, x / 2]
-
             s.layers['ann'].annotations = list(self.pts.values())
 
-
-
-
-        # mp_key_bindings = [
-        #     # ['keyx', 'add_matchpoint'],
-        #     # ['dblclick0', 'add_matchpoint'],
-        #     # ['keys', 'save_matchpoints'],
-        #     # ['keyc', 'clear_matchpoints'],
-        # ]
-        self.actions.add('add_matchpoint', self.add_matchpoint)
-        # self.actions.add('save_matchpoints', self.save_matchpoints)
-        # self.actions.add('clear_matchpoints', self.clear_matchpoints)
-
+        self.actions.add('add_manpoint', self.add_matchpoint)
 
         with self.config_state.txn() as s:
-            # for key, command in mp_key_bindings:
-            #     s.input_event_bindings.viewer[key] = command
-            # s.input_event_bindings.data_view['dblclick0'] = 'add_matchpoint'
-            # s.input_event_bindings.data_view['click0'] = 'add_matchpoint'
-            s.input_event_bindings.slice_view['shift+click0'] = 'add_matchpoint'
+            s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             s.show_ui_controls = False
             s.show_panel_borders = False
-
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
-            # s.viewer_size = [100,100]
-
-        # self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-
-        # if cfg.main_window.detachedNg.isVisible():
-        #     logger.critical('detached Neuroglancer is visible! Setting its page...')
-        #     cfg.main_window.detachedNg.setUrl(url=self.get_viewer_url())
-        # self.set_zmag()
 
         self.update_annotations()
 
@@ -206,7 +172,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
@@ -224,15 +190,11 @@ class MAViewer(neuroglancer.Viewer):
         #
         # try:
         zoom = self.state.cross_section_scale
-        # logger.info('self.state.cross_section_scale = %s' % str(zoom))
         if zoom:
             if zoom != self._crossSectionScale:
                 logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom}...')
                 self.signals.zoomChanged.emit(zoom)
             self._crossSectionScale = zoom
-        # except:
-        #     print_exception()
-        #     logger.error('ERROR on_state_change')
 
 
     def pt2ann(self, points: list):
@@ -295,7 +257,7 @@ class MAViewer(neuroglancer.Viewer):
         p_ = [p.point.tolist() for p in self.pts.values()]
         logger.critical('p_: %s' %str(p_))
         mps = [p_[0][1::], p_[1][1::], p_[2][1::]]
-        cfg.data.set_match_points(role=self.role, matchpoints=mps, l=layer)
+        cfg.data.set_manual_points(role=self.role, matchpoints=mps, l=layer)
         cfg.data.set_selected_method(method="Match Point Align", l=layer)
         cfg.data.print_all_match_points()
         cfg.main_window._saveProjectToFile(silently=True)
@@ -334,7 +296,6 @@ class MAViewer(neuroglancer.Viewer):
             s.layers['ann'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotations=self.pt2ann(points=cfg.data.getmpFlat()[self.role]),
-                # annotations=self.pt2ann(points=[(0,100,100)]),
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
                     ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),

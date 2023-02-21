@@ -241,14 +241,17 @@ class DataModel:
 
             for layer_index in range(len(scale['alignment_stack'])):
                 layer = scale['alignment_stack'][layer_index]
-                layer.setdefault('align_to_ref_method', {})
-                layer['align_to_ref_method'].setdefault('method_data', {})
-                layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-                layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+                layer.setdefault('alignment', {})
+                layer['alignment'].setdefault('method_data', {})
+                layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+                layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+                layer['alignment'].setdefault('manual_points', {})
+                layer['alignment']['manual_points'].setdefault('ref', [])
+                layer['alignment']['manual_points'].setdefault('base', [])
                 if s == self.coarsest_scale_key():
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+                    layer['alignment']['method_data']['alignment_option'] = 'init_affine'
                 else:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+                    layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
 
 
     def notes(self, s=None, l=None):
@@ -287,7 +290,7 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         # logger.info(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
-        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['filename'])
 
 
 
@@ -318,12 +321,12 @@ class DataModel:
 
     def filenames(self):
         '''Returns filenames as absolute paths'''
-        return natural_sort([os.path.abspath(l['images']['base']['filename'])
+        return natural_sort([os.path.abspath(l['filename'])
                 for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
     def basefilenames(self):
         '''Returns filenames as absolute paths'''
-        return natural_sort([os.path.basename(l['images']['base']['filename'])
+        return natural_sort([os.path.basename(l['filename'])
                 for l in self._data['data']['scales'][self.scales()[0]]['alignment_stack']])
 
     def thumbnail(self, l = None):
@@ -341,7 +344,7 @@ class DataModel:
     def thumbnails_ref(self) -> list:
         paths = []
         for l in cfg.data.alstack():
-            paths.append(os.path.join(self.dest(), 'thumbnails', os.path.basename(l['images']['ref']['filename'])))
+            paths.append(os.path.join(self.dest(), 'thumbnails', os.path.basename(l['reference'])))
         return paths
 
     def thumbnails_aligned(self) -> list:
@@ -356,25 +359,25 @@ class DataModel:
         # return self._data['data']['thumbnails'][self.layer()]
         return path
 
-    def corr_spot_q0_path(self, s=None, l=None) -> list:
+    def corr_spot_q0_path(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         img = self.base_image_name(s=s, l=l)
         return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_0_' + img)
 
-    def corr_spot_q1_path(self, s=None, l=None) -> list:
+    def corr_spot_q1_path(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         img = self.base_image_name(s=s, l=l)
         return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_1_' + img)
 
-    def corr_spot_q2_path(self, s=None, l=None) -> list:
+    def corr_spot_q2_path(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         img = self.base_image_name(s=s, l=l)
         return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_2_' + img)
 
-    def corr_spot_q3_path(self, s=None, l=None) -> list:
+    def corr_spot_q3_path(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         img = self.base_image_name(s=s, l=l)
@@ -459,7 +462,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']
+                'alignment']['method_results']
         except:
             return {}
 
@@ -468,7 +471,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['datetime']
+                'alignment']['method_results']['datetime']
         except:
             return ''
 
@@ -478,7 +481,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['previous_method_results']
+                'alignment']['previous_method_results']
         except:
             return {}
 
@@ -538,7 +541,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                            'align_to_ref_method']['method_results']['snr']
+                            'alignment']['method_results']['snr']
         except:
             logger.warning('No SNR data for %s, layer %d' %(s,l))
             return [0.0, 0.0, 0.0, 0.0]
@@ -549,7 +552,7 @@ class DataModel:
         if l == None: l = cfg.data.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['previous_method_results']['snr_prev']
+                'alignment']['previous_method_results']['snr_prev']
         except:
             logger.warning('No Previous SNR data for %s, layer %d' %(s,l))
             return [0.0, 0.0, 0.0, 0.0]
@@ -559,7 +562,7 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
-            return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['method_results']['snr_report']
+            return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['method_results']['snr_report']
         except:
             logger.warning('No SNR Report for Layer %d' % l)
             return ''
@@ -591,7 +594,7 @@ class DataModel:
         if s == None: s = self.curScale
         unavailable = []
         for i,l in enumerate(self.alstack(s=s)):
-            if not 'snr' in l['align_to_ref_method']['method_results']:
+            if not 'snr' in l['alignment']['method_results']:
                 unavailable.append((i, self.name_base(s=s, l=i)))
         return unavailable
 
@@ -632,9 +635,9 @@ class DataModel:
         logger.info('Match Points:')
         for i, l in enumerate(self.alstack()):
             r = self._data['data']['scales'][cfg.data.scale()]['alignment_stack'][
-                l]['align_to_ref_method']['match_points']['ref']
+                l]['alignment']['manual_points']['ref']
             b = self._data['data']['scales'][cfg.data.scale()]['alignment_stack'][
-                l]['align_to_ref_method']['match_points']['base']
+                l]['alignment']['manual_points']['base']
             if r != []:
                 logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
             if b != []:
@@ -649,55 +652,36 @@ class DataModel:
             self._data['data']['current_scale'] = self.scales()[-1]
         return self._data['data']['current_scale']
 
-    def clearMps(self, s=None, l=None):
+    def add_manpoint(self, coordinates, role, s=None, l=None) -> None:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points'] \
-            = {'ref': [], 'base': []}
-
-    def add_matchpoint(self, coordinates, role, s=None, l=None) -> None:
-        '''Example Usage:
-             self.add_matchpoint(coordinates=(100, 200), role='base')
-        '''
-        if s == None: s = self.curScale
-        if l == None: l = self.layer()
-        # logger.info('Adding matchpoint at %s for %s on %s, layer=%d' % (str(coordinates), role, s, l))
-        self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'].append(
-            coordinates)
         if role == 'base':
-            self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['base'].append(
-                coordinates)
+            self._data['data']['scales'][s]['alignment_stack'][l][
+                'alignment']['manual_points']['base'].append(coordinates)
         elif role == 'ref':
-            self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref'].append(
-                coordinates)
+            self._data['data']['scales'][s]['alignment_stack'][l][
+                'alignment']['manual_points']['ref'].append(coordinates)
 
 
-    def match_points(self, s=None, l=None):
+    def manual_points(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        layer = self._data['data']['scales'][s]['alignment_stack'][l]
-        # r = layer['images']['ref']['metadata']['match_points']
-        # b = layer['images']['base']['metadata']['match_points']
-        r = layer['align_to_ref_method']['match_points']['ref']
-        b = layer['align_to_ref_method']['match_points']['base']
-        combined = {'ref': r, 'base': b}
-        # logger.info(f'Ref, Match Points: {str(r)}')
-        # logger.info(f'Base, Match Points: {str(b)}')
-        return combined
+        return self._data['data']['scales'][s]['alignment_stack'][l][
+            'alignment']['manual_points']
 
-    def match_points_pretty(self, s=None, l=None):
+    def manpoints_pretty(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        ref = cfg.data.match_points()['ref']
-        base = cfg.data.match_points()['base']
+        ref = cfg.data.manual_points()['ref']
+        base = cfg.data.manual_points()['base']
         return (['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in ref],
                 ['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in base])
 
-    def match_points_rounded(self, s=None, l=None):
+    def manpoints_rounded(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        ref = cfg.data.match_points()['ref']
-        base = cfg.data.match_points()['base']
+        ref = cfg.data.manual_points()['ref']
+        base = cfg.data.manual_points()['base']
         return zip([(round(x1), round(y1)) for x1, y1 in ref],
                 [(round(x1), round(y1)) for x1, y1 in base])
 
@@ -708,13 +692,11 @@ class DataModel:
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.alstack()):
-                r = layer['images']['ref']['metadata']['match_points']
-                b = layer['images']['base']['metadata']['match_points']
-                # r = layer['align_to_ref_method']['match_points']['ref']
-                # b = layer['align_to_ref_method']['match_points']['base']
+                r = layer['alignment']['manual_points']
+                b = layer['alignment']['manual_points']
                 if (r != []) or (b != []):
                     indexes.append(i)
-                    names.append(os.path.basename(layer['images']['base']['filename']))
+                    names.append(os.path.basename(layer['filename']))
             return list(zip(indexes, names))
         except:
             print_exception()
@@ -726,10 +708,8 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         for i,layer in enumerate(self.alstack()):
-            # r = layer['align_to_ref_method']['match_points']['ref']
-            # b = layer['align_to_ref_method']['match_points']['base']
-            r = layer['images']['ref']['metadata']['match_points']
-            b = layer['images']['base']['metadata']['match_points']
+            r = layer['alignment']['manual_points']['ref']
+            b = layer['alignment']['manual_points']['base']
             if r != [] or b != []:
                 # combined = {'ref': r, 'base': b}
                 logger.info('____Layer %d Matchpoints____\n  Ref: %s\n  Base: %s' % (i, str(r), str(b)))
@@ -738,64 +718,62 @@ class DataModel:
     def getmp(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        # return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref']
-        return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']
+        # return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['ref']
+        return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']
 
     def getmpFlat(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
-            mps = self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']
+            mps = self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']
             ref = [(0, x[0], x[1]) for x in mps['ref']]
             base = [(0, x[0], x[1]) for x in mps['base']]
             return {'ref': ref, 'base': base}
         except:
             return {'ref': [], 'base': []}
 
-    def match_points_ref(self, s=None, l=None):
+    # def match_points_ref(self, s=None, l=None):
+    #     if s == None: s = self.curScale
+    #     if l == None: l = self.layer()
+    #     # return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['ref']
+    #     return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['metadata']['manual_points']
+    #
+    # def match_points_base(self, s=None, l=None):
+    #     if s == None: s = self.curScale
+    #     if l == None: l = self.layer()
+    #     # return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['base']
+    #     return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['metadata']['manual_points']
+
+    # def all_match_points_ref(self, s=None):
+    #     if s == None: s = self.curScale
+    #     lst = []
+    #     for i, layer in enumerate(self.alstack(s=s)):
+    #         mp = layer['alignment']['manual_points']['ref']
+    #         if mp != []:
+    #             for p in mp:
+    #                 lst.append([i, p[0], p[1]])
+    #     return lst
+    #
+    # def all_match_points_base(self, s=None):
+    #     if s == None: s = self.curScale
+    #     lst = []
+    #     for i, layer in enumerate(self.alstack(s=s)):
+    #         mp = layer['alignment']['manual_points']['base']
+    #         if mp != []:
+    #             for p in mp:
+    #                 lst.append([i, p[0], p[1]])
+    #     return lst
+
+    def clearMps(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        # return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['ref']
-        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['metadata']['match_points']
+        self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['ref'] = []
+        self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['base'] = []
 
-    def match_points_base(self, s=None, l=None):
-        if s == None: s = self.curScale
-        if l == None: l = self.layer()
-        # return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['match_points']['base']
-        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['metadata']['match_points']
-
-    def all_match_points_ref(self, s=None):
-        if s == None: s = self.curScale
-        lst = []
-        for i, layer in enumerate(self.alstack(s=s)):
-            # mp = layer['align_to_ref_method']['match_points']['ref']
-            mp = layer['images']['ref']['metadata']['match_points']
-            if mp != []:
-                for p in mp:
-                    lst.append([i, p[0], p[1]])
-        return lst
-
-    def all_match_points_base(self, s=None):
-        if s == None: s = self.curScale
-        lst = []
-        for i, layer in enumerate(self.alstack(s=s)):
-            # mp = layer['align_to_ref_method']['match_points']['base']
-            mp = layer['images']['base']['metadata']['match_points']
-            if mp != []:
-                for p in mp:
-                    lst.append([i, p[0], p[1]])
-        return lst
-
-    def get_mps(self, role, s=None):
-        if s == None: s = self.curScale
-        lst = []
-        for i, layer in enumerate(self.alstack(s=s)):
-            # mp = layer['align_to_ref_method']['match_points'][role]
-            mp = layer['images'][role]['metadata']['match_points']
-            if mp != []:
-                for p in mp:
-                    lst.append([i, p[0], p[1]])
-        return lst
+    def clearAllMps(self):
+        for layer in self.alstack():
+            layer['alignment']['manual_points']['ref'] = []
+            layer['alignment']['manual_points']['base'] = []
 
     def annotations(self, s=None, l=None):
         if s == None: s = self.curScale
@@ -810,43 +788,12 @@ class DataModel:
         logger.info(f'Base, Annotations: {str(a)}')
         return combined
 
-    def clear_match_points(self, s=None, l=None):
+
+    def set_manual_points(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        layer = self._data['data']['scales'][s]['alignment_stack'][l]
-        layer['align_to_ref_method']['match_points']['ref'] = []
-        layer['align_to_ref_method']['match_points']['base'] = []
-        for role in layer['images'].keys():
-            if 'metadata' in layer['images'][role]:
-                layer['images'][role]['metadata']['match_points'] = []
-                # layer['images'][role]['metadata']['annotations'] = []
-
-    def clear_all_match_points(self, s=None, l=None):
-        for layer in self.alstack():
-            layer['align_to_ref_method']['match_points']['ref'] = []
-            layer['align_to_ref_method']['match_points']['base'] = []
-            for role in layer['images'].keys():
-                if 'metadata' in layer['images'][role]:
-                    layer['images'][role]['metadata']['match_points'] = []
-                    # layer['images'][role]['metadata']['annotations'] = []
-
-    def clear_annotations(self):
-        logger.info("Removing all match points for this l")
-        s, l = self.curScale, self.layer()
-        layer = self._data['data']['scales'][s]['alignment_stack'][l]
-        for role in layer['images'].keys():
-            if 'metadata' in layer['images'][role]:
-                layer['images'][role]['metadata']['annotations'] = []
-
-    def set_match_points(self, role, matchpoints, s=None, l=None):
-        if s == None: s = self.curScale
-        if l == None: l = self.layer()
-        logger.critical(f"Writing match point to project dictionary, s={s}, l={l}")
-        if role not in ('ref', 'base', 'aligned'):
-            logger.warning('Invalid Role Argument- Returning')
-            return
-        self.alstack()[l]['align_to_ref_method']['match_points'][role] = matchpoints
-        self._data['data']['scales'][s]['alignment_stack'][l]['images'][role]['metadata']['match_points'] = matchpoints
+        logger.critical(f"Writing manual points to project dictionary, s={s}, l={l}")
+        self.alstack()[l]['alignment']['manual_points'][role] = matchpoints
 
 
     def afm(self, s=None, l=None) -> list:
@@ -854,7 +801,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['affine_matrix']
+                'alignment']['method_results']['affine_matrix']
         except:
             return [[0, 0, 0], [0, 0, 0]]
 
@@ -863,9 +810,9 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return zip(self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['affine_matrix'][0],
+                'alignment']['method_results']['affine_matrix'][0],
                        self._data['data']['scales'][s]['alignment_stack'][l][
-                           'align_to_ref_method']['method_results']['affine_matrix'][1]
+                           'alignment']['method_results']['affine_matrix'][1]
                        )
         except:
             return zip([0, 0, 0], [0, 0, 0])
@@ -875,7 +822,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['cumulative_afm']
+                'alignment']['method_results']['cumulative_afm']
         except:
             return [[0, 0, 0], [0, 0, 0]]
 
@@ -884,9 +831,9 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             return zip(self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['cumulative_afm'][0],
+                'alignment']['method_results']['cumulative_afm'][0],
                        self._data['data']['scales'][s]['alignment_stack'][l][
-                           'align_to_ref_method']['method_results']['cumulative_afm'][1]
+                           'alignment']['method_results']['cumulative_afm'][1]
                        )
         except:
             return zip([0, 0, 0], [0, 0, 0])
@@ -894,13 +841,13 @@ class DataModel:
     def afm_list(self, s=None, l=None) -> list:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        lst = [l['align_to_ref_method']['method_results']['affine_matrix'] for l in self.alstack()]
+        lst = [l['alignment']['method_results']['affine_matrix'] for l in self.alstack()]
         return lst
 
     def cafm_list(self, s=None, l=None) -> list:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.alstack()]
+        lst = [l['alignment']['method_results']['cumulative_afm'] for l in self.alstack()]
         return lst
 
     def bias_data_path(self, s=None, l=None):
@@ -1045,7 +992,7 @@ class DataModel:
             for i,layer in enumerate(self.alstack(s=s)):
                 if layer['skipped'] == True:
                     indexes.append(i)
-                    names.append(os.path.basename(layer['images']['base']['filename']))
+                    names.append(os.path.basename(layer['filename']))
             return list(zip(indexes, names))
         except:
             print_exception()
@@ -1065,8 +1012,7 @@ class DataModel:
         try:
             for i in range(self.n_sections()):
                 if self._data['data']['scales'][s]['alignment_stack'][i]['skipped'] == True:
-                    f = os.path.basename(self._data['data']['scales'][s]['alignment_stack'][i][
-                                             'images']['base']['filename'])
+                    f = os.path.basename(self._data['data']['scales'][s]['alignment_stack'][i]['filename'])
                     lst.append(f)
             return lst
         except:
@@ -1076,12 +1022,12 @@ class DataModel:
     def whitening(self) -> float:
         '''Returns the Whitening Factor for the Current Layer.'''
         return float(self._data['data']['scales'][self.curScale]['alignment_stack'][
-                         self.layer()]['align_to_ref_method']['method_data']['whitening_factor'])
+                         self.layer()]['alignment']['method_data']['whitening_factor'])
 
     def swim_window(self) -> float:
         '''Returns the SWIM Window for the Current Layer.'''
         return float(self._data['data']['scales'][self.curScale]['alignment_stack'][
-                         self.layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
+                         self.layer()]['alignment']['method_data']['win_scale_factor'])
 
     def has_bb(self, s=None) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
@@ -1138,14 +1084,14 @@ class DataModel:
     def path_ref(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename']
+        return self._data['data']['scales'][s]['alignment_stack'][l]['reference']
 
     def path_base(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         # Todo -- Refactor!
         try:
-            name = self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
+            name = self._data['data']['scales'][s]['alignment_stack'][l]['filename']
             return name
         except:
             print_exception()
@@ -1154,7 +1100,7 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
-            return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+            return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['filename'])
         except:
             return ''
 
@@ -1162,7 +1108,7 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         try:
-            return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename'])
+            return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['reference'])
         except:
             return ''
 
@@ -1204,9 +1150,9 @@ class DataModel:
         try:
             for l in range(len(self)):
                 self._data['data']['scales'][s]['alignment_stack'][l][
-                    'align_to_ref_method']['previous_method_results'] = \
+                    'alignment']['previous_method_results'] = \
                     self._data['data']['scales'][s]['alignment_stack'][l][
-                        'align_to_ref_method']['method_results']
+                        'alignment']['method_results']
         except:
             print_exception()
             logger.warning('Unable to set previous SNR...')
@@ -1220,12 +1166,12 @@ class DataModel:
     def set_whitening(self, f: float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
         self._data['data']['scales'][self.curScale]['alignment_stack'][self.layer()][
-            'align_to_ref_method']['method_data']['whitening_factor'] = f
+            'alignment']['method_data']['whitening_factor'] = f
 
     def set_swim_window(self, f: float) -> None:
         '''Sets the SWIM Window for the Current Layer.'''
         self._data['data']['scales'][self.curScale]['alignment_stack'][self.layer()][
-            'align_to_ref_method']['method_data']['win_scale_factor'] = f
+            'alignment']['method_data']['win_scale_factor'] = f
 
     def set_use_bounding_rect(self, b: bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
@@ -1303,7 +1249,7 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['cumulative_afm'] = afm
+                'alignment']['method_results']['cumulative_afm'] = afm
         except:
             print_exception()
 
@@ -1313,21 +1259,21 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             self._data['data']['scales'][s]['alignment_stack'][l][
-                'align_to_ref_method']['method_results']['cumulative_afm'] = cafm
+                'alignment']['method_results']['cumulative_afm'] = cafm
         except:
             print_exception()
 
     def selected_method(self, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        return self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method']
+        return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['selected_method']
 
     def set_selected_method(self, method, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         logger.critical(f'Setting section #{l}, {s} to {method}...')
         cfg.main_window.hud.post(f'Setting section #{l}, {s} to {method}...')
-        self._data['data']['scales'][s]['alignment_stack'][l]['align_to_ref_method']['selected_method'] = method
+        self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['selected_method'] = method
 
 
     def set_destination_absolute(self, head):
@@ -1340,16 +1286,18 @@ class DataModel:
         self.set_destination(os.path.splitext(filename)[0])
         logger.debug(f'Setting absolute project dest/head: {self.dest()}...')
         try:
-            head = self.dest() # returns parent directory
+            head = self.dest()
             for s in self.scales():
                 if s == 'scale_1':
                     pass
                 else:
                     for l in self._data['data']['scales'][s]['alignment_stack']:
-                        for r in l['images'].keys():
-                            # if (not l==0) and (not r=='ref'):
-                            tail = l['images'][r]['filename']
-                            l['images'][r]['filename'] = os.path.join(head, tail)
+                        # for r in l['images'].keys():
+                        # if (not l==0) and (not r=='ref'):
+                        # tail = l['images'][r]['filename']
+                        tail = l['filename']
+                        # l['images'][r]['filename'] = os.path.join(head, tail)
+                        l['filename'] = os.path.join(head, tail)
                     # self._data['data']['scales'][s]['alignment_stack'][0]['images']['ref']['filename'] = None
         except:
             logger.warning('Setting Absolute Paths Triggered This Exception')
@@ -1367,7 +1315,7 @@ class DataModel:
         Get aligned scales list. Check project datamodel and aligned Zarr group presence.'''
         lst = []
         for s in self.scales():
-            r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
+            r = self._data['data']['scales'][s]['alignment_stack'][-1]['alignment']['method_results']
             if r != {}:
                 lst.append(s)
         for s in lst:
@@ -1443,19 +1391,10 @@ class DataModel:
 
     def append_image(self, file):
         scale = self.scale()
-        # logger.debug("Adding Image: %s, role: base, scale: %s" % (file, scale))
-        used_for_this_role = ['base' in l['images'].keys() for l in self.alstack(s=scale)]
-        # logger.info(f'used_for_this_role = {used_for_this_role}')
-        # used_for_this_role = [True, True, True, True]
-        if False in used_for_this_role:
-            layer_index = used_for_this_role.index(False)
-            logger.critical(f'(!!!) "False in used_for_this_role" layer_index: {layer_index}')
-        else:
-            self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
-            '''copy from template'''
-            layer_index = self.n_sections() - 1
-        self.add_img_base(scale=scale, layer=layer_index, filename=file)
-        self.add_img_ref(scale=scale, layer=layer_index, filename='')
+        # logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
+        self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
+        self._data['data']['scales'][scale]['alignment_stack'][self.n_sections() - 1]['filename'] = file
+        self._data['data']['scales'][scale]['alignment_stack'][self.n_sections() - 1]['reference'] = ''
 
     def append_empty(self):
         logger.critical('MainWindow.append_empty:')
@@ -1467,17 +1406,7 @@ class DataModel:
         else:
             self._data['data']['scales'][scale]['alignment_stack'].append(copy.deepcopy(layer_template))
             layer_index_for_new_role = len(self['data']['scales'][scale]['alignment_stack']) - 1
-        self.add_img_base(scale=scale, layer=layer_index, filename='')
-
-    def add_img_ref(self, scale, layer, filename=''):
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['ref'] = copy.deepcopy(image_template)
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['ref']['filename'] = filename
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['reference'] = filename          # 0119+
-
-    def add_img_base(self, scale, layer, filename=''):
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['base'] = copy.deepcopy(image_template)
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['images']['base']['filename'] = filename
-        self._data['data']['scales'][scale]['alignment_stack'][layer]['filename'] = filename          # 0119+
+        self._data['data']['scales'][scale]['alignment_stack'][layer_index]['filename'] = ''
 
 
     # def add_img(self, scale, layer, role, filename=''):
@@ -1498,7 +1427,8 @@ class DataModel:
         for layer in self.alstack():
             image_name = None
             if 'base' in layer['images'].keys():
-                image_name = layer['images']['base']['filename']
+                # image_name = layer['images']['base']['filename']
+                image_name = layer['filename']
             # Convert from the base name to the standard aligned name:
             name = None
             if image_name is not None:
@@ -1511,8 +1441,9 @@ class DataModel:
                         name = os.path.join(os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]))
             aln_image_stack.append(name)
             logger.info("Adding aligned image %s" % name)
-            layer['images']['aligned'] = {}
-            layer['images']['aligned']['filename'] = name
+            # layer['images']['aligned'] = {}
+            # layer['images']['aligned']['filename'] = name
+            layer['filename'] = name
         try:
             cfg.main_window.load_images_in_role('aligned', aln_image_stack)
         except:
@@ -1532,9 +1463,9 @@ class DataModel:
             for i in range(self.n_scales()):
                 layer = self._data['data']['scales'][s]['alignment_stack'][i]
                 if s == coarsest:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+                    layer['alignment']['method_data']['alignment_option'] = 'init_affine'
                 else:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+                    layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
 
 
 
@@ -1576,14 +1507,14 @@ class DataModel:
     #         scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
     #         for layer_index in range(len(scale['alignment_stack'])):
     #             layer = scale['alignment_stack'][layer_index]
-    #             layer.setdefault('align_to_ref_method', {})
-    #             layer['align_to_ref_method'].setdefault('method_data', {})
-    #             layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-    #             layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+    #             layer.setdefault('alignment', {})
+    #             layer['alignment'].setdefault('method_data', {})
+    #             layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+    #             layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
     #             if scale_key == coarsest:
-    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+    #                 layer['alignment']['method_data']['alignment_option'] = 'init_affine'
     #             else:
-    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+    #                 layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
 
 
     def link_reference_sections(self):
@@ -1595,15 +1526,15 @@ class DataModel:
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['alignment_stack'][layer_index]
                 if (layer_index == 0) or (layer_index in skip_list):
-                    self.add_img_ref(scale=s, layer=layer_index, filename='')
+                    self._data['data']['scales'][s]['alignment_stack'][layer_index]['reference'] = ''
                 else:
                     j = layer_index - 1  # Find nearest previous non-skipped l
                     while (j in skip_list) and (j >= 0):
                         j -= 1
                     if (j not in skip_list) and (j >= 0):
-                        ref = self._data['data']['scales'][s]['alignment_stack'][j]['images']['base']['filename']
+                        ref = self._data['data']['scales'][s]['alignment_stack'][j]['filename']
                         ref = os.path.join(self.dest(), s, 'img_src', ref)
-                        base_layer['images']['ref']['filename'] = ref
+                        # base_layer['images']['ref']['filename'] = ref
                         base_layer['reference'] = ref
 
 
@@ -1625,8 +1556,8 @@ class DataModel:
                     stack = scale['alignment_stack']
                     current_alignment_options = []
                     for layer in stack:
-                        if "align_to_ref_method" in layer:
-                            align_method = layer['align_to_ref_method']
+                        if "alignment" in layer:
+                            align_method = layer['alignment']
                             if 'method_data' in align_method:
                                 if 'alignment_option' in align_method['method_data']:
                                     current_alignment_options.append(align_method['method_data']['alignment_option'])
@@ -1662,8 +1593,8 @@ class DataModel:
                     stack = scale['alignment_stack']
                     current_alignment_options = []
                     for layer in stack:
-                        if "align_to_ref_method" in layer:
-                            align_method = layer['align_to_ref_method']
+                        if "alignment" in layer:
+                            align_method = layer['alignment']
                             if 'method_data' in align_method:
                                 if 'alignment_option' in align_method['method_data']:
                                     align_method['method_data'].pop('alignment_option')
@@ -1743,7 +1674,7 @@ class DataModel:
     #     for s in sorted(image_scales_to_run):  # i.e. string '1 2 4'
     #         scale_key = self.get_scale_key(s)
     #         for i, l in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
-    #             l['align_to_ref_method']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
+    #             l['alignment']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
     #     logger.critical('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
     #
     # def update_init_scale(self):
@@ -1751,23 +1682,24 @@ class DataModel:
     #     for s in sorted(image_scales_to_run):  # i.e. string '1 2 4'
     #         scale_key = self.get_scale_key(s)
     #         for i, l in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
-    #             l['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
+    #             l['alignment']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
     #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
+
 
     def clear_method_results(self, scale=None, start=0, end=None):
         if scale == None: scale = cfg.data.scale()
         logger.info("Clearing 'method_results'...")
         for layer in self._data['data']['scales'][scale]['alignment_stack'][start:end]:
-            layer['align_to_ref_method']['method_results'] = {}
+            layer['alignment']['method_results'] = {}
+
 
     def make_paths_relative(self, start):
         self.set_destination(os.path.relpath(self.dest(), start=start))
         for s in self.downscales():
             for layer in self.alstack(s=s):
                 for role in layer['images'].keys():
-                    filename = layer['images'][role]['filename']
-                    if filename != '':
-                        layer['images'][role]['filename'] = os.path.relpath(filename, start=start)
+                    layer['filename'] = os.path.relpath(layer['filename'], start=start)
+                    layer['reference'] = os.path.relpath(layer['reference'], start=start)
 
 
 @dataclass
@@ -1794,38 +1726,3 @@ if __name__ == '__main__':
     data = DataModel()
     print('Data Model Version: ' + str(data['version']))
     print(data)
-
-'''
-# layer_dict as defined in run_project_json.py:
-layer_dict = {
-    "images": {
-        "base": {
-            "metadata": {
-                "match_points": match_points[0]
-            }
-        },
-        "ref": {
-            "metadata": {
-                "match_points": match_points[1]
-            }
-        }
-    },
-    "align_to_ref_method": {
-        "selected_method": "Match Point Align",
-        "method_options": [
-            "Auto-SWIM",
-            "Manual-Hint",
-            "Manual-Strict"
-        ],
-        "method_data": {},
-        "method_results": {}
-    }
-}
-'''
-
-'''
-
-print('Before Defaults: s = %s, l = %s' % (str(s), str(l)))
-print('After Defaults: s = %s, l = %s' % (str(s), str(l)))
-
-'''

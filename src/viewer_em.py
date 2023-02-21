@@ -96,7 +96,7 @@ class EMViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def initViewerMendenhall(self):
-        logger.critical('Initializing Neuroglancer EMViewer (Mendenhall)...')
+        logger.critical('Initializing Neuroglancer - Mendenhall...')
         path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
         scales = [50, 2, 2]
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm','nm','nm'], scales=scales, )
@@ -351,7 +351,7 @@ class EMViewer(neuroglancer.Viewer):
                 scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
                 scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             else:
-                scale_h = ((res_y*tensor_y) / (widget_h - 34)) * 1e-9  # nm/pixel (subtract height of ng toolbar)
+                scale_h = ((res_y*tensor_y) / (widget_h - 74)) * 1e-9  # nm/pixel (subtract height of ng toolbar)
                 scale_w = ((res_x*tensor_x) / (widget_w - 20)) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 

@@ -51,7 +51,6 @@ logger = logging.getLogger(__name__)
 def run_json_project(project,
                      alignment_option='init_affine',
                      use_scale=0,
-                     swiftir_code_mode='python',
                      start_layer=0,
                      num_layers=-1,
                      alone=False):
@@ -62,7 +61,6 @@ def run_json_project(project,
     all remaining scales), and 'apply_affine' (usually never run, it forces the current python_swiftir onto any s including
     the full s images), defaults to 'init_affine'
     :param use_scale: The s value to run the json datamodel at
-    :param swiftir_code_mode: This can be either 'c' or 'python', defaults to python
     :param start_layer: Layer index number to start at, defaults to 0.
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
   
@@ -124,8 +122,8 @@ def run_json_project(project,
             if num_layers < 0:
                 num_to_copy = common_length - start_layer  # Copy to the end
             for i in range(num_to_copy):
-                s_tbd[start_layer + i]['align_to_ref_method']['method_results'] = copy.deepcopy(
-                    s_done[start_layer + i]['align_to_ref_method']['method_results'])
+                s_tbd[start_layer + i]['alignment']['method_results'] = copy.deepcopy(
+                    s_done[start_layer + i]['alignment']['method_results'])
 
             # datamodel['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
 
@@ -143,19 +141,19 @@ def run_json_project(project,
         #   Copy skipped, swim, and match point settings
         for i in range(len(s_tbd)):
             # fix path for base and ref filenames for scale_tbd
-            base_fn = os.path.basename(s_tbd[i]['images']['base']['filename'])
-            s_tbd[i]['images']['base']['filename'] = os.path.join(scale_tbd_dir, 'img_src', base_fn)
+            base_fn = os.path.basename(s_tbd[i]['filename'])
+            s_tbd[i]['filename'] = os.path.join(scale_tbd_dir, 'img_src', base_fn)
             if i > 0:
-                ref_fn = os.path.basename(s_tbd[i]['images']['ref']['filename'])
-                s_tbd[i]['images']['ref']['filename'] = os.path.join(scale_tbd_dir, 'img_src', ref_fn)
+                ref_fn = os.path.basename(s_tbd[i]['reference'])
+                s_tbd[i]['reference'] = os.path.join(scale_tbd_dir, 'img_src', ref_fn)
 
-            atrm = s_tbd[i]['align_to_ref_method']
+            atrm = s_tbd[i]['alignment']
             mr = atrm['method_results']
             md = atrm['method_data']
 
             # Initialize method_results for skipped or missing method_results
-            logger.info("s_tbd[i]['skipped'] = %s" % str(s_tbd[i]['skipped']))
-            logger.info("atrm['method_results'] == {} = %s" % str(mr == {}))
+            logger.critical("s_tbd[i]['skipped'] = %s" % str(s_tbd[i]['skipped']))
+            logger.critical("atrm['method_results'] == {} = %s" % str(mr == {}))
             if s_tbd[i]['skipped'] or mr == {}:
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
@@ -182,18 +180,22 @@ def run_json_project(project,
             logger.info('method_data\n%s' % json.dumps(atrm['method_data'], indent=2))
 
             # put updated atrm into s_tbd
-            s_tbd[i]['align_to_ref_method'] = atrm
+            s_tbd[i]['alignment'] = atrm
 
             # if there are match points, copy and scale them for scale_tbd
             if atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
-                mp_ref = (np.array(s_tbd[i]['images']['ref']['metadata']['match_points']) * upscale).tolist()
-                mp_base = (np.array(s_tbd[i]['images']['base']['metadata']['match_points']) * upscale).tolist()
-                s_tbd[i]['images']['ref']['metadata']['match_points'] = mp_ref
-                s_tbd[i]['images']['base']['metadata']['match_points'] = mp_base
+                # mp_ref = (np.array(s_tbd[i]['images']['ref']['metadata']['man_points']) * upscale).tolist()
+                # mp_base = (np.array(s_tbd[i]['images']['base']['metadata']['man_points']) * upscale).tolist()
+                # s_tbd[i]['images']['ref']['metadata']['man_points'] = mp_ref
+                # s_tbd[i]['images']['base']['metadata']['man_points'] = mp_base
+                mp_ref = (np.array(atrm['manual_points']['ref']) * upscale).tolist()
+                mp_base = (np.array(atrm['manual_points']['base']) * upscale).tolist()
+                atrm['manual_points']['ref'] = mp_ref
+                atrm['manual_points']['base'] = mp_base
 
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
             # Copy the affine_matrices from s_tbd and s the translation part to use as the initial guess for s_tbd
-            afm_tmp = np.array([al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd])
+            afm_tmp = np.array([al['alignment']['method_results']['affine_matrix'] for al in s_tbd])
             logger.debug('\n>>>> Original python_swiftir matrices: \n\n')
             logger.debug(str(afm_tmp))
             afm_scaled = afm_tmp.copy()
@@ -245,7 +247,7 @@ def run_json_project(project,
             # Set the cafm to the afm of the previously aligned image
             # TODO: Check this for handling skips!!!
             prev_aligned_index = range_to_process[0] - 1
-            method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
+            method_results = s_tbd[prev_aligned_index]['alignment']['method_results']
             c_afm = method_results['cumulative_afm']  # Note that this might be wrong type (list not a matrix)
 
         # Align Forward Change:
@@ -300,7 +302,7 @@ def evaluate_project_status(project):
         logger.info('alstack: %s' % str(alstack))
         # Create an array of boolean values representing whether 'affine_matrix' is in the method results for each l
         proj_status['scales'][scale_key]['aligned_stat'] = np.array(
-            ['affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack])
+            ['affine_matrix' in item['alignment']['method_results'] for item in alstack])
         num_afm = np.count_nonzero(proj_status['scales'][scale_key]['aligned_stat'] == True)
         if num_afm == len(alstack):
             proj_status['scales'][scale_key]['all_aligned'] = True
@@ -336,7 +338,8 @@ def prefix_lines(i, s):
 class alignment_process:
 
     def __init__(self, im_sta_fn=None,
-                 im_mov_fn=None, align_dir='./',
+                 im_mov_fn=None,
+                 align_dir='./',
                  layer_dict=None,
                  init_affine_matrix=None,
                  cumulative_afm=None,
@@ -347,19 +350,20 @@ class alignment_process:
         self.im_sta_fn = im_sta_fn
         self.im_mov_fn = im_mov_fn
         self.align_dir = align_dir
+        logger.critical(f'\n\nALIGN DIR: {self.align_dir}\n\n')
         self.dest = dest
 
         if layer_dict != None:
             self.layer_dict = layer_dict
-            self.im_sta_fn = self.layer_dict['images']['ref']['filename']
-            self.im_mov_fn = self.layer_dict['images']['base']['filename']
+            self.im_sta_fn = self.layer_dict['reference']
+            self.im_mov_fn = self.layer_dict['filename']
         else:
             self.layer_dict = {
                 "images": {
                     "ref": {"filename": im_sta_fn},
                     "base": {"filename": im_mov_fn}
                 },
-                "align_to_ref_method": {
+                "alignment": {
                     "selected_method": "Auto-SWIM",
                     # "method_options": [
                     #     "Auto Swim Align",
@@ -392,20 +396,20 @@ class alignment_process:
 
     def align(self, c_afm, save=True):
         logger.info('Running align_alignment_process.align_all...')
-        atrm = self.layer_dict['align_to_ref_method']
+        atrm = self.layer_dict['alignment']
         result = self.auto_swim_align(c_afm, save=save)
         return result
 
     def auto_swim_align(self, c_afm, save=True):
         logger.info('Running align_alignment_process.auto_swim_align...')
         siz = ImageSize(self.im_sta_fn)
-        atrm = self.layer_dict['align_to_ref_method'] # (A)lign (T)o (R)ef (M)ethod
+        atrm = self.layer_dict['alignment'] # (A)lign (T)o (R)ef (M)ethod
         wsf = atrm['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
 
         # [
-        # init_rot = self.layer_dict['align_to_ref_method']['method_options']['initial_rotation']
-        # init_scale = self.layer_dict['align_to_ref_method']['method_options']['initial_scale']
+        # init_rot = self.layer_dict['alignment']['method_options']['initial_rotation']
+        # init_scale = self.layer_dict['alignment']['method_options']['initial_scale']
         # deg2rad = 2*np.pi/360.
         # sin_rot = np.sin(deg2rad*init_rot)
         # assert isinstance(init_rot, float)
@@ -499,9 +503,8 @@ class alignment_process:
             else:
                 '''init_affine'''
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
-                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
-                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
-                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest)  # 0721
+                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)
+                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest)
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
                 ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
                 ingredient_2x2b = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
@@ -511,23 +514,18 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_2x2b)
                 # self.recipe.add_ingredient(ingredient_4x4)
         elif atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
-            # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
-            # mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
-            # mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
-            mp_base = np.array(self.layer_dict['align_to_ref_method']['match_points']['base']).transpose()
-            mp_ref = np.array(self.layer_dict['align_to_ref_method']['match_points']['ref']).transpose()
+            mp_base = np.array(self.layer_dict['alignment']['manual_points']['base']).transpose()
+            mp_ref = np.array(self.layer_dict['alignment']['manual_points']['ref']).transpose()
             # First ingredient is to calculate the Affine matrix from match points alone
-            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, ad=self.align_dir, dest=self.dest)
+            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
             ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir, dest=self.dest) # <-- CALL TO SWIM
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
-        ingredient_check_align = \
-            align_ingredient(ww=(wwx_f, wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)
-
-        # DISABLE CHECK_ALIGN INGREDIENT FOR PERFORMANCE TESTING
-        #    self.recipe.add_ingredient(ingredient_check_align)
+        # ingredient_check_align = \
+        #     align_ingredient(ww=(wwx_f, wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)
+        # self.recipe.add_ingredient(ingredient_check_align)
 
         self.recipe.execute()  # DOES the alignment -jy
         self.setCafm(c_afm, bias_mat=None)  # returns new current cafm -jy
@@ -669,10 +667,9 @@ class align_recipe:
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
     '''Initialized with paths to mir/swim'''
-
     # Constructor for ingredient of a recipe
     # Ingredients come in 3 main types where the type is determined by value of align_mode
-    #   1) If align_mode is 'match_point_align' then this is a Matching Point ingredient
+    #   1) If align_mode is 'manual-align' then this is a Matching Point ingredient
     #        We calculate the afm directly using psta and pmov as the matching points
     #   2) If align_mode is 'swim_align' then this is a swim window matching ingredient
     #        ww and psta specify the size and location of windows in im_sta
@@ -801,6 +798,7 @@ class align_ingredient:
         # ' -f3' + \
 
         # im_sta_fn = ref, im_mov_fn = base
+        # self.ad is NoneType
         scale_dir = os.path.abspath(os.path.dirname(os.path.dirname(self.ad))) # self.ad = project/scale_X/img_aligned/
         path = os.path.join(scale_dir, 'corr_spots')
         # if not os.path.exists(path):
@@ -858,19 +856,6 @@ class align_ingredient:
         swim_out_lines = o['out'].strip().split('\n')
         swim_err_lines = o['err'].strip().split('\n')
         swim_results.append({'out': swim_out_lines, 'err': swim_err_lines})
-
-        # path = os.path.join(os.path.dirname(os.path.dirname(self.recipe.im_sta_fn)), 'swim_log.dat')
-        # with open(self.logpath, 'a+') as f:
-        #     f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
-        #     f.write('swim_stdout: \n%s\n\n' % (o['out']))
-        #     f.write('swim_stderr: \n%s\n\n' % (o['err']))
-        #
-        # with open(self.logpath, 'a+') as f:
-        #     f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
-        #     f.write('swim_stdout: \n%s\n\n' % (o['out']))
-        #     f.write('swim_stderr: \n%s\n\n' % (o['err']))
-        #     f.write('AFM:')
-        #     f.write(str(self.afm))
 
         mir_script = ""
         snr_list = []
@@ -969,10 +954,9 @@ class align_ingredient:
 
         '''---------------------------------NEW -------------------------------------'''
         #0214
-        if self.align_mode == 'match_point_align':
+        if self.align_mode == 'manual-align':
             mir_script_mp = ''
             for i in range(len(self.psta[0])):
-                # mir_script_mp += f'{int(self.psta[0][i])} {int(self.psta[1][i])} {int(self.pmov[0][i])} {int(self.pmov[1][i])}\n'
                 mir_script_mp += f'{int(self.psta[0][i])} {int(self.psta[1][i])} {int(self.pmov[0][i])} {int(self.pmov[1][i])}\n'
 
             mir_script_mp += 'R'
@@ -992,17 +976,16 @@ class align_ingredient:
             logger.critical('\n\n(MANUAL ALIGN) MIR out: ' + str(mir_mp_out_lines))
             logger.critical('\n\n(MANUAL ALIGN) MIR err: ' + str(mir_mp_err_lines))
 
-
-            # Separate the results into a list of token lists
             afm = np.eye(2, 3, dtype=np.float32)
             # self.ww = (0.0, 0.0)
+
+            '''Extract AFM from these lines:
+            AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
+            AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043'''
 
             for line in mir_mp_out_lines:
                 logger.info("Line: " + str(line))
                 toks = line.strip().split()
-                '''Extract AFM from these lines:
-                AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
-                AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043'''
                 if (toks[0] == 'AF'):
                     afm[0, 0] = float(toks[1])
                     afm[0, 1] = float(toks[2])
@@ -1018,11 +1001,9 @@ class align_ingredient:
                 snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
             logger.critical('AFM:\n' + str(afm))
             logger.critical('snr_report:\n' + self.snr_report)
-
             return self.afm
-
-
             '''------------------------------ NEW END ----------------------------------'''
+
         #NOTE made this conditional #2014+
         else:
             #0205-
@@ -1231,16 +1212,16 @@ if __name__ == '__main__':
                     "images": {
                         "base": {
                             "metadata": {
-                                "match_points": match_points[0]
+                                "manual_points": match_points[0]
                             }
                         },
                         "ref": {
                             "metadata": {
-                                "match_points": match_points[1]
+                                "manual_points": match_points[1]
                             }
                         }
                     },
-                    "align_to_ref_method": {
+                    "alignment": {
                         "selected_method": "Match Point Align",
                         "method_options": [
                             "Auto-SWIM",
