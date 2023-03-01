@@ -144,6 +144,7 @@ class MAViewer(neuroglancer.Viewer):
             s.crossSectionBackgroundColor = '#808080' # 128 grey
             # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
+            # s.position = [0.5, y / 2, x / 2]
             s.position = [0.5, y / 2, x / 2]
             s.layers['ann'].annotations = list(self.pts.values())
 
@@ -156,7 +157,7 @@ class MAViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
+            s.show_panel_borders = False
 
         self.update_annotations()
 
@@ -216,22 +217,6 @@ class MAViewer(neuroglancer.Viewer):
 
         pass
 
-    def add_matchpoint(self, s):
-        coords = np.array(s.mouse_voxel_coordinates)
-        logger.info('Coordinates: %s' %str(coords))
-        if coords.ndim == 0:
-            logger.warning('Coordinates are dimensionless! =%s' % str(coords))
-            return
-
-        z, y, x = s.mouse_voxel_coordinates
-
-        props = [self.mp_colors[len(self.pts)], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'), getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-        self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr(coords), point=coords, props=props)
-        self.update_annotations()
-        self.signals.ptsChanged.emit()
-        logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
-
-
 
     def update_annotations(self):
         anns = list(self.pts.values())
@@ -283,6 +268,24 @@ class MAViewer(neuroglancer.Viewer):
             state = copy.deepcopy(self.state)
             state.layers.clear()
             self.set_state(state)
+
+
+    def add_matchpoint(self, s):
+        coords = np.array(s.mouse_voxel_coordinates)
+        logger.info('Coordinates: %s' %str(coords))
+        if coords.ndim == 0:
+            logger.warning('Coordinates are dimensionless! =%s' % str(coords))
+            return
+        _, y, x = s.mouse_voxel_coordinates
+        z = 0.5
+        props = [self.mp_colors[len(self.pts)],
+                 getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
+                 getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
+        self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
+        self.update_annotations()
+        self.signals.ptsChanged.emit()
+        logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
+
 
     def restoreManAlignPts(self):
         logger.info('')

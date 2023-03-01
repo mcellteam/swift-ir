@@ -27,17 +27,15 @@ class SnrPlot(QWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # cfg.data = None
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
-        # self.view.setBackground('#ffffff')
-        drafting_blue = '#004060'
-        self.view.setBackground(drafting_blue)
+        # self.view.setBackground('#1b1e23')
+        self.view.setBackground('#1b1e23')
+        # drafting_blue = '#004060'
+        # self.view.setBackground(drafting_blue)
         pg.setConfigOption('foreground', '#f3f6fb')
         pg.setConfigOptions(antialias=True)
         self.plot = self.view.addPlot()
-        # self.vb = CustomViewBox()
-        # self.snr =
         # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
         self._curLayerLine = pg.InfiniteLine(
             movable=False,

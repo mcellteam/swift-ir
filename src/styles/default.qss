@@ -27,7 +27,7 @@ QTabBar::tab {
     height: 20px;
     max-width: 200px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 QWidget#self._tool_keyBindings{
@@ -37,8 +37,8 @@ QWidget#self._tool_keyBindings{
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);
      subcontrol-position: right;
-     height: 12px;
-     width: 12px;
+     height: 10px;
+     width: 10px;
  }
  /* TabBar::close-button:hover { image: url(src/resources/close-tab-hover.png) } */
 
@@ -199,7 +199,7 @@ QToolBar#toolbar {
 QLabel#toolbar_layer_label { color: #1B1E23; }
 QLabel#extra_header_text_label { color: #1B1E23; }
 QWidget#layer_view_container { background-color: #daebfe;  } /*culprit*/
-QWidget#snr_plot_widget { background-color: #004060  }
+/*QWidget#snr_plot_widget { background-color: #004060  }*/
 QWidget#splash_widget { background-color: #1b1e23;  }
 
 QCheckBox#toggle_skip {

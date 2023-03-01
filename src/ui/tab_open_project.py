@@ -5,17 +5,23 @@ import json
 import inspect
 import logging
 import textwrap
+import shutil
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
-    QSizePolicy
+    QSizePolicy, QSpacerItem, QLineEdit, QMessageBox
 from qtpy.QtCore import Qt, QRect
 from qtpy.QtGui import QFont, QPixmap, QPainter
 
 from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
-from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt
+from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
+    print_exception, append_project_path, configure_project_paths, delete_recursive, \
+    create_project_structure_directories, makedirs_exist_ok
 from src.data_model import DataModel
+from src.ui.tab_project import ProjectTab
+from src.ui.tab_zarr import ZarrTab
+from src.ui.dialogs import ScaleProjectDialog, new_project_dialog
 
 import src.config as cfg
 
@@ -32,13 +38,14 @@ class OpenProject(QWidget):
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.setStyleSheet('border-width: 0px;')
         self.filebrowser.controlsNavigation.show()
-        self.user_projects = UserProjects()
+        self.user_projects = UserProjects(parent=self)
         self.initUI()
 
     def initUI(self):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
-        lab = QLabel('<h3>Saved AlignEM-SWiFT Projects:</h3>')
+        lab = QLabel('Saved AlignEM-SWiFT Projects:')
+        lab.setStyleSheet('font-size: 13px; color: #1b1e23; font-weight: 650;')
 
 
         self.row_height_slider = Slider(self)
@@ -94,6 +101,54 @@ class OpenProject(QWidget):
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
+        self._buttonOpen = QPushButton('Open')
+        self._buttonOpen.clicked.connect(self.open_project_selected)
+        self._buttonOpen.setFixedSize(64, 20)
+
+        self._buttonDelete = QPushButton('Delete')
+        self._buttonDelete.clicked.connect(self.delete_project)
+        self._buttonDelete.setFixedSize(64, 20)
+
+        self._buttonNew = QPushButton('New')
+        self._buttonNew.clicked.connect(self.new_project)
+        self._buttonNew.setFixedSize(64, 20)
+
+        # self._buttonNew = QPushButton('Remember')
+        # self._buttonNew.setStyleSheet("font-size: 9px;")
+        # self._buttonNew.clicked.connect(self.new_project)
+        # self._buttonNew.setFixedSize(64, 20)
+        # # self._buttonNew.setStyleSheet(style)
+
+        self.selectionReadout = QLineEdit()
+
+        self.selectionReadout.textChanged.connect(self.validate_path)
+        self.selectionReadout.returnPressed.connect(self.open_project_selected)
+        # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
+
+        self.selectionReadout.setFixedHeight(22)
+        self.selectionReadout.setMinimumWidth(700)
+
+        self.validity_label = QLabel('Invalid')
+        self.validity_label.setObjectName('validity_label')
+        self.validity_label.setFixedHeight(20)
+        self.validity_label.hide()
+
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(6, 2, 6, 2)
+        hbl.addWidget(self._buttonNew)
+        hbl.addWidget(self.selectionReadout)
+        hbl.addWidget(self.validity_label)
+        hbl.addWidget(self._buttonOpen)
+        hbl.addWidget(self._buttonDelete)
+        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        hbl.addSpacerItem(self.spacer_item_docs)
+
+        self._buttonOpen.setEnabled(False)
+        self._buttonDelete.setEnabled(False)
+
+        self._actions_widget = QWidget()
+        self._actions_widget.setFixedHeight(26)
+        self._actions_widget.setLayout(hbl)
 
 
         self._splitter = QSplitter()
@@ -104,18 +159,269 @@ class OpenProject(QWidget):
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(4, 0, 4, 0)
         self.layout.addWidget(self._splitter)
+        self.layout.addWidget(self._actions_widget)
         self.setLayout(self.layout)
 
+    def validate_path(self):
+        # logger.info(f'caller:{inspect.stack()[1].function}')
+        path = self.selectionReadout.text()
+        if validate_project_selection(path) or validate_zarr_selection(path):
+            self.validity_label.hide()
+            self._buttonOpen.setEnabled(True)
+            self._buttonDelete.setEnabled(True)
+        else:
+            self.validity_label.show()
+            self._buttonOpen.setEnabled(False)
+            self._buttonDelete.setEnabled(False)
 
-        # self.user_projects.set_data()
+    def userSelectionChanged(self):
+        caller = inspect.stack()[1].function
+        # if caller == 'setScaleData':
+        #     return
+        row = self.user_projects.table.currentIndex().row()
+        try:
+            path = self.user_projects.table.item(row, 9).text()
+        except:
+            path = ''
+            logger.warning(f'No file path at project_table.currentIndex().row()! '
+                           f'caller: {caller} - Returning...')
+            return
+        logger.info(f'path: {path}')
+        self.selected_file = path
+        self.setSelectionPathText(path)
 
-        # cfg.main_window.tell('Open a project (.swiftir) or a Zarr (a directory containing .zarray):')
+        # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
+
+
+
+    # def new_project(self):
+    #     cfg.main_window.new_project()
+
+
+
+    def new_project(self, mendenhall=False):
+        logger.critical('Starting A New Project...')
+        cfg.main_window.tell('Starting A New Project...')
+        cfg.main_window.stopPlaybackTimer()
+        if cfg.project_tab:
+            logger.info('Data is not None. Asking user to confirm new data...')
+            msg = QMessageBox(QMessageBox.Warning,
+                              'Confirm New Project',
+                              'Please confirm create new project.',
+                              buttons=QMessageBox.Cancel | QMessageBox.Ok)
+            msg.setIcon(QMessageBox.Question)
+            msg.setDefaultButton(QMessageBox.Cancel)
+            reply = msg.exec_()
+            if reply == QMessageBox.Ok:
+                logger.info("Response was 'OK'")
+            else:
+                logger.info("Response was not 'OK' - Returning")
+                self.warn('New Project Canceled.')
+                return
+
+        cfg.main_window.tell('New Project Path:')
+        filename = new_project_dialog()
+        if filename in ['', None]:
+            logger.info('New Project Canceled.')
+            cfg.main_window.warn("New Project Canceled.")
+            return
+        if not filename.endswith('.swiftir'):
+            filename += ".swiftir"
+        if os.path.exists(filename):
+            logger.warning("The file '%s' already exists." % filename)
+            cfg.main_window.warn("The file '%s' already exists." % filename)
+            path_proj = os.path.splitext(filename)[0]
+            cfg.main_window.tell(f"Removing Extant Project Directory '{path_proj}'...")
+            logger.info(f"Removing Extant Project Directory '{path_proj}'...")
+            shutil.rmtree(path_proj, ignore_errors=True)
+            cfg.main_window.tell(f"Removing Extant Project File '{path_proj}'...")
+            logger.info(f"Removing Extant Project File '{path_proj}'...")
+            os.remove(filename)
+
+        path, extension = os.path.splitext(filename)
+        cfg.data = DataModel(name=path, mendenhall=mendenhall)
+
+        cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
+        cfg.dataById[id(cfg.project_tab)] = cfg.data
+
+        # makedirs_exist_ok(path, exist_ok=True)
+
+        if not mendenhall:
+            try:
+                cfg.main_window.import_multiple_images()
+            except:
+                logger.warning('Import Images Dialog Was Canceled - Returning')
+                cfg.main_window.warn('Canceling New Project')
+                print_exception()
+                return
+
+            recipe_dialog = ScaleProjectDialog(parent=self)
+            if recipe_dialog.exec():
+                logger.info('ConfigProjectDialog - Passing...')
+                pass
+            else:
+                logger.info('ConfigProjectDialog - Returning...')
+                return
+
+
+            makedirs_exist_ok(path, exist_ok=True)
+            cfg.main_window._autosave(silently=True)
+            cfg.main_window.autoscale()
+            cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
+            cfg.main_window._setLastTab()
+            cfg.main_window.onStartProject()
+        else:
+            create_project_structure_directories(cfg.data.dest(), ['scale_1'])
+            # self.onStartProject(mendenhall=True)
+            # turn OFF onStartProject for Mendenhall
+
+        logger.critical(f'Appending {filename} to .swift_cache...')
+        userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+        with open(userprojectspath, 'a') as f:
+            f.write(filename + '\n')
+        cfg.main_window._autosave()
+
+
+    def setSelectionPathText(self, path):
+        # logger.info(f'caller:{inspect.stack()[1].function}')
+        self.selectionReadout.setText(path)
+        logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
+
+        if validate_project_selection(path) or validate_zarr_selection(path):
+            self.validity_label.hide()
+            self._buttonOpen.setEnabled(True)
+            self._buttonDelete.setEnabled(True)
+        else:
+            self.validity_label.show()
+            self._buttonOpen.setEnabled(False)
+            self._buttonDelete.setEnabled(False)
+
+
+    def open_zarr_selected(self):
+        # path = self.selected_file
+        path = self.selectionReadout.text()
+        logger.info("Opening Zarr '%s'..." % path)
+        try:
+            with open(os.path.join(path, '.zarray')) as j:
+                self.zarray = json.load(j)
+        except:
+            print_exception()
+            return
+        tab = ZarrTab(self, path=path)
+        cfg.main_window.globTabs.addTab(tab, os.path.basename(path))
+        cfg.main_window._setLastTab()
+
+    def open_project_selected(self):
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
+        logger.info('')
+        cfg.main_window.stopPlaybackTimer()
+        path = self.selectionReadout.text()
+        if validate_zarr_selection(path):
+            self.open_zarr_selected()
+            return
+        elif validate_project_selection(path):
+            # filename = self.selected_file
+            filename = self.selectionReadout.text()
+            logger.critical(f'Opening Project {filename}...')
+            cfg.main_window.tell('Loading Project "%s"' % filename)
+            try:
+                with open(filename, 'r') as f:
+                    cfg.data = DataModel(data=json.load(f))
+                cfg.main_window._autosave()
+            except:
+                cfg.main_window.warn(f'No Such File Found: {filename}')
+                logger.warning(f'No Such File Found: {filename}')
+                print_exception()
+                return
+            else:
+                logger.info(f'Project Opened!')
+            append_project_path(filename)
+            cfg.data.set_paths_absolute(filename=filename)
+            cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
+            cfg.dataById[id(cfg.project_tab)] = cfg.data
+            cfg.main_window.onStartProject()
+            cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
+            cfg.main_window._setLastTab()
+        else:
+            cfg.main_window.warn("Invalid Path")
+
+
+
+
+    def delete_project(self):
+        logger.critical('')
+        # project_file = self.selected_file
+        project_file = self.selectionReadout.text()
+        project = os.path.splitext(project_file)[0]
+        if not validate_project_selection(project_file):
+            logger.warning('Invalid Project For Deletion (!)\n%s' % project)
+            return
+        cfg.main_window.warn("Delete the following project?\nProject: %s" % project)
+        txt = "Are you sure you want to PERMANENTLY DELETE " \
+              "the following project?\n\n" \
+              "Project: %s" % project
+        msgbox = QMessageBox(QMessageBox.Warning,
+                             'Confirm Delete Project',
+                             txt,
+                             buttons=QMessageBox.Abort | QMessageBox.Yes
+                             )
+        msgbox.setIcon(QMessageBox.Critical)
+        msgbox.setMaximumWidth(350)
+        msgbox.setDefaultButton(QMessageBox.Cancel)
+        reply = msgbox.exec_()
+        if reply == QMessageBox.Abort:
+            cfg.main_window.tell('Aborting Delete Project Permanently Instruction...')
+            logger.warning('Aborting Delete Project Permanently Instruction...')
+            return
+        if reply == QMessageBox.Ok:
+            logger.info('Deleting Project File %s...' % project_file)
+            cfg.main_window.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
+            logger.warning('Executing Delete Project Permanently Instruction...')
+
+        logger.critical(f'Deleting Project File: {project_file}...')
+        cfg.main_window.warn(f'Deleting Project File: {project_file}...')
+        try:
+            os.remove(project_file)
+        except:
+            print_exception()
+        else:
+            cfg.main_window.hud.done()
+
+        logger.info('Deleting Project Directory %s...' % project)
+        cfg.main_window.warn('Deleting Project Directory %s...' % project)
+        try:
+
+            delete_recursive(dir=project)
+            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+        except:
+            cfg.main_window.warn('An Error Was Encountered During Deletion of the Project Directory')
+            print_exception()
+        else:
+            cfg.main_window.hud.done()
+
+        cfg.main_window.tell('Wrapping up...')
+        configure_project_paths()
+        if cfg.main_window.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
+            logger.critical('Reloading table of projects data...')
+            try:
+                cfg.main_window.globTabs.currentWidget().user_projects.set_data()
+            except:
+                logger.warning('There was a problem updating the project list')
+                print_exception()
+
+        self.selectionReadout.setText('')
+
+        cfg.main_window.tell('Deletion Complete!')
+        logger.info('Deletion Complete')
 
 
 
 class UserProjects(QWidget):
-    def __init__(self, **kwargs):
+    def __init__(self, parent, **kwargs):
         super().__init__(**kwargs)
+        self.parent = parent
 
         # self.initial_row_height = 64
         self.ROW_HEIGHT = 64
@@ -139,12 +445,12 @@ class UserProjects(QWidget):
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         def countCurrentItemChangedCalls(): self.counter2 += 1
         self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
-        self.table.currentItemChanged.connect(self.userSelectionChanged)
+        self.table.currentItemChanged.connect(self.parent.userSelectionChanged)
         def countItemClickedCalls(): self.counter1 += 1
         self.table.itemClicked.connect(countItemClickedCalls)
-        self.table.itemClicked.connect(self.userSelectionChanged)
-        def onDoubleClick(): cfg.main_window.open_project_selected()
-        self.table.itemDoubleClicked.connect(onDoubleClick)
+        self.table.itemClicked.connect(self.parent.userSelectionChanged)
+        # def onDoubleClick(): self.parent.open_project_selected()
+        self.table.itemDoubleClicked.connect(self.parent.open_project_selected)
         self.table.setStyleSheet("border-radius: 12px; border-width: 3px;"
                                  "QPushButton{background-color: #ffe135;}")
         self.table.setColumnCount(10)
@@ -172,6 +478,7 @@ class UserProjects(QWidget):
         self.set_data()
         self.updateRowHeight(self.ROW_HEIGHT)
 
+
     def updateRowHeight(self, h):
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, h)
@@ -179,22 +486,22 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(2, h)
 
 
-    def userSelectionChanged(self):
-        caller = inspect.stack()[1].function
-        # if caller == 'setScaleData':
-        #     return
-        row = self.table.currentIndex().row()
-        try:
-            path = self.table.item(row,9).text()
-        except:
-            cfg.selected_file = ''
-            logger.warning(f'No file path at project_table.currentIndex().row()! '
-                           f'caller: {caller} - Returning...')
-            return
-        logger.info(f'path: {path}')
-        cfg.selected_file = path
-        cfg.main_window.setSelectionPathText(path)
-        # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
+    # def userSelectionChanged(self):
+    #     caller = inspect.stack()[1].function
+    #     # if caller == 'setScaleData':
+    #     #     return
+    #     row = self.table.currentIndex().row()
+    #     try:
+    #         path = self.table.item(row,9).text()
+    #     except:
+    #         cfg.selected_file = ''
+    #         logger.warning(f'No file path at project_table.currentIndex().row()! '
+    #                        f'caller: {caller} - Returning...')
+    #         return
+    #     logger.info(f'path: {path}')
+    #     cfg.selected_file = path
+    #     cfg.main_window.setSelectionPathText(path)
+    #     # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
 
 
     def set_headers(self):
@@ -243,10 +550,10 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(2, 80)
         self.table.setColumnWidth(3, 70)
         self.table.setColumnWidth(4, 70)
-        self.table.setColumnWidth(5, 50)
-        self.table.setColumnWidth(6, 70)
-        self.table.setColumnWidth(7, 90)
-        self.table.setColumnWidth(8, 90)
+        self.table.setColumnWidth(5, 40)
+        self.table.setColumnWidth(6, 60)
+        self.table.setColumnWidth(7, 80)
+        self.table.setColumnWidth(8, 80)
         self.table.setColumnWidth(9, 120)
         # self.row_height_slider.setValue(self.initial_row_height)
         self.updateRowHeight(self.ROW_HEIGHT)
@@ -258,7 +565,7 @@ class UserProjects(QWidget):
         self.project_paths = get_project_list()
         logger.info('Getting project data...')
 
-        projects, thumbnail_first, thumbnail_last, created, last_opened, \
+        projects, thumbnail_first, thumbnail_last, created, modified, \
         n_sections, img_dimensions, bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
         for p in self.project_paths:
@@ -269,8 +576,8 @@ class UserProjects(QWidget):
                 logger.error('Table view failed to load data model: %s' % p)
             try:    created.append(dm.created())
             except: created.append('Unknown')
-            try:    last_opened.append(dm.last_opened())
-            except: last_opened.append('Unknown')
+            try:    modified.append(dm.modified())
+            except: modified.append('Unknown')
             try:    n_sections.append(dm.n_sections())
             except: n_sections.append('Unknown')
             try:    img_dimensions.append(dm.full_scale_size())
@@ -299,7 +606,7 @@ class UserProjects(QWidget):
             try:    location.append(p)
             except: location.append('Unknown')
         logger.info('<<<< get_data <<<<')
-        return zip(projects, thumbnail_first, thumbnail_last, created, last_opened,
+        return zip(projects, thumbnail_first, thumbnail_last, created, modified,
                    n_sections, img_dimensions, bytes, gigabytes, location)
 
 
@@ -317,6 +624,26 @@ class Thumbnail(QWidget):
         self.layout.addWidget(self.thumbnail, 0, 0)
         self.setLayout(self.layout)
 
+
+def validate_project_selection(path) -> bool:
+    # logger.info('Validating selection %s...' % cfg.selected_file)
+    # called by setSelectionPathText
+    path, extension = os.path.splitext(path)
+    if extension != '.swiftir':
+        return False
+    else:
+        return True
+
+def validate_zarr_selection(path) -> bool:
+    logger.info('Validating selection %s...' % cfg.selected_file)
+    # called by setSelectionPathText
+    if os.path.isdir(path):
+        logger.info('Path IS a directory')
+        if '.zarray' in os.listdir(path):
+            logger.info('Directory DOES contain .zarray -> Returning True...')
+            return True
+    logger.info('Returning False...')
+    return False
 
 class Slider(QSlider):
     def __init__(self, parent):

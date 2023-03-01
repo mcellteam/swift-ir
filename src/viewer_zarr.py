@@ -27,8 +27,6 @@ __all__ = ['ZarrViewer']
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
 
-__all__ = ['ZarrViewer']
-
 log = logging.getLogger(__name__)
 
 
@@ -117,7 +115,7 @@ class ZarrViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
+            s.show_panel_borders = False
             # s.viewer_size = [100,100]
 
         self._layer = self.request_layer()

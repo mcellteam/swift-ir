@@ -319,7 +319,7 @@ class TaskQueue(QObject):
                 retries_tot += 1
 
             caller = inspect.stack()[1].function
-            # cfg.main_window.tell('caller: %s' % inspect.stack()[1].function)
+            logger.critical('caller: %s' % inspect.stack()[1].function)
             logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
             logger.debug('    Failed Tasks: %d\n' % (n_pending))
             logger.debug('    Retries: %d\n\n' % (retries_tot - 1))

@@ -22,6 +22,7 @@ import stat
 import time
 import psutil
 import resource
+import datetime
 import multiprocessing
 import numpy as np
 # from guppy import hpy; h=hpy()
@@ -32,7 +33,7 @@ import qtawesome as qta
 from rechunker import rechunk
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-    QKeySequence, QMovie, QStandardItemModel, QColor
+    QKeySequence, QMovie, QStandardItemModel, QColor, QCursor
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
@@ -53,12 +54,13 @@ from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
 from src.thumbnailer import Thumbnailer
 from src.generate_scales_zarr import generate_zarr_scales
-from src.helpers import setOpt, getOpt, print_exception, get_scale_val, natural_sort, make_affine_widget_HTML, \
+from src.helpers import setOpt, getOpt, getpOpt, setpOpt,  print_exception, get_scale_val, natural_sort, \
+    make_affine_widget_HTML, \
     is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, get_appdir, \
-    makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, validate_project_selection, \
-    validate_zarr_selection, configure_project_paths, handleError, append_project_path, isNeuroglancerRunning, \
-    count_widgets, find_allocated_widgets, cleanup_project_list, update_preferences_model, delete_recursive
+    makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, configure_project_paths, handleError, \
+    append_project_path, isNeuroglancerRunning, count_widgets, find_allocated_widgets, cleanup_project_list, \
+    update_preferences_model, delete_recursive
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
     QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
     mendenhall_dialog, RechunkDialog
@@ -75,7 +77,8 @@ from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
 from src.viewer_em import EMViewer
 from src.ui.tab_open_project import OpenProject
-from src.ui.thumbnails import Thumbnail, SnrThumbnail
+from src.ui.thumbnail import Thumbnail, SnrThumbnail, CorrSignalThumbnail
+
 # from src.ui.components import AutoResizingTextEdit
 from src.mendenhall_protocol import Mendenhall
 import src.pairwise
@@ -111,24 +114,19 @@ class MainWindow(QMainWindow):
         self.initPythonConsole()
         self.initStatusBar()
         self.initPbar()
-        self.initToolbar()
+        # self.initToolbar()
         self.initControlPanel()
         self.initUI()
         self.initMenu()
         self.initWidgetSpacing()
         self.initStyle()
         self.initShortcuts()
+        self.initToolbar()
         # self.initData()
         # self.initView()
         self.initLaunchTab()
 
         self.alignmentFinished.connect(self.updateProjectTable)
-        self.alignmentFinished.connect(self.updateSNRPlot)
-        self.alignmentFinished.connect(self.updateEnabledButtons)
-        self.alignmentFinished.connect(self.updateToolbar)
-        self.alignmentFinished.connect(self.dataUpdateWidgets)
-        self.alignmentFinished.connect(self.updateMenus)
-        self.updateTable.connect(self.updateProjectTable)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
         self.activateWindow()
@@ -176,7 +174,7 @@ class MainWindow(QMainWindow):
             logger.info('')
             if checked:
                 if self._isProjectTab():
-                    if cfg.MP_MODE:
+                    if getpOpt('state,MANUAL_MODE'):
                         # cfg.project_tab.MA_viewer_stage.initViewerSbs()
                         # if self.rb0.isChecked():
                         #     cfg.project_tab.MA_viewer_stage.initViewerSlim(force_xy=True)
@@ -258,10 +256,11 @@ class MainWindow(QMainWindow):
 
 
     def refreshTab(self):
-
+        logger.critical('')
         if not self._working:
             logger.critical('Refreshing...')
             if self._isProjectTab():
+                logger.critical('  Refreshing...')
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     # cfg.project_tab.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
                     # cfg.project_tab.webengine.reload()
@@ -270,21 +269,11 @@ class MainWindow(QMainWindow):
                     if self._lastRefresh and (delay < 2):
                         self.hardRestartNg()
                     else:
-                        cfg.project_tab.initNeuroglancer()
+                        cfg.project_tab.refreshTab()
                     self._lastRefresh = time.time()
-                if cfg.project_tab._tabs.currentIndex() == 1:
-                    logger.critical('Refreshing Table...')
-                    self.tell('Refreshing Table...')
-                    cfg.project_tab.project_table.setScaleData()
-                    self.hud.done()
-                if cfg.project_tab._tabs.currentIndex() == 2:
-                    logger.critical('Refreshing JSON Tree...')
-                    cfg.project_tab.updateJsonWidget()
-                elif cfg.project_tab._tabs.currentIndex() == 3:
-                    logger.critical('Refreshing SNR Plot...')
-                    self.tell('Refreshing SNR Plot...')
-                    cfg.project_tab.snr_plot.initSnrPlot()
-                    self.hud.done()
+                if cfg.project_tab._tabs.currentIndex() in (1, 2, 3):
+                    cfg.project_tab.refreshTab()
+                self.hud.done()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'OpenProject':
@@ -397,8 +386,9 @@ class MainWindow(QMainWindow):
         # self._tabs.show()
         self.enableAllTabs()
         self.cpanel.show()
-        self.matchpointControls.hide()
+        # self.matchpointControls.hide()
         cfg.MP_MODE = False
+        setpOpt('state,MANUAL_MODE', False)
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
         cfg.SHADER = ''
@@ -455,188 +445,75 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_shader.setText(label)
         self.updateShaderText()
 
-        # if cfg.project_tab:
-        #     cfg.project_tab.initNeuroglancer()
-        # if cfg.zarr_tab:
-        #     cfg.emViewer.bootstrap()
-
 
     def _callbk_showHideDetails(self):
-
-        if self.detailsWidget.isHidden():
-            label  = 'Hide Details'
+        if self.correlation_signals.isHidden():
+            label  = 'Hide Correlation Signal'
             icon   = 'fa.caret-down'
-            # sizes = self._splitter.sizes()
-            # sizes[2] = 200
-            # self._splitter.setSizes(sizes)
-            self.detailsWidget.show()
-            self.detailsWidget.setMinimumHeight(100)  # reverse this on splitter moved (hacky)
-            h = self.detailsWidget.geometry().height() - 44
-            self.detailsCorrSpots.setFixedSize(h, h)
 
-            self.detailsWidget.adjustSize()
-
-            # self.detailsWidget.resize(cfg.main_window.detailsWidget.geometry().width(), 200)
+            self.correlation_signals.show()
+            self.updateCorrSpotsDrawer()
 
         else:
-            label  = ' Details'
+            label  = ' Correlation Signal'
             icon   = 'fa.info-circle'
-            self.detailsWidget.hide()
-        self._btn_show_hide_details.setIcon(qta.icon(icon, color='#f3f6fb'))
-        self._btn_show_hide_details.setText(label)
-        self.updateDetailsWidget()
-        self.dataUpdateWidgets()
-        # if cfg.project_tab:
-        #     cfg.project_tab.initNeuroglancer()
-        # if cfg.zarr_tab:
-        #     cfg.emViewer.bootstrap()
-
-        # self.updateDetailsWidget()
-        # self.dataUpdateWidgets()
+            self.correlation_signals.hide()
+        self._btn_show_hide_corr_spots.setIcon(qta.icon(icon, color='#f3f6fb'))
+        self._btn_show_hide_corr_spots.setText(label)
 
 
-    #0210
-    def updateDetailsWidget(self):
+    def updateCorrSpotsDrawer(self):
+        caller = inspect.stack()[1].function
+        logger.info('')
+        # logger.info('caller: %s' % caller)
+        # logger.critical('')
         if self._isProjectTab():
 
-            s = cfg.data.curScale
-
-            # self.detailsTitle.setText('Details - ' + cfg.data.base_image_name())
-
-            # txt = []
-            # txt.append("<")
-            # subtext = textwrap.wrap("Filename: " + cfg.data.name_base(), 23)
-            # subtext = [f'{i}' for i in subtext]
-            # txt.append('\n'.join(subtext))
-            # subtext = textwrap.wrap('Reference: ' + cfg.data.name_ref(), 23)
-            # subtext = [f'{i}' for i in subtext]
-            # txt.append('\n'.join(subtext))
-            # txt.append('Last Aligned:\n%s' %cfg.data.datetime().rjust(23))
-
-            if self.detailsSection.isVisible():
-                txt_ = f"""
-                <p>
-                Filename:  <b><span style='color: #ffe135;'>{cfg.data.filename_basename()}</span></b><br>
-                Reference:  <b><span style='color: #ffe135;'>{cfg.data.reference_basename()}</span></b><br>
-                Last Aligned: {cfg.data.datetime().rjust(23)}<br>
-                Reject: {('[ ]', '[X]')[cfg.data.skipped()]}<br>
-                </p>
-                """
-                self.detailsSection.setText(txt_)
-
-            if self.detailsSkips.isVisible():
-                self.detailsSkips.setText('\n'.join(['%d: %s' %(x[0], x[1]) for x in cfg.data.skips_list()]))
-
-            # self.detailsLabel.setText(
-            #     'Filename   : %s\n'
-            #     'SNR        : %.3f\n'
-            #     'Prev. SNR  : %.3f' %(cfg.data.base_image_name(), cfg.data.snr(), cfg.data.snr_prev()))
-            s = cfg.data.curScale
-            snr = cfg.data.snr_components()
-            if self.detailsSNR.isVisible():
-                if cfg.data.selected_method() == 'Auto-SWIM':
-                    self.detailsSNR.setText(
-                        "SNR       :%s\n"
-                        "Prev.  SNR:%s\n\n"
-                        "Components\n"
-                        "Top,Left  :%s\n"
-                        "Top,Right :%s\n"
-                        "Btm,Left  :%s\n"
-                        "Btm,Right :%s" %
-                        (('%.3f' %cfg.data.snr()).rjust(9),
-                         ('%.3f' %cfg.data.snr_prev()).rjust(9),
-                         ('%.3f' %snr[0]).rjust(9),
-                         ('%.3f' %snr[1]).rjust(9),
-                         ('%.3f' %snr[2]).rjust(9),
-                         ('%.3f' %snr[3]).rjust(9))
-                    )
-                elif cfg.data.selected_method in ('Match Point Align','Manual-Hint', 'Manual-Strict'):
-                    txt = "SNR       :%s\n" \
-                          "Prev.  SNR:%s\n\n" \
-                          "Components"
-                    for i in range(len(snr)):
-                        txt += '\n%d: %s' % (i,str(snr[i]))
-
-                    self.detailsSNR.setText(txt)
-
-
-            method = cfg.data.selected_method()
-            try:
-                if method == 'Auto-SWIM':
-                    self.detailsMethod.setText('Automatic SWIM  [X]\n'
-                                               'Manual, Strict  [ ]\n'
-                                               'Manual, Hint    [ ]\n')
-                    self.detailsManualpoints.hide()
-
-                elif method == 'Manual-Strict':
-                    pts = list(cfg.data.manpoints_rounded())
-                    mps = '\n'.join(['%d: %s\n%s' % (pts.index((p1,p2)), str(p1).ljust(21), str(p2).rjust(21)) for p1, p2 in pts])
-                    self.detailsMethod.setText('Automatic SWIM  [ ]\n'
-                                               'Manual, Strict  [X]\n'
-                                               'Manual, Hint    [ ]\n')
-                    self.detailsManualpoints.setText('Manual Points:\n%s' % mps)
-                    self.detailsManualpoints.show()
-                elif method == 'Manual-Hint':
-                    pts = list(cfg.data.manpoints_rounded())
-                    mps = '\n'.join(['%d: %s\n%s' % (pts.index((p1,p2)), str(p1).ljust(21), str(p2).rjust(21)) for p1, p2 in pts])
-                    self.detailsMethod.setText('Automatic SWIM  [ ]\n'
-                                               'Manual, Strict  [ ]\n'
-                                               'Manual, Hint    [X]\n')
-                    self.detailsManualpoints.setText('Manual Points:\n%s' % mps)
-                    self.detailsManualpoints.show()
-
-            except:
-                print_exception()
-
-
-            if self.detailsAFM.isVisible():
-                afm, cafm = cfg.data.afm(), cfg.data.cafm()
-                afm_txt, cafm_txt = [], []
-                for x in range(2):
-                    for y in range(3):
-                        if y == 0:
-                            afm_txt.append(('%.3f' % afm[x][y]).ljust(7))
-                            cafm_txt.append(('%.3f' % cafm[x][y]).ljust(7))
-                        elif y == 1:
-                            afm_txt.append(('%.3f' % afm[x][y]).rjust(7))
-                            cafm_txt.append(('%.3f' % afm[x][y]).rjust(7))
+            snr_vals = cfg.data.snr_components()
+            thumbs = cfg.data.get_corr_spot_files()
+            n = len(thumbs)
+            # logger.info('thumbs: %s' % str(thumbs))
+            for i in range(7):
+                h = max(self.correlation_signals.height() - 38, 64)
+                self.corr_signals[i].setFixedSize(h, h)
+                if i < n:
+                    # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
+                    try:
+                        if snr_vals:
+                            self.corr_signals[i].set_data(path=thumbs[i], snr=snr_vals[i])
                         else:
-                            afm_txt.append(('%.3f' % afm[x][y]).rjust(10))
-                            cafm_txt.append(('%.3f' % cafm[x][y]).rjust(10))
+                            self.corr_signals[i].set_data(path=thumbs[i], snr=0.0)
+                    except:
+                        # print_exception()
+                        self.corr_signals[i].set_no_image()
+                    self.corr_signals[i].show()
+                else:
+                    self.corr_signals[i].hide()
 
-                        if (x == 0) and (y == 2):
-                            afm_txt.append('\n')
-                            cafm_txt.append('\n')
-                self.detailsAFM.setText('Affine:\n' + ''.join(afm_txt) +
-                                        '\n\nCumulative Affine:\n' + ''.join(cafm_txt))
-
-
-            # if self.detailsCorrSpots.isVisible():
-            #     snr_vals = cfg.data.snr_components()
-            #     self.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
-            #     self.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
-            #     self.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
-            #     self.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
-
-
-        else:
-            self.clearDetailsWidget()
-
-
-
-    def clearDetailsWidget(self):
-        self.detailsTitle.setText('Details')
-        self.detailsSection.setText('')
-        self.detailsScales.setText('')
-        self.detailsSNR.setText('')
-        self.detailsSkips.setText('')
-        self.detailsMethod.setText('')
-        self.detailsTiming.setText('')
-        self.detailsAFM.setText('')
-        self.detailsManualpoints.setText('')
-        self.detailsManualpoints.hide()
-        # self.detailsCorrSpots.setLayout(QVBoxLayout())
-
+    def clearCorrSpotsDrawer(self):
+        logger.info('')
+        if self._isProjectTab():
+            snr_vals = cfg.data.snr_components()
+            thumbs = cfg.data.get_corr_spot_files()
+            n = len(thumbs)
+            # logger.info('thumbs: %s' % str(thumbs))
+            for i in range(7):
+                self.corr_signals[i].hide()
+                # h = max(self.correlation_signals.height() - 38, 64)
+                # self.corr_signals[i].setFixedSize(h, h)
+                # if i < n:
+                #     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
+                #     try:
+                #         if snr_vals:
+                #             self.corr_signals[i].set_data(path=thumbs[i], snr=snr_vals[i])
+                #         else:
+                #             self.corr_signals[i].set_data(path=thumbs[i], snr=0.0)
+                #     except:
+                #         # print_exception()
+                #         self.corr_signals[i].set_no_image()
+                #     self.corr_signals[i].show()
+                # else:
+                #     self.corr_signals[i].hide()
 
 
 
@@ -653,7 +530,6 @@ class MainWindow(QMainWindow):
 
     def fn_brightness_control(self):
         caller = inspect.stack()[1].function
-
         if caller == 'main':
             if self._isProjectTab():
                 logger.info(f'val = {self.brightnessSlider.value()}')
@@ -666,7 +542,6 @@ class MainWindow(QMainWindow):
 
     def fn_contrast_control(self):
         caller = inspect.stack()[1].function
-
         if caller == 'main':
             if self._isProjectTab():
                 logger.info(f'val = {self.contrastSlider.value()}')
@@ -841,7 +716,12 @@ class MainWindow(QMainWindow):
         if cfg.project_tab is None: self.warn('No data yet!'); return
         if self._working == True: self.warn('Another Process is Already Running'); return
         if not cfg.data.is_aligned(s=scale): self.warn('Scale Must Be Aligned First'); return
-        self.onAlignmentStart(scale=scale)
+        cfg.nTasks = 3
+        cfg.nCompleted = 0
+        cfg.CancelProcesses = False
+        cfg.event = multiprocessing.Event()
+        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.showZeroedPbar()
         logger.info('Regenerate Aligned Images...')
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
@@ -959,6 +839,11 @@ class MainWindow(QMainWindow):
             self.pbarLabel.setText('')
             self.pbar_widget.hide()
             self.enableAllTabs()
+            self.updateToolbar()
+            self.updateSNRPlot()
+            self.updateEnabledButtons()
+            self.updateToolbar()
+            self.updateMenus()
             cfg.project_tab.updateJsonWidget()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
@@ -966,6 +851,7 @@ class MainWindow(QMainWindow):
             self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
 
             self.update_data_cache()
+            self.dataUpdateWidgets()
 
             self._showSNRcheck()
 
@@ -973,33 +859,36 @@ class MainWindow(QMainWindow):
             print_exception()
         finally:
             self._working = False
-            if not cfg.MP_MODE:
+            if not getpOpt('state,MANUAL_MODE'):
                 self.enableAllTabs()
                 self._autosave()
 
     def update_data_cache(self):
-        cfg.data.update_cache()
-        cfg.project_tab.updateJsonWidget()
-        s = cfg.data.scale()
-        self.detailsScales.setText('\n'.join([cfg.data.scale_pretty(s=x).ljust(10) + '-' +
-                                              ('%dx%d' % cfg.data.image_size(s=x)).rjust(12) for x in
-                                              cfg.data.scales()]))
-        try:
-            self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
-        except:
-            pass
-        try:
-            self.detailsTiming.setText(
-                'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['t_scaling']).rjust(9) +
-                'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
-                'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['t_thumbs']).rjust(9) +
-                'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_align']).rjust(9) +
-                'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
-                'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-                'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
-            )
-        except:
-            logger.warning('detailsTiming cant update')
+        logger.info('')
+        # if self._isProjectTab():
+        if cfg.data:
+            cfg.data.update_cache()
+            cfg.project_tab.updateJsonWidget()
+            s = cfg.data.scale()
+            # self.detailsScales.setText('\n'.join([cfg.data.scale_pretty(s=x).ljust(10) + '-' +
+            #                                       ('%dx%d' % cfg.data.image_size(s=x)).rjust(12) for x in
+            #                                       cfg.data.scales()]))
+            # try:
+            #     self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
+            # except:
+            #     pass
+            try:
+                cfg.project_tab.detailsRuntime.setText(
+                    'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['t_scaling']).rjust(9) +
+                    'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
+                    'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['t_thumbs']).rjust(9) +
+                    'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_align']).rjust(9) +
+                    'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
+                    'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
+                    'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
+                )
+            except:
+                logger.warning('detailsTiming cant update')
 
 
     def onAlignmentStart(self, scale):
@@ -1011,6 +900,16 @@ class MainWindow(QMainWindow):
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         cfg.event = multiprocessing.Event()
+
+        dt = datetime.datetime.now()
+        path = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
+        open(path, 'a+').close()
+        with open(path, 'a+') as f:
+            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        path = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
+        open(path, 'a+').close()
+        with open(path, 'a+') as f:
+            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
         self._disableGlobTabs()
@@ -1166,7 +1065,7 @@ class MainWindow(QMainWindow):
             self.warn('No data yet!')
             return
 
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             return
 
         msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
@@ -1280,7 +1179,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def clear_skips(self):
-        if cfg.project_tab.are_there_any_skips():
+        if cfg.data.anySkips():
             msg = 'Verify reset the reject list.'
             reply = QMessageBox.question(self, 'Verify Reset Reject List', msg, QMessageBox.Cancel | QMessageBox.Ok)
             if reply == QMessageBox.Ok:
@@ -1399,14 +1298,6 @@ class MainWindow(QMainWindow):
                 else:
                     self._scaleDownButton.setEnabled(True)
                     self._scaleUpButton.setEnabled(True)
-            # self._btn_regenerate.setStatusTip('Re-generate All Aligned Images, '
-            #                                   'But Keep Current Affines,  %s' % cfg.data.scale_pretty())
-            # self._btn_alignRange.setStatusTip('Re-compute Affines for Sections in the Range #%d to End, '
-            #                                     'then Generate Them  %s' % (cfg.data.layer(), cfg.data.scale_pretty()))
-            # self._btn_alignAll.setStatusTip('Compute Affines for All Sections, '
-            #                                 'then Generate Them,  %s' % cfg.data.scale_pretty())
-            # self._btn_alignOne.setStatusTip('Compute Affine for the Current Section Only, '
-            #                                 'then Generate It,  Scale %d' % cfg.data.scale_val())
         else:
             self._scaleUpButton.setEnabled(False)
             self._scaleDownButton.setEnabled(False)
@@ -1568,8 +1459,8 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._overlayRect.hide()
                     cfg.project_tab._overlayLab.hide()
 
-                if self.detailsWidget.isVisible():
-                    self.updateDetailsWidget()
+                if self.correlation_signals.isVisible():
+                    self.updateCorrSpotsDrawer()
 
                 cur = cfg.data.layer()
                 if self.notes.isVisible():
@@ -1590,31 +1481,78 @@ class MainWindow(QMainWindow):
 
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.updateLayerLinePos()
-                    cfg.project_tab.updatePlotThumbnail()
-                    styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
-                    # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
-                    cfg.project_tab.snr_plot.plot.setLabel('top', cfg.data.base_image_name(), **styles)
+
 
                 cfg.project_tab.project_table.table.selectRow(cur)
                 self._sectionSlider.setValue(cur)
                 self._jumpToLineedit.setText(str(cur)) #0131+
                 # if getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'):
                 #     self.updateLayerDetails()
-                if cfg.MP_MODE:
+                if getpOpt('state,MANUAL_MODE'):
                     self.matchpoint_text_snr.setText(cfg.data.snr_report())
 
                 if cfg.project_tab.detailsCorrSpots.isVisible():
                     if cfg.data.selected_method() == 'Auto-SWIM':
                         snr_vals = cfg.data.snr_components()
-                        cfg.project_tab.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
-                        cfg.project_tab.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
-                        cfg.project_tab.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
-                        cfg.project_tab.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
-                    else:
-                        cfg.project_tab.cs0.set_no_image()
-                        cfg.project_tab.cs1.set_no_image()
-                        cfg.project_tab.cs2.set_no_image()
-                        cfg.project_tab.cs3.set_no_image()
+                        n = len(snr_vals)
+                        if (n >= 1) and (snr_vals[0] > .001):
+                            cfg.project_tab.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
+                        else:
+                            cfg.project_tab.cs0.set_no_image()
+                        if (n >= 2):
+                            cfg.project_tab.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
+                        else:
+                            cfg.project_tab.cs1.set_no_image()
+                        if (n >= 3):
+                            cfg.project_tab.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
+                        else:
+                            cfg.project_tab.cs2.set_no_image()
+                        if (n >= 4):
+                            cfg.project_tab.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
+                        else:
+                            cfg.project_tab.cs3.set_no_image()
+                    elif cfg.data.selected_method() == 'Manual-Hint':
+                        files = cfg.data.get_corr_spot_files()
+                        snr_vals = cfg.data.snr_components()
+                        n = len(files)
+                        if n >= 1:
+                            cfg.project_tab.cs0.show()
+                            cfg.project_tab.cs0.set_data(path=files[0], snr=snr_vals[0])
+                        else:       cfg.project_tab.cs0.set_no_image()
+                        if n >= 2:  cfg.project_tab.cs1.set_data(path=files[1], snr=snr_vals[1])
+                        else:       cfg.project_tab.cs1.set_no_image()
+                        if n >= 3:  cfg.project_tab.cs2.set_data(path=files[2], snr=snr_vals[2])
+                        else:       cfg.project_tab.cs2.set_no_image()
+                        if n >= 4:
+                            cfg.project_tab.cs3.set_data(path=files[3], snr=snr_vals[3])
+                        else:
+                            cfg.project_tab.cs3.set_no_image()
+
+
+
+
+
+                # if self.detailsWidget.isVisible():
+                #
+                #     n = len(cfg.data.snr_components())
+                #     hbl = QHBoxLayout()
+                #     hbl.setContentsMargins(2, 2, 2, 2)
+                #     for i in range(n):
+                #         img = SnrThumbnail(parent=self)
+                #         hbl.addWidget(img)
+
+                    # self.cs0 = SnrThumbnail(parent=self)
+                    # self.cs1 = SnrThumbnail(parent=self)
+                    # self.cs2 = SnrThumbnail(parent=self)
+                    # self.cs3 = SnrThumbnail(parent=self)
+                    # gl = QGridLayout()
+                    # gl.setSpacing(1)
+                    # gl.setContentsMargins(0, 0, 0, 0)
+                    # gl.addWidget(self.cs0, 0, 0)
+                    # gl.addWidget(self.cs1, 0, 1)
+                    # gl.addWidget(self.cs2, 1, 0)
+                    # gl.addWidget(self.cs3, 1, 1)
+                    # self.detailsCorrSpots.setLayout(gl)
 
                 if cfg.project_tab.detailsSection.isVisible():
                     txt_ = f"""
@@ -1673,7 +1611,7 @@ class MainWindow(QMainWindow):
                     elif cfg.data.selected_method() in ('Manual-Hint', 'Manual-Strict'):
 
                         txt = "Avg. SNR&nbsp;&nbsp;:<b><span style='color: #ffe135;'>%s</span></b><br>" \
-                              "Prev.&nbsp;SNR&nbsp;:%s<br>" \
+                              "Prev. SNR&nbsp;:%s<br>" \
                               "Components" % (('%.3f' % cfg.data.snr()).rjust(9),
                                               ('%.3f' % cfg.data.snr_prev()).rjust(9))
                         for i in range(len(snr)):
@@ -1718,7 +1656,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         self.shaderText.clear()
         if self._isProjectTab():
-            self.shaderText.setPlainText(cfg.data['data']['shader'])
+            self.shaderText.setPlainText(cfg.data['rendering']['shader'])
 
     def onShaderApply(self):
         # caller = inspect.stack()[1].function
@@ -1726,7 +1664,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data.set_brightness(float(self.brightnessLE.text()))
             cfg.data.set_contrast(float(self.contrastLE.text()))
-            cfg.data['data']['shader'] = self.shaderText.toPlainText()
+            cfg.data['rendering']['shader'] = self.shaderText.toPlainText()
             cfg.project_tab.initNeuroglancer()
             self._callbk_unsavedChanges()
 
@@ -1763,11 +1701,11 @@ class MainWindow(QMainWindow):
         cfg.project_tab.afm_widget_.setText(make_affine_widget_HTML(afm, cafm))
 
 
-    def update_displayed_controls(self):
-        if getOpt('ui,SHOW_CORR_SPOTS'):
-            self.corr_spot_thumbs.show()
-        else:
-            self.corr_spot_thumbs.hide()
+    # def update_displayed_controls(self):
+    #     if getOpt('ui,SHOW_CORR_SPOTS'):
+    #         self.corr_spot_thumbs.show()
+    #     else:
+    #         self.corr_spot_thumbs.hide()
 
 
     def setPlaybackSpeed(self):
@@ -1884,31 +1822,30 @@ class MainWindow(QMainWindow):
         '''Requires Neuroglancer '''
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        if cfg.data:
-            try:
-                if self._isProjectTab() or self._isZarrTab():
-                    logger.info('Setting section slider and jump input validators...')
-                    if cfg.project_tab:
-                        self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                        self._sectionSlider.setRange(0, len(cfg.data) - 1)
-                        self._sectionSlider.setValue(cfg.data.layer())
-                        self.sectionRangeSlider.setMin(0)
-                        self.sectionRangeSlider.setStart(0)
-                        self.sectionRangeSlider.setMax(len(cfg.data) - 1)
-                        self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
-                        self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                        self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                    # if cfg.zarr_tab:
-                    #     if not cfg.tensor:
-                    #         logger.warning('No tensor!')
-                    #         return
-                    #     self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
-                    #     self._jumpToLineedit.setText(str(0))
-                    #     self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
-                    #     self._sectionSlider.setValue(0)
-                    self.update()
-            except:
-                print_exception()
+        try:
+            if self._isProjectTab() or self._isZarrTab():
+                logger.info('Setting section slider and jump input validators...')
+                if cfg.project_tab:
+                    self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                    self._sectionSlider.setRange(0, len(cfg.data) - 1)
+                    self._sectionSlider.setValue(cfg.data.layer())
+                    self.sectionRangeSlider.setMin(0)
+                    self.sectionRangeSlider.setStart(0)
+                    self.sectionRangeSlider.setMax(len(cfg.data) - 1)
+                    self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
+                    self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                    self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                # if cfg.zarr_tab:
+                #     if not cfg.tensor:
+                #         logger.warning('No tensor!')
+                #         return
+                #     self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
+                #     self._jumpToLineedit.setText(str(0))
+                #     self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
+                #     self._sectionSlider.setValue(0)
+                self.update()
+        except:
+            print_exception()
 
 
 
@@ -1963,7 +1900,7 @@ class MainWindow(QMainWindow):
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
 
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             return
         if not cfg.project_tab:
             if not cfg.zarr_tab:
@@ -1977,7 +1914,7 @@ class MainWindow(QMainWindow):
         # logger.info(f'slider, requested: {requested}')
         if self._isProjectTab():
             if requested in range(len(cfg.data)):
-                if cfg.project_tab._tabs.currentIndex() == 0:
+                if cfg.project_tab._tabs.currentIndex() in (0,3):
                     logger.info('Jumping To Section #%d' % requested)
                     state = copy.deepcopy(cfg.emViewer.state)
                     state.position[0] = requested
@@ -2031,12 +1968,13 @@ class MainWindow(QMainWindow):
                 # self.jump_to(cfg.data.layer())
                 self.dataUpdateWidgets()
                 self.updateEnabledButtons()
-                if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.setScaleData()
+                # if cfg.project_tab._tabs.currentIndex() == 1:
+                #     cfg.project_tab.project_table.setScaleData()
+                cfg.project_tab.refreshTab()
                 self.updateToolbar()
                 self.updateEnabledButtons()
                 self._showSNRcheck()
-                self.update_data_cache() #0213+
+                # self.update_data_cache() #0213+
                 try:
                     self._bbToggle.setChecked(cfg.data.has_bb())
                 except:
@@ -2048,21 +1986,20 @@ class MainWindow(QMainWindow):
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        if cfg.MP_MODE:
-            return
-        if self._isProjectTab():
-            if caller in ('main', 'scale_up', 'scale_down'):
-                if self._scales_combobox_switch:
-                    index = self._changeScaleCombo.currentIndex()
-                    cfg.data.set_scale(cfg.data.scales()[index])
-                    self.onScaleChange() #0129-
+        if caller in ('main', 'scale_up', 'scale_down'):
+            if self._isProjectTab():
+                if getpOpt('state,MANUAL_MODE') == False:
+                    if self._scales_combobox_switch:
+                        logger.info(f'caller: {caller}')
+                        index = self._changeScaleCombo.currentIndex()
+                        cfg.data.set_scale(cfg.data.scales()[index])
+                        self.onScaleChange() #0129-
 
 
     def fn_ng_layout_combobox(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             return
         if caller in ('main','<lambda>'):
             if cfg.data:
@@ -2136,6 +2073,9 @@ class MainWindow(QMainWindow):
 
 
     def new_project(self, mendenhall=False):
+
+        ''' NOT IN USE => SEE tab_open_project.py '''
+
         logger.critical('Starting A New Project...')
         self.tell('Starting A New Project...')
         self.stopPlaybackTimer()
@@ -2218,72 +2158,72 @@ class MainWindow(QMainWindow):
         self._autosave()
 
 
-    def delete_project(self):
-        logger.critical('')
-        project_file = cfg.selected_file
-        project = os.path.splitext(project_file)[0]
-        if not validate_project_selection():
-            logger.warning('Invalid Project For Deletion (!)\n%s' % project)
-            return
-        self.warn("Delete the following project?\nProject: %s" % project)
-        txt = "Are you sure you want to PERMANENTLY DELETE " \
-              "the following project?\n\n" \
-              "Project: %s" % project
-        msgbox = QMessageBox(QMessageBox.Warning, 'Confirm Delete Project', txt,
-                          buttons=QMessageBox.Abort | QMessageBox.Yes)
-        msgbox.setIcon(QMessageBox.Critical)
-        msgbox.setMaximumWidth(350)
-        msgbox.setDefaultButton(QMessageBox.Cancel)
-        reply = msgbox.exec_()
-        if reply == QMessageBox.Abort:
-            self.tell('Aborting Delete Project Permanently Instruction...')
-            logger.warning('Aborting Delete Project Permanently Instruction...')
-            return
-        if reply == QMessageBox.Ok:
-            logger.info('Deleting Project File %s...' % project_file)
-            self.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
-            logger.warning('Executing Delete Project Permanently Instruction...')
-
-        logger.critical(f'Deleting Project File: {project_file}...')
-        self.warn(f'Deleting Project File: {project_file}...')
-        try:
-            os.remove(project_file)
-        except:
-            print_exception()
-        else:
-            self.hud.done()
-
-        logger.info('Deleting Project Directory %s...' % project)
-        self.warn('Deleting Project Directory %s...' % project)
-        try:
-
-            delete_recursive(dir=project)
-            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-        except:
-            self.warn('An Error Was Encountered During Deletion of the Project Directory')
-            print_exception()
-        else:
-            self.hud.done()
-
-        self.tell('Wrapping up...')
-        configure_project_paths()
-        if self.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
-            logger.critical('Reloading table of projects data...')
-            try:
-                self.globTabs.currentWidget().user_projects.set_data()
-            except:
-                logger.warning('There was a problem updating the project list')
-                print_exception()
-
-        self.clearSelectionPathText()
-
-        self.tell('Deletion Complete!')
-        logger.info('Deletion Complete')
+    # def delete_project(self):
+    #     logger.critical('')
+    #     project_file = cfg.selected_file
+    #     project = os.path.splitext(project_file)[0]
+    #     if not validate_project_selection():
+    #         logger.warning('Invalid Project For Deletion (!)\n%s' % project)
+    #         return
+    #     self.warn("Delete the following project?\nProject: %s" % project)
+    #     txt = "Are you sure you want to PERMANENTLY DELETE " \
+    #           "the following project?\n\n" \
+    #           "Project: %s" % project
+    #     msgbox = QMessageBox(QMessageBox.Warning, 'Confirm Delete Project', txt,
+    #                       buttons=QMessageBox.Abort | QMessageBox.Yes)
+    #     msgbox.setIcon(QMessageBox.Critical)
+    #     msgbox.setMaximumWidth(350)
+    #     msgbox.setDefaultButton(QMessageBox.Cancel)
+    #     reply = msgbox.exec_()
+    #     if reply == QMessageBox.Abort:
+    #         self.tell('Aborting Delete Project Permanently Instruction...')
+    #         logger.warning('Aborting Delete Project Permanently Instruction...')
+    #         return
+    #     if reply == QMessageBox.Ok:
+    #         logger.info('Deleting Project File %s...' % project_file)
+    #         self.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
+    #         logger.warning('Executing Delete Project Permanently Instruction...')
+    #
+    #     logger.critical(f'Deleting Project File: {project_file}...')
+    #     self.warn(f'Deleting Project File: {project_file}...')
+    #     try:
+    #         os.remove(project_file)
+    #     except:
+    #         print_exception()
+    #     else:
+    #         self.hud.done()
+    #
+    #     logger.info('Deleting Project Directory %s...' % project)
+    #     self.warn('Deleting Project Directory %s...' % project)
+    #     try:
+    #
+    #         delete_recursive(dir=project)
+    #         # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+    #         # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+    #     except:
+    #         self.warn('An Error Was Encountered During Deletion of the Project Directory')
+    #         print_exception()
+    #     else:
+    #         self.hud.done()
+    #
+    #     self.tell('Wrapping up...')
+    #     configure_project_paths()
+    #     if self.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
+    #         logger.critical('Reloading table of projects data...')
+    #         try:
+    #             self.globTabs.currentWidget().user_projects.set_data()
+    #         except:
+    #             logger.warning('There was a problem updating the project list')
+    #             print_exception()
+    #
+    #     self.clearSelectionPathText()
+    #
+    #     self.tell('Deletion Complete!')
+    #     logger.info('Deletion Complete')
 
 
     def open_project_new(self):
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             return
 
         for i in range(self.globTabs.count()):
@@ -2300,61 +2240,64 @@ class MainWindow(QMainWindow):
         if self._isZarrTab():
             pass
 
-    def open_zarr_selected(self):
-        path = cfg.selected_file
-        logger.info("Opening Zarr '%s'..." % path)
-        try:
-            with open(os.path.join(path, '.zarray')) as j:
-                self.zarray = json.load(j)
-        except:
-            print_exception()
-            return
+    # def open_zarr_selected(self):
+    #     path = cfg.selected_file
+    #     logger.info("Opening Zarr '%s'..." % path)
+    #     try:
+    #         with open(os.path.join(path, '.zarray')) as j:
+    #             self.zarray = json.load(j)
+    #     except:
+    #         print_exception()
+    #         return
+    #
+    #     tab = ZarrTab(self, path=path)
+    #     self.globTabs.addTab(tab, os.path.basename(path))
+    #     self._setLastTab()
 
-        tab = ZarrTab(self, path=path)
-        self.globTabs.addTab(tab, os.path.basename(path))
-        self._setLastTab()
 
-
-    def open_project_selected(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        logger.info('')
-        self.stopPlaybackTimer()
-        if validate_zarr_selection():
-            self.open_zarr_selected()
-            return
-        elif validate_project_selection():
-            filename = cfg.selected_file
-            logger.critical(f'Opening Project {filename}...')
-            self.tell('Loading Project "%s"' % filename)
-
-            try:
-                with open(filename, 'r') as f:
-                    cfg.data = DataModel(data=json.load(f))
-                self._autosave()
-            except:
-                self.warn(f'No Such File Found: {filename}')
-                logger.warning(f'No Such File Found: {filename}')
-                print_exception()
-                return
-            else:
-                logger.info(f'Project Opened!')
-
-            append_project_path(filename)
-            cfg.data.set_paths_absolute(filename=filename)
-            cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
-            cfg.dataById[id(cfg.project_tab)] = cfg.data
-            self.onStartProject()
-            tab_name = os.path.basename(cfg.data.dest() + '.swiftir')
-            self.globTabs.addTab(cfg.project_tab, tab_name)
-            self._setLastTab()
-        else:
-            self.warn("Invalid Path")
+    # def open_project_selected(self):
+    #     # caller = inspect.stack()[1].function
+    #     # logger.info(f'caller: {caller}')
+    #     logger.info('')
+    #     self.stopPlaybackTimer()
+    #     if validate_zarr_selection():
+    #         self.open_zarr_selected()
+    #         return
+    #     elif validate_project_selection():
+    #         filename = cfg.selected_file
+    #         logger.critical(f'Opening Project {filename}...')
+    #         self.tell('Loading Project "%s"' % filename)
+    #
+    #         try:
+    #             with open(filename, 'r') as f:
+    #                 cfg.data = DataModel(data=json.load(f))
+    #             self._autosave()
+    #         except:
+    #             self.warn(f'No Such File Found: {filename}')
+    #             logger.warning(f'No Such File Found: {filename}')
+    #             print_exception()
+    #             return
+    #         else:
+    #             logger.info(f'Project Opened!')
+    #
+    #         append_project_path(filename)
+    #         cfg.data.set_paths_absolute(filename=filename)
+    #         cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
+    #         cfg.dataById[id(cfg.project_tab)] = cfg.data
+    #         self.onStartProject()
+    #         tab_name = os.path.basename(cfg.data.dest() + '.swiftir')
+    #         self.globTabs.addTab(cfg.project_tab, tab_name)
+    #         self._setLastTab()
+    #     else:
+    #         self.warn("Invalid Path")
 
 
     def detachNeuroglancer(self):
         # from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
         logger.info('')
+        if getpOpt('state,MANUAL_MODE') == True:
+            return
+
         if self._isProjectTab() or self._isZarrTab():
             logger.info('Creating QWebEngineView...')
 
@@ -2400,10 +2343,6 @@ class MainWindow(QMainWindow):
         # logger.critical('caller: %s' % caller)
         logger.critical('Loading project...')
 
-        logpath = os.path.join(cfg.data.dest(),'logs')
-        if not os.path.exists(logpath):
-            os.mkdir(logpath)
-
         if cfg.data['ui']['arrangement'] == 'stack':
             cfg.data['ui']['ng_layout'] = '4panel'
             self.rb0.setChecked(True)
@@ -2412,6 +2351,7 @@ class MainWindow(QMainWindow):
             self.rb1.setChecked(True)
 
         self.update_data_cache()
+        setpOpt('state,MANUAL_MODE', False)
         cfg.data.set_defaults()
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
@@ -2529,11 +2469,11 @@ class MainWindow(QMainWindow):
 
     def _callbk_unsavedChanges(self):
         if self._isProjectTab():
-            logger.info('')
+            # logger.info('')
             caller = inspect.stack()[1].function
             if caller == 'main':
                 # self.tell('You have unsaved changes.')
-                logger.critical("caller: " + inspect.stack()[1].function)
+                # logger.critical("caller: " + inspect.stack()[1].function)
                 self._unsaved_changes = True
                 name = os.path.basename(cfg.data.dest())
                 self.globTabs.setTabText(self.globTabs.currentIndex(), name + '.swiftir' + ' *')
@@ -2759,14 +2699,14 @@ class MainWindow(QMainWindow):
         else:
             logger.info('Neuroglancer Is Not Running')
 
-    def startStopProfiler(self):
-        logger.info('')
-        if self._isProfiling:
-            self.profilingTimer.stop()
-        else:
-            self.profilingTimer.setInterval(cfg.PROFILING_TIMER_SPEED)
-            self.profilingTimer.start()
-        self._isProfiling = not self._isProfiling
+    # def startStopProfiler(self):
+    #     logger.info('')
+    #     if self._isProfiling:
+    #         self.profilingTimer.stop()
+    #     else:
+    #         self.profilingTimer.setInterval(cfg.PROFILING_TIMER_SPEED)
+    #         self.profilingTimer.start()
+    #     self._isProfiling = not self._isProfiling
 
     def startStopTimer(self):
         logger.info('')
@@ -3000,21 +2940,25 @@ class MainWindow(QMainWindow):
 
             if self._isProjectTab():
                 # self.shutdownNeuroglancer()
-                if (cfg.MP_MODE == False) and (not force_exit):
+                if (not getpOpt('state,MANUAL_MODE')) and (not force_exit):
                     if cfg.data.is_aligned_and_generated():
                         logger.critical('Entering Manual Align Mode...')
                         self.tell('Entering Manual Align Mode...')
                         self.stopPlaybackTimer()
-                        del cfg.emViewer  # 0216+
+                        # del cfg.emViewer  # 0216+
                         self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                         self.alignMatchPointAction.setText('Exit Manual Align Mode')
-                        self.cpanel.setVisible(False)
-                        self.matchpointControls.setVisible(True)
+                        # self.cpanel.setVisible(False)
+                        # self.matchpointControls.setVisible(True)
                         self._changeScaleCombo.setEnabled(False)
                         self.matchpoint_text_snr.setText(cfg.data.snr_report())
                         self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
                         self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
                         cfg.MP_MODE = True
+                        setpOpt('state,MANUAL_MODE', True)
+                        pixmap = QPixmap('src/resources/cursor_circle.png')
+                        cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                        QApplication.setOverrideCursor(cursor)
                         cfg.project_tab.onEnterManualMode()
                     else:
                         self.warn('Alignment must be generated before using Manual Point Alignment method.')
@@ -3023,11 +2967,13 @@ class MainWindow(QMainWindow):
                     self.tell('Exiting Manual Align Mode...')
                     self.setWindowTitle(self.window_title)
                     cfg.MP_MODE = False
+                    setpOpt('state,MANUAL_MODE', False)
                     self.alignMatchPointAction.setText('Align Manually')
-                    self.cpanel.setVisible(True)
-                    self.matchpointControls.setVisible(False)
+                    # self.cpanel.setVisible(True)
+                    # self.matchpointControls.setVisible(False)
                     self._changeScaleCombo.setEnabled(True)
                     self.dataUpdateWidgets()
+                    QApplication.restoreOverrideCursor()
                     cfg.project_tab.onExitManualMode()
 
                 self.updateToolbar()
@@ -3119,19 +3065,19 @@ class MainWindow(QMainWindow):
         cfg.project_tab.initNeuroglancer()
 
     def set_shader_colormapJet(self):
-        cfg.data['data']['shader'] = src.shaders.colormapJet
+        cfg.data['rendering']['shader'] = src.shaders.colormapJet
         cfg.project_tab.initNeuroglancer()
 
     def set_shader_test1(self):
-        cfg.data['data']['shader'] = src.shaders.shader_test1
+        cfg.data['rendering']['shader'] = src.shaders.shader_test1
         cfg.project_tab.initNeuroglancer()
 
     def set_shader_test2(self):
-        cfg.data['data']['shader'] = src.shaders.shader_test2
+        cfg.data['rendering']['shader'] = src.shaders.shader_test2
         cfg.project_tab.initNeuroglancer()
 
     def set_shader_default(self):
-        cfg.data['data']['shader'] = src.shaders.shader_default_
+        cfg.data['rendering']['shader'] = src.shaders.shader_default_
         cfg.project_tab.initNeuroglancer()
 
     def onProfilingTimer(self):
@@ -3373,11 +3319,13 @@ class MainWindow(QMainWindow):
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.toolbar.addWidget(w)
+        # self.toolbar.addWidget(self._btn_refreshNg)
         self.toolbar.addWidget(self._jumpToSectionWidget)
         self.toolbar.addWidget(self._sectionSliderWidget)
         self.toolbar.addWidget(self._fps_spinbox)
         self.toolbar.addWidget(self._ngLayoutWidget)
         self.toolbar.addWidget(self._changeScaleWidget)
+
         # if cfg.DEV_MODE:
         #     self.toolbar.addWidget(self.profilingTimerButton)
         self.toolbar.addWidget(self._detachNgButton)
@@ -3439,35 +3387,42 @@ class MainWindow(QMainWindow):
 
 
     def _onGlobTabChange(self):
-        logger.info('')
         caller = inspect.stack()[1].function
+        logger.critical('caller: %s' %caller)
 
-        self.enableAllTabs() #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
-        if cfg.MP_MODE:
-            self.enterExitManAlignMode(force_exit=True)
+        self.globTabs.show() #nec?
+        self.enableAllTabs()  #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
+        self.stopPlaybackTimer()
+        self.clearCorrSpotsDrawer()
 
-        if self.globTabs.count() == 0:
-            return
+        # if self.globTabs.count() == 0:
+        #     cfg.project_tab = None
+        #     cfg.zarr_tab = None
+        #     cfg.emViewer = None
+        #     cfg.data = None
+        #     return
+        cfg.project_tab = None
+        cfg.zarr_tab = None
+        cfg.emViewer = None
+        cfg.data = None
+        self._changeScaleCombo.clear()
+
+        QApplication.restoreOverrideCursor()
+
+
         # if caller in ('onStartProject','_setLastTab'):
         # if caller in ('onStartProject'):
         #     return
         # logger.critical('Changing global tab (caller: %s)...' % caller)
-        cfg.selected_file = None
-        self.globTabs.show()
-        self.stopPlaybackTimer()
+        # cfg.selected_file = None
+
         tabtype = self._getTabType()
 
         if tabtype == 'OpenProject':
-            self.clearSelectionPathText()
             configure_project_paths()
             self._getTabObject().user_projects.set_data()
-            self._actions_widget.show()
             self._forceHideControls()
-        else:
-            self._actions_widget.hide()
-
-
-        if self._isProjectTab():
+        elif tabtype == 'ProjectTab':
             logger.critical('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = self.globTabs.currentWidget()
@@ -3475,8 +3430,8 @@ class MainWindow(QMainWindow):
             cfg.zarr_tab = None
             self._lastRefresh = 0
             self.cpanel.show()
-            self.matchpointControls.hide()
-            self.update_data_cache() # 0212
+            # self.matchpointControls.hide()
+            # self.update_data_cache() # 0212 #0301-
 
             if self.shaderCodeWidget.isVisible():
                 self.updateShaderText()
@@ -3492,15 +3447,13 @@ class MainWindow(QMainWindow):
             self.contrastSlider.setValue(cfg.data.contrast())
             self.dataUpdateWidgets()
             cfg.project_tab.initNeuroglancer()
-        else:
-            cfg.project_tab = None
-            cfg.emViewer = None
-            cfg.data = None
-            self._changeScaleCombo.clear()
-            self.corr_spot_thumbs.hide()
-            self.clearDetailsWidget()
+        # else:
+        #     cfg.project_tab = None
+        #     cfg.emViewer = None
+        #     cfg.data = None
+        #     self._changeScaleCombo.clear()
 
-        if self._isZarrTab():
+        elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.zarr_tab.viewer
@@ -3685,6 +3638,8 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textedit)
         menu.addAction(action)
 
+
+
     def initMenu(self):
         '''Initialize Menu'''
         logger.info('')
@@ -3774,7 +3729,7 @@ class MainWindow(QMainWindow):
         self.ngShowScaleBarAction.triggered.connect(self.update_ng)
         viewMenu.addAction(self.ngShowScaleBarAction)
 
-        self.ngShowAxisLinesAction = QAction('Show Ng Axis Lines', self)
+        self.ngShowAxisLinesAction = QAction('Show Ng Axis nlines', self)
         self.ngShowAxisLinesAction.setCheckable(True)
         self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
         self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
@@ -4761,39 +4716,45 @@ class MainWindow(QMainWindow):
 
 
     def splittersHaveMoved(self, pos, index):
-        self.detailsWidget.setMinimumHeight(10)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
+        # logger.info('')
+        self.correlation_signals.setMinimumHeight(16)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
 
-        logger.info('')
-        if self.detailsWidget.isVisible():
-            h = self.detailsWidget.geometry().height()
-            self.detailsCorrSpots.setFixedSize(max(10,h-44), max(10,h-44))
 
-        logger.info('pos: %s index: %s' % (str(pos),str(index)) )
-        if self.detailsWidget.isHidden():
-            label = ' Details'
-            icon = 'fa.info-circle'
-            self._btn_show_hide_details.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self._btn_show_hide_details.setText(label)
 
-        if self.shaderCodeWidget.isHidden():
-            label = ' Shader'
-            icon = 'mdi.format-paint'
-            self.shaderCodeWidget.hide()
-            self._btn_show_hide_shader.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self._btn_show_hide_shader.setText(label)
+        if self.correlation_signals.isVisible():
+            self.updateCorrSpotsDrawer()
+            # h = self.correlation_signals.geometry().height()
+            # # self.corr_spot_thumbs.setFixedHeight(max(10,h-44))
+            # for w in self.corr_signals:
+            #     w.setFixedSize(max(10,h-44))
+    #
+    #     logger.info('pos: %s index: %s' % (str(pos),str(index)) )
+    #     if self.detailsWidget.isHidden():
+    #         label = ' Details'
+    #         icon = 'fa.info-circle'
+    #         self._btn_show_hide_corr_spots.setIcon(qta.icon(icon, color='#f3f6fb'))
+    #         self._btn_show_hide_corr_spots.setText(label)
+    #
+    #     if self.shaderCodeWidget.isHidden():
+    #         label = ' Shader'
+    #         icon = 'mdi.format-paint'
+    #         self.shaderCodeWidget.hide()
+    #         self._btn_show_hide_shader.setIcon(qta.icon(icon, color='#f3f6fb'))
+    #         self._btn_show_hide_shader.setText(label)
+    #
+    #     if self.notes.isHidden():
+    #         label  = ' Notes'
+    #         icon   = 'mdi.notebook-edit'
+    #         self.notes.hide()
+    #         self._btn_show_hide_notes.setIcon(qta.icon(icon, color='#f3f6fb'))
+    #         self._btn_show_hide_notes.setText(label)
+    #
+    #     if self._dev_console.isHidden():
+    #         self._forceHidePython()
+    #
+    #     if self.cpanelMainWidgets.isHidden():
+    #         self._forceHideControls()
 
-        if self.notes.isHidden():
-            label  = ' Notes'
-            icon   = 'mdi.notebook-edit'
-            self.notes.hide()
-            self._btn_show_hide_notes.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self._btn_show_hide_notes.setText(label)
-
-        if self._dev_console.isHidden():
-            self._forceHidePython()
-
-        if self.cpanelMainWidgets.isHidden():
-            self._forceHideControls()
 
     def initUI(self):
         '''Initialize Main UI'''
@@ -4972,12 +4933,12 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.addWidget(self.splash_widget)
         self.viewer_stack_widget.addWidget(self.permFileBrowser)
 
-        self.matchpointControls = QWidget()
-        with open('src/styles/cpanel.qss', 'r') as f:
-            self.matchpointControls.setStyleSheet(f.read())
-
-        self.matchpointControls.setFixedSize(QSize(560,120))
-        self.matchpointControls.hide()
+        # self.matchpointControls = QWidget()
+        # with open('src/styles/cpanel.qss', 'r') as f:
+        #     self.matchpointControls.setStyleSheet(f.read())
+        #
+        # self.matchpointControls.setFixedSize(QSize(560,120))
+        # self.matchpointControls.hide()
 
         mp_marker_lineweight_label = QLabel('Lineweight')
         self.mp_marker_lineweight_spinbox = QSpinBox()
@@ -5028,16 +4989,16 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self.matchpoint_text_snr)
         hbl.addStretch()
 
-        self.matchpoint_text_prompt = QTextEdit()
-        # self.matchpoint_text_prompt.setMaximumWidth(600)
-        self.matchpoint_text_prompt.setFixedHeight(74)
-        self.matchpoint_text_prompt.setReadOnly(True)
-        self.matchpoint_text_prompt.setObjectName('matchpoint_text_prompt')
-        self.matchpoint_text_prompt.setStyleSheet('border: 0px;')
-        self.matchpoint_text_prompt.setHtml("Select 3-5 corresponding match points on the reference and base images. Key Bindings:<br>"
-                                            "<b>Enter/return</b> - Add match points (Left, Right, Left, Right...)<br>"
-                                            "<b>s</b>            - Save match points<br>"
-                                            "<b>c</b>            - Clear match points for this layer")
+        # self.matchpoint_text_prompt = QTextEdit()
+        # # self.matchpoint_text_prompt.setMaximumWidth(600)
+        # self.matchpoint_text_prompt.setFixedHeight(74)
+        # self.matchpoint_text_prompt.setReadOnly(True)
+        # self.matchpoint_text_prompt.setObjectName('matchpoint_text_prompt')
+        # self.matchpoint_text_prompt.setStyleSheet('border: 0px;')
+        # self.matchpoint_text_prompt.setHtml("Select 3-5 corresponding match points on the reference and base images. Key Bindings:<br>"
+        #                                     "<b>Enter/return</b> - Add match points (Left, Right, Left, Right...)<br>"
+        #                                     "<b>s</b>            - Save match points<br>"
+        #                                     "<b>c</b>            - Clear match points for this layer")
 
         lab = QLabel('Control Panel - Manual Point Selection')
         lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
@@ -5046,7 +5007,7 @@ class MainWindow(QMainWindow):
         vbl.setContentsMargins(4, 0, 4, 0)
         vbl.addWidget(lab)
         vbl.addLayout(hbl)
-        vbl.addWidget(self.matchpoint_text_prompt)
+        # vbl.addWidget(self.matchpoint_text_prompt)
         # vbl.addStretch()
 
         gb = QGroupBox()
@@ -5056,7 +5017,7 @@ class MainWindow(QMainWindow):
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(gb)
 
-        self.matchpointControls.setLayout(vbl)
+        # self.matchpointControls.setLayout(vbl)
 
         self.corrspot_q0 = SnrThumbnail(parent=self)
         self.corrspot_q1 = SnrThumbnail(parent=self)
@@ -5084,16 +5045,41 @@ class MainWindow(QMainWindow):
         # hbl.addWidget(self.matchpointControls)
 
         self.corr_spot_thumbs = QWidget()
-        self.corr_spot_thumbs.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
+        # self.corr_spot_thumbs.setMinimumHeight(30)
+        # self.corr_spot_thumbs.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
         hbl = QHBoxLayout()
+        hbl.setSpacing(1)
         # hbl.setContentsMargins(4,4,4,8)
-        hbl.setContentsMargins(4,4,4,4)
-        hbl.addWidget(self.corrspot_q0)
-        hbl.addWidget(self.corrspot_q1)
-        hbl.addWidget(self.corrspot_q2)
-        hbl.addWidget(self.corrspot_q3)
+
+        self.cs0 = CorrSignalThumbnail(self)
+        self.cs1 = CorrSignalThumbnail(self)
+        self.cs2 = CorrSignalThumbnail(self)
+        self.cs3 = CorrSignalThumbnail(self)
+        self.cs4 = CorrSignalThumbnail(self)
+        self.cs5 = CorrSignalThumbnail(self)
+        self.cs6 = CorrSignalThumbnail(self)
+        self.corr_signals = [
+            self.cs0,
+            self.cs1,
+            self.cs2,
+            self.cs3,
+            self.cs4,
+            self.cs5,
+            self.cs6
+        ]
+        hbl.setContentsMargins(2, 2, 2, 2)
+        hbl.addWidget(self.cs0)
+        hbl.addWidget(self.cs1)
+        hbl.addWidget(self.cs2)
+        hbl.addWidget(self.cs3)
+        hbl.addWidget(self.cs4)
+        hbl.addWidget(self.cs5)
+        hbl.addWidget(self.cs6)
+        w = QWidget()
+        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        hbl.addWidget(w)
         self.corr_spot_thumbs.setLayout(hbl)
-        self.corr_spot_thumbs.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
+        # self.corr_spot_thumbs.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
 
 
         '''Show/Hide Primary Tools Buttons'''
@@ -5158,11 +5144,11 @@ class MainWindow(QMainWindow):
 
 
         tip = 'Show/Hide Project Details'
-        self._btn_show_hide_details = QPushButton(' Details')
-        self._btn_show_hide_details.setStyleSheet(lower_controls_style)
-        self._btn_show_hide_details.setStatusTip(tip)
-        self._btn_show_hide_details.clicked.connect(self._callbk_showHideDetails)
-        self._btn_show_hide_details.setIcon(qta.icon('fa.info-circle', color='#f3f6fb'))
+        self._btn_show_hide_corr_spots = QPushButton(' Correlation Signal')
+        self._btn_show_hide_corr_spots.setStyleSheet(lower_controls_style)
+        self._btn_show_hide_corr_spots.setStatusTip(tip)
+        self._btn_show_hide_corr_spots.clicked.connect(self._callbk_showHideDetails)
+        self._btn_show_hide_corr_spots.setIcon(qta.icon('fa.info-circle', color='#f3f6fb'))
 
 
         self._showHideFeatures = QWidget()
@@ -5174,7 +5160,7 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self._btn_show_hide_console)
         hbl.addWidget(self._btn_show_hide_notes)
         hbl.addWidget(self._btn_show_hide_shader)
-        hbl.addWidget(self._btn_show_hide_details)
+        hbl.addWidget(self._btn_show_hide_corr_spots)
 
         # hbl.addStretch()
         self._showHideFeatures.setLayout(hbl)
@@ -5182,311 +5168,100 @@ class MainWindow(QMainWindow):
 
         dSize = 166
 
-        self.detailsTitle = QLabel('Details')
-        self.detailsTitle.setFixedHeight(12)
-        self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
+        self.detailsTitle = QLabel('Correlation Signal')
+        self.detailsTitle.setFixedHeight(13)
+        self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 2px; margin-top: 2px;')
 
 
+        # #0210
+        # self.detailsScales = QLabel()
+        # self.btnDetailsScales = QPushButton('Hide Scales')
+        # self.btnDetailsScales.setFixedWidth(dSize)
+        # self.btnDetailsScales.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
+        # def fn():
+        #     self.detailsScales.setVisible(not self.detailsScales.isVisible())
+        #     if self.detailsScales.isHidden():
+        #         label, icon = ' Scales', 'fa.caret-right'
+        #     else:
+        #         label, icon = 'Hide Scales', 'fa.caret-down'
+        #     self.btnDetailsScales.setIcon(qta.icon(icon, color='#f3f6fb'))
+        #     self.btnDetailsScales.setText(label)
+        # self.btnDetailsScales.clicked.connect(fn)
+        # self.detailsScales.setWordWrap(True)
+        # self.detailsScales.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.detailsScales.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 11px;""")
+        # # self.detailsScales.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum) #???
+        # self.detailsScales.setFixedWidth(dSize)
+        # # self.detailsScales.setReadOnly(True)
+        #
+        # self.detailsSkips = QLabel()
+        # self.btndetailsSkips = QPushButton('Hide Rejects')
+        # self.btndetailsSkips.setFixedWidth(dSize)
+        # self.btndetailsSkips.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
+        # def fn():
+        #     self.detailsSkips.setVisible(not self.detailsSkips.isVisible())
+        #     if self.detailsSkips.isHidden(): label, icon = ' Rejects', 'fa.caret-right'
+        #     else:                            label, icon = 'Hide Rejects', 'fa.caret-down'
+        #     self.btndetailsSkips.setIcon(qta.icon(icon, color='#f3f6fb'))
+        #     self.btndetailsSkips.setText(label)
+        # self.btndetailsSkips.clicked.connect(fn)
+        # self.detailsSkips.setWordWrap(True)
+        # self.detailsSkips.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.detailsSkips.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
+        # self.detailsSkips.setFixedWidth(dSize)
+        # # self.detailsSkips.setReadOnly(True)
 
-        self.detailsSection = QLabel()
-        self.btnDetailsSection = QPushButton('Hide Section')
-        self.btnDetailsSection.setFixedWidth(dSize)
-        self.btnDetailsSection.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsSection.setVisible(not self.detailsSection.isVisible())
-            if self.detailsSection.isHidden():
-                label, icon = ' Section', 'fa.caret-right'
-            else:
-                label, icon = 'Hide Section', 'fa.caret-down'
-            self.btnDetailsSection.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsSection.setText(label)
-        self.btnDetailsSection.clicked.connect(fn)
-        self.detailsSection.setWordWrap(True)
-        self.detailsSection.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsSection.setFixedWidth(dSize)
-
-
-
-        #0210
-        self.detailsScales = QLabel()
-        self.btnDetailsScales = QPushButton('Hide Scales')
-        self.btnDetailsScales.setFixedWidth(dSize)
-        self.btnDetailsScales.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsScales.setVisible(not self.detailsScales.isVisible())
-            if self.detailsScales.isHidden():
-                label, icon = ' Scales', 'fa.caret-right'
-            else:
-                label, icon = 'Hide Scales', 'fa.caret-down'
-            self.btnDetailsScales.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsScales.setText(label)
-        self.btnDetailsScales.clicked.connect(fn)
-        self.detailsScales.setWordWrap(True)
-        self.detailsScales.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsScales.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 11px;""")
-        # self.detailsScales.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum) #???
-        self.detailsScales.setFixedWidth(dSize)
-        # self.detailsScales.setReadOnly(True)
-
-        self.detailsSkips = QLabel()
-        self.btndetailsSkips = QPushButton('Hide Rejects')
-        self.btndetailsSkips.setFixedWidth(dSize)
-        self.btndetailsSkips.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsSkips.setVisible(not self.detailsSkips.isVisible())
-            if self.detailsSkips.isHidden(): label, icon = ' Rejects', 'fa.caret-right'
-            else:                            label, icon = 'Hide Rejects', 'fa.caret-down'
-            self.btndetailsSkips.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btndetailsSkips.setText(label)
-        self.btndetailsSkips.clicked.connect(fn)
-        self.detailsSkips.setWordWrap(True)
-        self.detailsSkips.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsSkips.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsSkips.setFixedWidth(dSize)
-        # self.detailsSkips.setReadOnly(True)
-
-        self.detailsSNR = QLabel()
-        self.btndetailsSNR = QPushButton('Hide SNR')
-        self.btndetailsSNR.setFixedWidth(dSize)
-        self.btndetailsSNR.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsSNR.setVisible(not self.detailsSNR.isVisible())
-            if self.detailsSNR.isHidden(): label, icon = ' SNR', 'fa.caret-right'
-            else:                          label, icon = 'Hide SNR', 'fa.caret-down'
-            self.btndetailsSNR.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btndetailsSNR.setText(label)
-        self.btndetailsSNR.clicked.connect(fn)
-        self.detailsSNR.setWordWrap(True)
-        self.detailsSNR.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsSNR.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsSNR.setFixedWidth(dSize)
-        # self.detailsSNR.setReadOnly(True)
-
-        self.detailsMethod = QLabel()
-        self.btnDetailsMethod = QPushButton('Hide Method')
-        self.btnDetailsMethod.setFixedWidth(dSize)
-        self.btnDetailsMethod.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsMethod.setVisible(not self.detailsMethod.isVisible())
-            if self.detailsMethod.isHidden(): label, icon = ' Method', 'fa.caret-right'
-            else:                          label, icon = 'Hide Method', 'fa.caret-down'
-            self.btnDetailsMethod.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsMethod.setText(label)
-        self.btnDetailsMethod.clicked.connect(fn)
-        self.detailsMethod.setWordWrap(True)
-        self.detailsMethod.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsMethod.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsMethod.setFixedWidth(dSize)
-        # self.detailsMethod.setMinimumHeight(100)
-        # self.detailsMethod.setFixedHeight(84)
-        # self.detailsMethod.setReadOnly(True)
-
-        self.detailsManualpoints = QLabel()
-        self.detailsManualpoints.setWordWrap(True)
-        self.detailsManualpoints.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsManualpoints.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        self.detailsManualpoints.setFixedWidth(dSize)
-        # self.detailsManualpoints.setReadOnly(True)
-        self.detailsManualpoints.hide()
-
-        self.detailsTiming = QLabel()
-        self.btnDetailsTiming = QPushButton('Hide Runtimes')
-        self.btnDetailsTiming.setFixedWidth(dSize)
-        self.btnDetailsTiming.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsTiming.setVisible(not self.detailsTiming.isVisible())
-            if self.detailsTiming.isHidden(): label, icon = ' Runtimes', 'fa.caret-right'
-            else:                          label, icon = 'Hide Runtimes', 'fa.caret-down'
-            self.btnDetailsTiming.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsTiming.setText(label)
-        self.btnDetailsTiming.clicked.connect(fn)
-        self.detailsTiming.setWordWrap(True)
-        self.detailsTiming.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsTiming.setStyleSheet("""
-        font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-        font-size: 10px;""")
-        self.detailsTiming.setFixedWidth(dSize)
-        # self.detailsTiming.setReadOnly(True)
-
-        self.detailsAFM = QLabel()
-        self.btnDetailsAFM = QPushButton('Hide Affine')
-        self.btnDetailsAFM.setFixedWidth(dSize)
-        self.btnDetailsAFM.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsAFM.setVisible(not self.detailsAFM.isVisible())
-            if self.detailsAFM.isHidden(): label, icon = ' Affine', 'fa.caret-right'
-            else:                          label, icon = 'Hide Affine', 'fa.caret-down'
-            self.btnDetailsAFM.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsAFM.setText(label)
-        self.btnDetailsAFM.clicked.connect(fn)
-        self.detailsAFM.setWordWrap(True)
-        self.detailsAFM.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsAFM.setStyleSheet("""
-        font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-        font-size: 11px;""")
-        self.detailsAFM.setFixedWidth(dSize)
-        # self.detailsAFM.setReadOnly(True)
+        # self.detailsTensor = QWidget()
+        # self.detailsTensor.setFixedWidth(dSize)
+        # self.detailsTensorLab = QLabel()
+        # self.detailsTensorLab.setWordWrap(True)
+        # # self.detailsTensorLab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.detailsTensorLab.setStyleSheet("""
+        # font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+        # color: #f3f6fb;
+        # font-size: 10px;""")
+        # self.detailsTensorLab.hide()
+        # self.btnDetailsTensor = QPushButton('Tensor')
+        # self.btnDetailsTensor.setIcon(qta.icon('fa.caret-right', color='#f3f6fb'))
+        # def fn():
+        #     logger.info('')
+        #     self.detailsTensorLab.setVisible(not self.detailsTensorLab.isVisible())
+        #     if self.detailsTensorLab.isHidden():
+        #         label, icon = ' Tensor', 'fa.caret-right'
+        #     else:
+        #         label, icon  = 'Hide Tensor', 'fa.caret-down'
+        #         self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
+        #     self.btnDetailsTensor.setIcon(qta.icon(icon, color='#f3f6fb'))
+        #     self.btnDetailsTensor.setText(label)
+        # self.btnDetailsTensor.setFixedWidth(dSize + 26)
+        # self.btnDetailsTensor.clicked.connect(fn)
+        # vbl = QVBoxLayout()
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # vbl.addWidget(self.btnDetailsTensor)
+        # vbl.addWidget(self.detailsTensorLab)
+        # self.detailsTensor.setLayout(vbl)
 
 
-        self.detailsTensor = QWidget()
-        self.detailsTensor.setFixedWidth(dSize)
-        self.detailsTensorLab = QLabel()
-        self.detailsTensorLab.setWordWrap(True)
-        # self.detailsTensorLab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.detailsTensorLab.setStyleSheet("""
-        font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-        color: #f3f6fb;
-        font-size: 10px;""")
-        self.detailsTensorLab.hide()
-        self.btnDetailsTensor = QPushButton('Tensor')
-        self.btnDetailsTensor.setIcon(qta.icon('fa.caret-right', color='#f3f6fb'))
-        def fn():
-            logger.info('')
-            self.detailsTensorLab.setVisible(not self.detailsTensorLab.isVisible())
-            if self.detailsTensorLab.isHidden():
-                label, icon = ' Tensor', 'fa.caret-right'
-            else:
-                label, icon  = 'Hide Tensor', 'fa.caret-down'
-                self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
-            self.btnDetailsTensor.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsTensor.setText(label)
-        self.btnDetailsTensor.setFixedWidth(dSize + 26)
-        self.btnDetailsTensor.clicked.connect(fn)
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.btnDetailsTensor)
-        vbl.addWidget(self.detailsTensorLab)
-        self.detailsTensor.setLayout(vbl)
-
-
-        self.detailsCorrSpots = QWidget()
-        self.btnDetailsCorrSpots = QPushButton('Hide Corr. Spots')
-        self.btnDetailsCorrSpots.setFixedWidth(dSize + 26)
-        self.btnDetailsCorrSpots.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        def fn():
-            self.detailsCorrSpots.setVisible(not self.detailsCorrSpots.isVisible())
-            if self.detailsCorrSpots.isHidden(): label, icon = ' Corr. Spots', 'fa.caret-right'
-            else:                          label, icon = 'Hide Corr. Spots', 'fa.caret-down'
-            self.btnDetailsCorrSpots.setIcon(qta.icon(icon, color='#f3f6fb'))
-            self.btnDetailsCorrSpots.setText(label)
-        self.btnDetailsCorrSpots.clicked.connect(fn)
-        # self.detailsCorrSpots.setFixedSize(QSize(dSize,dSize))
-        # self.detailsCorrSpots.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
-        self.cs0 = SnrThumbnail(parent=self)
-        self.cs1 = SnrThumbnail(parent=self)
-        self.cs2 = SnrThumbnail(parent=self)
-        self.cs3 = SnrThumbnail(parent=self)
-        gl = QGridLayout()
-        gl.setSpacing(1)
-        gl.setContentsMargins(0, 0, 0, 0)
-        gl.addWidget(self.cs0, 0, 0)
-        gl.addWidget(self.cs1, 0, 1)
-        gl.addWidget(self.cs2, 1, 0)
-        gl.addWidget(self.cs3, 1, 1)
-        self.detailsCorrSpots.setLayout(gl)
-
-
-        hbl = QHBoxLayout()
-        hbl.setSpacing(0)
-        hbl.setContentsMargins(0, 0, 0, 0)
-
-        w = QWidget()
-        w.setFixedWidth(dSize)
-        vbl = QVBoxLayout()
-        # vbl.setSpacing(1)
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.btnDetailsSection, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.detailsSection, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.btnDetailsScales, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.detailsScales, alignment=Qt.AlignmentFlag.AlignTop)
-        w.setLayout(vbl)
-        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-        w = QWidget()
-        w.setFixedWidth(dSize + 20)
-        vbl = QVBoxLayout()
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.btnDetailsAFM, alignment=Qt.AlignmentFlag.AlignLeft)
-        vbl.addWidget(self.detailsAFM)
-        w.setLayout(vbl)
-        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-        w = QWidget()
-        w.setFixedWidth(dSize)
-        vbl = QVBoxLayout()
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.btndetailsSNR)
-        vbl.addWidget(self.detailsSNR)
-        w.setLayout(vbl)
-        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-        w = QWidget()
-        w.setFixedWidth(dSize)
-        vbl = QVBoxLayout()
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.btnDetailsMethod, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.detailsMethod, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.detailsManualpoints, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.btndetailsSkips, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.detailsSkips, alignment=Qt.AlignmentFlag.AlignTop)
-        w.setLayout(vbl)
-        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-
-        w = QWidget()
-        w.setFixedWidth(dSize + 20)
-        vbl = QVBoxLayout()
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(self.btnDetailsTiming, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        vbl.addWidget(self.detailsTiming, alignment=Qt.AlignmentFlag.AlignTop)
-        vbl.addWidget(self.detailsTensor, alignment=Qt.AlignmentFlag.AlignTop)
-        w.setLayout(vbl)
-        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-
+        # self.correlation_signals = QWidget()
+        self.correlation_signals = QScrollArea()
+        self.correlation_signals.setMinimumHeight(100)
+        self.correlation_signals.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
+        self.correlation_signals.setWidgetResizable(True)
         w = QWidget()
         vbl = QVBoxLayout()
-        vbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.setSpacing(0)
-        vbl.addWidget(self.btnDetailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
-        vbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
-        w.setLayout(vbl)
-        hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop)
-
-        # hbl.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop)
-        # w = QWidget()
-        # w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        # hbl.addWidget(w)
-
-        self.detailsSubwidget = QWidget()
-        self.detailsSubwidget.setLayout(hbl)
-
-
-        w = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(2, 2, 2, 2)
-        # self.detailsLabel = QLabel('<label>')
         vbl.addWidget(self.detailsTitle)
-        # vbl.addWidget(self.detailsImagename)
-        vbl.addWidget(self.detailsSubwidget)
+        vbl.addWidget(self.corr_spot_thumbs)
         w.setLayout(vbl)
+        # self.correlation_signals.setLayout(vbl)
+        # self.correlation_signals.hide()
+        self.correlation_signals.setWidget(w)
+        self.correlation_signals.hide()
 
-        self.detailsWidget = QScrollArea()
-        self.detailsWidget.setWidgetResizable(True)
 
-
-        #Critical
-        self.detailsWidget.setStyleSheet("""font-size: 12px; background-color: #004060; color: #f3f6fb; border-radius: 5px; """)
-        self.detailsWidget.setWidget(w)
-        self.detailsWidget.hide()
-        # self.detailsWidget.setMinimumHeight(200)
-        # self._scroll.setWidgetResizable(True)
+        # self.detailsWidget = QScrollArea()
+        # self.detailsWidget.setWidgetResizable(True)
 
         self._btn_volumeRendering = QPushButton('Volume')
         self._btn_applyShader = QPushButton('Apply')
@@ -5501,7 +5276,7 @@ class MainWindow(QMainWindow):
             self.brightnessSlider.setValue(cfg.data.brightness())
             self.contrastSlider.setValue(cfg.data.contrast())
             if self._isProjectTab():
-                cfg.data['data']['shader'] = cfg.SHADER
+                cfg.data['rendering']['shader'] = cfg.SHADER
                 self.updateShaderText()
                 # cfg.project_tab.initNeuroglancer()
                 cfg.project_tab.updateNeuroglancer()
@@ -5685,55 +5460,55 @@ class MainWindow(QMainWindow):
         self.globTabs.setObjectName('globTabs')
         self.globTabs.tabCloseRequested[int].connect(self._onGlobTabClose)
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
-
-        self._buttonOpen = QPushButton('Open')
-        self._buttonOpen.clicked.connect(self.open_project_selected)
-        self._buttonOpen.setFixedSize(64, 20)
-
-        self._buttonDelete = QPushButton('Delete')
-        self._buttonDelete.clicked.connect(self.delete_project)
-        self._buttonDelete.setFixedSize(64, 20)
-
-        self._buttonNew = QPushButton('New')
-        self._buttonNew.clicked.connect(self.new_project)
-        self._buttonNew.setFixedSize(64, 20)
-
-        # self._buttonNew = QPushButton('Remember')
-        # self._buttonNew.setStyleSheet("font-size: 9px;")
+        #
+        # self._buttonOpen = QPushButton('Open')
+        # self._buttonOpen.clicked.connect(self.open_project_selected)
+        # self._buttonOpen.setFixedSize(64, 20)
+        #
+        # self._buttonDelete = QPushButton('Delete')
+        # self._buttonDelete.clicked.connect(self.delete_project)
+        # self._buttonDelete.setFixedSize(64, 20)
+        #
+        # self._buttonNew = QPushButton('New')
         # self._buttonNew.clicked.connect(self.new_project)
         # self._buttonNew.setFixedSize(64, 20)
-        # # self._buttonNew.setStyleSheet(style)
-
-        # self.selectionReadout = QLabel('<h4>Selection:</h4>')
-        # self.selectionReadout = QLabel()
-        self.selectionReadout = QLineEdit()
-        self.selectionReadout.returnPressed.connect(self.open_project_selected)
-        # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
-        self.selectionReadout.textChanged.connect(self.validateUserEnteredPath)
-        self.selectionReadout.setFixedHeight(22)
-        self.selectionReadout.setMinimumWidth(700)
-
-        self.validity_label = QLabel('Invalid')
-        self.validity_label.setObjectName('validity_label')
-        self.validity_label.setFixedHeight(20)
-        self.validity_label.hide()
-
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(6, 2, 6, 2)
-        hbl.addWidget(self._buttonNew)
-        hbl.addWidget(self.selectionReadout)
-        hbl.addWidget(self.validity_label)
-        hbl.addWidget(self._buttonOpen)
-        hbl.addWidget(self._buttonDelete)
-        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        hbl.addSpacerItem(self.spacer_item_docs)
-
-        self._buttonOpen.setEnabled(False)
-        self._buttonDelete.setEnabled(False)
-
-        self._actions_widget = QWidget()
-        self._actions_widget.setFixedHeight(26)
-        self._actions_widget.setLayout(hbl)
+        #
+        # # self._buttonNew = QPushButton('Remember')
+        # # self._buttonNew.setStyleSheet("font-size: 9px;")
+        # # self._buttonNew.clicked.connect(self.new_project)
+        # # self._buttonNew.setFixedSize(64, 20)
+        # # # self._buttonNew.setStyleSheet(style)
+        #
+        # # self.selectionReadout = QLabel('<h4>Selection:</h4>')
+        # # self.selectionReadout = QLabel()
+        # self.selectionReadout = QLineEdit()
+        # self.selectionReadout.returnPressed.connect(self.open_project_selected)
+        # # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
+        # self.selectionReadout.textChanged.connect(self.validateUserEnteredPath)
+        # self.selectionReadout.setFixedHeight(22)
+        # self.selectionReadout.setMinimumWidth(700)
+        #
+        # self.validity_label = QLabel('Invalid')
+        # self.validity_label.setObjectName('validity_label')
+        # self.validity_label.setFixedHeight(20)
+        # self.validity_label.hide()
+        #
+        # hbl = QHBoxLayout()
+        # hbl.setContentsMargins(6, 2, 6, 2)
+        # hbl.addWidget(self._buttonNew)
+        # hbl.addWidget(self.selectionReadout)
+        # hbl.addWidget(self.validity_label)
+        # hbl.addWidget(self._buttonOpen)
+        # hbl.addWidget(self._buttonDelete)
+        # self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        # hbl.addSpacerItem(self.spacer_item_docs)
+        #
+        # self._buttonOpen.setEnabled(False)
+        # self._buttonDelete.setEnabled(False)
+        #
+        # self._actions_widget = QWidget()
+        # self._actions_widget.setFixedHeight(26)
+        # self._actions_widget.setLayout(hbl)
 
         # self.cpanelMainWidgets = QWidget()
         self.cpanelMainSplitter = QSplitter(Qt.Orientation.Horizontal)
@@ -5742,19 +5517,11 @@ class MainWindow(QMainWindow):
         hbl = QHBoxLayout()
         hbl.setContentsMargins(6, 0, 6, 0)
 
-        # hbl.addWidget(self._processMonitorWidget)
-        # hbl.addWidget(self.corr_spot_thumbs)
-        # hbl.addWidget(self.cpanel)
-        # hbl.addWidget(self.matchpointControls)
-
         self.cpanelMainSplitter.addWidget(self._processMonitorWidget)
-        self.cpanelMainSplitter.addWidget(self.corr_spot_thumbs)
         self.cpanelMainSplitter.addWidget(self.cpanel)
-        self.cpanelMainSplitter.addWidget(self.matchpointControls)
+        # self.cpanelMainSplitter.addWidget(self.matchpointControls)
         self.cpanelMainSplitter.setCollapsible(0, False)
         self.cpanelMainSplitter.setCollapsible(1, False)
-        self.cpanelMainSplitter.setCollapsible(2, False)
-        self.cpanelMainSplitter.setCollapsible(3, False)
         hbl.addWidget(self.cpanelMainSplitter)
 
         self.cpanelMainWidgets = QWidget()
@@ -5763,8 +5530,6 @@ class MainWindow(QMainWindow):
 
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.setContentsMargins(6, 0, 6, 0)
-        # vbl.addWidget(self._actions_widget)
         vbl.addWidget(self.cpanelMainWidgets)
 
         self.pythonConsole = PythonConsole()
@@ -5808,7 +5573,7 @@ class MainWindow(QMainWindow):
 
         self.notes.setContentsMargins(0, 0, 0, 0)
         self.shaderCodeWidget.setContentsMargins(0, 0, 0, 0)
-        self.detailsWidget.setContentsMargins(0, 0, 0, 0)
+        # self.detailsWidget.setContentsMargins(0, 0, 0, 0)
         # self._py_console.setContentsMargins(6, 0, 6, 0)
         self._dev_console.setContentsMargins(0, 0, 0, 0)
 
@@ -5821,25 +5586,21 @@ class MainWindow(QMainWindow):
 
         self._splitter.addWidget(self.notes)             # (0)
         self._splitter.addWidget(self.shaderCodeWidget)  # (1)
-        self._splitter.addWidget(self.detailsWidget)     # (2)
+        self._splitter.addWidget(self.correlation_signals)     # (2)
         self._splitter.addWidget(self._dev_console)      # (3)
         # self._splitter.addWidget(self._showHideFeatures) # (4)
         # self._mainVSplitterSizes = [1000, 128, 128, 128, 180, 128, 128]
         # self._splitter.setSizes(self._mainVSplitterSizes)
         self._splitter.setContentsMargins(6, 0, 6, 0)
-
         self._splitter.setHandleWidth(2)
         self._splitter.setCollapsible(0, False)
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)
         self._splitter.setCollapsible(3, False)
-        # self._splitter.setCollapsible(4, True)
-
         self._splitter.setStretchFactor(0, 2)
         self._splitter.setStretchFactor(1, 2)
         self._splitter.setStretchFactor(2, 3)
         self._splitter.setStretchFactor(3, 1)
-        # self._splitter.setStretchFactor(4, 0)
 
         self.browser_html_widget = QWidget()
         vbl = QVBoxLayout()
@@ -6008,22 +5769,16 @@ class MainWindow(QMainWindow):
         self._splitterSplitter = QSplitter(Qt.Orientation.Vertical)
         self._splitterSplitter.splitterMoved.connect(self.splittersHaveMoved)
         self._splitterSplitter.addWidget(self.globTabs)
-        self._splitterSplitter.addWidget(self._actions_widget)
+        # self._splitterSplitter.addWidget(self._actions_widget)
         self._splitterSplitter.addWidget(self.cpanelMainWidgets)
         self._splitterSplitter.addWidget(self._splitter)
         self._splitterSplitter.setCollapsible(0,False)
         self._splitterSplitter.setCollapsible(1,False)
         self._splitterSplitter.setCollapsible(2,False)
-        self._splitterSplitter.setCollapsible(3,False)
-        self._splitterSplitter.setStretchFactor(0, 1)
+        self._splitterSplitter.setStretchFactor(0, 2)
         self._splitterSplitter.setStretchFactor(1, 1)
         self._splitterSplitter.setStretchFactor(2, 1)
-        self._splitterSplitter.setStretchFactor(3, 1)
         self._splitterSplitter.setHandleWidth(2)
-        # def fn():
-        #     self._forceHideControls()
-        #     self._forceHidePython()
-        # self._splitterSplitter.splittersHaveMoved.connect(fn)
 
         self.main_panel = QWidget()
         vbl = QVBoxLayout()
@@ -6046,68 +5801,48 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_stack_widget)
         # QShortcut(QKeySequence('Ctrl+M'), self.main_stack_widget, self.enterExitManAlignMode)
 
-
-    def validateUserEnteredPath(self):
-        # logger.info(f'caller:{inspect.stack()[1].function}')
-        cfg.selected_file = self.selectionReadout.text()
-        # if self._isProjectTab():
-        #     logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
-        #     if validate_project_selection():
-        #         self.validity_label.hide()
-        #         self._buttonOpen.setEnabled(True)
-        #         self._buttonDelete.setEnabled(True)
-        #     else:
-        #         self.validity_label.show()
-        #         self._buttonOpen.setEnabled(False)
-        #         self._buttonDelete.setEnabled(False)
-        # elif self._isZarrTab():
-        #     logger.info('Evaluating whether path is Zarr...')
-        #     if validate_zarr_selection():
-        #         self.validity_label.hide()
-        #         self._buttonOpen.setEnabled(True)
-        #         self._buttonDelete.setEnabled(True)
-        #     else:
-        #         self.validity_label.show()
-        #         self._buttonOpen.setEnabled(False)
-        #         self._buttonDelete.setEnabled(False)
-        if validate_project_selection() or validate_zarr_selection():
-            self.validity_label.hide()
-            self._buttonOpen.setEnabled(True)
-            self._buttonDelete.setEnabled(True)
-        else:
-            self.validity_label.show()
-            self._buttonOpen.setEnabled(False)
-            self._buttonDelete.setEnabled(False)
-
-
-
-    def setSelectionPathText(self, path):
-        # logger.info(f'caller:{inspect.stack()[1].function}')
-        self.selectionReadout.setText(path)
-        if self._isProjectTab():
-            logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
-            if validate_project_selection():
-                self.validity_label.hide()
-                self._buttonOpen.setEnabled(True)
-                self._buttonDelete.setEnabled(True)
-            else:
-                self.validity_label.show()
-                self._buttonOpen.setEnabled(False)
-                self._buttonDelete.setEnabled(False)
-        elif self._isZarrTab():
-            logger.info('Evaluating whether path is Zarr...')
-            if validate_zarr_selection():
-                self.validity_label.hide()
-                self._buttonOpen.setEnabled(True)
-                self._buttonDelete.setEnabled(True)
-            else:
-                self.validity_label.show()
-                self._buttonOpen.setEnabled(False)
-                self._buttonDelete.setEnabled(False)
+    #
+    # def validateUserEnteredPath(self):
+    #     # logger.info(f'caller:{inspect.stack()[1].function}')
+    #     cfg.selected_file = self.selectionReadout.text()
+    #     if validate_project_selection() or validate_zarr_selection():
+    #         self.validity_label.hide()
+    #         self._buttonOpen.setEnabled(True)
+    #         self._buttonDelete.setEnabled(True)
+    #     else:
+    #         self.validity_label.show()
+    #         self._buttonOpen.setEnabled(False)
+    #         self._buttonDelete.setEnabled(False)
+    #
+    #
+    #
+    # def setSelectionPathText(self, path):
+    #     # logger.info(f'caller:{inspect.stack()[1].function}')
+    #     self.selectionReadout.setText(path)
+    #     if self._isProjectTab():
+    #         logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
+    #         if validate_project_selection():
+    #             self.validity_label.hide()
+    #             self._buttonOpen.setEnabled(True)
+    #             self._buttonDelete.setEnabled(True)
+    #         else:
+    #             self.validity_label.show()
+    #             self._buttonOpen.setEnabled(False)
+    #             self._buttonDelete.setEnabled(False)
+    #     elif self._isZarrTab():
+    #         logger.info('Evaluating whether path is Zarr...')
+    #         if validate_zarr_selection():
+    #             self.validity_label.hide()
+    #             self._buttonOpen.setEnabled(True)
+    #             self._buttonDelete.setEnabled(True)
+    #         else:
+    #             self.validity_label.show()
+    #             self._buttonOpen.setEnabled(False)
+    #             self._buttonDelete.setEnabled(False)
 
 
-    def clearSelectionPathText(self):
-        self.selectionReadout.setText('')
+    # def clearSelectionPathText(self):
+    #     self.selectionReadout.setText('')
 
 
     def initLaunchTab(self):

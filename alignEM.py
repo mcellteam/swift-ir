@@ -225,10 +225,7 @@ def main():
     cfg.main_window.show()
 
     sys.exit(app.exec())
-    # app.exec()
 
-    # profiler.disable()
-    # profiler.dump_stats("results.prof")
     # stats = pstats.Stats(profiler).sort_stats('ncalls')
     # stats.print_stats()
 

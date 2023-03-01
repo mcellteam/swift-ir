@@ -355,7 +355,7 @@ class JsonModel(QAbstractItemModel):
 
     def getIndex(self, findkeys, treeitem=None, jump=True, expand=False, collapse=False):
         # start w/ cfg.project_tab.treeview_model._rootItem
-        print('\nRecursing...')
+        # print('\nRecursing...')
         isRoot = 0
         if treeitem == None:
             isRoot = 1
@@ -367,7 +367,7 @@ class JsonModel(QAbstractItemModel):
             self.lst = [treeitem.child(i,0).data() for i in range(self.count)]
 
         self.idx = self.lst.index(findkeys[0])
-        print('found key %s in %s at location %d...' % (str(findkeys), str(self.lst), self.idx))
+        # print('found key %s in %s at location %d...' % (str(findkeys), str(self.lst), self.idx))
 
         findkeys.pop(0)
 
@@ -379,7 +379,7 @@ class JsonModel(QAbstractItemModel):
         self.next_treeitem = next_treeitem
 
         if findkeys == []:
-            print('Returning: %s' % str(next_treeitem))
+            # print('Returning: %s' % str(next_treeitem))
             if jump:
                 cfg.project_tab.treeview.setCurrentIndex(next_treeitem)
             if expand:
@@ -392,7 +392,7 @@ class JsonModel(QAbstractItemModel):
             return next_treeitem
 
         else:
-            print('next treeitem: %s, type: %s' % (next_treeitem, type(next_treeitem)))
+            # print('next treeitem: %s, type: %s' % (next_treeitem, type(next_treeitem)))
             self.getIndex(findkeys, treeitem=next_treeitem)
 
     def jumpToLayer(self, s=None, l=None):

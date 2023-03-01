@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 import inspect
 import logging
 import textwrap
@@ -11,7 +12,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QChec
 from qtpy.QtCore import Qt, QRect, QAbstractTableModel
 from qtpy.QtGui import QPixmap, QPainter
 from src.helpers import absFilePaths
-from src.ui.thumbnails import Thumbnail, SnrThumbnail
+from src.ui.thumbnail import Thumbnail, ThumbnailFast, SnrThumbnail, CorrSignalThumbnail
 from src.helpers import print_exception
 from src.funcs_image import ImageSize
 
@@ -29,6 +30,7 @@ class ProjectTable(QWidget):
         super().__init__(parent)
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
+        # self.INITIAL_ROW_HEIGHT = 128
         self.INITIAL_ROW_HEIGHT = 100
         self.data = None
         self.table = QTableWidget()
@@ -73,7 +75,7 @@ class ProjectTable(QWidget):
         if cfg.data.is_aligned():
             labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned',
                        # 'Q0', 'Q1', 'Q2', 'Q3',
-                       'Top, Left', 'Top, Right', 'Bottom, Left', 'Bottom, Right',
+                       'Top,\nLeft', 'Top,\nRight', 'Bottom,\nLeft', 'Bottom,\nRight', 'Last\nAligned',
                        'Scale', 'Skip?', 'Method', 'SNR Report']
         else:
             labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
@@ -85,6 +87,7 @@ class ProjectTable(QWidget):
 
 
     def setScaleData(self):
+        t = time.time()
         caller = inspect.stack()[1].function
         logger.info('Setting Table Data (caller: %s)...' % caller)
         cur_selection = self.table.currentIndex().row()
@@ -99,7 +102,7 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         try:
-            if cfg.data.is_aligned():
+            if cfg.data.is_aligned_and_generated():
                 for i, row in enumerate(self.data):
                     # logger.info('Inserting row %d' % i)
                     self.table.insertRow(i)
@@ -121,16 +124,23 @@ class ProjectTable(QWidget):
                             # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
                             # self.table.setCellWidget(i, j, lab)
                             self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j in (3, 4, 5):
-                            tn = Thumbnail(self, path=item)
+                        elif j in (3, 4):
+                            # tn = Thumbnail(self, path=item)
+                            tn = ThumbnailFast(self, path=item)
+                            self.table.setCellWidget(i, j, tn)
+                        elif j == 5:
+                            # tn = Thumbnail(self, path=item)
+                            # tn = ThumbnailFast(self, path=item, extra=cfg.data.datetime(l=i))
+                            tn = ThumbnailFast(self, path=item)
                             self.table.setCellWidget(i, j, tn)
                         elif j in (6, 7, 8, 9):
                             # logger.info(f'j={j}, item={str(item)}')
                             try:
-                                tn = SnrThumbnail(self, path=item, snr=snr_4x[j - 6])
+                                # tn = SnrThumbnail(self, path=item, snr=snr_4x[j - 6])
+                                tn = CorrSignalThumbnail(self, path=item, snr=snr_4x[j - 6])
                                 self.table.setCellWidget(i, j, tn)
                             except:
-                                tn = SnrThumbnail(self)
+                                tn = CorrSignalThumbnail(self)
                                 tn.set_no_image()
                                 self.table.setCellWidget(i, j, tn)
                         else:
@@ -151,7 +161,8 @@ class ProjectTable(QWidget):
                             # self.table.setCellWidget(i, j, lab)
                             self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
                         elif j in (2, 3):
-                            thumbnail = Thumbnail(self, path=item)
+                            # thumbnail = Thumbnail(self, path=item)
+                            thumbnail = ThumbnailFast(self, path=item)
                             self.table.setCellWidget(i, j, thumbnail)
                         else:
                             self.table.setItem(i, j, QTableWidgetItem(str(item)))
@@ -166,13 +177,16 @@ class ProjectTable(QWidget):
             if cur_selection != -1:
                 self.table.selectRow(cur_selection)
             self.table.verticalScrollBar().setValue(cur_scroll_pos)
-            logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
+            # logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
             # cur_selection = self.table.currentIndex().row()
             self.table.update()
 
+            dt = time.time() - t
+            logger.info('Table Load Time %s' %str(dt))
+
 
     def setColumnWidths(self):
-        if cfg.data.is_aligned():
+        if cfg.data.is_aligned_and_generated():
             self.table.setColumnWidth(0, 128)  # 0 index
             self.table.setColumnWidth(1, 60)   # 1 Filename
             self.table.setColumnWidth(2, 60)   # 2 SNR
@@ -183,10 +197,11 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(7, 100)  # 7 Q1
             self.table.setColumnWidth(8, 100)  # 8 Q2
             self.table.setColumnWidth(9, 100) # 9 Q3
-            self.table.setColumnWidth(10, 50) # 10 Scale
-            self.table.setColumnWidth(11, 50)  # 11 Skip
-            self.table.setColumnWidth(12, 120)  # 12 Method
-            self.table.setColumnWidth(13, 120) # 11 SNR_report
+            self.table.setColumnWidth(10, 80) # 10 Last Aligned datetime
+            self.table.setColumnWidth(11, 50) # 11 Scale
+            self.table.setColumnWidth(12, 50)  # 12 Skip
+            self.table.setColumnWidth(13, 120)  # 13 Method
+            self.table.setColumnWidth(14, 120) # 14 SNR_report
         else:
             self.table.setColumnWidth(0, 128)
             self.table.setColumnWidth(1, 60)
@@ -218,38 +233,44 @@ class ProjectTable(QWidget):
 
     def get_data(self):
         # logger.info('')
-        is_aligned = cfg.data.is_aligned()
+        is_aligned = cfg.data.is_aligned_and_generated()
         # logger.critical('is aligned? %r' % is_aligned)
-        try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
-        except:  scale = ['Unknown'] * cfg.data.nSections; print_exception()
-        try:     ref = cfg.data.thumbnails_ref()
-        except:  ref = ['Unknown'] * cfg.data.nSections; print_exception()
-        indexes, skips, base, method, snr_report, test = [], [], [], [], [], []
-        for i, l in enumerate(cfg.data.alstack()):
-            indexes.append(i)
-            try:     skips.append(l['skipped'])
-            except:  skips.append('?'); print_exception()
-            try:
-                m = l['alignment']['selected_method']
-                if m == 'Auto-SWIM': m = 'Automatic SWIM Alignment'
-                method.append(m)
-            except:
-                method.append('Unknown')
-            if is_aligned:
-                try:     snr_report.append(l['alignment']['method_results']['snr_report'])
-                except:  snr_report.append('<No SNR Report>')
+        try:
+            try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
+            except:  scale = ['Unknown'] * cfg.data.nSections; print_exception()
+            try:     ref = cfg.data.thumbnails_ref()
+            except:  ref = ['Unknown'] * cfg.data.nSections; print_exception()
+            indexes, skips, base, method, snr_report, test, datetime = [], [], [], [], [], [], []
+            for i, l in enumerate(cfg.data.alstack()):
+                indexes.append(i)
+                try:     skips.append(l['skipped'])
+                except:  skips.append('?'); print_exception()
+                try:
+                    m = l['alignment']['selected_method']
+                    if m == 'Auto-SWIM': m = 'Automatic SWIM Alignment'
+                    method.append(m)
+                except:
+                    method.append('Unknown')
+                if is_aligned:
+                    try:     snr_report.append(l['alignment']['method_results']['snr_report'])
+                    except:  snr_report.append('<No SNR Report>')
+                    try:     datetime.append(l['alignment']['method_results']['datetime'])
+                    except:  datetime.append('N/A')
 
-        if is_aligned:
-            self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.snr_list(),
-                              cfg.data.thumbnails(), ref, cfg.data.thumbnails_aligned(),
-                              cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
-                              cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(),
-                              scale, skips, method, snr_report))
-        else:
-            self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),
-                              ref, scale, skips, method))
-        # print(str(list(zipped)))
-        # return self.data
+
+            if is_aligned:
+                self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.snr_list(),
+                                  cfg.data.thumbnails(), ref, cfg.data.thumbnails_aligned(),
+                                  cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
+                                  cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(), datetime,
+                                  scale, skips, method, snr_report))
+            else:
+                self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),
+                                  ref, scale, skips, method))
+            # print(str(list(zipped)))
+            # return self.data
+        except:
+            print_exception()
 
 
     # def updateSliderMaxVal(self):

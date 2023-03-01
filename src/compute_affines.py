@@ -80,6 +80,8 @@ def compute_affines(scale, start=0, end=None):
         task_queue.start(cpus)
         align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 
+        size = cfg.data.image_size(s=scale)
+
         # ADD ALIGNMENT TASKS TO QUEUE
         for layer in substack:
             index = alstack.index(layer)
@@ -92,8 +94,8 @@ def compute_affines(scale, start=0, end=None):
                              str(cfg.CODE_MODE),   # Python or C mode
                              str(index),           # First l number to run from Project file #ATTN!
                              str(1),               # Number of layers to run                 #ATTN!
-                             str(cfg.USE_FILE_IO)  # Use File IO instead of Pipe
-                             ]
+                             str(cfg.USE_FILE_IO),  # Use File IO instead of Pipe
+                             str(size[0])]
                 # if index == 5:
                 #     task_args[3] = 'bogus_align'
                 # if index == 8:
@@ -102,7 +104,7 @@ def compute_affines(scale, start=0, end=None):
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if index in range(start, start + 3):
                         e = [str(p) for p in task_args] # example
-                        logger.info("Layer #%d (example):\n%s\n%s\n%s\n%s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
+                        logger.info("Layer #%d (example):\n  %s\n  %s\n  %s\n  %s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
 
         # task_queue.work_q.join()
         # cfg.main_window.hud.post('Computing Alignment Using SWIM...')

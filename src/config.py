@@ -85,20 +85,11 @@ DUMMY = False
 USE_TENSORSTORE = True
 FAULT_HANDLER = False
 HEADLESS = False
-# TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
-# TACC_MAX_CPUS = 110  # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
 MP_MODE = False
-# SHADER =
-# SHADER = shaders.shader_default_
-# SHADER = '''#uicontrol invlerp normalized
-# void main() {
-#   emitGrayscale(normalized());
-# }'''
-# SHADER = '#define VOLUME_RENDERING true'
 THEME = 0
 MP_LINEWEIGHT = 3
 MP_SIZE = 6
@@ -112,7 +103,6 @@ settings = None
 selected_file = None
 tasks_remaining = None
 tasks_total = None
-
 
 DELAY_BEFORE = 0
 DELAY_AFTER = 0
