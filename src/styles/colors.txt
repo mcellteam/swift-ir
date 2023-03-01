@@ -24,3 +24,6 @@
 #161c20 - dark charcoal
 #003333 - dark green
 
+
+regex to remove empty lines: ^\s*^
+

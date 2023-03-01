@@ -12,12 +12,13 @@ import inspect
 import logging
 import platform
 import statistics
+from glob import glob
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
 import src.config as cfg
-from src.data_structs import data_template, layer_template, image_template
+from src.data_structs import data_template, layer_template
 from src.helpers import print_exception, natural_sort, exist_aligned_zarr,  \
     get_scale_val, get_scale_key, get_scales_with_generated_alignments
 from src.funcs_image import ComputeBoundingRect, ImageSize
@@ -46,16 +47,16 @@ class ScaleIterator:
 class DataModel:
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, quitely=False, mendenhall=False):
-        logger.info('>>>> Constructing DataModel >>>>')
-        self._current_version = 0.50
+        # self._current_version = 0.50
         self.quietly = quitely
+        if not self.quietly:
+            logger.info(f'Constructing Data Model (caller:{inspect.stack()[1].function})...')
         self.scalesAlignedAndGenerated = []
         self.nScalesAlignedAndGenerated = None
         self.nscales = None
         self.nSections = None
         self.curScale = None
-        if not self.quietly:
-            logger.info(f'Constructing Data Model (caller:{inspect.stack()[1].function})...')
+
 
         if data:
             self._data = data
@@ -64,23 +65,18 @@ class DataModel:
             current_time = datetime.now()
             self._data['created'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
             self.set_system_info()
-        # if not self.layer():
-        #     self.set_layer(0)
 
         if not self.quietly:
-            self._data['last_opened'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            # self.set_defaults()
+            self._data['modified'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self.set_defaults()
 
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
 
-        if not self.quietly:
-            self.set_defaults()
         if not self.layer():
             self.set_layer(0)
 
-        logger.info('<<<< Exiting DataModel Constructor <<<<')
 
     def __setitem__(self, key, item):
         self._data[key] = item
@@ -115,12 +111,18 @@ class DataModel:
         return self._data['created']
 
     def last_opened(self):
-        return self._data['last_opened']
+        return self._data['modified']
+
+    def modified(self):
+        return self._data['modified']
 
     def is_aligned(self, s=None):
         # logger.info('')
         if s == None: s = self.curScale
-        if sum(self.snr_list(s=s)) < 1:
+        snr_list = self.snr_list(s=s)
+        if not snr_list:
+            return False
+        if sum(snr_list) < 1:
             # logger.info('is_aligned is returning False')
             return False
         else:
@@ -207,52 +209,6 @@ class DataModel:
     def set_contrast(self, val):
         self._data['rendering']['contrast'] = val
 
-    def set_defaults(self):
-        # logger.info(f'caller: {inspect.stack()[1].function}')
-        self._data['data'].setdefault('shader', cfg.SHADER)
-        self._data['data'].setdefault('cname', cfg.CNAME)
-        self._data['data'].setdefault('clevel', cfg.CLEVEL)
-        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
-        self._data['data'].setdefault('t_scaling', 0.0)
-        self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
-        self._data['data'].setdefault('t_thumbs', 0.0)
-
-        self._data['rendering'].setdefault('normalize', [1,255])
-        self._data['rendering'].setdefault('brightness', 0)
-        self._data['rendering'].setdefault('contrast', 0)
-        self._data.setdefault('ui', {})
-        self._data['ui'].setdefault('ng_layout', '4panel')
-        self._data['ui'].setdefault('arrangement', 'stack')
-
-
-        # for s in self.scales():
-        for s in self._data['data']['scales'].keys():
-            logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
-            scale = self._data['data']['scales'][s]
-            scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
-            scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
-            scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
-            scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
-            scale.setdefault('t_align', 0.0)
-            scale.setdefault('t_generate', 0.0)
-            scale.setdefault('t_convert_zarr', 0.0)
-            scale.setdefault('t_thumbs_aligned', 0.0)
-            scale.setdefault('t_thumbs_spot', 0.0)
-
-            for layer_index in range(len(scale['alignment_stack'])):
-                layer = scale['alignment_stack'][layer_index]
-                layer.setdefault('alignment', {})
-                layer['alignment'].setdefault('method_data', {})
-                layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-                layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-                layer['alignment'].setdefault('manual_points', {})
-                layer['alignment']['manual_points'].setdefault('ref', [])
-                layer['alignment']['manual_points'].setdefault('base', [])
-                if s == self.coarsest_scale_key():
-                    layer['alignment']['method_data']['alignment_option'] = 'init_affine'
-                else:
-                    layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
-
 
     def notes(self, s=None, l=None):
         return self._data['data']['scales'][s]['alignment_stack'][l]['notes']
@@ -293,7 +249,6 @@ class DataModel:
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['filename'])
 
 
-
     '''NEW METHODS USING NEW DATA SCHEMA 2023'''
 
     def filename(self, s=None, l=None):
@@ -315,7 +270,6 @@ class DataModel:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['reference'])
-
 
     '''END OF NEW METHODS'''
 
@@ -358,6 +312,13 @@ class DataModel:
         path = os.path.join(self.dest(), self.curScale, 'thumbnails_aligned', self.base_image_name())
         # return self._data['data']['thumbnails'][self.layer()]
         return path
+
+    def corr_signal_path(self, i, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        img = self.base_image_name(s=s, l=l)
+        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_%d_' %i + img)
+
 
     def corr_spot_q0_path(self, s=None, l=None) -> str:
         if s == None: s = self.curScale
@@ -411,19 +372,72 @@ class DataModel:
             names.append(os.path.join(self.dest(), self.curScale, 'thumbnails_corr_spots', 'corr_spot_3_' + img))
         return names
 
+
+    def get_corr_spot_files(self):
+        path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
+        return natural_sort(glob(os.path.join(path, '*' + cfg.data.base_image_name())))
+
     def smallest_scale(self):
         return natural_sort(self._data['data']['scales'].keys())[-1]
 
-    # def thumbnail_names(self):
-    #
-    #
-    #     [os.path.join(cfg.dest())            name in self.basefilenames()])
-    #     return glob.glob(os.path.join(self.dest(), 'thumbnails', '*.tif'))
+    def layer_dict(self, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l]
 
-    # def thumbnail_paths(self):
-    #     names = self.thumbnail_names()
-    #     for i, name in enumerate(names):
-    #         names[i] = os.path.join(self.dest(), 'thumbnails', name)
+
+    def set_defaults(self):
+        # logger.info(f'caller: {inspect.stack()[1].function}')
+        self._data['data'].setdefault('shader', cfg.SHADER)
+        self._data['data'].setdefault('cname', cfg.CNAME)
+        self._data['data'].setdefault('clevel', cfg.CLEVEL)
+        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+        self._data['data'].setdefault('t_scaling', 0.0)
+        self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
+        self._data['data'].setdefault('t_thumbs', 0.0)
+
+        self._data['rendering'].setdefault('normalize', [1,255])
+        self._data['rendering'].setdefault('brightness', 0)
+        self._data['rendering'].setdefault('contrast', 0)
+        self._data['rendering'].setdefault('shader', '''
+        #uicontrol vec3 color color(default="white")
+        #uicontrol float brightness slider(min=-1, max=1, step=0.01)
+        #uicontrol float contrast slider(min=-1, max=1, step=0.01)
+        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
+        ''')
+        self._data.setdefault('ui', {})
+        self._data['ui'].setdefault('ng_layout', '4panel')
+        self._data['ui'].setdefault('arrangement', 'stack')
+
+
+        # for s in self.scales():
+        for s in self._data['data']['scales'].keys():
+            logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
+            scale = self._data['data']['scales'][s]
+            scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
+            scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
+            scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+            scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
+            scale.setdefault('t_align', 0.0)
+            scale.setdefault('t_generate', 0.0)
+            scale.setdefault('t_convert_zarr', 0.0)
+            scale.setdefault('t_thumbs_aligned', 0.0)
+            scale.setdefault('t_thumbs_spot', 0.0)
+
+            for layer_index in range(len(scale['alignment_stack'])):
+                layer = scale['alignment_stack'][layer_index]
+                layer.setdefault('alignment', {})
+                layer['alignment'].setdefault('method_data', {})
+                layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+                layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+                layer['alignment'].setdefault('manual_points', {})
+                layer['alignment']['manual_points'].setdefault('ref', [])
+                layer['alignment']['manual_points'].setdefault('base', [])
+                if s == self.coarsest_scale_key():
+                    layer['alignment']['method_data']['alignment_option'] = 'init_affine'
+                else:
+                    layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
+
 
     def set_source_path(self, dir):
         # self._data['data']['src_img_root'] = dir
@@ -486,7 +500,6 @@ class DataModel:
             return {}
 
 
-
     def snr(self, s=None, l=None) -> float:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
@@ -496,6 +509,8 @@ class DataModel:
             value = self.method_results(s=s, l=l)['snr']
             return statistics.fmean(map(float, value))
         except:
+            # print_exception()
+            # logger.warning('Unable to return SNR for layer #%d' %l)
             return 0.0
 
     def snr_prev(self, s=None, l=None) -> float:
@@ -507,29 +522,30 @@ class DataModel:
             value = self.previous_method_results(s=s, l=l)['snr']
             return statistics.fmean(map(float, value))
         except:
+            # print_exception()
             return 0.0
 
 
     def snr_list(self, s=None) -> list[float]:
-        # logger.info('caller: %s...' % inspect.stack()[1].function)
+        logger.info('caller: %s...' % inspect.stack()[1].function)
         ''' n is 4 for a 2x2 SWIM'''
         if self.method_results():
             try:
                 return [self.snr(s=s, l=i) for i in range(len(self))]
             except:
-                return [0.0, 0.0, 0.0, 0.0]
+                return []
         else:
             logger.warning('No Method Results, No SNR List - Returning Empty List')
 
 
 
     def snr_prev_list(self, s=None, l=None):
-        # logger.info('caller: %s...' % inspect.stack()[1].function)
+        logger.info('caller: %s...' % inspect.stack()[1].function)
         if s == None: s = self.curScale
         try:
             return [self.snr_prev(s=s, l=i) for i in range(self.n_sections())]
         except:
-            return [0.0, 0.0, 0.0, 0.0]
+            return []
 
 
     def delta_snr_list(self):
@@ -539,12 +555,20 @@ class DataModel:
     def snr_components(self, s=None, l=None) -> list[float]:
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        try:
-            return self._data['data']['scales'][s]['alignment_stack'][l][
-                            'alignment']['method_results']['snr']
-        except:
-            logger.warning('No SNR data for %s, layer %d' %(s,l))
-            return [0.0, 0.0, 0.0, 0.0]
+        mr = cfg.data.method_results()
+        if self.selected_method(s=s, l=l) == 'Manual-Hint':
+            files = self.get_corr_spot_files()
+            n = len(files)
+            if ('snr' in cfg.data.method_results()) and (len(files) == len(mr['snr'])):
+                return mr['snr']
+            else:
+                return [0.0]*n
+        else:
+            try:
+                return mr['snr']
+            except:
+                logger.warning('No SNR data for %s, layer %d' %(s,l))
+                return []
 
 
     def snr_prev_components(self, s=None, l=None):
@@ -555,7 +579,7 @@ class DataModel:
                 'alignment']['previous_method_results']['snr_prev']
         except:
             logger.warning('No Previous SNR data for %s, layer %d' %(s,l))
-            return [0.0, 0.0, 0.0, 0.0]
+            return []
 
 
     def snr_report(self, s=None, l=None) -> str:
@@ -613,7 +637,7 @@ class DataModel:
         except:
             caller = inspect.stack()[1].function
             logger.warning('Unable to append maximum SNR, none found (%s) - Returning Empty List' % caller)
-            return []
+            return 0.0
 
 
 
@@ -692,8 +716,8 @@ class DataModel:
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.alstack()):
-                r = layer['alignment']['manual_points']
-                b = layer['alignment']['manual_points']
+                r = layer['alignment']['manual_points']['ref']
+                b = layer['alignment']['manual_points']['base']
                 if (r != []) or (b != []):
                     indexes.append(i)
                     names.append(os.path.basename(layer['filename']))
@@ -726,43 +750,13 @@ class DataModel:
         if l == None: l = self.layer()
         try:
             mps = self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']
-            ref = [(0, x[0], x[1]) for x in mps['ref']]
-            base = [(0, x[0], x[1]) for x in mps['base']]
+            # ref = [(0, x[0], x[1]) for x in mps['ref']]
+            # base = [(0, x[0], x[1]) for x in mps['base']]
+            ref = [(0.5, x[0], x[1]) for x in mps['ref']]
+            base = [(0.5, x[0], x[1]) for x in mps['base']]
             return {'ref': ref, 'base': base}
         except:
             return {'ref': [], 'base': []}
-
-    # def match_points_ref(self, s=None, l=None):
-    #     if s == None: s = self.curScale
-    #     if l == None: l = self.layer()
-    #     # return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['ref']
-    #     return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['metadata']['manual_points']
-    #
-    # def match_points_base(self, s=None, l=None):
-    #     if s == None: s = self.curScale
-    #     if l == None: l = self.layer()
-    #     # return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']['base']
-    #     return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['metadata']['manual_points']
-
-    # def all_match_points_ref(self, s=None):
-    #     if s == None: s = self.curScale
-    #     lst = []
-    #     for i, layer in enumerate(self.alstack(s=s)):
-    #         mp = layer['alignment']['manual_points']['ref']
-    #         if mp != []:
-    #             for p in mp:
-    #                 lst.append([i, p[0], p[1]])
-    #     return lst
-    #
-    # def all_match_points_base(self, s=None):
-    #     if s == None: s = self.curScale
-    #     lst = []
-    #     for i, layer in enumerate(self.alstack(s=s)):
-    #         mp = layer['alignment']['manual_points']['base']
-    #         if mp != []:
-    #             for p in mp:
-    #                 lst.append([i, p[0], p[1]])
-    #     return lst
 
     def clearMps(self, s=None, l=None):
         if s == None: s = self.curScale
@@ -792,7 +786,8 @@ class DataModel:
     def set_manual_points(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.critical(f"Writing manual points to project dictionary, s={s}, l={l}")
+        logger.critical('l=%d, s=%s, role=%s, mps=%s' % (l, s, role, str(matchpoints)))
+        logger.info(f"Writing manual points to project dictionary, s={s}, l={l}")
         self.alstack()[l]['alignment']['manual_points'][role] = matchpoints
 
 
@@ -967,14 +962,8 @@ class DataModel:
 
     def skipped(self, s=None, l=None) -> bool:
         '''Called by get_axis_data'''
-        # logger.info('skipped (called By %s)' % inspect.stack()[1].function)
-
-        # print('Before Defaults: s = %s, l = %s' % (str(s), str(l))) # Before Defaults: s = None, l = None
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        # print('After Defaults: s = %s, l = %s' % (str(s), str(l))) # After Defaults: s = scale_4, l = 0
-        assert isinstance(s, str)
-        assert isinstance(l, int)
         try:
             return bool(self._data['data']['scales'][s]['alignment_stack'][l]['skipped'])
         except IndexError:
@@ -1209,10 +1198,6 @@ class DataModel:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
         self._data['data']['scales'][self.curScale]['null_cafm_trends'] = bool(b)
 
-    # def make_absolute(file_path, proj_path):
-    #     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
-    #     return abs_path
-
     def set_al_dict(self, aldict, s=None):
         if s == None: s = self.curScale
         try:
@@ -1271,8 +1256,8 @@ class DataModel:
     def set_selected_method(self, method, s=None, l=None):
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        logger.critical(f'Setting section #{l}, {s} to {method}...')
-        cfg.main_window.hud.post(f'Setting section #{l}, {s} to {method}...')
+        logger.info(f'Setting method for section #{l}, {s} to {method}...')
+        cfg.main_window.hud.post(f'Setting method for section #{l}, {s} to {method}...')
         self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['selected_method'] = method
 
 
@@ -1322,15 +1307,6 @@ class DataModel:
             if not exist_aligned_zarr(s):
                 lst.remove(s)
         return lst
-
-    # def not_aligned_list(self) -> list[str]:
-    #     '''Get not aligned scales list.'''
-    #     lst = []
-    #     for s in self.scales():
-    #         if not exist_aligned_zarr(s):
-    #             lst.append(s)
-    #     logger.debug('Not Aligned Scales List: %s ' % str(lst))
-    #     return lst
 
     def not_aligned_list(self):
         return set(self.scales()) - set(self.scalesAlignedAndGenerated)
@@ -1449,7 +1425,7 @@ class DataModel:
         except:
             print_exception()
 
-    def are_there_any_skips(self) -> bool:
+    def anySkips(self) -> bool:
         if len(self.skips_list()) > 0:
             return True
         else:

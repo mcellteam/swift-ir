@@ -5,9 +5,12 @@ data_template = \
     {
         "version": 0.50,
         "created": '',
-        "method": "None",
+        # "method": "None",
         "system": {
             "node": None,
+        },
+        "state": {
+            "MANUAL_MODE": False
         },
         "rendering": {
             "normalize": [1,255],
@@ -60,8 +63,8 @@ layer_template = \
                 'base': []
             },
             "method_results": {
-                "snr": [0.0],
-                "snr_prev": [0.0],
+                "snr": [],
+                "snr_prev": [],
             }
         },
         "images": {},

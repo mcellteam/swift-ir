@@ -55,7 +55,9 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             renew_directory(directory=od)
         # print_example_cafms(scale_dict)
         bias_path = os.path.join(dm.dest(), scale, 'bias_data')
+        t_sb = time.time()
         save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+        logger.critical('save bias time: %.3f' %(time.time() - t_sb))
         if end == None:
             end = len(dm)
         n_tasks = len(list(range(start,end)))
@@ -87,7 +89,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             task_queue.add_task(args)
             if cfg.PRINT_EXAMPLE_ARGS:
                 if ID in [0,1,2]:
-                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, '    '.join(map(str,args))))
+                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, '\n  '.join(map(str,args))))
                 # if ID is 7:
 
         # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
@@ -134,7 +136,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
                 task_queue.add_task(args)
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if ID in [0,1,2]:
-                        logger.info('Example Arguments (ID: %d):\n%s' % (ID, '    '.join(map(str,args))))
+                        logger.info('Example Arguments (ID: %d):\n%s' % (ID, '\n  '.join(map(str,args))))
                 # task_queue.add_task(args)
             logger.info('Adding Tasks To Multiprocessing Queue...')
             try:

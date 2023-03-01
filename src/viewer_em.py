@@ -22,7 +22,7 @@ import neuroglancer as ng
 from qtpy.QtCore import QObject, Signal, QUrl
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, obj_to_string, print_exception
+from src.helpers import getOpt, getpOpt, setpOpt, obj_to_string, print_exception
 from src.shaders import ann_shader
 import src.config as cfg
 from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
@@ -57,20 +57,21 @@ class EMViewer(neuroglancer.Viewer):
         self._layer = None
         self.cs_scale = None
         self._crossSectionScale = 1
+        self.orientation = None
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         logger.info('viewer constructed!')
 
 
-    # def __del__(self):
-        # try:
-        #     caller = inspect.stack()[1].function
-        #     logger.warning('__del__ called by [%s] on EMViewer (created: %s)'
-        #                    % (caller, self.created))
-        # except Exception as e:
-        #     logger.warning('Lost Track Of Caller')
-        #     raise e
-        # pass
+    def __del__(self):
+        try:
+            caller = inspect.stack()[1].function
+            logger.warning('__del__ called by [%s] on EMViewer (created: %s)'
+                           % (caller, self.created))
+        except Exception as e:
+            logger.warning('Lost Track Of Caller')
+            raise e
+        pass
 
     # def __str__(self):
     #     return obj_to_string(self)
@@ -128,10 +129,12 @@ class EMViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
 
     def initViewer(self):
-        if cfg.MP_MODE:
+
+        if cfg.project_tab._tabs.currentIndex() == 3:
+            self.initViewerSbs(requested='xy', orientation='vertical')
+        elif getpOpt('state,MANUAL_MODE'):
             self.initViewerSbs(requested='xy')
         else:
-
             if cfg.main_window.rb0.isChecked():
                 cfg.data['ui']['ng_layout'] = '4panel'
                 self.initViewerSlim()
@@ -140,9 +143,10 @@ class EMViewer(neuroglancer.Viewer):
                 self.initViewerSbs()
 
 
-    def initViewerSbs(self, requested=None):
+    def initViewerSbs(self, requested=None, orientation='horizontal'):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer (caller: {caller})....')
+        self.orientation = orientation
 
         if requested == None:
             requested = cfg.data['ui']['ng_layout']
@@ -163,7 +167,7 @@ class EMViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.curScale)),
         )
 
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             sf = cfg.data.scale_val(s=cfg.data.scale())
             al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
             self.store = cfg.tensor = cfg.al_tensor =  get_zarr_tensor(al_path).result()
@@ -189,7 +193,7 @@ class EMViewer(neuroglancer.Viewer):
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
 
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout)]
         else:
             self.grps = []
@@ -205,21 +209,36 @@ class EMViewer(neuroglancer.Viewer):
             s.concurrent_downloads = 512'''
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
-            s.crossSectionBackgroundColor = '#808080'
-            s.layout.type = nglayout
-            if cfg.MP_MODE:
-                s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['data']['shader'], )
+            if self.orientation == 'vertical':
+                s.show_scale_bar = False
+                s.show_default_annotations = False
+                s.show_axis_lines = False
             else:
-                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['data']['shader'], )
-                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['data']['shader'],)
-                if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['data']['shader'],)
+                s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+                s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
+                s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+            if self.orientation == 'vertical':
+                s.crossSectionBackgroundColor = '#1b1e23'
+            else:
+                s.crossSectionBackgroundColor = '#808080'
+            s.layout.type = nglayout
+            if getpOpt('state,MANUAL_MODE'):
+                s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
+            else:
+                s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
+                s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'],)
+                if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'],)
             s.showSlices=False
-            s.layout = ng.row_layout(self.grps)  # col
+            if orientation == 'horizontal':
+                s.layout = ng.row_layout(self.grps)
+            elif orientation == 'vertical':
+                s.layout = ng.column_layout(self.grps)  # col
+            else:
+                s.layout = ng.row_layout(self.grps)
 
-            if cfg.MP_MODE:
+            # s.layout = ng.row_layout(self.grps)  # col
+
+            if getpOpt('state,MANUAL_MODE'):
                 s.position = [0, tensor_y / 2, tensor_x / 2]
             else:
                 s.position = [cfg.data.layer(), tensor_y / 2, tensor_x / 2]
@@ -229,7 +248,9 @@ class EMViewer(neuroglancer.Viewer):
                 s.show_ui_controls = False
             else:
                 s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
+            s.show_panel_borders = False
+            # if orientation == 'vertical':
+                # s.viewer_size = (200,600)
 
         self._layer = math.floor(self.state.position[0])
         self._crossSectionScale = self.state.cross_section_scale
@@ -299,7 +320,7 @@ class EMViewer(neuroglancer.Viewer):
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[cfg.data.layer(), self.store.shape[1]/2, self.store.shape[2]/2]
-            s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['data']['shader'], )
+            s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['rendering']['shader'], )
             s.crossSectionBackgroundColor = '#808080' # 128 grey
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
 
@@ -309,7 +330,7 @@ class EMViewer(neuroglancer.Viewer):
                 s.show_ui_controls = False
             else:
                 s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            s.show_panel_borders = getOpt('neuroglancer,SHOW_PANEL_BORDERS')
+            s.show_panel_borders = False
             # s.viewer_size = [100,100]
 
         self._layer = self.request_layer()
@@ -335,21 +356,24 @@ class EMViewer(neuroglancer.Viewer):
             else:
                 tensor_z, tensor_y, tensor_x = cfg.unal_tensor.shape
 
-            if cfg.main_window.rb1.isChecked():
-                widget_w = (area[2] / 2, area[2] / 3)[cfg.data.is_aligned_and_generated()]
-            else:
-                widget_w = area[2] / 2
-            widget_h = area[3]
+            is_aligned = cfg.data.is_aligned_and_generated()
 
-            if cfg.MP_MODE:
+            if getpOpt('state,MANUAL_MODE'):
                 widget_w = cfg.project_tab.MA_webengine_stage.geometry().width()
                 widget_h = cfg.project_tab.MA_webengine_stage.geometry().height()
                 logger.info('widget w/h: %d/%d' % (widget_w, widget_h))
+            elif self.orientation=='vertical':
+                logger.critical('geometry = %s' %str(cfg.project_tab.snrPlotSplitter.geometry()))
+                widget_h = cfg.project_tab.snrPlotSplitter.geometry().height()
+                widget_w = cfg.project_tab.snrPlotSplitter.sizes()[1]
+            else:
+                widget_w = area[2]/(2,3)[cfg.main_window.rb1.isChecked() and is_aligned]
+                widget_h = area[3]
 
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale()) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
 
-            if cfg.MP_MODE:
+            if getpOpt('state,MANUAL_MODE'):
                 scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
                 scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             else:
@@ -357,15 +381,11 @@ class EMViewer(neuroglancer.Viewer):
                 scale_w = ((res_x*tensor_x) / (widget_w - 20)) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 
-            # logger.info('res_y    = %s' % str(res_y))
-            # logger.info('area[3]  = %s' % (str(area[3])))
-            # logger.info('nm/pixel (height)    : %.11f' % scale_h)
-            # logger.info('nm/pixel (width)     : %.11f' % scale_w)
-            # logger.info('zoom factor          : %.11f' % cs_scale)
-
             with self.txn() as s:
-                if cfg.MP_MODE:
+                if getpOpt('state,MANUAL_MODE'):
                     s.crossSectionScale = cs_scale *1.04
+                elif self.orientation == 'vertical':
+                    s.crossSectionScale = cs_scale * 1.20
                 else:
                     s.crossSectionScale = cs_scale * 1.06
 
@@ -385,7 +405,7 @@ class EMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
-        if cfg.MP_MODE:
+        if getpOpt('state,MANUAL_MODE'):
             return
 
         caller = inspect.stack()[1].function
@@ -449,7 +469,7 @@ class EMViewer(neuroglancer.Viewer):
 
         with self.txn() as s:
             if cfg.data.is_aligned_and_generated():
-                if cfg.MP_MODE:
+                if getpOpt('state,MANUAL_MODE'):
                     s.layout = ng.row_layout([
                         ng.column_layout([
                             ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),
@@ -468,6 +488,22 @@ class EMViewer(neuroglancer.Viewer):
             else:
                 s.layout = ng.row_layout(self.grps)
 
+    def set_vertical_layout(self, nglayout):
+        with self.txn() as s:
+            if cfg.data.is_aligned_and_generated():
+                if getpOpt('state,MANUAL_MODE'):
+                    ng.column_layout([
+                        ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout),
+                        ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout),
+                        ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),
+                    ]),
+                else:
+                    ng.column_layout([
+                        ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout),
+                        ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout),
+                    ]),
+            else:
+                s.layout = ng.row_layout(self.grps)
 
     def make_local_volumes(self):
         sf = cfg.data.scale_val(s=cfg.data.scale())
@@ -485,7 +521,7 @@ class EMViewer(neuroglancer.Viewer):
         x_nudge, y_nudge = self.get_nudge()
         cfg.refLV = ng.LocalVolume(
             volume_type='image',
-            data=cfg.unal_tensor[0:cfg.data.nSections - 1, :, :],
+            data=cfg.unal_tensor[0:len(cfg.data) - 1, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[1, y_nudge, x_nudge]
         )

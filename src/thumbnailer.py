@@ -7,6 +7,7 @@ import shutil
 import psutil
 import inspect
 import logging
+import datetime
 from math import floor, ceil
 from glob import glob
 
@@ -18,11 +19,16 @@ from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, a
 __all__ = ['Thumbnailer']
 
 logger = logging.getLogger(__name__)
+tnLogger = logging.getLogger('tnLogger')
+
+
 
 class Thumbnailer:
+
     def __init__(self):
         logger.info('')
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
+
 
 
     def generate_main(self):
@@ -55,6 +61,7 @@ class Thumbnailer:
 
     def generate_corr_spot(self, start, end):
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+
         pbar_text = 'Generating Correlation Spot Thumbnails (%d Cores)...' % cpus
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
@@ -77,6 +84,8 @@ class Thumbnailer:
             filenames = []
             for name in baseFileNames[start:end]:
                 filenames.extend(glob(os.path.join(src, '*' + name)))
+
+            tnLogger.info('Generating the following corr spot thumbnails:\n%s' %str(filenames))
 
             dt = self.generate_thumbnails(src=src, od=od,
                                           rmdir=rmdir, prefix='',
@@ -108,9 +117,16 @@ class Thumbnailer:
                             filenames=None,
                             target_size=cfg.TARGET_THUMBNAIL_SIZE
                             ):
-        if cpus == None:
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         caller = inspect.stack()[1].function
+
+        fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log'))
+        fh.setLevel(logging.DEBUG)
+        tnLogger.handlers.clear()
+        tnLogger.addHandler(fh)
+
+        # if cpus == None:
+        #     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+
         logger.info('Thumbnail Source Directory: %s' % src)
 
         try:
@@ -118,11 +134,11 @@ class Thumbnailer:
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
             if scale_factor == 0:
                 scale_factor = 1
-        except:
-            print_exception()
-            logger.warning('Are there any files in this directory? - Returning')
+        except Exception as e:
+            # print_exception()
+            logger.warning('Do file(s) exist? - Returning')
             cfg.main_window.err('Unable to generate thumbnail(s)')
-            return 1
+            raise e
 
         if rmdir:
             if os.path.exists(od):
@@ -133,6 +149,23 @@ class Thumbnailer:
 
         if filenames == None:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
+        tnLogger.info(f'\n==== {timestamp} ====\n'
+                      f'Generating Thumbnails...\n'
+                      f'caller    : {caller}\n'
+                      f'src       : {src}\n'
+                      f'od        : {od}\n'
+                      f'rmdir     : {rmdir}\n'
+                      f'prefix    : {prefix}\n'
+                      f'start     : {start}\n'
+                      f'end       : {end}\n'
+                      f'pbar      : {pbar_text}\n'
+                      f'cpus      : {cpus}\n'
+                      f'# files   : {len(filenames)}'
+                      )
+        tnLogger.info('filenames : \n' + '\n'.join(filenames))
+
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text)
@@ -146,7 +179,7 @@ class Thumbnailer:
             task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
-                logger.info('\nTQ Params:\n(1) %s\n(2) %s\n(3) %s\n(4) %s' % task)
+                logger.info('\nTQ Params:\n  (1) %s\n  (2) %s\n  (3) %s\n  (4) %s' % task)
 
         dt = task_queue.collect_results()
 

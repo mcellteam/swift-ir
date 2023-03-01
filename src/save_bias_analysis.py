@@ -38,7 +38,7 @@ def save_bias_analysis(layers, bias_path):
                 skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
                 det = (c_afm[0, 0] * c_afm[1, 1]) - (c_afm[0, 1] * c_afm[1, 0])
                 with open(os.path.join(bias_path, 'snr_1.dat'), 'a+') as f:
-                    f.write('%d %.6g\n' % (i, snr.mean()))
+                    f.write('%d %.6g\n' % (i, float(snr.mean())))
                 with open(os.path.join(bias_path, 'bias_x_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, c_afm[0, 2]))
                 with open(os.path.join(bias_path, 'bias_y_1.dat'), 'a+') as f:

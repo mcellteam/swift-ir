@@ -41,7 +41,7 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
            'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets',
-           'absFilePaths', 'validate_file', 'validate_project_selection', 'validate_zarr_selection'
+           'absFilePaths', 'validate_file',
            ]
 
 logger = logging.getLogger(__name__)
@@ -58,6 +58,16 @@ def setOpt(lookup, val):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
+
+def getpOpt(lookup):
+    if isinstance(lookup, str):
+        lookup = lookup.split(',')
+    return reduce(operator.getitem, lookup, cfg.data)
+
+def setpOpt(lookup, val):
+    if isinstance(lookup, str):
+        lookup = lookup.split(',')
+    getpOpt(lookup[:-1])[lookup[-1]] = val
 
 
 def natural_sort(l):
@@ -123,14 +133,15 @@ def delete_recursive(dir):
 def update_preferences_model():
     logger.info('Updating user preferences model...')
     cfg.settings.setdefault('neuroglancer', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', True)
-    cfg.settings['neuroglancer'].setdefault('SHOW_PANEL_BORDERS', False)
-    cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_ALIGNMENT_DETAILS', True)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
+    cfg.settings.setdefault('state', {})
+    cfg.settings['state'].setdefault('MANUAL_MODE', False)
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
@@ -169,25 +180,27 @@ def isNeuroglancerRunning():
    return ng.server.is_server_running()
 
 
-def validate_project_selection() -> bool:
-    # logger.info('Validating selection %s...' % cfg.selected_file)
-    # called by setSelectionPathText
-    path, extension = os.path.splitext(cfg.selected_file)
-    if extension != '.swiftir':
-        return False
-    else:
-        return True
 
-def validate_zarr_selection() -> bool:
-    logger.info('Validating selection %s...' % cfg.selected_file)
-    # called by setSelectionPathText
-    if os.path.isdir(cfg.selected_file):
-        logger.info('Path IS a directory')
-        if '.zarray' in os.listdir(cfg.selected_file):
-            logger.info('Directory DOES contain .zarray -> Returning True...')
-            return True
-    logger.info('Returning False...')
-    return False
+
+# def validate_project_selection() -> bool:
+#     # logger.info('Validating selection %s...' % cfg.selected_file)
+#     # called by setSelectionPathText
+#     path, extension = os.path.splitext(cfg.selected_file)
+#     if extension != '.swiftir':
+#         return False
+#     else:
+#         return True
+#
+# def validate_zarr_selection() -> bool:
+#     logger.info('Validating selection %s...' % cfg.selected_file)
+#     # called by setSelectionPathText
+#     if os.path.isdir(cfg.selected_file):
+#         logger.info('Path IS a directory')
+#         if '.zarray' in os.listdir(cfg.selected_file):
+#             logger.info('Directory DOES contain .zarray -> Returning True...')
+#             return True
+#     logger.info('Returning False...')
+#     return False
 
 
 def validate_file(file) -> bool:
@@ -671,7 +684,7 @@ class TimeoutException(Exception): pass
 def print_exception():
     tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
-    txt = f"  [{tstamp}] Error Type/Value  : {exi[0]} {exi[1]}\n{traceback.format_exc()}"
+    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
     logger.warning(txt)
 
     if cfg.data:
@@ -738,6 +751,13 @@ def make_absolute(file_path, proj_path):
 
 
 def create_project_structure_directories(destination, scales) -> None:
+    logpath = os.path.join(destination, 'logs')
+    if not os.path.exists(logpath):
+        os.mkdir(logpath)
+    open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
+    open(os.path.join(logpath, 'exceptions.log'), 'a').close()
+    open(os.path.join(logpath, 'recipe_maker.log'), 'a').close()
+
     for scale in scales:
         subdir_path = os.path.join(destination, scale)
         cfg.main_window.hud('Creating directories for %s...' % scale)
@@ -746,6 +766,7 @@ def create_project_structure_directories(destination, scales) -> None:
         staged_path = os.path.join(subdir_path, 'img_staged')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
         history_path = os.path.join(subdir_path, 'history')
+
         try:
             os.makedirs(subdir_path)
             os.makedirs(src_path)

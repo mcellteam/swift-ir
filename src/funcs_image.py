@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import copy
+import copy, time
 import os, struct, logging
 from dataclasses import dataclass
 import numpy as np
@@ -422,6 +422,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 
 
 def SetStackCafm(scale, null_biases=False, poly_order=None):
+    t0 = time.time()
     '''Calculate cafm across the whole stack with optional bias correction'''
     if null_biases == True:
         # To perform bias correction, first initialize Cafms without bias correction
@@ -449,6 +450,8 @@ def SetStackCafm(scale, null_biases=False, poly_order=None):
 
     logger.debug('Returning: %s' % format_cafm(c_afm_init))
     logger.debug('<<<< Setting Stack CAFM <<<<\n')
+    dt = '%.2f' % (time.time() - t0)
+    logger.critical('t(SetStackCafm) = %s' %dt)
     return c_afm_init
 
 

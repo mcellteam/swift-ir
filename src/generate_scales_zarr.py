@@ -59,7 +59,7 @@ def generate_zarr_scales(data):
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if ID in [0, 1, 2]:
                         print('Example Arguments (ID %d):' % (ID))
-                        print(task, sep='\n')
+                        print(task, sep='\n  ')
 
                 # print('\n'.join(task))
                 task_queue.add_task(task)
