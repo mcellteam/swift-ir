@@ -99,12 +99,11 @@ class MAViewer(neuroglancer.Viewer):
     def initViewer(self):
         # caller = inspect.stack()[1].function
         logger.info(f'Initializing Viewer (Role: %s)....' %self.role)
-        sf = cfg.data.scale_val(s=cfg.data.scale())
 
         self.clear_layers()
         self.restoreManAlignPts()
 
-
+        sf = cfg.data.scale_val(s=cfg.data.scale())
         if self.role == 'base':
             self.index = cfg.data.layer()
             path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
@@ -318,3 +317,10 @@ if __name__ == '__main__':
 
     viewer = MAViewer()
     viewer.initViewer()
+
+
+
+
+    from src.funcs_zarr import get_zarr_tensor
+    sf = cfg.data.scale_val(s=cfg.data.scale())
+    path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))

@@ -57,7 +57,6 @@ class DataModel:
         self.nSections = None
         self.curScale = None
 
-
         if data:
             self._data = data
         else:
@@ -527,7 +526,7 @@ class DataModel:
 
 
     def snr_list(self, s=None) -> list[float]:
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s...' % inspect.stack()[1].function)
         ''' n is 4 for a 2x2 SWIM'''
         if self.method_results():
             try:
@@ -540,7 +539,7 @@ class DataModel:
 
 
     def snr_prev_list(self, s=None, l=None):
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.curScale
         try:
             return [self.snr_prev(s=s, l=i) for i in range(self.n_sections())]
@@ -642,14 +641,14 @@ class DataModel:
 
 
     def snr_average(self, scale=None) -> float:
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = self.curScale
         # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
         return statistics.fmean(self.snr_list(s=scale)[1:])
 
 
     def snr_prev_average(self, scale=None) -> float:
-        logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = self.curScale
         # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
         return statistics.fmean(self.snr_prev_list(s=scale)[1:])
@@ -1133,7 +1132,7 @@ class DataModel:
         self._data['data']['current_layer'] = index
 
     def set_previous_results(self, s=None):
-        logger.info('Setting PREVIOUS SNR, caller: %s...' % inspect.stack()[1].function)
+        # logger.info('Setting PREVIOUS SNR, caller: %s...' % inspect.stack()[1].function)
         if s == None: s = self.curScale
         logger.info('')
         try:

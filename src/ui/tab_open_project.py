@@ -36,6 +36,9 @@ class OpenProject(QWidget):
         super().__init__(**kwargs)
         self.setMinimumHeight(200)
         self.filebrowser = FileBrowser(parent=self)
+        def fn():
+            self.selectionReadout.setText(self.filebrowser.getSelectionPath())
+        self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
         self.filebrowser.setStyleSheet('border-width: 0px;')
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects(parent=self)
@@ -47,13 +50,10 @@ class OpenProject(QWidget):
         lab = QLabel('Saved AlignEM-SWiFT Projects:')
         lab.setStyleSheet('font-size: 13px; color: #1b1e23; font-weight: 650;')
 
-
         self.row_height_slider = Slider(self)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         # self.row_height_slider.setValue(self.initial_row_height)
         # self.updateRowHeight(self.initial_row_height)
-
-
 
         self.fetchSizesCheckbox = QCheckBox('Fetch Sizes')
         self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))

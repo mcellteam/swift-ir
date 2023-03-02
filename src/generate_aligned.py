@@ -6,6 +6,7 @@ import time
 import json
 import psutil
 import logging
+import zarr
 import neuroglancer as ng
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
@@ -118,6 +119,28 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
                              dtype='uint8',
                              overwrite=True
                              )
+        # dir = os.path.join(cfg.data.dest(), cfg.data.scale())
+        # out_stage = os.path.join(dir, 'img_staged', str(ID))
+        x, y = cfg.data.image_size(s=cfg.data.scale())
+        stage_path = os.path.join(cfg.data.scale(), 'img_staged')
+        # if not os.path.exists(stage_path):
+        grp = zarr.open_group(stage_path, mode='w')
+        # z = zarr.open(stage_path, mode='w', shape=1000000, dtype='i4')
+        # zarr.save('/Users/joelyancey/SavedZarr', z)
+
+        # if not os.path.isdir(stage_path):
+        #     preallocate_zarr(name=stage_path,
+        #                      group=str(ID),
+        #                      dimx=x,
+        #                      dimy=y,
+        #                      dimz=1,
+        #                      dtype='uint8',
+        #                      overwrite=True)
+
+
+        # path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'img_staged')
+        # if not os.path.isdir(path):
+        #     os.mkdir(path)
 
         if cfg.CancelProcesses:
             cfg.main_window.tell('Canceling Copy-convert Alignment to Zarr Tasks...')

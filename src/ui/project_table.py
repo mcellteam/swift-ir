@@ -7,14 +7,11 @@ import inspect
 import logging
 import textwrap
 
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider
 from qtpy.QtCore import Qt, QRect, QAbstractTableModel
-from qtpy.QtGui import QPixmap, QPainter
-from src.helpers import absFilePaths
-from src.ui.thumbnail import Thumbnail, ThumbnailFast, SnrThumbnail, CorrSignalThumbnail
+from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 from src.helpers import print_exception
-from src.funcs_image import ImageSize
 
 import src.config as cfg
 
