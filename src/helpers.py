@@ -60,14 +60,16 @@ def setOpt(lookup, val):
     getOpt(lookup[:-1])[lookup[-1]] = val
 
 def getpOpt(lookup):
-    if isinstance(lookup, str):
-        lookup = lookup.split(',')
-    return reduce(operator.getitem, lookup, cfg.data)
+    if cfg.project_tab:
+        if isinstance(lookup, str):
+            lookup = lookup.split(',')
+        return reduce(operator.getitem, lookup, cfg.data)
 
 def setpOpt(lookup, val):
-    if isinstance(lookup, str):
-        lookup = lookup.split(',')
-    getpOpt(lookup[:-1])[lookup[-1]] = val
+    if cfg.project_tab:
+        if isinstance(lookup, str):
+            lookup = lookup.split(',')
+        getpOpt(lookup[:-1])[lookup[-1]] = val
 
 
 def natural_sort(l):
