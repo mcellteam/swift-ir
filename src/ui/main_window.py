@@ -894,6 +894,7 @@ class MainWindow(QMainWindow):
         logger.info('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         try:
+            self.updateToolbar()
             self.pbarLabel.setText('')
             self.pbar_widget.hide()
             self.enableAllTabs()
@@ -902,7 +903,7 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self.updateProjectTable() #+
             self.updateMenus()
-            self.updateToolbar()
+
             cfg.project_tab.updateJsonWidget()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
@@ -940,9 +941,9 @@ class MainWindow(QMainWindow):
         )
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
+        self.updateToolbar()
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
-        self.updateToolbar()
         self.tell('**** Processes Complete ****')
 
 

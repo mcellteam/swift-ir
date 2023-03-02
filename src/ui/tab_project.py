@@ -1252,7 +1252,7 @@ class ProjectTab(QWidget):
 
     def onSliderZmag(self):
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
+        # logger.info('caller: %s' % caller)
         try:
             if getpOpt('state,MANUAL_MODE'):
                 val = self.ZdisplaySlider.value()

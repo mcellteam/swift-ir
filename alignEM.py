@@ -192,7 +192,7 @@ def main():
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
     # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
     # ***************
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
