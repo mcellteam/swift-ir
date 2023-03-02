@@ -450,7 +450,7 @@ class ProjectTab(QWidget):
             self.detailsRuntime.setVisible(not self.detailsRuntime.isVisible())
             self.runtimeClabel.setText(
                 ("<b><span style='color: #ffe135;'>dt</span></b>",
-                 "<b>dt</b>")[self.detailsSNR.isHidden()])
+                 "<b>dt</b>")[self.detailsRuntime.isHidden()])
         self.runtimeClabel.clicked.connect(fn)
         self.detailsRuntime.setWordWrap(True)
         self.detailsRuntime.setStyleSheet("""
@@ -478,10 +478,10 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.snrClabel)
         hbl.addWidget(QLabel("<span style='font-size: 15px; color: #f3f6fb; "
                              "font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;'>&#183;</span>"))
-        hbl.addWidget(self.corrSpotClabel)
+        hbl.addWidget(self.runtimeClabel)
         hbl.addWidget(QLabel("<span style='font-size: 15px; color: #f3f6fb; "
                              "font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;'>&#183;</span>"))
-        hbl.addWidget(self.runtimeClabel)
+        hbl.addWidget(self.corrSpotClabel)
         self.labelsWidget.setLayout(hbl)
 
         self.detailsDetailsWidget = QWidget()
@@ -493,8 +493,8 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.detailsSection, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.detailsRuntime, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(self.detailsCorrSpots, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.detailsDetailsWidget.setLayout(hbl)
 
         vbl = QVBoxLayout()
@@ -588,7 +588,7 @@ class ProjectTab(QWidget):
         self.MA_webengine_ref.setMinimumWidth(200)
         self.MA_webengine_base.setMinimumWidth(200)
         self.MA_webengine_stage.setMinimumWidth(300)
-        self.MA_webengine_stage.setMinimumHeight(200)
+        self.MA_webengine_stage.setMinimumHeight(128)
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
         # self.MA_webengine_stage.setMouseTracking(True)
@@ -633,9 +633,9 @@ class ProjectTab(QWidget):
 
         # self.gb_actionsMA = QGroupBox('Actions')
         self.gb_actionsMA = QGroupBox()
-        fl_actionsMA = QFormLayout()
-        fl_actionsMA.setContentsMargins(0, 0, 0, 0)
-        self.gb_actionsMA.setLayout(fl_actionsMA)
+        self.fl_actionsMA = QFormLayout()
+        self.fl_actionsMA.setContentsMargins(0, 0, 0, 0)
+        self.gb_actionsMA.setLayout(self.fl_actionsMA)
 
         lab = QLabel('Method: ')
         tip = 'Automatic Alignment using SWIM'
@@ -680,7 +680,7 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.rbManHint)
         hbl.addWidget(self.rbManStrict)
         w.setLayout(hbl)
-        fl_actionsMA.addWidget(w)
+        self.fl_actionsMA.addWidget(w)
 
         self.btnClearMA = QPushButton('Clear Manual Points')
         self.btnClearMA.setMaximumHeight(20)
@@ -726,11 +726,11 @@ class ProjectTab(QWidget):
         self.btnExitMA.setMaximumHeight(20)
         self.btnExitMA.clicked.connect(cfg.main_window.enterExitManAlignMode)
 
-        fl_actionsMA.addWidget(self.btnClearMA)
-        fl_actionsMA.addWidget(self.btnSaveAndRealignMA)
-        fl_actionsMA.addWidget(self.btnResetAllMA)
-        fl_actionsMA.addWidget(self.btnSaveExitMA)
-        fl_actionsMA.addWidget(self.btnExitMA)
+        self.fl_actionsMA.addWidget(self.btnClearMA)
+        self.fl_actionsMA.addWidget(self.btnSaveAndRealignMA)
+        self.fl_actionsMA.addWidget(self.btnResetAllMA)
+        self.fl_actionsMA.addWidget(self.btnSaveExitMA)
+        self.fl_actionsMA.addWidget(self.btnExitMA)
 
 
         hbl = QHBoxLayout()
@@ -889,11 +889,11 @@ class ProjectTab(QWidget):
 
     def copySaveAlignment(self):
         logger.critical('')
-
         dt = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         path = os.path.join(cfg.data.dest(), cfg.data.curScale, 'img_staged',str(cfg.data.layer()), dt)
-        os.makedirs(path, exist_ok=True)
-        file = cfg.data.filename
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        file = cfg.data.filename()
         out = os.path.join(path, os.path.basename(file))
         logger.critical('Copying FROM %s' % str(file))
         logger.critical('Copying TO %s' % str(out))
@@ -1426,29 +1426,18 @@ class ProjectTab(QWidget):
 
         self.snr_plt_wid = QWidget()
         self.snr_plt_wid.setLayout(vbl)
-        self.snr_plt_wid.setStyleSheet('background-color: #1b1e23;')
+        self.snr_plt_wid.setStyleSheet('background-color: #1b1e23; font-weight: 550;')
 
         self._thumbnail_src = QLabel()
         self._thumbnail_aligned = QLabel()
 
         self.snrWebengine = QWebEngineView()
-        self.snrWebengine.setMinimumWidth(200)
+        self.snrWebengine.setMinimumWidth(256)
 
-        # gl = QGridLayout()
-        # gl.setContentsMargins(4, 4, 4, 4)
-        # gl.setRowStretch(0, 1)
-        # gl.setRowStretch(1, 1)
-        # gl.setColumnStretch(0, 1)
-        # gl.addWidget(self.snrWebengine, 1, 0)
-        # w2 = QWidget()
-        # w2.setLayout(gl)
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #1b1e23;')
-        # self.snrPlotSplitter.setStyleSheet('background-color: #1b1e23;')
-        # self.snrPlotSplitter.setObjectName('snrPlotSplitter')
 
         self.snrPlotSplitter.addWidget(self.snr_plt_wid)
-        # self.snrPlotSplitter.addWidget(w2)
         self.snrPlotSplitter.addWidget(self.snrWebengine)
 
 
@@ -1457,7 +1446,7 @@ class ProjectTab(QWidget):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
-        self._tabs.setStyleSheet('QTabBar::tab { height: 22px; width: 84px; }')
+        self._tabs.setStyleSheet('QTabBar::tab { height: 20px; width: 84px; }')
         self._tabs.setDocumentMode(True)
         self._tabs.setTabsClosable(True)
         self._tabs.setObjectName('project_tabs')

@@ -94,13 +94,17 @@ class SnrPlot(QWidget):
         self.selected_scale = None
 
         self.checkboxes_widget = QWidget()
+        self.checkboxes_widget.setMaximumHeight(24)
         self.checkboxes_hlayout = QHBoxLayout()
         self.checkboxes_hlayout.setContentsMargins(0, 0, 0, 0)
         self.checkboxes_widget.setLayout(self.checkboxes_hlayout)
 
         self.layout = QGridLayout()
-        self.layout.addWidget(self.view, 0, 0, 0, 0)
-        self.layout.addWidget(self.checkboxes_widget, 0, 0, 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
+        self.layout.addWidget(self.view, 0, 0, 2, 2)
+        self.layout.addWidget(self.checkboxes_widget, 0, 1, 1, 1,
+                              alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        self.layout.setRowStretch(0,0)
+        self.layout.setRowStretch(1,1)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 

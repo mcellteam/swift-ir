@@ -35,7 +35,7 @@ class FileBrowser(QWidget):
 
         self.treeview.setColumnWidth(0, 600)
         self.initUI()
-        self.treeview.selectionModel().selectionChanged.connect(self.selectionChanged)
+        # self.treeview.selectionModel().selectionChanged.connect(self.selectionChanged)
 
     def setRootHome(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(os.path.expanduser('~')))
@@ -121,10 +121,10 @@ class FileBrowser(QWidget):
         # vbl.setStretch(1,0)
         self.setLayout(vbl)
 
-    def selectionChanged(self):
-        cfg.selected_file = self.getSelectionPath()
-        logger.info(f'Project Selection Changed! {cfg.selected_file}')
-        cfg.main_window.setSelectionPathText(cfg.selected_file)
+    # def selectionChanged(self):
+    #     cfg.selected_file = self.getSelectionPath()
+    #     logger.info(f'Project Selection Changed! {cfg.selected_file}')
+    #     # cfg.tab.setSelectionPathText(cfg.selected_file)
 
     def showSelection(self):
         logger.info('showSelection:')

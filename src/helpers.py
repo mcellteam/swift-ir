@@ -763,7 +763,7 @@ def create_project_structure_directories(destination, scales) -> None:
         cfg.main_window.hud('Creating directories for %s...' % scale)
         src_path = os.path.join(subdir_path, 'img_src')
         aligned_path = os.path.join(subdir_path, 'img_aligned')
-        staged_path = os.path.join(subdir_path, 'img_staged')
+        # staged_path = os.path.join(subdir_path, 'img_staged')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
         history_path = os.path.join(subdir_path, 'history')
 
@@ -771,7 +771,7 @@ def create_project_structure_directories(destination, scales) -> None:
             os.makedirs(subdir_path)
             os.makedirs(src_path)
             os.makedirs(aligned_path)
-            os.makedirs(staged_path)
+            # os.makedirs(staged_path)
             os.makedirs(bias_data_path)
             os.makedirs(history_path)
         except:

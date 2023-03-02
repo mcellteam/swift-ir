@@ -31,7 +31,7 @@ import pyqtgraph.console
 import pyqtgraph as pg
 import qtawesome as qta
 from rechunker import rechunk
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QEventLoop
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor
 from qtpy.QtWebEngineWidgets import *
@@ -94,7 +94,7 @@ logger = logging.getLogger(__name__)
 class MainWindow(QMainWindow):
     resized = Signal()
     keyPressed = Signal(int)
-    alignmentFinished = Signal()
+    # alignmentFinished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
 
@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
         # self.initView()
         self.initLaunchTab()
 
-        self.alignmentFinished.connect(self.updateProjectTable)
+        # self.alignmentFinished.connect(self.updateProjectTable)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
         self.activateWindow()
@@ -262,8 +262,6 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 logger.critical('  Refreshing...')
                 if cfg.project_tab._tabs.currentIndex() == 0:
-                    # cfg.project_tab.webengine.setUrl(QUrl(cfg.emViewer.get_viewer_url()))
-                    # cfg.project_tab.webengine.reload()
                     delay = time.time() - self._lastRefresh
                     logger.info('delay: %s' % str(delay))
                     if self._lastRefresh and (delay < 2):
@@ -271,11 +269,13 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.project_tab.refreshTab()
                     self._lastRefresh = time.time()
-                if cfg.project_tab._tabs.currentIndex() in (1, 2, 3):
-                    cfg.project_tab.refreshTab()
                 self.hud.done()
+                self.updateToolbar()    #0301+
+                self.updateEnabledButtons()    #0301+
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
+            elif self._getTabType() == 'QWebEngineView':
+                self.globTabs.currentWidget().reload()
             elif self._getTabType() == 'OpenProject':
                 configure_project_paths()
                 self._getTabObject().user_projects.set_data()
@@ -832,37 +832,6 @@ class MainWindow(QMainWindow):
         else:                    self.tell('  Δ AVG. SNR : %.3f (BETTER)' % diff_avg)
 
 
-    def onAlignmentEnd(self, start, end):
-        logger.info('Running Post-Alignment Tasks...')
-        self.alignmentFinished.emit()
-        try:
-            self.pbarLabel.setText('')
-            self.pbar_widget.hide()
-            self.enableAllTabs()
-            self.updateToolbar()
-            self.updateSNRPlot()
-            self.updateEnabledButtons()
-            self.updateToolbar()
-            self.updateMenus()
-            cfg.project_tab.updateJsonWidget()
-            self.present_snr_results(start=start, end=end)
-            prev_snr_average = cfg.data.snr_prev_average()
-            snr_average = cfg.data.snr_average()
-            self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
-
-            self.update_data_cache()
-            self.dataUpdateWidgets()
-
-            self._showSNRcheck()
-
-        except:
-            print_exception()
-        finally:
-            self._working = False
-            if not getpOpt('state,MANUAL_MODE'):
-                self.enableAllTabs()
-                self._autosave()
-
     def update_data_cache(self):
         logger.info('')
         # if self._isProjectTab():
@@ -921,6 +890,38 @@ class MainWindow(QMainWindow):
         self.stopNgServer()  # 0202-
 
 
+    def onAlignmentEnd(self, start, end):
+        logger.info('Running Post-Alignment Tasks...')
+        # self.alignmentFinished.emit()
+        try:
+            self.pbarLabel.setText('')
+            self.pbar_widget.hide()
+            self.enableAllTabs()
+
+            self.updateSNRPlot()
+            self.updateEnabledButtons()
+            self.updateProjectTable() #+
+            self.updateMenus()
+            self.updateToolbar()
+            cfg.project_tab.updateJsonWidget()
+            self.present_snr_results(start=start, end=end)
+            prev_snr_average = cfg.data.snr_prev_average()
+            snr_average = cfg.data.snr_average()
+            self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
+            self.update_data_cache()
+            self.dataUpdateWidgets()
+
+            self._showSNRcheck()
+
+        except:
+            print_exception()
+        finally:
+            self._working = False
+            if not getpOpt('state,MANUAL_MODE'):
+                self.enableAllTabs()
+                self._autosave()
+
+
     def alignAll(self):
         '''MUST handle bounding box for partial-stack alignments.'''
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
@@ -941,6 +942,7 @@ class MainWindow(QMainWindow):
         #     self.present_snr_results()
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
+        self.updateToolbar()
         self.tell('**** Processes Complete ****')
 
 
@@ -1556,13 +1558,13 @@ class MainWindow(QMainWindow):
 
                 if cfg.project_tab.detailsSection.isVisible():
                     txt_ = f"""
-                    Filename:  <b><span style='color: #ffe135;'>{cfg.data.filename_basename()}</span></b><br>
-                    Reference:  <b><span style='color: #ffe135;'>{cfg.data.reference_basename()}</span></b><br>
-                    Last Aligned: {cfg.data.datetime().rjust(23)}"""
+                    Filename:  <span style='color: #ffe135;'>{cfg.data.filename_basename()}</span><br>
+                    Reference:  <span style='color: #ffe135;'>{cfg.data.reference_basename()}</span><br>
+                    Last Aligned: <span style='color: #ffe135;'>{cfg.data.datetime().rjust(23)}</span><br>"""
                     method = cfg.data.selected_method()
-                    if method == 'Auto-SWIM':        txt_ += '<br>Method:&nbsp;Automatic&nbsp;SWIM'
-                    elif method == 'Manual-Hint': txt_ += '<br>Method:&nbsp;Manual,&nbsp;Hint'
-                    elif method == 'Manual-Strict':                      txt_ += '<br>Method:&nbsp;Manual, Strict'
+                    if method == 'Auto-SWIM':        txt_ += "Method:&nbsp;<span style='color: #ffe135;'>Automatic&nbsp;SWIM</span><br>"
+                    elif method == 'Manual-Hint':    txt_ += "Method:&nbsp;<span style='color: #ffe135;'>Manual,&nbsp;Hint</span><br>"
+                    elif method == 'Manual-Strict':  txt_ += "Method:&nbsp;<span style='color: #ffe135;'>Manual, Strict</span>"
                     txt_ += f"""<br>Reject: {('[ ]', "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
                     cfg.project_tab.detailsSection.setText(txt_)
 
@@ -2293,32 +2295,13 @@ class MainWindow(QMainWindow):
 
 
     def detachNeuroglancer(self):
-        # from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
-        logger.info('')
-        if getpOpt('state,MANUAL_MODE') == True:
-            return
-
-        if self._isProjectTab() or self._isZarrTab():
-            logger.info('Creating QWebEngineView...')
-
-
-
-            if cfg.emViewer:
-                self.detachedNg = WebPage(url=cfg.emViewer.url())
-                # logger.info('Showing QWebEngineView...')
-                # self.webengineview.load(QUrl())
-                # self.webengineview.show()
-
-            else:
-                logger.warning('cfg.emViewer does not exist')
-
-            # self.detachedNg = WebPage(parent=self, url=cfg.emViewer.url())
-            # self.detachedNg.open(url=cfg.emViewer.url())
-        else:
-            if not ng.server.is_server_running():
-                logger.warning('Neuroglancer is not running.')
-            else:
-                logger.warning('Wrong tab type.')
+        if self._isProjectTab():
+            if getpOpt('state,MANUAL_MODE') == True:
+                return
+            if self._isProjectTab() or self._isZarrTab():
+                logger.info('Creating QWebEngineView...')
+                if cfg.emViewer:
+                    self.detachedNg = WebPage(url=cfg.emViewer.url())
 
 
     def openDetatchedZarr(self):
@@ -2610,40 +2593,47 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
 
-    def html_view(self):
-        app_root = self.get_application_root()
-        html_f = os.path.join(app_root, 'src', 'resources', 'remod.html')
-        with open(html_f, 'r') as f:
-            html = f.read()
-        self.browser_web.setHtml(html)
-        self.main_stack_widget.setCurrentIndex(1)
+    # def html_view(self):
+    #     app_root = self.get_application_root()
+    #     html_f = os.path.join(app_root, 'src', 'resources', 'remod.html')
+    #     with open(html_f, 'r') as f:
+    #         html = f.read()
+    #     self.browser_web.setHtml(html)
+    #     self.main_stack_widget.setCurrentIndex(1)
 
     def html_resource(self, resource='features.html', title='Features'):
+
         html_f = os.path.join(self.get_application_root(), 'src', 'resources', resource)
         with open(html_f, 'r') as f:
             html = f.read()
 
         webengine = QWebEngineView()
-        webengine.setHtml(html)
-
-        w = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-
-        vbl.addWidget(webengine)
-        w.setLayout(vbl)
-        self.globTabs.addTab(w, title)
-        self._setLastTab()
-        # self.main_stack_widget.setCurrentIndex(4)
-
-
-    def documentation_view(self):
-        self.tell('Opening Documentation...')
-        browser = WebBrowser()
-        browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md'))
-        self.globTabs.addTab(browser, 'Documentation')
+        webengine.setFocusPolicy(Qt.StrongFocus)
+        webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd()+os.path.sep))
+        webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.globTabs.addTab(webengine, title)
         self._setLastTab()
         self._forceHideControls()
+        self._forceHidePython()
+
+    def url_resource(self, url, title):
+        webengine = QWebEngineView()
+        webengine.setFocusPolicy(Qt.StrongFocus)
+        webengine.setUrl(QUrl(url))
+        webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.globTabs.addTab(webengine, title)
+        self._setLastTab()
+        self._forceHideControls()
+        self._forceHidePython()
+
 
 
     def remote_view(self):
@@ -2660,10 +2650,13 @@ class MainWindow(QMainWindow):
         self.main_stack_widget.setCurrentIndex(1)
 
 
-    def view_swiftir_examples(self):
-        self.browser_web.setUrl(
-            QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/docs/user/command_line/examples/README.md'))
-        self.main_stack_widget.setCurrentIndex(1)
+    # def view_swiftir_examples(self):
+    #     self.browser_web.setUrl(
+    #         QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/docs/user/command_line/examples/README.md'))
+    #     self.main_stack_widget.setCurrentIndex(1)
+
+    def view_zarr_drawing(self):
+        path = 'https://github.com/zarr-developers/zarr-specs/blob/main/docs/v3/core/terminology-read.excalidraw.png'
 
 
     def view_swiftir_commands(self):
@@ -2763,7 +2756,7 @@ class MainWindow(QMainWindow):
         self.browser = WebBrowser(self)
         self.browser.setObjectName('web_browser')
         self.browser.setUrl(QUrl('https://www.google.com'))
-        self.globTabs.addTab(self.browser, 'Web Browser')
+        self.globTabs.addTab(self.browser, 'Google')
         self._setLastTab()
         # self._getTabObject()
         self._forceHideControls()
@@ -3393,7 +3386,8 @@ class MainWindow(QMainWindow):
         self.globTabs.show() #nec?
         self.enableAllTabs()  #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
-        self.clearCorrSpotsDrawer()
+        if self.correlation_signals.isVisible():
+            self.clearCorrSpotsDrawer()
 
         # if self.globTabs.count() == 0:
         #     cfg.project_tab = None
@@ -3446,6 +3440,14 @@ class MainWindow(QMainWindow):
             self.brightnessSlider.setValue(cfg.data.brightness())
             self.contrastSlider.setValue(cfg.data.contrast())
             self.dataUpdateWidgets()
+            ####
+            self.updateMenus()
+            self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
+            self.updateToolbar()
+            self.reload_scales_combobox()
+            self.updateEnabledButtons()
+            self.updateNotes()
+            ####
             cfg.project_tab.initNeuroglancer()
         # else:
         #     cfg.project_tab = None
@@ -3460,12 +3462,12 @@ class MainWindow(QMainWindow):
             self.set_nglayout_combo_text(layout='4panel')
             cfg.zarr_tab.viewer.bootstrap()
 
-        self.updateMenus()
-        self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
-        self.updateToolbar()
-        self.reload_scales_combobox()
-        self.updateEnabledButtons()
-        self.updateNotes()
+        # self.updateMenus()
+        # self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
+        # self.updateToolbar()
+        # self.reload_scales_combobox()
+        # self.updateEnabledButtons()
+        # self.updateNotes()
 
 
     def _onGlobTabClose(self, index):
@@ -3681,10 +3683,6 @@ class MainWindow(QMainWindow):
         self.exportCafmAction = QAction('Cumulative Affines...', self)
         self.exportCafmAction.triggered.connect(self.export_cafms)
         exportMenu.addAction(self.exportCafmAction)
-
-        self.ngRemoteAction = QAction('Remote Neuroglancer', self)
-        self.ngRemoteAction.triggered.connect(self.remote_view)
-        fileMenu.addAction(self.ngRemoteAction)
 
         self.saveAction = QAction('&Save Project', self)
         self.saveAction.triggered.connect(self.save)
@@ -3969,6 +3967,12 @@ class MainWindow(QMainWindow):
         self.hardRestartNgNgAction.triggered.connect(self.hardRestartNg)
         ngMenu.addAction(self.hardRestartNgNgAction)
 
+        action = QAction('Remote NG Client', self)
+        action.triggered.connect(
+            lambda: self.url_resource(url='https://neuroglancer-demo.appspot.com/',
+                                      title='Remote NG Client'))
+        ngMenu.addAction(action)
+
         actionsMenu = self.menu.addMenu('Actions')
 
         self.rescaleAction = QAction('Rescale...', self)
@@ -4132,30 +4136,68 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textbrowser)
         menu.addAction(action)
 
-
         action = QAction('SWiFT-IR Examples', self)
-        action.triggered.connect(self.view_swiftir_examples)
+        action.triggered.connect(
+            lambda: self.url_resource(url="https://github.com/mcellteam/swift-ir/blob/development_ng/docs/user/command_line/examples/README.md", title='CLI Examples'))
         helpMenu.addAction(action)
+
+        self.featuresAction = QAction('AlignEM-SWiFT Features', self)
+        self.featuresAction.triggered.connect(lambda: self.html_resource(resource='features.html', title='Help: Features'))
+        helpMenu.addAction(self.featuresAction)
 
         # self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
         # self.reloadBrowserAction.triggered.connect(self.browser_reload)
         # helpMenu.addAction(self.reloadBrowserAction)
 
+        zarrHelpMenu = helpMenu.addMenu('Zarr Help')
+
+        action = QAction('Zarr Debrief', self)
+        action.triggered.connect(lambda: self.html_resource(resource='zarr-drawing.html', title='Help: Zarr'))
+        zarrHelpMenu.addAction(action)
+
+        action = QAction('Zarr/NGFF (Nature Methods, 2021)', self)
+        action.triggered.connect(lambda: self.html_resource(resource='zarr-nature-2021.html', title="Help: NGFF"))
+        zarrHelpMenu.addAction(action)
+
         action = QAction('Remod Help', self)
-        action.triggered.connect(self.html_view)
+        action.triggered.connect(lambda: self.html_resource(resource='remod.html', title='Help: Remod (beta)'))
         helpMenu.addAction(action)
 
-        self.featuresAction = QAction('AlignEM-SWiFT Features', self)
-        self.featuresAction.triggered.connect(lambda: self.html_resource(resource='features.html', title='Features'))
-        helpMenu.addAction(self.featuresAction)
-
-        self.documentationAction = QAction('Documentation', self)
-        self.documentationAction.triggered.connect(self.documentation_view)
+        self.documentationAction = QAction('GitHub', self)
+        action.triggered.connect(lambda: self.url_resource(url='https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md', title='Source Code (GitHub)'))
         helpMenu.addAction(self.documentationAction)
 
-        self.googleAction = QAction('Google', self)
-        self.googleAction.triggered.connect(self.google)
-        helpMenu.addAction(self.googleAction)
+
+        researchGroupMenu = helpMenu.addMenu('Our Research Groups')
+
+        action = QAction('CNL @ Salk', self)
+        action.triggered.connect(lambda: self.url_resource(url='https://cnl.salk.edu/', title='Web: CNL'))
+        researchGroupMenu.addAction(action)
+
+        action = QAction('Texas Advanced Computing Center', self)
+        action.triggered.connect(lambda: self.url_resource(url='https://3dem.org/workbench', title='Web: TACC'))
+        researchGroupMenu.addAction(action)
+
+        action = QAction('UTexas @ Austin', self)
+        action.triggered.connect(lambda: self.url_resource(url='https://synapseweb.clm.utexas.edu/harrislab', title='Web: UTexas'))
+        researchGroupMenu.addAction(action)
+
+        action = QAction('MMBIoS (UPitt)', self)
+        action.triggered.connect(lambda: self.url_resource(url='https://mmbios.pitt.edu/', title='Web: MMBioS'))
+        researchGroupMenu.addAction(action)
+
+        action = QAction('MCell4 Pre-print', self)
+        action.triggered.connect(
+            lambda: self.html_resource(resource="mcell4-preprint.html", title='MCell4 Pre-print (2023)'))
+        researchGroupMenu.addAction(action)
+
+        # self.googleAction = QAction('Google', self)
+        # self.googleAction.triggered.connect(self.google)
+        # helpMenu.addAction(self.googleAction)
+
+        action = QAction('Google', self)
+        action.triggered.connect(lambda: self.url_resource(url='https://www.google.com', title='Google'))
+        helpMenu.addAction(action)
 
 
     # @Slot()
@@ -5602,13 +5644,6 @@ class MainWindow(QMainWindow):
         self._splitter.setStretchFactor(2, 3)
         self._splitter.setStretchFactor(3, 1)
 
-        self.browser_html_widget = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-        self.browser_html = QWebEngineView()
-        vbl.addWidget(self.browser_html)
-        self.browser_html_widget.setLayout(vbl)
-
         btn = QPushButton()
         btn.setStatusTip('Go Back')
         btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5618,18 +5653,12 @@ class MainWindow(QMainWindow):
 
         '''Documentation Panel'''
         self.browser_web = QWebEngineView()
-        # self.browser = WebPage(self)
         self._buttonExitBrowserWeb = QPushButton()
         self._buttonExitBrowserWeb.setFixedSize(18, 18)
         self._buttonExitBrowserWeb.setIcon(qta.icon('fa.arrow-left', color=ICON_COLOR))
         self._buttonExitBrowserWeb.setStyleSheet('font-size: 9px;')
         self._buttonExitBrowserWeb.setFixedSize(std_button_size)
         self._buttonExitBrowserWeb.clicked.connect(self.exit_docs)
-        # self._readmeButton = QPushButton("README.md")
-        # self._readmeButton.setFixedSize(50, 18)
-        # self._readmeButton.setStyleSheet('font-size: 9px;')
-        # self._readmeButton.setFixedSize(std_button_size)
-        # self._readmeButton.clicked.connect(self.documentation_view)
         self.browser_widget = QWidget()
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -5733,39 +5762,6 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-        '''Remote Neuroglancer Viewer (_wdg_remote_viewer)'''
-        self._wdg_remote_viewer = QWidget()
-        self.browser_remote = QWebEngineView()
-        self._btn_remote_exit = QPushButton('Back')
-        self._btn_remote_exit.setFixedSize(std_button_size)
-        self._btn_remote_exit.clicked.connect(self.exit_remote)
-        self._btn_remote_reload = QPushButton('Reload')
-        self._btn_remote_reload.setFixedSize(std_button_size)
-        self._btn_remote_reload.clicked.connect(self.reload_remote)
-
-        vbl = QVBoxLayout()
-        vbl.addWidget(self.browser_remote)
-        hbl = QHBoxLayout()
-        hbl.addWidget(self._btn_remote_exit, alignment=Qt.AlignmentFlag.AlignLeft)
-        hbl.addWidget(self._btn_remote_reload, alignment=Qt.AlignmentFlag.AlignLeft)
-        # hbl.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-        vbl.addLayout(hbl)
-        self._wdg_remote_viewer.setLayout(vbl)
-
-        '''Demos Panel (_wdg_demos)'''
-        # get rid of this?
-        self._wdg_demos = QWidget()
-        self._btn_demos_exit = QPushButton('Back')
-        self._btn_demos_exit.setFixedSize(std_button_size)
-        self._btn_demos_exit.clicked.connect(self.exit_demos)
-
-        vbl = QVBoxLayout()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
-        hbl.addWidget(self._btn_demos_exit)
-        vbl.addLayout(hbl)
-        self._wdg_demos.setLayout(vbl)
-
         self._splitterSplitter = QSplitter(Qt.Orientation.Vertical)
         self._splitterSplitter.splitterMoved.connect(self.splittersHaveMoved)
         self._splitterSplitter.addWidget(self.globTabs)
@@ -5783,20 +5779,15 @@ class MainWindow(QMainWindow):
         self.main_panel = QWidget()
         vbl = QVBoxLayout()
         vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.addWidget(self.globTabs)
-        # vbl.addWidget(self._actions_widget)
-        # vbl.addWidget(self._splitter)
         vbl.addWidget(self._splitterSplitter)
         vbl.addWidget(self._showHideFeatures)
+        self.main_panel.setLayout(vbl)
 
         #Todo keep this main_stack_widget for now, repurpose later
         self.main_stack_widget = QStackedWidget(self)               #____INDEX____
         self.main_stack_widget.addWidget(self.main_panel)           # (0)
         self.main_stack_widget.addWidget(self.browser_widget)       # (1)
-        self.main_stack_widget.addWidget(self._wdg_demos)           # (2)
-        self.main_stack_widget.addWidget(self._wdg_remote_viewer)   # (3)
-        self.main_stack_widget.addWidget(self.browser_html_widget)  # (4)
-        self.main_panel.setLayout(vbl)
+
         # self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
         self.setCentralWidget(self.main_stack_widget)
         # QShortcut(QKeySequence('Ctrl+M'), self.main_stack_widget, self.enterExitManAlignMode)
