@@ -195,9 +195,7 @@ class HeadupDisplay(QWidget):
             border-width: 0px;
             border-radius: 2px;
             font-size: 9px;
-            
-            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-            
+            font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
             margin: 0px 0px 0px 0px;
         """)
 
@@ -215,9 +213,7 @@ class HeadupDisplay(QWidget):
             border-width: 1px;
             border-radius: 4px;  
             font-size: 9px;
-            
-            font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-                  
+            font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
             margin: 0px 0px 0px 0px;
         """)
 

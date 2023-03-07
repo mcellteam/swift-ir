@@ -59,7 +59,7 @@ class FileBrowser(QWidget):
 
 
     def initUI(self):
-        with open('src/styles/controls.qss', 'r') as f:
+        with open('src/style/controls.qss', 'r') as f:
             style = f.read()
 
         self._btn_showFileBrowser = QPushButton('Hide Files')
