@@ -1,0 +1,39 @@
+
+QGroupBox {
+  background-color: #003b5c;
+  color: #f3f6fb;
+  border-radius: 5px;
+  font-family: Arial, Helvetica, sans-serif;
+
+}
+
+QTextEdit {
+  background-color: #003b5c;
+  color: #f3f6fb;
+  border-radius: 5px;
+  font-family: Arial, Helvetica, sans-serif;
+
+}
+
+QLabel {
+  color: #f3f6fb;
+}
+
+QSpinBox {
+  color: #141414;
+  font-size: 11px;
+
+}
+
+QDoubleSpinBox {
+  color: #141414;
+  font-size: 11px;
+
+}
+
+
+QComboBox {
+  font-size: 11px;
+
+}
+
