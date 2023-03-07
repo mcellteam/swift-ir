@@ -78,6 +78,7 @@ from src.ui.tab_browser import WebBrowser
 from src.viewer_em import EMViewer
 from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnail import Thumbnail, SnrThumbnail, CorrSignalThumbnail
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
 
 # from src.ui.components import AutoResizingTextEdit
 from src.mendenhall_protocol import Mendenhall
@@ -387,7 +388,6 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()
         self.cpanel.show()
         # self.matchpointControls.hide()
-        cfg.MP_MODE = False
         setpOpt('state,MANUAL_MODE', False)
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
@@ -464,11 +464,9 @@ class MainWindow(QMainWindow):
 
     def updateCorrSpotsDrawer(self):
         caller = inspect.stack()[1].function
-        logger.info('')
+        # logger.info('')
         # logger.info('caller: %s' % caller)
-        # logger.critical('')
         if self._isProjectTab():
-
             snr_vals = cfg.data.snr_components()
             thumbs = cfg.data.get_corr_spot_files()
             n = len(thumbs)
@@ -489,6 +487,7 @@ class MainWindow(QMainWindow):
                     self.corr_signals[i].show()
                 else:
                     self.corr_signals[i].hide()
+
 
     def clearCorrSpotsDrawer(self):
         logger.info('')
@@ -514,7 +513,6 @@ class MainWindow(QMainWindow):
                 #     self.corr_signals[i].show()
                 # else:
                 #     self.corr_signals[i].hide()
-
 
 
     def fn_shader_control(self):
@@ -1380,8 +1378,8 @@ class MainWindow(QMainWindow):
     def apply_default_style(self):
         cfg.THEME = 0
         # self.tell('Setting Default Theme')
-        # self.main_stylesheet = os.path.abspath('src/styles/default.qss')
-        self.main_stylesheet = os.path.abspath('src/styles/default.qss')
+        # self.main_stylesheet = os.path.abspath('src/style/default.qss')
+        self.main_stylesheet = os.path.abspath('src/style/default.qss')
         with open(self.main_stylesheet, 'r') as f:
             style = f.read()
         self.setStyleSheet(style)
@@ -1561,12 +1559,13 @@ class MainWindow(QMainWindow):
                     txt_ = f"""
                     Filename:  <span style='color: #ffe135;'>{cfg.data.filename_basename()}</span><br>
                     Reference:  <span style='color: #ffe135;'>{cfg.data.reference_basename()}</span><br>
-                    Last Aligned: <span style='color: #ffe135;'>{cfg.data.datetime().rjust(23)}</span><br>"""
+                    Last Aligned: <span style='color: #ffe135;'>{
+                    ('N/A'.rjust(23), cfg.data.datetime().rjust(23))[cfg.data.is_aligned()]}</span><br>"""
                     method = cfg.data.selected_method()
                     if method == 'Auto-SWIM':        txt_ += "Method:&nbsp;<span style='color: #ffe135;'>Automatic&nbsp;SWIM</span><br>"
                     elif method == 'Manual-Hint':    txt_ += "Method:&nbsp;<span style='color: #ffe135;'>Manual,&nbsp;Hint</span><br>"
                     elif method == 'Manual-Strict':  txt_ += "Method:&nbsp;<span style='color: #ffe135;'>Manual, Strict</span>"
-                    txt_ += f"""<br>Reject: {('[ ]', "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
+                    txt_ += f"""Reject: {('[ ]', "<b><span style='color: #ffe135;'>[X]</span></b>")[cfg.data.skipped()]}"""
                     cfg.project_tab.detailsSection.setText(txt_)
 
                 if cfg.project_tab.detailsAFM.isVisible():
@@ -1966,6 +1965,9 @@ class MainWindow(QMainWindow):
     def onScaleChange(self):
         caller = inspect.stack()[1].function
         logger.critical(f'Changing Scales (caller: {caller})...')
+
+
+
         if not self._working:
             if caller != 'OnStartProject':
                 # self.jump_to(cfg.data.layer())
@@ -1989,14 +1991,19 @@ class MainWindow(QMainWindow):
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
+        logger.info('caller: %s' %caller)
         if caller in ('main', 'scale_up', 'scale_down'):
             if self._isProjectTab():
-                if getpOpt('state,MANUAL_MODE') == False:
-                    if self._scales_combobox_switch:
-                        logger.info(f'caller: {caller}')
-                        index = self._changeScaleCombo.currentIndex()
-                        cfg.data.set_scale(cfg.data.scales()[index])
-                        self.onScaleChange() #0129-
+                mode = getpOpt('state,MANUAL_MODE')
+                if mode:
+                    setpOpt('state,MANUAL_MODE', False)
+                    self.exit_man_mode()
+
+                if self._scales_combobox_switch:
+                    logger.info(f'caller: {caller}')
+                    index = self._changeScaleCombo.currentIndex()
+                    cfg.data.set_scale(cfg.data.scales()[index])
+                    self.onScaleChange() #0129-
 
 
     def fn_ng_layout_combobox(self) -> None:
@@ -2923,7 +2930,7 @@ class MainWindow(QMainWindow):
     #     self.corrspot_q3.set_data(path=cfg.data.corr_spot_q3_path(s=s, l=l), snr=snr_vals[3])
 
 
-    def enterExitManAlignMode(self, force_exit=False):
+    def enterExitManAlignMode(self):
         #Todo REFACTOR
 
         if cfg.data:
@@ -2934,43 +2941,51 @@ class MainWindow(QMainWindow):
 
             if self._isProjectTab():
                 # self.shutdownNeuroglancer()
-                if (not getpOpt('state,MANUAL_MODE')) and (not force_exit):
-                    if cfg.data.is_aligned_and_generated():
-                        logger.critical('Entering Manual Align Mode...')
-                        self.tell('Entering Manual Align Mode...')
-                        self.stopPlaybackTimer()
-                        # del cfg.emViewer  # 0216+
-                        self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
-                        self.alignMatchPointAction.setText('Exit Manual Align Mode')
-                        # self.cpanel.setVisible(False)
-                        # self.matchpointControls.setVisible(True)
-                        self._changeScaleCombo.setEnabled(False)
-                        self.matchpoint_text_snr.setText(cfg.data.snr_report())
-                        self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
-                        self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                        cfg.MP_MODE = True
-                        setpOpt('state,MANUAL_MODE', True)
-                        pixmap = QPixmap('src/resources/cursor_circle.png')
-                        cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-                        QApplication.setOverrideCursor(cursor)
-                        cfg.project_tab.onEnterManualMode()
-                    else:
-                        self.warn('Alignment must be generated before using Manual Point Alignment method.')
-                else:
-                    logger.critical('Exiting Manual Align Mode...')
-                    self.tell('Exiting Manual Align Mode...')
-                    self.setWindowTitle(self.window_title)
-                    cfg.MP_MODE = False
-                    setpOpt('state,MANUAL_MODE', False)
-                    self.alignMatchPointAction.setText('Align Manually')
-                    # self.cpanel.setVisible(True)
-                    # self.matchpointControls.setVisible(False)
-                    self._changeScaleCombo.setEnabled(True)
-                    self.dataUpdateWidgets()
-                    QApplication.restoreOverrideCursor()
-                    cfg.project_tab.onExitManualMode()
+                if not getpOpt('state,MANUAL_MODE'):
+                    self.enter_man_mode()
 
-                self.updateToolbar()
+                else:
+                    self.exit_man_mode()
+                # self.updateToolbar()
+
+    def enter_man_mode(self):
+        if cfg.data.is_aligned_and_generated():
+            logger.critical('Entering Manual Align Mode...')
+            self.tell('Entering Manual Align Mode...')
+            self.stopPlaybackTimer()
+            self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
+            self.alignMatchPointAction.setText('Exit Manual Align Mode')
+            self.matchpoint_text_snr.setText(cfg.data.snr_report())
+            self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
+            self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
+            pixmap = QPixmap('src/resources/cursor_circle.png')
+            cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            QApplication.setOverrideCursor(cursor)
+            setpOpt('state,MANUAL_MODE', True)
+            cfg.project_tab.onEnterManualMode()
+
+        else:
+            self.warn('Alignment must be generated before using Manual Point Alignment method.')
+
+    def exit_man_mode(self):
+        logger.critical('Exiting Manual Align Mode...')
+        self.tell('Exiting Manual Align Mode...')
+        self.setWindowTitle(self.window_title)
+        setpOpt('state,MANUAL_MODE', False)
+        self.alignMatchPointAction.setText('Align Manually')
+        self._changeScaleCombo.setEnabled(True)
+        self.dataUpdateWidgets()
+        QApplication.restoreOverrideCursor()
+        # cfg.project_tab.onExitManualMode()
+        cfg.project_tab.MA_ptsListWidget_ref.clear()
+        cfg.project_tab.MA_ptsListWidget_base.clear()
+        cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
+        cfg.project_tab.MA_splitter.hide()
+        cfg.project_tab.ng_browser_container.show()
+        cfg.project_tab.ngVertLab.setStyleSheet('')
+        cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
+        cfg.project_tab.initNeuroglancer()
+
 
 
     def clear_match_points(self):
@@ -3292,8 +3307,7 @@ class MainWindow(QMainWindow):
         # self.extra_header_text_label.hide()
 
         self._al_unal_label_widget = QWidget()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(self.label_toolbar_resolution)
         hbl.addWidget(self.aligned_label)
         hbl.addWidget(self.unaligned_label)
@@ -4463,8 +4477,7 @@ class MainWindow(QMainWindow):
         lab = QLabel('Section:')
         # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(lab, alignment=right)
         hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(self._prevSectionBtn, alignment=right)
@@ -4495,8 +4508,7 @@ class MainWindow(QMainWindow):
         lab = QLabel('Scale:')
         # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(lab, alignment=right)
         hbl.addWidget(self._scaleDownButton, alignment=right)
         hbl.addWidget(self._scaleUpButton, alignment=left)
@@ -4580,8 +4592,7 @@ class MainWindow(QMainWindow):
         self._toggleAutogenerate.setStatusTip(tip)
         self._toggleAutogenerate.setChecked(True)
         self._toggleAutogenerate.setEnabled(False)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(lab, alignment=right | vcenter)
         hbl.addWidget(self._toggleAutogenerate, alignment=right | vcenter)
         self._ctlpanel_toggleAutogenerate = QWidget()
@@ -4643,8 +4654,7 @@ class MainWindow(QMainWindow):
         self._btn_regenerate.setFixedSize(normal_button_size)
 
         self._wdg_alignButtons = QWidget()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(self._btn_regenerate)
         hbl.addWidget(self._btn_alignOne)
         hbl.addWidget(self.sectionRangeSlider)
@@ -4727,7 +4737,7 @@ class MainWindow(QMainWindow):
 
 
         self.cpanel = QWidget()
-        with open('src/styles/cpanel.qss', 'r') as f:
+        with open('src/style/cpanel.qss', 'r') as f:
             self.cpanel.setStyleSheet(f.read())
 
         # self.cpanel.setStyleSheet('border-radius: 5px;')
@@ -4806,7 +4816,7 @@ class MainWindow(QMainWindow):
         std_button_size = QSize(96, 20)
         normal_button_size = QSize(64, 24)
 
-        with open('src/styles/controls.qss', 'r') as f:
+        with open('src/style/controls.qss', 'r') as f:
             lower_controls_style = f.read()
 
         '''Headup Display'''
@@ -4910,8 +4920,7 @@ class MainWindow(QMainWindow):
         self.layer_details.setObjectName('layer_details')
         self.layer_details.setReadOnly(True)
         self._tool_textInfo = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.setSpacing(1)
         # vbl.addWidget(lab, alignment=baseline)
         # vbl.addWidget(self.layer_details)
@@ -4953,8 +4962,7 @@ class MainWindow(QMainWindow):
 
         self.ng_widget = QWidget()
         self.ng_widget.setObjectName('ng_widget')
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
 
         self.splash_widget = QWidget()  # Todo refactor this it is not in use
         self.splash_widget.setObjectName('splash_widget')
@@ -4977,7 +4985,7 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.addWidget(self.permFileBrowser)
 
         # self.matchpointControls = QWidget()
-        # with open('src/styles/cpanel.qss', 'r') as f:
+        # with open('src/style/cpanel.qss', 'r') as f:
         #     self.matchpointControls.setStyleSheet(f.read())
         #
         # self.matchpointControls.setFixedSize(QSize(560,120))
@@ -5021,8 +5029,7 @@ class MainWindow(QMainWindow):
         # self.matchpoint_text_snr.setFixedHeight(24)
         self.matchpoint_text_snr.setObjectName('matchpoint_text_snr')
 
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(self.exit_matchpoint_button)
         hbl.addWidget(self.realign_matchpoint_button)
         hbl.addWidget(mp_marker_lineweight_label)
@@ -5056,8 +5063,7 @@ class MainWindow(QMainWindow):
         gb = QGroupBox()
         gb.setLayout(vbl)
 
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.addWidget(gb)
 
         # self.matchpointControls.setLayout(vbl)
@@ -5291,8 +5297,7 @@ class MainWindow(QMainWindow):
         self.correlation_signals.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
         self.correlation_signals.setWidgetResizable(True)
         w = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.setSpacing(0)
         vbl.addWidget(self.detailsTitle)
         vbl.addWidget(self.corr_spot_thumbs)
@@ -5336,7 +5341,7 @@ class MainWindow(QMainWindow):
         color: #141414;
         background-color: #f3f6fb;
         font-size: 12px;
-        font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+        font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
         '''
         self.shaderText.setStyleSheet(style)
         self.shaderSideButtons = QWidget()
@@ -5406,8 +5411,7 @@ class MainWindow(QMainWindow):
 
 
         self.brightnessSliderWidget = QWidget()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(w)
         hbl.addWidget(self.brightnessLE)
         self.brightnessSliderWidget.setLayout(hbl)
@@ -5432,9 +5436,8 @@ class MainWindow(QMainWindow):
         self.contrastSlider.valueChanged.connect(
             lambda: self.contrastLE.setText('%.2f' %self.contrastSlider.value()))
         w = QWidget()
-        vbl = QVBoxLayout()
+        vbl = VBL()
         vbl.setSpacing(1)
-        vbl.setContentsMargins(0, 0, 0, 0)
         lab = QLabel('Contrast:')
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
         vbl.addWidget(lab)
@@ -5444,8 +5447,7 @@ class MainWindow(QMainWindow):
         w.setMinimumWidth(140)
 
         self.contrastSliderWidget = QWidget()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(w)
         hbl.addWidget(self.contrastLE)
         self.contrastSliderWidget.setLayout(hbl)
@@ -5453,8 +5455,7 @@ class MainWindow(QMainWindow):
         self.bcWidget = QWidget()
         self.bcWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding,)
         self.bcWidget.setMaximumWidth(180)
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.addWidget(self.brightnessSliderWidget)
         vbl.addWidget(self.contrastSliderWidget)
         self.bcWidget.setLayout(vbl)
@@ -5469,8 +5470,7 @@ class MainWindow(QMainWindow):
         self.bcWidgetAndSideButtons.setMaximumHeight(80)
         self.bcWidgetAndSideButtons.setMaximumWidth(320)
 
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(self.shaderText)
         # hbl.addWidget(self.bcWidget)
         # hbl.addWidget(self.normalizedSliderWidget)
@@ -5571,15 +5571,13 @@ class MainWindow(QMainWindow):
         self.cpanelMainWidgets.setLayout(hbl)
         self.cpanelMainWidgets.setFixedHeight(120)
 
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.addWidget(self.cpanelMainWidgets)
 
         self.pythonConsole = PythonConsole()
         self.__dev_console = QWidget()
         # self.__dev_console.setStyleSheet("font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;")
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.addWidget(self.pythonConsole)
         self.__dev_console.setLayout(vbl)
 
@@ -5592,7 +5590,7 @@ class MainWindow(QMainWindow):
         self.__dev_console.setStyleSheet("font-size: 10px; "
                                         "background-color: #003333; "
                                         "color: #f3f6fb; "
-                                         "font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;"
+                                         "font-family: 'Andale Mono', 'Ubuntu Mono', monospace;"
 
                                         )
         lab = QLabel('Python Console')
@@ -5731,8 +5729,7 @@ class MainWindow(QMainWindow):
         #webpage
         browser_controls_widget = QWidget()
         browser_controls_widget.setFixedHeight(24)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(QLabel(' '))
         hbl.addWidget(buttonBrowserBack, alignment=right)
         hbl.addWidget(buttonBrowserForward, alignment=left)
@@ -5748,12 +5745,10 @@ class MainWindow(QMainWindow):
         hbl.addWidget(button3demCommunity, alignment=left)
         browser_controls_widget.setLayout(hbl)
 
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.addWidget(browser_controls_widget, alignment=Qt.AlignmentFlag.AlignLeft)
         vbl.addWidget(self.browser_web)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl = HBL()
         hbl.addWidget(self._buttonExitBrowserWeb, alignment=Qt.AlignmentFlag.AlignLeft)
         # hbl.addWidget(self._readmeButton, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(w)
@@ -5778,8 +5773,7 @@ class MainWindow(QMainWindow):
         self._splitterSplitter.setHandleWidth(2)
 
         self.main_panel = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
+        vbl = VBL()
         vbl.addWidget(self._splitterSplitter)
         vbl.addWidget(self._showHideFeatures)
         self.main_panel.setLayout(vbl)
