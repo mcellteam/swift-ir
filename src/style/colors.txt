@@ -1,0 +1,29 @@
+#1b1e23 - Duron Black of Night (https://encycolorpedia.com/1b1e23)
+#141414 - Chinese Black (darker than Duron)
+#f3f6fb - New Snow White (https://www.color-name.com/snow-white.color)
+#004060 - drafting blue
+#808080 - #128 grey
+
+#2774ae - Blue
+#ffd100 - Gold
+#8bb8e8 - Lighter Blue
+#daebfe - Lightest Blue
+#003b5c - Darkest Blue
+
+(https://brand.ucla.edu/identity/colors)
+
+#ebecf0 - "bright" grey
+#ffcccb - very light red
+#ede9e8 - my dirty white
+#708090 - (light) slate grey
+#39ff14 - neon green
+#00BF00 - pure green
+#969696 - medium grey
+#0096ff - bright blue
+
+#161c20 - dark charcoal
+#003333 - dark green
+
+
+regex to remove empty lines: ^\s*^
+
