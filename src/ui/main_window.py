@@ -54,8 +54,8 @@ from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
 from src.thumbnailer import Thumbnailer
 from src.generate_scales_zarr import generate_zarr_scales
-from src.helpers import setOpt, getOpt, getpOpt, setpOpt,  print_exception, get_scale_val, natural_sort, \
-    make_affine_widget_HTML, \
+from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exception, get_scale_val, \
+    natural_sort, make_affine_widget_HTML,  \
     is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, get_appdir, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, configure_project_paths, handleError, \
@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
             logger.info('')
             if checked:
                 if self._isProjectTab():
-                    if getpOpt('state,MANUAL_MODE'):
+                    if getData('state,MANUAL_MODE'):
                         # cfg.project_tab.MA_viewer_stage.initViewerSbs()
                         # if self.rb0.isChecked():
                         #     cfg.project_tab.MA_viewer_stage.initViewerSlim(force_xy=True)
@@ -211,8 +211,6 @@ class MainWindow(QMainWindow):
     # def neuroglancer_configuration_0(self):
     #
     #     # logger.info('')
-    #
-    #
     #
     # def neuroglancer_configuration_1(self):
     #     logger.critical(f'caller:{inspect.stack()[1].function}')
@@ -388,7 +386,7 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()
         self.cpanel.show()
         # self.matchpointControls.hide()
-        setpOpt('state,MANUAL_MODE', False)
+        setData('state,MANUAL_MODE', False)
         self.main_stack_widget.setCurrentIndex(0)
         self._changeScaleCombo.setEnabled(True)
         cfg.SHADER = ''
@@ -916,7 +914,7 @@ class MainWindow(QMainWindow):
             print_exception()
         finally:
             self._working = False
-            if not getpOpt('state,MANUAL_MODE'):
+            if not getData('state,MANUAL_MODE'):
                 self.enableAllTabs()
                 self._autosave()
 
@@ -1066,7 +1064,7 @@ class MainWindow(QMainWindow):
             self.warn('No data yet!')
             return
 
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
 
         msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
@@ -1489,7 +1487,7 @@ class MainWindow(QMainWindow):
                 self._jumpToLineedit.setText(str(cur)) #0131+
                 # if getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'):
                 #     self.updateLayerDetails()
-                if getpOpt('state,MANUAL_MODE'):
+                if getData('state,MANUAL_MODE'):
                     self.matchpoint_text_snr.setText(cfg.data.snr_report())
 
                 if cfg.project_tab.detailsCorrSpots.isVisible():
@@ -1898,46 +1896,31 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
-
-        if getpOpt('state,MANUAL_MODE'):
-            return
-        if not cfg.project_tab:
-            if not cfg.zarr_tab:
-                return
-        # logger.info(f'caller: {caller}')
         requested = self._sectionSlider.value()
-        if cfg.project_tab:
-            cfg.data.set_layer(requested)
-        if cfg.emViewer: # ? check this
+
+        if cfg.emViewer:
             cfg.emViewer._layer = requested
-        # logger.info(f'slider, requested: {requested}')
         if self._isProjectTab():
-            if requested in range(len(cfg.data)):
-                if cfg.project_tab._tabs.currentIndex() in (0,3):
-                    logger.info('Jumping To Section #%d' % requested)
+            logger.info('Jumping To Section #%d' % requested)
+            cfg.data.set_layer(requested)
+            # if requested in range(len(cfg.data)):
+            if cfg.project_tab._tabs.currentIndex() in (0,3):
+
+
+                if getData('state,MANUAL_MODE'):
+                    cfg.project_tab.MA_viewer_ref.initViewer()
+                    cfg.project_tab.MA_viewer_base.initViewer()
+                    cfg.project_tab.updateListWidgets()
+                else:
                     state = copy.deepcopy(cfg.emViewer.state)
                     state.position[0] = requested
                     cfg.emViewer.set_state(state)
-                if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.table.selectRow(requested)
-                # elif self.detachedNg:
-                #     if self.detachedNg.view.isVisible():
-                #         state = copy.deepcopy(cfg.emViewer.state)
-                #         state.position[0] = requested
-                #         cfg.emViewer.set_state(state)
             self.dataUpdateWidgets()
 
-        # elif cfg.zarr_tab:
-        #     logger.info('Jumping To Section #%d' % requested)
-        #     state = copy.deepcopy(cfg.emViewer.state)
-        #     state.position[0] = requested
-        #     cfg.emViewer.set_state(state)
-
         try:     self._jumpToLineedit.setText(str(requested))
-        except:  logger.warning('Current Layer Widget Failed to Update')
+        except:  logger.warning('Current Section Widget Failed to Update')
 
 
     @Slot()
@@ -1994,9 +1977,9 @@ class MainWindow(QMainWindow):
         logger.info('caller: %s' %caller)
         if caller in ('main', 'scale_up', 'scale_down'):
             if self._isProjectTab():
-                mode = getpOpt('state,MANUAL_MODE')
+                mode = getData('state,MANUAL_MODE')
                 if mode:
-                    setpOpt('state,MANUAL_MODE', False)
+                    setData('state,MANUAL_MODE', False)
                     self.exit_man_mode()
 
                 if self._scales_combobox_switch:
@@ -2009,7 +1992,7 @@ class MainWindow(QMainWindow):
     def fn_ng_layout_combobox(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
         if caller in ('main','<lambda>'):
             if cfg.data:
@@ -2233,7 +2216,7 @@ class MainWindow(QMainWindow):
 
 
     def open_project_new(self):
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
 
         for i in range(self.globTabs.count()):
@@ -2244,11 +2227,11 @@ class MainWindow(QMainWindow):
         self._setLastTab()
 
 
-    def open_selected(self):
-        if self._isProjectTab():
-            self.open_project_selected()
-        if self._isZarrTab():
-            pass
+    # def open_selected(self):
+    #     if self._isProjectTab():
+    #         self.open_project_selected()
+    #     if self._isZarrTab():
+    #         pass
 
     # def open_zarr_selected(self):
     #     path = cfg.selected_file
@@ -2304,7 +2287,7 @@ class MainWindow(QMainWindow):
 
     def detachNeuroglancer(self):
         if self._isProjectTab():
-            if getpOpt('state,MANUAL_MODE') == True:
+            if getData('state,MANUAL_MODE') == True:
                 return
             if self._isProjectTab() or self._isZarrTab():
                 logger.info('Creating QWebEngineView...')
@@ -2342,7 +2325,7 @@ class MainWindow(QMainWindow):
             self.rb1.setChecked(True)
 
         self.update_data_cache()
-        setpOpt('state,MANUAL_MODE', False)
+        setData('state,MANUAL_MODE', False)
         cfg.data.set_defaults()
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
@@ -2929,6 +2912,8 @@ class MainWindow(QMainWindow):
     #     self.corrspot_q2.set_data(path=cfg.data.corr_spot_q2_path(s=s, l=l), snr=snr_vals[2])
     #     self.corrspot_q3.set_data(path=cfg.data.corr_spot_q3_path(s=s, l=l), snr=snr_vals[3])
 
+    def runchecks(self):
+        run_checks()
 
     def enterExitManAlignMode(self):
         #Todo REFACTOR
@@ -2941,7 +2926,7 @@ class MainWindow(QMainWindow):
 
             if self._isProjectTab():
                 # self.shutdownNeuroglancer()
-                if not getpOpt('state,MANUAL_MODE'):
+                if not getData('state,MANUAL_MODE'):
                     self.enter_man_mode()
 
                 else:
@@ -2961,7 +2946,7 @@ class MainWindow(QMainWindow):
             pixmap = QPixmap('src/resources/cursor_circle.png')
             cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
             QApplication.setOverrideCursor(cursor)
-            setpOpt('state,MANUAL_MODE', True)
+            setData('state,MANUAL_MODE', True)
             cfg.project_tab.onEnterManualMode()
 
         else:
@@ -2971,7 +2956,7 @@ class MainWindow(QMainWindow):
         logger.critical('Exiting Manual Align Mode...')
         self.tell('Exiting Manual Align Mode...')
         self.setWindowTitle(self.window_title)
-        setpOpt('state,MANUAL_MODE', False)
+        setData('state,MANUAL_MODE', False)
         self.alignMatchPointAction.setText('Align Manually')
         self._changeScaleCombo.setEnabled(True)
         self.dataUpdateWidgets()
@@ -3664,7 +3649,6 @@ class MainWindow(QMainWindow):
         # self.scManualAlign = QShortcut(QKeySequence('Ctrl+M'), self)
         # self.scManualAlign.activated.connect(self.enterExitManAlignMode)
 
-
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
@@ -3960,7 +3944,6 @@ class MainWindow(QMainWindow):
         ngShaderMenu.addAction(self.shader4Action)
 
 
-
         shaderActionGroup = QActionGroup(self)
         shaderActionGroup.setExclusive(True)
         shaderActionGroup.addAction(self.shader1Action)
@@ -4066,7 +4049,6 @@ class MainWindow(QMainWindow):
         menu.hovered.connect(fn)
         debugMenu.hovered.connect(fn)
         menu.addAction(action)
-
 
         def fn():
             try:

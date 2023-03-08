@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
             logger.info('')
             if checked:
                 if self._isProjectTab():
-                    if getpOpt('state,MANUAL_MODE'):
+                    if getData('state,MANUAL_MODE'):
                         # cfg.project_tab.MA_viewer_stage.initViewerSbs()
                         # if self.rb0.isChecked():
                         #     cfg.project_tab.MA_viewer_stage.initViewerSlim(force_xy=True)
@@ -739,7 +739,7 @@ class MainWindow(QMainWindow):
             print_exception()
         finally:
             self._working = False
-            if not getpOpt('state,MANUAL_MODE'):
+            if not getData('state,MANUAL_MODE'):
                 self.enableAllTabs()
                 self._autosave()
     def update_data_cache(self):
@@ -912,7 +912,7 @@ class MainWindow(QMainWindow):
         if not cfg.data:
             self.warn('No data yet!')
             return
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
         msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
         dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
@@ -1293,7 +1293,7 @@ class MainWindow(QMainWindow):
                 self._jumpToLineedit.setText(str(cur)) #0131+
                 # if getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'):
                 #     self.updateLayerDetails()
-                if getpOpt('state,MANUAL_MODE'):
+                if getData('state,MANUAL_MODE'):
                     self.matchpoint_text_snr.setText(cfg.data.snr_report())
                 if cfg.project_tab.detailsCorrSpots.isVisible():
                     if cfg.data.selected_method() == 'Auto-SWIM':
@@ -1631,7 +1631,7 @@ class MainWindow(QMainWindow):
         # logger.info(f'caller: {caller}')
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
         if not cfg.project_tab:
             if not cfg.zarr_tab:
@@ -1709,7 +1709,7 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         if caller in ('main', 'scale_up', 'scale_down'):
             if self._isProjectTab():
-                if getpOpt('state,MANUAL_MODE') == False:
+                if getData('state,MANUAL_MODE') == False:
                     if self._scales_combobox_switch:
                         logger.info(f'caller: {caller}')
                         index = self._changeScaleCombo.currentIndex()
@@ -1718,7 +1718,7 @@ class MainWindow(QMainWindow):
     def fn_ng_layout_combobox(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
         if caller in ('main','<lambda>'):
             if cfg.data:
@@ -1917,7 +1917,7 @@ class MainWindow(QMainWindow):
     #     self.tell('Deletion Complete!')
     #     logger.info('Deletion Complete')
     def open_project_new(self):
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
         for i in range(self.globTabs.count()):
             if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
@@ -1981,7 +1981,7 @@ class MainWindow(QMainWindow):
     def detachNeuroglancer(self):
         # from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
         logger.info('')
-        if getpOpt('state,MANUAL_MODE') == True:
+        if getData('state,MANUAL_MODE') == True:
             return
         if self._isProjectTab() or self._isZarrTab():
             logger.info('Creating QWebEngineView...')
@@ -2509,7 +2509,7 @@ class MainWindow(QMainWindow):
                 return
             if self._isProjectTab():
                 # self.shutdownNeuroglancer()
-                if (not getpOpt('state,MANUAL_MODE')) and (not force_exit):
+                if (not getData('state,MANUAL_MODE')) and (not force_exit):
                     if cfg.data.is_aligned_and_generated():
                         logger.critical('Entering Manual Align Mode...')
                         self.tell('Entering Manual Align Mode...')
@@ -2891,7 +2891,7 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
         # if caller != 'initLaunchTab':
         #     # if caller != '_setLastTab':
-        #     # if getpOpt('state,MANUAL_MODE'):
+        #     # if getData('state,MANUAL_MODE'):
         #     self.enterExitManAlignMode(force_exit=True)
         # if caller in ('onStartProject','_setLastTab'):
         # if caller in ('onStartProject'):
@@ -8244,7 +8244,7 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self):
         logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
         caller = inspect.stack()[1].function
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
             self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
@@ -8268,7 +8268,7 @@ class ProjectTab(QWidget):
     def updateNeuroglancer(self):
         caller = inspect.stack()[1].function
         logger.info(f'Updating Neuroglancer Viewer (caller: {caller})')
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
@@ -9137,7 +9137,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 val = self.MA_viewer_ref.state.cross_section_scale
                 if val:
                     if val != 0:
@@ -9160,7 +9160,7 @@ class ProjectTab(QWidget):
         calname = str(calframe[1][3])
         logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller not in  ('slotUpdateZoomSlider', 'setValue'):
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 val = self.zoomSlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.cross_section_scale = val * val
@@ -9186,7 +9186,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.critical('caller: %s' % caller)
         try:
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 val = self.ZdisplaySlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.relative_display_scales = {'z': val}
@@ -12431,14 +12431,14 @@ def setOpt(lookup, val):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
-def getpOpt(lookup):
+def getData(lookup):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     return reduce(operator.getitem, lookup, cfg.data)
 def setpOpt(lookup, val):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
-    getpOpt(lookup[:-1])[lookup[-1]] = val
+    getData(lookup[:-1])[lookup[-1]] = val
 def natural_sort(l):
     '''Natural sort a list of strings regardless of zero padding'''
     convert = lambda text: int(text) if text.isdigit() else text.lower()
@@ -13507,7 +13507,7 @@ class EMViewer(neuroglancer.Viewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
     def initViewer(self):
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             self.initViewerSbs(requested='xy')
         else:
             if cfg.main_window.rb0.isChecked():
@@ -13532,7 +13532,7 @@ class EMViewer(neuroglancer.Viewer):
             units=['nm', 'nm', 'nm'],
             scales=list(cfg.data.resolution(s=cfg.data.curScale)),
         )
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             sf = cfg.data.scale_val(s=cfg.data.scale())
             al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
             self.store = cfg.tensor = cfg.al_tensor =  get_zarr_tensor(al_path).result()
@@ -13553,7 +13553,7 @@ class EMViewer(neuroglancer.Viewer):
         self.set_zoom()
         sf = cfg.data.scale_val(s=cfg.data.scale())
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout)]
         else:
             self.grps = []
@@ -13573,7 +13573,7 @@ class EMViewer(neuroglancer.Viewer):
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             s.crossSectionBackgroundColor = '#808080'
             s.layout.type = nglayout
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             else:
                 s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
@@ -13581,7 +13581,7 @@ class EMViewer(neuroglancer.Viewer):
                 if is_aligned: s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'],)
             s.showSlices=False
             s.layout = ng.row_layout(self.grps)  # col
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 s.position = [0, tensor_y / 2, tensor_x / 2]
             else:
                 s.position = [cfg.data.layer(), tensor_y / 2, tensor_x / 2]
@@ -13682,13 +13682,13 @@ class EMViewer(neuroglancer.Viewer):
             else:
                 widget_w = area[2] / 2
             widget_h = area[3]
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 widget_w = cfg.project_tab.MA_webengine_stage.geometry().width()
                 widget_h = cfg.project_tab.MA_webengine_stage.geometry().height()
                 logger.info('widget w/h: %d/%d' % (widget_w, widget_h))
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale()) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
                 scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             else:
@@ -13701,7 +13701,7 @@ class EMViewer(neuroglancer.Viewer):
             # logger.info('nm/pixel (width)     : %.11f' % scale_w)
             # logger.info('zoom factor          : %.11f' % cs_scale)
             with self.txn() as s:
-                if getpOpt('state,MANUAL_MODE'):
+                if getData('state,MANUAL_MODE'):
                     s.crossSectionScale = cs_scale *1.04
                 else:
                     s.crossSectionScale = cs_scale * 1.06
@@ -13716,7 +13716,7 @@ class EMViewer(neuroglancer.Viewer):
             return 0, 0
         return (x_nudge, y_nudge)
     def on_state_changed(self):
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             return
         caller = inspect.stack()[1].function
         curframe = inspect.currentframe()
@@ -13767,7 +13767,7 @@ class EMViewer(neuroglancer.Viewer):
     def set_row_layout(self, nglayout):
         with self.txn() as s:
             if cfg.data.is_aligned_and_generated():
-                if getpOpt('state,MANUAL_MODE'):
+                if getData('state,MANUAL_MODE'):
                     s.layout = ng.row_layout([
                         ng.column_layout([
                             ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),

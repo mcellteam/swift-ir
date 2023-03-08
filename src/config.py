@@ -14,6 +14,7 @@ LOG_LEVEL = 1
 data = None
 dataById = {}
 main_window = None
+mw = None
 project_tab = None
 zarr_tab = None
 thumb = None

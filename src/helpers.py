@@ -36,7 +36,7 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'delete_recursive',
+__all__ = ['run_checks','is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
@@ -47,6 +47,12 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
 logger = logging.getLogger(__name__)
 
 snapshot = None
+
+def run_checks():
+
+    if not getData('state,MANUAL_MODE'):
+        assert(cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
+
 
 def getOpt(lookup):
     if isinstance(lookup, str):
@@ -59,17 +65,17 @@ def setOpt(lookup, val):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
 
-def getpOpt(lookup):
+def getData(lookup):
     if cfg.project_tab:
         if isinstance(lookup, str):
             lookup = lookup.split(',')
         return reduce(operator.getitem, lookup, cfg.data)
 
-def setpOpt(lookup, val):
+def setData(lookup, val):
     if cfg.project_tab:
         if isinstance(lookup, str):
             lookup = lookup.split(',')
-        getpOpt(lookup[:-1])[lookup[-1]] = val
+        getData(lookup[:-1])[lookup[-1]] = val
 
 
 def natural_sort(l):
