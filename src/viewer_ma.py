@@ -41,9 +41,9 @@ class WorkerSignals(QObject):
 
 
 class MAViewer(neuroglancer.Viewer):
-    def __init__(self, index, role=None, webengine=None):
+    def __init__(self, role=None, webengine=None):
         super().__init__()
-        self.index = index
+        self.index = 0
         if role:
             self.role = role
         self.webengine = webengine
@@ -71,6 +71,8 @@ class MAViewer(neuroglancer.Viewer):
 
         # self.restoreManAlignPts()
 
+        self.initViewer()
+
 
     def __del__(self):
         try:
@@ -86,6 +88,10 @@ class MAViewer(neuroglancer.Viewer):
     def __repr__(self):
         return copy.deepcopy(self.state)
 
+    def set_layer(self, index):
+        state = copy.deepcopy(self.state)
+        state.position[0] = index
+        self.set_state(state)
 
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
@@ -99,6 +105,11 @@ class MAViewer(neuroglancer.Viewer):
     def initViewer(self):
         # caller = inspect.stack()[1].function
         logger.info(f'Initializing Viewer (Role: %s)....' %self.role)
+
+        if self.role == 'ref':
+            self.index = max(cfg.data.layer() - 1, 0)
+        elif self.role == 'base':
+            self.index = cfg.data.layer() #
 
         self.clear_layers()
         self.restoreManAlignPts()
@@ -237,13 +248,12 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def save_matchpoints(self):
-        layer = cfg.data.layer()
         logger.info('Saving Match Points for Section #%d: %s' % (layer, cfg.data.base_image_name(l=layer)))
         p_ = [p.point.tolist() for p in self.pts.values()]
         logger.critical('p_: %s' %str(p_))
         mps = [p_[0][1::], p_[1][1::], p_[2][1::]]
-        cfg.data.set_manual_points(role=self.role, matchpoints=mps, l=layer)
-        cfg.data.set_selected_method(method="Match Point Align", l=layer)
+        cfg.data.set_manual_points(role=self.role, matchpoints=mps, l=self.index)
+        cfg.data.set_selected_method(method="Match Point Align", l=self.index)
         cfg.data.print_all_match_points()
         cfg.main_window._saveProjectToFile(silently=True)
         cfg.main_window.hud.post('Match Points Saved!')
@@ -288,8 +298,9 @@ class MAViewer(neuroglancer.Viewer):
 
     def restoreManAlignPts(self):
         logger.info('')
-
-        for i, p in enumerate(cfg.data.getmpFlat()[self.role]):
+        self.pts = {}
+        data = cfg.data.getmpFlat(l=self.index)[self.role]
+        for i, p in enumerate(data):
             props = [self.mp_colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
@@ -298,7 +309,7 @@ class MAViewer(neuroglancer.Viewer):
         with self.txn() as s:
             s.layers['ann'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
-                annotations=self.pt2ann(points=cfg.data.getmpFlat()[self.role]),
+                annotations=self.pt2ann(points=data),
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
                     ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),

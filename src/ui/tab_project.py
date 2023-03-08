@@ -17,7 +17,7 @@ from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent
 from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
-from src.helpers import getOpt, getpOpt, setpOpt
+from src.helpers import getOpt, getData, setData
 from src.viewer_em import EMViewer
 from src.viewer_ma import MAViewer
 from src.helpers import print_exception
@@ -86,8 +86,7 @@ class ProjectTab(QWidget):
         if index == None:
             index = self._tabs.currentIndex()
 
-
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             self.pts_ref = self.MA_viewer_ref.pts
             self.pts_base = self.MA_viewer_base.pts
             self.initNeuroglancer()
@@ -139,16 +138,14 @@ class ProjectTab(QWidget):
         logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
 
         caller = inspect.stack()[1].function
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
-            self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
+            self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
-
-            self.MA_viewer_base.initViewer()
-            self.MA_viewer_ref.initViewer()
-            self.MA_viewer_stage.initViewer()
-
+            # self.MA_viewer_base.initViewer()
+            # self.MA_viewer_ref.initViewer()
+            # self.MA_viewer_stage.initViewer()
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
@@ -176,7 +173,7 @@ class ProjectTab(QWidget):
         #         layer.shaderControls['brightness'] = cfg.data.brightness()
         #         layer.shaderControls['contrast'] = cfg.data.contrast()
         #     self.snrViewer.set_state(state)
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             self.MA_viewer_base.initViewer()
             self.MA_viewer_ref.initViewer()
             self.MA_viewer_stage.initViewer()
@@ -651,8 +648,8 @@ class ProjectTab(QWidget):
             VWidget(MA_refViewerTitle, self.MA_ptsListWidget_ref, self.MA_refNextColorLab),
             VWidget(MA_baseViewerTitle, self.MA_ptsListWidget_base, self.MA_baseNextColorLab)
         )
-        msg_MAinstruct = YellowTextLabel('⇧ + Click - Select up to 7 corresponding points')
-        msg_MAinstruct.setFixedSize(430, 30)
+        msg_MAinstruct = YellowTextLabel('⇧ + Click - Select at least 3 corresponding points')
+        msg_MAinstruct.setFixedSize(360, 30)
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
@@ -713,16 +710,16 @@ class ProjectTab(QWidget):
         shutil.copyfile(file, out)
 
 
-
     def checkMApoints(self):
         # return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys()) and \
         #                         (len(self.MA_viewer_ref.pts.keys()) > 2)
         return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys())
 
+
     def updateListWidgets(self):
         caller = inspect.stack()[1].function
         logger.info('caller: %s' %caller)
-        if getpOpt('state,MANUAL_MODE'):
+        if getData('state,MANUAL_MODE'):
             self.updateMAlistRef()
             self.updateMAlistBase()
             isValid = self.checkMApoints()
@@ -736,7 +733,9 @@ class ProjectTab(QWidget):
 
     def updateMAlistRef(self):
         logger.info('')
+        # self.MA_viewer_ref.pts = {}
         self.MA_ptsListWidget_ref.clear()
+        self.MA_ptsListWidget_ref.update()
         n = 0
         for key in self.MA_viewer_ref.pts.keys():
             p = self.MA_viewer_ref.pts[key]
@@ -751,7 +750,9 @@ class ProjectTab(QWidget):
 
     def updateMAlistBase(self):
         logger.info('')
+        # self.MA_viewer_base.pts = {}
         self.MA_ptsListWidget_base.clear()
+        self.MA_ptsListWidget_base.update()
         n = 0
         for key in self.MA_viewer_base.pts.keys():
             p = self.MA_viewer_base.pts[key]
@@ -956,12 +957,12 @@ class ProjectTab(QWidget):
         elif method == 'Manual-Hint':   self.rbManHint.setChecked(True)
         elif method == 'Manual-Strict': self.rbManStrict.setChecked(True)
         else:                           self.rbAuto.setChecked(True)
-        self.MA_viewer_ref = MAViewer(index=max(cfg.data.layer() - 1, 0), role='ref', webengine=self.MA_webengine_ref)
-        self.MA_viewer_base = MAViewer(index=cfg.data.layer(), role='base', webengine=self.MA_webengine_base)
+        self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+        self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
-        self.MA_viewer_ref.initViewer()
-        self.MA_viewer_base.initViewer()
-        self.MA_viewer_stage.initViewer()
+        # self.MA_viewer_ref.initViewer()
+        # self.MA_viewer_base.initViewer()
+        # self.MA_viewer_stage.initViewer()
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
         self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
@@ -998,7 +999,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 val = self.MA_viewer_ref.state.cross_section_scale
                 if val:
                     if val != 0:
@@ -1025,7 +1026,7 @@ class ProjectTab(QWidget):
         logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
 
         if caller not in  ('slotUpdateZoomSlider', 'setValue'):
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 val = self.zoomSlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.cross_section_scale = val * val
@@ -1055,7 +1056,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         # logger.info('caller: %s' % caller)
         try:
-            if getpOpt('state,MANUAL_MODE'):
+            if getData('state,MANUAL_MODE'):
                 val = self.ZdisplaySlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.relative_display_scales = {'z': val}
