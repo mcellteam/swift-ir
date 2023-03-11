@@ -1423,7 +1423,7 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             if cfg.data:
-                prev_loc = cfg.data.loc
+                # prev_loc = cfg.data.loc
 
                 if self._working == True:
                     logger.warning(f"Can't update GUI now - working (caller: {caller})...")
@@ -1463,9 +1463,9 @@ class MainWindow(QMainWindow):
                 self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
                 if getData('state,MANUAL_MODE'):
                     cfg.project_tab.dataUpdateMA()
-                    if prev_loc != cfg.data.loc:
-                        cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
-                        cfg.project_tab.set_method_label_text()
+                    # if prev_loc != cfg.data.loc:
+                    cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
+                    cfg.project_tab.set_method_label_text()
 
                 if cfg.project_tab._tabs.currentIndex() == 2:
                     cfg.project_tab.treeview_model.jumpToLayer()

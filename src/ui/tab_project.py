@@ -681,7 +681,7 @@ class ProjectTab(QWidget):
         self.btnClearMA = QPushButton('Clear')
         self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setMaximumHeight(20)
-        self.btnClearMA.setMaximumWidth(64)
+        self.btnClearMA.setMaximumWidth(60)
         self.btnClearMA.clicked.connect(fn)
 
         # self.btnClearMA.clicked.connect(self.initNeuroglancer)
@@ -737,7 +737,8 @@ class ProjectTab(QWidget):
             cfg.main_window.hud.done()
         self.btnResetAllMA = QPushButton('Set All Automatic')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setMaximumHeight(20)
+        self.btnResetAllMA.setFixedHeight(20)
+        self.btnResetAllMA.setFixedWidth(122)
         self.btnResetAllMA.clicked.connect(fn)
 
         def fn():
@@ -747,7 +748,8 @@ class ProjectTab(QWidget):
             cfg.main_window.hud.done()
         self.btnRealignMA = QPushButton('Align && Regenerate')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnRealignMA.setMaximumHeight(20)
+        self.btnRealignMA.setFixedHeight(20)
+        self.btnRealignMA.setFixedWidth(122)
         self.btnRealignMA.clicked.connect(fn)
 
         def fn():
@@ -762,15 +764,15 @@ class ProjectTab(QWidget):
                 logger.warning('(!) validate points is misconfigured')
         self.btnApplyMA = QPushButton('Apply')
         self.btnApplyMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnApplyMA.setMaximumHeight(20)
-        self.btnApplyMA.setMaximumWidth(64)
+        self.btnApplyMA.setFixedHeight(20)
+        self.btnApplyMA.setFixedWidth(60)
         self.btnApplyMA.clicked.connect(fn)
         self.btnApplyMA.setEnabled(False)
 
         self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnExitMA.setMaximumHeight(20)
-        self.btnExitMA.setMaximumWidth(64)
+        self.btnExitMA.setFixedHeight(20)
+        self.btnExitMA.setFixedWidth(60)
         self.btnExitMA.clicked.connect(cfg.main_window.exit_man_mode)
 
         def fn():
@@ -781,6 +783,7 @@ class ProjectTab(QWidget):
         self.combo_MA_actions.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Set All Auto-SWIM']
         self.combo_MA_actions.addItems(items)
+        self.combo_MA_actions.currentTextChanged.connect(fn)
         self.combo_MA_actions.currentTextChanged.connect(fn)
         btn_go = QPushButton()
         btn_go.clicked.connect(self.onMAaction)
@@ -929,6 +932,7 @@ class ProjectTab(QWidget):
             self.combo_MA_manual_mode.setCurrentText(cfg.data.selected_method())
         # if self.validate_MA_points() and method != 'Auto-SWIM':
         self.btnApplyMA.setEnabled(self.validate_MA_points() and self.tgl_alignMethod.isChecked())
+        self.combo_MA_manual_mode.setEnabled(self.validate_MA_points() and self.tgl_alignMethod.isChecked())
         self.btnClearMA.setEnabled(bool(len(self.MA_viewer_ref.pts) + len(self.MA_viewer_base.pts)))
         self.btnPrevSection.setEnabled(cfg.data.loc > 0)
         self.btnNextSection.setEnabled(cfg.data.loc < len(cfg.data) - 1)
