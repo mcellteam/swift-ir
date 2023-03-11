@@ -412,8 +412,10 @@ class MainWindow(QMainWindow):
                 # rng = cfg.data.normalize()
                 # self.normalizedSlider.setStart(rng[0])
                 # self.normalizedSlider.setEnd(rng[1])
-                self.brightnessSlider.setValue(cfg.data.brightness())
-                self.contrastSlider.setValue(cfg.data.contrast())
+                # self.brightnessSlider.setValue(cfg.data.brightness())
+                self.brightnessSlider.setValue(cfg.data.brightness)
+                # self.contrastSlider.setValue(cfg.data.contrast())
+                self.contrastSlider.setValue(cfg.data.contrast)
                 # sizes = self._splitter.sizes()
                 # sizes[1] = 140
                 # self._splitter.setSizes(sizes)
@@ -509,7 +511,7 @@ class MainWindow(QMainWindow):
         logger.info('caller: %s' %caller)
         if caller == 'main':
             if self._isProjectTab():
-                cfg.data.set_brightness(self.brightnessSlider.value())
+                cfg.data.brightness = self.brightnessSlider.value()
                 for viewer in self.get_viewers():
                     viewer.set_brightness()
 
@@ -519,7 +521,7 @@ class MainWindow(QMainWindow):
         logger.info('caller: %s' % caller)
         if caller == 'main':
             if self._isProjectTab():
-                cfg.data.set_contrast(self.contrastSlider.value())
+                cfg.data.contrast = self.contrastSlider.value()
                 for viewer in self.get_viewers():
                     viewer.set_contrast()
 
@@ -697,8 +699,8 @@ class MainWindow(QMainWindow):
 
 
     def regenerateOne(self):
-        start = cfg.data.layer()
-        end = cfg.data.layer() + 1
+        start = cfg.data.loc
+        end = cfg.data.loc + 1
         self.regenerate(scale=cfg.data.scale(), start=start, end=end)
 
 
@@ -944,9 +946,9 @@ class MainWindow(QMainWindow):
     # def alignOne(self, stageit=False):
     def alignOne(self):
         self.tell('Re-aligning Section #%d (%s)...' %
-                  (cfg.data.layer(), cfg.data.scale_pretty()))
-        start = cfg.data.layer()
-        end = cfg.data.layer() + 1
+                  (cfg.data.loc, cfg.data.scale_pretty()))
+        start = cfg.data.loc
+        end = cfg.data.loc + 1
         self.align(
             scale=cfg.data.curScale,
             start=start,
@@ -968,9 +970,9 @@ class MainWindow(QMainWindow):
     def alignOneMp(self):
         logger.critical('Realigning Manually...')
         self.tell('Re-aligning Section #%d (%s)...' %
-                  (cfg.data.layer(), cfg.data.scale_pretty()))
-        start = cfg.data.layer()
-        end = cfg.data.layer() + 1
+                  (cfg.data.loc, cfg.data.scale_pretty()))
+        start = cfg.data.loc
+        end = cfg.data.loc + 1
         self.align(
             scale=cfg.data.curScale,
             start=start,
@@ -1179,7 +1181,7 @@ class MainWindow(QMainWindow):
             self.tell('Applying These Settings To All Scales + Layers...')
             self.tell('  SWIM Window  : %.3f%%' % self._swimWindowControl.value())
             self.tell('  Whitening    : %.3f' % whitening_val)
-            for layer in cfg.data.alstack(s=cfg.data.curScale):
+            for layer in cfg.data.stack(s=cfg.data.curScale):
                 layer['alignment']['method_data']['win_scale_factor'] = swim_val
                 layer['alignment']['method_data']['whitening_factor'] = whitening_val
 
@@ -1312,22 +1314,25 @@ class MainWindow(QMainWindow):
         logger.info('')
         if cfg.data:
             if cfg.project_tab:
-                requested = cfg.data.layer() + 1
+                requested = cfg.data.loc + 1
                 if requested < len(cfg.data):
-                    cfg.data.set_layer(requested)
+                    cfg.data.loc = requested
+                if not getData('state,MANUAL_MODE'):
                     cfg.emViewer.set_layer(requested)
-                    self.dataUpdateWidgets()
+                self.dataUpdateWidgets()
+
 
 
     def layer_left(self):
         logger.info('')
         if cfg.data:
             if cfg.project_tab:
-                requested = cfg.data.layer() - 1
+                requested = cfg.data.loc - 1
                 if requested >= 0:
-                    cfg.data.set_layer(requested)
+                    cfg.data.loc = requested
+                if not getData('state,MANUAL_MODE'):
                     cfg.emViewer.set_layer(requested)
-                    self.dataUpdateWidgets()
+                self.dataUpdateWidgets()
 
 
 
@@ -1418,6 +1423,8 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             if cfg.data:
+                prev_loc = cfg.data.loc
+
                 if self._working == True:
                     logger.warning(f"Can't update GUI now - working (caller: {caller})...")
                     self.warn("Can't update GUI now - working...")
@@ -1426,7 +1433,7 @@ class MainWindow(QMainWindow):
                     try:
                         if 0 <= ng_layer < len(cfg.data):
                             logger.debug(f'Setting Layer: {ng_layer}')
-                            cfg.data.set_layer(ng_layer)
+                            cfg.data.loc = ng_layer
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
@@ -1448,15 +1455,17 @@ class MainWindow(QMainWindow):
                 if self.correlation_signals.isVisible():
                     self.updateCorrSpotsDrawer()
 
-                cur = cfg.data.layer()
+                cur = cfg.data.loc
                 if self.notes.isVisible():
                     self.updateNotes()
 
                 self._btn_prevSection.setEnabled(cur > 0)
                 self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
                 if getData('state,MANUAL_MODE'):
-                    cfg.project_tab.btnPrevSection.setEnabled(cur > 0)
-                    cfg.project_tab.btnNextSection.setEnabled(cur < len(cfg.data) - 1)
+                    cfg.project_tab.dataUpdateMA()
+                    if prev_loc != cfg.data.loc:
+                        cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
+                        cfg.project_tab.set_method_label_text()
 
                 if cfg.project_tab._tabs.currentIndex() == 2:
                     cfg.project_tab.treeview_model.jumpToLayer()
@@ -1595,11 +1604,10 @@ class MainWindow(QMainWindow):
         # logger.info('')
         self.notesTextEdit.clear()
         if self._isProjectTab():
-            cur = cfg.data.layer()
             self.notesTextEdit.setPlaceholderText('Enter notes about %s here...'
-                                                  % cfg.data.base_image_name(s=cfg.data.curScale, l=cur))
-            if cfg.data.notes(s=cfg.data.curScale, l=cur):
-                self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cur))
+                                                  % cfg.data.base_image_name(s=cfg.data.curScale, l=cfg.data.loc))
+            if cfg.data.notes(s=cfg.data.curScale, l=cfg.data.loc):
+                self.notesTextEdit.setPlainText(cfg.data.notes(s=cfg.data.curScale, l=cfg.data.loc))
         else:
             self.notesTextEdit.clear()
             self.notesTextEdit.setPlaceholderText('Enter notes about anything here...')
@@ -1616,15 +1624,17 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         logger.info('')
         if self._isProjectTab():
-            cfg.data.set_brightness(float(self.brightnessLE.text()))
-            cfg.data.set_contrast(float(self.contrastLE.text()))
+            # cfg.data.set_brightness(float(self.brightnessLE.text()))
+            cfg.data.brightness = float(self.brightnessLE.text())
+            # cfg.data.set_contrast(float(self.contrastLE.text()))
+            cfg.data.contrast = float(self.contrastLE.text())
             cfg.data['rendering']['shader'] = self.shaderText.toPlainText()
             cfg.project_tab.initNeuroglancer()
             self._callbk_unsavedChanges()
 
     # def updateLayerDetails(self, s=None, l=None):
     #     if s == None: s = cfg.data.curScale
-    #     if l == None: l = cfg.data.layer()
+    #     if l == None: l = cfg.data.loc
     #     name = "%s" % cfg.data.name_base(s=s, l=l)
     #     snr_report = cfg.data.snr_report(s=s, l=l)
     #     snr = f"%s" % snr_report
@@ -1754,13 +1764,6 @@ class MainWindow(QMainWindow):
             print_exception()
 
 
-    def request_ng_layer(self):
-        '''Returns The Currently Shown Layer Index In Neuroglancer'''
-        layer = cfg.emViewer.request_layer()
-        logger.info(f'Layer Requested From NG Worker Thread: {layer}')
-        return layer
-
-
     def _resetSlidersAndJumpInput(self):
         '''Requires Neuroglancer '''
         # caller = inspect.stack()[1].function
@@ -1771,7 +1774,7 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab:
                     self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
                     self._sectionSlider.setRange(0, len(cfg.data) - 1)
-                    self._sectionSlider.setValue(cfg.data.layer())
+                    self._sectionSlider.setValue(cfg.data.loc)
                     self.sectionRangeSlider.setMin(0)
                     self.sectionRangeSlider.setStart(0)
                     self.sectionRangeSlider.setMax(len(cfg.data) - 1)
@@ -1809,7 +1812,7 @@ class MainWindow(QMainWindow):
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
-            cfg.data.set_layer(requested)
+            cfg.data.loc = requested
             cfg.project_tab.updateNeuroglancer() #0214+ intentionally putting this before dataUpdateWidgets (!)
             self.dataUpdateWidgets()
 
@@ -1822,7 +1825,7 @@ class MainWindow(QMainWindow):
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
-            cfg.data.set_layer(requested)
+            cfg.data.loc = requested
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.table.selectRow(requested)
             self._sectionSlider.setValue(requested)
@@ -1842,25 +1845,14 @@ class MainWindow(QMainWindow):
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
         requested = self._sectionSlider.value()
-
         if self._isProjectTab():
             if cfg.emViewer:
                 cfg.emViewer._layer = requested
             logger.info('Jumping To Section #%d' % requested)
-            cfg.data.set_layer(requested)
-
+            cfg.data.loc = requested
             if getData('state,MANUAL_MODE'):
                 cfg.project_tab.initNeuroglancer()
-
-            # elif cfg.project_tab._tabs.currentIndex() in (0,3):
-            cfg.emViewer.set_layer(requested)
-
-            # if getData('state,MANUAL_MODE'):
-            #     cfg.project_tab.MA_viewer_ref.initViewer()
-            #     cfg.project_tab.MA_viewer_base.initViewer()
-            #     cfg.project_tab.updateListWidgets()
-            # else:
-            #     cfg.emViewer.set_layer(requested)
+            cfg.emViewer.loc = requested
             self.dataUpdateWidgets()
 
         try:     self._jumpToLineedit.setText(str(requested))
@@ -1894,7 +1886,7 @@ class MainWindow(QMainWindow):
         logger.critical(f'Changing Scales (caller: {caller})...')
         if not self._working:
             if caller != 'OnStartProject':
-                # self.jump_to(cfg.data.layer())
+                # self.jump_to(cfg.data.loc)
                 self.dataUpdateWidgets()
                 # if cfg.project_tab._tabs.currentIndex() == 1:
                 #     cfg.project_tab.project_table.setScaleData()
@@ -2752,8 +2744,7 @@ class MainWindow(QMainWindow):
             if caller != 'dataUpdateWidgets':
                 skip_state = self._skipCheckbox.isChecked()
                 for s in cfg.data.scales():
-                    # layer = self.request_ng_layer()
-                    layer = cfg.data.layer()
+                    layer = cfg.data.loc
                     if layer < cfg.data.n_sections():
                         cfg.data.set_skip(skip_state, s=s, l=layer)
                     else:
@@ -2780,7 +2771,7 @@ class MainWindow(QMainWindow):
 
     # def updateCorrSpotThumbnails(self, s=None, l=None):
     #     if s == None: s=cfg.data.curScale
-    #     if l == None: l=cfg.data.layer()
+    #     if l == None: l=cfg.data.loc
     #     snr_vals = cfg.data.snr_components()
     #     self.corrspot_q0.set_data(path=cfg.data.corr_spot_q0_path(s=s, l=l), snr=snr_vals[0])
     #     self.corrspot_q1.set_data(path=cfg.data.corr_spot_q1_path(s=s, l=l), snr=snr_vals[1])
@@ -2858,7 +2849,7 @@ class MainWindow(QMainWindow):
     def show_all_matchpoints(self):
         if cfg.project_tab:
             no_mps = True
-            for i, l in enumerate(cfg.data.alstack()):
+            for i, l in enumerate(cfg.data.stack()):
                 r = l['images']['ref']['metadata']['man_points']
                 b = l['images']['base']['metadata']['man_points']
                 if r != []:
@@ -3112,7 +3103,6 @@ class MainWindow(QMainWindow):
         self.comboboxNgLayout.setStyleSheet('font-size: 11px')
         self.comboboxNgLayout.resize(QSize(76, 20))
         self.comboboxNgLayout.setFixedHeight(20)
-
         self.comboboxNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.comboboxNgLayout.setFixedSize(QSize(76, 20))
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
@@ -3286,8 +3276,8 @@ class MainWindow(QMainWindow):
                 cfg.data['ui']['ng_layout'] = 'xy'
                 self.rb1.setChecked(True)
             self.set_nglayout_combo_text(layout=cfg.data['ui']['arrangement'])  # must be before initNeuroglancer
-            self.brightnessSlider.setValue(cfg.data.brightness())
-            self.contrastSlider.setValue(cfg.data.contrast())
+            self.brightnessSlider.setValue(cfg.data.brightness)
+            self.contrastSlider.setValue(cfg.data.contrast)
             self.dataUpdateWidgets()
             self._bbToggle.setChecked(cfg.data.has_bb()) #0309+
             cfg.project_tab.initNeuroglancer()
@@ -5138,10 +5128,14 @@ class MainWindow(QMainWindow):
         # self._btn_resetBrightnessAndContrast.setFixedSize(QSize(80,36))
         def fn():
             reset_val = 0.0
-            cfg.data.set_brightness(reset_val)
-            cfg.data.set_contrast(reset_val)
-            self.brightnessSlider.setValue(cfg.data.brightness())
-            self.contrastSlider.setValue(cfg.data.contrast())
+            # cfg.data.set_brightness(reset_val)
+            cfg.data.brightness = reset_val
+            # cfg.data.set_contrast(reset_val)
+            cfg.data.contrast = reset_val
+            # self.brightnessSlider.setValue(cfg.data.brightness())
+            self.brightnessSlider.setValue(cfg.data.brightness)
+            # self.contrastSlider.setValue(cfg.data.contrast())
+            self.contrastSlider.setValue(cfg.data.contrast)
             if self._isProjectTab():
                 cfg.data['rendering']['shader'] = cfg.SHADER
                 self.updateShaderText()

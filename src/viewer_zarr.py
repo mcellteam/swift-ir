@@ -118,11 +118,11 @@ class ZarrViewer(neuroglancer.Viewer):
             s.show_panel_borders = False
             # s.viewer_size = [100,100]
 
-        self._layer = self.request_layer()
+        self._layer = self.get_loc()
         self.shared_state.add_changed_callback(self.on_state_changed)
 
 
-    def request_layer(self):
+    def get_loc(self):
         return math.floor(self.state.position[0])
 
     def on_state_changed(self):

@@ -347,9 +347,9 @@ class JsonModel(QAbstractItemModel):
 
     def collapseIndex(self, s=None, l=None):
         if s == None: s = cfg.data.curScale
-        if l == None: l = cfg.data.layer()
+        if l == None: l = cfg.data.loc
         cfg.project_tab.treeview.collapseAll()
-        keys = ['data', 'scales', s, 'alignment_stack', l]
+        keys = ['data', 'scales', s, 'stack', l]
         self.getIndex(findkeys=keys, jump=False, collapse=True)
 
 
@@ -397,12 +397,9 @@ class JsonModel(QAbstractItemModel):
 
     def jumpToLayer(self, s=None, l=None):
         if s == None: s = cfg.data.curScale
-        if l == None: l = cfg.data.layer()
+        if l == None: l = cfg.data.loc
         # cfg.project_tab.treeview.collapseAll()
-        # keys = ['data', 'scales', s, 'alignment_stack', l, 'align_to_ref_method','method_results','affine_matrix']
-        keys = ['data', 'scales', s, 'alignment_stack', l]
-
-
+        keys = ['data', 'scales', s, 'stack', l]
         # if l !=0:
         #     self.collapseIndex(l=l - 1)
         self.getIndex(findkeys=keys, expand=True)

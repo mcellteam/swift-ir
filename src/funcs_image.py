@@ -546,7 +546,7 @@ def ComputeBoundingRect(al_stack, scale=None):
 
     To get result for current s, in the main process, use:
     from src.image_funcs import ComputeBoundingRect, ImageSize
-    ComputeBoundingRect(cfg.datamodel.alstack())
+    ComputeBoundingRect(cfg.datamodel.stack())
 
     model_bounds example:
 AlignEM [29]:
@@ -582,7 +582,7 @@ array([[   0,    0],
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
         # model_bounds = None
-        # al_stack = cfg.datamodel.alstack()
+        # al_stack = cfg.datamodel.stack()
         model_bounds = [[0,0]] #Todo initialize this better
         siz = cfg.data.image_size(s=scale)
         for item in al_stack:
