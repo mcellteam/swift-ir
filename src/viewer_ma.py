@@ -43,7 +43,7 @@ class WorkerSignals(QObject):
 class MAViewer(neuroglancer.Viewer):
     def __init__(self, role=None, webengine=None):
         super().__init__()
-        self.index = 0
+        self.index = None
         if role:
             self.role = role
         self.webengine = webengine
@@ -97,13 +97,9 @@ class MAViewer(neuroglancer.Viewer):
         cfg.alLV.invalidate()
 
 
-    def set_zmag(self):
-        with self.txn() as s:
-            s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
-
-
     def initViewer(self):
         # caller = inspect.stack()[1].function
+        # logger.critical('caller: %s' %str(caller))
         logger.info(f'Initializing Viewer (Role: %s)....' %self.role)
 
         if self.role == 'ref':
@@ -115,14 +111,15 @@ class MAViewer(neuroglancer.Viewer):
         self.restoreManAlignPts()
 
         sf = cfg.data.scale_val(s=cfg.data.scale())
-        if self.role == 'base':
-            self.index = cfg.data.layer()
-            path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-        elif self.role == 'ref':
-            path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-        elif self.role == 'stage':
-            self.index = 0 #placeholder. this will be the index of staging area.
-            path = os.path.join(cfg.data.dest(), 'img_stage.zarr', 's' + str(sf))
+        path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+        # if self.role == 'base':
+        #     path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+        # elif self.role == 'ref':
+        #     path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+        # elif self.role == 'stage':
+        #     self.index = 0 #placeholder. this will be the index of staging area.
+        #     path = os.path.join(cfg.data.dest(), 'img_stage.zarr', 's' + str(sf))
+
 
         if not os.path.exists(path):
             cfg.main_window.warn('Data Store Not Found: %s' % path)
@@ -141,6 +138,7 @@ class MAViewer(neuroglancer.Viewer):
             voxel_offset=[0, 0, 0]
         )
 
+
         with self.txn() as s:
 
             s.layout.type = 'yz'
@@ -150,11 +148,10 @@ class MAViewer(neuroglancer.Viewer):
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             # s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
-            s.layers['layer'] = ng.ImageLayer(source=self.LV)
+            s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             s.crossSectionBackgroundColor = '#808080' # 128 grey
             # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
-            # s.position = [0.5, y / 2, x / 2]
             s.position = [0.5, y / 2, x / 2]
             s.layers['ann'].annotations = list(self.pts.values())
 
@@ -174,6 +171,12 @@ class MAViewer(neuroglancer.Viewer):
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        self.set_brightness()
+        self.set_contrast()
+        # self.set_zmag()
+        # self.set_zoom()
+        # self._set_zmag()
+
 
     def get_layout(self, requested=None):
         if requested == None:
@@ -190,17 +193,8 @@ class MAViewer(neuroglancer.Viewer):
         calname = str(calframe[1][3])
         if calname == '<lambda>':
             return
-        # logger.info('caller: %s, calname: %s' % (caller, calname))
 
         self.signals.stateChanged.emit()
-
-        # if not self.cs_scale:
-        #     if self.state.cross_section_scale:
-        #         if self.state.cross_section_scale > .0001:
-        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-        #             self.cs_scale = self.state.cross_section_scale
-        #
-        # try:
         zoom = self.state.cross_section_scale
         if zoom:
             if zoom != self._crossSectionScale:
@@ -247,16 +241,16 @@ class MAViewer(neuroglancer.Viewer):
         return set(self.pts.keys())
 
 
-    def save_matchpoints(self):
-        logger.info('Saving Match Points for Section #%d: %s' % (layer, cfg.data.base_image_name(l=layer)))
-        p_ = [p.point.tolist() for p in self.pts.values()]
-        logger.critical('p_: %s' %str(p_))
-        mps = [p_[0][1::], p_[1][1::], p_[2][1::]]
-        cfg.data.set_manual_points(role=self.role, matchpoints=mps, l=self.index)
-        cfg.data.set_selected_method(method="Match Point Align", l=self.index)
-        cfg.data.print_all_match_points()
-        cfg.main_window._saveProjectToFile(silently=True)
-        cfg.main_window.hud.post('Match Points Saved!')
+    # def save_matchpoints(self):
+    #     logger.info('Saving Match Points for Section #%d: %s' % (layer, cfg.data.base_image_name(l=layer)))
+    #     p_ = [p.point.tolist() for p in self.pts.values()]
+    #     logger.critical('p_: %s' %str(p_))
+    #     mps = [p_[0][1::], p_[1][1::], p_[2][1::]]
+    #     cfg.data.set_manual_points(role=self.role, matchpoints=mps, l=self.index)
+    #     cfg.data.set_selected_method(method="Match Point Align", l=self.index)
+    #     cfg.data.print_all_match_points()
+    #     cfg.main_window._saveProjectToFile(silently=True)
+    #     cfg.main_window.hud.post('Match Points Saved!')
 
 
     # def clear_matchpoints(self, s):
@@ -297,10 +291,10 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def restoreManAlignPts(self):
-        logger.info('')
+        logger.info('Restoring manual alignment points for role: %s' %self.role)
         self.pts = {}
-        data = cfg.data.getmpFlat(l=self.index)[self.role]
-        for i, p in enumerate(data):
+        pts_data = cfg.data.getmpFlat(l=cfg.data.layer())[self.role]
+        for i, p in enumerate(pts_data):
             props = [self.mp_colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
@@ -309,7 +303,7 @@ class MAViewer(neuroglancer.Viewer):
         with self.txn() as s:
             s.layers['ann'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
-                annotations=self.pt2ann(points=data),
+                annotations=self.pt2ann(points=pts_data),
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
                     ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
@@ -317,6 +311,65 @@ class MAViewer(neuroglancer.Viewer):
                 ],
                 shader=copy.deepcopy(ann_shader),
             )
+
+        # json_str = self.state.layers.to_json()
+        # logger.critical('--------------')
+        # logger.critical(json_str[0]['annotations'])
+
+
+    def set_brightness(self, val=None):
+        logger.info('')
+        state = copy.deepcopy(self.state)
+        for layer in state.layers:
+            if val: layer.shaderControls['brightness'] = val
+            else:   layer.shaderControls['brightness'] = cfg.data.brightness()
+            # layer.volumeRendering = True
+        self.set_state(state)
+
+    def set_contrast(self, val=None):
+        logger.info('')
+        state = copy.deepcopy(self.state)
+        for layer in state.layers:
+            if val: layer.shaderControls['contrast'] = val
+            else:   layer.shaderControls['contrast'] = cfg.data.contrast()
+            # layer.volumeRendering = True
+        self.set_state(state)
+
+    def set_zmag(self, val=10):
+        logger.info('')
+        try:
+            state = copy.deepcopy(self.state)
+            state.relativeDisplayScales = val
+            self.set_state(state)
+        except:
+            logger.warning('Unable to set Z-mag')
+        else:
+            logger.info('Successfully set Z-mag!')
+
+    def _set_zmag(self):
+        with self.txn() as s:
+            s.relativeDisplayScales = {"z": 10}
+
+    def set_zoom(self):
+        logger.info('')
+
+        if self.cs_scale:
+            with self.txn() as s:
+                s.crossSectionScale = self.cs_scale
+        else:
+            _, tensor_y, tensor_x = cfg.tensor.shape
+            widget_w = cfg.project_tab.MA_webengine_ref.geometry().width()
+            widget_h = cfg.project_tab.MA_webengine_ref.geometry().height()
+            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale()) # nm per imagepixel
+            # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
+            scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
+            scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
+            cs_scale = max(scale_h, scale_w)
+
+            with self.txn() as s:
+                # s.crossSectionScale = cs_scale * 1.20
+                s.crossSectionScale = cs_scale
+
 
 
 if __name__ == '__main__':

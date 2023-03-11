@@ -46,7 +46,7 @@ class WorkerSignals(QObject):
 
 
 class EMViewer(neuroglancer.Viewer):
-    def __init__(self, name=None, force_xy=False, webengine=None):
+    def __init__(self, name=None, force_xy=False, webengine=None, orientation=None):
         super().__init__()
         if name:
             self.name=name
@@ -57,9 +57,11 @@ class EMViewer(neuroglancer.Viewer):
         self._layer = None
         self.cs_scale = None
         self._crossSectionScale = 1
-        self.orientation = None
+        self.orientation = orientation
+        self.scale = cfg.data.scale()
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.initViewer()
         logger.info('viewer constructed!')
 
 
@@ -79,6 +81,7 @@ class EMViewer(neuroglancer.Viewer):
     def __repr__(self):
         return copy.deepcopy(self.state)
 
+
     def set_layer(self, index):
         state = copy.deepcopy(self.state)
         state.position[0] = index
@@ -96,10 +99,7 @@ class EMViewer(neuroglancer.Viewer):
     #             s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
 
 
-    def set_layer(self, l:int):
-        state = copy.deepcopy(self.state)
-        state.position[0] = l
-        self.set_state(state)
+
 
     def initViewerMendenhall(self):
         logger.critical('Initializing Neuroglancer - Mendenhall...')
@@ -133,8 +133,8 @@ class EMViewer(neuroglancer.Viewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
 
-    def initViewer(self):
 
+    def initViewer(self):
         if cfg.project_tab._tabs.currentIndex() == 3:
             self.initViewerSbs(requested='xy', orientation='vertical')
         elif getData('state,MANUAL_MODE'):
@@ -159,9 +159,6 @@ class EMViewer(neuroglancer.Viewer):
           'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         nglayout = mapping[requested]
 
-        # logger.critical(f'passed arg: {nglayout}')
-
-
         if cfg.data.is_mendenhall(): self.initViewerMendenhall(); return
 
         self.clear_layers()
@@ -173,25 +170,27 @@ class EMViewer(neuroglancer.Viewer):
         )
 
         if getData('state,MANUAL_MODE'):
-            sf = cfg.data.scale_val(s=cfg.data.scale())
-            al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-            self.store = cfg.tensor = cfg.al_tensor =  get_zarr_tensor(al_path).result()
             self.index = cfg.data.layer()
+            dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
+            self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
             self.LV = ng.LocalVolume(
                 volume_type='image',
-                data=self.store[self.index:self.index + 1, :, :],
+                # data=self.store[self.index:self.index + 1, :, :],
+                data=self.store[:, :, :],
+                # data=self.store[:, :],
+                # dimensions=ng.CoordinateSpace(names=['x', 'y'], units=['nm','nm'], scales=cfg.data.resolution()[1:], ),
                 dimensions=self.coordinate_space,
+                # voxel_offset=[0, 0]
                 voxel_offset=[0, 0, 0]
             )
         else:
             self.make_local_volumes()
 
-
         is_aligned = cfg.data.is_aligned_and_generated()
-        if is_aligned:
-            tensor_z, tensor_y, tensor_x = cfg.al_tensor.shape
-        else:
-            tensor_z, tensor_y, tensor_x = cfg.unal_tensor.shape
+        # if getData('state,MANUAL_MODE'):
+        #     tensor_y, tensor_x = cfg.tensor.shape
+        # else:
+        _, tensor_y, tensor_x = cfg.tensor.shape
 
         self.set_zoom()
         sf = cfg.data.scale_val(s=cfg.data.scale())
@@ -199,7 +198,9 @@ class EMViewer(neuroglancer.Viewer):
 
 
         if getData('state,MANUAL_MODE'):
-            self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout)]
+            # self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l], layout='xy')]s
+            # self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l])]
+            self.grps = [ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')]
         else:
             self.grps = []
             self.grps.append(ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout))
@@ -226,7 +227,10 @@ class EMViewer(neuroglancer.Viewer):
                 s.crossSectionBackgroundColor = '#1b1e23'
             else:
                 s.crossSectionBackgroundColor = '#808080'
-            s.layout.type = nglayout
+            # if getData('state,MANUAL_MODE'):
+            #     s.layout.type = 'xy'
+            # else:
+            #     s.layout.type = nglayout
             if getData('state,MANUAL_MODE'):
                 s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             else:
@@ -262,10 +266,14 @@ class EMViewer(neuroglancer.Viewer):
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
-            time.sleep(.25)
-            self.webengine.setUrl(QUrl(self.get_viewer_url()))
-            time.sleep(.25)
-            self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            # time.sleep(.25)
+            # self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            # time.sleep(.25)
+            # self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+        self.set_brightness()
+        self.set_contrast()
+        # self.set_zmag()
 
 
     def initViewerSlim(self, nglayout=None):
@@ -286,25 +294,30 @@ class EMViewer(neuroglancer.Viewer):
         if not os.path.exists(path):
             cfg.main_window.warn('Zarr Not Found: %s' % path)
             return
-        try:
-            if cfg.USE_TENSORSTORE:
-                self.store = cfg.tensor = get_zarr_tensor(path).result()
-            else:
-                logger.info('Opening Zarr...')
-                self.store = zarr.open(path)
-        except:
-            print_exception()
-            cfg.main_window.warn('There was a problem loading tensor at %s' % path)
-            cfg.main_window.warn('Trying with regular Zarr datastore...')
-            try:
-                self.store = zarr.open(path)
-            except:
-                print_exception()
-                cfg.main_window.warn('Unable to load Zarr')
-                return
-            else:    print('Zarr Loaded Successfully!')
-        else:
-            print('TensorStore Loaded Successfully!')
+
+
+
+        self.store = cfg.tensor = get_zarr_tensor(path).result()
+        # try:
+        #     if cfg.USE_TENSORSTORE:
+        #         self.store = cfg.tensor = get_zarr_tensor(path).result()
+        #     else:
+        #         logger.info('Opening Zarr...')
+        #         self.store = zarr.open(path)
+        # except:
+        #     print_exception()
+        #     cfg.main_window.warn('There was a problem loading tensor at %s' % path)
+        #     cfg.main_window.warn('Trying with regular Zarr datastore...')
+        #     try:
+        #         self.store = zarr.open(path)
+        #     except:
+        #         print_exception()
+        #         cfg.main_window.warn('Unable to load Zarr')
+        #         return
+        #     else:    print('Zarr Loaded Successfully!')
+        # else:
+        #     print('TensorStore Loaded Successfully!')
+
 
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
@@ -345,6 +358,9 @@ class EMViewer(neuroglancer.Viewer):
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        self.set_brightness()
+        self.set_contrast()
+
 
 
     def set_zoom(self):
@@ -356,10 +372,10 @@ class EMViewer(neuroglancer.Viewer):
         else:
 
             area = cfg.main_window.globTabs.geometry().getRect()
-            if cfg.data.is_aligned_and_generated():
-                tensor_z, tensor_y, tensor_x = cfg.al_tensor.shape
-            else:
-                tensor_z, tensor_y, tensor_x = cfg.unal_tensor.shape
+            # if getData('state,MANUAL_MODE'):
+            #     tensor_y, tensor_x = cfg.tensor.shape
+            # else:
+            _, tensor_y, tensor_x = cfg.tensor.shape
 
             is_aligned = cfg.data.is_aligned_and_generated()
 
@@ -388,11 +404,11 @@ class EMViewer(neuroglancer.Viewer):
 
             with self.txn() as s:
                 if getData('state,MANUAL_MODE'):
-                    s.crossSectionScale = cs_scale *1.04
+                    s.crossSectionScale = cs_scale *1.10
                 elif self.orientation == 'vertical':
-                    s.crossSectionScale = cs_scale * 1.20
+                    s.crossSectionScale = cs_scale *1.24
                 else:
-                    s.crossSectionScale = cs_scale * 1.06
+                    s.crossSectionScale = cs_scale *1.10
 
 
     # def set_rds(self):
@@ -557,6 +573,37 @@ class EMViewer(neuroglancer.Viewer):
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, ] * 3,
             )
+
+    def set_brightness(self, val=None):
+        state = copy.deepcopy(self.state)
+        for layer in state.layers:
+            if val: layer.shaderControls['brightness'] = val
+            else:   layer.shaderControls['brightness'] = cfg.data.brightness()
+            # layer.volumeRendering = True
+        self.set_state(state)
+
+    def set_contrast(self, val=None):
+        state = copy.deepcopy(self.state)
+        for layer in state.layers:
+            if val: layer.shaderControls['contrast'] = val
+            else:   layer.shaderControls['contrast'] = cfg.data.contrast()
+            #layer.volumeRendering = True
+        self.set_state(state)
+
+    def set_zmag(self, val=10):
+        logger.info('')
+        try:
+            state = copy.deepcopy(self.state)
+            state.relativeDisplayScales = val
+            self.set_state(state)
+        except:
+            logger.warning('Unable to set Z-mag')
+        else:
+            logger.info('Successfully set Z-mag!')
+
+    # def _set_zmag(self):
+    #     with self.txn() as s:
+    #         s.relativeDisplayScales = {"z": 10}
 
 
 # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.

@@ -44,7 +44,7 @@ class ProjectTab(QWidget):
                  datamodel=None):
         super().__init__(parent)
         logger.info('')
-        # logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
+        logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
         self.viewer = None
@@ -83,25 +83,28 @@ class ProjectTab(QWidget):
         self.refreshTab(index=index)
 
     def refreshTab(self, index=None):
+        logger.info('\n\n\n')
         if index == None:
             index = self._tabs.currentIndex()
 
         if getData('state,MANUAL_MODE'):
-            self.pts_ref = self.MA_viewer_ref.pts
-            self.pts_base = self.MA_viewer_base.pts
+            pts_ref = self.MA_viewer_ref.pts
+            pts_base = self.MA_viewer_base.pts
+            logger.critical('pts_ref = %s' %str(pts_ref))
+            logger.critical('pts_base = %s' %str(pts_base))
             self.initNeuroglancer()
-            self.MA_viewer_ref.pts = self.pts_ref
-            self.MA_viewer_base.pts = self.pts_base
-            self.updateNeuroglancer()
+            self.MA_viewer_ref.pts = pts_ref
+            self.MA_viewer_base.pts = pts_base
+            # self.updateNeuroglancer()
 
-        elif index == 0:
+        if index == 0:
             # self.updateNeuroglancer()
             self.initNeuroglancer()
             # pass
         elif index == 1:
             pass
         elif index == 2:
-            self.updateJsonWidget()
+            self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
         elif index == 3:
             self.snr_plot.data = cfg.data
@@ -115,7 +118,7 @@ class ProjectTab(QWidget):
     def initSnrViewer(self):
 
         self.snrViewer = self.viewer =  cfg.emViewer = EMViewer(webengine=self.snrWebengine)
-        self.snrViewer.initViewerSbs(orientation='vertical')
+        # self.snrViewer.initViewerSbs(orientation='vertical')
         self.snrWebengine.setUrl(QUrl(self.snrViewer.url()))
         self.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         self.updateNeuroglancer()
@@ -143,15 +146,11 @@ class ProjectTab(QWidget):
             self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
-            # self.MA_viewer_base.initViewer()
-            # self.MA_viewer_ref.initViewer()
-            # self.MA_viewer_stage.initViewer()
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
             self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
             self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
-
             self.updateListWidgets()
         else:
             if caller != '_onGlobTabChange':
@@ -162,35 +161,36 @@ class ProjectTab(QWidget):
                 self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
 
 
-
     def updateNeuroglancer(self):
         caller = inspect.stack()[1].function
         logger.info(f'Updating Neuroglancer Viewer (caller: {caller})')
-        # if self._tabs.currentIndex() == 3:
-        #     # self.snrViewer.initViewer()
-        #     state = copy.deepcopy(self.snrViewer.state)
-        #     for layer in state.layers:
-        #         layer.shaderControls['brightness'] = cfg.data.brightness()
-        #         layer.shaderControls['contrast'] = cfg.data.contrast()
-        #     self.snrViewer.set_state(state)
-        if getData('state,MANUAL_MODE'):
-            self.MA_viewer_base.initViewer()
-            self.MA_viewer_ref.initViewer()
-            self.MA_viewer_stage.initViewer()
-            self.updateListWidgets()
-        else:
-            self.viewer.initViewer()
-            state = copy.deepcopy(self.viewer.state)
-            for layer in state.layers:
-                # layer.shaderControls['normalized'] = {'range': np.array(cfg.data.normalize())}
-                layer.shaderControls['brightness'] = cfg.data.brightness()
-                layer.shaderControls['contrast'] = cfg.data.contrast()
-                # layer.volumeRendering = True
+        for viewer in cfg.main_window.get_viewers():
+            viewer.initViewer()
+        # if getData('state,MANUAL_MODE'):
+        #     self.MA_viewer_base.initViewer()
+        #     self.MA_viewer_ref.initViewer()
+        #     self.MA_viewer_stage.initViewer()
+        #     self.updateListWidgets() # <-- !!!
+        # else:
+        #     self.viewer.initViewer()
 
-            self.viewer.set_state(state)
-            # url = self.viewer.get_viewer_url()
-            # logger.info('setting URL...\n%s' % url)
-            # self.webengine.setUrl(QUrl(url))
+        # self.setViewerModifications()
+
+
+    # def setViewerModifications(self):
+    #     logger.info('')
+    #     if getData('state,MANUAL_MODE'):
+    #         self.MA_viewer_base.set_brightness()
+    #         self.MA_viewer_ref.set_brightness()
+    #         self.MA_viewer_stage.set_brightness()
+    #
+    #         self.MA_viewer_base.set_contrast()
+    #         self.MA_viewer_ref.set_contrast()
+    #         self.MA_viewer_stage.set_contrast()
+    #     else:
+    #         self.viewer.set_brightness()
+    #         self.viewer.set_contrast()
+
 
 
 
@@ -254,10 +254,7 @@ class ProjectTab(QWidget):
         w = QWidget()
         w.setWindowFlags(Qt.FramelessWindowHint)
         w.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # spcr = QWidget()
-        # spcr.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         vbl = QVBoxLayout()
-        # vbl.addWidget(spcr)
         vbl.addWidget(self.hud_overlay)
         w.setLayout(vbl)
 
@@ -270,12 +267,10 @@ class ProjectTab(QWidget):
         self.afm_widget_.setObjectName('_tool_afmCafm')
         self.afm_widget_.setReadOnly(True)
         self._transformationWidget = QWidget()
-        # self._transformationWidget.setFixedSize(180,80)
         self._transformationWidget.setFixedWidth(170)
         self._transformationWidget.setMaximumHeight(70)
         vbl = VBL()
         vbl.setSpacing(1)
-        # vbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignBaseline)
         vbl.addWidget(self.afm_widget_)
         self._transformationWidget.setLayout(vbl)
 
@@ -284,23 +279,16 @@ class ProjectTab(QWidget):
         self._overlayBottomLeft.hide()
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_gl.addWidget(self._overlayBottomLeft, 0, 0, 5, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        # self.ng_gl.addWidget(cfg.main_window._tool_afmCafm, 0, 0, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.ngVertLab.setObjectName('label_ng')
 
-        dSize = 120
-
         self.DetailsContainer = QWidget()
-        # self.DetailsContainer.setWindowFlags(Qt.FramelessWindowHint)
-        # self.DetailsContainer.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.DetailsContainer.setAutoFillBackground(False)
         self.DetailsContainer.setAttribute(Qt.WA_TranslucentBackground, True)
         self.DetailsContainer.setStyleSheet("""background-color: rgba(255, 255, 255, 0);""")
 
         self.detailsCorrSpots = QWidget()
-        # self.detailsCorrSpots.setWindowFlags(Qt.FramelessWindowHint)
-        # self.detailsCorrSpots.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.corrSpotClabel = ClickLabel("<b>Signal</b>")
         self.corrSpotClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0);color: #f3f6fb;")
         self.corrSpotClabel.setAutoFillBackground(False)
@@ -354,8 +342,7 @@ class ProjectTab(QWidget):
         self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.detailsSection.setMaximumHeight(100)
-        self.detailsSection.setMinimumWidth(210)
-        # self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.detailsSection.setMinimumWidth(230)
         self.detailsClabel = ClickLabel("<b><span style='color: #ffe135;'>Section</span></b>")
         self.detailsClabel.setStyleSheet("color: #f3f6fb;")
         self.detailsClabel.setAutoFillBackground(False)
@@ -415,6 +402,8 @@ class ProjectTab(QWidget):
         self.detailsSNR.hide()
 
         self.detailsRuntime = QLabel()
+        self.detailsRuntime.setWindowFlags(Qt.FramelessWindowHint)
+        self.detailsRuntime.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.runtimeClabel = ClickLabel('<b>dt</b>')
         self.runtimeClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0); color: #f3f6fb;")
         self.runtimeClabel.setAutoFillBackground(False)
@@ -538,6 +527,8 @@ class ProjectTab(QWidget):
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
         # self.MA_webengine_stage.setMouseTracking(True)
+        '''Mouse move events will occur only when a mouse button is pressed down, 
+        unless mouse tracking has been enabled with setMouseTracking() .'''
         self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
         self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
         self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
@@ -588,61 +579,93 @@ class ProjectTab(QWidget):
         self.rbAuto.setEnabled(False)
         self.rbManHint.setEnabled(False)
         self.rbManStrict.setEnabled(False)
-        self.rbAuto.toggled.connect(self.updateListWidgets)
-        self.rbManHint.toggled.connect(self.updateListWidgets)
-        self.rbManStrict.toggled.connect(self.updateListWidgets)
+
+        def fn():
+            method = 'Auto-SWIM'
+            if self.rbAuto.isChecked():
+                method = 'Auto-SWIM'
+            elif self.rbManHint.isChecked():
+                method = 'Manual-Hint'
+            elif self.rbManStrict.isChecked():
+                method = 'Manual-Strict'
+            cfg.data.set_selected_method(method)
+
+        self.rbAuto.toggled.connect(fn)
+        self.rbManHint.toggled.connect(fn)
+        self.rbManStrict.toggled.connect(fn)
         self.rbMethodGroup = QButtonGroup()
         self.rbMethodGroup.setExclusive(True)
         self.rbMethodGroup.addButton(self.rbAuto)
         self.rbMethodGroup.addButton(self.rbManHint)
         self.rbMethodGroup.addButton(self.rbManStrict)
 
-        self.fl_actionsMA.addWidget(HWidget(self.rbAuto, self.rbManHint, self.rbManStrict))
+        self.fl_actionsMA.addWidget(HWidget(QLabel('Method:'), self.rbAuto, self.rbManHint, self.rbManStrict))
 
-        self.btnClearMA = QPushButton('Clear Manual Points')
+        self.btnClearMA = QPushButton('Clear')
+        self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setMaximumHeight(20)
         self.btnClearMA.clicked.connect(self.deleteAllMp)
-        self.btnClearMA.clicked.connect(self.initNeuroglancer)
+        # self.btnClearMA.clicked.connect(self.initNeuroglancer)
 
-        self.btnResetAllMA = QPushButton('Setting All To Automatic-SWIM && Realign')
-        self.btnResetAllMA.setMaximumHeight(20)
         def fn():
-            cfg.main_window.hud.post('Setting All Section to Automatic-SWIM...')
-            s = cfg.data.scale()
+            cfg.main_window.layer_left()
+            self.initNeuroglancer()
+        self.btnPrevSection = QPushButton('Previous Section')
+        self.btnPrevSection.setMaximumHeight(20)
+        self.btnPrevSection.clicked.connect(fn)
+        # self.btnPrevSection.clicked.connect(self.updateNeuroglancer)
+
+        def fn():
+            cfg.main_window.layer_right()
+            self.initNeuroglancer()
+        self.btnNextSection = QPushButton('Next Section')
+        self.btnNextSection.setMaximumHeight(20)
+        self.btnNextSection.clicked.connect(fn)
+        # self.btnNextSection.clicked.connect(self.updateNeuroglancer)
+
+        def fn():
+            cfg.main_window.hud.post('Setting Method for All Sections to Automatic-SWIM...')
             for i in range(len(cfg.data)):
-                cfg.data['data']['scales'][s]['alignment_stack'][i]['alignment']['selected_method'] = 'Auto-SWIM'
-            cfg.main_window._saveProjectToFile()
-            cfg.main_window.alignAll()
-            cfg.main_window.exit_man_mode()
+                cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][i]['alignment']['selected_method'] = 'Auto-SWIM'
+            cfg.main_window.hud.done()
+        self.btnResetAllMA = QPushButton('Set All Automatic')
+        self.btnResetAllMA.setMaximumHeight(20)
         self.btnResetAllMA.clicked.connect(fn)
 
-        self.btnSaveAndRealignMA = QPushButton('Save && Realign')
-        self.btnSaveAndRealignMA.setMaximumHeight(20)
         def fn():
-            self.saveMps()
-            cfg.main_window.alignOne()
-            # cfg.main_window.alignAll()
-            logger.critical('Regenerating...')
-            cfg.main_window.regenerate(scale=cfg.data.scale())
-            self.copySaveAlignment()
-        self.btnSaveAndRealignMA.clicked.connect(fn)
+            cfg.main_window.hud.post('Aligning...')
+            cfg.main_window.alignOneMp()
+            # cfg.main_window.regenerateOne()
+            cfg.main_window.hud.done()
+        self.btnRealignMA = QPushButton('Align && Regenerate')
+        self.btnRealignMA.setMaximumHeight(20)
+        self.btnRealignMA.clicked.connect(fn)
 
-        self.btnSaveExitMA = QPushButton('Save && Exit Manual Alignment Mode')
-        self.btnSaveExitMA.setMaximumHeight(20)
         def fn():
-            self.saveMps()
+            cfg.main_window.hud.post('Applying Manual Points...')
+            self.applyMps()
+            cfg.main_window.hud.done()
+        self.btnApplyMA = QPushButton('Apply')
+        self.btnApplyMA.setMaximumHeight(20)
+        self.btnApplyMA.clicked.connect(fn)
+        self.btnApplyMA.setEnabled(False)
+
+        def fn():
+            self.applyMps()
             cfg.main_window.exit_man_mode()
-        self.btnSaveExitMA.clicked.connect(fn)
+        self.btnApplyExitMA = QPushButton('Apply && Exit')
+        self.btnApplyExitMA.setMaximumHeight(20)
+        self.btnApplyExitMA.clicked.connect(fn)
+        self.btnApplyExitMA.setEnabled(False)
 
-        self.btnExitMA = QPushButton('Exit Manual Alignment Mode')
+        self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setMaximumHeight(20)
         self.btnExitMA.clicked.connect(cfg.main_window.exit_man_mode)
 
-        self.fl_actionsMA.addWidget(self.btnClearMA)
-        self.fl_actionsMA.addWidget(self.btnSaveAndRealignMA)
-        self.fl_actionsMA.addWidget(self.btnResetAllMA)
-        self.fl_actionsMA.addWidget(self.btnSaveExitMA)
-        self.fl_actionsMA.addWidget(self.btnExitMA)
+        self.fl_actionsMA.addWidget(HWidget(self.btnPrevSection, self.btnNextSection))
+        self.fl_actionsMA.addWidget(HWidget(self.btnClearMA, self. btnApplyMA))
+        self.fl_actionsMA.addWidget(HWidget(self.btnRealignMA, self.btnResetAllMA))
+        self.fl_actionsMA.addWidget(HWidget(self.btnApplyExitMA, self.btnExitMA))
 
         self.MA_sbw = HWidget(
             VWidget(MA_refViewerTitle, self.MA_ptsListWidget_ref, self.MA_refNextColorLab),
@@ -651,9 +674,14 @@ class ProjectTab(QWidget):
         msg_MAinstruct = YellowTextLabel('⇧ + Click - Select at least 3 corresponding points')
         msg_MAinstruct.setFixedSize(360, 30)
 
+        self.labNoArrays = QLabel('')
+
+        self.stageDetails = VWidget()
+        self.stageDetails.addWidget(HWidget(QLabel('No. Generated Arrays: 1'), self.labNoArrays))
+
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
-        self.MA_stageSplitter.addWidget(VWidget(self.MA_sbw, self.gb_actionsMA))
+        self.MA_stageSplitter.addWidget(VWidget(self.stageDetails, self.MA_sbw, self.gb_actionsMA))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
 
@@ -686,7 +714,6 @@ class ProjectTab(QWidget):
         self.ng_browser_container_outer.layout.setSpacing(1)
 
 
-
     def refListItemClicked(self, qmodelindex):
         item = self.MA_ptsListWidget_ref.currentItem()
         logger.info(f"Selected {item.text()}")
@@ -697,22 +724,20 @@ class ProjectTab(QWidget):
         logger.info(f"Selected {item.text()}")
 
 
-    def copySaveAlignment(self):
-        logger.critical('')
-        dt = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        path = os.path.join(cfg.data.dest(), cfg.data.curScale, 'img_staged',str(cfg.data.layer()), dt)
-        if not os.path.isdir(path):
-            os.mkdir(path)
-        file = cfg.data.filename()
-        out = os.path.join(path, os.path.basename(file))
-        logger.critical('Copying FROM %s' % str(file))
-        logger.critical('Copying TO %s' % str(out))
-        shutil.copyfile(file, out)
+    # def copySaveAlignment(self):
+    #     logger.critical('')
+    #     dt = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    #     path = os.path.join(cfg.data.dest(), cfg.data.curScale, 'img_staged',str(cfg.data.layer()), dt)
+    #     if not os.path.isdir(path):
+    #         os.mkdir(path)
+    #     file = cfg.data.filename()
+    #     out = os.path.join(path, os.path.basename(file))
+    #     logger.critical('Copying FROM %s' % str(file))
+    #     logger.critical('Copying TO %s' % str(out))
+    #     shutil.copyfile(file, out)
 
 
     def checkMApoints(self):
-        # return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys()) and \
-        #                         (len(self.MA_viewer_ref.pts.keys()) > 2)
         return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys())
 
 
@@ -720,15 +745,24 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info('caller: %s' %caller)
         if getData('state,MANUAL_MODE'):
-            self.updateMAlistRef()
             self.updateMAlistBase()
+            self.updateMAlistRef()
             isValid = self.checkMApoints()
-            self.btnSaveExitMA.setEnabled(isValid)
+            self.btnApplyExitMA.setEnabled(isValid)
             if isValid or self.rbAuto:
-                self.btnSaveAndRealignMA.setEnabled(isValid)
+                # self.btnRealignMA.setEnabled(isValid)
+                self.btnApplyMA.setEnabled(isValid)
             self.rbAuto.setEnabled(True)
             self.rbManHint.setEnabled(isValid)
             self.rbManStrict.setEnabled(isValid)
+            method = cfg.data.selected_method()
+            if method == 'Auto-SWIM':
+                self.rbAuto.setChecked(True)
+            elif method == 'Manual-Hint':
+                self.rbManHint.setChecked(True)
+            elif method == 'Manual-Strict':
+                self.rbManStrict.setChecked(True)
+
 
 
     def updateMAlistRef(self):
@@ -827,7 +861,6 @@ class ProjectTab(QWidget):
         self.updateNeuroglancer()
 
 
-
     def deleteMpBase(self):
         logger.info('Deleting A Base Image Manual Correspondence Point from Buffer...')
         cfg.main_window.hud.post('Deleting A Base Image Manual Correspondence Point from Buffer...')
@@ -873,11 +906,12 @@ class ProjectTab(QWidget):
         self.MA_viewer_ref.update_annotations()
         self.MA_viewer_base.update_annotations()
         self.updateListWidgets()
-        self.saveMps()
-        self.updateNeuroglancer()
+        self.applyMps()
+        # self.updateNeuroglancer()
+        self.initNeuroglancer()
 
 
-    def saveMps(self):
+    def applyMps(self):
         cfg.main_window.hud.post('Saving Manual Correspondence Points...')
         logger.critical('Saving Manual Correspondence Points...')
         if self.checkMApoints():
@@ -960,9 +994,6 @@ class ProjectTab(QWidget):
         self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
         self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
-        # self.MA_viewer_ref.initViewer()
-        # self.MA_viewer_base.initViewer()
-        # self.MA_viewer_stage.initViewer()
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
         self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
@@ -1001,18 +1032,12 @@ class ProjectTab(QWidget):
         try:
             if getData('state,MANUAL_MODE'):
                 val = self.MA_viewer_ref.state.cross_section_scale
-                if val:
-                    if val != 0:
-                        new_val = float(sqrt(val))
-                        # logger.info(f'val = {val}, new_val = {new_val}')
-                        self.zoomSlider.setValue(new_val)
             else:
                 val = self.viewer.state.cross_section_scale
-                if val:
-                    if val != 0:
-                        new_val = float(sqrt(val))
-                        # logger.info(f'val = {val}, new_val = {new_val}')
-                        self.zoomSlider.setValue(new_val)
+            if val:
+                if val != 0:
+                    new_val = float(sqrt(val))
+                    self.zoomSlider.setValue(new_val)
         except:
             print_exception()
 
@@ -1056,6 +1081,8 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         # logger.info('caller: %s' % caller)
         try:
+            # for viewer in cfg.main_window.get_viewers():
+
             if getData('state,MANUAL_MODE'):
                 val = self.ZdisplaySlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
@@ -1119,12 +1146,14 @@ class ProjectTab(QWidget):
         self.table_container.setLayout(hbl)
 
 
-    def updateJsonWidget(self):
-        logger.info('')
+    def updateTreeWidget(self):
+        logger.critical('Updating Project Tree...')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.setModel(self.treeview_model)
         self.treeview.header().resizeSection(0, 300)
         self.treeview.expandAll()
+        self.treeview.update()
+        self.repaint()
 
 
     def initUI_JSON(self):
@@ -1173,65 +1202,34 @@ class ProjectTab(QWidget):
         self._wdg_treeview.setLayout(self.treeHbl)
 
 
-    def updatePlotThumbnail(self):
-        pixmap = QPixmap(cfg.data.thumbnail())
-        pixmap = pixmap.scaledToHeight(160)
-        self._thumbnail_src.setPixmap(pixmap)
-        self.source_thumb_and_label.show()
-        if cfg.data.is_aligned_and_generated():
-            pixmap = QPixmap(cfg.data.thumbnail_aligned())
-            pixmap = pixmap.scaledToHeight(160)
-            self._thumbnail_aligned.setPixmap(pixmap)
-            self.aligned_thumb_and_label.show()
-        else:
-            self.aligned_thumb_and_label.hide()
-
-
     def initUI_plot(self):
         '''SNR Plot Widget'''
         logger.info('')
         font = QFont()
         font.setBold(True)
         self.snr_plot = SnrPlot()
-        # lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#f3f6fb', font_size=14)
-        # self.lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#141414', font_size=14)
         self.lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
         self.lab_yaxis.setMaximumWidth(20)
-        # hbl = QHBoxLayout()
-        # hbl.addWidget(lab_yaxis)
-        # self._plot_Yaxis = QWidget()
-        # self._plot_Yaxis.setLayout(hbl)
-        # self._plot_Yaxis.setContentsMargins(0, 0, 0, 0)
-        # self._plot_Yaxis.setFixedWidth(22)
-        # self.lab_yaxis.setFont(font)
         hbl = HBL()
-        # hbl.addWidget(self._plot_Yaxis)
         hbl.addWidget(self.lab_yaxis)
         hbl.addWidget(self.snr_plot)
         self._plot_Xaxis = QLabel('Serial Section #')
         self._plot_Xaxis.setMaximumHeight(20)
-        # self._plot_Xaxis.setStyleSheet('color: #f3f6fb; font-size: 14px;')
-        # self._plot_Xaxis.setStyleSheet('color: #141414; font-size: 14px;')
         self._plot_Xaxis.setStyleSheet('color: #ede9e8; font-size: 14px;')
         self._plot_Xaxis.setContentsMargins(0, 0, 0, 8)
         self._plot_Xaxis.setFont(font)
         vbl = VBL()
         vbl.addLayout(hbl)
         vbl.addWidget(self._plot_Xaxis, alignment=Qt.AlignmentFlag.AlignHCenter)
-
         self.snr_plt_wid = QWidget()
         self.snr_plt_wid.setLayout(vbl)
         self.snr_plt_wid.setStyleSheet('background-color: #1b1e23; font-weight: 550;')
-
         self._thumbnail_src = QLabel()
         self._thumbnail_aligned = QLabel()
-
         self.snrWebengine = QWebEngineView()
         self.snrWebengine.setMinimumWidth(256)
-
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #1b1e23;')
-
         self.snrPlotSplitter.addWidget(self.snr_plt_wid)
         self.snrPlotSplitter.addWidget(self.snrWebengine)
 
@@ -1248,7 +1246,6 @@ class ProjectTab(QWidget):
         self._tabs.addTab(self.ng_browser_container_outer, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
         self._tabs.setTabToolTip(1, os.path.basename(cfg.data.dest()))
-        # self._tabs.addTab(self._wdg_treeview, ' Tree ')
         self._tabs.addTab(self._wdg_treeview, ' Data ')
         self._tabs.addTab(self.snrPlotSplitter, ' SNR Plot ')
         self._tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)

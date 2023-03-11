@@ -170,10 +170,10 @@ def run_json_project(project,
 
             # if there are match points, copy and scale them for scale_tbd
             if atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
-                mp_ref = (np.array(atrm['manual_points']['ref']) * upscale).tolist()
-                mp_base = (np.array(atrm['manual_points']['base']) * upscale).tolist()
-                atrm['manual_points']['ref'] = mp_ref
-                atrm['manual_points']['base'] = mp_base
+                mp_ref = (np.array(atrm['manual_points_mir']['ref']) * upscale).tolist()
+                mp_base = (np.array(atrm['manual_points_mir']['base']) * upscale).tolist()
+                atrm['manual_points_mir']['ref'] = mp_ref
+                atrm['manual_points_mir']['base'] = mp_base
 
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
             # Copy the affine_matrices from s_tbd and s the translation part to use as the initial guess for s_tbd
@@ -462,7 +462,12 @@ class alignment_process:
 
         # wwx, wwy = window width
         # psta = points stationary array
+        #build #recipe #addingredients
+
+        fn = os.path.basename(self.layer_dict['filename'])
+
         if atrm['selected_method'] == 'Auto-SWIM':
+            MAlogger.critical('\n%s (Method: Auto-SWIM)...' % fn)
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
                 '''refine_affine'''
@@ -478,6 +483,8 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_apply_affine)
             else:
                 '''init_affine'''
+                '''Number of SWIMs is equal to number of points in list of SWIM windows (e.g. psta_1)'''
+                '''psta_1 is list of x,y coordinates'''
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)
                 ingredient_1 = align_ingredient(name=self.im_mov_fn, ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest)
@@ -490,10 +497,10 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_2x2b)
                 # self.recipe.add_ingredient(ingredient_4x4)
         elif atrm['selected_method'] == 'Manual-Hint':
-            self.mp_base = np.array(self.layer_dict['alignment']['manual_points']['base']).transpose()
-            self.mp_ref = np.array(self.layer_dict['alignment']['manual_points']['ref']).transpose()
-            self.mp_base[1][:] = self.size - self.mp_base[1][:] # convert neuroglancer coordinate system
-            self.mp_ref[1][:] = self.size - self.mp_ref[1][:]  # convert neuroglancer coordinate system
+            MAlogger.critical('\n%s (Method: Manual-Hint)...' % fn)
+            self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
+            self.mp_ref = np.array(self.layer_dict['alignment']['manual_points_mir']['ref']).transpose()
+
             # logger.critical('Manual Points (base):\n%s' % str(self.mp_base))
             # logger.critical('Manual Points (ref):\n%s' % str(self.mp_ref))
             # MAlogger.critical('Manual Points (base):\n%s' % str(self.mp_base))
@@ -509,10 +516,11 @@ class alignment_process:
             self.recipe.add_ingredient(ingredient_2_mp_b)  # This one will use the previous Affine and refine it #0221+
             # self.recipe.add_ingredient(ingredient_4x4)
         elif atrm['selected_method'] == 'Manual-Strict':
-            self.mp_base = np.array(self.layer_dict['alignment']['manual_points']['base']).transpose()
-            self.mp_ref = np.array(self.layer_dict['alignment']['manual_points']['ref']).transpose()
-            self.mp_base[1][:] = self.size - self.mp_base[1][:]
-            self.mp_ref[1][:] = self.size - self.mp_ref[1][:]
+            MAlogger.critical('\n%s (Method: Manual-Strict)...' % fn)
+            self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
+            self.mp_ref = np.array(self.layer_dict['alignment']['manual_points_mir']['ref']).transpose()
+            # self.mp_base[1][:] = self.size - self.mp_base[1][:]
+            # self.mp_ref[1][:] = self.size - self.mp_ref[1][:]
             ingredient_1_mp = align_ingredient(name=self.im_mov_fn, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
 
@@ -775,10 +783,16 @@ class align_ingredient:
 
         if self.align_mode == 'manual_align':
             logger.critical('SWIM argument string: %s' % self.swim_str)
+            MAlogger.critical('SWIM argument string: %s' % self.swim_str)
+            MAlogger.critical('\nSWIM stdout: %s' % str(self.swim_out_lines))
+            # MAlogger.info('swim_err_lines\n %s' % str(self.swim_out_lines))
 
         self.swim_out_lines = swim_out_lines = o['out'].strip().split('\n')
         self.swim_err_lines = swim_err_lines = o['err'].strip().split('\n')
         swim_results.append({'out': swim_out_lines, 'err': swim_err_lines})
+
+
+
 
         mir_script = ""
         snr_list = []
@@ -806,8 +820,7 @@ class align_ingredient:
         for i,l in enumerate(swim_out_lines):
             toks = l.replace('(', ' ').replace(')', ' ').strip().split()
             self.mir_toks[i] = str(toks)
-            if self.align_mode == 'manual_align':
-                MAlogger.critical('\n****MANUAL ALIGNMENT**** MIR Toks: %s' % str(toks))
+            MAlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
             if len(swim_out_lines) == 1:
                 dx = float(toks[8])
                 dy = float(toks[9])

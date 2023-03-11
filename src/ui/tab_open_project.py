@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel,
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox
 from qtpy.QtCore import Qt, QRect
-from qtpy.QtGui import QFont, QPixmap, QPainter
+from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence
 
 from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
@@ -347,8 +347,6 @@ class OpenProject(QWidget):
             cfg.main_window.warn("Invalid Path")
 
 
-
-
     def delete_project(self):
         logger.critical('')
         # project_file = self.selected_file
@@ -416,7 +414,34 @@ class OpenProject(QWidget):
         cfg.main_window.tell('Deletion Complete!')
         logger.info('Deletion Complete')
 
+    # def keyPressEvent(self, event):
+    #     print(event)
+    #     self.keyevent = event
+    #
+    #     if event.matches(QKeySequence.Delete):
+    #         self.delete_project()
 
+
+        # if event.key() == Qt.Key_Delete:
+        #     # self.parent.parent.delete_project()
+        #     self.delete_project()
+        # else:
+        #     super().keyPressEvent(event)
+
+
+# class TableWidget(QTableWidget):
+#     def __init__(self, parent=None):
+#         # super(TableWidget, self).__init__(parent)
+#         super().__init__()
+#         self.parent = parent
+#
+#     def keyPressEvent(self, event):
+#         print(event.key())
+#         if event.key() == Qt.Key_Delete:
+#             # self.parent.parent.delete_project()
+#             cfg.main_window._getTabObject().delete_project()
+#         else:
+#             super().keyPressEvent(event)
 
 class UserProjects(QWidget):
     def __init__(self, parent, **kwargs):
@@ -432,6 +457,8 @@ class UserProjects(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
+        # self.table = TableWidget(self)
+
         self.table.setShowGrid(False)
         self.table.setSortingEnabled(True)
         self.table.setWordWrap(True)

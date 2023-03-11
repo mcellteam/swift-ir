@@ -432,6 +432,9 @@ class DataModel:
                 layer['alignment'].setdefault('manual_points', {})
                 layer['alignment']['manual_points'].setdefault('ref', [])
                 layer['alignment']['manual_points'].setdefault('base', [])
+                layer['alignment'].setdefault('manual_points_mir', {})
+                layer['alignment']['manual_points_mir'].setdefault('ref', [])
+                layer['alignment']['manual_points_mir'].setdefault('base', [])
                 if s == self.coarsest_scale_key():
                     layer['alignment']['method_data']['alignment_option'] = 'init_affine'
                 else:
@@ -461,10 +464,7 @@ class DataModel:
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''
         try:
-            layer = self._data['data']['current_layer']
-            if layer is None:
-                logger.warning('Layer is None!')
-            return layer
+            return self._data['data']['current_layer']
         except:
             logger.warning('Falling Back To Layer 0')
             self.set_layer(0)
@@ -552,22 +552,29 @@ class DataModel:
 
 
     def snr_components(self, s=None, l=None) -> list[float]:
+        # logger.critical('')
         if s == None: s = self.curScale
         if l == None: l = self.layer()
-        mr = cfg.data.method_results()
-        if self.selected_method(s=s, l=l) == 'Manual-Hint':
-            files = self.get_corr_spot_files()
-            n = len(files)
-            if ('snr' in cfg.data.method_results()) and (len(files) == len(mr['snr'])):
-                return mr['snr']
-            else:
-                return [0.0]*n
-        else:
-            try:
-                return mr['snr']
-            except:
-                logger.warning('No SNR data for %s, layer %d' %(s,l))
-                return []
+        mr = cfg.data.method_results(s=s, l=l)
+        try:
+            return mr['snr']
+        except:
+            print_exception()
+            logger.critical('Cant return SNR components for section %d' %l)
+        # if self.selected_method(s=s, l=l) == 'Manual-Hint':
+        #     files = self.get_corr_spot_files()
+        #     n = len(files)
+        #     if ('snr' in mr) and (n == len(mr['snr'])):
+        #         return mr['snr']
+        #     else:
+        #         return [0.0]*n
+        # else:
+        #     try:
+        #         return mr['snr']
+        #     except:
+        #         print_exception()
+        #         logger.warning('No SNR data for %s, layer %d' %(s,l))
+        #         return []
 
 
     def snr_prev_components(self, s=None, l=None):
@@ -745,16 +752,20 @@ class DataModel:
         return self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']
 
     def getmpFlat(self, s=None, l=None):
+        # logger.critical('')
         if s == None: s = self.curScale
         if l == None: l = self.layer()
+
         try:
             mps = self._data['data']['scales'][s]['alignment_stack'][l]['alignment']['manual_points']
+            logger.info('mps = %s' %str(mps))
             # ref = [(0, x[0], x[1]) for x in mps['ref']]
             # base = [(0, x[0], x[1]) for x in mps['base']]
             ref = [(0.5, x[0], x[1]) for x in mps['ref']]
             base = [(0.5, x[0], x[1]) for x in mps['base']]
             return {'ref': ref, 'base': base}
         except:
+            print_exception()
             return {'ref': [], 'base': []}
 
     def clearMps(self, s=None, l=None):
@@ -788,6 +799,15 @@ class DataModel:
         logger.critical('l=%d, s=%s, role=%s, mps=%s' % (l, s, role, str(matchpoints)))
         logger.info(f"Writing manual points to project dictionary, s={s}, l={l}")
         self.alstack()[l]['alignment']['manual_points'][role] = matchpoints
+        self.set_manual_points_mir(role, matchpoints, s, l)
+
+
+    def set_manual_points_mir(self, role, matchpoints, s=None, l=None):
+        if s == None: s = self.curScale
+        if l == None: l = self.layer()
+        img_width = cfg.data.image_size()[0]
+        lst = [[img_width - pt[1], pt[0]] for pt in matchpoints]
+        self.alstack()[l]['alignment']['manual_points_mir'][role] = lst
 
 
     def afm(self, s=None, l=None) -> list:
@@ -902,7 +922,7 @@ class DataModel:
 
     def chunkshape(self):
         try:
-            return self._data['data']['chunkshape']
+            return tuple(self._data['data']['chunkshape'])
         except:
             logger.warning('chunkshape not in dictionary')
 
