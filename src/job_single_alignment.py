@@ -12,6 +12,10 @@ import json
 import logging
 from recipe_maker import run_json_project
 
+
+# {'ref': [(0.5, 12.000009536743164, 1016.5),
+#   (0.5, 1016.0000610351562, 8.49999713897705)],
+
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
@@ -28,7 +32,7 @@ if __name__ == '__main__':
     start_layer = int(sys.argv[5].strip())
     num_layers = int(sys.argv[6].strip())
     use_file_io = (int(sys.argv[7].strip()) != 0)
-    size = sys.argv[8]
+    size = int(sys.argv[8])
     with open(project_name, 'r') as f:
         project_dict = json.load(f)
     updated_model, need_to_write_json = run_json_project(

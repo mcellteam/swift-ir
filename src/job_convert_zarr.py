@@ -12,17 +12,11 @@ import os
 import sys
 import zarr
 import logging
-import numpy as np
+import shutil
 import numcodecs
+import numpy as np
 numcodecs.blosc.use_threads = False
 from libtiff import TIFF
-
-try:     import src.config as cfg
-except:  import config as cfg
-
-logger = logging.getLogger(__name__)
-logpath = '/Users/joelyancey/Logs/temp_zarr.log'
-
 
 
 def cat(outfilename, *infilenames):
@@ -35,93 +29,68 @@ def cat(outfilename, *infilenames):
 
 
 if __name__ == '__main__':
-
     job_script   = sys.argv[0] #*
     ID           = int(sys.argv[1]) #*
     fn           = sys.argv[2]
     out          = sys.argv[3] #*
+    chunkshape   = tuple(map(int,sys.argv[4][1:-1].split(', ')))
+    stageit      = bool(int(sys.argv[5]))
+    dest         = sys.argv[6]
+    '''
+    out = os.path.join(od, 's%d' % get_scale_val(scale))
+    fn = os.path.join(dest, scale, 'img_src', img)
+    '''
+    logger = logging.getLogger('job_convert_zarr.log')
+    fh = logging.FileHandler(os.path.join(dest, 'logs', 'job_convert_zarr.log'))
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    logger.critical('\nRunning job:\n%s' %str(sys.argv))
 
     # synchronizer = zarr.ThreadSynchronizer()
     # store = zarr.open(out, synchronizer=synchronizer)\
     store = zarr.open(out, write_empty_chunks=False)
-
     tif = TIFF.open(fn)
     img = tif.read_image()[:,::-1] # np.array
-
     # img = TIFFfile(fn)  # pylibtiff -- LIBTIFF (pure Python module)
     # img = tifffile.imread(fn)
-
     store[ID,:,:] = img # store: <zarr.core.Array (19, 1244, 1130) uint8>
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-
-    img_ = np.expand_dims(img, axis=0)
-    # img.shape = (1024, 1024)
-    # img_.shape = (1, 1024, 1024)
-    # copy_store.shape = <zarr.core.Array (1, 1024, 1024) float64>
-
-    # out_stage = '/Users/joelyancey/glanceem_swift/test_projects/testProj2/img_staged/2'
-    # if not os.path.isdir(stage):
-    #     copy_store = zarr.open_array(stage, shape=img_.shape)
-    # else:
-    #     copy_store = zarr.open_array(stage, shape=img_.shape)
-    #     copy_store.append(img_)
-
-    if '/img_aligned/' in fn:
-
-        grp = zarr.open_group(os.path.join(os.path.dirname(out), 'img_staged'), mode='w')
-
-        p_stg = os.path.join(os.path.dirname(out), 'img_staged', str(ID))
+    # store.attrs['ID'] = ID
+    # store.attrs[f'{ID}_stageit'] = stageit
+    # store.attrs['fn'] = fn
+    # store.attrs['chunkshape'] = chunkshape
 
 
-        # open(logpath, 'a+').close()
-        with open(logpath, 'a+') as f:
-            f.write('\nCopy-writing %s to %s...' % (fn, p_stg))
+    if stageit:
+        img_ = np.expand_dims(img, axis=0)
+        # img.shape = (1024, 1024)
+        # img_.shape = (1, 1024, 1024)
+
+        out_name = 'staged'
+        dir_scale = os.path.dirname(os.path.dirname(fn))
+        dir_staged = os.path.join(dir_scale, 'zarr_staged')
+        dir_staged_img = os.path.join(dir_staged, str(ID))
+        path = os.path.join(dir_staged_img, out_name)
+        grp = zarr.open(dir_staged_img)
+        # arrays = dict(grp.info_items())['Arrays']
+        # groups = dict(grp.info_items())['Groups']
+
+        #Temporary!
+
+        if os.path.exists(path):
+            try:    shutil.rmtree(path, ignore_errors=True)
+            except: pass
+
+        # n_arrays = dict(grp.info_items())['No. arrays']
+        # name_ = str(n_arrays) + '__'
+        # grp.create_dataset(name=out_name, shape=img.shape, chunks=chunkshape[1:2], dtype='|u1', compressor=None)
+        grp.create_dataset(name=out_name, shape=img_.shape, chunks=chunkshape, dtype='|u1', compressor=None)
+        # grp[out_name][:,:] = img
+        grp[out_name][:,:,:] = img_
+
+        checksum = grp[out_name].digest()
 
 
-        # z = zarr.array(img_, shape=img_.shape)
-        # z = zarr.open_array(p_stg, shape=img_.shape, mode='w', dtype='uint8', fill_value=0)
-        # # z = zarr.open(p_stg, mode='w')
-        # z.append(img_, axis=0)
-
-        store = zarr.DirectoryStore(p_stg)
-
-        grp = zarr.open_group('data/example.zarr', mode='w')
-
-        # a = zarr.create(shape=img_.shape, dtype='i4',
-        #                 fill_value=42, compressor=None, store=store, overwrite=True)
-        a = grp.create_dataset(shape=img_.shape, compressor=None, store=store, overwrite=False)
-        a.append(img_)
-
-
-        # copy_store = zarr.create(shape=img_.shape)
-        # copy_store = zarr.open_array(shape=img_.shape)
-        # copy_store.append(img_, axis=0)
-
-        # if not os.path.isdir(stage):
-        #     with open(logpath, 'a+') as f:
-        #         f.write('\nINITopening Zarr...')
-        #     # copy_store = zarr.open_array(stage, shape=img_.shape)s
-        #     copy_store = zarr.open_array(stage, shape=img_.shape)
-        #     # copy_store = zarr.open_array(stage, shape=img_.shape)
-        #     # copy_store = zarr.create(shape=img_.shape)
-        #     # copy_store[0,:,:] = img_
-        #     # with open(logpath, 'a+') as f:
-        #     #     f.write('copy_store.shape = %s' %str(copy_store.shape))
-        #
-        # else:
-        #     with open(logpath, 'a+') as f:
-        #         f.write('\nREopening Zarr...')
-        #     copy_store = zarr.open(stage)
-        #     with open(logpath, 'a+') as f:
-        #         f.write('copy_store.shape (BEFORE) = %s' % str(copy_store.shape))
-        #     copy_store.append(img_, axis=0)
-        #     with open(logpath, 'a+') as f:
-        #         f.write('copy_store.shape (AFTER) = %s' % str(copy_store.shape))
-
-        # zarr.save_array(copy_store)
-        # z_arr = zarr.open(stage, shape=img.shape)
-        # x, y = img
-        # print('copy_store.shape = %s' %str(store.shape))
 
     # del img
     sys.stdout.close()
@@ -130,18 +99,52 @@ if __name__ == '__main__':
 
 
 '''
+https://zarr.readthedocs.io/en/stable/api/core.html
+
+a.info_items()
+
+Out[24]: 
+[('Name', '/'),
+ ('Type', 'zarr.hierarchy.Group'),
+ ('Read-only', 'False'),
+ ('Store type', 'zarr.storage.DirectoryStore'),
+ ('No. members', 37),
+ ('No. arrays', 37),
+ ('No. groups', 0),
+ ('Arrays',
+  '0, 1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 3, 30, 31, 32, 33, 34, 35, 36, 4, 5, 6, 7, 8, 9')]
+
+
+
+
 
 NOTE: CREATE versus OPEN
 
 cd ~/scratch/2023-01-01
 python3
 
-c
+import os, zarr, numpy as np
+from libtiff import TIFF
+fn = '/Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_aligned/dummy2.tif'
 tif = TIFF.open(fn)
 img = tif.read_image()[:,::-1] # np.array
 img_ = np.expand_dims(img, axis=0)
-stage = 'img_staged/foo'
-zarr.open_array(stage, shape=img_.shape)
+dir_staged = '/Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/zarr_staged'
+chunkshape = cfg.data.chunkshape()
+ID = 7
+arr = zarr.open('/Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/zarr_staged/15')
+
+
+
+
+arr = grp.zeros(str(ID), shape=img_.shape, chunks=chunkshape, dtype='i8')
+
+z = zarr.array(img_, chunks=(1, 512,512))
+store = zarr.DirectoryStore(dir_staged)
+
+
+zarr.open_array(dir_staged, shape=img_.shape)
+arr = grp.zeros(str(ID), shape=img_.shape, chunks=chunkshape, dtype='i8')
 
 
 >>> from libtiff import TIFF

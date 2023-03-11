@@ -29,8 +29,6 @@ class Thumbnailer:
         logger.info('')
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
-
-
     def generate_main(self):
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         pbar_text = 'Generating Source Image Thumbnails (%d Cores)...' % cpus
@@ -102,7 +100,6 @@ class Thumbnailer:
                 print_exception()
             else:
                 cfg.main_window.hud.done()
-
 
 
     def generate_thumbnails(self,

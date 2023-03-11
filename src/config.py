@@ -47,12 +47,14 @@ DEFAULT_NULL_BIAS         = bool(False)
 DEFAULT_BOUNDING_BOX      = bool(False)
 DEFAULT_INITIAL_ROTATION  = float(0.0000)
 DEFAULT_INITIAL_SCALE     = float(1.0000)
+DEFAULT_DTYPE             = '|u1'
 
 '''Default Image Resolution (Voxel Dimensions)'''
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
 
 '''Default Zarr Chunk Shape'''
-CHUNK_X, CHUNK_Y, CHUNK_Z = 128, 128, 1
+# CHUNK_X, CHUNK_Y, CHUNK_Z = 128, 128, 1
+CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 # CHUNK_X, CHUNK_Y, CHUNK_Z = 64, 64, 64
 
 '''Default Compression Parameters'''

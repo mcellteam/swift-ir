@@ -243,7 +243,7 @@ class MainWindow(QMainWindow):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
         cfg.project_tab.snr_plot.initSnrPlot()
         cfg.project_tab.project_table.setScaleData()
-        cfg.project_tab.updateJsonWidget()
+        cfg.project_tab.updateTreeWidget()
         self.updateToolbar()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
@@ -283,7 +283,7 @@ class MainWindow(QMainWindow):
                     self.hud.done()
                 if cfg.project_tab._tabs.currentIndex() == 2:
                     logger.critical('Refreshing JSON Tree...')
-                    cfg.project_tab.updateJsonWidget()
+                    cfg.project_tab.updateTreeWidget()
                 elif cfg.project_tab._tabs.currentIndex() == 3:
                     logger.critical('Refreshing SNR Plot...')
                     self.tell('Refreshing SNR Plot...')
@@ -689,7 +689,7 @@ class MainWindow(QMainWindow):
         cfg.project_tab.snr_plot.initSnrPlot()
     @Slot()
     def updateProjectDict(self):
-        cfg.project_tab.updateJsonWidget()
+        cfg.project_tab.updateTreeWidget()
     # @Slot()
     # def restore_interactivity(self):
     #     self._working = False
@@ -727,7 +727,7 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self.updateToolbar()
             self.updateMenus()
-            cfg.project_tab.updateJsonWidget()
+            cfg.project_tab.updateTreeWidget()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
@@ -747,7 +747,7 @@ class MainWindow(QMainWindow):
         # if self._isProjectTab():
         if cfg.data:
             cfg.data.update_cache()
-            cfg.project_tab.updateJsonWidget()
+            cfg.project_tab.updateTreeWidget()
             s = cfg.data.scale()
             # self.detailsScales.setText('\n'.join([cfg.data.scale_pretty(s=x).ljust(10) + '-' +
             #                                       ('%dx%d' % cfg.data.image_size(s=x)).rjust(12) for x in
@@ -2035,7 +2035,7 @@ class MainWindow(QMainWindow):
         except: logger.warning('Bounding Rect Widget Failed to Update')
         self._changeScaleCombo.setCurrentText(cfg.data.curScale)
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
-        cfg.project_tab.updateJsonWidget()
+        cfg.project_tab.updateTreeWidget()
         self.updateEnabledButtons()
         self.updateMenus()
         self._resetSlidersAndJumpInput()
@@ -8224,7 +8224,7 @@ class ProjectTab(QWidget):
             # self.project_table.setScaleData() #not sure why this is needed twice
             pass
         if index == 2:
-            # self.updateJsonWidget()
+            # self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
         if index == 3:
             self.snr_plot.data = cfg.data
@@ -8735,7 +8735,7 @@ class ProjectTab(QWidget):
         self.btnSaveAndRealignMA = QPushButton('Save && Realign')
         self.btnSaveAndRealignMA.setMaximumHeight(20)
         def fn():
-            self.saveMps()
+            self.applyMps()
             logger.critical('Aligning The Current Section...')
             cfg.main_window.alignOne()
             # cfg.main_window.alignAll()
@@ -8745,7 +8745,7 @@ class ProjectTab(QWidget):
         self.btnSaveExitMA = QPushButton('Save && Exit Manual Alignment Mode')
         self.btnSaveExitMA.setMaximumHeight(20)
         def fn():
-            self.saveMps()
+            self.applyMps()
             cfg.main_window.enterExitManAlignMode(force_exit=True)
         self.btnSaveExitMA.clicked.connect(fn)
         self.btnExitMA = QPushButton('Exit Manual Alignment Mode')
@@ -9014,9 +9014,9 @@ class ProjectTab(QWidget):
         self.MA_viewer_ref.update_annotations()
         self.MA_viewer_base.update_annotations()
         self.updateListWidgets()
-        self.saveMps()
+        self.applyMps()
         self.updateNeuroglancer()
-    def saveMps(self):
+    def applyMps(self):
         logger.info('')
         if self.checkMApoints():
             ref_pts, base_pts = [], []
@@ -9243,7 +9243,7 @@ class ProjectTab(QWidget):
         self.table_container = QWidget()
         self.table_container.setObjectName('table_container')
         self.table_container.setLayout(hbl)
-    def updateJsonWidget(self):
+    def updateTreeWidget(self):
         logger.info('')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.header().resizeSection(0, 300)

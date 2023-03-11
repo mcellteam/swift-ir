@@ -7,6 +7,7 @@ import json
 import psutil
 import logging
 import zarr
+import numpy as np
 import neuroglancer as ng
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
@@ -21,7 +22,9 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=True):
+def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=True, stageit=False):
+    logger.critical(f'\n\n\n\ngenerating aligned reallocate_zarr={reallocate_zarr}...')
+
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     scale_val = get_scale_val(scale)
     pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
@@ -103,64 +106,53 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             print_exception()
             logger.warning('Task Queue encountered a problem')
 
-
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
         logger.info('Generating Zarr...')
         if reallocate_zarr:
-            logger.info('preallocating')
+            logger.critical('\n\npreallocating...\n')
             preallocate_zarr(name='img_aligned.zarr',
                              group='s%d' % scale_val,
                              dimx=rect[2],
                              dimy=rect[3],
                              dimz=len(cfg.data),
-                             dtype='uint8',
-                             overwrite=True
-                             )
-        # dir = os.path.join(cfg.data.dest(), cfg.data.scale())
-        # out_stage = os.path.join(dir, 'img_staged', str(ID))
-        x, y = cfg.data.image_size(s=cfg.data.scale())
-        stage_path = os.path.join(cfg.data.scale(), 'img_staged')
-        # if not os.path.exists(stage_path):
-        grp = zarr.open_group(stage_path, mode='w')
-        # z = zarr.open(stage_path, mode='w', shape=1000000, dtype='i4')
-        # zarr.save('/Users/joelyancey/SavedZarr', z)
+                             dtype='|u1',
+                             overwrite=True)
 
-        # if not os.path.isdir(stage_path):
-        #     preallocate_zarr(name=stage_path,
-        #                      group=str(ID),
-        #                      dimx=x,
-        #                      dimy=y,
-        #                      dimz=1,
-        #                      dtype='uint8',
-        #                      overwrite=True)
-
-
-        # path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'img_staged')
-        # if not os.path.isdir(path):
-        #     os.mkdir(path)
+        dir = os.path.join(cfg.data.dest(), scale)
+        stage_path = os.path.join(dir, 'zarr_staged')
+        store = zarr.DirectoryStore(stage_path)  # Does not create directory
+        root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
+        for i in range(len(cfg.data)):
+            if not os.path.exists(os.path.join(stage_path, str(i))):
+                logger.critical('creating group: %s...' %str(i))
+                root.create_group(str(i))
 
         if cfg.CancelProcesses:
             cfg.main_window.tell('Canceling Copy-convert Alignment to Zarr Tasks...')
         else:
             logger.info('Making Copy-convert Alignment To Zarr Tasks List...')
             # cfg.main_window.set_status('Copy-converting TIFFs...')
+            chunkshape = cfg.data.chunkshape()
             task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
             task_queue.start(cpus)
             job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
             task_list = []
-            for ID, layer in enumerate(iter(alstack[start:end])):
-                _ , fn = os.path.split(layer['filename'])
+            # for ID, layer in enumerate(iter(alstack[start:snd])):
+            alstack = cfg.data.alstack()
+            for i in range(start,end):
+                _ , fn = os.path.split(alstack[i]['filename'])
                 al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
                 zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-                args = [sys.executable, job_script, str(ID), al_name, zarr_group]
+                dest = cfg.data.dest()
+                args = [sys.executable, job_script, str(i), al_name, zarr_group, str(chunkshape), str(int(stageit)), dest]
                 task_queue.add_task(args)
+                logger.critical('\n\nstageit = %s\n' % str(int(stageit)))
                 if cfg.PRINT_EXAMPLE_ARGS:
-                    if ID in [0,1,2]:
-                        logger.info('Example Arguments (ID: %d):\n%s' % (ID, '\n  '.join(map(str,args))))
-                # task_queue.add_task(args)
+                    if i in [0,1,2]:
+                        logger.info('Example Arguments (ID: %d):\n%s' % (i, '\n  '.join(map(str,args))))
             logger.info('Adding Tasks To Multiprocessing Queue...')
             try:
                 dt = task_queue.collect_results()
