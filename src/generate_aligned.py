@@ -49,7 +49,6 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
         path = os.path.split(os.path.realpath(__file__))[0]
         job_script = os.path.join(path, job_script)
 
-        alstack = dm.alstack(s=scale)
         print_example_cafms(dm)
         logger.info('Setting Stack CAFM...')
         SetStackCafm(scale=scale, null_biases=dm.null_cafm(s=scale), poly_order=dm.poly_order(s=scale))
@@ -76,11 +75,11 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             rect = [0, 0, w, h] # might need to swap w/h for Zarr
         logger.info(f'Aligned Size              : {rect[2:]}')
         logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
-        # args_list = makeTasksList(dm, iter(alstack[start:end]), job_script, scale, rect) #0129-
+        # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale, rect) #0129-
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.start(cpus)
-        for ID, layer in enumerate(iter(alstack[start:end])):
+        for ID, layer in enumerate(iter(dm()[start:end])):
             base_name = layer['filename']
             _ , fn = os.path.split(base_name)
             al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
@@ -139,11 +138,9 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
             task_queue.start(cpus)
             job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
-            task_list = []
-            # for ID, layer in enumerate(iter(alstack[start:snd])):
-            alstack = cfg.data.alstack()
+            # for ID, layer in enumerate(iter(stack[start:snd])):
             for i in range(start,end):
-                _ , fn = os.path.split(alstack[i]['filename'])
+                _ , fn = os.path.split(cfg.data()[i]['filename'])
                 al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
                 zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
                 dest = cfg.data.dest()

@@ -98,7 +98,7 @@ if __name__ == '__main__':
     with open('src/ui/models/r34_alignment.swiftir', 'r') as f:
         data = json.load(f)
 
-    s4_layers = data['data']['scales']['scale_4']['alignment_stack']
+    s4_layers = data['data']['scales']['scale_4']['stack']
     print(s4_layers)
 
 

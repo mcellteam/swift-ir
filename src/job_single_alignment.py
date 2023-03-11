@@ -32,7 +32,6 @@ if __name__ == '__main__':
     start_layer = int(sys.argv[5].strip())
     num_layers = int(sys.argv[6].strip())
     use_file_io = (int(sys.argv[7].strip()) != 0)
-    size = int(sys.argv[8])
     with open(project_name, 'r') as f:
         project_dict = json.load(f)
     updated_model, need_to_write_json = run_json_project(
@@ -40,8 +39,7 @@ if __name__ == '__main__':
             alignment_option=alignment_option,
             use_scale=use_scale,
             start_layer=start_layer,
-            num_layers=num_layers,
-            size=size)
+            num_layers=num_layers)
     # Send the updated datamodel previewmodel and need_to_write_json back to the datamodel runner via stdout
     jde = json.JSONEncoder(indent=1, separators=(",", ": "), sort_keys=True)
     run_output_json = jde.encode({'data_model': updated_model, 'need_to_write_json': need_to_write_json})

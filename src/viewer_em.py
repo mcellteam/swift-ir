@@ -12,7 +12,6 @@ import logging
 import datetime
 import argparse
 import time
-
 import numpy as np
 import numcodecs
 import zarr
@@ -25,9 +24,7 @@ from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, obj_to_string, print_exception
 from src.shaders import ann_shader
 import src.config as cfg
-from neuroglancer.json_wrappers import (JsonObjectWrapper, array_wrapper, optional, text_type, typed_list,
-                                        typed_map, typed_set, typed_string_map, wrapped_property,
-                                        number_or_string)
+
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
@@ -81,13 +78,33 @@ class EMViewer(neuroglancer.Viewer):
     def __repr__(self):
         return copy.deepcopy(self.state)
 
+    def position(self):
+        return self.state.position
+
+    def set_position(self, val):
+        # state = copy.deepcopy(self.state)
+        # state.position = val
+        # self.set_state(state)
+        with self.txn() as s:
+            s.position = val
+
+    def zoom(self):
+        return self.state.crossSectionScale
+
+    def set_zoom(self, val):
+        # state = copy.deepcopy(self.state)
+        # state.crossSectionScale = val
+        # self.set_state(state)
+        with self.txn() as s:
+            s.crossSectionScale = val
+
 
     def set_layer(self, index):
         state = copy.deepcopy(self.state)
         state.position[0] = index
         self.set_state(state)
 
-    def request_layer(self):
+    def get_loc(self):
         return math.floor(self.state.position[0])
 
     def invalidateAlignedLayers(self):
@@ -149,6 +166,8 @@ class EMViewer(neuroglancer.Viewer):
 
 
     def initViewerSbs(self, requested=None, orientation='horizontal'):
+        t0 = time.time()
+
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer (caller: {caller})....')
         self.orientation = orientation
@@ -161,7 +180,7 @@ class EMViewer(neuroglancer.Viewer):
 
         if cfg.data.is_mendenhall(): self.initViewerMendenhall(); return
 
-        self.clear_layers()
+        # self.clear_layers()
 
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
@@ -170,7 +189,7 @@ class EMViewer(neuroglancer.Viewer):
         )
 
         if getData('state,MANUAL_MODE'):
-            self.index = cfg.data.layer()
+            self.index = cfg.data.loc
             dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
             self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
             self.LV = ng.LocalVolume(
@@ -192,7 +211,7 @@ class EMViewer(neuroglancer.Viewer):
         # else:
         _, tensor_y, tensor_x = cfg.tensor.shape
 
-        self.set_zoom()
+        self.initZoom()
         sf = cfg.data.scale_val(s=cfg.data.scale())
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
@@ -250,7 +269,7 @@ class EMViewer(neuroglancer.Viewer):
             if getData('state,MANUAL_MODE'):
                 s.position = [0, tensor_y / 2, tensor_x / 2]
             else:
-                s.position = [cfg.data.layer(), tensor_y / 2, tensor_x / 2]
+                s.position = [cfg.data.loc, tensor_y / 2, tensor_x / 2]
 
         with self.config_state.txn() as s:
             if self.force_xy:
@@ -263,6 +282,8 @@ class EMViewer(neuroglancer.Viewer):
 
         self._layer = math.floor(self.state.position[0])
         self._crossSectionScale = self.state.cross_section_scale
+        self.initial_cs_scale = self.state.cross_section_scale
+        logger.critical('_crossSectionScale = %s' %str(self.initial_cs_scale))
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -275,8 +296,13 @@ class EMViewer(neuroglancer.Viewer):
         self.set_contrast()
         # self.set_zmag()
 
+        dt = time.time() - t0
+        logger.critical('Loading Time: %.4f' %dt)
+
 
     def initViewerSlim(self, nglayout=None):
+        t0 = time.time()
+
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
 
@@ -337,7 +363,7 @@ class EMViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            s.position=[cfg.data.layer(), self.store.shape[1]/2, self.store.shape[2]/2]
+            s.position=[cfg.data.loc, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['rendering']['shader'], )
             s.crossSectionBackgroundColor = '#808080' # 128 grey
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
@@ -351,7 +377,7 @@ class EMViewer(neuroglancer.Viewer):
             s.show_panel_borders = False
             # s.viewer_size = [100,100]
 
-        self._layer = self.request_layer()
+        self._layer = self.get_loc()
         self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
@@ -361,9 +387,13 @@ class EMViewer(neuroglancer.Viewer):
         self.set_brightness()
         self.set_contrast()
 
+        dt = time.time() - t0
+        logger.critical('Loading Time: %.4f' %dt)
 
 
-    def set_zoom(self):
+
+
+    def initZoom(self):
         logger.info('')
 
         if self.cs_scale:
@@ -445,14 +475,14 @@ class EMViewer(neuroglancer.Viewer):
 
         try:
             # print('requested layer: %s' % str(self.state.position[0]))
-            # request_layer = floor(self.state.position[0])
+            # get_loc = floor(self.state.position[0])
             if isinstance(self.state.position, np.ndarray):
                 request_layer = int(self.state.position[0])
                 if request_layer == self._layer:
                     logger.debug('State Changed, But Layer Is The Same - Suppressing The stateChanged Callback Signal')
                 else:
                     self._layer = request_layer
-                    logger.info(f'(!) emitting request_layer: {request_layer}')
+                    logger.info(f'(!) emitting get_loc: {request_layer}')
                     self.signals.stateChanged.emit(request_layer)
 
             zoom = self.state.cross_section_scale
@@ -578,7 +608,8 @@ class EMViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['brightness'] = val
-            else:   layer.shaderControls['brightness'] = cfg.data.brightness()
+            # else:   layer.shaderControls['brightness'] = cfg.data.brightness()
+            else:   layer.shaderControls['brightness'] = cfg.data.brightness
             # layer.volumeRendering = True
         self.set_state(state)
 
@@ -586,7 +617,8 @@ class EMViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['contrast'] = val
-            else:   layer.shaderControls['contrast'] = cfg.data.contrast()
+            # else:   layer.shaderControls['contrast'] = cfg.data.contrast()
+            else:   layer.shaderControls['contrast'] = cfg.data.contrast
             #layer.volumeRendering = True
         self.set_state(state)
 
@@ -609,6 +641,69 @@ class EMViewer(neuroglancer.Viewer):
 # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
 # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{unal_path}'
 # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{al_path}'
+
+
+'''
+ViewerState({
+    "dimensions": {
+        "z": [5e-08, "m"],
+        "y": [8e-09, "m"],
+        "x": [8e-09, "m"]
+    },
+    "position": [0.5167545080184937, 264, 679.9994506835938],
+    "crossSectionScale": 1,
+    "projectionScale": 1024,
+    "layers": [{
+        "type": "annotation",
+        "source": {
+            "url": "local://annotations",
+            "transform": {
+                "outputDimensions": {
+                    "z": [5e-08, "m"],
+                    "y": [8e-09, "m"],
+                    "x": [8e-09, "m"]
+                }
+            }
+        },
+        "tab": "source",
+        "annotations": [{
+            "point": [0.5, 369, 597.4999389648438],
+            "type": "point",
+            "id": "(0.5, 369.0, 597.49994)",
+            "props": ["#f3e375", 3, 8]
+        }, {
+            "point": [0.5, 449, 379.4999694824219],
+            "type": "point",
+            "id": "(0.5, 449.0, 379.49997)",
+            "props": ["#5c4ccc", 3, 8]
+        }],
+        "annotationProperties": [{
+            "id": "ptColor",
+            "type": "rgb",
+            "default": "#ffffff"
+        }, {
+            "id": "ptWidth",
+            "type": "float32",
+            "default": 3
+        }, {
+            "id": "size",
+            "type": "float32",
+            "default": 8
+        }],
+        "shader": "void main() { setPointMarkerBorderColor(prop_ptColor()); \nsetPointMarkerBorderWidth(prop_ptWidth()); \nsetPointMarkerSize(prop_size());}\n",
+        "name": "ann"
+    }, {
+        "type": "image",
+        "source": "python://volume/cef5a1ec1ac2735310e4b0eac0f6c086399351cf.bc644314f0d66472a635e053ba4a78252a6a4262",
+        "tab": "source",
+        "shader": "\n        #uicontrol vec3 color color(default=\"white\")\n        #uicontrol float brightness slider(min=-1, max=1, step=0.01)\n        #uicontrol float contrast slider(min=-1, max=1, step=0.01)\n        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}\n        ",
+        "name": "layer"
+    }],
+    "crossSectionBackgroundColor": "#808080",
+    "layout": "yz"
+})
+
+'''
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

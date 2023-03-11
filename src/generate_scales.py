@@ -52,7 +52,7 @@ def generate_scales(dm):
             scale_val = get_scale_val(s)
             logger.info("Queuing Downsample Tasks For Scale %d..." % scale_val)
             # for i, layer in enumerate(datamodel.get_iter(s)):
-            for i, layer in enumerate(dm['data']['scales'][s]['alignment_stack']):
+            for i, layer in enumerate(dm['data']['scales'][s]['stack']):
                 base       = dm.base_image_name(s=s, l=i)
                 if_arg     = os.path.join(src_path, base)
                 ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project

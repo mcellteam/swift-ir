@@ -12,6 +12,8 @@
 
 (https://brand.ucla.edu/identity/colors)
 
+#06470c - forest green
+#380282 - indigo
 #ebecf0 - "bright" grey
 #ffcccb - very light red
 #ede9e8 - my dirty white
@@ -26,4 +28,6 @@
 
 
 regex to remove empty lines: ^\s*^
+
+https://xkcd.com/color/rgb/
 

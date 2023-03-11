@@ -88,6 +88,34 @@ class MAViewer(neuroglancer.Viewer):
     def __repr__(self):
         return copy.deepcopy(self.state)
 
+    def n_annotations(self):
+        return len(self.state.layers['ann'].annotations)
+
+
+    def position(self):
+        return self.state.position
+
+    def set_position(self, val):
+        # state = copy.deepcopy(self.state)
+        # state.position = val
+        # self.set_state(state)
+        with self.txn() as s:
+            s.position = val
+
+    def zoom(self):
+        return self.state.crossSectionScale
+
+    def set_zoom(self, val):
+        # state = copy.deepcopy(self.state)
+        # state.crossSectionScale = val
+        # self.set_state(state)
+        with self.txn() as s:
+            s.crossSectionScale = val
+
+    def undrawAnnotations(self):
+        with self.txn() as s:
+            s.layers['ann'].annotations = None
+
     def set_layer(self, index):
         state = copy.deepcopy(self.state)
         state.position[0] = index
@@ -103,9 +131,9 @@ class MAViewer(neuroglancer.Viewer):
         logger.info(f'Initializing Viewer (Role: %s)....' %self.role)
 
         if self.role == 'ref':
-            self.index = max(cfg.data.layer() - 1, 0)
+            self.index = max(cfg.data.loc - 1, 0)
         elif self.role == 'base':
-            self.index = cfg.data.layer() #
+            self.index = cfg.data.loc #
 
         self.clear_layers()
         self.restoreManAlignPts()
@@ -147,12 +175,13 @@ class MAViewer(neuroglancer.Viewer):
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
-            # s.position=[cfg.data.layer(), store.shape[1]/2, store.shape[2]/2]
+            # s.position=[cfg.data.loc, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             s.crossSectionBackgroundColor = '#808080' # 128 grey
             # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
             s.position = [0.5, y / 2, x / 2]
+            # s.position = [0.1, y / 2, x / 2]
             s.layers['ann'].annotations = list(self.pts.values())
 
         self.actions.add('add_manpoint', self.add_matchpoint)
@@ -174,7 +203,7 @@ class MAViewer(neuroglancer.Viewer):
         self.set_brightness()
         self.set_contrast()
         # self.set_zmag()
-        # self.set_zoom()
+        # self.initZoom()
         # self._set_zmag()
 
 
@@ -228,6 +257,10 @@ class MAViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 s.layers['ann'].annotations = anns
 
+    def remove_annotations(self):
+        with self.txn() as s:
+            s.layers['ann'].annotations = None
+
 
     def getNextUnusedColor(self):
         for c in self.mp_colors:
@@ -273,6 +306,7 @@ class MAViewer(neuroglancer.Viewer):
             self.set_state(state)
 
 
+
     def add_matchpoint(self, s):
         coords = np.array(s.mouse_voxel_coordinates)
         logger.info('Coordinates: %s' %str(coords))
@@ -281,19 +315,23 @@ class MAViewer(neuroglancer.Viewer):
             return
         _, y, x = s.mouse_voxel_coordinates
         z = 0.5
+        # z = 0.1
         props = [self.mp_colors[len(self.pts)],
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
         self.update_annotations()
         self.signals.ptsChanged.emit()
+        self._set_zmag()
+
+        # self._set_zmag()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
 
 
     def restoreManAlignPts(self):
         logger.info('Restoring manual alignment points for role: %s' %self.role)
         self.pts = {}
-        pts_data = cfg.data.getmpFlat(l=cfg.data.layer())[self.role]
+        pts_data = cfg.data.getmpFlat(l=cfg.data.loc)[self.role]
         for i, p in enumerate(pts_data):
             props = [self.mp_colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
@@ -322,7 +360,8 @@ class MAViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['brightness'] = val
-            else:   layer.shaderControls['brightness'] = cfg.data.brightness()
+            # else:   layer.shaderControls['brightness'] = cfg.data.brightness()
+            else:   layer.shaderControls['brightness'] = cfg.data.brightness
             # layer.volumeRendering = True
         self.set_state(state)
 
@@ -331,7 +370,8 @@ class MAViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['contrast'] = val
-            else:   layer.shaderControls['contrast'] = cfg.data.contrast()
+            # else:   layer.shaderControls['contrast'] = cfg.data.contrast()
+            else:   layer.shaderControls['contrast'] = cfg.data.contrast
             # layer.volumeRendering = True
         self.set_state(state)
 
@@ -350,7 +390,7 @@ class MAViewer(neuroglancer.Viewer):
         with self.txn() as s:
             s.relativeDisplayScales = {"z": 10}
 
-    def set_zoom(self):
+    def initZoom(self):
         logger.info('')
 
         if self.cs_scale:

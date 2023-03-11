@@ -117,7 +117,7 @@ class SnrPlot(QWidget):
         # logger.info(f'caller={caller}')
         if cfg.data:
             offset = self._getScaleOffset(s=cfg.data.scale())
-            pos = [cfg.data.layer() + offset, 1]
+            pos = [cfg.data.loc + offset, 1]
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
             # snr = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
@@ -271,7 +271,7 @@ class SnrPlot(QWidget):
             if not max_snr:
                 logger.warning('No max SNR, Nothing to plot - Returning')
                 return
-            xmax = cfg.data.nSections + 1
+            xmax = len(cfg.data) + 1
             ymax = ceil(max_snr) + 5
             self.plot.setLimits(
                 minXRange=1,
@@ -328,7 +328,7 @@ class SnrPlot(QWidget):
         # logger.info('')
         offset = self._getScaleOffset(s=s)
         errbars = cfg.data.snr_errorbars(s=s)
-        n = cfg.data.nSections
+        n = len(cfg.data)
         deltas = np.zeros(n)
         y = np.zeros(n)
         x = np.arange(0, n ) + offset
@@ -391,7 +391,7 @@ class SnrPlot(QWidget):
                 print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
                 pos_click = int(mouseClickEvent.pos()[0])
                 print('Position Clicked: %d' % pos_click)
-                cfg.data.set_layer(pos_click)
+                cfg.data.loc = pos_click
                 self.updateLayerLinePos()
                 cfg.main_window.dataUpdateWidgets()
             except:

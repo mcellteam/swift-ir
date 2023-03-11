@@ -64,7 +64,7 @@ class ProjectTable(QWidget):
             if cfg.project_tab._tabs.currentIndex() == 1:
                 row = self.table.currentIndex().row()
                 # cfg.main_window.tell('Section #%d' % row)
-                cfg.data.set_layer(row)
+                cfg.data.loc = row
                 cfg.main_window.dataUpdateWidgets()
 
 
@@ -236,9 +236,9 @@ class ProjectTable(QWidget):
             try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
             except:  scale = ['Unknown'] * cfg.data.nSections; print_exception()
             try:     ref = cfg.data.thumbnails_ref()
-            except:  ref = ['Unknown'] * cfg.data.nSections; print_exception()
+            except:  ref = ['Unknown'] * len(cfg.data); print_exception()
             indexes, skips, base, method, snr_report, test, datetime = [], [], [], [], [], [], []
-            for i, l in enumerate(cfg.data.alstack()):
+            for i, l in enumerate(cfg.data.stack()):
                 indexes.append(i)
                 try:     skips.append(l['skipped'])
                 except:  skips.append('?'); print_exception()

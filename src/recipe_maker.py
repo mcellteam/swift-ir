@@ -56,8 +56,7 @@ def run_json_project(project,
                      use_scale=0,
                      start_layer=0,
                      num_layers=-1,
-                     alone=False,
-                     size=None):
+                     alone=False):
     '''Align one s - either the one specified in "s" or the coarsest without an AFM.
     :param project: All datamodel datamodel as a JSON dictionary
     :param alignment_option: This the alignment operation which can be one of three values: 'init_affine' (initializes
@@ -108,13 +107,13 @@ def run_json_project(project,
 
         scale_tbd_dir = os.path.join(project['data']['destination_path'], 'scale_' + str(scale_tbd)) #directory -> ad variable
         ident = swiftir.identityAffine()
-        s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
+        s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['stack']
         common_length = len(s_tbd)
 
         if next_scale:
             # Copy settings from next coarsest completed s to tbd:
-            # s_done = datamodel['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
-            s_done = project['data']['scales']['scale_' + str(next_scale)]['alignment_stack']
+            # s_done = datamodel['data']['scales']['scale_'+str(finest_scale_done)]['stack']
+            s_done = project['data']['scales']['scale_' + str(next_scale)]['stack']
             common_length = min(len(s_tbd), len(s_done))
             # Copy from coarser to finer
             num_to_copy = num_layers
@@ -124,7 +123,7 @@ def run_json_project(project,
                 s_tbd[start_layer + i]['alignment']['method_results'] = copy.deepcopy(
                     s_done[start_layer + i]['alignment']['method_results'])
 
-            # datamodel['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+            # datamodel['data']['scales']['scale_'+str(scale_tbd)]['stack'] = copy.deepcopy(s_done)
 
         actual_num_layers = num_layers
         if actual_num_layers < 0:
@@ -205,7 +204,6 @@ def run_json_project(project,
                         layer_dict=s_tbd[i],
                         init_affine_matrix=afm_scaled[i],
                         dest=project['data']['destination_path'],
-                        size=size
                     )
                 else:
                     '''init_affine'''
@@ -214,7 +212,6 @@ def run_json_project(project,
                         layer_dict=s_tbd[i],
                         init_affine_matrix=ident,
                         dest=project['data']['destination_path'],
-                        size=size
                     )
                 align_list.append({'i': i, 'proc': align_proc, 'do': (i in range_to_process)})
 
@@ -279,8 +276,8 @@ def evaluate_project_status(project):
     for scale in scales:
         scale_key = 'scale_' + str(scale)
         proj_status['scales'][scale_key] = {}
-        alstack = project['data']['scales'][scale_key]['alignment_stack']
-        logger.info('alstack: %s' % str(alstack))
+        alstack = project['data']['scales'][scale_key]['stack']
+        logger.info('stack: %s' % str(alstack))
         # Create an array of boolean values representing whether 'affine_matrix' is in the method results for each l
         proj_status['scales'][scale_key]['aligned_stat'] = np.array(
             ['affine_matrix' in item['alignment']['method_results'] for item in alstack])
@@ -325,7 +322,6 @@ class alignment_process:
                  init_affine_matrix=None,
                  cumulative_afm=None,
                  dest=None,
-                 size=None
                  ):
 
         self.recipe = None
@@ -335,7 +331,6 @@ class alignment_process:
         self.dest = dest
         self.mp_ref = None
         self.mp_base = None
-        self.size = float(size)
 
         if layer_dict != None:
             self.layer_dict = layer_dict

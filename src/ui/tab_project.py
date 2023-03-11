@@ -12,8 +12,8 @@ import shutil
 import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
-    QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup
-from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent
+    QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox
+from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
 from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
@@ -30,6 +30,7 @@ from src.ui.thumbnail import CorrSignalThumbnail
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
+from src.ui.toggle_animated import AnimatedToggle
 
 
 __all__ = ['ProjectTab']
@@ -124,8 +125,6 @@ class ProjectTab(QWidget):
         self.updateNeuroglancer()
 
 
-
-
     def shutdownNeuroglancer(self):
         logger.critical('')
         if cfg.USE_DELAY:
@@ -147,11 +146,11 @@ class ProjectTab(QWidget):
             self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
-            self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
-            self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
-            self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
-            self.updateListWidgets()
+            self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
+            self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
+            self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
+            self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
+            self.update_MA_widgets()
         else:
             if caller != '_onGlobTabChange':
                 self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
@@ -170,7 +169,7 @@ class ProjectTab(QWidget):
         #     self.MA_viewer_base.initViewer()
         #     self.MA_viewer_ref.initViewer()
         #     self.MA_viewer_stage.initViewer()
-        #     self.updateListWidgets() # <-- !!!
+        #     self.update_MA_widgets() # <-- !!!
         # else:
         #     self.viewer.initViewer()
 
@@ -535,20 +534,21 @@ class ProjectTab(QWidget):
 
         # NO CHANGE----------------------
         # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        # self.MA_viewer_ref.signals.ptsChanged.connect(self.updateMAlistRef)
-        # self.MA_viewer_base.signals.ptsChanged.connect(self.updateMAlistBase)
-        # self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
-        # self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+        # self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_list_ref)
+        # self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_list_base)
+        # self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
+        # self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
         # NO CHANGE----------------------
 
         # MA Stage Buffer Widget
 
+        # MA_refViewerTitle = YellowTextLabel('Reference')
+        # MA_baseViewerTitle = YellowTextLabel('Working')
         MA_refViewerTitle = QLabel('Reference')
         MA_baseViewerTitle = QLabel('Working')
-        MA_refViewerTitle.setStyleSheet('color: #1b1e23; font-weight: 600; font-size:12px;')
-        MA_baseViewerTitle.setStyleSheet('color: #1b1e23; font-weight: 600; font-size:12px;')
 
         self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
         self.MA_ptsListWidget_ref.itemClicked.connect(self.refListItemClicked)
         self.MA_refNextColorLab = QLabel('Next')
@@ -556,6 +556,7 @@ class ProjectTab(QWidget):
         self.MA_refNextColorLab.setStyleSheet('background-color: #ffe135;')
 
         self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
         self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
         self.MA_baseNextColorLab = QLabel('Next')
@@ -567,68 +568,175 @@ class ProjectTab(QWidget):
         self.fl_actionsMA.setContentsMargins(0, 0, 0, 0)
         self.gb_actionsMA.setLayout(self.fl_actionsMA)
 
-        self.rbAuto = QRadioButton('Automatic')
-        self.rbManHint = QRadioButton('Manual, Hint')
-        self.rbManStrict = QRadioButton('Manual, Strict')
-        self.rbAuto.setStatusTip('Automatic Alignment using SWIM')
-        self.rbManHint.setStatusTip('Align by Manual-Hint Point Selection')
-        self.rbManStrict.setStatusTip('Align by Manual-Strict Point Selection')
-        self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rbManHint.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rbAuto.setEnabled(False)
-        self.rbManHint.setEnabled(False)
-        self.rbManStrict.setEnabled(False)
+
+        self.automatic_label = QLabel()
+        self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
+        font = QFont()
+        font.setFamily("Tahoma")
+        self.automatic_label.setFont(font)
+
 
         def fn():
-            method = 'Auto-SWIM'
-            if self.rbAuto.isChecked():
-                method = 'Auto-SWIM'
-            elif self.rbManHint.isChecked():
-                method = 'Manual-Hint'
-            elif self.rbManStrict.isChecked():
-                method = 'Manual-Strict'
-            cfg.data.set_selected_method(method)
+            caller = inspect.stack()[1].function
+            logger.critical('caller: %s' % caller)
 
-        self.rbAuto.toggled.connect(fn)
-        self.rbManHint.toggled.connect(fn)
-        self.rbManStrict.toggled.connect(fn)
-        self.rbMethodGroup = QButtonGroup()
-        self.rbMethodGroup.setExclusive(True)
-        self.rbMethodGroup.addButton(self.rbAuto)
-        self.rbMethodGroup.addButton(self.rbManHint)
-        self.rbMethodGroup.addButton(self.rbManStrict)
+            if self.tgl_alignMethod.isChecked():
+                self.combo_MA_manual_mode.setEnabled(True)
+                self.update_MA_widgets()
+            else:
+                self.combo_MA_manual_mode.setEnabled(False)
+                cfg.data.set_selected_method('Auto-SWIM')
+                self.set_method_label_text()
+        self.tgl_alignMethod = AnimatedToggle(
+            checked_color='#FFB000',
+            pulse_checked_color='#44FFB000')
+        self.tgl_alignMethod.toggled.connect(fn)
+        self.tgl_alignMethod.toggled.connect(cfg.main_window._callbk_unsavedChanges)
+        self.tgl_alignMethod.setFixedSize(48,24)
 
-        self.fl_actionsMA.addWidget(HWidget(QLabel('Method:'), self.rbAuto, self.rbManHint, self.rbManStrict))
 
+        def fn():
+            caller = inspect.stack()[1].function
+            logger.critical('caller: %s' % caller)
+            # request = self.combo_MA_manual_mode.currentText()
+            # cfg.data.set_selected_method(request)
+            if cfg.data.selected_method != 'Auto-SWIM':
+                self.set_method_label_text()
+        self.combo_MA_manual_mode = QComboBox(self)
+        self.combo_MA_manual_mode.setStyleSheet('font-size: 11px')
+        self.combo_MA_manual_mode.setFixedHeight(20)
+        self.combo_MA_manual_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        items = ['Manual-Hint', 'Manual-Strict']
+        self.combo_MA_manual_mode.addItems(items)
+        self.combo_MA_manual_mode.currentTextChanged.connect(fn)
+        self.combo_MA_manual_mode.currentTextChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        self.combo_MA_manual_mode.setEnabled(False)
+
+
+        # mainToggle = AnimatedToggle()
+        # secondaryToggle = AnimatedToggle(
+        #     checked_color="#FFB000",
+        #     pulse_checked_color="#44FFB000"
+        # )
+        # mainToggle.setFixedSize(mainToggle.sizeHint())
+        # secondaryToggle.setFixedSize(mainToggle.sizeHint())
+        # window.setLayout(QVBoxLayout())
+        # window.layout().addWidget(QLabel("Main Toggle"))
+        # window.layout().addWidget(mainToggle)
+        # window.layout().addWidget(QLabel("Secondary Toggle"))
+        # window.layout().addWidget(secondaryToggle)
+        # mainToggle.stateChanged.connect(secondaryToggle.setChecked)
+
+
+        # self.rbAuto = QRadioButton('Automatic')
+        # self.rbManHint = QRadioButton('Manual, Hint')
+        # self.rbManStrict = QRadioButton('Manual, Strict')
+        # self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rbManHint.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rbAuto.setStatusTip('Automatic Alignment using SWIM')
+        # self.rbManHint.setStatusTip('Align by Manual-Hint Point Selection')
+        # self.rbManStrict.setStatusTip('Align by Manual-Strict Point Selection')
+        # self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rbManHint.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.rbAuto.setEnabled(False)
+        # self.rbManHint.setEnabled(False)
+        # self.rbManStrict.setEnabled(False)
+
+        # def fn():
+        #     method = 'Auto-SWIM'
+        #     if self.rbAuto.isChecked():
+        #         method = 'Auto-SWIM'
+        #     elif self.rbManHint.isChecked():
+        #         method = 'Manual-Hint'
+        #     elif self.rbManStrict.isChecked():
+        #         method = 'Manual-Strict'
+        #     cfg.data.set_selected_method(method)
+
+        # self.rbAuto.toggled.connect(fn)
+        # self.rbManHint.toggled.connect(fn)
+        # self.rbManStrict.toggled.connect(fn)
+        # self.rbMethodGroup = QButtonGroup()
+        # self.rbMethodGroup.setExclusive(True)
+        # self.rbMethodGroup.addButton(self.rbAuto)
+        # self.rbMethodGroup.addButton(self.rbManHint)
+        # self.rbMethodGroup.addButton(self.rbManStrict)
+
+        # self.fl_actionsMA.addWidget(HWidget(QLabel('Method:'), self.rbAuto, self.rbManHint, self.rbManStrict))
+        self.fl_actionsMA.addWidget(HWidget(self.automatic_label, self.tgl_alignMethod, self.combo_MA_manual_mode))
+
+
+        def fn():
+            try:
+                self.deleteAllMp()
+                cfg.data.set_selected_method('Auto-SWIM')
+                self.update_MA_widgets()
+                self.set_method_label_text()
+                self.tgl_alignMethod.setChecked(False)
+            except:
+                print_exception()
+            else:
+                self.btnClearMA.setEnabled(False)
         self.btnClearMA = QPushButton('Clear')
         self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setMaximumHeight(20)
-        self.btnClearMA.clicked.connect(self.deleteAllMp)
+        self.btnClearMA.setMaximumWidth(64)
+        self.btnClearMA.clicked.connect(fn)
+
         # self.btnClearMA.clicked.connect(self.initNeuroglancer)
 
+        # your logic here
+
         def fn():
+            pos = cfg.project_tab.MA_viewer_base.position()
+            zoom = cfg.project_tab.MA_viewer_base.zoom()
             cfg.main_window.layer_left()
-            self.initNeuroglancer()
-        self.btnPrevSection = QPushButton('Previous Section')
-        self.btnPrevSection.setMaximumHeight(20)
+            # self.MA_viewer_ref.clear_layers()
+            # self.MA_viewer_base.clear_layers()
+            # self.initNeuroglancer()
+            self.updateNeuroglancer()
+            self.MA_viewer_base.set_position(pos)
+            # self.MA_viewer_stage.initViewer()
+            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+            self.update_MA_widgets()
+        tip = 'Go To Previous Section.'
+        self.btnPrevSection = QPushButton()
+        self.btnPrevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btnPrevSection.setStatusTip(tip)
         self.btnPrevSection.clicked.connect(fn)
-        # self.btnPrevSection.clicked.connect(self.updateNeuroglancer)
+        self.btnPrevSection.setFixedSize(QSize(18, 18))
+        self.btnPrevSection.setIcon(qta.icon("fa.arrow-left", color=cfg.ICON_COLOR))
+        self.btnPrevSection.setEnabled(False)
+
 
         def fn():
+            pos = cfg.project_tab.MA_viewer_base.position()
+            zoom = cfg.project_tab.MA_viewer_base.zoom()
             cfg.main_window.layer_right()
-            self.initNeuroglancer()
-        self.btnNextSection = QPushButton('Next Section')
-        self.btnNextSection.setMaximumHeight(20)
+            # self.MA_viewer_ref.clear_layers()
+            # self.MA_viewer_base.clear_layers()
+            # self.initNeuroglancer()
+            self.updateNeuroglancer()
+            self.MA_viewer_base.set_position(pos)
+            # self.MA_viewer_stage.initViewer()
+            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+            self.update_MA_widgets()
+        tip = 'Go To Next Section.'
+        self.btnNextSection = QPushButton()
         self.btnNextSection.clicked.connect(fn)
-        # self.btnNextSection.clicked.connect(self.updateNeuroglancer)
+        self.btnNextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btnNextSection.setStatusTip(tip)
+        self.btnNextSection.setFixedSize(QSize(18, 18))
+        self.btnNextSection.setIcon(qta.icon("fa.arrow-right", color=cfg.ICON_COLOR))
+        self.btnNextSection.setEnabled(False)
+
 
         def fn():
-            cfg.main_window.hud.post('Setting Method for All Sections to Automatic-SWIM...')
-            for i in range(len(cfg.data)):
-                cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][i]['alignment']['selected_method'] = 'Auto-SWIM'
+            cfg.data.set_all_methods_automatic()
             cfg.main_window.hud.done()
         self.btnResetAllMA = QPushButton('Set All Automatic')
+        self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnResetAllMA.setMaximumHeight(20)
         self.btnResetAllMA.clicked.connect(fn)
 
@@ -638,34 +746,65 @@ class ProjectTab(QWidget):
             # cfg.main_window.regenerateOne()
             cfg.main_window.hud.done()
         self.btnRealignMA = QPushButton('Align && Regenerate')
+        self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRealignMA.setMaximumHeight(20)
         self.btnRealignMA.clicked.connect(fn)
 
         def fn():
             cfg.main_window.hud.post('Applying Manual Points...')
-            self.applyMps()
-            cfg.main_window.hud.done()
+            if self.validate_MA_points():
+                self.applyMps()
+                cfg.data.set_selected_method(self.combo_MA_manual_mode.currentText())
+                self.update_MA_widgets()
+                self.set_method_label_text()
+                cfg.main_window.hud.done()
+            else:
+                logger.warning('(!) validate points is misconfigured')
         self.btnApplyMA = QPushButton('Apply')
+        self.btnApplyMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnApplyMA.setMaximumHeight(20)
+        self.btnApplyMA.setMaximumWidth(64)
         self.btnApplyMA.clicked.connect(fn)
         self.btnApplyMA.setEnabled(False)
 
-        def fn():
-            self.applyMps()
-            cfg.main_window.exit_man_mode()
-        self.btnApplyExitMA = QPushButton('Apply && Exit')
-        self.btnApplyExitMA.setMaximumHeight(20)
-        self.btnApplyExitMA.clicked.connect(fn)
-        self.btnApplyExitMA.setEnabled(False)
-
         self.btnExitMA = QPushButton('Exit')
+        self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnExitMA.setMaximumHeight(20)
+        self.btnExitMA.setMaximumWidth(64)
         self.btnExitMA.clicked.connect(cfg.main_window.exit_man_mode)
 
-        self.fl_actionsMA.addWidget(HWidget(self.btnPrevSection, self.btnNextSection))
-        self.fl_actionsMA.addWidget(HWidget(self.btnClearMA, self. btnApplyMA))
-        self.fl_actionsMA.addWidget(HWidget(self.btnRealignMA, self.btnResetAllMA))
-        self.fl_actionsMA.addWidget(HWidget(self.btnApplyExitMA, self.btnExitMA))
+        def fn():
+            pass
+        self.combo_MA_actions = QComboBox(self)
+        self.combo_MA_actions.setStyleSheet('font-size: 11px')
+        self.combo_MA_actions.setFixedHeight(20)
+        self.combo_MA_actions.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        items = ['Set All Auto-SWIM']
+        self.combo_MA_actions.addItems(items)
+        self.combo_MA_actions.currentTextChanged.connect(fn)
+        btn_go = QPushButton()
+        btn_go.clicked.connect(self.onMAaction)
+
+        self.MA_actions = HWidget(self.combo_MA_actions, btn_go)
+
+
+        w_change_section = HWidget(QLabel('Section:'), self.btnPrevSection, self.btnNextSection)
+        w_change_section.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        self.fl_actionsMA.addWidget(
+            HWidget(
+                w_change_section,
+                self.btnClearMA,
+                self.btnApplyMA,
+            )
+        )
+        self.fl_actionsMA.addWidget(
+            HWidget(
+                self.btnRealignMA,
+                self.btnResetAllMA,
+                self.btnExitMA
+            )
+        )
 
         self.MA_sbw = HWidget(
             VWidget(MA_refViewerTitle, self.MA_ptsListWidget_ref, self.MA_refNextColorLab),
@@ -687,8 +826,8 @@ class ProjectTab(QWidget):
 
         self.MA_ng_widget = QWidget()
         self.MA_gl = GL()
-        self.MA_gl.addWidget(MA_refViewerTitle, 3, 0, 1, 2)
-        self.MA_gl.addWidget(MA_baseViewerTitle, 3, 2, 1, 2)
+        # self.MA_gl.addWidget(MA_refViewerTitle, 3, 0, 1, 1)
+        # self.MA_gl.addWidget(MA_baseViewerTitle, 3, 2, 1, 1)
         self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
         self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
         self.MA_gl.addWidget(msg_MAinstruct, 2, 1, 1, 2)
@@ -696,7 +835,7 @@ class ProjectTab(QWidget):
         self.MA_ng_widget.setLayout(self.MA_gl)
 
         self.MA_splitter = HSplitter(self.MA_ng_widget, self.MA_stageSplitter)
-        self.MA_splitter.setSizes([.70 * cfg.WIDTH, .30 * cfg.WIDTH])
+        self.MA_splitter.setSizes([.90 * cfg.WIDTH, .10 * cfg.WIDTH])
         self.MA_splitter.setCollapsible(0, False)
         self.MA_splitter.setCollapsible(1, False)
         self.MA_splitter.hide()
@@ -714,6 +853,21 @@ class ProjectTab(QWidget):
         self.ng_browser_container_outer.layout.setSpacing(1)
 
 
+    # def fade(self):
+    #     self.MA_ng_widget.setWindowOpacity(0.5)
+    #     QTimer.singleShot(1000, self.unfade)
+    #
+    #
+    # def unfade(self):
+    #     self.setWindowOpacity(1)
+
+
+    def onMAaction(self):
+        if self.combo_MA_actions.currentIndex() == 0:
+            cfg.data.set_all_methods_automatic()
+
+
+
     def refListItemClicked(self, qmodelindex):
         item = self.MA_ptsListWidget_ref.currentItem()
         logger.info(f"Selected {item.text()}")
@@ -727,7 +881,7 @@ class ProjectTab(QWidget):
     # def copySaveAlignment(self):
     #     logger.critical('')
     #     dt = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    #     path = os.path.join(cfg.data.dest(), cfg.data.curScale, 'img_staged',str(cfg.data.layer()), dt)
+    #     path = os.path.join(cfg.data.dest(), cfg.data.curScale, 'img_staged',str(cfg.data.loc), dt)
     #     if not os.path.isdir(path):
     #         os.mkdir(path)
     #     file = cfg.data.filename()
@@ -737,35 +891,50 @@ class ProjectTab(QWidget):
     #     shutil.copyfile(file, out)
 
 
-    def checkMApoints(self):
-        return (self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys())
+    def set_method_label_text(self):
+        method = cfg.data.selected_method()
+        if method == 'Auto-SWIM':
+            self.automatic_label.setText('<i>Automatic SWIM Alignment</i>')
+            self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
+        elif method == 'Manual-Hint':
+            self.automatic_label.setText('<i>Manual Hint Alignment</i>')
+            self.automatic_label.setStyleSheet('color: #380282; font-size: 11px; font-weight: 600;')
+        elif method == 'Manual-Strict':
+            self.automatic_label.setText('<i>Manual Strict Alignment</i>')
+            self.automatic_label.setStyleSheet('color: #380282; font-size: 11px; font-weight: 600;')
 
 
-    def updateListWidgets(self):
+    def validate_MA_points(self):
+        # if cfg.data.selected_method() != 'Auto-SWIM':
+        if len(self.MA_viewer_ref.pts.keys()) >= 1:
+            if self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys():
+                return True
+        return False
+
+
+    def update_MA_widgets(self):
         caller = inspect.stack()[1].function
         logger.info('caller: %s' %caller)
         if getData('state,MANUAL_MODE'):
-            self.updateMAlistBase()
-            self.updateMAlistRef()
-            isValid = self.checkMApoints()
-            self.btnApplyExitMA.setEnabled(isValid)
-            if isValid or self.rbAuto:
-                # self.btnRealignMA.setEnabled(isValid)
-                self.btnApplyMA.setEnabled(isValid)
-            self.rbAuto.setEnabled(True)
-            self.rbManHint.setEnabled(isValid)
-            self.rbManStrict.setEnabled(isValid)
-            method = cfg.data.selected_method()
-            if method == 'Auto-SWIM':
-                self.rbAuto.setChecked(True)
-            elif method == 'Manual-Hint':
-                self.rbManHint.setChecked(True)
-            elif method == 'Manual-Strict':
-                self.rbManStrict.setChecked(True)
+            self.update_MA_list_base()
+            self.update_MA_list_ref()
+        self.dataUpdateMA()
 
 
+    def dataUpdateMA(self):
+        caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % caller)
+        # self.tgl_alignMethod.setChecked(is_manual)
+        if cfg.data.selected_method() != 'Auto-SWIM':
+            self.combo_MA_manual_mode.setCurrentText(cfg.data.selected_method())
+        # if self.validate_MA_points() and method != 'Auto-SWIM':
+        self.btnApplyMA.setEnabled(self.validate_MA_points() and self.tgl_alignMethod.isChecked())
+        self.btnClearMA.setEnabled(bool(len(self.MA_viewer_ref.pts) + len(self.MA_viewer_base.pts)))
+        self.btnPrevSection.setEnabled(cfg.data.loc > 0)
+        self.btnNextSection.setEnabled(cfg.data.loc < len(cfg.data) - 1)
 
-    def updateMAlistRef(self):
+
+    def update_MA_list_ref(self):
         logger.info('')
         # self.MA_viewer_ref.pts = {}
         self.MA_ptsListWidget_ref.clear()
@@ -782,7 +951,7 @@ class ProjectTab(QWidget):
             f'''background-color: {self.MA_viewer_ref.getNextUnusedColor()}''')
 
 
-    def updateMAlistBase(self):
+    def update_MA_list_base(self):
         logger.info('')
         # self.MA_viewer_base.pts = {}
         self.MA_ptsListWidget_base.clear()
@@ -799,7 +968,7 @@ class ProjectTab(QWidget):
             f'''background-color: {self.MA_viewer_base.getNextUnusedColor()}''')
 
 
-    def updateMA_ref_state(self):
+    def update_MA_ref_state(self):
         caller = inspect.stack()[1].function
         # curframe = inspect.currentframe()
         # calframe = inspect.getouterframes(curframe, 2)
@@ -823,7 +992,7 @@ class ProjectTab(QWidget):
                         self.MA_viewer_ref.set_state(state)
 
 
-    def updateMA_base_state(self):
+    def update_MA_base_state(self):
         caller = inspect.stack()[1].function
         # curframe = inspect.currentframe()
         # calframe = inspect.getouterframes(curframe, 2)
@@ -857,7 +1026,7 @@ class ProjectTab(QWidget):
             logger.info('del_key is %s' % del_key)
             self.MA_viewer_ref.pts.pop(del_key)
             self.MA_viewer_ref.update_annotations()
-        self.updateListWidgets()
+        self.update_MA_widgets()
         self.updateNeuroglancer()
 
 
@@ -871,7 +1040,7 @@ class ProjectTab(QWidget):
             logger.info('del_key is %s' % del_key)
             self.MA_viewer_base.pts.pop(del_key)
             self.MA_viewer_base.update_annotations()
-        self.updateListWidgets()
+        self.update_MA_widgets()
         self.updateNeuroglancer()
 
 
@@ -881,7 +1050,7 @@ class ProjectTab(QWidget):
         self.MA_viewer_ref.pts.clear()
         self.MA_ptsListWidget_ref.clear()
         self.MA_viewer_ref.update_annotations()
-        self.updateListWidgets()
+        self.update_MA_widgets()
         self.updateNeuroglancer()
 
 
@@ -891,7 +1060,7 @@ class ProjectTab(QWidget):
         self.MA_viewer_base.pts.clear()
         self.MA_ptsListWidget_base.clear()
         self.MA_viewer_base.update_annotations()
-        self.updateListWidgets()
+        self.update_MA_widgets()
         self.updateNeuroglancer()
 
 
@@ -905,16 +1074,32 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.clear()
         self.MA_viewer_ref.update_annotations()
         self.MA_viewer_base.update_annotations()
-        self.updateListWidgets()
+        self.update_MA_widgets()
         self.applyMps()
-        # self.updateNeuroglancer()
-        self.initNeuroglancer()
 
+        self.MA_viewer_ref.undrawAnnotations()
+        self.MA_viewer_base.undrawAnnotations()
+
+        # self.MA_viewer_ref.clear_layers()
+        # self.MA_viewer_base.clear_layers()
+
+        # pos = self.MA_viewer_ref.position()
+        # zoom = self.MA_viewer_ref.zoom()
+        # # pos_staged = self.MA_viewer_stage.position()
+        # # zoom_staged = self.MA_viewer_stage.zoom()
+        # self.updateNeuroglancer()
+        # # self.initNeuroglancer()
+        # self.MA_viewer_ref.set_position(pos)
+        # self.MA_viewer_ref.set_zoom(zoom)
+        # # self.MA_viewer_stage.set_position(pos_staged)
+        # # self.MA_viewer_stage.set_zoom(zoom_staged)
+        # self.MA_viewer_stage.set_zoom(self.MA_viewer_stage.initial_cs_scale)
+        # # self.MA_viewer_stage.initViewer()
 
     def applyMps(self):
         cfg.main_window.hud.post('Saving Manual Correspondence Points...')
         logger.critical('Saving Manual Correspondence Points...')
-        if self.checkMApoints():
+        if self.validate_MA_points():
             ref_pts, base_pts = [], []
             for key in self.MA_viewer_ref.pts.keys():
                 p = self.MA_viewer_ref.pts[key]
@@ -929,14 +1114,14 @@ class ProjectTab(QWidget):
             cfg.data.set_manual_points('ref', ref_pts)
             cfg.data.set_manual_points('base', base_pts)
 
-            if self.rbAuto.isChecked():
-                cfg.data.set_selected_method('Auto-SWIM')
-            if self.rbManHint.isChecked():
-                cfg.data.set_selected_method('Manual-Hint')
-            elif self.rbManStrict.isChecked():
-                cfg.data.set_selected_method('Manual-Strict')
-            else:
-                cfg.data.set_selected_method('Auto-SWIM')
+            # if self.rbAuto.isChecked():
+            #     cfg.data.set_selected_method('Auto-SWIM')
+            # if self.rbManHint.isChecked():
+            #     cfg.data.set_selected_method('Manual-Hint')
+            # elif self.rbManStrict.isChecked():
+            #     cfg.data.set_selected_method('Manual-Strict')
+            # else:
+            #     cfg.data.set_selected_method('Auto-SWIM')
 
             cfg.data.print_all_match_points()
             cfg.main_window._saveProjectToFile(silently=True)
@@ -987,21 +1172,25 @@ class ProjectTab(QWidget):
         self.ng_browser_container.hide()
         self.MA_splitter.show()
         method = cfg.data.selected_method()
-        if method == 'Auto-SWIM':       self.rbAuto.setChecked(True)
-        elif method == 'Manual-Hint':   self.rbManHint.setChecked(True)
-        elif method == 'Manual-Strict': self.rbManStrict.setChecked(True)
-        else:                           self.rbAuto.setChecked(True)
+        # if method == 'Auto-SWIM':       self.rbAuto.setChecked(True)
+        # elif method == 'Manual-Hint':   self.rbManHint.setChecked(True)
+        # elif method == 'Manual-Strict': self.rbManStrict.setChecked(True)
+        # else:                           self.rbAuto.setChecked(True)
+        self.set_method_label_text()
+        self.tgl_alignMethod.setChecked(method == 'Auto-SWIM')
         self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
         self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        self.MA_viewer_ref.signals.ptsChanged.connect(self.updateListWidgets)
-        self.MA_viewer_base.signals.ptsChanged.connect(self.updateListWidgets)
-        self.MA_viewer_ref.shared_state.add_changed_callback(self.updateMA_base_state)
-        self.MA_viewer_base.shared_state.add_changed_callback(self.updateMA_ref_state)
+        self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
+        self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
+        self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
+        self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
         self.ngVertLab.setText('Manual Alignment Mode')
         self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
-        self.updateListWidgets()
+        self.update_MA_widgets()
+        self.tgl_alignMethod.setChecked(method != 'Auto-SWIM')
+        cfg.main_window.dataUpdateWidgets()
 
 
     # def onExitManualMode(self):

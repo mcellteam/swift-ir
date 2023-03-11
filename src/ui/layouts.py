@@ -2,7 +2,7 @@
 
 import inspect
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 
 __all__ = ['HBL', 'VBL', 'GL', 'HWidget', 'VWidget', 'HSplitter', 'VSplitter', 'YellowTextLabel']
 
@@ -67,9 +67,13 @@ class VSplitter(QSplitter):
 
 
 class YellowTextLabel(QLabel):
+    clicked = Signal()
     def __init__(self, *args):
         super().__init__(*args)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setAlignment(Qt.AlignCenter)
         self.setStyleSheet("""color: #ffe135; background-color: rgba(0,0,0,.24); 
             font-weight: 600; text-align: center; padding: 3px;""")
+
+    def mousePressEvent(self, ev):
+        self.clicked.emit()

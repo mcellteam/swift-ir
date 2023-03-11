@@ -863,8 +863,8 @@ def update_skip_annotations():
     remove_list = []
     add_list = []
     for sk, scale in cfg.data['data']['scales'].items():
-        for layer in scale['alignment_stack']:
-            layer_num = scale['alignment_stack'].index(layer)
+        for layer in scale['stack']:
+            layer_num = scale['stack'].index(layer)
             for ik, im in layer['images'].items():
                 if not 'metadata' in im:
                     im['metadata'] = {}

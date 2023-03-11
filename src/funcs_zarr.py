@@ -81,7 +81,7 @@ def get_zarr_tensor(zarr_path):
 
 
 def get_zarr_array_layer_view(zarr_path:str, l=None):
-    if l == None: l = cfg.data.layer()
+    if l == None: l = cfg.data.loc
     arr = ts.open({
         'driver': 'zarr',
         'kvstore': {
@@ -106,7 +106,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
 
 def get_tensor_from_tiff(dir=None, s=None, l=None):
     if s == None: s = cfg.data.scale()
-    if l == None: l = cfg.data.layer()
+    if l == None: l = cfg.data.loc
     fn = os.path.basename(cfg.data.base_image_name(s=s, l=l))
     path = os.path.join(cfg.data.dest(), s, 'img_src', fn)
     logger.info('Path: %s' % path)

@@ -38,14 +38,14 @@ def compute_affines(scale, start=0, end=None):
         #     ng.server.stop()
 
         rename_switch = False
-        alignment_dict = dm['data']['scales'][scale]['alignment_stack']
+        alignment_dict = dm['data']['scales'][scale]['stack']
 
         alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
         logger.info('Start Layer: %s / # Layers: %s' % (str(start), str(end)))
 
         # path = os.path.join(dm.dest(), scale, 'img_aligned')
         # if checkForTiffs(path):
-        #     # al_substack = dm['data']['scales'][scale]['alignment_stack'][start:]
+        #     # al_substack = dm['data']['scales'][scale]['stack'][start:]
         #     # remove_aligned(al_substack) #0903 Moved into conditional
         #     dm.remove_aligned(scale, start, end)
 
@@ -58,8 +58,7 @@ def compute_affines(scale, start=0, end=None):
             rename_layers(use_scale=scale, al_dict=alignment_dict)
 
         dm_ = copy.deepcopy(dm) # Copy the datamodel previewmodel for this datamodel to add local fields for SWiFT
-        alstack = dm_['data']['scales'][scale]['alignment_stack']
-        substack = alstack[start:end]
+        substack = dm_()[start:end]
         n_tasks = n_skips = 0
         for layer in substack: # Operating on the Copy!
             # # layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
@@ -84,7 +83,7 @@ def compute_affines(scale, start=0, end=None):
 
         # ADD ALIGNMENT TASKS TO QUEUE
         for layer in substack:
-            index = alstack.index(layer)
+            index = dm_().index(layer)
             if not layer['skipped']:
                 task_args = [sys.executable,
                              align_job,            # Python program to run (single_alignment_job)
@@ -148,8 +147,8 @@ def compute_affines(scale, start=0, end=None):
                 fdm_new = results_dict['data_model']
 
                 # Get the same s from both the old and new datamodel models
-                al_stack_old = updated_model['data']['scales'][scale]['alignment_stack']
-                al_stack_new = fdm_new['data']['scales'][scale]['alignment_stack']
+                al_stack_old = updated_model['data']['scales'][scale]['stack']
+                al_stack_new = fdm_new['data']['scales'][scale]['stack']
                 layer_index = int(task_list[tnum]['args'][5]) # may differ from tnum!
                 al_stack_old[layer_index] = al_stack_new[layer_index]
                 if task_list[tnum]['statusBar'] == 'task_error':
