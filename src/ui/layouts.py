@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import inspect
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel, QPushButton
 from qtpy.QtCore import Qt, Signal
 
 __all__ = ['HBL', 'VBL', 'GL', 'HWidget', 'VWidget', 'HSplitter', 'VSplitter', 'YellowTextLabel']
@@ -10,12 +10,14 @@ class HBL(QHBoxLayout):
     def __init__(self):
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(2)
 
 
 class VBL(QVBoxLayout):
     def __init__(self):
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(2)
 
 
 class GL(QGridLayout):
@@ -29,6 +31,7 @@ class HWidget(QWidget):
         super().__init__()
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(2)
         self.setLayout(self.layout)
         for w in args:
             self.layout.addWidget(w)
@@ -42,6 +45,7 @@ class VWidget(QWidget):
         super().__init__()
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(2)
         self.setLayout(self.layout)
         for w in args:
             self.layout.addWidget(w)
@@ -77,3 +81,8 @@ class YellowTextLabel(QLabel):
 
     def mousePressEvent(self, ev):
         self.clicked.emit()
+
+class Button(QPushButton):
+    def __init__(self, *args):
+        super().__init__(*args)
+

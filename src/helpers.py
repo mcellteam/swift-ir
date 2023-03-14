@@ -50,7 +50,7 @@ snapshot = None
 
 def run_checks():
 
-    if not getData('state,MANUAL_MODE'):
+    if not getData('state,manual_mode'):
         assert(cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
 
 
@@ -66,16 +66,16 @@ def setOpt(lookup, val):
     getOpt(lookup[:-1])[lookup[-1]] = val
 
 def getData(lookup):
-    if cfg.project_tab:
-        if isinstance(lookup, str):
-            lookup = lookup.split(',')
-        return reduce(operator.getitem, lookup, cfg.data)
+    # if cfg.project_tab:
+    if isinstance(lookup, str):
+        lookup = lookup.split(',')
+    return reduce(operator.getitem, lookup, cfg.data)
 
 def setData(lookup, val):
-    if cfg.project_tab:
-        if isinstance(lookup, str):
-            lookup = lookup.split(',')
-        getData(lookup[:-1])[lookup[-1]] = val
+    # if cfg.project_tab:
+    if isinstance(lookup, str):
+        lookup = lookup.split(',')
+    getData(lookup[:-1])[lookup[-1]] = val
 
 
 def natural_sort(l):
@@ -149,7 +149,7 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings.setdefault('state', {})
-    cfg.settings['state'].setdefault('MANUAL_MODE', False)
+    cfg.settings['state'].setdefault('manual_mode', False)
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
@@ -1091,12 +1091,12 @@ def create_paged_tiff():
 
 # def print_dat_files() -> None:
 #     '''Prints the .dat files for the current s, if they exist .'''
-#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale(), 'bias_data')
+#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale, 'bias_data')
 #     if are_images_imported():
 #         logger.info('Printing .dat Files')
 #         try:
 #             logger.info("_____________________BIAS DATA_____________________")
-#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale()))
+#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale))
 #             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
 #                 snr_1 = f.read()
 #                 logger.info('snr_1               : %s' % snr_1)

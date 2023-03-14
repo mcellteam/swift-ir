@@ -155,7 +155,7 @@ def run_json_project(project,
 
             md['alignment_option'] = alignment_option
 
-            # atrm['selected_method'] = 'Auto-SWIM' #0205-
+            # atrm['method'] = 'Auto-SWIM' #0205-
 
             md.setdefault('bias_x_per_image', 0)
             md.setdefault('bias_y_per_image', 0)
@@ -168,7 +168,7 @@ def run_json_project(project,
             s_tbd[i]['alignment'] = atrm # put updated atrm into s_tbd
 
             # if there are match points, copy and scale them for scale_tbd
-            if atrm['selected_method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
+            if atrm['method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
                 mp_ref = (np.array(atrm['manual_points_mir']['ref']) * upscale).tolist()
                 mp_base = (np.array(atrm['manual_points_mir']['base']) * upscale).tolist()
                 atrm['manual_points_mir']['ref'] = mp_ref
@@ -343,7 +343,7 @@ class alignment_process:
                     "base": {"filename": im_mov_fn}
                 },
                 "alignment": {
-                    "selected_method": "Auto-SWIM",
+                    "method": "Auto-SWIM",
                     # "method_options": [
                     #     "Auto Swim Align",
                     #     "Match Point Align"
@@ -461,7 +461,7 @@ class alignment_process:
 
         fn = os.path.basename(self.layer_dict['filename'])
 
-        if atrm['selected_method'] == 'Auto-SWIM':
+        if atrm['method'] == 'Auto-SWIM':
             MAlogger.critical('\n%s (Method: Auto-SWIM)...' % fn)
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
@@ -491,7 +491,7 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_2x2b)
                 # self.recipe.add_ingredient(ingredient_4x4)
-        elif atrm['selected_method'] == 'Manual-Hint':
+        elif atrm['method'] == 'Manual-Hint':
             MAlogger.critical('\n%s (Method: Manual-Hint)...' % fn)
             self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
             self.mp_ref = np.array(self.layer_dict['alignment']['manual_points_mir']['ref']).transpose()
@@ -510,7 +510,7 @@ class alignment_process:
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
             self.recipe.add_ingredient(ingredient_2_mp_b)  # This one will use the previous Affine and refine it #0221+
             # self.recipe.add_ingredient(ingredient_4x4)
-        elif atrm['selected_method'] == 'Manual-Strict':
+        elif atrm['method'] == 'Manual-Strict':
             MAlogger.critical('\n%s (Method: Manual-Strict)...' % fn)
             self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
             self.mp_ref = np.array(self.layer_dict['alignment']['manual_points_mir']['ref']).transpose()

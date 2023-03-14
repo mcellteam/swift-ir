@@ -764,7 +764,7 @@ class RechunkDialog(QDialog):
         # self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
         self.chunk_x_lineedit.setValidator(QIntValidator(0, img_size[0]))
         self.chunk_y_lineedit.setValidator(QIntValidator(0, img_size[1]))
-        self.chunk_z_lineedit.setValidator(QIntValidator(0, cfg.data.nSections))
+        self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
         self.chunk_x_layout = QHBoxLayout()
         self.chunk_x_layout.setContentsMargins(4,4,4,4)
         self.chunk_y_layout = QHBoxLayout()

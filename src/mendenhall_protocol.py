@@ -69,7 +69,6 @@ class Mendenhall(QObject):
         img = diff[0]
         logger.info(f'New Image (or possibly removed): {img}')
         self.add_image(os.path.join(self.sink, img))
-        cfg.data.nSections = len(cfg.data)
         self._files = contents
 
     def n_files(self):
