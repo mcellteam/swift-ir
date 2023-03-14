@@ -426,8 +426,16 @@ class DataModel:
 
     def set_defaults(self):
         logger.critical(f'caller: {inspect.stack()[1].function}')
-        self._data['data'].setdefault('shader', cfg.SHADER)
 
+        self._data.setdefault('data', {})
+        self._data.setdefault('rendering', {})
+        self._data.setdefault('state', {})
+        self._data.setdefault('system', {})
+        self._data.setdefault('ui', {})
+        self._data['state'].setdefault('manual_mode', False)
+        self._data['state'].setdefault('mode', 'comparison')
+        self._data['state'].setdefault('previous_mode', None)
+        self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))

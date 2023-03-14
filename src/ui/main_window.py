@@ -1313,9 +1313,9 @@ class MainWindow(QMainWindow):
         # logger.info(f'caller: {caller}')
         if self._isProjectTab():
 
-            if cfg.data['ui']['arrangement'] == 'stack':
+            if cfg.data['state']['mode'] == 'stack':
                 self.combo_mode.setCurrentIndex(0)
-            elif cfg.data['ui']['arrangement'] == 'comparison':
+            elif cfg.data['state']['mode'] == 'comparison':
                 self.combo_mode.setCurrentIndex(1)
 
             self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
@@ -2075,15 +2075,16 @@ class MainWindow(QMainWindow):
         # logger.critical('caller: %s' % caller)
         logger.critical('Loading project...')
 
-        if cfg.data['ui']['arrangement'] == 'stack':
+        if cfg.data['state']['mode'] == 'stack':
             cfg.data['ui']['ng_layout'] = '4panel'
             self.combo_mode.setCurrentIndex(0)
-        elif cfg.data['ui']['arrangement'] == 'comparison':
+        elif cfg.data['state']['mode'] == 'comparison':
             cfg.data['ui']['ng_layout'] = 'xy'
             self.combo_mode.setCurrentIndex(1)
 
         self.updateDtWidget()
         cfg.project_tab.updateTreeWidget()
+        setData('state,mode', 'comparison')
         setData('state,manual_mode', False)
         cfg.data.set_defaults()
         self.updateToolbar()
@@ -2677,10 +2678,13 @@ class MainWindow(QMainWindow):
                 # self.updateToolbar()
 
     def enter_man_mode(self):
+        logger.critical('')
         if cfg.data.is_aligned_and_generated():
             logger.critical('Entering Manual Align Mode...')
             self.tell('Entering Manual Align Mode...')
             self.combo_mode.setCurrentIndex(2)
+            setData('state,previous_mode', getData('state,mode'))
+            setData('state,mode', 'manual_align')
             setData('state,manual_mode', True)
             self.stopPlaybackTimer()
             self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
@@ -2697,9 +2701,14 @@ class MainWindow(QMainWindow):
         logger.critical('Exiting Manual Align Mode...')
         self.tell('Exiting Manual Align Mode...')
         self.setWindowTitle(self.window_title)
-        if cfg.data['ui']['arrangement'] == 'stack':
+        if getData('state,previous_mode') == 'stack':
+            setData('state,mode', 'stack')
             self.combo_mode.setCurrentIndex(0)
-        elif cfg.data['ui']['arrangement'] == 'comparison':
+        elif getData('state,previous_mode') == 'comparison':
+            setData('state,mode', 'comparison')
+            self.combo_mode.setCurrentIndex(1)
+        else:
+            setData('state,mode', 'comparison')
             self.combo_mode.setCurrentIndex(1)
         setData('state,manual_mode', False)
         self.alignMatchPointAction.setText('Align Manually')
@@ -2843,17 +2852,21 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if cfg.project_tab._tabs.currentIndex() == 0:
                 if caller == 'main':
+                    cfg.data['state']['previous_mode'] = cfg.data['state']['mode']
                     index = self.combo_mode.currentIndex()
-                    if getData('state,manual_mode'):
+                    if getData('state,mode') == 'manual_align':
                         if index in (0,1):
                             self.exit_man_mode()
                     if index == 0:
+                        cfg.data['state']['mode'] = 'stack'
                         cfg.data['ui']['arrangement'] = 'stack'
                         cfg.data['ui']['ng_layout'] = '4panel'
                     elif index == 1:
+                        cfg.data['state']['mode'] = 'comparison'
                         cfg.data['ui']['arrangement'] = 'comparison'
                         cfg.data['ui']['ng_layout'] = 'xy'
                     elif index == 2:
+                        cfg.data['state']['mode'] = 'manual_align'
                         self.enter_man_mode()
                     self.dataUpdateWidgets()
                     cfg.project_tab.initNeuroglancer()
@@ -2896,7 +2909,7 @@ class MainWindow(QMainWindow):
 
         '''section # / jump-to lineedit'''
         self._jumpToLineedit = QLineEdit(self)
-        self._jumpToLineedit.setStyleSheet('font-size: 11px;')
+        self._jumpToLineedit.setStyleSheet('font-size: 11px; border-width: 0px;')
         self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
         self._jumpToLineedit.setStatusTip(tip)
         self._jumpToLineedit.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -2904,7 +2917,8 @@ class MainWindow(QMainWindow):
         self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
-        hbl.addWidget(QLabel('Section: '), alignment=Qt.AlignmentFlag.AlignRight)
+        sec_label = QLabel('Section: ')
+        hbl.addWidget(sec_label, alignment=Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self._jumpToLineedit)
         self._jumpToSectionWidget = QWidget()
         self._jumpToSectionWidget.setLayout(hbl)
@@ -3121,13 +3135,13 @@ class MainWindow(QMainWindow):
             if self.shaderCodeWidget.isVisible():
                 self.updateShaderText()
 
-            if cfg.data['ui']['arrangement'] == 'stack':
+            if cfg.data['state']['mode'] == 'stack':
                 cfg.data['ui']['ng_layout'] = '4panel'
                 self.combo_mode.setCurrentIndex(0)
-            elif cfg.data['ui']['arrangement'] == 'comparison':
+            elif cfg.data['state']['mode'] == 'comparison':
                 cfg.data['ui']['ng_layout'] = 'xy'
                 self.combo_mode.setCurrentIndex(1)
-            self.set_nglayout_combo_text(layout=cfg.data['ui']['arrangement'])  # must be before initNeuroglancer
+            self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.brightnessSlider.setValue(cfg.data.brightness)
             self.contrastSlider.setValue(cfg.data.contrast)
             self.dataUpdateWidgets()
@@ -4776,7 +4790,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Alignment Controls'
         self._btn_show_hide_ctls = QPushButton('Hide Controls')
-        self._btn_show_hide_ctls.setFixedHeight(16)
+        self._btn_show_hide_ctls.setFixedHeight(18)
         self._btn_show_hide_ctls.setStyleSheet(lower_controls_style)
         self._btn_show_hide_ctls.setStatusTip(tip)
         self._btn_show_hide_ctls.clicked.connect(self._callbk_showHideControls)
@@ -4788,7 +4802,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Python Console'
         self._btn_show_hide_console = QPushButton(' Python')
-        self._btn_show_hide_console.setFixedHeight(16)
+        self._btn_show_hide_console.setFixedHeight(18)
         self._btn_show_hide_console.setStyleSheet(lower_controls_style)
         self._btn_show_hide_console.setStatusTip(tip)
         self._btn_show_hide_console.clicked.connect(self._callbk_showHidePython)
@@ -4827,7 +4841,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Project Notes'
         self._btn_show_hide_notes = QPushButton(' Notes')
-        self._btn_show_hide_notes.setFixedHeight(16)
+        self._btn_show_hide_notes.setFixedHeight(18)
         self._btn_show_hide_notes.setStyleSheet(lower_controls_style)
         self._btn_show_hide_notes.setStatusTip(tip)
         self._btn_show_hide_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4839,7 +4853,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Shader Code'
         self._btn_show_hide_shader = QPushButton(' Shader')
-        self._btn_show_hide_shader.setFixedHeight(16)
+        self._btn_show_hide_shader.setFixedHeight(18)
         self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
         self._btn_show_hide_shader.setStatusTip(tip)
         self._btn_show_hide_shader.clicked.connect(self._callbk_showHideShader)
@@ -4852,7 +4866,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Project Details'
         self._btn_show_hide_corr_spots = QPushButton(' Correlation Signal')
-        self._btn_show_hide_corr_spots.setFixedHeight(16)
+        self._btn_show_hide_corr_spots.setFixedHeight(18)
         self._btn_show_hide_corr_spots.setStyleSheet(lower_controls_style)
         self._btn_show_hide_corr_spots.setStatusTip(tip)
         self._btn_show_hide_corr_spots.clicked.connect(self._callbk_showHideCorrSpots)
