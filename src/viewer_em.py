@@ -235,11 +235,11 @@ class EMViewer(AbstractEMViewer):
         self.shared_state.add_changed_callback(self.on_state_changed)
 
     def initViewer(self):
-        if cfg.data['ui']['arrangement'] == 'stack':
+        if cfg.data['state']['mode'] == 'stack':
             assert (cfg.main_window.combo_mode.currentIndex() == 0)
             # cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
-        elif cfg.data['ui']['arrangement'] == 'comparison':
+        elif cfg.data['state']['mode'] == 'comparison':
             assert (cfg.main_window.combo_mode.currentIndex() == 1)
             # cfg.data['ui']['ng_layout'] = 'xy'
             self.initViewerSbs()
@@ -285,7 +285,7 @@ class EMViewer(AbstractEMViewer):
         _, tensor_y, tensor_x = cfg.tensor.shape
 
         area = cfg.main_window.globTabs.geometry().getRect()
-        w = area[2] / (2, 3)[(cfg.data['ui']['arrangement'] == 'comparison')
+        w = area[2] / (2, 3)[(cfg.data['state']['mode'] == 'comparison')
                              and cfg.data.is_aligned_and_generated()]
         h = area[3]
         self.initZoom(w=w, h=h, adjust=1.10)

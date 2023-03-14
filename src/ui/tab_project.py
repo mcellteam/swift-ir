@@ -80,13 +80,6 @@ class ProjectTab(QWidget):
     def _onTabChange(self):
         logger.info('')
         index = self._tabs.currentIndex()
-        # if index == 0:
-        #     if cfg.data['ui']['arrangement'] == 'stack':
-        #         cfg.main_window.combo_mode.setCurrentIndex(0)
-        #     elif cfg.data['ui']['arrangement'] == 'stack':
-        #         cfg.main_window.combo_mode.setCurrentIndex(0)
-        #     self.initNeuroglancer()
-        #     # pass
         QApplication.restoreOverrideCursor()
         self.refreshTab(index=index)
 
@@ -1248,6 +1241,7 @@ class ProjectTab(QWidget):
 
 
     def onEnterManualMode(self):
+        logger.critical('')
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         self.ng_browser_container.hide()
@@ -1371,7 +1365,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
-            if cfg.data['ui']['arrangement'] == 'comparison':
+            if cfg.data['state']['mode'] == 'comparison':
                 self.ZdisplaySlider.setValue(10)
             else:
                 self.ZdisplaySlider.setValue(1)

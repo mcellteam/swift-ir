@@ -10,7 +10,9 @@ data_template = \
             "node": None,
         },
         "state": {
-            "manual_mode": False
+            "mode": "comparison",
+            "previous_mode": None,
+            "manual_mode": True
         },
         "rendering": {
             "normalize": [1,255],
