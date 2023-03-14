@@ -425,7 +425,7 @@ class DataModel:
 
 
     def set_defaults(self):
-        logger.critical(f'caller: {inspect.stack()[1].function}')
+        # logger.critical(f'caller: {inspect.stack()[1].function}')
 
         self._data.setdefault('data', {})
         self._data.setdefault('rendering', {})
