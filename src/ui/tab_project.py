@@ -1233,9 +1233,6 @@ class ProjectTab(QWidget):
     def onEnterManualMode(self):
         logger.critical('')
         self.bookmark_tab = self._tabs.currentIndex()
-        self._tabs.setCurrentIndex(0)
-        self.ng_browser_container.hide()
-        self.MA_splitter.show()
         method = cfg.data.selected_method()
         self.set_method_label_text()
         self.tgl_alignMethod.setChecked(method == 'Auto-SWIM')
@@ -1251,6 +1248,9 @@ class ProjectTab(QWidget):
         self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
         self.update_MA_widgets()
         self.tgl_alignMethod.setChecked(method != 'Auto-SWIM')
+        self._tabs.setCurrentIndex(0)
+        self.ng_browser_container.hide()
+        self.MA_splitter.show()
         cfg.main_window.dataUpdateWidgets()
 
 

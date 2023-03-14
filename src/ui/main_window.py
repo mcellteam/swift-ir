@@ -1486,31 +1486,42 @@ class MainWindow(QMainWindow):
 
 
                 if cfg.project_tab.detailsSNR.isVisible():
-                    components = cfg.data.snr_components()
-                    str0 = ('%.3f' % cfg.data.snr()).rjust(9)
-                    str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
-                    if cfg.data.selected_method() == 'Auto-SWIM':
-                        q0 = ('%.3f' % components[0]).rjust(9)
-                        q1 = ('%.3f' % components[1]).rjust(9)
-                        q2 = ('%.3f' % components[2]).rjust(9)
-                        q3 = ('%.3f' % components[3]).rjust(9)
+                    if cfg.data.zpos == 0:
                         cfg.project_tab.detailsSNR.setText(
-                            f"Avg. SNR{br*2}:{a}{str0}{b}{nl}"
-                            f"Prev.{br}SNR{br}:{str1}{nl}"
+                            f"Avg. SNR{br * 2}: N/A{nl}"
+                            f"Prev.{br}SNR{br}: N/A{nl}"
                             f"Components{nl}"
-                            f"Top,Left{br*2}:{q0}{nl}"
-                            f"Top,Right{br}:{q1}{nl}"
-                            f"Btm,Left{br*2}:{q2}{nl}"
-                            f"Btm,Right{br}:{q3}"
+                            f"Top,Left{br * 2}: N/A{nl}"
+                            f"Top,Right{br}: N/A{nl}"
+                            f"Btm,Left{br * 2}: N/A{nl}"
+                            f"Btm,Right{br}: N/A"
                         )
-                    elif cfg.data.selected_method() in ('Manual-Hint', 'Manual-Strict'):
-                        txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
-                              f"Prev. SNR{br}:{str1}{nl}" \
-                              f"Components"
-                        for i in range(len(components)):
-                            txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
+                    else:
+                        components = cfg.data.snr_components()
+                        str0 = ('%.3f' % cfg.data.snr()).rjust(9)
+                        str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
+                        if cfg.data.selected_method() == 'Auto-SWIM':
+                            q0 = ('%.3f' % components[0]).rjust(9)
+                            q1 = ('%.3f' % components[1]).rjust(9)
+                            q2 = ('%.3f' % components[2]).rjust(9)
+                            q3 = ('%.3f' % components[3]).rjust(9)
+                            cfg.project_tab.detailsSNR.setText(
+                                f"Avg. SNR{br*2}:{a}{str0}{b}{nl}"
+                                f"Prev.{br}SNR{br}:{str1}{nl}"
+                                f"Components{nl}"
+                                f"Top,Left{br*2}:{q0}{nl}"
+                                f"Top,Right{br}:{q1}{nl}"
+                                f"Btm,Left{br*2}:{q2}{nl}"
+                                f"Btm,Right{br}:{q3}"
+                            )
+                        elif cfg.data.selected_method() in ('Manual-Hint', 'Manual-Strict'):
+                            txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
+                                  f"Prev. SNR{br}:{str1}{nl}" \
+                                  f"Components"
+                            for i in range(len(components)):
+                                txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
 
-                        cfg.project_tab.detailsSNR.setText(txt)
+                            cfg.project_tab.detailsSNR.setText(txt)
 
                 try:     self._jumpToLineedit.setText(str(cur))
                 except:  logger.warning('Current Layer Widget Failed to Update')
