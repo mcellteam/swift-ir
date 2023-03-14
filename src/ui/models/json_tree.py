@@ -346,8 +346,8 @@ class JsonModel(QAbstractItemModel):
             return item.value
 
     def collapseIndex(self, s=None, l=None):
-        if s == None: s = cfg.data.curScale
-        if l == None: l = cfg.data.loc
+        if s == None: s = cfg.data.scale
+        if l == None: l = cfg.data.zpos
         cfg.project_tab.treeview.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
         self.getIndex(findkeys=keys, jump=False, collapse=True)
@@ -396,17 +396,14 @@ class JsonModel(QAbstractItemModel):
             self.getIndex(findkeys, treeitem=next_treeitem)
 
     def jumpToLayer(self, s=None, l=None):
-        if s == None: s = cfg.data.curScale
-        if l == None: l = cfg.data.loc
+        if s == None: s = cfg.data.scale
+        if l == None: l = cfg.data.zpos
         # cfg.project_tab.treeview.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
         # if l !=0:
         #     self.collapseIndex(l=l - 1)
         self.getIndex(findkeys=keys, expand=True)
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
-
-
-
 
 
 

@@ -22,6 +22,7 @@ from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import ScaleProjectDialog, new_project_dialog
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
 
 import src.config as cfg
 
@@ -48,7 +49,7 @@ class OpenProject(QWidget):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
         lab = QLabel('Saved AlignEM-SWiFT Projects:')
-        lab.setStyleSheet('font-size: 13px; color: #1b1e23; font-weight: 650;')
+        lab.setStyleSheet('font-size: 12px; font-family: Tahoma, sans-serif; font-weight: 600;')
 
         self.row_height_slider = Slider(self)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
@@ -56,6 +57,7 @@ class OpenProject(QWidget):
         # self.updateRowHeight(self.initial_row_height)
 
         self.fetchSizesCheckbox = QCheckBox('Fetch Sizes')
+        self.fetchSizesCheckbox.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         self.fetchSizesCheckbox.toggled.connect(
             lambda: setOpt('ui,FETCH_PROJECT_SIZES', self.fetchSizesCheckbox.isChecked()))
@@ -362,15 +364,15 @@ class OpenProject(QWidget):
         msgbox = QMessageBox(QMessageBox.Warning,
                              'Confirm Delete Project',
                              txt,
-                             buttons=QMessageBox.Abort | QMessageBox.Yes
+                             buttons=QMessageBox.Cancel | QMessageBox.Yes
                              )
         msgbox.setIcon(QMessageBox.Critical)
         msgbox.setMaximumWidth(350)
         msgbox.setDefaultButton(QMessageBox.Cancel)
         reply = msgbox.exec_()
-        if reply == QMessageBox.Abort:
-            cfg.main_window.tell('Aborting Delete Project Permanently Instruction...')
-            logger.warning('Aborting Delete Project Permanently Instruction...')
+        if reply == QMessageBox.Cancel:
+            cfg.main_window.tell('Canceling Delete Project Permanently Instruction...')
+            logger.warning('Canceling Delete Project Permanently Instruction...')
             return
         if reply == QMessageBox.Ok:
             logger.info('Deleting Project File %s...' % project_file)
@@ -598,14 +600,14 @@ class UserProjects(QWidget):
         for p in self.project_paths:
             try:
                 with open(p, 'r') as f:
-                    dm = DataModel(data=json.load(f), quitely=True)
+                    dm = DataModel(data=json.load(f), quietly=True)
             except:
                 logger.error('Table view failed to load data model: %s' % p)
             try:    created.append(dm.created)
             except: created.append('Unknown')
             try:    modified.append(dm.modified)
             except: modified.append('Unknown')
-            try:    n_sections.append(dm.n_sections())
+            try:    n_sections.append(len(dm))
             except: n_sections.append('Unknown')
             try:    img_dimensions.append(dm.full_scale_size())
             except: img_dimensions.append('Unknown')

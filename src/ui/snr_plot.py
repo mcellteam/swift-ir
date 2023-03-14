@@ -116,8 +116,8 @@ class SnrPlot(QWidget):
         caller = inspect.stack()[1].function
         # logger.info(f'caller={caller}')
         if cfg.data:
-            offset = self._getScaleOffset(s=cfg.data.scale())
-            pos = [cfg.data.loc + offset, 1]
+            offset = self._getScaleOffset(s=cfg.data.scale)
+            pos = [cfg.data.zpos + offset, 1]
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
             # snr = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
@@ -131,7 +131,7 @@ class SnrPlot(QWidget):
 
     def updateSpecialLayerLines(self):
         logger.debug('')
-        offset = self._getScaleOffset(s=cfg.data.scale())
+        offset = self._getScaleOffset(s=cfg.data.scale)
         layers_mp = cfg.data.find_layers_with_matchpoints()
         for line in self._mp_lines:   self.plot.removeItem(line)
         for label in self._mp_labels: self.plot.removeItem(label)
@@ -172,12 +172,6 @@ class SnrPlot(QWidget):
             self._skip_labels.append(label)
             line.setPos([layer[0] + offset, 1])
             self.plot.addItem(line)
-
-        # for scale in cfg.data.scalesAlignedAndGenerated:
-        #     self.updateErrBars(s=scale)
-
-
-
 
 
     def callableFunction(x, y):
@@ -244,7 +238,7 @@ class SnrPlot(QWidget):
 
 
     def get_axis_data(self, s=None) -> tuple:
-        if s == None: s = cfg.data.curScale
+        if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         for layer, snr in enumerate(cfg.data.snr_list(s=s)):
             if cfg.data.skipped(s=s, l=layer):
@@ -296,7 +290,7 @@ class SnrPlot(QWidget):
 
     def plotSingleScale(self, s=None):
         logger.info(f'plotSingleScale (scale: {s}):')
-        if s == None: scale = cfg.data.scale()
+        if s == None: scale = cfg.data.scale
         x_axis, y_axis = self.get_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
         x_axis = [x+offset for x in x_axis]
@@ -391,7 +385,7 @@ class SnrPlot(QWidget):
                 print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
                 pos_click = int(mouseClickEvent.pos()[0])
                 print('Position Clicked: %d' % pos_click)
-                cfg.data.loc = pos_click
+                cfg.data.zpos = pos_click
                 self.updateLayerLinePos()
                 cfg.main_window.dataUpdateWidgets()
             except:

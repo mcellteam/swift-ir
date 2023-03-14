@@ -8,7 +8,7 @@ import logging
 import argparse
 import src.config as cfg
 from src.mp_queue import TaskQueue
-from src.helpers import get_scale_val, get_img_filenames, print_exception
+from src.helpers import get_scale_val, get_img_filenames, print_exception, get_scales_with_generated_alignments
 
 __all__ = ['generate_multiscale_zarr']
 
@@ -21,11 +21,11 @@ def generate_multiscale_zarr(src, out):
     logger.info('src : %s\nout: %s' % (src, out))
     # Todo conditional handling of skips
     tasks_ = []
-    imgs = sorted(get_img_filenames(os.path.join(src, cfg.data.scale(), 'img_aligned')))
+    imgs = sorted(get_img_filenames(os.path.join(src, cfg.data.scale, 'img_aligned')))
     logger.info('# images: %d' % len(imgs))
     chunkshape = cfg.data.chunkshape()
     for ID, img in enumerate(imgs):
-        for scale in cfg.data.scalesAlignedAndGenerated:
+        for scale in get_scales_with_generated_alignments(cfg.data.scales()):
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
             tasks_.append([ID, img, src, path_out, scale, str(chunkshape)])

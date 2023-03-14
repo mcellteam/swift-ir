@@ -64,7 +64,7 @@ class ProjectTable(QWidget):
             if cfg.project_tab._tabs.currentIndex() == 1:
                 row = self.table.currentIndex().row()
                 # cfg.main_window.tell('Section #%d' % row)
-                cfg.data.loc = row
+                cfg.data.zpos = row
                 cfg.main_window.dataUpdateWidgets()
 
 
@@ -233,8 +233,8 @@ class ProjectTable(QWidget):
         is_aligned = cfg.data.is_aligned_and_generated()
         # logger.critical('is aligned? %r' % is_aligned)
         try:
-            try:     scale = [cfg.data.scale_pretty()] * cfg.data.nSections
-            except:  scale = ['Unknown'] * cfg.data.nSections; print_exception()
+            try:     scale = [cfg.data.scale_pretty()] * len(cfg.data)
+            except:  scale = ['Unknown'] * len(cfg.data); print_exception()
             try:     ref = cfg.data.thumbnails_ref()
             except:  ref = ['Unknown'] * len(cfg.data); print_exception()
             indexes, skips, base, method, snr_report, test, datetime = [], [], [], [], [], [], []
@@ -243,7 +243,7 @@ class ProjectTable(QWidget):
                 try:     skips.append(l['skipped'])
                 except:  skips.append('?'); print_exception()
                 try:
-                    m = l['alignment']['selected_method']
+                    m = l['alignment']['method']
                     if m == 'Auto-SWIM': m = 'Automatic SWIM Alignment'
                     method.append(m)
                 except:
@@ -272,7 +272,7 @@ class ProjectTable(QWidget):
 
     # def updateSliderMaxVal(self):
     #     if cfg.data.is_aligned():
-    #         thumb_path = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
+    #         thumb_path = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
     #     else:
     #         thumb_path = os.path.join(cfg.data.dest(), 'thumbnails')
     #     max_val = max(ImageSize(next(absFilePaths(thumb_path))))

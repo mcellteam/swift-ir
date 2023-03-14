@@ -1,21 +1,62 @@
 
 
+QTabBar::tab:selected {
+    background-color: #daebfe;
+    border-width: 0px;
+}
+
+QDoubleSpinBox {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 4px;
+    border-width: 0px;
+}
+
+QSpinBox {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 4px;
+    border-width: 0px;
+}
+
+QLabel {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 1px;
+    border-width: 0px;
+}
 
 
+QPushButton {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+}
 
+QComboBox {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 4px;
+    border-width: 0px;
+
+}
 
 QTableWidget{
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
 
 }
 
 
 QDialog QLabel {
 	color: #141414;
+	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
-QMainWindow#mainwindow{
-    /*background-color: #f3f6fb;*/
+QMainWindow {
     background-color: #ede9e8;
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 
@@ -24,7 +65,8 @@ QTabBar::tab {
     height: 22px;
     max-width: 200px;
     font-size: 11px;
-    font-weight: 500;
+    font-family: Tahoma, sans-serif;
+    font-weight: 600;
 }
 
 QWidget#self._tool_keyBindings{
@@ -39,33 +81,24 @@ QWidget#self._tool_keyBindings{
  }
  /* TabBar::close-button:hover { image: url(src/resources/close-tab-hover.png) } */
 
- QLabel#extra_header_text_label{
-     font-size: 11px;
-     color: #1b1e23;
-     font-weight: 550;
-     background-color: #f3f6fb;
-     border-radius: 5px;
-     border: 1px solid #808080;
- }
-
 QLabel#label_toolbar_resolution{
-    font-size: 11px;
+    font-size: 10px;
     color: #1b1e23;
     font-weight: 550;
     background-color: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #808080;
+    font-family: Tahoma, sans-serif;
 }
 
 QLabel#green_toolbar_label{
     font-size: 11px;
-    /*color: #39ff14;*/
     color: #00BF00;
     font-weight: 550;
     background-color: #f3f6fb;
     border-radius: 5px;
-    /*border: 1px solid #39ff14;*/
     border: 1px solid #00BF00;
+    font-family: Tahoma, sans-serif;
 }
 
 QLabel#red_toolbar_label{
@@ -75,6 +108,7 @@ QLabel#red_toolbar_label{
     background-color: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #ff0000;
+    font-family: Tahoma, sans-serif;
 }
 
 QLabel#validity_label{
@@ -84,21 +118,27 @@ QLabel#validity_label{
     background-color: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #ff0000;
+    font-family: Tahoma, sans-serif;
 }
 
 QTabWidget#project_tabs{
     height: 10px;
     font-size: 12px;
+    font-family: Tahoma, sans-serif;
 }
 
 QHeaderView
 {
     color: #141414;
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 
 QProgressBar {
 	font-size: 10px;
+	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 
 }
 
@@ -109,6 +149,8 @@ QMenu {
 	border-width: 1px;
 	border-color: #1b1e23;
 	border-style: outset;
+	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 /* affects main menu top-of-window*/
@@ -116,6 +158,8 @@ QMenuBar::item {
   	spacing: 4px;
 	padding: 2px 2px;
   	background: transparent;
+  	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 QMenuBar::item:selected {
@@ -125,6 +169,8 @@ QMenuBar::item:selected {
 QMenuBar {
 	background: #1b2328;
 	color: #f3f6fb;
+	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 QMenu::item {
@@ -138,6 +184,8 @@ QMenu::item {
 
 QTreeView {
     show-decoration-selected: 1;
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 QTreeView::item {
@@ -193,11 +241,7 @@ QToolBar#toolbar {
 
 
 
-QLabel#toolbar_layer_label { color: #1B1E23; }
-QLabel#extra_header_text_label { color: #1B1E23; }
-QWidget#layer_view_container { background-color: #daebfe;  } /*culprit*/
-/*QWidget#snr_plot_widget { background-color: #004060  }*/
-QWidget#splash_widget { background-color: #1b1e23;  }
+
 
 QCheckBox#toggle_skip {
 	spacing: 5px;
@@ -254,9 +298,10 @@ QLineEdit {
 	border-width: 1px;
 	border-style: solid;
 	border-color: #141414;
-	font-weight: 450;
 	/*selection-background-color: #ffcccb;*/
 	/*background:#daebfe;*/
+	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 QLCDNumber {
@@ -267,6 +312,8 @@ QStatusBar {
 	/*background: #1c2321;*/
 	color: #1b1e23;
 	/*font-weight: bold;*/
+	font-size: 11px;
+    font-family: Tahoma, sans-serif;
 }
 
 

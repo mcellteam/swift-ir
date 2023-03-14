@@ -577,7 +577,7 @@ array([[   0,    0],
        [ 997,  580]], dtype=int32)
     '''
     logger.info('Computing Bounding Rect...')
-    if scale == None: scale = cfg.data.scale()
+    if scale == None: scale = cfg.data.scale
 
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''

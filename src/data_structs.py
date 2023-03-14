@@ -10,7 +10,7 @@ data_template = \
             "node": None,
         },
         "state": {
-            "MANUAL_MODE": False
+            "manual_mode": False
         },
         "rendering": {
             "normalize": [1,255],
@@ -20,12 +20,15 @@ data_template = \
         "ui": {
             "ng_layout": '4panel',
             "arrangement": 'stack',
+            "stage_viewer": {
+                "show_yellow_frame": True
+            }
         },
         "data": {
             "shader": None,
             "source_path": "",
             "destination_path": "",
-            "Current Section (Index)": 0,
+            "z_position": 0,
             "current_scale": "scale_1",
             "t_scaling": 0.0,
             "t_scaling_convert_zarr": 0.0,
@@ -57,7 +60,7 @@ layer_template = \
         "alignment": {
             "method_data": {},
             "method_options": {},
-            "selected_method": "Auto-SWIM",
+            "method": "Auto-SWIM",
             "manual_points": {
                 "ref": [],
                 'base': []

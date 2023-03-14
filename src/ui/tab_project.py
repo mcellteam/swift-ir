@@ -12,13 +12,14 @@ import shutil
 import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
-    QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox
+    QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
+    QCheckBox
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
 from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
-from src.helpers import getOpt, getData, setData
-from src.viewer_em import EMViewer
+from src.helpers import getOpt, setOpt, getData, setData
+from src.viewer_em import EMViewer, EMViewerStage, EMViewerSnr
 from src.viewer_ma import MAViewer
 from src.helpers import print_exception
 from src.ui.snr_plot import SnrPlot
@@ -74,12 +75,18 @@ class ProjectTab(QWidget):
         self.MA_base_zoom = None
 
         h = self.MA_webengine_ref.geometry().height()
-        self.MA_stageSplitter.setSizes([int(.5*h), int(.5*h)])
+        self.MA_stageSplitter.setSizes([int(.7*h), int(.3*h)])
 
-    def _onTabChange(self, index=None):
-        logger.critical('')
-        if index == None:
-            index = self._tabs.currentIndex()
+    def _onTabChange(self):
+        logger.info('')
+        index = self._tabs.currentIndex()
+        # if index == 0:
+        #     if cfg.data['ui']['arrangement'] == 'stack':
+        #         cfg.main_window.combo_mode.setCurrentIndex(0)
+        #     elif cfg.data['ui']['arrangement'] == 'stack':
+        #         cfg.main_window.combo_mode.setCurrentIndex(0)
+        #     self.initNeuroglancer()
+        #     # pass
         QApplication.restoreOverrideCursor()
         self.refreshTab(index=index)
 
@@ -88,11 +95,9 @@ class ProjectTab(QWidget):
         if index == None:
             index = self._tabs.currentIndex()
 
-        if getData('state,MANUAL_MODE'):
+        if getData('state,manual_mode'):
             pts_ref = self.MA_viewer_ref.pts
             pts_base = self.MA_viewer_base.pts
-            logger.critical('pts_ref = %s' %str(pts_ref))
-            logger.critical('pts_base = %s' %str(pts_base))
             self.initNeuroglancer()
             self.MA_viewer_ref.pts = pts_ref
             self.MA_viewer_base.pts = pts_base
@@ -118,7 +123,7 @@ class ProjectTab(QWidget):
 
     def initSnrViewer(self):
 
-        self.snrViewer = self.viewer =  cfg.emViewer = EMViewer(webengine=self.snrWebengine)
+        self.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
         # self.snrViewer.initViewerSbs(orientation='vertical')
         self.snrWebengine.setUrl(QUrl(self.snrViewer.url()))
         self.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
@@ -137,14 +142,14 @@ class ProjectTab(QWidget):
 
 
     def initNeuroglancer(self):
-        logger.critical(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
+        logger.info(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
 
         caller = inspect.stack()[1].function
-        if getData('state,MANUAL_MODE'):
+        if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
-            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
             self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
             self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
@@ -273,11 +278,7 @@ class ProjectTab(QWidget):
         vbl.addWidget(self.afm_widget_)
         self._transformationWidget.setLayout(vbl)
 
-        self._overlayBottomLeft = QLabel()
-        self._overlayBottomLeft.setObjectName('_overlayBottomLeft')
-        self._overlayBottomLeft.hide()
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
-        self.ng_gl.addWidget(self._overlayBottomLeft, 0, 0, 5, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.ngVertLab.setObjectName('label_ng')
@@ -419,7 +420,7 @@ class ProjectTab(QWidget):
         self.detailsRuntime.hide()
 
         sep = "<span style='font-size: 15px; color: #f3f6fb; " \
-                    "font-family: 'Andale Mono', 'Ubuntu Mono', monospace;'>&#183;</span>"
+                    "font-family: sans-serif;'>&nbsp;&#183;&nbsp;</span>"
         sep0, sep1, sep2, sep3 = QLabel(sep), QLabel(sep), QLabel(sep), QLabel(sep)
         self.labelsWidget = HWidget(self.detailsClabel, sep0, self.afmClabel, sep1,
                                     self.snrClabel, sep2, self.runtimeClabel, sep3,
@@ -503,7 +504,9 @@ class ProjectTab(QWidget):
         self.zoomSliderAndLabel = VWidget()
         self.zoomSliderAndLabel.setFixedWidth(16)
         self.zoomSliderAndLabel.addWidget(self.zoomSlider)
-        self.zoomSliderAndLabel.addWidget(VerticalLabel('Zoom:'))
+        vlab = VerticalLabel('Zoom:')
+        vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.zoomSliderAndLabel.addWidget(vlab)
 
         self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
         self.ZdisplaySlider.setMaximum(20)
@@ -513,16 +516,17 @@ class ProjectTab(QWidget):
 
         self.ZdisplaySliderAndLabel = VWidget()
         self.ZdisplaySliderAndLabel.setFixedWidth(16)
+        self.ZdisplaySliderAndLabel.setMaximumHeight(100)
         self.ZdisplaySliderAndLabel.addWidget(self.ZdisplaySlider)
-        self.ZdisplaySliderAndLabel.addWidget(VerticalLabel('Z-Mag:'))
+        vlab = VerticalLabel('Z-Mag:')
+        vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.ZdisplaySliderAndLabel.addWidget(vlab)
 
         self.MA_webengine_ref = QWebEngineView()
         self.MA_webengine_base = QWebEngineView()
         self.MA_webengine_stage = QWebEngineView()
         self.MA_webengine_ref.setMinimumWidth(200)
         self.MA_webengine_base.setMinimumWidth(200)
-        self.MA_webengine_stage.setMinimumWidth(300)
-        self.MA_webengine_stage.setMinimumHeight(128)
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
         # self.MA_webengine_stage.setMouseTracking(True)
@@ -530,6 +534,9 @@ class ProjectTab(QWidget):
         unless mouse tracking has been enabled with setMouseTracking() .'''
         self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
         self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
+
+        self.MA_webengine_stage.setMinimumWidth(240)
+        self.MA_webengine_stage.setMinimumHeight(128)
         self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
 
         # NO CHANGE----------------------
@@ -542,75 +549,93 @@ class ProjectTab(QWidget):
 
         # MA Stage Buffer Widget
 
-        # MA_refViewerTitle = YellowTextLabel('Reference')
-        # MA_baseViewerTitle = YellowTextLabel('Working')
-        MA_refViewerTitle = QLabel('Reference')
-        MA_baseViewerTitle = QLabel('Working')
+        # self.MA_refViewerTitle = YellowTextLabel('Reference')
+        # self.MA_baseViewerTitle = YellowTextLabel('Working')
+        self.MA_refViewerTitle = QLabel('Left Image Points')
+        self.MA_refViewerTitle.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_refViewerTitle.setMaximumHeight(14)
+
+        self.MA_baseViewerTitle = QLabel('Right Image Points')
+        self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.setMaximumHeight(64)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
         self.MA_ptsListWidget_ref.itemClicked.connect(self.refListItemClicked)
-        self.MA_refNextColorLab = QLabel('Next')
-        self.MA_refNextColorLab.setFixedSize(100, 16)
-        self.MA_refNextColorLab.setStyleSheet('background-color: #ffe135;')
+        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+
+        self.MA_refNextColorTxt = QLabel('Next Color: ')
+        self.MA_refNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.MA_refNextColorLab = QLabel()
+        # self.MA_refNextColorLab.setMaximumHeight(12)
+        self.MA_refNextColorLab.setFixedSize(60, 18)
 
         self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.setMaximumHeight(64)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
         self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
-        self.MA_baseNextColorLab = QLabel('Next')
-        self.MA_baseNextColorLab.setFixedSize(100, 16)
-        self.MA_baseNextColorLab.setStyleSheet('background-color: #ffe135;')
+        self.MA_ptsListWidget_base.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+        self.MA_baseNextColorTxt = QLabel('Next Color: ')
+        self.MA_baseNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.MA_baseNextColorLab = QLabel()
+        # self.MA_baseNextColorLab.setMaximumHeight(12)
+        self.MA_baseNextColorLab.setFixedSize(60, 18)
+
+        self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab)
+        self.baseNextColorWidget.setMaximumHeight(14)
+        self.refNextColorWidget = HWidget(self.MA_refNextColorTxt, self.MA_refNextColorLab)
+        self.refNextColorWidget.setMaximumHeight(14)
 
         self.gb_actionsMA = QGroupBox()
         self.fl_actionsMA = QFormLayout()
+        self.fl_actionsMA.setSpacing(2)
         self.fl_actionsMA.setContentsMargins(0, 0, 0, 0)
         self.gb_actionsMA.setLayout(self.fl_actionsMA)
 
-
         self.automatic_label = QLabel()
         self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
-        font = QFont()
-        font.setFamily("Tahoma")
-        self.automatic_label.setFont(font)
+        # font = QFont()
+        # font.setFamily("Tahoma")
+        # self.automatic_label.setFont(font)
 
 
         def fn():
             caller = inspect.stack()[1].function
             logger.critical('caller: %s' % caller)
-
             if self.tgl_alignMethod.isChecked():
                 self.combo_MA_manual_mode.setEnabled(True)
                 self.update_MA_widgets()
             else:
                 self.combo_MA_manual_mode.setEnabled(False)
-                cfg.data.set_selected_method('Auto-SWIM')
+                cfg.data.set_selected_method('Auto-SWIM') #Critical always set project dict back to Auto-align
                 self.set_method_label_text()
+            self.updateCursor()
         self.tgl_alignMethod = AnimatedToggle(
             checked_color='#FFB000',
             pulse_checked_color='#44FFB000')
         self.tgl_alignMethod.toggled.connect(fn)
         self.tgl_alignMethod.toggled.connect(cfg.main_window._callbk_unsavedChanges)
-        self.tgl_alignMethod.setFixedSize(48,24)
-
+        self.tgl_alignMethod.setFixedSize(44,26)
 
         def fn():
             caller = inspect.stack()[1].function
             logger.critical('caller: %s' % caller)
             # request = self.combo_MA_manual_mode.currentText()
             # cfg.data.set_selected_method(request)
-            if cfg.data.selected_method != 'Auto-SWIM':
+            if cfg.data.selected_method() != 'Auto-SWIM':
                 self.set_method_label_text()
         self.combo_MA_manual_mode = QComboBox(self)
-        self.combo_MA_manual_mode.setStyleSheet('font-size: 11px')
-        self.combo_MA_manual_mode.setFixedHeight(20)
+        self.combo_MA_manual_mode.setFixedHeight(18)
         self.combo_MA_manual_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Manual-Hint', 'Manual-Strict']
         self.combo_MA_manual_mode.addItems(items)
         self.combo_MA_manual_mode.currentTextChanged.connect(fn)
         self.combo_MA_manual_mode.currentTextChanged.connect(cfg.main_window._callbk_unsavedChanges)
         self.combo_MA_manual_mode.setEnabled(False)
+        self.combo_MA_manual_mode.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
 
         # mainToggle = AnimatedToggle()
@@ -627,45 +652,17 @@ class ProjectTab(QWidget):
         # window.layout().addWidget(secondaryToggle)
         # mainToggle.stateChanged.connect(secondaryToggle.setChecked)
 
+        lab = QLabel('Saved Method:')
+        lab.setStyleSheet('font-size: 8px; font-family: Tahoma, sans-serif;')
+        vw = VWidget(lab, self.automatic_label)
+        vw.layout.setSpacing(0)
 
-        # self.rbAuto = QRadioButton('Automatic')
-        # self.rbManHint = QRadioButton('Manual, Hint')
-        # self.rbManStrict = QRadioButton('Manual, Strict')
-        # self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rbManHint.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rbAuto.setStatusTip('Automatic Alignment using SWIM')
-        # self.rbManHint.setStatusTip('Align by Manual-Hint Point Selection')
-        # self.rbManStrict.setStatusTip('Align by Manual-Strict Point Selection')
-        # self.rbAuto.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rbManHint.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rbManStrict.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rbAuto.setEnabled(False)
-        # self.rbManHint.setEnabled(False)
-        # self.rbManStrict.setEnabled(False)
+        # lab2 = QLabel('Mode:')
+        # lab2.setStyleSheet('font-size: 8px; font-family: Tahoma, sans-serif;')
+        # vw2 = VWidget(lab2, self.tgl_alignMethod)
+        # vw2.layout.setSpacing(0)
 
-        # def fn():
-        #     method = 'Auto-SWIM'
-        #     if self.rbAuto.isChecked():
-        #         method = 'Auto-SWIM'
-        #     elif self.rbManHint.isChecked():
-        #         method = 'Manual-Hint'
-        #     elif self.rbManStrict.isChecked():
-        #         method = 'Manual-Strict'
-        #     cfg.data.set_selected_method(method)
-
-        # self.rbAuto.toggled.connect(fn)
-        # self.rbManHint.toggled.connect(fn)
-        # self.rbManStrict.toggled.connect(fn)
-        # self.rbMethodGroup = QButtonGroup()
-        # self.rbMethodGroup.setExclusive(True)
-        # self.rbMethodGroup.addButton(self.rbAuto)
-        # self.rbMethodGroup.addButton(self.rbManHint)
-        # self.rbMethodGroup.addButton(self.rbManStrict)
-
-        # self.fl_actionsMA.addWidget(HWidget(QLabel('Method:'), self.rbAuto, self.rbManHint, self.rbManStrict))
-        self.fl_actionsMA.addWidget(HWidget(self.automatic_label, self.tgl_alignMethod, self.combo_MA_manual_mode))
-
+        self.fl_actionsMA.addWidget(HWidget(vw, self.tgl_alignMethod, self.combo_MA_manual_mode))
 
         def fn():
             try:
@@ -683,6 +680,7 @@ class ProjectTab(QWidget):
         self.btnClearMA.setMaximumHeight(20)
         self.btnClearMA.setMaximumWidth(60)
         self.btnClearMA.clicked.connect(fn)
+        self.btnClearMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         # self.btnClearMA.clicked.connect(self.initNeuroglancer)
 
@@ -698,7 +696,7 @@ class ProjectTab(QWidget):
             self.updateNeuroglancer()
             self.MA_viewer_base.set_position(pos)
             # self.MA_viewer_stage.initViewer()
-            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
             self.update_MA_widgets()
         tip = 'Go To Previous Section.'
         self.btnPrevSection = QPushButton()
@@ -720,7 +718,7 @@ class ProjectTab(QWidget):
             self.updateNeuroglancer()
             self.MA_viewer_base.set_position(pos)
             # self.MA_viewer_stage.initViewer()
-            self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
             self.update_MA_widgets()
         tip = 'Go To Next Section.'
         self.btnNextSection = QPushButton()
@@ -738,8 +736,9 @@ class ProjectTab(QWidget):
         self.btnResetAllMA = QPushButton('Set All Automatic')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnResetAllMA.setFixedHeight(20)
-        self.btnResetAllMA.setFixedWidth(122)
+        self.btnResetAllMA.setFixedWidth(102)
         self.btnResetAllMA.clicked.connect(fn)
+        self.btnResetAllMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         def fn():
             cfg.main_window.hud.post('Aligning...')
@@ -747,10 +746,12 @@ class ProjectTab(QWidget):
             # cfg.main_window.regenerateOne()
             cfg.main_window.hud.done()
         self.btnRealignMA = QPushButton('Align && Regenerate')
+        # self.btnRealignMA.setStyleSheet()
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRealignMA.setFixedHeight(20)
-        self.btnRealignMA.setFixedWidth(122)
+        self.btnRealignMA.setFixedWidth(102)
         self.btnRealignMA.clicked.connect(fn)
+        self.btnRealignMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         def fn():
             cfg.main_window.hud.post('Applying Manual Points...')
@@ -768,12 +769,14 @@ class ProjectTab(QWidget):
         self.btnApplyMA.setFixedWidth(60)
         self.btnApplyMA.clicked.connect(fn)
         self.btnApplyMA.setEnabled(False)
+        self.btnApplyMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnExitMA.setFixedHeight(20)
         self.btnExitMA.setFixedWidth(60)
         self.btnExitMA.clicked.connect(cfg.main_window.exit_man_mode)
+        self.btnExitMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         def fn():
             pass
@@ -790,9 +793,13 @@ class ProjectTab(QWidget):
 
         self.MA_actions = HWidget(self.combo_MA_actions, btn_go)
 
-
-        w_change_section = HWidget(QLabel('Section:'), self.btnPrevSection, self.btnNextSection)
+        sec_label = QLabel('Section:')
+        sec_label.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        w_change_section = HWidget(sec_label, self.btnPrevSection, self.btnNextSection)
         w_change_section.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        w = QWidget()
+        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.fl_actionsMA.addWidget(
             HWidget(
@@ -803,42 +810,89 @@ class ProjectTab(QWidget):
         )
         self.fl_actionsMA.addWidget(
             HWidget(
+                w,
                 self.btnRealignMA,
                 self.btnResetAllMA,
                 self.btnExitMA
             )
         )
 
-        self.MA_sbw = HWidget(
-            VWidget(MA_refViewerTitle, self.MA_ptsListWidget_ref, self.MA_refNextColorLab),
-            VWidget(MA_baseViewerTitle, self.MA_ptsListWidget_base, self.MA_baseNextColorLab)
-        )
-        msg_MAinstruct = YellowTextLabel('⇧ + Click - Select at least 3 corresponding points')
-        msg_MAinstruct.setFixedSize(360, 30)
+        gb1 = QGroupBox()
+        vbl = VBL()
+        vbl.setSpacing(1)
+        vbl.addWidget(self.MA_refViewerTitle)
+        vbl.addWidget(self.MA_ptsListWidget_ref)
+        vbl.addWidget(self.refNextColorWidget)
+        gb1.setLayout(vbl)
+
+        gb2 = QGroupBox()
+        vbl = VBL()
+        vbl.setSpacing(1)
+        vbl.addWidget(self.MA_baseViewerTitle)
+        vbl.addWidget(self.MA_ptsListWidget_base)
+        vbl.addWidget(self.baseNextColorWidget)
+        gb2.setLayout(vbl)
+
+        self.MA_sbw = HWidget(gb1, gb2)
+        self.MA_sbw.layout.setSpacing(0)
+        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select at least 3 corresponding points")
+        self.msg_MAinstruct.setFixedSize(290, 22)
+        self.msg_MAinstruct.hide()
+
+        def fn():
+            # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+            EMViewerStage(webengine=self.MA_webengine_stage)
+        self.cb_showYellowFrame = QCheckBox('Show Frame')
+        self.cb_showYellowFrame.setChecked(getData('ui,stage_viewer,show_yellow_frame'))
+        self.cb_showYellowFrame.toggled.connect(lambda val: setData('ui,stage_viewer,show_yellow_frame', val))
+        # self.cb_showYellowFrame.toggled.connect(self.initNeuroglancer)
+        self.cb_showYellowFrame.toggled.connect(fn)
 
         self.labNoArrays = QLabel('')
 
         self.stageDetails = VWidget()
-        self.stageDetails.addWidget(HWidget(QLabel('No. Generated Arrays: 1'), self.labNoArrays))
+        lab = QLabel('No. Generated Arrays:')
+        lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.stageDetails.addWidget(HWidget(lab, self.labNoArrays))
+        #Todo self.labNoArrays
+
+        self.gb_stageInfoText = QGroupBox()
+        vbl = VBL()
+        vbl.setSpacing(0)
+        vbl.addWidget(self.stageDetails)
+        self.gb_stageInfoText.setLayout(vbl)
+
+
+        self.MA_webengine_widget = VWidget()
+        self.MA_webengine_widget.addWidget(self.MA_webengine_stage)
+        self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
+
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
-        self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
-        self.MA_stageSplitter.addWidget(VWidget(self.stageDetails, self.MA_sbw, self.gb_actionsMA))
+        # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
+        self.MA_stageSplitter.addWidget(self.MA_webengine_widget)
+        self.MA_stageSplitter.addWidget(VWidget(self.gb_stageInfoText, self.MA_sbw, self.gb_actionsMA))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
 
         self.MA_ng_widget = QWidget()
         self.MA_gl = GL()
-        # self.MA_gl.addWidget(MA_refViewerTitle, 3, 0, 1, 1)
-        # self.MA_gl.addWidget(MA_baseViewerTitle, 3, 2, 1, 1)
+        # self.MA_gl.addWidget(self.MA_refViewerTitle, 3, 0, 1, 1)
+        # self.MA_gl.addWidget(self.MA_baseViewerTitle, 3, 2, 1, 1)
+
+        #Note, may be able to tailor this to webengine if wrapped in QWidget
+        # self.MA_webengine_ref.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
+        # self.MA_webengine_base.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
+
+
         self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
         self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
-        self.MA_gl.addWidget(msg_MAinstruct, 2, 1, 1, 2)
-        self.MA_ng_widget.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
+        self.MA_gl.addWidget(self.msg_MAinstruct, 2, 0, 1, 4, alignment=Qt.AlignCenter)
+        # self.MA_ng_widget.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
         self.MA_ng_widget.setLayout(self.MA_gl)
 
         self.MA_splitter = HSplitter(self.MA_ng_widget, self.MA_stageSplitter)
-        self.MA_splitter.setSizes([.90 * cfg.WIDTH, .10 * cfg.WIDTH])
+        self.MA_splitter.setSizes([.80 * cfg.WIDTH, .20 * cfg.WIDTH])
         self.MA_splitter.setCollapsible(0, False)
         self.MA_splitter.setCollapsible(1, False)
         self.MA_splitter.hide()
@@ -847,14 +901,33 @@ class ProjectTab(QWidget):
         self.weSplitter.setCollapsible(0, False)
         self.weSplitter.setCollapsible(1, False)
 
+        self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
+
         self.ng_browser_container_outer = HWidget(
             self.ngVertLab,
             self.weSplitter,
-            self.ZdisplaySliderAndLabel,
-            self.zoomSliderAndLabel
+            self.sideSliders,
         )
         self.ng_browser_container_outer.layout.setSpacing(1)
 
+
+    def updateCursor(self):
+        QApplication.restoreOverrideCursor()
+        self.msg_MAinstruct.hide()
+        # self.msg_MAinstruct.setText("Toggle 'Mode' to select manual correspondence points")
+
+        if getData('state,manual_mode'):
+            if self.tgl_alignMethod.isChecked():
+                pixmap = QPixmap('src/resources/cursor_circle.png')
+                cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                QApplication.setOverrideCursor(cursor)
+                self.msg_MAinstruct.show()
+
+
+
+
+    def isManualReady(self):
+        return self.tgl_alignMethod.isChecked()
 
     # def fade(self):
     #     self.MA_ng_widget.setWindowOpacity(0.5)
@@ -884,7 +957,7 @@ class ProjectTab(QWidget):
     # def copySaveAlignment(self):
     #     logger.critical('')
     #     dt = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    #     path = os.path.join(cfg.data.dest(), cfg.data.curScale, 'img_staged',str(cfg.data.loc), dt)
+    #     path = os.path.join(cfg.data.dest(), cfg.data.scale, 'img_staged',str(cfg.data.zpos), dt)
     #     if not os.path.isdir(path):
     #         os.mkdir(path)
     #     file = cfg.data.filename()
@@ -897,19 +970,22 @@ class ProjectTab(QWidget):
     def set_method_label_text(self):
         method = cfg.data.selected_method()
         if method == 'Auto-SWIM':
-            self.automatic_label.setText('<i>Automatic SWIM Alignment</i>')
-            self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
+            self.automatic_label.setText('<i>Auto SWIM Alignment</i>')
+            self.automatic_label.setStyleSheet(
+                'color: #06470c; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
         elif method == 'Manual-Hint':
-            self.automatic_label.setText('<i>Manual Hint Alignment</i>')
-            self.automatic_label.setStyleSheet('color: #380282; font-size: 11px; font-weight: 600;')
+            self.automatic_label.setText('<i>Manual Alignment (Hint)</i>')
+            self.automatic_label.setStyleSheet(
+                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
         elif method == 'Manual-Strict':
-            self.automatic_label.setText('<i>Manual Strict Alignment</i>')
-            self.automatic_label.setStyleSheet('color: #380282; font-size: 11px; font-weight: 600;')
+            self.automatic_label.setText('<i>Manual Alignment (Strict)</i>')
+            self.automatic_label.setStyleSheet(
+                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
 
 
     def validate_MA_points(self):
         # if cfg.data.selected_method() != 'Auto-SWIM':
-        if len(self.MA_viewer_ref.pts.keys()) >= 1:
+        if len(self.MA_viewer_ref.pts.keys()) >= 3:
             if self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys():
                 return True
         return False
@@ -918,7 +994,7 @@ class ProjectTab(QWidget):
     def update_MA_widgets(self):
         caller = inspect.stack()[1].function
         logger.info('caller: %s' %caller)
-        if getData('state,MANUAL_MODE'):
+        if getData('state,manual_mode'):
             self.update_MA_list_base()
             self.update_MA_list_ref()
         self.dataUpdateMA()
@@ -926,16 +1002,17 @@ class ProjectTab(QWidget):
 
     def dataUpdateMA(self):
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
+        logger.info('caller: %s' % caller)
         # self.tgl_alignMethod.setChecked(is_manual)
         if cfg.data.selected_method() != 'Auto-SWIM':
             self.combo_MA_manual_mode.setCurrentText(cfg.data.selected_method())
         # if self.validate_MA_points() and method != 'Auto-SWIM':
         self.btnApplyMA.setEnabled(self.validate_MA_points() and self.tgl_alignMethod.isChecked())
-        self.combo_MA_manual_mode.setEnabled(self.validate_MA_points() and self.tgl_alignMethod.isChecked())
+        # self.combo_MA_manual_mode.setEnabled(self.validate_MA_points() and self.tgl_alignMethod.isChecked())
+        self.combo_MA_manual_mode.setEnabled(self.tgl_alignMethod.isChecked())
         self.btnClearMA.setEnabled(bool(len(self.MA_viewer_ref.pts) + len(self.MA_viewer_base.pts)))
-        self.btnPrevSection.setEnabled(cfg.data.loc > 0)
-        self.btnNextSection.setEnabled(cfg.data.loc < len(cfg.data) - 1)
+        self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
+        self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
 
 
     def update_MA_list_ref(self):
@@ -1102,7 +1179,7 @@ class ProjectTab(QWidget):
 
     def applyMps(self):
         cfg.main_window.hud.post('Saving Manual Correspondence Points...')
-        logger.critical('Saving Manual Correspondence Points...')
+        logger.info('Saving Manual Correspondence Points...')
         if self.validate_MA_points():
             ref_pts, base_pts = [], []
             for key in self.MA_viewer_ref.pts.keys():
@@ -1176,15 +1253,11 @@ class ProjectTab(QWidget):
         self.ng_browser_container.hide()
         self.MA_splitter.show()
         method = cfg.data.selected_method()
-        # if method == 'Auto-SWIM':       self.rbAuto.setChecked(True)
-        # elif method == 'Manual-Hint':   self.rbManHint.setChecked(True)
-        # elif method == 'Manual-Strict': self.rbManStrict.setChecked(True)
-        # else:                           self.rbAuto.setChecked(True)
         self.set_method_label_text()
         self.tgl_alignMethod.setChecked(method == 'Auto-SWIM')
         self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
         self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
-        self.MA_viewer_stage = EMViewer(force_xy=True, webengine=self.MA_webengine_stage)
+        self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
         self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
         self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
         self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
@@ -1223,7 +1296,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
-            if getData('state,MANUAL_MODE'):
+            if getData('state,manual_mode'):
                 val = self.MA_viewer_ref.state.cross_section_scale
             else:
                 val = self.viewer.state.cross_section_scale
@@ -1240,11 +1313,10 @@ class ProjectTab(QWidget):
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
-
-        logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        # logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
 
         if caller not in  ('slotUpdateZoomSlider', 'setValue'):
-            if getData('state,MANUAL_MODE'):
+            if getData('state,manual_mode'):
                 val = self.zoomSlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.cross_section_scale = val * val
@@ -1260,7 +1332,7 @@ class ProjectTab(QWidget):
 
 
     def setZmag(self, val):
-        logger.critical(f'Setting Z-mag to {val}...')
+        logger.info(f'Setting Z-mag to {val}...')
         try:
             state = copy.deepcopy(self.viewer.state)
             state.relative_display_scales = {'z': val}
@@ -1276,7 +1348,7 @@ class ProjectTab(QWidget):
         try:
             # for viewer in cfg.main_window.get_viewers():
 
-            if getData('state,MANUAL_MODE'):
+            if getData('state,manual_mode'):
                 val = self.ZdisplaySlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.relative_display_scales = {'z': val}
@@ -1286,7 +1358,7 @@ class ProjectTab(QWidget):
                 self.MA_viewer_base.set_state(state)
             else:
                 val = self.ZdisplaySlider.value()
-                logger.critical('val = %d' % val)
+                # logger.info('val = %d' % val)
                 state = copy.deepcopy(self.viewer.state)
                 state.relative_display_scales = {'z': val}
                 self.viewer.set_state(state)
@@ -1299,7 +1371,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
-            if cfg.main_window.rb1.isChecked():
+            if cfg.data['ui']['arrangement'] == 'comparison':
                 self.ZdisplaySlider.setValue(10)
             else:
                 self.ZdisplaySlider.setValue(1)
@@ -1340,7 +1412,7 @@ class ProjectTab(QWidget):
 
 
     def updateTreeWidget(self):
-        logger.critical('Updating Project Tree...')
+        logger.info('Updating Project Tree...')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.setModel(self.treeview_model)
         self.treeview.header().resizeSection(0, 300)
@@ -1362,10 +1434,12 @@ class ProjectTab(QWidget):
         self._wdg_treeview = QWidget()
         self._wdg_treeview.setObjectName('_wdg_treeview')
         self.btnCollapseAll = QPushButton('Collapse All')
-        self.btnCollapseAll.setFixedSize(90,18)
+        self.btnCollapseAll.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.btnCollapseAll.setFixedSize(70,18)
         self.btnCollapseAll.clicked.connect(self.treeview.collapseAll)
         self.btnExpandAll = QPushButton('Expand All')
-        self.btnExpandAll.setFixedSize(90,18)
+        self.btnExpandAll.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.btnExpandAll.setFixedSize(70,18)
         self.btnExpandAll.clicked.connect(self.treeview.expandAll)
 
         self.treeHbl = QHBoxLayout()

@@ -50,8 +50,8 @@ class Thumbnailer:
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'img_aligned')
-            od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_aligned')
+            src = os.path.join(cfg.data.dest(), cfg.data.scale, 'img_aligned')
+            od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
             dt = self.generate_thumbnails(
                 src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, cpus=cpus)
             cfg.data.set_t_thumbs_aligned(dt)
@@ -64,8 +64,8 @@ class Thumbnailer:
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots')
-            od = os.path.join(cfg.data.dest(), cfg.data.scale(), 'thumbnails_corr_spots')
+            src = os.path.join(cfg.data.dest(), cfg.data.scale, 'corr_spots')
+            od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_corr_spots')
             rmdir = True if (start == 0) and (end == None) else False
 
             baseFileNames = cfg.data.basefilenames()
@@ -94,8 +94,8 @@ class Thumbnailer:
             cfg.data.set_t_thumbs_spot(dt)
             cfg.main_window.tell('Discarding Full Size Correlation Spots...')
             try:
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale(), 'corr_spots'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'corr_spots'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'corr_spots'), ignore_errors=True)
             except:
                 print_exception()
             else:

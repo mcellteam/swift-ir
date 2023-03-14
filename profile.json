@@ -5481,7 +5481,7 @@
                     "n_usage_fraction": 0.0007775745731593962
                 },
                 {
-                    "line": "        self.align_all_button.clicked.connect(lambda: self.align_all(scale=cfg.data.scale()))\n",
+                    "line": "        self.align_all_button.clicked.connect(lambda: self.align_all(scale=cfg.data.scale))\n",
                     "lineno": 3325,
                     "memory_samples": [],
                     "n_avg_mb": 0.0,
