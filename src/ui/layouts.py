@@ -85,4 +85,11 @@ class YellowTextLabel(QLabel):
 class Button(QPushButton):
     def __init__(self, *args):
         super().__init__(*args)
+        self.setFixedHeight(18)
+
+class SmallButton(QPushButton):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.setFixedHeight(18)
+        self.setFixedWidth(48)
 
