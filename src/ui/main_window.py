@@ -2878,7 +2878,7 @@ class MainWindow(QMainWindow):
 
         self.toolbar = QToolBar()
         # self.toolbar.setFixedHeight(32)
-        self.toolbar.setFixedHeight(28)
+        self.toolbar.setFixedHeight(30)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
@@ -2921,6 +2921,7 @@ class MainWindow(QMainWindow):
         hbl.addWidget(sec_label, alignment=Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self._jumpToLineedit)
         self._jumpToSectionWidget = QWidget()
+        self._jumpToSectionWidget.setStyleSheet('border-radius: 4px;')
         self._jumpToSectionWidget.setLayout(hbl)
         # self.toolbar.addWidget(self._sectionSlider)
 
@@ -2994,7 +2995,7 @@ class MainWindow(QMainWindow):
         self._changeScaleWidget = QWidget()
         self._changeScaleWidget.setLayout(hbl)
 
-        self.label_toolbar_resolution = QLabel('[dims]')
+        self.label_toolbar_resolution = QLabel('<dims>')
         self.label_toolbar_resolution.setObjectName('label_toolbar_resolution')
         self.label_toolbar_resolution.setFixedHeight(18)
         self.label_toolbar_resolution.hide()
@@ -3032,7 +3033,9 @@ class MainWindow(QMainWindow):
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
         self._detachNgButton.setStatusTip('Detach Neuroglancer (open in a separate window)')
 
+        # self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self._btn_refreshTab)
+        self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self.combo_mode)
         self.toolbar.addWidget(self._al_unal_label_widget)
         w = QWidget()

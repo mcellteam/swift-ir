@@ -146,7 +146,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
                 dest = cfg.data.dest()
                 args = [sys.executable, job_script, str(i), al_name, zarr_group, str(chunkshape), str(int(stageit)), dest]
                 task_queue.add_task(args)
-                logger.critical('\n\nstageit = %s\n' % str(int(stageit)))
+                # logger.critical('stageit = %s' % str(int(stageit)))
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if i in [0,1,2]:
                         logger.info('Example Arguments (ID: %d):\n%s' % (i, '\n  '.join(map(str,args))))

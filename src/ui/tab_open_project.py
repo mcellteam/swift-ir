@@ -22,7 +22,7 @@ from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import ScaleProjectDialog, new_project_dialog
-from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
 
 import src.config as cfg
 

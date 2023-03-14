@@ -844,7 +844,7 @@ class ProjectTab(QWidget):
         self.labNoArrays = QLabel('')
 
         self.stageDetails = VWidget()
-        lab = QLabel('No. Generated Arrays:')
+        lab = QLabel('No. Generated Arrays: 1')
         lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.stageDetails.addWidget(HWidget(lab, self.labNoArrays))
         #Todo self.labNoArrays
@@ -1187,16 +1187,6 @@ class ProjectTab(QWidget):
             logger.info('Setting+Saving Working manual points: %s' % str(base_pts))
             cfg.data.set_manual_points('ref', ref_pts)
             cfg.data.set_manual_points('base', base_pts)
-
-            # if self.rbAuto.isChecked():
-            #     cfg.data.set_selected_method('Auto-SWIM')
-            # if self.rbManHint.isChecked():
-            #     cfg.data.set_selected_method('Manual-Hint')
-            # elif self.rbManStrict.isChecked():
-            #     cfg.data.set_selected_method('Manual-Strict')
-            # else:
-            #     cfg.data.set_selected_method('Auto-SWIM')
-
             cfg.data.print_all_match_points()
             cfg.main_window._saveProjectToFile(silently=True)
             cfg.main_window.hud.post('Match Points Saved!')
