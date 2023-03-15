@@ -84,7 +84,7 @@ class ProjectTab(QWidget):
         self.refreshTab(index=index)
 
     def refreshTab(self, index=None):
-        logger.info('\n\n\n')
+        logger.info('')
         if index == None:
             index = self._tabs.currentIndex()
 
@@ -99,7 +99,6 @@ class ProjectTab(QWidget):
         if index == 0:
             # self.updateNeuroglancer()
             self.initNeuroglancer()
-            # pass
         elif index == 1:
             pass
         elif index == 2:
@@ -151,6 +150,7 @@ class ProjectTab(QWidget):
             self.update_MA_widgets()
         else:
             if caller != '_onGlobTabChange':
+                logger.info('Initializing...')
                 self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
                 self.updateNeuroglancer()
                 cfg.main_window.dataUpdateWidgets()  # 0204+
@@ -870,14 +870,6 @@ class ProjectTab(QWidget):
 
         self.MA_ng_widget = QWidget()
         self.MA_gl = GL()
-        # self.MA_gl.addWidget(self.MA_refViewerTitle, 3, 0, 1, 1)
-        # self.MA_gl.addWidget(self.MA_baseViewerTitle, 3, 2, 1, 1)
-
-        #Note, may be able to tailor this to webengine if wrapped in QWidget
-        # self.MA_webengine_ref.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
-        # self.MA_webengine_base.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
-
-
         self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
         self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
         self.MA_gl.addWidget(self.msg_MAinstruct, 2, 0, 1, 4, alignment=Qt.AlignCenter)

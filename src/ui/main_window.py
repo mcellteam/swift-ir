@@ -219,7 +219,6 @@ class MainWindow(QMainWindow):
         if not self._working:
             logger.critical('Refreshing...')
             if self._isProjectTab():
-                logger.critical('  Refreshing...')
                 if cfg.project_tab._tabs.currentIndex() == 0:
                     # delay = time.time() - self._lastRefresh
                     # logger.info('delay: %s' % str(delay))
@@ -3109,6 +3108,26 @@ class MainWindow(QMainWindow):
             return self.globTabs.currentWidget().__class__.__name__
         except:
             return None
+
+    def getOpenProjects(self):
+        projects = []
+        for i in range(self.globTabs.count()):
+            if 'ProjectTab' in str(self.globTabs.widget(i)):
+                projects.append(cfg.main_window.globTabs.widget(i).datamodel.dest())
+        return projects
+
+
+    def isProjectOpen(self, name):
+        return os.path.splitext(name)[0] in [os.path.splitext(x)[0] for x in self.getOpenProjects()]
+
+
+    def getProjectIndex(self, search):
+
+        for i in range(self.globTabs.count()):
+            if 'ProjectTab' in str(self.globTabs.widget(i)):
+                if cfg.main_window.globTabs.widget(i).datamodel.dest() == os.path.splitext(search)[0]:
+                    return i
+
 
 
     def getCurrentTabWidget(self):

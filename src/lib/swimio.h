@@ -19,6 +19,9 @@
 #define ushort unsigned short
 #define uint16 unsigned short
 
+// global counts
+int Nswim_reads, Nswim_writes, Nswim_nullwrites;
+
 struct image {
 	unsigned char *pp;
 	int wid, ht, ydelta, bpp, trans; // single trans >= 0
@@ -136,6 +139,7 @@ struct image *read_img(char *fname) {
 	int bpp = 1, wid, ht, range, c, nr;
 	unsigned char *idata;
 	char *cp, *ep = NULL; // ep will point to the last dot before extension
+	Nswim_reads++;
 	for(cp = fname; *cp; cp++)
 		if(*cp == '.')
 			ep = cp;
@@ -189,7 +193,7 @@ fprintf(stderr, "raw fd %d\n", fd);
 	if(c == 0122) {		// RIFF assume webp
 #define	WEBPSIZ 100000000 // AWW kludge tmp size to get started - fix later
 		int nr, wid, ht;;
-		char *imp, *tp = (char *)malloc(WEBPSIZ);
+		unsigned char *imp, *tp = (unsigned char *)malloc(WEBPSIZ);
 		ip = (struct image *)malloc(sizeof(struct image));
 		nr = fread(tp, 1, WEBPSIZ, fp);
 fprintf(stderr, "webp nr %d\n", nr);
@@ -448,6 +452,8 @@ int write_img(char *fname, struct image *ip) {
 	char hdr[100], *ext; // buf for header and pointer to extension
 	int fd, nw, rowbytes, color_type = 2;
 	long qw, tqw = 0, want;
+if(!fname) { fname = "nullwrite.pgm"; Nswim_nullwrites++; }
+	Nswim_writes++;
 //	unlink(fname); // AWW don't do if appending XXX
 	//fd = creat(fname, 0666);
 // fprintf(stderr, "write_img %d %s  %d %d %d %d\n",
@@ -555,7 +561,7 @@ int write_img(char *fname, struct image *ip) {
 		jpeg_finish_compress(&cinfo);
 		fclose(outfile);
 		jpeg_destroy_compress(&cinfo);
-	} else if(ext = strstr(fname, "raw")) {
+	} else if((ext = strstr(fname, "raw"))) {
 fprintf(stderr, "+++++ write raw %s  ext %s  %d %d  %d\n",
 fname, ext-1, ip->wid, ip->ht, ip->bpp);
 		if(*(ext-1) == '-') {

@@ -323,6 +323,14 @@ class OpenProject(QWidget):
             self.open_zarr_selected()
             return
         elif validate_project_selection(path):
+
+            isOpen = cfg.main_window.isProjectOpen(path)
+            logger.critical(f'isOpen = {isOpen}')
+            logger.info('path = %s' % path)
+            if isOpen:
+                cfg.main_window.globTabs.setCurrentIndex(cfg.main_window.getProjectIndex(path))
+                return
+
             # filename = self.selected_file
             filename = self.selectionReadout.text()
             logger.critical(f'Opening Project {filename}...')
