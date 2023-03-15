@@ -189,6 +189,8 @@ class MAViewer(neuroglancer.Viewer):
 
         self.update_annotations()
 
+        self.drawSWIMwindow()
+
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
@@ -302,6 +304,52 @@ class MAViewer(neuroglancer.Viewer):
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
 
 
+    def drawSWIMwindow(self):
+
+        sw = cfg.data.swim_window() # SWIM Window
+        image_w = cfg.data.image_size()[0]
+        siz_sw = sw * image_w
+        offset = (image_w - siz_sw) /2
+
+        # pointA=[.5, 10, 10], pointB=[.5, 1000, 1000] <- diagonal from upper right to bottom left
+        # square corners, counter-clockwise from upper-left:
+        A = [.5, offset + siz_sw, offset]
+        B = [.5, offset, offset]
+        C = [.5, offset, offset + siz_sw]
+        D = [.5, offset + siz_sw, offset + siz_sw]
+
+        annotations = [
+            ng.LineAnnotation(id='L1', pointA=A, pointB=B, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L2', pointA=B, pointB=C, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L3', pointA=C, pointB=D, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L4', pointA=D, pointB=A, props=['#FF0000', 5]),
+
+        ]
+
+        with self.txn() as s:
+            s.layers['line'] = ng.LocalAnnotationLayer(
+                dimensions=self.coordinate_space,
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(
+                        id='color',
+                        type='rgb',
+                        default='red',
+                    ),
+                    ng.AnnotationPropertySpec(
+                        id='size',
+                        type='float32',
+                        default=5
+                    )
+                ],
+                annotations=annotations,
+                shader='''
+                    void main() {
+                      setColor(prop_color());
+                      setPointMarkerSize(prop_size());
+                    }
+                ''',
+            )
+
     def restoreManAlignPts(self):
         logger.info('Restoring manual alignment points for role: %s' %self.role)
         self.pts = {}
@@ -323,6 +371,7 @@ class MAViewer(neuroglancer.Viewer):
                 ],
                 shader=copy.deepcopy(ann_shader),
             )
+
 
         # json_str = self.state.layers.to_json()
         # logger.critical('--------------')

@@ -334,23 +334,23 @@ class TaskQueue(QObject):
                 # cfg.main_window.tell('Retries           : %d' % (retries_tot - 1))
                 cfg.main_window.tell('══════ Complete ══════')
             else:
-                if caller == 'generate_aligned':
-                    cfg.main_window.tell('Tasks Successful  : %d' % n_tasks)
-                    cfg.main_window.tell('Tasks Failed      : %d' % 0)
-                    # cfg.main_window.tell('Retries           : %d' % (retries_tot - 1))
-                    cfg.main_window.tell('══════ Complete ══════')
-                else:
-                    cfg.main_window.warn('Something Went Wrong')
-                    cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
-                    cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
-                    # logger.warning('Retries          : %d' % (retries_tot - 1))
-                    cfg.main_window.warn('══════ Complete ══════')
+                # if caller == 'generate_aligned':
+                #     cfg.main_window.tell('Tasks Successful  : %d' % n_tasks)
+                #     cfg.main_window.tell('Tasks Failed      : %d' % 0)
+                #     # cfg.main_window.tell('Retries           : %d' % (retries_tot - 1))
+                #     cfg.main_window.tell('══════ Complete ══════')
+                # else:
+                cfg.main_window.warn('Something Went Wrong')
+                cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
+                cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
+                # logger.warning('Retries          : %d' % (retries_tot - 1))
+                cfg.main_window.warn('══════ Complete ══════')
 
-                    logger.warning('Something Went Wrong')
-                    logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))
-                    logger.warning('Failed Tasks      : %d' % n_pending)
-                    # logger.warning('Retries          : %d' % (retries_tot - 1))
-                    logger.warning('══════ Complete ══════')
+                logger.warning('Something Went Wrong')
+                logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))
+                logger.warning('Failed Tasks      : %d' % n_pending)
+                # logger.warning('Retries          : %d' % (retries_tot - 1))
+                logger.warning('══════ Complete ══════')
         except:
             print_exception()
         finally:

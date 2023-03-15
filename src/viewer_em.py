@@ -235,18 +235,21 @@ class EMViewer(AbstractEMViewer):
         self.shared_state.add_changed_callback(self.on_state_changed)
 
     def initViewer(self):
+        caller = inspect.stack()[1].function
+        logger.critical(f'Initializing EMViewer (caller: {caller})....')
         if cfg.data['state']['mode'] == 'stack':
-            assert (cfg.main_window.combo_mode.currentIndex() == 0)
+            # assert (cfg.main_window.combo_mode.currentIndex() == 0)
             # cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
         elif cfg.data['state']['mode'] == 'comparison':
-            assert (cfg.main_window.combo_mode.currentIndex() == 1)
+            # assert (cfg.main_window.combo_mode.currentIndex() == 1)
             # cfg.data['ui']['ng_layout'] = 'xy'
             self.initViewerSbs()
 
     def initViewerSbs(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer (caller: {caller})....')
+        # caller = inspect.stack()[1].function
+        # logger.critical(f'Initializing EMViewer (caller: {caller})....')
+
 
         requested = cfg.data['ui']['ng_layout']
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -331,14 +334,14 @@ class EMViewer(AbstractEMViewer):
         self.set_brightness()
         self.set_contrast()
         # self.set_zmag()
+        self.drawSWIMwindow()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
 
     def initViewerSlim(self, nglayout=None):
         # t0 = time.time()
-
-        caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
+        # caller = inspect.stack()[1].function
+        # logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
 
         if not nglayout:
             requested = cfg.data['ui']['ng_layout']
@@ -386,7 +389,55 @@ class EMViewer(AbstractEMViewer):
 
         self.set_brightness()
         self.set_contrast()
+        self.drawSWIMwindow()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+
+    def drawSWIMwindow(self):
+
+        sw = cfg.data.swim_window() # SWIM Window
+        image_w = cfg.data.image_size()[0]
+        siz_sw = sw * image_w
+        offset = (image_w - siz_sw) /2
+
+        # pointA=[.5, 10, 10], pointB=[.5, 1000, 1000] <- diagonal from upper right to bottom left
+        # square corners, counter-clockwise from upper-left:
+        A = [.5, offset + siz_sw, offset]
+        B = [.5, offset, offset]
+        C = [.5, offset, offset + siz_sw]
+        D = [.5, offset + siz_sw, offset + siz_sw]
+
+        annotations = [
+            ng.LineAnnotation(id='L1', pointA=A, pointB=B, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L2', pointA=B, pointB=C, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L3', pointA=C, pointB=D, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L4', pointA=D, pointB=A, props=['#FF0000', 5]),
+
+        ]
+
+        with self.txn() as s:
+            s.layers['line'] = ng.LocalAnnotationLayer(
+                dimensions=self.coordinate_space,
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(
+                        id='color',
+                        type='rgb',
+                        default='red',
+                    ),
+                    ng.AnnotationPropertySpec(
+                        id='size',
+                        type='float32',
+                        default=1
+                    )
+                ],
+                annotations=annotations,
+                shader='''
+                    void main() {
+                      setColor(prop_color());
+                      setPointMarkerSize(prop_size());
+                    }
+                ''',
+            )
 
 
 

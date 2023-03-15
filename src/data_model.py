@@ -432,6 +432,8 @@ class DataModel:
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
         self._data.setdefault('ui', {})
+
+        self._data['ui'].setdefault('stage_viewer', {})
         self._data['state'].setdefault('manual_mode', False)
         self._data['state'].setdefault('mode', 'comparison')
         self._data['state'].setdefault('previous_mode', None)

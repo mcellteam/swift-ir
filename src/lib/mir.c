@@ -485,7 +485,7 @@ void dquad(float *v0, float *v1, float *v2, float *v3) {
   fprintf(stderr, "\t%g %g  %g %g  %g %g  %g %g\n",
   v0[2], v0[3], v1[2], v1[3], v2[2], v2[3], v3[2], v3[3]);
 	for(y = v0[1]; y < v2[1]; y++) {
-		char *oip = obase + y * (long)owid * obpp;
+		unsigned char *oip = obase + y * (long)owid * obpp;
 		for(x = v0[0]; x < v1[0]; x++)
 			oip[x] = 128;
 	}
@@ -799,7 +799,7 @@ int ndraw, nwrite;
 
 int prompt = 0;
 
-void main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   FILE *fp;
   int c, i, j, x, y, *trp, *qup, pushed, sv;
   int box_xmin, box_ymin, box_xmax, box_ymax;
@@ -1104,7 +1104,7 @@ void main(int argc, char *argv[]) {
         inimg = read_img(fullname);
         if (!inimg) {
           fprintf(stderr, "read failed %s\n", fullname);
-          idat = "AAAAAAAAAAAAAAAAAAAAAAAAAA";
+          idat = (unsigned char *)"AAAAAAAAAAAAAAAAAAAAAAAAAA";
           iwid = 1;
           iht = 1;
           ibpp = 1;
@@ -1637,6 +1637,7 @@ if(verbose) fprintf(stderr, "ndraw %d\n", ndraw);
     fprintf(stderr, "tri_ticks %llu\n", tri_ticks);
     fprintf(stderr, "aff_ticks %llu\n", aff_ticks);
   }
+	exit(0);
 }
 
 #define MAX 1000                // XXX Jan 2016 was 100 but 10000 failed
