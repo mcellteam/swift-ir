@@ -2,7 +2,6 @@
 
 QTabBar::tab:selected {
     background-color: #daebfe;
-    border-width: 0px;
 }
 
 QDoubleSpinBox {
@@ -24,6 +23,28 @@ QLabel {
     font-family: Tahoma, sans-serif;
     border-radius: 1px;
     border-width: 0px;
+}
+
+/*
+QCheckBox {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 1px;
+
+    border-width: 1px;
+    border-color: #f3f6fb;
+
+    color: #f3f6fb;
+}
+*/
+
+QToolBar {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 1px;
+    border-width: 0px;
+    padding: 0px;
+    margin: 0px;
 }
 
 
@@ -60,7 +81,7 @@ QMainWindow {
 }
 
 
-
+/*
 QTabBar::tab {
     height: 22px;
     max-width: 200px;
@@ -68,6 +89,7 @@ QTabBar::tab {
     font-family: Tahoma, sans-serif;
     font-weight: 600;
 }
+*/
 
 QWidget#self._tool_keyBindings{
     font-size: 9px;
@@ -239,31 +261,6 @@ QToolBar#toolbar {
     margin: 1px 1px 1px 1px;
 }
 
-
-
-
-
-QCheckBox#toggle_skip {
-	spacing: 5px;
-	outline: none;
-	/*color: #f3f6fb;*/
-	color: #141414;
-	/*margin-bottom: 2px;*/
-	font-size: 10px;
-}
-
-QCheckBox {
-    /*color: #1B1E23;*/
-	spacing: 5px;
-	outline: none;
-	/*color: #f3f6fb;*/
-	/*margin-bottom: 2px;*/
-	/*border: 1px solid #f3f6fb;*/
-	border-radius: 2px;
-	border-style: outset;
-	font-size: 10px;
-	/*background-color: #FFF9CF;*/
-}
 
 
 

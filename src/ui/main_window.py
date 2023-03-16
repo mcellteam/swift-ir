@@ -8,6 +8,7 @@ import sys
 import copy
 import json
 import time
+from math import sqrt
 import threading
 import inspect
 import logging
@@ -1237,18 +1238,6 @@ class MainWindow(QMainWindow):
             self.endRangeInput.setEnabled(False)
 
 
-    def layer_right(self):
-        logger.info('')
-        if cfg.data:
-            if cfg.project_tab:
-                requested = cfg.data.zpos + 1
-                if requested < len(cfg.data):
-                    cfg.data.zpos = requested
-                if not getData('state,manual_mode'):
-                    cfg.emViewer.set_layer(requested)
-                self.dataUpdateWidgets()
-
-
     def layer_left(self):
         logger.info('')
         if cfg.data:
@@ -1256,7 +1245,23 @@ class MainWindow(QMainWindow):
                 requested = cfg.data.zpos - 1
                 if requested >= 0:
                     cfg.data.zpos = requested
-                if not getData('state,manual_mode'):
+                if getData('state,manual_mode'):
+                    cfg.project_tab.MA_layer_left()
+                else:
+                    cfg.emViewer.set_layer(requested)
+                self.dataUpdateWidgets()
+
+
+    def layer_right(self):
+        logger.info('')
+        if cfg.data:
+            if cfg.project_tab:
+                requested = cfg.data.zpos + 1
+                if requested < len(cfg.data):
+                    cfg.data.zpos = requested
+                if getData('state,manual_mode'):
+                    cfg.project_tab.MA_layer_right()
+                else:
                     cfg.emViewer.set_layer(requested)
                 self.dataUpdateWidgets()
 
@@ -1313,8 +1318,10 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
 
             if cfg.data['state']['mode'] == 'stack':
+                setData('ui,ng_layout', '4panel')
                 self.combo_mode.setCurrentIndex(0)
             elif cfg.data['state']['mode'] == 'comparison':
+                setData('ui,ng_layout', 'xy')
                 self.combo_mode.setCurrentIndex(1)
 
             self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
@@ -2094,9 +2101,9 @@ class MainWindow(QMainWindow):
 
         self.updateDtWidget()
         cfg.project_tab.updateTreeWidget()
+        cfg.data.set_defaults()
         setData('state,mode', 'comparison')
         setData('state,manual_mode', False)
-        cfg.data.set_defaults()
         self.updateToolbar()
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
@@ -2479,12 +2486,57 @@ class MainWindow(QMainWindow):
         self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
         self._isPlayingBack = 0
 
+    def incrementZoomOut(self):
+        logger.info('')
+
+        if getData('state,manual_mode'):
+            # cfg.project_tab.MA_viewer_ref.set_zoom(cfg.emViewer.zoom() + .2)
+            new_cs_scale = cfg.project_tab.MA_viewer_ref.zoom() * 1.1
+            logger.info(f'new_cs_scale: {new_cs_scale}')
+            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
+            cfg.project_tab.MA_viewer_base.set_zoom(new_cs_scale)
+            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
+        else:
+            # cfg.emViewer.set_zoom(cfg.emViewer.zoom() + .2)
+            new_cs_scale = cfg.emViewer.zoom() * 1.1
+            logger.info(f'new_cs_scale: {new_cs_scale}')
+            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
+            cfg.emViewer.set_zoom(new_cs_scale)
+            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
+
+
+    def incrementZoomIn(self):
+        logger.info('')
+
+        if getData('state,manual_mode'):
+            # cfg.project_tab.MA_viewer_ref.set_zoom(cfg.emViewer.zoom() - .2)
+            new_cs_scale = cfg.project_tab.MA_viewer_ref.zoom() * 0.9
+            logger.info(f'new_cs_scale: {new_cs_scale}')
+            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
+            cfg.project_tab.MA_viewer_base.set_zoom(new_cs_scale)
+            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
+        else:
+            # cfg.emViewer.set_zoom(cfg.emViewer.zoom() - .2)
+            new_cs_scale = cfg.emViewer.zoom() * 0.9
+            logger.info(f'new_cs_scale: {new_cs_scale}')
+            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
+            cfg.emViewer.set_zoom(new_cs_scale)
+            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
+
+
+
+
+
 
     def initShortcuts(self):
         logger.info('')
         events = (
             (QKeySequence.MoveToPreviousChar, self.layer_left),
             (QKeySequence.MoveToNextChar, self.layer_right),
+            (QKeySequence.MoveToPreviousLine, self.incrementZoomIn),
+            (QKeySequence.MoveToNextLine, self.incrementZoomOut),
+
+
             # (QKeySequence.MoveToPreviousChar, self.scale_down),
             # (QKeySequence.MoveToNextChar, self.scale_up),
             (Qt.Key_K, self._callbk_skipChanged),
@@ -2730,7 +2782,7 @@ class MainWindow(QMainWindow):
         cfg.project_tab.MA_ptsListWidget_base.clear()
         cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
         cfg.project_tab.MA_splitter.hide()
-        cfg.project_tab.ng_browser_container.show()
+        cfg.project_tab.w_ng_display_ext.show()
         cfg.project_tab.ngVertLab.setStyleSheet('')
         cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
         cfg.project_tab.initNeuroglancer()
@@ -2816,10 +2868,14 @@ class MainWindow(QMainWindow):
         obj.setAutoFillBackground(True)
 
 
-    def set_shader_none(self):
-        cfg.SHADER = '''void main () {
-          emitGrayscale(toNormalized(getDataValue()));
-        }'''
+    # def set_shader_none(self):
+    #     cfg.SHADER = '''void main () {
+    #       emitGrayscale(toNormalized(getDataValue()));
+    #     }'''
+    #     cfg.project_tab.initNeuroglancer()
+
+    def set_shader_default(self):
+        cfg.data['rendering']['shader'] = src.shaders.shader_default_
         cfg.project_tab.initNeuroglancer()
 
     def set_shader_colormapJet(self):
@@ -2834,9 +2890,7 @@ class MainWindow(QMainWindow):
         cfg.data['rendering']['shader'] = src.shaders.shader_test2
         cfg.project_tab.initNeuroglancer()
 
-    def set_shader_default(self):
-        cfg.data['rendering']['shader'] = src.shaders.shader_default_
-        cfg.project_tab.initNeuroglancer()
+
 
     def onProfilingTimer(self):
         cpu_percent = psutil.cpu_percent()
@@ -2855,6 +2909,22 @@ class MainWindow(QMainWindow):
         # print(f'# of widgets : {num_widgets}')
         # print(h.heap())
 
+    def modeKeyToCombo(self, key):
+        if key == 'stack':
+            return 'Stack View'
+        elif key == 'comparison':
+            return 'Comparison View'
+        elif key == 'manual_align':
+            return 'Manual Align Mode'
+
+    def comboToModeKey(self, key):
+        if key == 'Stack View':
+            return 'stack'
+        elif key == 'Comparison View':
+            return 'comparison'
+        elif key == 'Manual Align Mode':
+            return 'manual_align'
+
 
     def onComboModeChange(self):
         logger.info('')
@@ -2862,8 +2932,14 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if cfg.project_tab._tabs.currentIndex() == 0:
                 if caller == 'main':
-                    cfg.data['state']['previous_mode'] = cfg.data['state']['mode']
                     index = self.combo_mode.currentIndex()
+                    curText = self.combo_mode.currentText()
+                    if curText == 'Manual Align Mode':
+                        if not cfg.data.is_aligned():
+                            # cfg.data['state']['mode'] = 'stack'
+                            self.combo_mode.setCurrentText(self.modeKeyToCombo(cfg.data['state']['mode']))
+                            return
+                    cfg.data['state']['previous_mode'] = cfg.data['state']['mode']
                     if getData('state,mode') == 'manual_align':
                         if index in (0,1):
                             self.exit_man_mode()
@@ -2983,7 +3059,8 @@ class MainWindow(QMainWindow):
         self.comboboxNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         self.comboboxNgLayout.addItems(items)
-        self.comboboxNgLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
+        # self.comboboxNgLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
+        self.comboboxNgLayout.activated.connect(self.fn_ng_layout_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
         hbl.addWidget(self.comboboxNgLayout)
@@ -3109,6 +3186,7 @@ class MainWindow(QMainWindow):
         except:
             return None
 
+
     def getOpenProjects(self):
         projects = []
         for i in range(self.globTabs.count()):
@@ -3122,12 +3200,10 @@ class MainWindow(QMainWindow):
 
 
     def getProjectIndex(self, search):
-
         for i in range(self.globTabs.count()):
             if 'ProjectTab' in str(self.globTabs.widget(i)):
                 if cfg.main_window.globTabs.widget(i).datamodel.dest() == os.path.splitext(search)[0]:
                     return i
-
 
 
     def getCurrentTabWidget(self):
@@ -3159,7 +3235,7 @@ class MainWindow(QMainWindow):
             logger.critical('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
-            cfg.emViewer = cfg.project_tab.viewer
+            # cfg.emViewer = cfg.project_tab.viewer
             cfg.zarr_tab = None
             self._lastRefresh = 0
             self.cpanel.show()
@@ -3169,10 +3245,12 @@ class MainWindow(QMainWindow):
                 self.updateShaderText()
 
             if cfg.data['state']['mode'] == 'stack':
-                cfg.data['ui']['ng_layout'] = '4panel'
+                self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
+                # cfg.data['ui']['ng_layout'] = '4panel'
                 self.combo_mode.setCurrentIndex(0)
             elif cfg.data['state']['mode'] == 'comparison':
-                cfg.data['ui']['ng_layout'] = 'xy'
+                self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
+                # cfg.data['ui']['ng_layout'] = 'xy'
                 self.combo_mode.setCurrentIndex(1)
             self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.brightnessSlider.setValue(cfg.data.brightness)
@@ -3367,6 +3445,26 @@ class MainWindow(QMainWindow):
         menu.addAction(action)
 
 
+    def fn_ngShowHideUiControls(self):
+        logger.info('')
+        if self._isProjectTab():
+            try:
+                setOpt('neuroglancer,SHOW_UI_CONTROLS', self.ngShowUiControlsAction.isChecked())
+                cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+                cfg.project_tab.updateUISpacing()
+                self.ngShowUiControlsAction.setText(
+                    ('Show NG UI Controls', 'Hide NG UI Controls')[self.ngShowUiControlsAction.isChecked()])
+                # self.update_ng()
+                # cfg.emViewer.initViewer()
+                self.initAllViewers()
+            except:
+                print_exception()
+
+
+    def initAllViewers(self):
+        for v in self.get_viewers():
+            v.initViewer()
+
 
     def initMenu(self):
         '''Initialize Menu'''
@@ -3459,12 +3557,19 @@ class MainWindow(QMainWindow):
         self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
         viewMenu.addAction(self.ngShowAxisLinesAction)
 
-        self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
+        # self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
+        self.ngShowUiControlsAction = QAction(self)
         self.ngShowUiControlsAction.setCheckable(True)
         self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+        self.ngShowUiControlsAction.setText(
+                    ('Show NG UI Controls', 'Hide NG UI Controls')[self.ngShowUiControlsAction.isChecked()])
+
         # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
-        self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
-        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
+        # self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
+        # self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
+        # self.ngShowUiControlsAction.triggered.connect(self.update_ng)
+        self.ngShowUiControlsAction.triggered.connect(self.fn_ngShowHideUiControls)
+        # self.ngShowAxisLinesAction.triggered.connect(cfg.project_tab)
         viewMenu.addAction(self.ngShowUiControlsAction)
 
         self.ngShowYellowFrameAction = QAction('Show Yellow Frame', self)
@@ -3474,12 +3579,23 @@ class MainWindow(QMainWindow):
         self.ngShowYellowFrameAction.triggered.connect(self.update_ng)
         viewMenu.addAction(self.ngShowYellowFrameAction)
 
+        maViewMenu = viewMenu.addMenu('Manual Align Mode')
+
+        self.maShowSwimWindowAction = QAction('Show SWIM Window', self)
+        self.maShowSwimWindowAction.setCheckable(True)
+        self.maShowSwimWindowAction.setChecked(getOpt('neuroglancer,SHOW_SWIM_WINDOW'))
+        self.maShowSwimWindowAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SWIM_WINDOW', val))
         def fn():
-            cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-            cfg.project_tab.updateUISpacing()
-        self.ngShowUiControlsAction.triggered.connect(fn)
-        self.ngShowUiControlsAction.triggered.connect(self.update_ng)
-        viewMenu.addAction(self.ngShowUiControlsAction)
+            if self._isProjectTab():
+                if getData('state,manual_mode'):
+                    if not getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
+                        cfg.project_tab.MA_viewer_ref.undrawSWIMwindow()
+                        cfg.project_tab.MA_viewer_base.undrawSWIMwindow()
+                    else:
+                        cfg.project_tab.MA_viewer_ref.drawSWIMwindow()
+                        cfg.project_tab.MA_viewer_base.drawSWIMwindow()
+        self.maShowSwimWindowAction.triggered.connect(fn)
+        maViewMenu.addAction(self.maShowSwimWindowAction)
 
         # self.showCorrSpotsAction = QAction('Show Correlation Spots', self)
         # self.showCorrSpotsAction.setCheckable(True)
@@ -3494,14 +3610,6 @@ class MainWindow(QMainWindow):
         # self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
         # self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
         # ngMenu.addAction(self.ngShowPanelBordersAction)
-
-        self.ngShowAlignmentDetailsAction = QAction('Show Alignment Details', self)
-        self.ngShowAlignmentDetailsAction.setCheckable(True)
-        self.ngShowAlignmentDetailsAction.setChecked(getOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS'))
-        self.ngShowAlignmentDetailsAction.triggered.connect(
-            lambda val: setOpt('neuroglancer,SHOW_ALIGNMENT_DETAILS', val))
-        self.ngShowAlignmentDetailsAction.triggered.connect(self.dataUpdateWidgets)
-        viewMenu.addAction(self.ngShowAlignmentDetailsAction)
 
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
@@ -3630,13 +3738,14 @@ class MainWindow(QMainWindow):
 
         ngShaderMenu = ngMenu.addMenu("Experimental Shaders")
 
-        self.shader1Action = QAction('None', self)
-        self.shader1Action.triggered.connect(self.set_shader_none)
-        ngShaderMenu.addAction(self.shader1Action)
+        # self.shader1Action = QAction('None', self)
+        # self.shader1Action.triggered.connect(self.set_shader_none)
+        # ngShaderMenu.addAction(self.shader1Action)
 
         self.shaderDefaultAction = QAction('default', self)
         self.shaderDefaultAction.triggered.connect(self.set_shader_default)
         ngShaderMenu.addAction(self.shaderDefaultAction)
+        self.shaderDefaultAction.setChecked(True)
 
         self.shader2Action = QAction('colorMap Jet', self)
         self.shader2Action.triggered.connect(self.set_shader_colormapJet)
@@ -3653,12 +3762,13 @@ class MainWindow(QMainWindow):
 
         shaderActionGroup = QActionGroup(self)
         shaderActionGroup.setExclusive(True)
-        shaderActionGroup.addAction(self.shader1Action)
+        # shaderActionGroup.addAction(self.shader1Action)
+        shaderActionGroup.addAction(self.shaderDefaultAction)
         shaderActionGroup.addAction(self.shader2Action)
         shaderActionGroup.addAction(self.shader3Action)
         shaderActionGroup.addAction(self.shader4Action)
-        self.shader1Action.setCheckable(True)
-        self.shader1Action.setChecked(True)
+        # self.shader1Action.setCheckable(True)
+        # self.shader1Action.setChecked(True)
         self.shader2Action.setCheckable(True)
         self.shader3Action.setCheckable(True)
         self.shader4Action.setCheckable(True)
@@ -5205,13 +5315,13 @@ class MainWindow(QMainWindow):
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
         self.globTabs.setStyleSheet("""
-        QTabBar::tab { 
-          height: 18px; 
-          width: 128px; 
+        QTabBar::tab {
+          height: 18px;
+          width: 128px;
           border-top-left-radius: 1px;
         }
         """)
-        self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
+        # self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
 
         # self.globTabs.setTabBarAutoHide(True)
         self.globTabs.setElideMode(Qt.ElideMiddle)

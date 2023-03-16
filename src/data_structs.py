@@ -24,7 +24,7 @@ data_template = \
             "arrangement": 'stack',
             "stage_viewer": {
                 "show_yellow_frame": True
-            }
+            },
         },
         "data": {
             "shader": None,

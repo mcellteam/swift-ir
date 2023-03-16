@@ -115,13 +115,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     logger.info(f'(!) emitting get_loc: {request_layer}')
                     self.signals.stateChanged.emit(request_layer)
 
-            zoom = self.state.cross_section_scale
-            # logger.info('self.state.cross_section_scale = %s' % str(zoom))
-            if zoom:
-                if zoom != self._crossSectionScale:
-                    logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                    self.signals.zoomChanged.emit(zoom)
-                self._crossSectionScale = zoom
+            # zoom = self.state.cross_section_scale
+            # # logger.info('self.state.cross_section_scale = %s' % str(zoom))
+            # if zoom:
+            #     if zoom != self._crossSectionScale:
+            #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+            #         self.signals.zoomChanged.emit(zoom)
+            #     self._crossSectionScale = zoom
         except:
             print_exception()
             logger.error('ERROR on_state_change')
@@ -136,14 +136,42 @@ class AbstractEMViewer(neuroglancer.Viewer):
         cfg.alLV.invalidate()
 
     def position(self):
-        return self.state.position
+        return copy.deepcopy(self.state.position)
+        # return self.state.position
+
 
     def set_position(self, val):
         with self.txn() as s:
             s.position = val
 
+    def moveUpBy(self, val):
+        pos = self.position()
+        pos[1] = pos[1] - val
+        with self.txn() as s:
+            s.position = pos
+
+    def moveDownBy(self, val):
+        pos = self.position()
+        pos[1] = pos[1] + val
+        with self.txn() as s:
+            s.position = pos
+
+    def moveLeftBy(self, val):
+        pos = self.position()
+        pos[2] = pos[2] + val
+        with self.txn() as s:
+            s.position = pos
+
+    def moveRightBy(self, val):
+        pos = self.position()
+        pos[2] = pos[2] - val
+        with self.txn() as s:
+            s.position = pos
+
+
     def zoom(self):
-        return self.state.crossSectionScale
+        return copy.deepcopy(self.state.crossSectionScale)
+        # return self.state.crossSectionScale
 
     def set_zoom(self, val):
         with self.txn() as s:
@@ -233,23 +261,22 @@ class EMViewer(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.shared_state.add_changed_callback(self.on_state_changed)
+        caller = inspect.stack()[1].function
+        logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....\n')
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer (caller: {caller})....')
+        # logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....\n')
         if cfg.data['state']['mode'] == 'stack':
-            # assert (cfg.main_window.combo_mode.currentIndex() == 0)
             # cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
         elif cfg.data['state']['mode'] == 'comparison':
-            # assert (cfg.main_window.combo_mode.currentIndex() == 1)
             # cfg.data['ui']['ng_layout'] = 'xy'
             self.initViewerSbs()
 
     def initViewerSbs(self):
         # caller = inspect.stack()[1].function
         # logger.critical(f'Initializing EMViewer (caller: {caller})....')
-
 
         requested = cfg.data['ui']['ng_layout']
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
@@ -316,6 +343,7 @@ class EMViewer(AbstractEMViewer):
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
 
+
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
             s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'],)
             if is_aligned:
@@ -325,6 +353,7 @@ class EMViewer(AbstractEMViewer):
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            s.scale_bar_options.scale_factor = 1
             s.show_panel_borders = False
 
         self._layer = math.floor(self.state.position[0])
@@ -397,8 +426,12 @@ class EMViewer(AbstractEMViewer):
 
         sw = cfg.data.swim_window() # SWIM Window
         image_w = cfg.data.image_size()[0]
+        image_h = cfg.data.image_size()[1]
         siz_sw = sw * image_w
         offset = (image_w - siz_sw) /2
+        half_w = image_w / 2
+        half_h = image_h / 2
+
 
         # pointA=[.5, 10, 10], pointB=[.5, 1000, 1000] <- diagonal from upper right to bottom left
         # square corners, counter-clockwise from upper-left:
@@ -407,28 +440,34 @@ class EMViewer(AbstractEMViewer):
         C = [.5, offset, offset + siz_sw]
         D = [.5, offset + siz_sw, offset + siz_sw]
 
+        AB = [.5, half_w, offset]
+        BC = [.5, offset, half_h]
+        CD = [.5, half_w, offset + siz_sw]
+        DA = [.5, offset + siz_sw, half_h]
+
+        '''
+        A____AB_____B
+        |           |
+        DA          BC
+        |           |
+        D____CD_____C 
+        '''
+
         annotations = [
             ng.LineAnnotation(id='L1', pointA=A, pointB=B, props=['#FF0000', 5]),
             ng.LineAnnotation(id='L2', pointA=B, pointB=C, props=['#FF0000', 5]),
             ng.LineAnnotation(id='L3', pointA=C, pointB=D, props=['#FF0000', 5]),
             ng.LineAnnotation(id='L4', pointA=D, pointB=A, props=['#FF0000', 5]),
-
+            ng.LineAnnotation(id='L5', pointA=AB, pointB=CD, props=['#FF0000', 5]),
+            ng.LineAnnotation(id='L6', pointA=DA, pointB=BC, props=['#FF0000', 5]),
         ]
 
         with self.txn() as s:
             s.layers['line'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotation_properties=[
-                    ng.AnnotationPropertySpec(
-                        id='color',
-                        type='rgb',
-                        default='red',
-                    ),
-                    ng.AnnotationPropertySpec(
-                        id='size',
-                        type='float32',
-                        default=1
-                    )
+                    ng.AnnotationPropertySpec(id='color', type='rgb', default='red', ),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
                 ],
                 annotations=annotations,
                 shader='''
@@ -465,6 +504,7 @@ class EMViewerStage(AbstractEMViewer):
         _, tensor_y, tensor_x = cfg.tensor.shape
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
+        logger.critical(f'\n\n\nMA_webengine_stage: w={w}, h={h}\n\n')
         self.initZoom(w=w, h=h, adjust=1.10)
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
@@ -478,7 +518,7 @@ class EMViewerStage(AbstractEMViewer):
             s.system_memory_limit = -1
             s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')])
             s.crossSectionBackgroundColor = '#808080'
-            s.show_scale_bar = False
+            s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = getData('ui,stage_viewer,show_yellow_frame')
             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )

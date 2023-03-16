@@ -13,9 +13,9 @@ import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
-    QCheckBox
+    QCheckBox, QToolBar
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
-from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor
+from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor, QPalette
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import getOpt, setOpt, getData, setData
@@ -32,6 +32,7 @@ from src.ui.toggle_switch import ToggleSwitch
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
 from src.ui.toggle_animated import AnimatedToggle
+from src.ui.joystick import Joystick
 
 
 __all__ = ['ProjectTab']
@@ -115,7 +116,8 @@ class ProjectTab(QWidget):
 
     def initSnrViewer(self):
 
-        self.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+        # self.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+        self.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
         # self.snrViewer.initViewerSbs(orientation='vertical')
         self.snrWebengine.setUrl(QUrl(self.snrViewer.url()))
         self.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
@@ -142,20 +144,19 @@ class ProjectTab(QWidget):
             self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
             self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-            self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
             self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
             self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
             self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
             self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
             self.update_MA_widgets()
         else:
-            if caller != '_onGlobTabChange':
-                logger.info('Initializing...')
-                self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-                self.updateNeuroglancer()
-                cfg.main_window.dataUpdateWidgets()  # 0204+
-                self.viewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-                self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+            # if caller != '_onGlobTabChange':
+            logger.info('Initializing...')
+            # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
+            cfg.emViewer = EMViewer(webengine=self.webengine)
+            cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+
 
 
     def updateNeuroglancer(self):
@@ -207,23 +208,14 @@ class ProjectTab(QWidget):
         # this fixes detailsSection not displaying immediately on start project
         self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
 
-        # self.webengine.loadFinished.connect(self.resetSliderZmag)
-        # self.webengine.loadFinished.connect(self.slotUpdateZoomSlider)
-        # self.webengine.loadFinished.connect(lambda val=21: self.setZmag(val=val))
-
-        # self.webengine.loadProgress.connect(lambda progress: print(f'QWebengineView Load Progress: {progress}'))
-        # self.webengine.urlChanged.connect(lambda terminationStatus:
-        #                              print(f'QWebengineView Render Process Terminated!'
-        #                                    f' terminationStatus:{terminationStatus}'))
-
         # self.webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         # self.webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         # self.webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         # self.webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
-        self.ng_browser_container = QWidget()
-        self.ng_browser_container.setObjectName('ng_browser_container')
+        self.w_ng_display = QWidget()
+        self.w_ng_display.setObjectName('w_ng_display')
         self.ng_gl = QGridLayout()
         self.ng_gl.addWidget(self.webengine, 0, 0, 5, 5)
         self._overlayRect = QWidget()
@@ -271,10 +263,12 @@ class ProjectTab(QWidget):
         vbl.addWidget(self.afm_widget_)
         self._transformationWidget.setLayout(vbl)
 
+        self.joystick = Joystick()
+
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
-        self.ngVertLab.setObjectName('label_ng')
+        self.ngVertLab.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
 
         self.DetailsContainer = QWidget()
         self.DetailsContainer.setAutoFillBackground(False)
@@ -455,6 +449,8 @@ class ProjectTab(QWidget):
         self.spreadW3.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.spreadW3.setFixedSize(40,1)
 
+        # self.ng_gl.addWidget(self.joystick, 0, 0, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
         self.ng_gl.addWidget(self.labelsWidget, 0, 2, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW3, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW2, 1, 3, 2, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
@@ -470,13 +466,16 @@ class ProjectTab(QWidget):
         self.ng_gl.setColumnStretch(2, 5)
         self.ng_gl.setColumnStretch(3, 1)
         self.updateUISpacing()
-        self.ng_browser_container.setLayout(self.ng_gl)
+        self.w_ng_display.setLayout(self.ng_gl)
 
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.zoomSlider.setInvertedAppearance(True)
         self.zoomSlider.setMaximum(4)
         self.zoomSlider.setMinimum(0.1)
+
+
+        self.zoomSlider.sliderMoved.connect(self.onZoomSlider) #Original #0314
         # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
-        self.zoomSlider.sliderMoved.connect(self.onZoomSlider)
         self.zoomSlider.setValue(4.0)
 
         # self.crossSectionOrientationSlider = DoubleSlider(Qt.Orientation.Vertical, self)
@@ -597,15 +596,21 @@ class ProjectTab(QWidget):
 
         def fn():
             caller = inspect.stack()[1].function
-            logger.critical('caller: %s' % caller)
-            if self.tgl_alignMethod.isChecked():
-                self.combo_MA_manual_mode.setEnabled(True)
-                self.update_MA_widgets()
-            else:
-                self.combo_MA_manual_mode.setEnabled(False)
-                cfg.data.set_selected_method('Auto-SWIM') #Critical always set project dict back to Auto-align
-                self.set_method_label_text()
-            self.updateCursor()
+            logger.info('caller: %s' % caller)
+            if caller == 'main':
+                if self.tgl_alignMethod.isChecked():
+                    self.combo_MA_manual_mode.setEnabled(True)
+                    self.update_MA_widgets()
+                else:
+                    self.combo_MA_manual_mode.setEnabled(False)
+                    cfg.data.set_selected_method('Auto-SWIM') #Critical always set project dict back to Auto-align
+                    self.set_method_label_text()
+                # cfg.project_tab.MA_viewer_ref.undrawSWIMwindow()
+                # cfg.project_tab.MA_viewer_base.undrawSWIMwindow()
+                if getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
+                    cfg.project_tab.MA_viewer_ref.drawSWIMwindow()
+                    cfg.project_tab.MA_viewer_base.drawSWIMwindow()
+                self.updateCursor()
         self.tgl_alignMethod = AnimatedToggle(
             checked_color='#FFB000',
             pulse_checked_color='#44FFB000')
@@ -618,8 +623,9 @@ class ProjectTab(QWidget):
             logger.critical('caller: %s' % caller)
             # request = self.combo_MA_manual_mode.currentText()
             # cfg.data.set_selected_method(request)
-            if cfg.data.selected_method() != 'Auto-SWIM':
-                self.set_method_label_text()
+            if caller == 'main':
+                if cfg.data.selected_method() != 'Auto-SWIM':
+                    self.set_method_label_text()
         self.combo_MA_manual_mode = QComboBox(self)
         self.combo_MA_manual_mode.setFixedHeight(18)
         self.combo_MA_manual_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -664,6 +670,8 @@ class ProjectTab(QWidget):
                 self.update_MA_widgets()
                 self.set_method_label_text()
                 self.tgl_alignMethod.setChecked(False)
+                self.MA_viewer_ref.undrawSWIMwindow()
+                self.MA_viewer_base.undrawSWIMwindow()
             except:
                 print_exception()
             else:
@@ -679,43 +687,20 @@ class ProjectTab(QWidget):
 
         # your logic here
 
-        def fn():
-            pos = cfg.project_tab.MA_viewer_base.position()
-            zoom = cfg.project_tab.MA_viewer_base.zoom()
-            cfg.main_window.layer_left()
-            # self.MA_viewer_ref.clear_layers()
-            # self.MA_viewer_base.clear_layers()
-            # self.initNeuroglancer()
-            self.updateNeuroglancer()
-            self.MA_viewer_base.set_position(pos)
-            # self.MA_viewer_stage.initViewer()
-            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-            self.update_MA_widgets()
+
         tip = 'Go To Previous Section.'
         self.btnPrevSection = QPushButton()
         self.btnPrevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnPrevSection.setStatusTip(tip)
-        self.btnPrevSection.clicked.connect(fn)
+        self.btnPrevSection.clicked.connect(self.MA_layer_left)
         self.btnPrevSection.setFixedSize(QSize(18, 18))
         self.btnPrevSection.setIcon(qta.icon("fa.arrow-left", color=cfg.ICON_COLOR))
         self.btnPrevSection.setEnabled(False)
 
 
-        def fn():
-            pos = cfg.project_tab.MA_viewer_base.position()
-            zoom = cfg.project_tab.MA_viewer_base.zoom()
-            cfg.main_window.layer_right()
-            # self.MA_viewer_ref.clear_layers()
-            # self.MA_viewer_base.clear_layers()
-            # self.initNeuroglancer()
-            self.updateNeuroglancer()
-            self.MA_viewer_base.set_position(pos)
-            # self.MA_viewer_stage.initViewer()
-            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-            self.update_MA_widgets()
         tip = 'Go To Next Section.'
         self.btnNextSection = QPushButton()
-        self.btnNextSection.clicked.connect(fn)
+        self.btnNextSection.clicked.connect(self.MA_layer_right)
         self.btnNextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnNextSection.setStatusTip(tip)
         self.btnNextSection.setFixedSize(QSize(18, 18))
@@ -753,6 +738,8 @@ class ProjectTab(QWidget):
                 cfg.data.set_selected_method(self.combo_MA_manual_mode.currentText())
                 self.update_MA_widgets()
                 self.set_method_label_text()
+                cfg.project_tab.MA_viewer_ref.drawSWIMwindow()
+                cfg.project_tab.MA_viewer_base.drawSWIMwindow()
                 cfg.main_window.hud.done()
             else:
                 logger.warning('(!) validate points is misconfigured')
@@ -834,7 +821,7 @@ class ProjectTab(QWidget):
 
         def fn():
             # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-            EMViewerStage(webengine=self.MA_webengine_stage)
+            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
         self.cb_showYellowFrame = QCheckBox('Show Frame')
         self.cb_showYellowFrame.setChecked(getData('ui,stage_viewer,show_yellow_frame'))
         self.cb_showYellowFrame.toggled.connect(lambda val: setData('ui,stage_viewer,show_yellow_frame', val))
@@ -882,7 +869,49 @@ class ProjectTab(QWidget):
         self.MA_splitter.setCollapsible(1, False)
         self.MA_splitter.hide()
 
-        self.weSplitter = HSplitter(self.ng_browser_container, self.MA_splitter)
+
+
+        ngFont = QFont('Tahoma')
+        ngFont.setBold(True)
+        pal = QPalette()
+        pal.setColor(QPalette.Text, QColor("#ffe135"))
+
+        # ng_pal = QPalette()
+        # ng_pal.setColor(QPalette.window, QColor("#222222"))
+
+        # self.cb_show_ng_ui_controls = QCheckBox('Show NG UI Controls')
+        # self.cb_show_ng_ui_controls = QCheckBox('Show NG UI Controls')
+        # self.cb_show_ng_ui_controls.setStyleSheet("""
+        #     QCheckBox {
+        #         background-color: none;
+        #         color: #ffe135;
+        #         font-size: 11px;
+        #     }
+        #     """) #Critical
+
+        # self.cb_show_ng_ui_controls.setFont(ngFont)
+        # self.cb_show_ng_ui_controls.setPalette(ng_pal)
+
+        self.w_ng_extended_toolbar = QToolBar()
+        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
+
+        self.w_ng_extended_toolbar.setAutoFillBackground(True)
+        # self.w_ng_extended_toolbar.setPalette(ng_pal)
+        self.w_ng_extended_toolbar.addWidget(w)
+
+        # self.w_ng_extended_toolbar.addWidget(self.cb_show_ng_ui_controls)
+        # self.w_ng_extended_toolbar.setLayout(hbl)
+        self.w_ng_extended_toolbar.setFixedHeight(20)
+        self.w_ng_extended_toolbar.setStyleSheet('background-color: #222222; color: #f3f6fb;')
+
+        self.w_ng_display_ext = VWidget()
+        # self.w_ng_display_ext.setStyleSheet('background-color: #222222; color: #f3f6fb;')
+        self.w_ng_display_ext.layout.setSpacing(0)
+        self.w_ng_display_ext.addWidget(self.w_ng_extended_toolbar)
+        self.w_ng_display_ext.addWidget(self.w_ng_display)
+
+
+        self.weSplitter = HSplitter(self.w_ng_display_ext, self.MA_splitter)
         self.weSplitter.setCollapsible(0, False)
         self.weSplitter.setCollapsible(1, False)
 
@@ -893,7 +922,50 @@ class ProjectTab(QWidget):
             self.weSplitter,
             self.sideSliders,
         )
-        self.ng_browser_container_outer.layout.setSpacing(1)
+        # self.ng_browser_container_outer.layout.setSpacing(1)
+        self.ng_browser_container_outer.layout.setSpacing(0)
+
+
+    def MA_layer_left(self):
+        if self.btnPrevSection.isEnabled():
+            # pos = cfg.project_tab.MA_viewer_base.position()
+            # zoom = cfg.project_tab.MA_viewer_base.zoom()
+            self.initNeuroglancer()
+            # cfg.main_window.layer_left()
+            # self.updateNeuroglancer()
+            # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
+            # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+
+            # self.MA_viewer_base.set_position(pos)
+            # self.MA_viewer_base.set_zoom(zoom)
+
+            # self.MA_viewer_stage.initViewer()
+            # self.update_MA_widgets()
+        else:
+            cfg.main_window.warn('The current section is the first section')
+
+
+    def MA_layer_right(self):
+        if self.btnNextSection.isEnabled():
+            # pos = cfg.project_tab.MA_viewer_base.position()
+            # zoom = cfg.project_tab.MA_viewer_base.zoom()
+            self.initNeuroglancer()
+            # cfg.main_window.layer_right()
+            # self.updateNeuroglancer()
+
+
+            # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
+            # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+
+            # self.MA_viewer_base.set_position(pos)
+            # self.MA_viewer_base.set_zoom(zoom)
+
+            # self.MA_viewer_stage.initViewer()
+            # self.update_MA_widgets()
+        else:
+            cfg.main_window.warn('The current section is the last section')
 
 
     def updateCursor(self):
@@ -907,8 +979,6 @@ class ProjectTab(QWidget):
                 cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
                 QApplication.setOverrideCursor(cursor)
                 self.msg_MAinstruct.show()
-
-
 
 
     def isManualReady(self):
@@ -1047,7 +1117,7 @@ class ProjectTab(QWidget):
                     #     if self.MA_viewer_base.state.cross_section_scale != 1.0:
                     pos = self.MA_viewer_base.state.position
                     zoom = self.MA_viewer_base.state.cross_section_scale
-                    if isinstance(pos,np.ndarray) or isinstance(zoom,np.ndarray):
+                    if isinstance(pos,np.ndarray) or isinstance(zoom, np.ndarray):
                         state = copy.deepcopy(self.MA_viewer_ref.state)
                         if isinstance(pos, np.ndarray):
                             state.position = self.MA_viewer_base.state.position
@@ -1225,33 +1295,39 @@ class ProjectTab(QWidget):
     def onEnterManualMode(self):
         logger.critical('')
         self.bookmark_tab = self._tabs.currentIndex()
-        method = cfg.data.selected_method()
+        self._tabs.setCurrentIndex(0)
+        self.w_ng_display_ext.hide() # change layout before initializing viewer
+        self.MA_splitter.show() # change layout before initializing viewer
+        self.ngVertLab.setText('Manual Alignment Mode')
+        # self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
+        self.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
         self.set_method_label_text()
-        self.tgl_alignMethod.setChecked(method == 'Auto-SWIM')
+        self.tgl_alignMethod.setChecked(cfg.data.selected_method() == 'Auto-SWIM')
+
+        self.update()
+
+        # 278 x 318 when commented
+        # when uncommented, what is actualized:
+        # MA_webengine_stage: w=240, h=318
+
         self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
         self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-        self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+        # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314-
         self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
         self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
         self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
         self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
-        self.ngVertLab.setText('Manual Alignment Mode')
-        self.ngVertLab.setStyleSheet("""background-color: #1b1e23; color: #f3f6fb;""")
-        self.update_MA_widgets()
-        self.tgl_alignMethod.setChecked(method != 'Auto-SWIM')
-        self._tabs.setCurrentIndex(0)
-        self.ng_browser_container.hide()
-        self.MA_splitter.show()
-        cfg.main_window.dataUpdateWidgets()
 
+        self.update_MA_widgets()
+        cfg.main_window.dataUpdateWidgets()
 
     # def onExitManualMode(self):
     #     self.MA_ptsListWidget_ref.clear()
     #     self.MA_ptsListWidget_base.clear()
     #     self._tabs.setCurrentIndex(self.bookmark_tab)
     #     self.MA_splitter.hide()
-    #     self.ng_browser_container.show()
+    #     self.w_ng_display.show()
     #     self.ngVertLab.setStyleSheet('')
     #     self.ngVertLab.setText('Neuroglancer 3DEM View')
     #     self.initNeuroglancer()
@@ -1269,16 +1345,19 @@ class ProjectTab(QWidget):
 
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> slider
+
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         try:
             if getData('state,manual_mode'):
                 val = self.MA_viewer_ref.state.cross_section_scale
             else:
-                val = self.viewer.state.cross_section_scale
+                val = cfg.emViewer.state.cross_section_scale
             if val:
                 if val != 0:
-                    new_val = float(sqrt(val))
+                    # new_val = float(sqrt(val))
+                    new_val = float(val * val)
+                    logger.critical('new_val = %s' %str(new_val))
                     self.zoomSlider.setValue(new_val)
         except:
             print_exception()
@@ -1290,29 +1369,38 @@ class ProjectTab(QWidget):
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
         # logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+        # logger.critical('caller: %s' %caller)
 
-        if caller not in  ('slotUpdateZoomSlider', 'setValue'):
+        if caller not in  ('slotUpdateZoomSlider', 'setValue'): #Original #0314
+            logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+            # logger.critical('caller: %s' % caller)
             if getData('state,manual_mode'):
                 val = self.zoomSlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
-                state.cross_section_scale = val * val
+                state.cross_section_scale = val
+                # state.cross_section_scale = val * val
+                # state.cross_section_scale = 1 / (val * val)
                 self.MA_viewer_ref.set_state(state)
             else:
                 try:
                     val = self.zoomSlider.value()
-                    state = copy.deepcopy(self.viewer.state)
-                    state.cross_section_scale = val * val
-                    self.viewer.set_state(state)
+                    state = copy.deepcopy(cfg.emViewer.state)
+                    state.cross_section_scale = val
+                    # state.cross_section_scale = val * val
+                    # state.cross_section_scale = 1 / (val * val)
+                    cfg.emViewer.set_state(state)
                 except:
                     print_exception()
+            # logger.critical('val = %s' %str(val))
+            # logger.critical('1 / (val * val) = %s' %str(1 / (val * val)))
 
 
     def setZmag(self, val):
         logger.info(f'Setting Z-mag to {val}...')
         try:
-            state = copy.deepcopy(self.viewer.state)
+            state = copy.deepcopy(cfg.emViewer.state)
             state.relative_display_scales = {'z': val}
-            self.viewer.set_state(state)
+            cfg.emViewer.set_state(state)
             cfg.main_window.update()
         except:
             print_exception()
@@ -1320,12 +1408,11 @@ class ProjectTab(QWidget):
 
     def onSliderZmag(self):
         caller = inspect.stack()[1].function
-        # logger.info('caller: %s' % caller)
+        logger.critical('caller: %s' % caller)
         try:
             # for viewer in cfg.main_window.get_viewers():
-
+            val = self.ZdisplaySlider.value()
             if getData('state,manual_mode'):
-                val = self.ZdisplaySlider.value()
                 state = copy.deepcopy(self.MA_viewer_ref.state)
                 state.relative_display_scales = {'z': val}
                 self.MA_viewer_ref.set_state(state)
@@ -1333,11 +1420,10 @@ class ProjectTab(QWidget):
                 state.relative_display_scales = {'z': val}
                 self.MA_viewer_base.set_state(state)
             else:
-                val = self.ZdisplaySlider.value()
                 # logger.info('val = %d' % val)
-                state = copy.deepcopy(self.viewer.state)
+                state = copy.deepcopy(cfg.emViewer.state)
                 state.relative_display_scales = {'z': val}
-                self.viewer.set_state(state)
+                cfg.emViewer.set_state(state)
             cfg.main_window.update()
         except:
             print_exception()
@@ -1482,7 +1568,7 @@ class ProjectTab(QWidget):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
-        self._tabs.setStyleSheet('QTabBar::tab { height: 20px; width: 84px; }')
+        self._tabs.setStyleSheet('QTabBar::tab { height: 20px; width: 84px; font-size: 11px; font-weight: 600;}')
         self._tabs.setDocumentMode(True)
         self._tabs.setTabsClosable(True)
         self._tabs.setObjectName('project_tabs')
@@ -1514,8 +1600,6 @@ class ProjectTab(QWidget):
 
     def sizeHint(self):
         return QSize(1000,1000)
-
-
 
 
 class ScaledPixmapLabel(QLabel):
@@ -1595,6 +1679,9 @@ class VerticalLabel(QLabel):
 
 class ClickLabel(QLabel):
     clicked=Signal()
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.setStyleSheet('color: #f3f6fb;')
 
     def mousePressEvent(self, ev):
         self.clicked.emit()

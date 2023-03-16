@@ -432,8 +432,14 @@ class DataModel:
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
         self._data.setdefault('ui', {})
-
+        self._data.setdefault('ui', {})
+        # self._data['ui'].setdefault('ng_layout', '4panel')
+        self._data['ui'].setdefault('arrangement', 'stack')
         self._data['ui'].setdefault('stage_viewer', {})
+        self._data['ui'].setdefault('manual_mode', {})
+        self._data['ui']['stage_viewer'].setdefault('show_yellow_frame', True)
+
+
         self._data['state'].setdefault('manual_mode', False)
         self._data['state'].setdefault('mode', 'comparison')
         self._data['state'].setdefault('previous_mode', None)
@@ -455,11 +461,7 @@ class DataModel:
         ''')
         # self._data['data'].setdefault('shader', cfg.SHADER)
 
-        self._data.setdefault('ui', {})
-        self._data['ui'].setdefault('ng_layout', '4panel')
-        self._data['ui'].setdefault('arrangement', 'stack')
-        self._data['ui'].setdefault('stage_viewer', {})
-        self._data['ui']['stage_viewer'].setdefault('show_yellow_frame', True)
+
 
 
         # for s in self.scales():
@@ -1281,6 +1283,12 @@ class DataModel:
                 'alignment']['method_results']['cumulative_afm'] = cafm
         except:
             print_exception()
+
+
+    def method(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
 
     def selected_method(self, s=None, l=None):
         if s == None: s = self.scale
