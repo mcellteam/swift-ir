@@ -4,6 +4,12 @@
 #004060 - drafting blue
 #808080 - #128 grey
 
+
+#222222 - Neuroglancer grey
+#339933 - Neuroglancer green
+
+#FFFF00 - standard yellow
+
 #2774ae - Blue
 #ffd100 - Gold
 #8bb8e8 - Lighter Blue

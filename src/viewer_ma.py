@@ -20,7 +20,7 @@ import neuroglancer as ng
 from qtpy.QtCore import QObject, Signal, QUrl
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt
+from src.helpers import getOpt, getData, setData
 from src.shaders import ann_shader
 import src.config as cfg
 
@@ -93,7 +93,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def position(self):
-        return self.state.position
+        return copy.deepcopy(self.state.position)
+        # return self.state.position
 
     def set_position(self, val):
         # state = copy.deepcopy(self.state)
@@ -103,7 +104,8 @@ class MAViewer(neuroglancer.Viewer):
             s.position = val
 
     def zoom(self):
-        return self.state.crossSectionScale
+        return copy.deepcopy(self.state.crossSectionScale)
+        # return self.state.crossSectionScale
 
     def set_zoom(self, val):
         # state = copy.deepcopy(self.state)
@@ -165,7 +167,8 @@ class MAViewer(neuroglancer.Viewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            # s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            s.show_axis_lines = False
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
@@ -183,13 +186,10 @@ class MAViewer(neuroglancer.Viewer):
             s.show_ui_controls = False
             s.show_panel_borders = False
 
-        with self.config_state.txn() as s:
-            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            s.show_panel_borders = False
-
         self.update_annotations()
 
-        self.drawSWIMwindow()
+        if getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
+            self.drawSWIMwindow()
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -218,12 +218,13 @@ class MAViewer(neuroglancer.Viewer):
             return
 
         self.signals.stateChanged.emit()
-        zoom = self.state.cross_section_scale
-        if zoom:
-            if zoom != self._crossSectionScale:
-                logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                self.signals.zoomChanged.emit(zoom)
-            self._crossSectionScale = zoom
+
+        # zoom = self.state.cross_section_scale
+        # if zoom:
+        #     if zoom != self._crossSectionScale:
+        #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+        #         self.signals.zoomChanged.emit(zoom)
+        #     self._crossSectionScale = zoom
 
 
     def pt2ann(self, points: list):
@@ -300,46 +301,101 @@ class MAViewer(neuroglancer.Viewer):
         self.signals.ptsChanged.emit()
         self._set_zmag()
 
+
         # self._set_zmag()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
 
 
+    def undrawSWIMwindow(self):
+        logger.info('')
+        try:
+            with self.txn() as s:
+                s.layers['SWIM Window'].annotations = None
+        except:
+            logger.warning('No annotations to clear')
+
+
+
+
     def drawSWIMwindow(self):
+        logger.info('')
+        self.undrawSWIMwindow()
 
-        sw = cfg.data.swim_window() # SWIM Window
-        image_w = cfg.data.image_size()[0]
-        siz_sw = sw * image_w
-        offset = (image_w - siz_sw) /2
+        marker_size = 1
 
-        # pointA=[.5, 10, 10], pointB=[.5, 1000, 1000] <- diagonal from upper right to bottom left
-        # square corners, counter-clockwise from upper-left:
-        A = [.5, offset + siz_sw, offset]
-        B = [.5, offset, offset]
-        C = [.5, offset, offset + siz_sw]
-        D = [.5, offset + siz_sw, offset + siz_sw]
+        # if cfg.data.method() == 'Auto-SWIM':
+        if not cfg.project_tab.tgl_alignMethod.isChecked():
 
-        annotations = [
-            ng.LineAnnotation(id='L1', pointA=A, pointB=B, props=['#FF0000', 5]),
-            ng.LineAnnotation(id='L2', pointA=B, pointB=C, props=['#FF0000', 5]),
-            ng.LineAnnotation(id='L3', pointA=C, pointB=D, props=['#FF0000', 5]),
-            ng.LineAnnotation(id='L4', pointA=D, pointB=A, props=['#FF0000', 5]),
+            sw = cfg.data.swim_window() # SWIM Window
+            image_w = cfg.data.image_size()[0]
+            image_h = cfg.data.image_size()[1]
+            siz_sw = sw * image_w
+            offset = (image_w - siz_sw) /2
+            half_w = image_w / 2
+            half_h = image_h / 2
 
-        ]
+            # pointA=[.5, 10, 10], pointB=[.5, 1000, 1000] <- diagonal from upper right to bottom left
+            # square corners, counter-clockwise from upper-left:
+            A = [.5, offset + siz_sw, offset]
+            B = [.5, offset, offset]
+            C = [.5, offset, offset + siz_sw]
+            D = [.5, offset + siz_sw, offset + siz_sw]
+
+            AB = [.5, half_w, offset]
+            BC = [.5, offset, half_h]
+            CD = [.5, half_w, offset + siz_sw]
+            DA = [.5, offset + siz_sw, half_h]
+
+            '''
+            A____AB_____B
+            |           |
+            DA          BC
+            |           |
+            D____CD_____C 
+            '''
+
+
+            annotations = [
+                ng.LineAnnotation(id='L1', pointA=A, pointB=B, props=['#FFFF00', marker_size]),
+                ng.LineAnnotation(id='L2', pointA=B, pointB=C, props=['#FFFF00', marker_size]),
+                ng.LineAnnotation(id='L3', pointA=C, pointB=D, props=['#FFFF00', marker_size]),
+                ng.LineAnnotation(id='L4', pointA=D, pointB=A, props=['#FFFF00', marker_size]),
+                ng.LineAnnotation(id='L5', pointA=AB, pointB=CD, props=['#FFFF00', marker_size]),
+                ng.LineAnnotation(id='L6', pointA=DA, pointB=BC, props=['#FFFF00', marker_size]),
+            ]
+
+        else:
+            manual_sw = 128
+
+            # A = [.5, manual_sw, 0]
+            # B = [.5, 0, 0]
+            # C = [.5, 0, manual_sw]
+            # D = [.5, manual_sw, manual_sw]
+
+            points = cfg.data.manual_points()[self.role]
+
+            annotations = []
+
+            for i in range(len(points)):
+                pt = points[i]
+                x = pt[0]
+                y = pt[1]
+                A = [.5, x-64, y+64]
+                B = [.5, x+64, y+64]
+                C = [.5, x+64, y-64]
+                D = [.5, x-64, y-64]
+
+                annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=['#FFFF00', marker_size]))
+                annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=['#FFFF00', marker_size]))
+                annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=['#FFFF00', marker_size]))
+                annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=['#FFFF00', marker_size]))
 
         with self.txn() as s:
-            s.layers['line'] = ng.LocalAnnotationLayer(
+            s.layers['SWIM Window'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotation_properties=[
-                    ng.AnnotationPropertySpec(
-                        id='color',
-                        type='rgb',
-                        default='red',
-                    ),
-                    ng.AnnotationPropertySpec(
-                        id='size',
-                        type='float32',
-                        default=5
-                    )
+                    ng.AnnotationPropertySpec(id='color', type='rgb', default='yellow', ),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
                 ],
                 annotations=annotations,
                 shader='''
@@ -348,7 +404,14 @@ class MAViewer(neuroglancer.Viewer):
                       setPointMarkerSize(prop_size());
                     }
                 ''',
+
             )
+
+    def makeSquare(self, size):
+        pass
+
+
+
 
     def restoreManAlignPts(self):
         logger.info('Restoring manual alignment points for role: %s' %self.role)
