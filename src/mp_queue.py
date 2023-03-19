@@ -27,7 +27,7 @@ __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
 
-MPQLogger = logging.getLogger('MPQLogger')
+# MPQLogger = logging.getLogger('MPQLogger')
 
 # mpl = mp.log_to_stderr()
 # mpl.setLevel(logging.INFO)
@@ -95,9 +95,9 @@ class TaskQueue(QObject):
         self.taskNameList = None
         self.taskPrefix = None
 
-        fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
-        fh.setLevel(logging.DEBUG)
-        MPQLogger.addHandler(fh)
+        # fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
+        # fh.setLevel(logging.DEBUG)
+        # MPQLogger.addHandler(fh)
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=1) -> None:
@@ -239,7 +239,7 @@ class TaskQueue(QObject):
 
     def collect_results(self):
 
-        MPQLogger.critical(str(self.task_dict))
+        # MPQLogger.critical(str(self.task_dict))
 
         t0 = time.time()
         '''Run All Tasks and Collect Results'''
