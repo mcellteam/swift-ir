@@ -2561,7 +2561,7 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if not cfg.data.is_aligned_and_generated():
                 logger.warning('Cannot enter manual alignment mode until the series is aligned.')
-                self.warn('The series must be aligned normally before Manual Alignment Mode can be used.')
+                self.warn('Align the series first and then use Manual Alignment.')
                 return
             if self._isProjectTab():
                 if not getData('state,manual_mode'):
