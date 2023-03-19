@@ -1639,7 +1639,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % str(caller))
+        # logger.info('caller: %s' % str(caller))
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
         requested = self._sectionSlider.value()
@@ -4873,7 +4873,7 @@ class MainWindow(QMainWindow):
 
 
         tip = 'Show/Hide Project Details'
-        self._btn_show_hide_corr_spots = QPushButton(' Correlation Signal')
+        self._btn_show_hide_corr_spots = QPushButton(' Correlation Signals')
         self._btn_show_hide_corr_spots.setFixedHeight(18)
         self._btn_show_hide_corr_spots.setStyleSheet(lower_controls_style)
         self._btn_show_hide_corr_spots.setStatusTip(tip)
@@ -4904,7 +4904,7 @@ class MainWindow(QMainWindow):
 
         dSize = 166
 
-        self.detailsTitle = QLabel('Correlation Signal')
+        self.detailsTitle = QLabel('Correlation Signals')
         self.detailsTitle.setFixedHeight(13)
         self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 2px; margin-top: 2px;')
 

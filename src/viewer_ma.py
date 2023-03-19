@@ -63,6 +63,7 @@ class MAViewer(neuroglancer.Viewer):
         self._mpCount = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.type = 'MAViewer'
 
         logger.info('viewer constructed!')
 

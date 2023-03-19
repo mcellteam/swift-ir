@@ -54,6 +54,9 @@ class ProjectTab(QWidget):
         self.datamodel = datamodel
         self.setUpdatesEnabled(True)
         self.webengine = QWebEngineView()
+
+        # self.setStyleSheet("""QWidget {background: #000000;}""")
+        self.setAutoFillBackground(True)
         # self.webengine.setMouseTracking(True)
         # self.webengine.setFocusPolicy(Qt.StrongFocus)
         self.initShader()
@@ -1152,7 +1155,7 @@ QListView::item:!selected:hover
         if caller in ('main','<lambda>'):
             choice = self.comboNgLayout.currentText()
             logger.critical('Setting ui,ng_layout to %s' % str(choice))
-            setData('ui,ng_layout', choice)
+            # setData('ui,ng_layout', choice)
             setData('state,ng_layout', choice)
 
             try:
