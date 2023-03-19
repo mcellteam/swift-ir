@@ -166,6 +166,9 @@ class Thumbnailer:
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text)
+        task_queue.taskPrefix = 'Generating Thumbnails for '
+        basefilenames = [os.path.basename(x) for x in filenames]
+        task_queue.taskNameList = basefilenames
         task_queue.start(cpus)
 
         logger.info('Removing up to %d files...' %len(filenames))

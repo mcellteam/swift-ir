@@ -17,11 +17,11 @@ from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
-    create_project_structure_directories, makedirs_exist_ok
+    create_project_structure_directories, makedirs_exist_ok, natural_sort
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
-from src.ui.dialogs import ScaleProjectDialog, new_project_dialog
+from src.ui.dialogs import ScaleProjectDialog, new_project_dialog, import_images_dialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
 
 import src.config as cfg
@@ -49,7 +49,7 @@ class OpenProject(QWidget):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
         lab = QLabel('Saved AlignEM-SWiFT Projects:')
-        lab.setStyleSheet('font-size: 12px; font-family: Tahoma, sans-serif; font-weight: 600;')
+        lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
 
         self.row_height_slider = Slider(self)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
@@ -70,7 +70,7 @@ class OpenProject(QWidget):
         controls = QWidget()
         controls.setFixedHeight(18)
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.setContentsMargins(2, 0, 2, 0)
         hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(w)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
@@ -78,7 +78,8 @@ class OpenProject(QWidget):
         controls.setLayout(hbl)
 
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(4, 4, 4, 4)
+        vbl.setSpacing(1)
+        vbl.setContentsMargins(2, 2, 2, 2)
         vbl.addWidget(controls)
         vbl.addWidget(self.user_projects)
         self.userProjectsWidget.setLayout(vbl)
@@ -154,6 +155,8 @@ class OpenProject(QWidget):
 
 
         self._splitter = QSplitter()
+        self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
         self._splitter.setSizes([650, 350])
@@ -249,22 +252,14 @@ class OpenProject(QWidget):
         # makedirs_exist_ok(path, exist_ok=True)
 
         if not mendenhall:
-            try:
-                cfg.main_window.import_multiple_images()
-            except:
-                logger.warning('Import Images Dialog Was Canceled - Returning')
-                cfg.main_window.warn('Canceling New Project')
-                print_exception()
+            result = self.import_multiple_images()
+            if result == 1:
+                cfg.main_window.warn('No images were imported - canceling new project')
                 return
 
             recipe_dialog = ScaleProjectDialog(parent=self)
-            if recipe_dialog.exec():
-                logger.info('ConfigProjectDialog - Passing...')
-                pass
-            else:
-                logger.info('ConfigProjectDialog - Returning...')
-                return
-
+            result = recipe_dialog.exec()
+            logger.critical('result = %s' %str(result))
 
             makedirs_exist_ok(path, exist_ok=True)
             cfg.main_window._autosave(silently=True)
@@ -282,6 +277,31 @@ class OpenProject(QWidget):
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
         cfg.main_window._autosave()
+
+
+    def import_multiple_images(self):
+        ''' Import images into data '''
+        cfg.main_window.tell('Import Images:')
+        filenames = import_images_dialog()
+
+        if filenames == 1:
+            logger.warning('New Project Canceled')
+            cfg.main_window.warn('No Project Canceled')
+            return 1
+
+        files_sorted = natural_sort(filenames)
+
+        cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
+        cfg.main_window.tell(f'Importing {len(files_sorted)} Images...')
+        logger.info(f'Selected Images: \n{files_sorted}')
+
+        for f in files_sorted:
+            cfg.data.append_image(f)
+
+        img_size = cfg.data.image_size(s='scale_1')
+        cfg.main_window.tell(f'Dimensions: {img_size[0]}✕{img_size[1]}')
+        cfg.data.link_reference_sections()
+
 
 
     def setSelectionPathText(self, path):

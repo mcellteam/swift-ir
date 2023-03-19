@@ -58,8 +58,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._layer = None
         self.scale = cfg.data.scale
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self._settingZoom = False
         self.initViewer()
-        logger.info('viewer constructed!')
+
+        # logger.info('viewer constructed!')
+        caller = inspect.stack()[1].function
+        logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....\n')
 
 
     def __repr__(self):
@@ -88,6 +92,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     #     pass
 
     def on_state_changed(self):
+        if self._settingZoom:
+            return
 
         caller = inspect.stack()[1].function
         curframe = inspect.currentframe()
@@ -114,14 +120,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     self._layer = request_layer
                     logger.info(f'(!) emitting get_loc: {request_layer}')
                     self.signals.stateChanged.emit(request_layer)
+            zoom = self.state.cross_section_scale
+            # logger.info('self.state.cross_section_scale = %s' % str(zoom))
+            if zoom:
 
-            # zoom = self.state.cross_section_scale
-            # # logger.info('self.state.cross_section_scale = %s' % str(zoom))
-            # if zoom:
-            #     if zoom != self._crossSectionScale:
-            #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-            #         self.signals.zoomChanged.emit(zoom)
-            #     self._crossSectionScale = zoom
+                if zoom != self._crossSectionScale:
+                    logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+                    self.signals.zoomChanged.emit(zoom)
+                self._crossSectionScale = zoom
         except:
             print_exception()
             logger.error('ERROR on_state_change')
@@ -174,8 +180,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # return self.state.crossSectionScale
 
     def set_zoom(self, val):
+        self._settingZoom = True
         with self.txn() as s:
             s.crossSectionScale = val
+        self._settingZoom = False
 
     def set_layer(self, index):
         state = copy.deepcopy(self.state)
@@ -213,6 +221,26 @@ class AbstractEMViewer(neuroglancer.Viewer):
         else:
             logger.info('Successfully set Z-mag!')
 
+
+    def updateScaleBar(self):
+        with self.txn() as s:
+            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+
+    def updateAxisLines(self):
+        with self.txn() as s:
+            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
+
+
+    def updateDefaultAnnotations(self):
+        with self.txn() as s:
+            s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+
+
+    def updateUIControls(self):
+        with self.config_state.txn() as s:
+            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+
+
     # def set_zmag(self):
     #     if cfg.MP_MODE:
     #         with self.txn() as s:
@@ -240,7 +268,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 s.crossSectionScale = cs_scale * adjust
 
+
     def get_tensors(self):
+        del cfg.tensor
+        del cfg.unal_tensor
+        del cfg.al_tensor
         sf = cfg.data.scale_val(s=cfg.data.scale)
         al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
         unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
@@ -254,6 +286,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
             logger.warning('Failed to acquire Tensorstore view')
             raise e
 
+    def post_message(self, msg):
+        with self.config_state.txn() as cs:
+            cs.status_messages['message'] = msg
+
 
 # class EMViewer(neuroglancer.Viewer):
 class EMViewer(AbstractEMViewer):
@@ -262,11 +298,10 @@ class EMViewer(AbstractEMViewer):
         super().__init__(**kwags)
         self.shared_state.add_changed_callback(self.on_state_changed)
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....\n')
+        # logger.critical(f'\n\nInitializing AbstractEMViewer (caller: {caller})....\n')
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        # logger.critical(f'\n\nInitializing EMViewer (caller: {caller})....\n')
         if cfg.data['state']['mode'] == 'stack':
             # cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
@@ -278,10 +313,11 @@ class EMViewer(AbstractEMViewer):
         # caller = inspect.stack()[1].function
         # logger.critical(f'Initializing EMViewer (caller: {caller})....')
 
-        requested = cfg.data['ui']['ng_layout']
+        requested = getData('state,ng_layout')
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
           'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         nglayout = mapping[requested]
+        logger.critical('nglayout = %s' %nglayout)
 
         self.coordinate_space = self.getCoordinateSpace()
         self.get_tensors()
@@ -314,11 +350,13 @@ class EMViewer(AbstractEMViewer):
         is_aligned = cfg.data.is_aligned_and_generated()
         _, tensor_y, tensor_x = cfg.tensor.shape
 
-        area = cfg.main_window.globTabs.geometry().getRect()
-        w = area[2] / (2, 3)[(cfg.data['state']['mode'] == 'comparison')
-                             and cfg.data.is_aligned_and_generated()]
-        h = area[3]
-        self.initZoom(w=w, h=h, adjust=1.10)
+        # area = cfg.main_window.globTabs.geometry().getRect()
+        # w = area[2] / (2, 3)[cfg.data.is_aligned_and_generated()]
+        # h = area[3]
+        w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+        h = cfg.project_tab.webengine.height()
+        # self.initZoom(w=w, h=h, adjust=1.10)
+        self.initZoom(w=w, h=h, adjust=1.08)
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
@@ -328,6 +366,16 @@ class EMViewer(AbstractEMViewer):
         self.grps.append(ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout))
         if is_aligned:
             self.grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout))
+
+        # box = ng.AxisAlignedBoundingBoxAnnotation(
+        #     point_a=[5, 50, 50],
+        #     point_b=[5, 500, 500],
+        #     id="bounding-box",
+        # )
+
+
+
+                # (annotations=[box])
 
         with self.txn() as s:
             '''other settings: 
@@ -351,6 +399,8 @@ class EMViewer(AbstractEMViewer):
             s.showSlices=False
             s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
 
+            # s.layers["bounding-box"] = ng.AnnotationLayer(annotations=[box], ) #0316
+
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.scale_bar_options.scale_factor = 1
@@ -373,7 +423,7 @@ class EMViewer(AbstractEMViewer):
         # logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
 
         if not nglayout:
-            requested = cfg.data['ui']['ng_layout']
+            requested = getData('state,ng_layout')
             mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
             nglayout = mapping[requested]
@@ -487,7 +537,7 @@ class EMViewerStage(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer (caller: {caller})....')
+        logger.critical(f'Initializing EMViewerStage (caller: {caller})....')
 
         self.coordinate_space = self.getCoordinateSpace()
 
@@ -504,7 +554,7 @@ class EMViewerStage(AbstractEMViewer):
         _, tensor_y, tensor_x = cfg.tensor.shape
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
-        logger.critical(f'\n\n\nMA_webengine_stage: w={w}, h={h}\n\n')
+        logger.critical(f'MA_webengine_stage: w={w}, h={h}')
         self.initZoom(w=w, h=h, adjust=1.10)
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
@@ -520,7 +570,7 @@ class EMViewerStage(AbstractEMViewer):
             s.crossSectionBackgroundColor = '#808080'
             s.show_scale_bar = True
             s.show_axis_lines = False
-            s.show_default_annotations = getData('ui,stage_viewer,show_yellow_frame')
+            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             s.showSlices=False
             s.position = [0, tensor_y / 2, tensor_x / 2]
@@ -547,7 +597,7 @@ class EMViewerSnr(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer (caller: {caller})....')
+        logger.critical(f'Initializing EMViewerSnr (caller: {caller})....')
 
         self.coordinate_space = self.getCoordinateSpace()
         self.get_tensors()
@@ -576,7 +626,7 @@ class EMViewerSnr(AbstractEMViewer):
         h = cfg.project_tab.snrPlotSplitter.geometry().height()
         w = cfg.project_tab.snrPlotSplitter.sizes()[1]
         # self.initZoom(h=h, w=w, adjust=1.18)
-        self.initZoom(h=h, w=w, adjust=1.16)
+        self.initZoom(h=h, w=w, adjust=1.04)
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
@@ -589,7 +639,7 @@ class EMViewerSnr(AbstractEMViewer):
             s.system_memory_limit = -1
             # s.displayDimensions = ["z", "y"]
 
-            s.crossSectionBackgroundColor = '#1b1e23'
+            s.crossSectionBackgroundColor = '#222222'
             s.show_scale_bar = False
             s.show_default_annotations = False
             s.show_axis_lines = False

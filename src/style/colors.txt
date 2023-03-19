@@ -7,6 +7,8 @@
 
 #222222 - Neuroglancer grey
 #339933 - Neuroglancer green
+#206020 - Neuroglancer green, darkened
+#FFFF66 = Neuroglancer light yellow (text)
 
 #FFFF00 - standard yellow
 
@@ -31,6 +33,7 @@
 
 #161c20 - dark charcoal
 #003333 - dark green
+#dadada - light grey
 
 
 regex to remove empty lines: ^\s*^

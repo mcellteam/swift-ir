@@ -10,9 +10,7 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
-QWidget#self._tool_keyBindings{
-    font-size: 11px;
-}
+
 
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);

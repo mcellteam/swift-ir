@@ -12,19 +12,16 @@ data_template = \
         "state": {
             "mode": "comparison",
             "previous_mode": None,
-            "manual_mode": True
+            "manual_mode": True,
+            "ng_layout": 'xy',
+            "stage_viewer": {
+                "show_yellow_frame": True
+            },
         },
         "rendering": {
             "normalize": [1,255],
             "brightness": 0,
             "contrast": 0,
-        },
-        "ui": {
-            "ng_layout": '4panel',
-            "arrangement": 'stack',
-            "stage_viewer": {
-                "show_yellow_frame": True
-            },
         },
         "data": {
             "shader": None,

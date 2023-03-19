@@ -11,6 +11,7 @@ import inspect
 import logging
 import datetime
 import argparse
+from collections import OrderedDict
 import numpy as np
 import numcodecs
 import zarr
@@ -20,7 +21,7 @@ import neuroglancer as ng
 from qtpy.QtCore import QObject, Signal, QUrl
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData
+from src.helpers import getOpt, getData, setData, print_exception
 from src.shaders import ann_shader
 import src.config as cfg
 
@@ -49,10 +50,11 @@ class MAViewer(neuroglancer.Viewer):
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
+        self._settingZoom = True
         self._layer = None
         self.cs_scale = None
-        self.pts = {}
-        self.points = {}
+        # self.pts = {}
+        self.pts = OrderedDict()
         self.mp_colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
                           '#152c74', '#404f74', '#f3e375', '#5c4ccc',
                           '#d6acd6', '#aaa672', '#152c74', '#404f74'
@@ -70,6 +72,7 @@ class MAViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.scale)), )
 
         # self.restoreManAlignPts()
+
 
         self.initViewer()
 
@@ -107,21 +110,23 @@ class MAViewer(neuroglancer.Viewer):
         return copy.deepcopy(self.state.crossSectionScale)
         # return self.state.crossSectionScale
 
+
     def set_zoom(self, val):
+        self._settingZoom = True
         # state = copy.deepcopy(self.state)
         # state.crossSectionScale = val
         # self.set_state(state)
         with self.txn() as s:
             s.crossSectionScale = val
 
-    def undrawAnnotations(self):
-        with self.txn() as s:
-            s.layers['ann'].annotations = None
+        self._settingZoom = False
+
 
     def set_layer(self, index):
         state = copy.deepcopy(self.state)
         state.position[0] = index
         self.set_state(state)
+
 
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
@@ -130,7 +135,7 @@ class MAViewer(neuroglancer.Viewer):
     def initViewer(self):
         # caller = inspect.stack()[1].function
         # logger.critical('caller: %s' %str(caller))
-        logger.info(f'Initializing Viewer (Role: %s)....' %self.role)
+        logger.critical(f'Initializing Viewer (Role: %s)....' %self.role)
 
         if self.role == 'ref':
             self.index = max(cfg.data.zpos - 1, 0)
@@ -177,7 +182,7 @@ class MAViewer(neuroglancer.Viewer):
             _, y, x = self.store.shape
             s.position = [0.5, y / 2, x / 2]
             # s.position = [0.1, y / 2, x / 2]
-            s.layers['ann'].annotations = list(self.pts.values())
+            # s.layers['ann'].annotations = list(self.pts.values())
 
         self.actions.add('add_manpoint', self.add_matchpoint)
 
@@ -186,10 +191,11 @@ class MAViewer(neuroglancer.Viewer):
             s.show_ui_controls = False
             s.show_panel_borders = False
 
-        self.update_annotations()
+        # if cfg.data.method() != 'Auto-SWIM':
+        #     self.draw_point_annotations()
 
-        if getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
-            self.drawSWIMwindow()
+        # if getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
+        self.drawSWIMwindow()
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -201,21 +207,16 @@ class MAViewer(neuroglancer.Viewer):
         # self._set_zmag()
 
 
-    def get_layout(self, requested=None):
-        if requested == None:
-            requested = cfg.data['ui']['ng_layout']
-        mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
-              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        return mapping[requested]
-
-
     def on_state_changed(self):
+        if self._settingZoom:
+            return
         # caller = inspect.stack()[1].function
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
         if calname == '<lambda>':
             return
+
 
         self.signals.stateChanged.emit()
 
@@ -246,15 +247,12 @@ class MAViewer(neuroglancer.Viewer):
         pass
 
 
-    def update_annotations(self):
-        anns = list(self.pts.values())
-        if anns:
-            with self.txn() as s:
-                s.layers['ann'].annotations = anns
-
-    def remove_annotations(self):
-        with self.txn() as s:
-            s.layers['ann'].annotations = None
+    # def undrawAnnotations(self):
+    #     try:
+    #         with self.txn() as s:
+    #             s.layers['ann'].annotations = None
+    #     except:
+    #         logger.warning('Unable to undraw annotations')
 
 
     def getNextUnusedColor(self):
@@ -282,8 +280,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
-        if not cfg.project_tab.isManualReady():
-            return
+        # if not cfg.project_tab.isManualReady():
+        #     return
 
         coords = np.array(s.mouse_voxel_coordinates)
         logger.info('Coordinates: %s' %str(coords))
@@ -297,34 +295,69 @@ class MAViewer(neuroglancer.Viewer):
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
-        self.update_annotations()
+
+
+        self.draw_point_annotations()
+        self.drawSWIMwindow()
+
         self.signals.ptsChanged.emit()
+
         self._set_zmag()
+
+
+
 
 
         # self._set_zmag()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
 
 
+
+
+    def draw_point_annotations(self):
+        # logger.critical('Drawing point annotations...')
+        # try:
+        #     anns = list(self.pts.values())
+        #     if anns:
+        #         with self.txn() as s:
+        #             s.layers['ann'].annotations = anns
+        # except:
+        #     # print_exception()
+        #     logger.warning('Unable to draw donut annotations or none to draw')
+        pass
+
+
+    def undraw_point_annotations(self):
+        # logger.critical('Undrawing point annotations...')
+        # try:
+        #     with self.txn() as s:
+        #         s.layers['ann'].annotations = None
+        # except:
+        #     # print_exception()
+        #     logger.warning('No donut annotations to delete')
+        pass
+
+
     def undrawSWIMwindow(self):
-        logger.info('')
+        logger.critical('Undrawing SWIM Window')
         try:
             with self.txn() as s:
                 s.layers['SWIM Window'].annotations = None
         except:
             logger.warning('No annotations to clear')
-
-
+            # print_exception()
 
 
     def drawSWIMwindow(self):
-        logger.info('')
+        logger.critical('Drawing SWIM window...')
         self.undrawSWIMwindow()
 
         marker_size = 1
 
-        # if cfg.data.method() == 'Auto-SWIM':
-        if not cfg.project_tab.tgl_alignMethod.isChecked():
+        if cfg.data.method() == 'Auto-SWIM':
+        # if not cfg.project_tab.tgl_alignMethod.isChecked():
+            logger.critical('Drawing SWIM Window for automatic SWIM alignment...')
+            self.undraw_point_annotations()
 
             sw = cfg.data.swim_window() # SWIM Window
             image_w = cfg.data.image_size()[0]
@@ -365,36 +398,78 @@ class MAViewer(neuroglancer.Viewer):
             ]
 
         else:
+            logger.critical('Drawing SWIM Windows for manual alignment...')
             manual_sw = 128
-
-            # A = [.5, manual_sw, 0]
-            # B = [.5, 0, 0]
-            # C = [.5, 0, manual_sw]
-            # D = [.5, manual_sw, manual_sw]
-
             points = cfg.data.manual_points()[self.role]
-
             annotations = []
 
-            for i in range(len(points)):
-                pt = points[i]
-                x = pt[0]
-                y = pt[1]
-                A = [.5, x-64, y+64]
-                B = [.5, x+64, y+64]
-                C = [.5, x+64, y-64]
-                D = [.5, x-64, y-64]
+            if len(cfg.data.manual_points()[self.role]) > 0:
+                for i in range(len(points)):
+                    pt = points[i]
+                    x = pt[0]
+                    y = pt[1]
+                    A = [.5, x-64, y+64]
+                    B = [.5, x+64, y+64]
+                    C = [.5, x+64, y-64]
+                    D = [.5, x-64, y-64]
 
-                annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=['#FFFF00', marker_size]))
-                annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=['#FFFF00', marker_size]))
-                annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=['#FFFF00', marker_size]))
-                annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=['#FFFF00', marker_size]))
+                    X_A = [.5, x - 25, y + 25]
+                    X_B = [.5, x + 25, y + 25]
+                    X_C = [.5, x + 25, y - 25]
+                    X_D = [.5, x - 25, y - 25]
+
+                    color = self.mp_colors[i]
+
+                    annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=[color, marker_size]))
+
+                    annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
+            else:
+                pts_list = list(self.pts.items())
+
+                for i in range(len(pts_list)):
+                    pt = pts_list[i]
+                    color = pt[0]
+                    coords = pt[1].point
+
+                    x = coords[1]
+                    y = coords[2]
+                    A = [.5, x-64, y+64]
+                    B = [.5, x+64, y+64]
+                    C = [.5, x+64, y-64]
+                    D = [.5, x-64, y-64]
+
+                    X_A = [.5, x - 25, y + 25]
+                    X_B = [.5, x + 25, y + 25]
+                    X_C = [.5, x + 25, y - 25]
+                    X_D = [.5, x - 25, y - 25]
+
+                    annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=[color, marker_size]))
+
+                    annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
+                    annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
+
+        box = ng.AxisAlignedBoundingBoxAnnotation(
+            point_a=[5, 50, 50],
+            point_b=[5, 500, 500],
+            id="bounding-box",
+        )
+
 
         with self.txn() as s:
+            s.layers["bounding-box"] = ng.LocalAnnotationLayer(
+                dimensions=self.coordinate_space,
+                annotations=[box])
             s.layers['SWIM Window'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotation_properties=[
-                    ng.AnnotationPropertySpec(id='color', type='rgb', default='yellow', ),
+                    ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
                     ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
                 ],
                 annotations=annotations,
@@ -415,7 +490,8 @@ class MAViewer(neuroglancer.Viewer):
 
     def restoreManAlignPts(self):
         logger.info('Restoring manual alignment points for role: %s' %self.role)
-        self.pts = {}
+        # self.pts = {}
+        self.pts = OrderedDict()
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
         for i, p in enumerate(pts_data):
             props = [self.mp_colors[i],
@@ -423,17 +499,17 @@ class MAViewer(neuroglancer.Viewer):
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
             self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
 
-        with self.txn() as s:
-            s.layers['ann'] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotations=self.pt2ann(points=pts_data),
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-                    ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-                ],
-                shader=copy.deepcopy(ann_shader),
-            )
+        # with self.txn() as s:
+        #     s.layers['ann'] = ng.LocalAnnotationLayer(
+        #         dimensions=self.coordinate_space,
+        #         annotations=self.pt2ann(points=pts_data),
+        #         annotation_properties=[
+        #             ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
+        #             ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
+        #             ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
+        #         ],
+        #         shader=copy.deepcopy(ann_shader),
+        #     )
 
 
         # json_str = self.state.layers.to_json()
