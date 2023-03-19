@@ -45,7 +45,8 @@ class VWidget(QWidget):
         super().__init__()
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(2)
+        # self.layout.setSpacing(2)
+        self.layout.setSpacing(0)
         self.setLayout(self.layout)
         for w in args:
             self.layout.addWidget(w)

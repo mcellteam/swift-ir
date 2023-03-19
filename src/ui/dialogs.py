@@ -53,7 +53,7 @@ def import_images_dialog():
     else:
         logger.warning('Import images dialog did not return a valid file list')
         cfg.main_window.warn('Import images dialog did not return a valid file list')
-        return
+        return 1
 
 class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):

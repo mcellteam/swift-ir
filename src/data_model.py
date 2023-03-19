@@ -431,18 +431,11 @@ class DataModel:
         self._data.setdefault('rendering', {})
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
-        self._data.setdefault('ui', {})
-        self._data.setdefault('ui', {})
-        # self._data['ui'].setdefault('ng_layout', '4panel')
-        self._data['ui'].setdefault('arrangement', 'stack')
-        self._data['ui'].setdefault('stage_viewer', {})
-        self._data['ui'].setdefault('manual_mode', {})
-        self._data['ui']['stage_viewer'].setdefault('show_yellow_frame', True)
-
-
+        self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
         self._data['state'].setdefault('manual_mode', False)
         self._data['state'].setdefault('mode', 'comparison')
-        self._data['state'].setdefault('previous_mode', None)
+        self._data['state'].setdefault('previous_mode', 'comparison')
+        self._data['state'].setdefault('ng_layout', 'xy')
         self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
@@ -460,9 +453,6 @@ class DataModel:
         void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
         ''')
         # self._data['data'].setdefault('shader', cfg.SHADER)
-
-
-
 
         # for s in self.scales():
         for s in self._data['data']['scales'].keys():

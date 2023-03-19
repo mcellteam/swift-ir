@@ -133,7 +133,7 @@ def delete_recursive(dir):
         cfg.main_window.update()
         QApplication.processEvents()
 
-    cfg.main_window.pbar_widget.hide()
+    cfg.main_window.hidePbar()
 
 
 
@@ -141,13 +141,14 @@ def delete_recursive(dir):
 def update_preferences_model():
     logger.info('Updating user preferences model...')
     cfg.settings.setdefault('neuroglancer', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', True)
+    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings['neuroglancer'].setdefault('SHOW_SWIM_WINDOW', True)
+    cfg.settings['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
     cfg.settings.setdefault('state', {})
     cfg.settings['state'].setdefault('manual_mode', False)
     cfg.settings.setdefault('ui', {})

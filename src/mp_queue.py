@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import logging
 import multiprocessing as mp
 import subprocess as sp
@@ -25,6 +26,9 @@ stderr <- info + errors
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
+
+MPQLogger = logging.getLogger('MPQLogger')
+
 # mpl = mp.log_to_stderr()
 # mpl.setLevel(logging.INFO)
 
@@ -88,6 +92,13 @@ class TaskQueue(QObject):
             self.close_worker = True
         self.logging_handler = logging_handler
 
+        self.taskNameList = None
+        self.taskPrefix = None
+
+        fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
+        fh.setLevel(logging.DEBUG)
+        MPQLogger.addHandler(fh)
+
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=1) -> None:
 
@@ -109,7 +120,6 @@ class TaskQueue(QObject):
         self.task_id = 0
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
-
 
         cfg.main_window.shutdownNeuroglancer()
         cfg.main_window.showZeroedPbar() #0208+
@@ -228,6 +238,9 @@ class TaskQueue(QObject):
 
 
     def collect_results(self):
+
+        MPQLogger.critical(str(self.task_dict))
+
         t0 = time.time()
         '''Run All Tasks and Collect Results'''
         logger.info(f'Running Multiprocessing Tasks ({self.retries} retries allowed)...')
@@ -255,7 +268,7 @@ class TaskQueue(QObject):
 
                 # Loop over pending tasks...
                 # Update progress bar and result queue as tasks finish (mp.Queue.get() is blocking).
-                for j in range(n_pending):
+                for img_index,j in enumerate(range(n_pending)):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
                     # logger.info(task_str)
                     if cfg.event.is_set():
@@ -275,6 +288,10 @@ class TaskQueue(QObject):
 
                     try:
                         self.parent.updatePbar(self.n_tasks - realtime)
+                        if self.taskPrefix and self.taskNameList:
+                            name = self.taskNameList[img_index]
+                            # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
+                            self.parent.statusBar.showMessage(self.taskPrefix + name + '...')
                     except:
                         # print_exception()
                         logger.warning('An exception was raised while updating progress bar')

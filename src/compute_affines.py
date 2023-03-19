@@ -71,6 +71,8 @@ def compute_affines(scale, start=0, end=None):
             f.write(dm.to_json())
 
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
+        task_queue.taskPrefix = 'Computing alignment for '
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
 
         # START TASK QUEUE
         task_queue.start(cpus)

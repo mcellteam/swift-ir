@@ -42,7 +42,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem
+    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget
 
 import src.config as cfg
 import src.shaders
@@ -162,11 +162,10 @@ class MainWindow(QMainWindow):
         #     if cfg.project_tab:
         #         cfg.project_tab.initNeuroglancer()
         #     return super(MainWindow, self).resizeEvent(event)
-        pass
-
-
-    def getNgLayout(self):
-        return self.comboboxNgLayout.currentText()
+        if self._isProjectTab():
+            # if cfg.project_tab._tabs.currentIndex() == 0:
+            if getData('state,mode') == 'comparison':
+                cfg.project_tab.initNeuroglancer()
 
 
     # def neuroglancer_configuration_0(self):
@@ -193,7 +192,6 @@ class MainWindow(QMainWindow):
         cfg.project_tab.snr_plot.initSnrPlot()
         cfg.project_tab.project_table.setScaleData()
         cfg.project_tab.updateTreeWidget()
-        self.updateToolbar()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
 
@@ -230,7 +228,6 @@ class MainWindow(QMainWindow):
                     # self._lastRefresh = time.time()
                     cfg.project_tab.refreshTab()
                 self.hud.done()
-                self.updateToolbar()    #0301+
                 self.updateEnabledButtons()    #0301+
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
@@ -328,7 +325,7 @@ class MainWindow(QMainWindow):
 
         cfg.py_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
         self._py_console = QWidget()
-        self._py_console.setStyleSheet('background-color: #003333; color: #f3f6fb; border-radius: 5px;')
+        self._py_console.setStyleSheet('background: #222222; color: #f3f6fb; border-radius: 5px;')
         lab = QLabel('Python Console')
         # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
@@ -337,74 +334,14 @@ class MainWindow(QMainWindow):
         vbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignBaseline)
         vbl.addWidget(cfg.py_console)
         self._py_console.setLayout(vbl)
-        self._py_console.setObjectName('_py_console')
         self._py_console.hide()
 
 
-    def _callbk_showHideNotes(self):
-        if self.notes.isHidden():
-            label  = 'Hide Notes'
-            icon   = 'fa.caret-down'
-            self.notes.show()
-            sizes = self._splitter.sizes()
-            sizes[0] = 200
-            self._splitter.setSizes(sizes)
-        else:
-            label  = ' Notes'
-            icon   = 'mdi.notebook-edit'
-            self.notes.hide()
-        # self._btn_show_hide_notes.setIcon(qta.icon(icon, color='#f3f6fb'))
-        self._btn_show_hide_notes.setIcon(qta.icon(icon, color='#380282'))
-        self._btn_show_hide_notes.setText(label)
-        self.updateNotes()
-
-        # if cfg.project_tab:
-        #     cfg.project_tab.initNeuroglancer()
-        # if cfg.zarr_tab:
-        #     cfg.emViewer.bootstrap()
-
-
-    def _callbk_showHideShader(self):
-        if self.shaderCodeWidget.isHidden():
-            label  = 'Hide Shader'
-            icon   = 'fa.caret-down'
-            self.shaderCodeWidget.show()
-            if self._isProjectTab():
-                # rng = cfg.data.normalize()
-                # self.normalizedSlider.setStart(rng[0])
-                # self.normalizedSlider.setEnd(rng[1])
-                # self.brightnessSlider.setValue(cfg.data.brightness())
-                self.brightnessSlider.setValue(cfg.data.brightness)
-                # self.contrastSlider.setValue(cfg.data.contrast())
-                self.contrastSlider.setValue(cfg.data.contrast)
-                # sizes = self._splitter.sizes()
-                # sizes[1] = 140
-                # self._splitter.setSizes(sizes)
-        else:
-            label  = ' Shader'
-            icon   = 'mdi.format-paint'
-            self.shaderCodeWidget.hide()
-        # self._btn_show_hide_shader.setIcon(qta.icon(icon, color='#f3f6fb'))
-        self._btn_show_hide_shader.setIcon(qta.icon(icon, color='#380282'))
-        self._btn_show_hide_shader.setText(label)
-        self.updateShaderText()
-
 
     def _callbk_showHideCorrSpots(self):
-        if self.correlation_signals.isHidden():
-            label  = 'Hide Correlation Signal'
-            icon   = 'fa.caret-down'
+        self.correlation_signals.setVisible(self.correlation_signals.isHidden())
+        self.updateCorrSpotsDrawer()
 
-            self.correlation_signals.show()
-            self.updateCorrSpotsDrawer()
-
-        else:
-            label  = ' Correlation Signal'
-            icon   = 'fa.info-circle'
-            self.correlation_signals.hide()
-        # self._btn_show_hide_corr_spots.setIcon(qta.icon(icon, color='#f3f6fb'))
-        self._btn_show_hide_corr_spots.setIcon(qta.icon(icon, color='#380282'))
-        self._btn_show_hide_corr_spots.setText(label)
 
 
     def updateCorrSpotsDrawer(self):
@@ -417,8 +354,9 @@ class MainWindow(QMainWindow):
             n = len(thumbs)
             # logger.info('thumbs: %s' % str(thumbs))
             for i in range(7):
-                h = max(self.correlation_signals.height() - 38, 64)
-                self.corr_signals[i].setFixedSize(h, h)
+                # h = max(self.correlation_signals.height() - 38, 64)
+                h = self.correlation_signals.height()
+                self.corr_signals[i].setFixedSize(h-16, h-16)
                 if i < n:
                     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
                     try:
@@ -469,97 +407,44 @@ class MainWindow(QMainWindow):
             return [cfg.emViewer]
 
 
-    def fn_brightness_control(self):
-        caller = inspect.stack()[1].function
-        logger.info('caller: %s' %caller)
-        if caller == 'main':
-            if self._isProjectTab():
-                cfg.data.brightness = self.brightnessSlider.value()
-                for viewer in self.get_viewers():
-                    viewer.set_brightness()
-
-
-    def fn_contrast_control(self):
-        caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
-        if caller == 'main':
-            if self._isProjectTab():
-                cfg.data.contrast = self.contrastSlider.value()
-                for viewer in self.get_viewers():
-                    viewer.set_contrast()
-
-
-    def fn_shader_control(self):
-        logger.info('')
-        if self._isProjectTab():
-            logger.info(f'range: {self.normalizedSlider.getRange()}')
-            cfg.data.set_normalize(self.normalizedSlider.getRange())
-            state = copy.deepcopy(cfg.emViewer.state)
-            for layer in state.layers:
-                layer.shaderControls['normalized'].range = np.array(cfg.data.normalize())
-            # state.layers[0].shader_controls['normalized'] = {'range': np.array([20,50])}
-            cfg.emViewer.set_state(state)
-
-
-    def fn_volume_rendering(self):
-        if self._isProjectTab():
-            state = copy.deepcopy(cfg.emViewer.state)
-            state.showSlices = False
-            cfg.emViewer.set_state(state)
-
 
     def _callbk_showHidePython(self):
         logger.info('')
-        # con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
-        con = self._dev_console
-        if con.isHidden():
-            label  = 'Hide Python'
-            icon   = 'fa.caret-down'
-            con.show()
-            sizes = self._splitter.sizes()
-            sizes[3] = 200
-            self._splitter.setSizes(sizes)
-        else:
-            label  = ' Python'
-            icon   = 'mdi.language-python'
-            con.hide()
-        # self._btn_show_hide_console.setIcon(qta.icon(icon, color='#f3f6fb'))
-        self._btn_show_hide_console.setIcon(qta.icon(icon, color='#380282'))
-        self._btn_show_hide_console.setText(label)
-        # if cfg.project_tab:
-        #     if cfg.project_tab._tabs.currentIndex() == 0:
-        #         cfg.project_tab.updateNeuroglancer()
-
-        # if cfg.project_tab:
-        #     cfg.project_tab.initNeuroglancer()
-        # if cfg.zarr_tab:
-        #     cfg.emViewer.bootstrap()
+        self._dev_console.setVisible(self._dev_console.isHidden())
+        self.pythonButton.setText(('Python','Hide')[self._dev_console.isVisible()])
+        self.pythonButton.setStatusTip(('Show Python Console','Hide Python Console')[self._dev_console.isVisible()])
 
 
     def _forceShowControls(self):
         self.cpanelMainWidgets.show()
-        # self._btn_show_hide_ctls.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
-        self._btn_show_hide_ctls.setIcon(qta.icon("fa.caret-down", color='#380282'))
-        self._btn_show_hide_ctls.setText('Hide Controls')
 
 
     def _forceHideControls(self):
         self.cpanelMainWidgets.hide()
-        # self._btn_show_hide_ctls.setIcon(qta.icon("ei.adjust-alt", color='#f3f6fb'))
-        self._btn_show_hide_ctls.setIcon(qta.icon("ei.adjust-alt", color='#380282'))
-        self._btn_show_hide_ctls.setText(' Controls')
 
 
     def _callbk_showHideControls(self):
-        logger.info('')
-        if self.cpanelMainWidgets.isHidden():
-            self._forceShowControls()
-        else:
-            self._forceHideControls()
-        # if cfg.project_tab:
-        #     cfg.project_tab.inputNeuroglancer()
-        # if cfg.zarr_tab:
-        #     cfg.emViewer.bootstrap()
+        self.cpanelMainWidgets.setVisible(self.cpanelMainWidgets.isHidden())
+        self.controlsButton.setText(('Controls','Hide')[self.cpanelMainWidgets.isVisible()])
+        self.controlsButton.setStatusTip(('Show Control Panel','Hide Control Panel')[self.cpanelMainWidgets.isVisible()])
+
+
+    def _forceHideNotes(self):
+        self.notes.hide()
+        self.notesButton.setText('Notes')
+        self.notesButton.setStatusTip('Show Notepad')
+
+    def _forceShowNotes(self):
+        self.notes.show()
+        self.notesButton.setText('Hide')
+        self.notesButton.setStatusTip('Hide Notepad')
+
+
+    def _callbk_showHideNotes(self):
+        self.notes.setVisible(self.notes.isHidden())
+        self.notesButton.setText(('Notepad', 'Hide')[self.notes.isVisible()])
+        self.notesButton.setStatusTip(('Show Notepad','Hide Notepad')[self.notes.isVisible()])
+        self.updateNotes()
 
 
     def _forceHidePython(self):
@@ -637,7 +522,7 @@ class MainWindow(QMainWindow):
 
             finally:
                 cfg.data.scale = cfg.data.scales()[-1]
-                self.pbar_widget.hide()
+                self.hidePbar()
                 logger.info('Thumbnail Generation Complete')
 
         self.enableAllTabs()
@@ -702,7 +587,7 @@ class MainWindow(QMainWindow):
             print_exception()
         finally:
             self.pbarLabel.setText('')
-            self.pbar_widget.hide()
+            self.hidePbar()
             self.updateDtWidget()
             cfg.project_tab.updateTreeWidget()
             cfg.nCompleted = 0
@@ -818,9 +703,8 @@ class MainWindow(QMainWindow):
         logger.info('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         try:
-            self.updateToolbar()
             self.pbarLabel.setText('')
-            self.pbar_widget.hide()
+            self.hidePbar()
             self.enableAllTabs()
             cfg.project_tab.snr_plot.initSnrPlot()
             self.updateEnabledButtons()
@@ -982,7 +866,7 @@ class MainWindow(QMainWindow):
                 logger.info('Generate Aligned Thumbnails Finished')
 
         self.pbarLabel.setText('')
-        self.pbar_widget.hide()
+        self.hidePbar()
         cfg.nCompleted = 0
         cfg.nTasks = 0
 
@@ -1073,7 +957,7 @@ class MainWindow(QMainWindow):
             self._autosave()
             self.tell('Rescaling Successful')
         finally:
-            self.pbar_widget.hide()
+            self.hidePbar()
             self.enableAllTabs()
             self.onStartProject()
         self.tell('**** Processes Complete ****')
@@ -1240,30 +1124,32 @@ class MainWindow(QMainWindow):
 
     def layer_left(self):
         logger.info('')
-        if cfg.data:
-            if cfg.project_tab:
-                requested = cfg.data.zpos - 1
-                if requested >= 0:
-                    cfg.data.zpos = requested
-                if getData('state,manual_mode'):
-                    cfg.project_tab.MA_layer_left()
-                else:
-                    cfg.emViewer.set_layer(requested)
-                self.dataUpdateWidgets()
+        if self._isProjectTab():
+            requested = cfg.data.zpos - 1
+            if requested >= 0:
+                cfg.data.zpos = requested
+            if getData('state,manual_mode'):
+                # cfg.project_tab.MA_layer_left()
+                # self.initAllViewers()
+                cfg.project_tab.initNeuroglancer()
+            else:
+                cfg.emViewer.set_layer(requested)
+            self.dataUpdateWidgets()
 
 
     def layer_right(self):
         logger.info('')
-        if cfg.data:
-            if cfg.project_tab:
-                requested = cfg.data.zpos + 1
-                if requested < len(cfg.data):
-                    cfg.data.zpos = requested
-                if getData('state,manual_mode'):
-                    cfg.project_tab.MA_layer_right()
-                else:
-                    cfg.emViewer.set_layer(requested)
-                self.dataUpdateWidgets()
+        if self._isProjectTab():
+            requested = cfg.data.zpos + 1
+            if requested < len(cfg.data):
+                cfg.data.zpos = requested
+            if getData('state,manual_mode'):
+                # cfg.project_tab.MA_layer_right()
+                # self.initAllViewers()
+                cfg.project_tab.initNeuroglancer()
+            else:
+                cfg.emViewer.set_layer(requested)
+            self.dataUpdateWidgets()
 
 
     def scale_down(self) -> None:
@@ -1312,44 +1198,36 @@ class MainWindow(QMainWindow):
         logger.info('reset_groupbox_styles:')
 
 
-    def updateToolbar(self):
-        caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        if self._isProjectTab():
-
-            if cfg.data['state']['mode'] == 'stack':
-                setData('ui,ng_layout', '4panel')
-                self.combo_mode.setCurrentIndex(0)
-            elif cfg.data['state']['mode'] == 'comparison':
-                setData('ui,ng_layout', 'xy')
-                self.combo_mode.setCurrentIndex(1)
-
-            self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
-            if cfg.data.is_aligned_and_generated():
-                self.aligned_label.show()
-                self.generated_label.show()
-                self.unaligned_label.hide()
-            elif cfg.data.is_aligned():
-                self.aligned_label.show()
-                self.generated_label.hide()
-                self.unaligned_label.hide()
-            else:
-                self.aligned_label.hide()
-                self.generated_label.hide()
-                self.unaligned_label.show()
-
-        if self._isProjectTab() or self._isZarrTab():
-            if cfg.tensor:
-                self.label_toolbar_resolution.setText(f'{cfg.tensor.shape}')
-                self.label_toolbar_resolution.show()
-            else:
-                self.label_toolbar_resolution.hide()
-
-        else:
-            self.aligned_label.hide()
-            self.unaligned_label.hide()
-            self.generated_label.hide()
-            self.label_toolbar_resolution.hide()
+    # def updateToolbar(self):
+    #     caller = inspect.stack()[1].function
+    #     logger.info(f'caller: {caller}')
+    #     if self._isProjectTab():
+    #
+    #         if cfg.data['state']['mode'] == 'stack':
+    #             setData('state,ng_layout', '4panel')
+    #             self.combo_mode.setCurrentIndex(0)
+    #         elif cfg.data['state']['mode'] == 'comparison':
+    #             setData('state,ng_layout', 'xy')
+    #             self.combo_mode.setCurrentIndex(1)
+    #
+    #         # self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
+    #         if cfg.data.is_aligned_and_generated():
+    #             cfg.project_tab.aligned_label.show()
+    #             cfg.project_tab.generated_label.show()
+    #             cfg.project_tab.unaligned_label.hide()
+    #         elif cfg.data.is_aligned():
+    #             cfg.project_tab.aligned_label.show()
+    #             cfg.project_tab.generated_label.hide()
+    #             cfg.project_tab.unaligned_label.hide()
+    #         else:
+    #             cfg.project_tab.aligned_label.hide()
+    #             cfg.project_tab.generated_label.hide()
+    #             cfg.project_tab.unaligned_label.show()
+    #
+    #     else:
+    #         cfg.project_tab.aligned_label.hide()
+    #         cfg.project_tab.unaligned_label.hide()
+    #         cfg.project_tab.generated_label.hide()
 
     @Slot()
     def dataUpdateWidgets(self, ng_layer=None) -> None:
@@ -1373,6 +1251,10 @@ class MainWindow(QMainWindow):
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
+
+                # self.statusBar.showMessage(cfg.data.name_base(), 1000)
+
+                self.statusBar.showMessage(cfg.data.name_base())
 
                 cfg.project_tab._overlayRect.hide()
                 cfg.project_tab._overlayLab.hide()
@@ -1400,7 +1282,7 @@ class MainWindow(QMainWindow):
                 if getData('state,manual_mode'):
                     cfg.project_tab.dataUpdateMA()
                     # if prev_loc != cfg.data.zpos:
-                    cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
+                    # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
                     cfg.project_tab.set_method_label_text()
 
                 if cfg.project_tab._tabs.currentIndex() == 2:
@@ -1475,14 +1357,14 @@ class MainWindow(QMainWindow):
                     for x in range(2):
                         for y in range(3):
                             if y == 0:
-                                afm_txt.append(('%.3f' % afm[x][y]).ljust(8))
-                                cafm_txt.append(('%.3f' % cafm[x][y]).ljust(8))
+                                afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
+                                cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
                             elif y == 1:
-                                afm_txt.append(('%.3f' % afm[x][y]).rjust(8))
-                                cafm_txt.append(('%.3f' % afm[x][y]).rjust(8))
+                                afm_txt.append(('%.2f' % afm[x][y]).rjust(8))
+                                cafm_txt.append(('%.2f' % afm[x][y]).rjust(8))
                             else:
-                                afm_txt.append(('%.3f' % afm[x][y]).rjust(11))
-                                cafm_txt.append(('%.3f' % cafm[x][y]).rjust(11))
+                                afm_txt.append(('%.2f' % afm[x][y]).rjust(11))
+                                cafm_txt.append(('%.2f' % cafm[x][y]).rjust(11))
                             if (x == 0) and (y == 2):
                                 afm_txt.append(f'{nl}')
                                 cafm_txt.append(f'{nl}')
@@ -1560,24 +1442,24 @@ class MainWindow(QMainWindow):
             self.notesTextEdit.setPlaceholderText('Enter notes about anything here...')
         self.notes.update()
 
-    def updateShaderText(self):
-        # caller = inspect.stack()[1].function
-        logger.info('')
-        self.shaderText.clear()
-        if self._isProjectTab():
-            self.shaderText.setPlainText(cfg.data['rendering']['shader'])
+    # def updateShaderText(self):
+    #     # caller = inspect.stack()[1].function
+    #     logger.info('')
+    #     self.shaderText.clear()
+    #     if self._isProjectTab():
+    #         self.shaderText.setPlainText(cfg.data['rendering']['shader'])
 
-    def onShaderApply(self):
-        # caller = inspect.stack()[1].function
-        logger.info('')
-        if self._isProjectTab():
-            # cfg.data.set_brightness(float(self.brightnessLE.text()))
-            cfg.data.brightness = float(self.brightnessLE.text())
-            # cfg.data.set_contrast(float(self.contrastLE.text()))
-            cfg.data.contrast = float(self.contrastLE.text())
-            cfg.data['rendering']['shader'] = self.shaderText.toPlainText()
-            cfg.project_tab.initNeuroglancer()
-            self._callbk_unsavedChanges()
+    # def onShaderApply(self):
+    #     # caller = inspect.stack()[1].function
+    #     logger.info('')
+    #     if self._isProjectTab():
+    #         # cfg.data.set_brightness(float(self.brightnessLE.text()))
+    #         cfg.data.brightness = float(self.brightnessLE.text())
+    #         # cfg.data.set_contrast(float(self.contrastLE.text()))
+    #         cfg.data.contrast = float(self.contrastLE.text())
+    #         # cfg.data['rendering']['shader'] = self.shaderText.toPlainText()
+    #         cfg.project_tab.initNeuroglancer()
+    #         self._callbk_unsavedChanges()
 
 
     # def clearAffineWidget(self):
@@ -1757,6 +1639,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
+        logger.critical('caller: %s' % str(caller))
         if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
             return
         requested = self._sectionSlider.value()
@@ -1767,7 +1650,10 @@ class MainWindow(QMainWindow):
             cfg.data.zpos = requested
             if getData('state,manual_mode'):
                 cfg.project_tab.initNeuroglancer()
-            cfg.emViewer.loc = requested
+            # cfg.emViewer.loc = requested
+            else:
+                for v in self.get_viewers():
+                    v.set_layer(requested)
             self.dataUpdateWidgets()
 
         try:     self._jumpToLineedit.setText(str(requested))
@@ -1814,48 +1700,15 @@ class MainWindow(QMainWindow):
         logger.critical(f'Changing Scales (caller: {caller})...')
         if not self._working:
             if caller != 'OnStartProject':
-                # self.jump_to(cfg.data.zpos)
-                self.updateToolbar()
-                self.updateEnabledButtons()
-                self._bbToggle.setChecked(cfg.data.has_bb())
-                self.dataUpdateWidgets()
-                self._showSNRcheck()
-                cfg.project_tab.refreshTab()
-
-
-    def fn_ng_layout_combobox(self) -> None:
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        if getData('state,manual_mode'):
-            return
-        if caller in ('main','<lambda>'):
-            if cfg.data:
-                if self._isProjectTab() or self._isZarrTab():
-                    choice = self.comboboxNgLayout.currentText()
-                    cfg.data['ui']['ng_layout'] = choice
-
-                    try:
-                        self.hud("Setting Neuroglancer Layout ['%s']... " % choice)
-                        layout_actions = {
-                            'xy': self.ngLayout1Action,
-                            'yz': self.ngLayout2Action,
-                            'xz': self.ngLayout3Action,
-                            'xy-3d': self.ngLayout4Action,
-                            'yz-3d': self.ngLayout5Action,
-                            'xz-3d': self.ngLayout6Action,
-                            '3d': self.ngLayout7Action,
-                            '4panel': self.ngLayout8Action
-                        }
-                        layout_actions[choice].setChecked(True)
-                        if cfg.project_tab:
-                            # cfg.project_tab.updateNeuroglancer(nglayout=choice)
-                            cfg.project_tab.updateNeuroglancer()
-                        elif cfg.zarr_tab:
-                            cfg.zarr_tab.load()
-                         # cfg.project_tab.refreshNeuroglancerURL()
-                    except:
-                        print_exception()
-                        logger.error('Unable To Change Neuroglancer Layout')
+                if self._isProjectTab():
+                    # self.jump_to(cfg.data.zpos)
+                    # self.updateToolbar()
+                    cfg.project_tab.updateProjectLabels()
+                    self.updateEnabledButtons()
+                    self._bbToggle.setChecked(cfg.data.has_bb())
+                    self.dataUpdateWidgets()
+                    self._showSNRcheck()
+                    cfg.project_tab.refreshTab()
 
 
     def export_afms(self):
@@ -2080,8 +1933,8 @@ class MainWindow(QMainWindow):
             if not ng.server.is_server_running():
                 self.warn('Neuroglancer is not running.')
 
-    def set_nglayout_combo_text(self, layout:str):
-        self.comboboxNgLayout.setCurrentText(layout)
+    # def set_nglayout_combo_text(self, layout:str):
+    #     self.comboboxNgLayout.setCurrentText(layout)
 
 
     def onStartProject(self, mendenhall=False):
@@ -2090,21 +1943,17 @@ class MainWindow(QMainWindow):
 
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
-        logger.critical('Loading project...')
+        logger.critical('\n\nLoading project...\n')
 
-        if cfg.data['state']['mode'] == 'stack':
-            cfg.data['ui']['ng_layout'] = '4panel'
-            self.combo_mode.setCurrentIndex(0)
-        elif cfg.data['state']['mode'] == 'comparison':
-            cfg.data['ui']['ng_layout'] = 'xy'
-            self.combo_mode.setCurrentIndex(1)
+        setData('state,manual_mode', False)
+        setData('state,mode', 'comparison')
+        setData('state,ng_layout', 'xy')
+        self.combo_mode.setCurrentIndex(1)
 
         self.updateDtWidget()
         cfg.project_tab.updateTreeWidget()
         cfg.data.set_defaults()
-        setData('state,mode', 'comparison')
-        setData('state,manual_mode', False)
-        self.updateToolbar()
+
         cfg.project_tab.initNeuroglancer()
         self.tell('Updating UI...')
         self.dataUpdateWidgets()
@@ -2116,7 +1965,6 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.updateMenus()
         self._resetSlidersAndJumpInput()
-        # self.updateToolbar()
         self.reload_scales_combobox()
         self.enableAllTabs()
         self.updateNotes()
@@ -2237,41 +2085,41 @@ class MainWindow(QMainWindow):
         if cfg.zarr_tab:
             cfg.zarr_tab.load()
 
-    def import_multiple_images(self):
-        ''' Import images into data '''
-        logger.info('>>>> import_multiple_images >>>>')
-        self.tell('Import Images:')
-        filenames = natural_sort(import_images_dialog())
-
-        if not filenames:
-            logger.warning('No Images Were Selected')
-            self.warn('No Images Were Selected')
-            return 1
-
-        cfg.data.set_source_path(os.path.dirname(filenames[0])) #Critical!
-        self.tell(f'Importing {len(filenames)} Images...')
-        logger.info(f'Selected Images: \n{filenames}')
-
-        try:
-            for f in filenames:
-                if f:
-                    cfg.data.append_image(f)
-                else:
-                    cfg.data.append_empty()
-        except:
-            print_exception()
-            self.err('There Was A Problem Importing Selected Files')
-        else:
-            self.hud.done()
-
-        if len(cfg.data) > 0:
-            img_size = cfg.data.image_size(s='scale_1')
-            self.tell(f'Dimensions: {img_size[0]}✕{img_size[1]}')
-            cfg.data.link_reference_sections()
-        else:
-            self.warn('No Images Were Imported')
-
-        logger.info('<<<< import_multiple_images <<<<')
+    # def import_multiple_images(self):
+    #     ''' Import images into data '''
+    #     logger.info('>>>> import_multiple_images >>>>')
+    #     self.tell('Import Images:')
+    #     filenames = natural_sort(import_images_dialog())
+    #
+    #     if not filenames:
+    #         logger.warning('No Images Were Selected')
+    #         self.warn('No Images Were Selected')
+    #         return 1
+    #
+    #     cfg.data.set_source_path(os.path.dirname(filenames[0])) #Critical!
+    #     self.tell(f'Importing {len(filenames)} Images...')
+    #     logger.info(f'Selected Images: \n{filenames}')
+    #
+    #     try:
+    #         for f in filenames:
+    #             if f:
+    #                 cfg.data.append_image(f)
+    #             else:
+    #                 cfg.data.append_empty()
+    #     except:
+    #         print_exception()
+    #         self.err('There Was A Problem Importing Selected Files')
+    #     else:
+    #         self.hud.done()
+    #
+    #     if len(cfg.data) > 0:
+    #         img_size = cfg.data.image_size(s='scale_1')
+    #         self.tell(f'Dimensions: {img_size[0]}✕{img_size[1]}')
+    #         cfg.data.link_reference_sections()
+    #     else:
+    #         self.warn('No Images Were Imported')
+    #
+    #     logger.info('<<<< import_multiple_images <<<<')
 
 
     @Slot()
@@ -2488,44 +2336,29 @@ class MainWindow(QMainWindow):
 
     def incrementZoomOut(self):
         logger.info('')
-
         if getData('state,manual_mode'):
-            # cfg.project_tab.MA_viewer_ref.set_zoom(cfg.emViewer.zoom() + .2)
             new_cs_scale = cfg.project_tab.MA_viewer_ref.zoom() * 1.1
             logger.info(f'new_cs_scale: {new_cs_scale}')
-            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
             cfg.project_tab.MA_viewer_base.set_zoom(new_cs_scale)
-            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
         else:
-            # cfg.emViewer.set_zoom(cfg.emViewer.zoom() + .2)
             new_cs_scale = cfg.emViewer.zoom() * 1.1
             logger.info(f'new_cs_scale: {new_cs_scale}')
-            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
             cfg.emViewer.set_zoom(new_cs_scale)
-            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
+
+        cfg.project_tab.zoomSlider.setValue( 1 / new_cs_scale )
 
 
     def incrementZoomIn(self):
         logger.info('')
-
         if getData('state,manual_mode'):
-            # cfg.project_tab.MA_viewer_ref.set_zoom(cfg.emViewer.zoom() - .2)
             new_cs_scale = cfg.project_tab.MA_viewer_ref.zoom() * 0.9
             logger.info(f'new_cs_scale: {new_cs_scale}')
-            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
             cfg.project_tab.MA_viewer_base.set_zoom(new_cs_scale)
-            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
         else:
-            # cfg.emViewer.set_zoom(cfg.emViewer.zoom() - .2)
             new_cs_scale = cfg.emViewer.zoom() * 0.9
             logger.info(f'new_cs_scale: {new_cs_scale}')
-            # cfg.project_tab.zoomSlider.setValue(1 / float(sqrt(new_cs_scale)))
             cfg.emViewer.set_zoom(new_cs_scale)
-            cfg.project_tab.zoomSlider.setValue(new_cs_scale)
-
-
-
-
+        cfg.project_tab.zoomSlider.setValue( 1 / new_cs_scale )
 
 
     def initShortcuts(self):
@@ -2535,8 +2368,6 @@ class MainWindow(QMainWindow):
             (QKeySequence.MoveToNextChar, self.layer_right),
             (QKeySequence.MoveToPreviousLine, self.incrementZoomIn),
             (QKeySequence.MoveToNextLine, self.incrementZoomOut),
-
-
             # (QKeySequence.MoveToPreviousChar, self.scale_down),
             # (QKeySequence.MoveToNextChar, self.scale_up),
             (Qt.Key_K, self._callbk_skipChanged),
@@ -2737,7 +2568,6 @@ class MainWindow(QMainWindow):
                     self.enter_man_mode()
                 else:
                     self.exit_man_mode()
-                # self.updateToolbar()
 
     def enter_man_mode(self):
         logger.critical('')
@@ -2764,9 +2594,11 @@ class MainWindow(QMainWindow):
         self.tell('Exiting Manual Align Mode...')
         self.setWindowTitle(self.window_title)
         if getData('state,previous_mode') == 'stack':
+            setData('state,ng_layout', '4panel')
             setData('state,mode', 'stack')
             self.combo_mode.setCurrentIndex(0)
         elif getData('state,previous_mode') == 'comparison':
+            setData('state,ng_layout', 'xy')
             setData('state,mode', 'comparison')
             self.combo_mode.setCurrentIndex(1)
         else:
@@ -2783,7 +2615,6 @@ class MainWindow(QMainWindow):
         cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
         cfg.project_tab.MA_splitter.hide()
         cfg.project_tab.w_ng_display_ext.show()
-        cfg.project_tab.ngVertLab.setStyleSheet('')
         cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
         cfg.project_tab.initNeuroglancer()
 
@@ -2927,7 +2758,7 @@ class MainWindow(QMainWindow):
 
 
     def onComboModeChange(self):
-        logger.info('')
+        logger.critical('onComboModeChange:')
         caller = inspect.stack()[1].function
         if self._isProjectTab():
             if cfg.project_tab._tabs.currentIndex() == 0:
@@ -2945,12 +2776,10 @@ class MainWindow(QMainWindow):
                             self.exit_man_mode()
                     if index == 0:
                         cfg.data['state']['mode'] = 'stack'
-                        cfg.data['ui']['arrangement'] = 'stack'
-                        cfg.data['ui']['ng_layout'] = '4panel'
+                        cfg.data['state']['ng_layout'] = '4panel'
                     elif index == 1:
                         cfg.data['state']['mode'] = 'comparison'
-                        cfg.data['ui']['arrangement'] = 'comparison'
-                        cfg.data['ui']['ng_layout'] = 'xy'
+                        cfg.data['state']['ng_layout'] = 'xy'
                     elif index == 2:
                         cfg.data['state']['mode'] = 'manual_align'
                         self.enter_man_mode()
@@ -2963,8 +2792,9 @@ class MainWindow(QMainWindow):
         logger.info('')
 
         self.toolbar = QToolBar()
+        self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         # self.toolbar.setFixedHeight(32)
-        self.toolbar.setFixedHeight(30)
+        self.toolbar.setFixedHeight(22)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
@@ -2999,7 +2829,7 @@ class MainWindow(QMainWindow):
         self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
         self._jumpToLineedit.setStatusTip(tip)
         self._jumpToLineedit.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self._jumpToLineedit.setFixedSize(QSize(36, 18))
+        self._jumpToLineedit.setFixedSize(QSize(36, 16))
         self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -3013,7 +2843,7 @@ class MainWindow(QMainWindow):
 
         self._btn_automaticPlayTimer = QPushButton()
         self._btn_automaticPlayTimer.setIconSize(QSize(14,14))
-        self._btn_automaticPlayTimer.setFixedSize(20,20)
+        self._btn_automaticPlayTimer.setFixedSize(20,18)
         self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
         self.automaticPlayTimer = QTimer(self)
         self._btn_automaticPlayTimer.clicked.connect(self.startStopTimer)
@@ -3043,7 +2873,7 @@ class MainWindow(QMainWindow):
         self._fps_spinbox = QDoubleSpinBox()
         self._fps_spinbox.setStyleSheet('font-size: 11px')
         # self._fps_spinbox.setStyleSheet('font-size: 11px')
-        self._fps_spinbox.setFixedHeight(18)
+        self._fps_spinbox.setFixedHeight(16)
         self._fps_spinbox.setMinimum(.5)
         self._fps_spinbox.setMaximum(10)
         self._fps_spinbox.setSingleStep(.2)
@@ -3052,25 +2882,10 @@ class MainWindow(QMainWindow):
         self._fps_spinbox.setStatusTip('Playback Speed (frames/second)')
         self._fps_spinbox.clear()
 
-        '''NG arrangement/layout combobox'''
-        self.comboboxNgLayout = QComboBox(self)
-        self.comboboxNgLayout.setStyleSheet('font-size: 11px')
-        self.comboboxNgLayout.setFixedSize(60,18)
-        self.comboboxNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
-        self.comboboxNgLayout.addItems(items)
-        # self.comboboxNgLayout.currentTextChanged.connect(self.fn_ng_layout_combobox)
-        self.comboboxNgLayout.activated.connect(self.fn_ng_layout_combobox)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 0, 4, 0)
-        hbl.addWidget(self.comboboxNgLayout)
-
         '''scale combobox'''
-        self._ngLayoutWidget = QWidget()
-        self._ngLayoutWidget.setLayout(hbl)
         self._changeScaleCombo = QComboBox(self)
         self._changeScaleCombo.setMinimumWidth(134)
-        self._changeScaleCombo.setFixedHeight(18)
+        self._changeScaleCombo.setFixedHeight(16)
         self._changeScaleCombo.setStyleSheet('font-size: 11px')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
@@ -3082,49 +2897,40 @@ class MainWindow(QMainWindow):
         self._changeScaleWidget = QWidget()
         self._changeScaleWidget.setLayout(hbl)
 
-        self.label_toolbar_resolution = QLabel('<dims>')
-        self.label_toolbar_resolution.setObjectName('label_toolbar_resolution')
-        self.label_toolbar_resolution.setFixedHeight(18)
-        self.label_toolbar_resolution.hide()
-        self.aligned_label = QLabel(' Aligned ')
-        self.aligned_label.setObjectName('green_toolbar_label')
-        self.aligned_label.setFixedHeight(18)
-        self.aligned_label.hide()
-        self.unaligned_label = QLabel(' Not Aligned ')
-        self.unaligned_label.setObjectName('red_toolbar_label')
-        self.unaligned_label.setFixedHeight(18)
-        self.unaligned_label.hide()
-        self.generated_label = QLabel(' Generated ')
-        self.generated_label.setObjectName('green_toolbar_label')
-        self.generated_label.setFixedHeight(18)
-        self.generated_label.hide()
-        # self.extra_header_text_label = QLabel('Match Point Mode')
-        # self.extra_header_text_label.setObjectName('extra_header_text_label')
-        # self.extra_header_text_label.setFixedHeight(20)
-        # self.extra_header_text_label.hide()
+        self.controlsButton = QPushButton('Controls')
+        self.controlsButton.setStatusTip('Show Controls')
+        self.controlsButton.setFixedHeight(18)
+        self.controlsButton.setFixedWidth(70)
+        self.controlsButton.setIcon(qta.icon('ei.adjust-alt', color=ICON_COLOR))
+        self.controlsButton.clicked.connect(self._callbk_showHideControls)
 
-        self._al_unal_label_widget = QWidget()
-        hbl = HBL()
-        hbl.setSpacing(8)
-        hbl.setContentsMargins(6,0,6,0)
-        hbl.addWidget(self.label_toolbar_resolution)
-        hbl.addWidget(self.aligned_label)
-        hbl.addWidget(self.unaligned_label)
-        hbl.addWidget(self.generated_label)
-        # hbl.addWidget(self.extra_header_text_label)
-        self._al_unal_label_widget.setLayout(hbl)
+
+        self.notesButton = QPushButton('Notes')
+        self.notesButton.setStatusTip('Show Notepad')
+        self.notesButton.setFixedHeight(18)
+        self.notesButton.setFixedWidth(70)
+        self.notesButton.setIcon(qta.icon('mdi.notebook-edit', color=ICON_COLOR))
+        self.notesButton.clicked.connect(self._callbk_showHideNotes)
+
+
+        self.pythonButton = QPushButton('Python')
+        self.pythonButton.setStatusTip('Show Python Console')
+        self.pythonButton.setFixedHeight(18)
+        self.pythonButton.setFixedWidth(70)
+        self.pythonButton.setIcon(qta.icon('mdi.language-python', color=ICON_COLOR))
+        self.pythonButton.clicked.connect(self._callbk_showHidePython)
 
         self._detachNgButton = QPushButton()
-        self._detachNgButton.setFixedSize(20,20)
+        self._detachNgButton.setFixedSize(18,18)
         self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color=ICON_COLOR))
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
-        self._detachNgButton.setStatusTip('Detach Neuroglancer (open in a separate window)')
+        self._detachNgButton.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
 
         # self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self._btn_refreshTab)
         self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self.combo_mode)
-        self.toolbar.addWidget(self._al_unal_label_widget)
+        # self.toolbar.addWidget(self._al_unal_label_widget)
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.toolbar.addWidget(w)
@@ -3132,11 +2938,13 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self._jumpToSectionWidget)
         self.toolbar.addWidget(self._sectionSliderWidget)
         self.toolbar.addWidget(self._fps_spinbox)
-        self.toolbar.addWidget(self._ngLayoutWidget)
         self.toolbar.addWidget(self._changeScaleWidget)
 
         # if cfg.DEV_MODE:
         #     self.toolbar.addWidget(self.profilingTimerButton)
+        self.toolbar.addWidget(self.controlsButton)
+        self.toolbar.addWidget(self.notesButton)
+        self.toolbar.addWidget(self.pythonButton)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
 
@@ -3227,6 +3035,17 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.clear()
         QApplication.restoreOverrideCursor()
         tabtype = self._getTabType()
+        self.statusBar.setStyleSheet("""
+                font-size: 10px;
+                font-weight: 600;
+                color: #141414;
+                background-color: #ede9e8;
+                margin: 0px;
+                padding: 0px;
+                """)
+
+        # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+
         if tabtype == 'OpenProject':
             configure_project_paths()
             self._getTabObject().user_projects.set_data()
@@ -3235,26 +3054,25 @@ class MainWindow(QMainWindow):
             logger.critical('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
-            # cfg.emViewer = cfg.project_tab.viewer
+            cfg.emViewer = cfg.project_tab.viewer
             cfg.zarr_tab = None
             self._lastRefresh = 0
             self.cpanel.show()
             # self.updateDtWidget() # 0212 #0301-
-
-            if self.shaderCodeWidget.isVisible():
-                self.updateShaderText()
-
+            # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: #222222; }""")
+            self.statusBar.setStyleSheet("""
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: #f3f6fb;
+                    background-color: #222222;
+                    margin: 0px;
+                    padding: 0px;
+                    """)
             if cfg.data['state']['mode'] == 'stack':
-                self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
-                # cfg.data['ui']['ng_layout'] = '4panel'
                 self.combo_mode.setCurrentIndex(0)
             elif cfg.data['state']['mode'] == 'comparison':
-                self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
-                # cfg.data['ui']['ng_layout'] = 'xy'
                 self.combo_mode.setCurrentIndex(1)
-            self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
-            self.brightnessSlider.setValue(cfg.data.brightness)
-            self.contrastSlider.setValue(cfg.data.contrast)
+            # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
             self._bbToggle.setChecked(cfg.data.has_bb()) #0309+
             cfg.project_tab.initNeuroglancer()
@@ -3263,12 +3081,12 @@ class MainWindow(QMainWindow):
             logger.critical('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.zarr_tab.viewer
-            self.set_nglayout_combo_text(layout='4panel')
+            # self.set_nglayout_combo_text(layout='4panel')
             cfg.zarr_tab.viewer.bootstrap()
+
 
         self.updateMenus()
         self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
-        self.updateToolbar()
         self.reload_scales_combobox()
         self.updateEnabledButtons()
         self.updateNotes()
@@ -3445,20 +3263,15 @@ class MainWindow(QMainWindow):
         menu.addAction(action)
 
 
-    def fn_ngShowHideUiControls(self):
-        logger.info('')
-        if self._isProjectTab():
-            try:
-                setOpt('neuroglancer,SHOW_UI_CONTROLS', self.ngShowUiControlsAction.isChecked())
-                cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-                cfg.project_tab.updateUISpacing()
-                self.ngShowUiControlsAction.setText(
-                    ('Show NG UI Controls', 'Hide NG UI Controls')[self.ngShowUiControlsAction.isChecked()])
-                # self.update_ng()
-                # cfg.emViewer.initViewer()
-                self.initAllViewers()
-            except:
-                print_exception()
+    # def fn_ngShowHideUiControls(self):
+    #     logger.info('')
+    #     if self._isProjectTab():
+    #         setOpt('neuroglancer,SHOW_UI_CONTROLS', self.ngShowUiControlsAction.isChecked())
+    #         cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+    #         cfg.project_tab.updateUISpacing()
+    #         self.ngShowUiControlsAction.setText(
+    #             ('Show NG UI Controls', 'Hide NG UI Controls')[self.ngShowUiControlsAction.isChecked()])
+    #         self.initAllViewers()
 
 
     def initAllViewers(self):
@@ -3541,42 +3354,76 @@ class MainWindow(QMainWindow):
         self.addAction(self.exitAppAction)
         fileMenu.addAction(self.exitAppAction)
 
+
         viewMenu = self.menu.addMenu("View")
 
-        self.ngShowScaleBarAction = QAction('Show Ng Scale Bar', self)
+        self.ngShowScaleBarAction = QAction(self)
+        def fn():
+            if self._isProjectTab():
+                opt = self.ngShowScaleBarAction.isChecked()
+                setOpt('neuroglancer,SHOW_SCALE_BAR', opt)
+                # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[opt])
+                # for v in self.get_viewers():
+                #     v.updateScaleBar()
+                if cfg.emViewer:
+                    cfg.emViewer.updateScaleBar()
         self.ngShowScaleBarAction.setCheckable(True)
         self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        self.ngShowScaleBarAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SCALE_BAR', val))
-        self.ngShowScaleBarAction.triggered.connect(self.update_ng)
+        # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[getOpt('neuroglancer,SHOW_SCALE_BAR')])
+        self.ngShowScaleBarAction.setText('Scale Bar')
+        self.ngShowScaleBarAction.triggered.connect(fn)
         viewMenu.addAction(self.ngShowScaleBarAction)
 
-        self.ngShowAxisLinesAction = QAction('Show Ng Axis nlines', self)
+
+        self.ngShowAxisLinesAction = QAction(self)
+        def fn():
+            if self._isProjectTab():
+                opt = self.ngShowAxisLinesAction.isChecked()
+                setOpt('neuroglancer,SHOW_AXIS_LINES', opt)
+                # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[opt])
+                # for v in self.get_viewers():
+                #     v.updateAxisLines()
+                if cfg.emViewer:
+                    cfg.emViewer.updateAxisLines()
+        self.ngShowAxisLinesAction.triggered.connect(fn)
         self.ngShowAxisLinesAction.setCheckable(True)
         self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
-        self.ngShowAxisLinesAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_AXIS_LINES', val))
-        self.ngShowAxisLinesAction.triggered.connect(self.update_ng)
+        # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[getOpt('neuroglancer,SHOW_AXIS_LINES')])
+        self.ngShowAxisLinesAction.setText('Axis Lines')
         viewMenu.addAction(self.ngShowAxisLinesAction)
 
-        # self.ngShowUiControlsAction = QAction('Show Ng UI Controls', self)
+
         self.ngShowUiControlsAction = QAction(self)
+        def fn():
+            if self._isProjectTab():
+                opt = self.ngShowUiControlsAction.isChecked()
+                setOpt('neuroglancer,SHOW_UI_CONTROLS', opt)
+                cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+                cfg.project_tab.updateUISpacing()
+                # self.ngShowUiControlsAction.setText(('Show NG UI Controls', 'Hide NG UI Controls')[opt])
+                # self.initAllViewers()
+                if cfg.emViewer:
+                    cfg.emViewer.updateUIControls()
+        self.ngShowUiControlsAction.triggered.connect(fn)
         self.ngShowUiControlsAction.setCheckable(True)
         self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        self.ngShowUiControlsAction.setText(
-                    ('Show NG UI Controls', 'Hide NG UI Controls')[self.ngShowUiControlsAction.isChecked()])
-
-        # self.ngShowUiControlsAction.triggered.connect(self.ng_toggle_show_ui_controls)
-        # self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
-        # self.ngShowUiControlsAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_UI_CONTROLS', val))
-        # self.ngShowUiControlsAction.triggered.connect(self.update_ng)
-        self.ngShowUiControlsAction.triggered.connect(self.fn_ngShowHideUiControls)
-        # self.ngShowAxisLinesAction.triggered.connect(cfg.project_tab)
+        # self.ngShowUiControlsAction.setText(('Show NG UI Controls', 'Hide NG UI Controls')[getOpt('neuroglancer,SHOW_UI_CONTROLS')])
+        self.ngShowUiControlsAction.setText('NG UI Controls')
         viewMenu.addAction(self.ngShowUiControlsAction)
 
-        self.ngShowYellowFrameAction = QAction('Show Yellow Frame', self)
+        self.ngShowYellowFrameAction = QAction(self)
+        def fn():
+            if self._isProjectTab():
+                opt = self.ngShowYellowFrameAction.isChecked()
+                setOpt('neuroglancer,SHOW_YELLOW_FRAME', opt)
+                # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[opt])
+                if cfg.emViewer:
+                    cfg.emViewer.updateDefaultAnnotations()
         self.ngShowYellowFrameAction.setCheckable(True)
         self.ngShowYellowFrameAction.setChecked(getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
-        self.ngShowYellowFrameAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_YELLOW_FRAME', val))
-        self.ngShowYellowFrameAction.triggered.connect(self.update_ng)
+        # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
+        self.ngShowYellowFrameAction.setText('Boundary')
+        self.ngShowYellowFrameAction.triggered.connect(fn)
         viewMenu.addAction(self.ngShowYellowFrameAction)
 
         maViewMenu = viewMenu.addMenu('Manual Align Mode')
@@ -3584,6 +3431,7 @@ class MainWindow(QMainWindow):
         self.maShowSwimWindowAction = QAction('Show SWIM Window', self)
         self.maShowSwimWindowAction.setCheckable(True)
         self.maShowSwimWindowAction.setChecked(getOpt('neuroglancer,SHOW_SWIM_WINDOW'))
+        # self.maShowSwimWindowAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_SWIM_WINDOW')])
         self.maShowSwimWindowAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SWIM_WINDOW', val))
         def fn():
             if self._isProjectTab():
@@ -3693,10 +3541,10 @@ class MainWindow(QMainWindow):
         ngPerspectiveMenu = ngMenu.addMenu("Perspective")
 
         self.ngLayout1Action = QAction('xy', self)
-        self.ngLayout2Action = QAction('xz', self)
-        self.ngLayout3Action = QAction('yz', self)
-        self.ngLayout4Action = QAction('yz-3d', self)
-        self.ngLayout5Action = QAction('xy-3d', self)
+        self.ngLayout2Action = QAction('yz', self)
+        self.ngLayout3Action = QAction('xz', self)
+        self.ngLayout4Action = QAction('xy-3d', self)
+        self.ngLayout5Action = QAction('yz-3d', self)
         self.ngLayout6Action = QAction('xz-3d', self)
         self.ngLayout7Action = QAction('3d', self)
         self.ngLayout8Action = QAction('4panel', self)
@@ -3706,16 +3554,16 @@ class MainWindow(QMainWindow):
         ngPerspectiveMenu.addAction(self.ngLayout4Action)
         ngPerspectiveMenu.addAction(self.ngLayout5Action)
         ngPerspectiveMenu.addAction(self.ngLayout6Action)
-        ngPerspectiveMenu.addAction(self.ngLayout7Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout7Action)
         ngPerspectiveMenu.addAction(self.ngLayout8Action)
-        self.ngLayout1Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xy'))
-        self.ngLayout2Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xz'))
-        self.ngLayout3Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('yz'))
-        self.ngLayout4Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('yz-3d'))
-        self.ngLayout5Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xy-3d'))
-        self.ngLayout6Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xz-3d'))
-        self.ngLayout6Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('3d'))
-        self.ngLayout8Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('4panel'))
+        # self.ngLayout1Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xy'))
+        # self.ngLayout2Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xz'))
+        # self.ngLayout3Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('yz'))
+        # self.ngLayout4Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('yz-3d'))
+        # self.ngLayout5Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xy-3d'))
+        # self.ngLayout6Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xz-3d'))
+        self.ngLayout7Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('3d'))
+        # self.ngLayout8Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('4panel'))
         ngLayoutActionGroup = QActionGroup(self)
         ngLayoutActionGroup.setExclusive(True)
         ngLayoutActionGroup.addAction(self.ngLayout1Action)
@@ -3726,15 +3574,14 @@ class MainWindow(QMainWindow):
         ngLayoutActionGroup.addAction(self.ngLayout6Action)
         ngLayoutActionGroup.addAction(self.ngLayout7Action)
         ngLayoutActionGroup.addAction(self.ngLayout8Action)
-        # self.ngLayout1Action.setCheckable(True)
-        # self.ngLayout1Action.setChecked(True)
-        # self.ngLayout2Action.setCheckable(True)
-        # self.ngLayout3Action.setCheckable(True)
-        # self.ngLayout4Action.setCheckable(True)
-        # self.ngLayout5Action.setCheckable(True)
-        # self.ngLayout6Action.setCheckable(True)
-        # self.ngLayout7Action.setCheckable(True)
-        # self.ngLayout8Action.setCheckable(True)
+        self.ngLayout1Action.setCheckable(True)
+        self.ngLayout2Action.setCheckable(True)
+        self.ngLayout3Action.setCheckable(True)
+        self.ngLayout4Action.setCheckable(True)
+        self.ngLayout5Action.setCheckable(True)
+        self.ngLayout6Action.setCheckable(True)
+        self.ngLayout7Action.setCheckable(True)
+        self.ngLayout8Action.setCheckable(True)
 
         ngShaderMenu = ngMenu.addMenu("Experimental Shaders")
 
@@ -4568,10 +4415,17 @@ class MainWindow(QMainWindow):
 
 
     def splittersHaveMoved(self, pos, index):
-        # logger.info('')
-        self.correlation_signals.setMinimumHeight(16)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
+        logger.info('')
+        # self.correlation_signals.setMinimumHeight(16)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
 
+        if not self._dev_console.isVisible():
+            self._forceHidePython()
 
+        if not self.cpanelMainWidgets.isVisible():
+            self._forceHideControls()
+
+        if not self.notes.isVisible():
+            self._forceHideNotes()
 
         if self.correlation_signals.isVisible():
             self.updateCorrSpotsDrawer()
@@ -4587,10 +4441,10 @@ class MainWindow(QMainWindow):
     #         self._btn_show_hide_corr_spots.setIcon(qta.icon(icon, color='#f3f6fb'))
     #         self._btn_show_hide_corr_spots.setText(label)
     #
-    #     if self.shaderCodeWidget.isHidden():
+    #     if self.shaderWidget.isHidden():
     #         label = ' Shader'
     #         icon = 'mdi.format-paint'
-    #         self.shaderCodeWidget.hide()
+    #         self.shaderWidget.hide()
     #         self._btn_show_hide_shader.setIcon(qta.icon(icon, color='#f3f6fb'))
     #         self._btn_show_hide_shader.setText(label)
     #
@@ -4678,7 +4532,7 @@ class MainWindow(QMainWindow):
         self._processMonitorWidget = QWidget()
         self._processMonitorWidget.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
         lab = QLabel('Process Monitor')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab.setStyleSheet('font-size: 9px; font-weight: 500; color: #141414;')
         lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
         vbl = QVBoxLayout()
         vbl.setSpacing(1)
@@ -4966,16 +4820,27 @@ class MainWindow(QMainWindow):
                 self.notes.update()
 
         self.notes = QWidget()
-        self.notes.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px; ')
+        self.notes.setStyleSheet("""
+        color: #f3f6fb; 
+        """)
         # self.notesTextEdit = QPlainTextEdit()
         self.notesTextEdit = QTextEdit()
-        self.notesTextEdit.setStyleSheet('color: #f3f6fb; font-size: 11px; border-width: 0px; border-radius: 0px;')
+        self.notesTextEdit.setStyleSheet("""
+        background-color: #f3f6fb; 
+        color: #141414;
+        font-size: 11px; 
+        border-width: 0px; 
+        border-radius: 5px;
+        """)
         self.notesTextEdit.setPlaceholderText('Type any notes here...')
         self.notesTextEdit.textChanged.connect(fn)
         lab = QLabel('Notes')
-        lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 2px; margin-top: 2px;')
+        # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 2px; margin-top: 2px;')
+        lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin: 2px;')
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(4, 0, 4, 0)
+        vbl.setSpacing(0)
+        # vbl.setContentsMargins(4, 0, 4, 0)
+        vbl.setContentsMargins(1, 1, 1, 1)
         vbl.addWidget(lab)
         vbl.addWidget(self.notesTextEdit)
         self.notes.setLayout(vbl)
@@ -4999,7 +4864,7 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_shader.setFixedHeight(18)
         self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
         self._btn_show_hide_shader.setStatusTip(tip)
-        self._btn_show_hide_shader.clicked.connect(self._callbk_showHideShader)
+        # self._btn_show_hide_shader.clicked.connect(self._callbk_showHideShader)
         # self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#f3f6fb'))
         self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#380282'))
         self._btn_show_hide_shader.setIconSize(QSize(12, 12))
@@ -5021,7 +4886,9 @@ class MainWindow(QMainWindow):
 
 
         self._showHideFeatures = QWidget()
-        self._showHideFeatures.setObjectName('_showHideFeatures')
+        self._showHideFeatures.setStyleSheet("""
+        QWidget {background-color: #222222; }
+        QPushButton {background-color: #ede9e8; }""")
         hbl = QHBoxLayout()
         hbl.setSpacing(1)
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -5113,8 +4980,8 @@ class MainWindow(QMainWindow):
 
         # self.correlation_signals = QWidget()
         self.correlation_signals = QScrollArea()
-        self.correlation_signals.setMinimumHeight(100)
-        self.correlation_signals.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
+        self.correlation_signals.setMinimumHeight(64)
+        self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; ')
         self.correlation_signals.setWidgetResizable(True)
         w = QWidget()
         vbl = VBL()
@@ -5122,6 +4989,7 @@ class MainWindow(QMainWindow):
         vbl.addWidget(self.detailsTitle)
         vbl.addWidget(self.corr_spot_thumbs)
         w.setLayout(vbl)
+        # w.setMinimumHeight(80)
         # self.correlation_signals.setLayout(vbl)
         # self.correlation_signals.hide()
         self.correlation_signals.setWidget(w)
@@ -5131,196 +4999,15 @@ class MainWindow(QMainWindow):
         # self.detailsWidget = QScrollArea()
         # self.detailsWidget.setWidgetResizable(True)
 
-        self._btn_volumeRendering = QPushButton('Volume')
-        self._btn_applyShader = QPushButton('Apply')
-        self._btn_applyShader.clicked.connect(self.onShaderApply)
-
-        self._btn_resetBrightnessAndContrast = QPushButton('Reset')
-        def fn():
-            reset_val = 0.0
-            cfg.data.brightness = reset_val
-            cfg.data.contrast = reset_val
-            self.brightnessSlider.setValue(cfg.data.brightness)
-            self.contrastSlider.setValue(cfg.data.contrast)
-            if self._isProjectTab():
-                cfg.data['rendering']['shader'] = cfg.SHADER
-                self.updateShaderText()
-                # cfg.project_tab.updateNeuroglancer()
-                cfg.project_tab.initNeuroglancer()
-
-        self._btn_resetBrightnessAndContrast.clicked.connect(fn)
-
-
-        self.shaderCodeWidget = QWidget()
-        # self.shaderCodeWidget.setFixedHeight(128)
-        self.shaderText = QPlainTextEdit()
-        style = '''
-        border-width: 1px;
-        border-radius: 5px;
-        color: #141414;
-        background-color: #f3f6fb;
-        font-size: 12px;
-        font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        '''
-        self.shaderText.setStyleSheet(style)
-        self.shaderSideButtons = QWidget()
-        self.shaderSideButtons.setFixedWidth(60)
-        self.shaderSideButtons.setStyleSheet("""
-        QPushButton {background-color: #ede9e8; color: #141414;}
-        QPushButton::pressed {background-color: #ede9e8; color: #141414; border-bottom-style: solid;
-        border-bottom-color: #ede9e8; border-bottom-width: 2px; }
-        QPushButton::hover {color: #161c20;}
-        """)
-        self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(4,4,4,4)
-        vbl.addWidget(self._btn_volumeRendering, alignment=Qt.AlignVCenter)
-        vbl.addWidget(self._btn_applyShader, alignment=Qt.AlignVCenter)
-        vbl.addWidget(self._btn_resetBrightnessAndContrast, alignment=Qt.AlignVCenter)
-        self.shaderSideButtons.setLayout(vbl)
-
-        # self.normalizedSlider = RangeSlider()
-        # self.normalizedSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # # self.normalizedSlider.setFixedWidth(120)
-        # self.normalizedSlider.setMin(1)
-        # self.normalizedSlider.setStart(1)
-        # self.normalizedSlider.setMax(255)
-        # self.normalizedSlider.setEnd(255)
-        # self.normalizedSlider.startValueChanged.connect(self.fn_shader_control)
-        # self.normalizedSlider.endValueChanged.connect(self.fn_shader_control)
-        #
-        # self.normalizedSliderWidget = QWidget()
-        # self.normalizedSliderWidget.setFixedWidth(120)
-        # vbl = QVBoxLayout()
-        # vbl.setSpacing(1)
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # lab = QLabel('Normalize:')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        # vbl.addWidget(lab)
-        # vbl.addWidget(self.normalizedSlider)
-        # self.normalizedSliderWidget.setLayout(vbl)
-
-        self.brightnessLE = QLineEdit()
-        self.brightnessLE.setText('0.00')
-        self.brightnessLE.setValidator(QDoubleValidator(-1, 1, 2))
-        # self.brightnessLE.setFixedWidth(120)
-        self.brightnessLE.textChanged.connect(
-            lambda: self.brightnessSlider.setValue(float(self.brightnessLE.text())))
-        self.brightnessLE.textChanged.connect(self.fn_brightness_control)
-        self.brightnessSlider = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.brightnessSlider.setMouseTracking(False)
-        self.brightnessSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.brightnessSlider.setMinimum(-1.0)
-        self.brightnessSlider.setMaximum(1.0)
-        self.brightnessSlider.setValue(0)
-        self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
-        self.brightnessSlider.valueChanged.connect(self._callbk_unsavedChanges)
-        self.brightnessSlider.valueChanged.connect(
-            lambda: self.brightnessLE.setText('%.2f' %self.brightnessSlider.value()))
-        w = QWidget()
-        vbl = QVBoxLayout()
-        vbl.setSpacing(1)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        lab = QLabel('Brightness:')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb')
-        vbl.addWidget(lab)
-        vbl.addWidget(self.brightnessSlider)
-        w.setLayout(vbl)
-        w.setMaximumHeight(36)
-        w.setMinimumWidth(140)
-
-
-        self.brightnessSliderWidget = QWidget()
-        hbl = HBL()
-        hbl.addWidget(w)
-        hbl.addWidget(self.brightnessLE)
-        self.brightnessSliderWidget.setLayout(hbl)
-
-
-        self.contrastLE = QLineEdit()
-        self.contrastLE.setText('0.00')
-        self.contrastLE.setValidator(QDoubleValidator(-1,1,2))
-        # self.contrastLE.setFixedWidth(120)
-        self.contrastLE.textChanged.connect(
-            lambda: self.contrastSlider.setValue(float(self.contrastLE.text())))
-        self.contrastLE.textChanged.connect(self.fn_contrast_control)
-        self.contrastSlider = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.contrastSlider.setMouseTracking(False)
-        self.contrastSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.contrastSlider.setMinimum(-1.0)
-        self.contrastSlider.setMaximum(1.0)
-        self.contrastSlider.setValue(0)
-        # self.contrastSlider.setSingleStep(.02)
-        # self.contrastSlider.setSingleStep(0.01)
-        self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
-        self.contrastSlider.valueChanged.connect(self._callbk_unsavedChanges)
-        self.contrastSlider.valueChanged.connect(
-            lambda: self.contrastLE.setText('%.2f' %self.contrastSlider.value()))
-        w = QWidget()
-        vbl = VBL()
-        vbl.setSpacing(1)
-        lab = QLabel('Contrast:')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
-        vbl.addWidget(lab)
-        vbl.addWidget(self.contrastSlider)
-        w.setLayout(vbl)
-        w.setFixedHeight(30)
-        w.setMinimumWidth(140)
-
-        self.contrastSliderWidget = QWidget()
-        hbl = HBL()
-        hbl.addWidget(w)
-        hbl.addWidget(self.contrastLE)
-        self.contrastSliderWidget.setLayout(hbl)
-
-        self.bcWidget = QWidget()
-        self.bcWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding,)
-        self.bcWidget.setMaximumWidth(180)
-        vbl = VBL()
-        vbl.addWidget(self.brightnessSliderWidget)
-        vbl.addWidget(self.contrastSliderWidget)
-        self.bcWidget.setLayout(vbl)
-
-        self.bcWidgetAndSideButtons = QWidget()
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 4, 4, 4)
-        hbl.setSpacing(0)
-        hbl.addWidget(self.bcWidget)
-        hbl.addWidget(self.shaderSideButtons)
-        self.bcWidgetAndSideButtons.setLayout(hbl)
-        self.bcWidgetAndSideButtons.setMaximumHeight(80)
-        self.bcWidgetAndSideButtons.setMaximumWidth(320)
-
-        hbl = HBL()
-        hbl.addWidget(self.shaderText)
-        # hbl.addWidget(self.bcWidget)
-        # hbl.addWidget(self.normalizedSliderWidget)
-        # hbl.addWidget(self.shaderSideButtons)
-        hbl.addWidget(self.bcWidgetAndSideButtons, alignment=Qt.AlignBottom)
-        self.shaderMainWidget = QWidget()
-        self.shaderMainWidget.setLayout(hbl)
-
-        lab = QLabel('Shader')
-        lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(1,1,1,1)
-        vbl.addWidget(lab)
-        vbl.addWidget(self.shaderMainWidget)
-
-        self.shaderCodeWidget.setLayout(vbl)
-        self.shaderCodeWidget.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
-        self.shaderCodeWidget.hide()
-
 
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
-        self.globTabs.setStyleSheet("""
+        self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
-          height: 18px;
           width: 128px;
-          border-top-left-radius: 1px;
         }
         """)
+
         # self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
 
         # self.globTabs.setTabBarAutoHide(True)
@@ -5385,7 +5072,15 @@ class MainWindow(QMainWindow):
 
         # self.cpanelMainWidgets = QWidget()
         self.cpanelMainSplitter = QSplitter(Qt.Orientation.Horizontal)
-        self.cpanelMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
+        self.cpanelMainSplitter.setHandleWidth(0)
+        self.cpanelMainSplitter.setStyleSheet("""
+        QSplitter {
+        background: none;
+        }
+        QSplitter::handle { 
+        background: none; 
+        }""")
+        # self.cpanelMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(6, 0, 6, 0)
@@ -5412,22 +5107,23 @@ class MainWindow(QMainWindow):
         self.__dev_console.setLayout(vbl)
 
         self._dev_console = QWidget()
-        self._dev_console.setStyleSheet("background-color: #003333; border-radius: 5px;")
         self._dev_console.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self._dev_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self._dev_console.resize(QSize(600,600))
 
-        self.__dev_console.setStyleSheet("font-size: 10px; "
-                                        "background-color: #003333; "
-                                        "color: #f3f6fb; "
-                                         "font-family: 'Andale Mono', 'Ubuntu Mono', monospace;"
-
-                                        )
+        self.__dev_console.setStyleSheet("""
+        font-size: 10px; 
+        background-color: #222222;
+        color: #f3f6fb;
+        font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        border-radius: 5px;
+        """)
         lab = QLabel('Python Console')
         lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin: 2px;')
         # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500;')
         vbl = QVBoxLayout()
-        vbl.setSpacing(1)
+        # vbl.setSpacing(1)
+        vbl.setSpacing(0)
         vbl.setContentsMargins(1, 1, 1, 1) # this provides for thin contrasting margin
         vbl.addWidget(lab, alignment=Qt.AlignBaseline)
         vbl.addWidget(self.__dev_console)
@@ -5443,35 +5139,35 @@ class MainWindow(QMainWindow):
         #     self._dev_console = None
 
         self.notes.setContentsMargins(0, 0, 0, 0)
-        self.shaderCodeWidget.setContentsMargins(0, 0, 0, 0)
         # self.detailsWidget.setContentsMargins(0, 0, 0, 0)
         # self._py_console.setContentsMargins(6, 0, 6, 0)
         self._dev_console.setContentsMargins(0, 0, 0, 0)
 
         '''Main Vertical Splitter'''
-        self._splitter = QSplitter(Qt.Orientation.Vertical)      # __SPLITTER INDEX__
-
-
+        self._splitter = QSplitter(Qt.Orientation.Vertical)
+        self._splitter.setStyleSheet("""background: #222222;""")
+        # self._splitter.setStyleSheet("""background: none;""")
+        self._splitter.setAutoFillBackground(True)
         self._splitter.splitterMoved.connect(self.splittersHaveMoved)
-        # self._splitter.addWidget(self.globTabs)          # (0)
 
         self._splitter.addWidget(self.notes)             # (0)
-        self._splitter.addWidget(self.shaderCodeWidget)  # (1)
+        # self._splitter.addWidget(self.shaderWidget)  # (1)
+        # self._splitter.addWidget(self.dockWidget_shader)  # (1)
         self._splitter.addWidget(self.correlation_signals)     # (2)
         self._splitter.addWidget(self._dev_console)      # (3)
         # self._splitter.addWidget(self._showHideFeatures) # (4)
         # self._mainVSplitterSizes = [1000, 128, 128, 128, 180, 128, 128]
         # self._splitter.setSizes(self._mainVSplitterSizes)
         self._splitter.setContentsMargins(6, 0, 6, 0)
-        self._splitter.setHandleWidth(2)
-        self._splitter.setCollapsible(0, False)
-        self._splitter.setCollapsible(1, False)
-        self._splitter.setCollapsible(2, False)
-        self._splitter.setCollapsible(3, False)
-        self._splitter.setStretchFactor(0, 2)
-        self._splitter.setStretchFactor(1, 2)
-        self._splitter.setStretchFactor(2, 3)
-        self._splitter.setStretchFactor(3, 1)
+        self._splitter.setHandleWidth(0)
+        self._splitter.setCollapsible(0, True)
+        self._splitter.setCollapsible(1, True)
+        self._splitter.setCollapsible(2, True)
+        # self._splitter.setCollapsible(3, False)
+        # self._splitter.setStretchFactor(0, 0)
+        # self._splitter.setStretchFactor(1, 0)
+        # self._splitter.setStretchFactor(2, 0)
+        # self._splitter.setStretchFactor(3, 1)
 
         btn = QPushButton()
         btn.setStatusTip('Go Back')
@@ -5588,33 +5284,26 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-        self._splitterSplitter = QSplitter(Qt.Orientation.Vertical)
-        self._splitterSplitter.splitterMoved.connect(self.splittersHaveMoved)
-        self._splitterSplitter.addWidget(self.globTabs)
-        # self._splitterSplitter.addWidget(self._actions_widget)
-        self._splitterSplitter.addWidget(self.cpanelMainWidgets)
-        self._splitterSplitter.addWidget(self._splitter)
-        self._splitterSplitter.setCollapsible(0,False)
-        self._splitterSplitter.setCollapsible(1,False)
-        self._splitterSplitter.setCollapsible(2,False)
-        self._splitterSplitter.setStretchFactor(0, 2)
-        self._splitterSplitter.setStretchFactor(1, 1)
-        self._splitterSplitter.setStretchFactor(2, 1)
-        self._splitterSplitter.setHandleWidth(2)
 
-        self.main_panel = QWidget()
-        vbl = VBL()
-        vbl.addWidget(self._splitterSplitter)
-        vbl.addWidget(self._showHideFeatures)
-        self.main_panel.setLayout(vbl)
 
-        #Todo keep this main_stack_widget for now, repurpose later
-        self.main_stack_widget = QStackedWidget(self)               #____INDEX____
-        self.main_stack_widget.addWidget(self.main_panel)           # (0)
-        self.main_stack_widget.addWidget(self.browser_widget)       # (1)
 
-        # self.setWindowIcon(QIcon(QPixmap('src/resources/em_guy_icon.png')))
-        self.setCentralWidget(self.main_stack_widget)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanelMainWidgets)
+
+        # self.newMainWidget = VWidget(self.globTabs, self._splitter)
+        self.newMainSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.newMainSplitter.setHandleWidth(0)
+        # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background-color: #222222; }""")
+        # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        self.newMainSplitter.addWidget(self.globTabsAndCpanel)
+        self.newMainSplitter.addWidget(self._splitter)
+        self.newMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
+        self.newMainSplitter.setCollapsible(0, False)
+        self.newMainSplitter.setCollapsible(1, False)
+
+        # self.newMainWidget.layout.setStretch(0,1)
+        # self.newMainWidget.layout.setStretch(1,0)
+
+        self.setCentralWidget(self.newMainSplitter)
         # QShortcut(QKeySequence('Ctrl+M'), self.main_stack_widget, self.enterExitManAlignMode)
 
     #
@@ -5685,9 +5374,18 @@ class MainWindow(QMainWindow):
 
     def initStatusBar(self):
         logger.info('')
-        self.statusBar = self.statusBar()
-        self.statusBar.setFixedHeight(22)
-        self.statusBar.setStyleSheet('font-size: 11px;')
+        # self.statusBar = self.statusBar()
+        self.statusBar = QStatusBar()
+        self.statusBar.setFixedHeight(20)
+        self.statusBar.setStyleSheet("""
+        font-size: 10px;
+        font-weight: 600;
+        color: #141414;
+        background-color: #ede9e8;
+        margin: 0px;
+        padding: 0px;
+        """)
+        self.setStatusBar(self.statusBar)
 
 
     def initPbar(self):
@@ -5717,7 +5415,7 @@ class MainWindow(QMainWindow):
         self.status_bar_layout.addWidget(self.pbar)
         self.status_bar_layout.addWidget(self.pbar_cancel_button)
         self.statusBar.addPermanentWidget(self.pbar_widget)
-        self.pbar_widget.hide()
+        self.hidePbar()
 
     def forceStopMultiprocessing(self):
         cfg.CancelProcesses = True
@@ -5733,18 +5431,26 @@ class MainWindow(QMainWindow):
 
 
     def setPbarText(self, text: str):
+        logger.critical('')
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         self.repaint()
 
 
     def showZeroedPbar(self):
-        # logger.critical('')
+        logger.critical('Showing Progress Bar...')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
         self.pbar_widget.repaint()
         self.repaint()
+
+
+    def hidePbar(self):
+        logger.critical('Hiding Progress Bar...')
+        self.pbar_widget.hide()
+        self.statusBar.clearMessage() #Shoehorn
+
 
 
     def back_callback(self):

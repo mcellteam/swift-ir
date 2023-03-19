@@ -38,10 +38,6 @@ QTabBar::tab {
     max-width: 200px;
 }
 
-QWidget#self._tool_keyBindings{
-    font-size: 9px;
-}
-
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);
      subcontrol-position: left;
