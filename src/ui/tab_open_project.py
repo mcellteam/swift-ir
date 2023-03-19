@@ -57,7 +57,8 @@ class OpenProject(QWidget):
         # self.updateRowHeight(self.initial_row_height)
 
         self.fetchSizesCheckbox = QCheckBox('Fetch Sizes')
-        self.fetchSizesCheckbox.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.fetchSizesCheckbox.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         self.fetchSizesCheckbox.toggled.connect(
             lambda: setOpt('ui,FETCH_PROJECT_SIZES', self.fetchSizesCheckbox.isChecked()))

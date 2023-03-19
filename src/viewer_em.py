@@ -60,6 +60,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self._settingZoom = False
         self.initViewer()
+        self.type = 'AbstractEMViewer'
 
         # logger.info('viewer constructed!')
         caller = inspect.stack()[1].function
@@ -71,10 +72,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def __del__(self):
         try:
-            logger.warning('__del__ called on EMViewer by %s (created: %s)'
-                           % (inspect.stack()[1].function, self.created))
+            logger.warning('__del__ called on %s by %s (created: %s)'% (self.type, inspect.stack()[1].function, self.created))
         except:
-            logger.warning('__del__ called on EMViewer')
+            logger.warning('__del__ called on %s (created: %s)' %(self.type, self.created))
 
     @abc.abstractmethod
     def initViewer(self):
@@ -298,6 +298,7 @@ class EMViewer(AbstractEMViewer):
         super().__init__(**kwags)
         self.shared_state.add_changed_callback(self.on_state_changed)
         caller = inspect.stack()[1].function
+        self.type = 'EMViewer'
         # logger.critical(f'\n\nInitializing AbstractEMViewer (caller: {caller})....\n')
 
     def initViewer(self):
@@ -534,6 +535,7 @@ class EMViewerStage(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
+        self.type = 'EMViewerStage'
 
     def initViewer(self):
         caller = inspect.stack()[1].function
@@ -594,6 +596,7 @@ class EMViewerSnr(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.shared_state.add_changed_callback(self.on_state_changed)
+        self.type = 'EMViewerSnr'
 
     def initViewer(self):
         caller = inspect.stack()[1].function
@@ -676,6 +679,7 @@ class EMViewerMendenhall(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.shared_state.add_changed_callback(self.on_state_changed)
+        self.type = 'EMViewerMendenhall'
 
     def initViewer(self):
         logger.critical('Initializing Neuroglancer - Mendenhall...')

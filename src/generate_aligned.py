@@ -78,7 +78,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
         # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale, rect) #0129-
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
-        task_queue.taskPrefix = 'Generating Alignment for '
+        task_queue.taskPrefix = 'Alignment Generated for '
         task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
 
         task_queue.start(cpus)
@@ -139,7 +139,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
             # cfg.main_window.set_status('Copy-converting TIFFs...')
             chunkshape = cfg.data.chunkshape()
             task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
-            task_queue.taskPrefix = 'Converting TIFFs to Zarr for '
+            task_queue.taskPrefix = 'TIFFs Converted to Zarr for '
             task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
             task_queue.start(cpus)
             job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')

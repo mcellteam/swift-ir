@@ -291,7 +291,7 @@ class TaskQueue(QObject):
                         if self.taskPrefix and self.taskNameList:
                             name = self.taskNameList[img_index]
                             # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
-                            self.parent.statusBar.showMessage(self.taskPrefix + name + '...')
+                            self.parent.statusBar.showMessage(self.taskPrefix + name)
                     except:
                         # print_exception()
                         logger.warning('An exception was raised while updating progress bar')
