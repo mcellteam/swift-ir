@@ -295,7 +295,7 @@ class TaskQueue(QObject):
                     except:
                         # print_exception()
                         logger.warning('An exception was raised while updating progress bar')
-                        pass
+                        print_exception()
 
                     # .get method is BLOCKING by default for mp.Queue
                     task_id, outs, errs, rc, dt = self.result_queue.get()

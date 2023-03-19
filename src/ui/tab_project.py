@@ -84,7 +84,7 @@ class ProjectTab(QWidget):
         logger.info('')
         index = self._tabs.currentIndex()
         QApplication.restoreOverrideCursor()
-        self.refreshTab(index=index)
+        self.refreshTab()
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
@@ -415,8 +415,8 @@ class ProjectTab(QWidget):
                     ("<b><span style='color: #FFFF66;'>SNR</span></b>",
                      "<b>SNR</b>")[self.detailsSNR.isHidden()])
                 cfg.main_window.dataUpdateWidgets()
-            else:
-                cfg.main_window.warn('Series is not aligned. No SNR data to show.')
+            # else:
+            #     cfg.main_window.warn('Series is not aligned. No SNR data to show.')
         self.snrClabel.clicked.connect(fn)
         self.detailsSNR.setWordWrap(True)
         self.detailsSNR.setStyleSheet(style)
