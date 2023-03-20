@@ -355,13 +355,16 @@ class MainWindow(QMainWindow):
 
     def _callbk_showHideCorrSpots(self):
         logger.critical('')
-        if not self.correlation_signals.isVisible():
+        # self.correlation_signals.setVisible(self.correlation_signals.isHidden())
+        self.correlation_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
+        # if self.correlation_signals.isVisible():
+        if cfg.project_tab.signalsAction.isChecked():
             sizes = self._splitter.sizes()
             sizes[1] = self._corrSpotDrawerSize
             self._splitter.setSizes(sizes)
             self.updateCorrSpotsDrawer()
 
-        self.correlation_signals.setVisible(self.correlation_signals.isHidden())
+        # self.correlation_signals.setVisible(self.correlation_signals.isHidden())
         # logger.critical(f'_splitter sizes: {self._splitter.sizes()}, corr spot height = {self.correlation_signals.height()}')
         # logger.critical('is visible? %r' % self.correlation_signals.isVisible())
 
@@ -3105,6 +3108,9 @@ class MainWindow(QMainWindow):
             configure_project_paths()
             self._getTabObject().user_projects.set_data()
             self._forceHideControls()
+
+            self.correlation_signals.hide()
+
         elif tabtype == 'ProjectTab':
             logger.critical('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
@@ -3131,6 +3137,11 @@ class MainWindow(QMainWindow):
             self.dataUpdateWidgets()
             self._bbToggle.setChecked(cfg.data.has_bb()) #0309+
             cfg.project_tab.initNeuroglancer()
+
+            try:
+                cfg.project_tab.signalsAction.setChecked(False)
+            except:
+                logger.warning('Cant deactivate signalsAction QAction')
 
         elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
@@ -5177,7 +5188,11 @@ class MainWindow(QMainWindow):
 
         '''Main Vertical Splitter'''
         self._splitter = QSplitter(Qt.Orientation.Vertical)
-        self._splitter.setStyleSheet("""background-color: #222222;""")
+        # self._splitter.setStyleSheet("""background-color: #222222;""")
+        self._splitter.setStyleSheet("""
+        
+        QWidget {background: #222222;}
+        QSplitter::handle { background: #339933; }""")
         # self._splitter.setStyleSheet("""background: none;""")
         self._splitter.setAutoFillBackground(True)
         self._splitter.splitterMoved.connect(self.splittersHaveMoved)
@@ -5192,7 +5207,8 @@ class MainWindow(QMainWindow):
         # self._splitter.setSizes(self._mainVSplitterSizes)
         # self._splitter.setContentsMargins(6, 0, 6, 0)
         self._splitter.setContentsMargins(0, 0, 0, 0)
-        self._splitter.setHandleWidth(0)
+        # self._splitter.setHandleWidth(2)
+        self._splitter.setHandleWidth(2)
         self._splitter.setCollapsible(0, False)
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)
