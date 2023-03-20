@@ -519,7 +519,7 @@ class EMViewerStage(AbstractEMViewer):
         self.store = get_zarr_tensor(dir_staged).result()
         self.LV = ng.LocalVolume(
             volume_type='image',
-            data=self.store[:, :, :],
+            data=self.store,
             # data=self.store[self.index:self.index+1, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0]
