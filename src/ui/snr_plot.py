@@ -399,7 +399,8 @@ class SnrPlot(QWidget):
         cfg.main_window._changeScaleCombo.setCurrentText(scale)
 
 
-    def onSnrClick(self, plot, points, scale):
+    # def onSnrClick(self, plot, points, scale):
+    def onSnrClick(self, plot, points):
         # logger.info(f'onSnrClick ({scale}):')
 
         index = int(points[0].pos()[0])
