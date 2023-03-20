@@ -164,6 +164,7 @@ class MAViewer(neuroglancer.Viewer):
             cfg.main_window.warn('Unable to Load Data Store at %s' % path)
             raise e
 
+        logger.critical('Creating Local Volume for %d' %self.index)
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[self.index:self.index+1, :, :],

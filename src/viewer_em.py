@@ -507,9 +507,11 @@ class EMViewerStage(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
+        logger.critical(f'\n\nInitializing [{self.type}] [caller: {caller}]...\n')
 
         self.coordinate_space = self.getCoordinateSpace()
+
+        logger.critical('zpos = %d' %cfg.data.zpos)
 
         self.index = cfg.data.zpos
         dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
@@ -517,6 +519,7 @@ class EMViewerStage(AbstractEMViewer):
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[:, :, :],
+            # data=self.store[self.index:self.index+1, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0]
         )
