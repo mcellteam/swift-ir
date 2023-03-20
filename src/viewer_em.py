@@ -533,10 +533,12 @@ class EMViewerStage(AbstractEMViewer):
         logger.critical('Configuring Shape...')
         # _, tensor_y, tensor_x = cfg.tensor.shape
         _, tensor_y, tensor_x = self.store.shape
-        w = cfg.project_tab.MA_webengine_stage.geometry().width()
-        h = cfg.project_tab.MA_webengine_stage.geometry().height()
-        logger.critical(f'MA_webengine_stage: w={w}, h={h}')
-        self.initZoom(w=w, h=h, adjust=1.10)
+
+        logger.critical(f'Tensor Shape: {self.store.shape}')
+        # w = cfg.project_tab.MA_webengine_stage.geometry().width()
+        # h = cfg.project_tab.MA_webengine_stage.geometry().height()
+        # logger.critical(f'MA_webengine_stage: w={w}, h={h}')
+        # self.initZoom(w=w, h=h, adjust=1.10)
 
         logger.critical('Calling with txn()...')
 
@@ -565,18 +567,18 @@ class EMViewerStage(AbstractEMViewer):
             s.show_ui_controls = False
             s.show_panel_borders = False
 
-        self._layer = math.floor(self.state.position[0])
         self._crossSectionScale = self.state.cross_section_scale
         self.initial_cs_scale = self.state.cross_section_scale
 
         self.set_brightness()
         self.set_contrast()
         # self.set_zmag()
+        self._set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
         logger.critical('\n\n' + self.url() + '\n')
 
-        self._set_zmag()
+
 
 
 
