@@ -400,7 +400,7 @@ class SnrPlot(QWidget):
 
 
     def onSnrClick(self, plot, points, scale):
-        logger.info(f'onSnrClick ({scale}):')
+        # logger.info(f'onSnrClick ({scale}):')
 
         index = int(points[0].pos()[0])
         if index in range(len(cfg.data)):
