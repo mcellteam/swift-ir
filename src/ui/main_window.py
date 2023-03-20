@@ -116,7 +116,6 @@ class MainWindow(QMainWindow):
         self.initPythonConsole()
         self.initStatusBar()
         self.initPbar()
-        # self.initToolbar()
         self.initControlPanel()
         self.initUI()
         self.initMenu()
@@ -2850,7 +2849,7 @@ class MainWindow(QMainWindow):
         self.toolbar.setIconSize(QSize(18,18))
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         # self.toolbar.setFixedHeight(32)
-        self.toolbar.setFixedHeight(22)
+        self.toolbar.setFixedHeight(20)
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
