@@ -761,7 +761,7 @@ class ProjectTab(QWidget):
         self.btnClearMA.setMaximumHeight(20)
         self.btnClearMA.setMaximumWidth(60)
         self.btnClearMA.clicked.connect(fn)
-        self.btnClearMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.btnClearMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
 
         # self.btnClearMA.clicked.connect(self.initNeuroglancer)
 
@@ -796,7 +796,7 @@ class ProjectTab(QWidget):
         self.btnResetAllMA.setFixedHeight(20)
         self.btnResetAllMA.setFixedWidth(102)
         self.btnResetAllMA.clicked.connect(fn)
-        self.btnResetAllMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.btnResetAllMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
 
         def fn():
             cfg.main_window.hud.post('Aligning...')
@@ -812,7 +812,7 @@ class ProjectTab(QWidget):
         self.btnRealignMA.setFixedHeight(20)
         self.btnRealignMA.setFixedWidth(102)
         self.btnRealignMA.clicked.connect(fn)
-        self.btnRealignMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.btnRealignMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
 
         def fn():
             cfg.main_window.hud.post('Applying Manual Points...')
@@ -839,7 +839,7 @@ class ProjectTab(QWidget):
         self.btnExitMA.setFixedHeight(20)
         self.btnExitMA.setFixedWidth(60)
         self.btnExitMA.clicked.connect(cfg.main_window.exit_man_mode)
-        self.btnExitMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.btnExitMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
 
         def fn():
             pass
