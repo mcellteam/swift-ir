@@ -367,7 +367,8 @@ class ProjectTab(QWidget):
         font-size: 9px; 
         background-color: rgba(0,0,0,.50); 
         color: #f3f6fb; 
-        padding: 2px;
+        margin: 5px;
+        padding: 5px;
         border-radius: 2px;"""
 
         # self.cspotSlider = QSlider(Qt.Orientation.Vertical)
@@ -391,8 +392,8 @@ class ProjectTab(QWidget):
         self.detailsSection = QLabel()
         self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.detailsSection.setMaximumHeight(100)
-        self.detailsSection.setMinimumWidth(230)
+        # self.detailsSection.setMaximumHeight(100)
+        # self.detailsSection.setMinimumWidth(230)
         self.detailsClabel = ClickLabel("<b><span style='color: #FFFF66;'>Section</span></b>")
         self.detailsClabel.setStyleSheet("color: #f3f6fb;")
         self.detailsClabel.setAutoFillBackground(False)
