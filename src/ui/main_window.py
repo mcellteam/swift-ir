@@ -2627,6 +2627,7 @@ class MainWindow(QMainWindow):
         run_checks()
 
     def enterExitManAlignMode(self):
+        logger.critical('enterExitManAlignMode >>>>')
         if cfg.data:
             if not cfg.data.is_aligned_and_generated():
                 logger.warning('Cannot enter manual alignment mode until the series is aligned.')
@@ -2637,6 +2638,7 @@ class MainWindow(QMainWindow):
                     self.enter_man_mode()
                 else:
                     self.exit_man_mode()
+        logger.critical('<<<< enterExitManAlignMode')
 
     def enter_man_mode(self):
         logger.critical('')
