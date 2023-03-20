@@ -1390,8 +1390,7 @@ class MainWindow(QMainWindow):
                     txt = f"""
                     Filename{br}:{br}{a}{cfg.data.filename_basename()}{b}{nl}
                     Reference:{br}{a}{cfg.data.reference_basename()}{b}{nl}
-                    Modified{br}:{a}{x}
-                    ('N/A'.rjust(23)"""
+                    Modified{br}:{br}{a}{cfg.data.modified}{b}{nl}"""
                     method = cfg.data.selected_method()
                     if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}"
                     elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
