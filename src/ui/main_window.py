@@ -1330,11 +1330,16 @@ class MainWindow(QMainWindow):
 
                 self._btn_prevSection.setEnabled(cur > 0)
                 self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+
+                logger.critical('0')
+
                 if getData('state,manual_mode'):
                     cfg.project_tab.dataUpdateMA()
                     # if prev_loc != cfg.data.zpos:
                     # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
                     cfg.project_tab.set_method_label_text()
+
+                logger.critical('1')
 
                 if cfg.project_tab._tabs.currentIndex() == 2:
                     cfg.project_tab.treeview_model.jumpToLayer()
@@ -1342,10 +1347,13 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.updateLayerLinePos()
 
+                logger.critical('2')
 
                 cfg.project_tab.project_table.table.selectRow(cur)
                 self._sectionSlider.setValue(cur)
                 self._jumpToLineedit.setText(str(cur)) #0131+
+
+                logger.critical('3')
 
                 if cfg.project_tab.detailsCorrSpots.isVisible():
                     if cfg.data.selected_method() == 'Auto-SWIM':
@@ -1422,6 +1430,7 @@ class MainWindow(QMainWindow):
                         f"{a}Affine:{b}{nl}" + "".join(afm_txt) +
                         f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
 
+                logger.critical('4')
 
                 if cfg.project_tab.detailsSNR.isVisible():
                     if cfg.data.zpos == 0:
@@ -1461,6 +1470,8 @@ class MainWindow(QMainWindow):
 
                             cfg.project_tab.detailsSNR.setText(txt)
 
+                logger.critical('5')
+
                 try:     self._jumpToLineedit.setText(str(cur))
                 except:  logger.warning('Current Layer Widget Failed to Update')
                 try:     self._skipCheckbox.setChecked(cfg.data.skipped())
@@ -1476,6 +1487,11 @@ class MainWindow(QMainWindow):
                         self._polyBiasCombo.setCurrentText('None')
                 except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
                 # cfg.project_tab.slotUpdateZoomSlider()
+
+
+        logger.critical('<<<< dataUpdateWidgets')
+
+
 
 
     def updateNotes(self):
