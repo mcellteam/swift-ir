@@ -575,6 +575,8 @@ class EMViewerStage(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        logger.critical('\n\n' + self.url() + '\n')
+
         self._set_zmag()
 
 
