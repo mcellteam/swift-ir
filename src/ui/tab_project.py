@@ -1619,7 +1619,7 @@ QListView::item:!selected:hover
 
 
     def onEnterManualMode(self):
-        logger.critical('')
+        logger.critical('onEnterManualMode >>>>')
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         self.w_ng_display_ext.hide() # change layout before initializing viewer
@@ -1644,6 +1644,8 @@ QListView::item:!selected:hover
 
         self.update_MA_widgets()
         cfg.main_window.dataUpdateWidgets()
+
+        logger.critical('<<<< onEnterManualMode')
 
     # def onExitManualMode(self):
     #     self.MA_ptsListWidget_ref.clear()
