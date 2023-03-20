@@ -150,7 +150,7 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings['neuroglancer'].setdefault('SHOW_SWIM_WINDOW', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
-    cfg.settings['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', False)
+    cfg.settings['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', True)
     cfg.settings.setdefault('state', {})
     cfg.settings['state'].setdefault('manual_mode', False)
     cfg.settings.setdefault('ui', {})
