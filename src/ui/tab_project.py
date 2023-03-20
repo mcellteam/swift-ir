@@ -1397,14 +1397,17 @@ QListView::item:!selected:hover
 
 
     def dataUpdateMA(self):
+
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
+        logger.critical('dataUpdateMA (caller: %s) >>>>' %caller)
         if cfg.data.selected_method() != 'Auto-SWIM':
             self.combo_method.setCurrentText(cfg.data.selected_method())
         self.btnApplyMA.setEnabled(self.validate_MA_points())
         self.btnClearMA.setEnabled(bool(len(self.MA_viewer_ref.pts) + len(self.MA_viewer_base.pts)))
         self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
         self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
+        logger.critical('<<< dataUpdateMA')
+
 
 
     def update_MA_list_ref(self):
