@@ -2144,10 +2144,11 @@ QListView::item:!selected:hover
 
 
     def get_viewers(self):
-        logger.info('')
+        logger.critical('Getting Viewers...')
         viewers = []
         if getData('state,manual_mode'):
-            viewers.extend([self.MA_viewer_base, self.MA_viewer_ref, self.MA_viewer_stage])
+            # viewers.extend([self.MA_viewer_base, self.MA_viewer_ref, self.MA_viewer_stage])
+            viewers.extend([self.MA_viewer_base, self.MA_viewer_ref])
             # return [cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref]
         tab = self._tabs.currentIndex()
         if tab == 0:
