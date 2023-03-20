@@ -383,7 +383,7 @@ class EMViewer(AbstractEMViewer):
         w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
         h = cfg.project_tab.webengine.height()
         # self.initZoom(w=w, h=h, adjust=1.10)
-        self.initZoom(w=w, h=h)
+        # self.initZoom(w=w, h=h)
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
@@ -434,7 +434,6 @@ class EMViewer(AbstractEMViewer):
             s.scale_bar_options.scale_factor = 1
             s.show_panel_borders = False
 
-        self._layer = math.floor(self.state.position[0])
         self._crossSectionScale = self.state.cross_section_scale
         self.initial_cs_scale = self.state.cross_section_scale
 
