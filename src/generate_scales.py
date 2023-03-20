@@ -30,7 +30,7 @@ def generate_scales(dm):
         for s in dm.downscales():  # value string '1 2 4'
             scale_val = get_scale_val(s)
             for layer in dm['data']['scales'][s]['stack']:
-                task_name_list.append('%s (scaling factor: %d)' %(layer['filename'], scale_val))
+                task_name_list.append('%s (scaling factor: %d)' %(os.path.basename(layer['filename']), scale_val))
         task_queue.taskNameList = task_name_list # <- assumes generate scales for all layers
 
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
