@@ -515,7 +515,8 @@ class EMViewerStage(AbstractEMViewer):
 
         self.index = cfg.data.zpos
         dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
-        self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
+        # self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
+        self.store = get_zarr_tensor(dir_staged).result()
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[:, :, :],
@@ -524,7 +525,8 @@ class EMViewerStage(AbstractEMViewer):
             voxel_offset=[0, 0, 0]
         )
 
-        _, tensor_y, tensor_x = cfg.tensor.shape
+        # _, tensor_y, tensor_x = cfg.tensor.shape
+        _, tensor_y, tensor_x = self.store.shape
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
         logger.critical(f'MA_webengine_stage: w={w}, h={h}')
