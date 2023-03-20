@@ -1633,6 +1633,7 @@ QListView::item:!selected:hover
         self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
         self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
         self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+        # self.MA_viewer_stage.initViewer()
         # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314-
         self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
         self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
