@@ -1393,9 +1393,9 @@ class MainWindow(QMainWindow):
                     Modified{br}:{a}{
                     ('N/A'.rjust(23), cfg.data.datetime().rjust(23))[cfg.data.is_aligned()]}{b}{nl}"""
                     method = cfg.data.selected_method()
-                    if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}{nl}"
-                    elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}{nl}"
-                    elif method == 'Manual-Strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}{nl}"
+                    if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}"
+                    elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
+                    elif method == 'Manual-Strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
                     # txt += f"""Reject{br*7}:{br}[{(' ', 'X')[cfg.data.skipped()]}]"""
                     cfg.project_tab.detailsSection.setText(txt)
 
