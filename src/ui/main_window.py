@@ -388,7 +388,7 @@ class MainWindow(QMainWindow):
                 siz = self._splitter.sizes()[1]
                 if siz == 0:
                     siz = self._corrSpotDrawerSize
-                h = max(siz - 14, 50)
+                h = max(siz - 22, 30)
                 self.corr_signals[i].setFixedSize(h, h)
                 if i < n:
                     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
@@ -5178,7 +5178,7 @@ class MainWindow(QMainWindow):
 
         '''Main Vertical Splitter'''
         self._splitter = QSplitter(Qt.Orientation.Vertical)
-        self._splitter.setStyleSheet("""background: #222222;""")
+        self._splitter.setStyleSheet("""background-color: #222222;""")
         # self._splitter.setStyleSheet("""background: none;""")
         self._splitter.setAutoFillBackground(True)
         self._splitter.splitterMoved.connect(self.splittersHaveMoved)
