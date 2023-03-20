@@ -97,6 +97,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._blockZoom = False
         logger.critical('Zoom enabled.')
 
+    def _set_zmag(self):
+        with self.txn() as s:
+            s.relativeDisplayScales = {"z": 10}
+
     def on_state_changed(self):
         if self._blockZoom:
             return
@@ -439,6 +443,8 @@ class EMViewer(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        self._set_zmag()
+
 
     def initViewerSlim(self, nglayout=None):
         # t0 = time.time()
@@ -569,6 +575,9 @@ class EMViewerStage(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        self._set_zmag()
+
+
 
 class EMViewerSnr(AbstractEMViewer):
 
@@ -656,6 +665,8 @@ class EMViewerSnr(AbstractEMViewer):
         self.set_contrast()
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+        self._set_zmag()
 
 
 class EMViewerMendenhall(AbstractEMViewer):
