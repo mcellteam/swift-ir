@@ -30,7 +30,7 @@ class SnrPlot(QWidget):
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
         # self.view.setBackground('#1b1e23')
-        self.view.setBackground('#1b1e23')
+        self.view.setBackground('#222222')
         # drafting_blue = '#004060'
         # self.view.setBackground(drafting_blue)
         pg.setConfigOption('foreground', '#f3f6fb')
@@ -108,7 +108,7 @@ class SnrPlot(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
-        self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
+        # self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
 
 
@@ -124,6 +124,8 @@ class SnrPlot(QWidget):
             lab = 'SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
             # logger.info(f'lab = {lab}')
             self._snr_label.setText(lab)
+            styles = {'color': '#ede9e8', 'font-size': '14px', 'font-weight': 'bold'}
+            self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         else:
             logger.warning(f'Cant update layer line caller={caller}')
 
@@ -226,8 +228,8 @@ class SnrPlot(QWidget):
             # self.checkboxes_hlayout.addStretch()
 
             self.updateLayerLinePos()
-            styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
-            # cfg.project_tab.snr_plot.plot.setTitle(cfg.data.base_image_name())
+            # styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
+            styles = {'color': '#ede9e8', 'font-size': '14px', 'font-weight': 'bold'}
             self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         except:
             print_exception()
@@ -399,25 +401,35 @@ class SnrPlot(QWidget):
 
     def onSnrClick(self, plot, points, scale):
         logger.info(f'onSnrClick ({scale}):')
+
         index = int(points[0].pos()[0])
-        snr = float(points[0].pos()[1])
-        pt = points[0] # just allow one point clicked
-        cfg.main_window.hud.post('Jump to Section #%d (SNR: %.3f)' % (index, snr))
-        clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
-        # for p in self.last_snr_click:
-        #     p.resetPen()
-        #     p.resetBrush()
-        # for p in points:
-        #     p.setBrush(pg.mkBrush('#ffffff'))
-        #     p.setPen(clickedPen)
-        if self.last_snr_click:
-            self.last_snr_click.resetPen()
-            self.last_snr_click.resetBrush()
-        pt.setBrush(pg.mkBrush('#ffffff'))
-        pt.setPen(clickedPen)
-        # self.last_snr_click = points
-        self.last_snr_click = pt
-        cfg.main_window.jump_to(index)
+        if index in range(len(cfg.data)):
+            snr = float(points[0].pos()[1])
+            pt = points[0] # just allow one point clicked
+            cfg.main_window.hud.post('Jump to Section #%d (SNR: %.3f)' % (index, snr))
+            clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
+            # for p in self.last_snr_click:
+            #     p.resetPen()
+            #     p.resetBrush()
+            # for p in points:
+            #     p.setBrush(pg.mkBrush('#ffffff'))
+            #     p.setPen(clickedPen)
+            if self.last_snr_click:
+                self.last_snr_click.resetPen()
+                self.last_snr_click.resetBrush()
+            pt.setBrush(pg.mkBrush('#ffffff'))
+            pt.setPen(clickedPen)
+            # self.last_snr_click = points
+            self.last_snr_click = pt
+            # cfg.main_window.jump_to(index)
+            cfg.data.zpos = index
+            cfg.project_tab.snrViewer.set_layer(cfg.data.zpos)
+            cfg.main_window.dataUpdateWidgets()
+            self.updateLayerLinePos()
+
+        else:
+            logger.warning('Invalid Index: %d' %index)
+
 
     def sizeHint(self):
         if cfg.main_window:

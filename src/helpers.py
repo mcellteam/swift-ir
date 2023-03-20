@@ -132,6 +132,7 @@ def delete_recursive(dir):
         cfg.main_window.updatePbar(cfg.nCompleted)
         cfg.main_window.update()
         QApplication.processEvents()
+    shutil.rmtree(dir, ignore_errors=True, onerror=handleError)
 
     cfg.main_window.hidePbar()
 
@@ -149,11 +150,12 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
     cfg.settings['neuroglancer'].setdefault('SHOW_SWIM_WINDOW', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
+    cfg.settings['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', False)
     cfg.settings.setdefault('state', {})
     cfg.settings['state'].setdefault('manual_mode', False)
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
-    # cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
+    cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
 

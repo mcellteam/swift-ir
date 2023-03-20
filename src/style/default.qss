@@ -190,11 +190,19 @@ QHeaderView
 }
 
 
-QProgressBar {
-	font-size: 10px;
-	font-size: 11px;
-    font-family: Tahoma, sans-serif;
 
+QProgressBar {
+    color: #ede9e8;
+    font-size: 10px;
+    font-family: Tahoma, sans-serif;
+    border: 1px solid #ede9e8;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #000000;
+
+}
+QProgressBar::chunk {
+    background-color: #339933;
 }
 
 
