@@ -95,6 +95,12 @@ class MAViewer(neuroglancer.Viewer):
     def n_annotations(self):
         return len(self.state.layers['ann'].annotations)
 
+    def updateHighContrastMode(self):
+        with self.txn() as s:
+            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+                s.crossSectionBackgroundColor = '#808080'
+            else:
+                s.crossSectionBackgroundColor = '#222222'
 
     def position(self):
         return copy.deepcopy(self.state.position)
@@ -134,9 +140,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def initViewer(self):
-        # caller = inspect.stack()[1].function
-        # logger.critical('caller: %s' %str(caller))
-        logger.critical(f'Initializing Viewer (Role: %s)....' %self.role)
+        caller = inspect.stack()[1].function
+        logger.critical(f'\nInitializing [{self.type}] [role: {self.role}] [caller: {caller}]...\n')
 
         if self.role == 'ref':
             self.index = max(cfg.data.zpos - 1, 0)
@@ -172,13 +177,17 @@ class MAViewer(neuroglancer.Viewer):
             s.layout.type = 'yz'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            s.show_scale_bar = False
             # s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_axis_lines = False
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
-            s.crossSectionBackgroundColor = '#808080' # 128 grey
+            # s.crossSectionBackgroundColor = '#808080' # 128 grey
+            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+                s.crossSectionBackgroundColor = '#808080'
+            else:
+                s.crossSectionBackgroundColor = '#222222'
             # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
             s.position = [0.5, y / 2, x / 2]
@@ -306,9 +315,6 @@ class MAViewer(neuroglancer.Viewer):
         self._set_zmag()
 
 
-
-
-
         # self._set_zmag()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
 
@@ -316,27 +322,27 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def draw_point_annotations(self):
-        # logger.critical('Drawing point annotations...')
-        # try:
-        #     anns = list(self.pts.values())
-        #     if anns:
-        #         with self.txn() as s:
-        #             s.layers['ann'].annotations = anns
-        # except:
-        #     # print_exception()
-        #     logger.warning('Unable to draw donut annotations or none to draw')
-        pass
+        logger.critical('Drawing point annotations...')
+        try:
+            anns = list(self.pts.values())
+            if anns:
+                with self.txn() as s:
+                    s.layers['ann'].annotations = anns
+        except:
+            # print_exception()
+            logger.warning('Unable to draw donut annotations or none to draw')
+        # pass
 
 
     def undraw_point_annotations(self):
-        # logger.critical('Undrawing point annotations...')
-        # try:
-        #     with self.txn() as s:
-        #         s.layers['ann'].annotations = None
-        # except:
-        #     # print_exception()
-        #     logger.warning('No donut annotations to delete')
-        pass
+        logger.critical('Undrawing point annotations...')
+        try:
+            with self.txn() as s:
+                s.layers['ann'].annotations = None
+        except:
+            # print_exception()
+            logger.warning('No donut annotations to delete')
+        # pass
 
 
     def undrawSWIMwindow(self):
@@ -426,8 +432,8 @@ class MAViewer(neuroglancer.Viewer):
                     annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=[color, marker_size]))
                     annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=[color, marker_size]))
 
-                    annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
-                    annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
+                    # annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
+                    # annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
             else:
                 pts_list = list(self.pts.items())
 
@@ -453,8 +459,8 @@ class MAViewer(neuroglancer.Viewer):
                     annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=[color, marker_size]))
                     annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=[color, marker_size]))
 
-                    annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
-                    annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
+                    # annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
+                    # annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
 
         box = ng.AxisAlignedBoundingBoxAnnotation(
             point_a=[5, 50, 50],

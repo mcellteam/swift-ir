@@ -25,8 +25,14 @@ def generate_scales(dm):
 
         n_tasks = len(cfg.data) * (dm.n_scales() - 1)  #0901 #Refactor
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
-        task_queue.taskPrefix = 'Scale Pyramid Generated for '
-        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()] # <- assumes generate scales for all layers
+        task_queue.taskPrefix = 'Scale Generated for '
+        task_name_list = []
+        for s in dm.downscales():  # value string '1 2 4'
+            scale_val = get_scale_val(s)
+            for layer in dm['data']['scales'][s]['stack']:
+                task_name_list.append('%s (scaling factor: %d)' %(layer['filename'], scale_val))
+        task_queue.taskNameList = task_name_list # <- assumes generate scales for all layers
+
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         create_project_structure_directories(dm.dest(), dm.scales())
         iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')

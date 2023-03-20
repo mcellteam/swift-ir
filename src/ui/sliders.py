@@ -33,7 +33,11 @@ class DoubleSlider(QSlider):
         return float(super().value()) / self._max_int * self._value_range + self._min_value
 
     def setValue(self, value):
-        super().setValue(int((value - self._min_value) / self._value_range * self._max_int))
+        try:
+            super().setValue(int((value - self._min_value) / self._value_range * self._max_int))
+        except:
+            logger.warning('Unable to set slider value to %s' %str(value))
+
 
     def setMinimum(self, value):
         if value > self._max_value:

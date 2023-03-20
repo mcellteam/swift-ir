@@ -140,7 +140,10 @@ class DataModel:
     @zpos.setter
     def zpos(self, index):
         # self._data['data']['Current Section (Index)'] = index
-        self['data']['z_position'] = index
+        if index in range(len(self)):
+            self['data']['z_position'] = index
+        else:
+            logger.warning(f'\n\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n\n')
 
     #Deprecated
     @property
@@ -562,6 +565,7 @@ class DataModel:
 
 
     def snr_list(self, s=None) -> list[float]:
+        caller = inspect.stack()[1].function
         # logger.info('caller: %s...' % inspect.stack()[1].function)
         ''' n is 4 for a 2x2 SWIM'''
         if self.method_results():
@@ -570,7 +574,7 @@ class DataModel:
             except:
                 return []
         else:
-            logger.warning('No Method Results, No SNR List - Returning Empty List')
+            logger.warning('No Method Results, No SNR List - Returning Empty List (caller: %s)' %caller)
 
 
 

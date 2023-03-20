@@ -87,7 +87,29 @@ class ProjectTab(QWidget):
         logger.info('')
         index = self._tabs.currentIndex()
         QApplication.restoreOverrideCursor()
-        self.refreshTab()
+        index = self._tabs.currentIndex()
+
+        if getData('state,manual_mode'):
+            pts_ref = self.MA_viewer_ref.pts
+            pts_base = self.MA_viewer_base.pts
+            self.initNeuroglancer()
+            self.MA_viewer_ref.pts = pts_ref
+            self.MA_viewer_base.pts = pts_base
+            # self.updateNeuroglancer()
+
+        if index == 0:
+            # self.updateNeuroglancer()
+            # self.initNeuroglancer()
+            cfg.emViewer.set_layer(cfg.data.zpos)
+        elif index == 1:
+            pass
+        elif index == 2:
+            self.updateTreeWidget()
+            # self.treeview_model.jumpToLayer()
+        elif index == 3:
+            self.snr_plot.data = cfg.data
+            self.snr_plot.initSnrPlot()
+            self.initSnrViewer()
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
@@ -107,10 +129,10 @@ class ProjectTab(QWidget):
             # self.updateNeuroglancer()
             self.initNeuroglancer()
         elif index == 1:
-            pass
+            self.project_table.setScaleData()
         elif index == 2:
             self.updateTreeWidget()
-            # self.treeview_model.jumpToLayer()
+            self.treeview_model.jumpToLayer()
         elif index == 3:
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()
@@ -123,7 +145,8 @@ class ProjectTab(QWidget):
     def initSnrViewer(self):
 
         # self.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-        self.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+        # self.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+        self.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
         # self.snrViewer.initViewerSbs(orientation='vertical')
         self.snrWebengine.setUrl(QUrl(self.snrViewer.url()))
         self.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
@@ -165,7 +188,8 @@ class ProjectTab(QWidget):
             cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
             # cfg.emViewer.signals.stateChanged.connect(self.slotUpdateZoomSlider)
             cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
-            self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
+            # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
+            self.zoomSlider.valueChanged.connect(self.onZoomSlider)
 
         self.updateProjectLabels()
 
@@ -253,7 +277,7 @@ class ProjectTab(QWidget):
                     background-color: rgba(0,0,0,0.5);
                     color: #FFFF66;
                     padding: 1px;
-                    border-radius: 5px;
+                    border-radius: 4px;
                     """)
 
         self._ProcessMonitorWidget = QWidget()
@@ -338,8 +362,13 @@ class ProjectTab(QWidget):
         self.csALL = QWidget()
         self.csALL.setLayout(gl)
 
-        style = """font-family: 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 10px; 
-        background-color: rgba(0,0,0,.50); color: #f3f6fb; padding: 3px;"""
+        style = """
+        font-family: 'Andale Mono', 'Ubuntu Mono', monospace; 
+        font-size: 10px; 
+        background-color: rgba(0,0,0,.50); 
+        color: #f3f6fb; 
+        padding: 2px;
+        border-radius: 2px;"""
 
         # self.cspotSlider = QSlider(Qt.Orientation.Vertical)
         # self.cspotSlider.setRange(36,256)
@@ -510,11 +539,12 @@ class ProjectTab(QWidget):
         self.zoomSlider.setMouseTracking(True)
         # self.zoomSlider.setInvertedAppearance(True)
         self.zoomSlider.setMaximum(4)
-        self.zoomSlider.setMinimum(0.1)
+        # self.zoomSlider.setMinimum(0.1)
+        self.zoomSlider.setMinimum(0.02)
 
 
-        self.zoomSlider.sliderMoved.connect(self.onZoomSlider) #Original #0314
-        # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
+        # self.zoomSlider.sliderMoved.connect(self.onZoomSlider) #Original #0314
+        self.zoomSlider.valueChanged.connect(self.onZoomSlider)
         self.zoomSlider.setValue(4.0)
 
         # self.crossSectionOrientationSlider = DoubleSlider(Qt.Orientation.Vertical, self)
@@ -916,6 +946,38 @@ class ProjectTab(QWidget):
 
 
 
+        # TOOLBARS
+
+        # self._highContrastNgAction = QPushButton()
+        self._highContrastNgAction = QAction()
+        self._highContrastNgAction.setStatusTip('Toggle High Contrast Mode')
+        # self._highContrastNgAction.setFixedSize(16, 16)
+        # self._highContrastNgAction.setIconSize(QSize(14,14))
+        self._highContrastNgAction.setIcon(qta.icon("mdi.theme-light-dark", color='#ede9e8'))
+        self._highContrastNgAction.setCheckable(True)
+        self._highContrastNgAction.setChecked(getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
+        if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            self._highContrastNgAction.setText('Neutral')
+        else:
+            self._highContrastNgAction.setText('Contrast')
+
+        self._highContrastNgAction.triggered.connect(lambda: setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', self._highContrastNgAction.isChecked()))
+        def fn():
+            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+                self._highContrastNgAction.setText('Neutral')
+            else:
+                self._highContrastNgAction.setText('Contrast')
+            for v in self.get_viewers():
+                try:
+                    v.updateHighContrastMode()
+                except:
+                    logger.warning('Cant update contrast mode setting for %s' %str(v))
+                    print_exception()
+        self._highContrastNgAction.triggered.connect(fn)
+        self._highContrastNgAction.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
+
+
+
         ngFont = QFont('Tahoma')
         ngFont.setBold(True)
         pal = QPalette()
@@ -1071,8 +1133,9 @@ QListView::item:!selected:hover
         self.showHudOverlayAction.setChecked(getOpt('neuroglancer,SHOW_HUD_OVERLAY'))
         self.showHudOverlayAction.setText('HUD')
 
+        # self.w_ng_extended_toolbar.addWidget(self._highContrastNgAction)
 
-
+        # self.w_ng_extended_toolbar.addWidget(QLabel(' '))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
@@ -1086,6 +1149,7 @@ QListView::item:!selected:hover
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
+        self.w_ng_extended_toolbar.addAction(self._highContrastNgAction)
         # self.w_ng_extended_toolbar.addWidget(self.aligned_label)
         # self.w_ng_extended_toolbar.addWidget(self.unaligned_label)
         # self.w_ng_extended_toolbar.addWidget(self.generated_label)
@@ -1489,9 +1553,11 @@ QListView::item:!selected:hover
 
 
     def applyMps(self):
-        cfg.main_window.hud.post('Saving Manual Correspondence Points...')
-        logger.info('Saving Manual Correspondence Points...')
+
         if self.validate_MA_points():
+            cfg.main_window.hud.post('Saving Manual Correspondence Points...')
+            logger.info('Saving Manual Correspondence Points...')
+            cfg.main_window.statusBar.showMessage('Manual Points Saved!', 3000)
             ref_pts, base_pts = [], []
             for key in self.MA_viewer_ref.pts.keys():
                 p = self.MA_viewer_ref.pts[key]
@@ -1569,6 +1635,9 @@ QListView::item:!selected:hover
         self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
         self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
 
+        self.MA_viewer_ref.signals.ptsChanged.connect(self.applyMps)
+        self.MA_viewer_base.signals.ptsChanged.connect(self.applyMps)
+
         self.update_MA_widgets()
         cfg.main_window.dataUpdateWidgets()
 
@@ -1594,13 +1663,20 @@ QListView::item:!selected:hover
             self.spreadW3.setFixedSize(10, 1)
 
 
-    def setZoomSlider(self):
+    def disableZoomSlider(self):
         self._allow_zoom_change = False
-        caller = inspect.stack()[1].function
-        zoom = cfg.emViewer.zoom()
-        logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
-        self.zoomSlider.setValue(1 / zoom)
+
+    def enableZoomSlider(self):
         self._allow_zoom_change = True
+
+
+    def setZoomSlider(self):
+        if self._allow_zoom_change:
+            caller = inspect.stack()[1].function
+            zoom = cfg.emViewer.zoom()
+            logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
+            self.zoomSlider.setValue(1 / zoom)
+            self._allow_zoom_change = True
 
 
     def onZoomSlider(self):
@@ -1625,7 +1701,7 @@ QListView::item:!selected:hover
                 # state.cross_section_scale = 1 / (val * val)
                 # self.MA_viewer_ref.set_state(state)
                 if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
-                    logger.critical('Setting Neuroglancer Zoom to %g...' %val)
+                    # logger.info('Setting Neuroglancer Zoom to %g...' %val)
                     self.MA_viewer_ref.set_zoom( val )
             else:
                 try:
@@ -1637,7 +1713,7 @@ QListView::item:!selected:hover
                     # state.cross_section_scale = 1 / (val * val)
                     # cfg.emViewer.set_state(state)
                     if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
-                        logger.critical('Setting Neuroglancer Zoom to %g...' % val)
+                        # logger.info('Setting Neuroglancer Zoom to %g...' % val)
                         cfg.emViewer.set_zoom( val )
                 except:
                     print_exception()
@@ -1809,6 +1885,7 @@ QListView::item:!selected:hover
         font = QFont()
         font.setBold(True)
         self.snr_plot = SnrPlot()
+        # self.lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
         self.lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
         self.lab_yaxis.setMaximumWidth(20)
         hbl = HBL()
@@ -1816,6 +1893,7 @@ QListView::item:!selected:hover
         hbl.addWidget(self.snr_plot)
         self._plot_Xaxis = QLabel('Serial Section #')
         self._plot_Xaxis.setMaximumHeight(20)
+        # self._plot_Xaxis.setStyleSheet('color: #ede9e8; font-size: 14px;')
         self._plot_Xaxis.setStyleSheet('color: #ede9e8; font-size: 14px;')
         self._plot_Xaxis.setContentsMargins(0, 0, 0, 8)
         self._plot_Xaxis.setFont(font)
@@ -2060,13 +2138,19 @@ QListView::item:!selected:hover
         cfg.emViewer.set_state(state)
 
 
+
     def get_viewers(self):
         logger.info('')
+        viewers = []
         if getData('state,manual_mode'):
-            return [self.MA_viewer_base, self.MA_viewer_ref, self.MA_viewer_stage]
+            viewers.extend([self.MA_viewer_base, self.MA_viewer_ref, self.MA_viewer_stage])
             # return [cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref]
-        else:
-            return [cfg.emViewer]
+        tab = self._tabs.currentIndex()
+        if tab == 0:
+            viewers.extend([cfg.emViewer])
+        elif tab == 3:
+            viewers.extend([self.snrViewer])
+        return viewers
 
     def paintEvent(self, pe):
         '''Enables widget to be style-ized'''
