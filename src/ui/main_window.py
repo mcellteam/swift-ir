@@ -3415,22 +3415,6 @@ class MainWindow(QMainWindow):
 
         viewMenu = self.menu.addMenu("View")
 
-        self.ngShowScaleBarAction = QAction(self)
-        def fn():
-            if self._isProjectTab():
-                opt = self.ngShowScaleBarAction.isChecked()
-                setOpt('neuroglancer,SHOW_SCALE_BAR', opt)
-                # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[opt])
-                # for v in self.get_viewers():
-                #     v.updateScaleBar()
-                if cfg.emViewer:
-                    cfg.emViewer.updateScaleBar()
-        self.ngShowScaleBarAction.setCheckable(True)
-        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[getOpt('neuroglancer,SHOW_SCALE_BAR')])
-        self.ngShowScaleBarAction.setText('Scale Bar')
-        self.ngShowScaleBarAction.triggered.connect(fn)
-        viewMenu.addAction(self.ngShowScaleBarAction)
 
 
         self.ngShowAxisLinesAction = QAction(self)
@@ -3449,6 +3433,23 @@ class MainWindow(QMainWindow):
         # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[getOpt('neuroglancer,SHOW_AXIS_LINES')])
         self.ngShowAxisLinesAction.setText('Axis Lines')
         viewMenu.addAction(self.ngShowAxisLinesAction)
+
+        self.ngShowScaleBarAction = QAction(self)
+        def fn():
+            if self._isProjectTab():
+                opt = self.ngShowScaleBarAction.isChecked()
+                setOpt('neuroglancer,SHOW_SCALE_BAR', opt)
+                # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[opt])
+                # for v in self.get_viewers():
+                #     v.updateScaleBar()
+                if cfg.emViewer:
+                    cfg.emViewer.updateScaleBar()
+        self.ngShowScaleBarAction.setCheckable(True)
+        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
+        # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[getOpt('neuroglancer,SHOW_SCALE_BAR')])
+        self.ngShowScaleBarAction.setText('Scale Bar')
+        self.ngShowScaleBarAction.triggered.connect(fn)
+        viewMenu.addAction(self.ngShowScaleBarAction)
 
 
         self.ngShowUiControlsAction = QAction(self)
