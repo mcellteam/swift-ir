@@ -364,7 +364,7 @@ class ProjectTab(QWidget):
 
         style = """
         font-family: 'Andale Mono', 'Ubuntu Mono', monospace; 
-        font-size: 10px; 
+        font-size: 9px; 
         background-color: rgba(0,0,0,.50); 
         color: #f3f6fb; 
         padding: 2px;
@@ -1138,8 +1138,8 @@ QListView::item:!selected:hover
         # self.w_ng_extended_toolbar.addWidget(QLabel(' '))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
+        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
         self.w_ng_extended_toolbar.addAction(self.showHudOverlayAction)
         self.w_ng_extended_toolbar.addWidget(QLabel('      '))

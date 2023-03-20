@@ -44,6 +44,8 @@ def generate_zarr_scales(data):
                              overwrite=True)
         n_tasks = len(data) * data.n_scales()
 
+        cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
+
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.taskPrefix = 'Downscales Converted to Zarr for '
         task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()]

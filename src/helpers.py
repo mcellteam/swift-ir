@@ -144,7 +144,7 @@ def update_preferences_model():
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', True)
-    cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', True)
+    cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
     cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
