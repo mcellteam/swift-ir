@@ -516,7 +516,8 @@ class EMViewerStage(AbstractEMViewer):
         self.index = cfg.data.zpos
         dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
         # self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
-        self.store = get_zarr_tensor(dir_staged).result()
+        self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
+        logger.critical('Getting Local Volume...')
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store,
@@ -524,13 +525,15 @@ class EMViewerStage(AbstractEMViewer):
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0]
         )
-
+        logger.critical('Configuring Shape...')
         # _, tensor_y, tensor_x = cfg.tensor.shape
         _, tensor_y, tensor_x = self.store.shape
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
         logger.critical(f'MA_webengine_stage: w={w}, h={h}')
         self.initZoom(w=w, h=h, adjust=1.10)
+
+        logger.critical('Calling with txn()...')
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
