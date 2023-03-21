@@ -3021,6 +3021,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.notesButton)
         self.toolbar.addWidget(self.pythonButton)
         # self.toolbar.addWidget(self._highContrastNgAction)
+        self.toolbar.addWidget(self._fixAllZmag)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
 
