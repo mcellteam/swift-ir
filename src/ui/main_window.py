@@ -1478,7 +1478,6 @@ class MainWindow(QMainWindow):
                 except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
                 # cfg.project_tab.slotUpdateZoomSlider()
 
-
         logger.info('<<<< dataUpdateWidgets')
 
 
