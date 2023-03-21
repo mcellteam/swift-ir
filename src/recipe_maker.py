@@ -922,8 +922,8 @@ class align_ingredient:
             for line in mir_mp_out_lines:
                 logger.info("Line: " + str(line))
                 toks = line.strip().split()
-                if (toks[0] == 'AF'):
-                # if (toks[0] == 'AI'):
+                # if (toks[0] == 'AF'):
+                if (toks[0] == 'AI'):
                     afm[0, 0] = float(toks[1])
                     afm[0, 1] = float(toks[2])
                     afm[0, 2] = float(toks[3])
