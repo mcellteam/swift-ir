@@ -168,7 +168,7 @@ def run_json_project(project,
             s_tbd[i]['alignment'] = atrm # put updated atrm into s_tbd
 
             # if there are match points, copy and scale them for scale_tbd
-            if atrm['method'] in ('Match Point Align', 'Manual-Hint', 'Manual-Strict'):
+            if atrm['method'] in ('Manual-Hint', 'Manual-Strict'):
                 mp_ref = (np.array(atrm['manual_points_mir']['ref']) * upscale).tolist()
                 mp_base = (np.array(atrm['manual_points_mir']['base']) * upscale).tolist()
                 atrm['manual_points_mir']['ref'] = mp_ref
@@ -331,11 +331,16 @@ class alignment_process:
         self.dest = dest
         self.mp_ref = None
         self.mp_base = None
+        # self.align_mode = 'Auto-SWIM'
 
         if layer_dict != None:
             self.layer_dict = layer_dict
             self.im_sta_fn = self.layer_dict['reference']
             self.im_mov_fn = self.layer_dict['filename']
+
+            self.align_mode = self.layer_dict['alignment']['method']
+
+
         else:
             self.layer_dict = {
                 "images": {
@@ -380,7 +385,7 @@ class alignment_process:
         return result
 
     def auto_swim_align(self, c_afm, save=True):
-        logger.info('Running align_alignment_process.auto_swim_align...')
+        MAlogger.info('Running align_alignment_process.auto_swim_align...')
         siz = ImageSize(self.im_sta_fn)
         atrm = self.layer_dict['alignment'] # (A)lign (T)o (R)ef (M)ethod
         wsf = atrm['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
@@ -502,7 +507,8 @@ class alignment_process:
             # MAlogger.critical('Manual Points (ref):\n%s' % str(self.mp_ref))
             # First ingredient is to calculate the Affine matrix from match points alone
             # ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
-            ingredient_1_mp = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
+            # ingredient_1_mp = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
+            ingredient_1_mp = align_ingredient(mode='Manual-Hint',name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
             ingredient_2_mp = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest) # <-- CALL TO SWIM
             ingredient_2_mp_b = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest) #0221+
@@ -516,7 +522,8 @@ class alignment_process:
             self.mp_ref = np.array(self.layer_dict['alignment']['manual_points_mir']['ref']).transpose()
             # self.mp_base[1][:] = self.size - self.mp_base[1][:]
             # self.mp_ref[1][:] = self.size - self.mp_ref[1][:]
-            ingredient_1_mp = align_ingredient(name=self.im_mov_fn, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
+            # ingredient_1_mp = align_ingredient(name=self.im_mov_fn, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
+            ingredient_1_mp = align_ingredient(mode='Manual-Strict',name=self.im_mov_fn, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest)
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
 
 
@@ -658,8 +665,9 @@ class align_ingredient:
     #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
     #        supplied afm matrix but do not refine the afm matrix
     def __init__(self,
-                 name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
-                 iters=2, align_mode='auto_swim', rota=None, ad=None, dest=None, ):
+                 mode='Auto-SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
+                 iters=2, rota=None, ad=None, dest=None, ):
+        self.align_mode = mode
         self.name = os.path.basename(name)
         self.swim_drift = 0.0
         self.afm = afm
@@ -670,7 +678,7 @@ class align_ingredient:
         self.wht = wht
         self.rota = rota
         self.iters = iters
-        self.align_mode = align_mode
+        # self.align_mode = align_mode
         self.snr = None
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
@@ -684,6 +692,7 @@ class align_ingredient:
         self.swim_err_lines = None
         self.dest = dest
         self.mir_toks = {}
+
 
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')['tacc.utexas' in platform.node()]
@@ -776,8 +785,10 @@ class align_ingredient:
         self.swim_str = multi_swim_arg_string
         o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string)
 
-        if self.align_mode == 'manual_align':
-            logger.critical('SWIM argument string: %s' % self.swim_str)
+
+        MAlogger.critical(f'ALIGNMENT MODE : {self.align_mode}')
+        if self.align_mode in ('Manual-Hint', 'Manual-Strict'):
+            MAlogger.critical('SWIM argument string: %s' % self.swim_str)
             MAlogger.critical('SWIM argument string: %s' % self.swim_str)
             MAlogger.critical('\nSWIM stdout: %s' % str(self.swim_out_lines))
             # MAlogger.info('swim_err_lines\n %s' % str(self.swim_out_lines))
@@ -832,15 +843,13 @@ class align_ingredient:
         self.mir_script = mir_script
         o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
 
-        if self.align_mode == 'manual_align':
-            logger.critical('***MIR script***\n' + str(self.mir_script))
-
         mir_out_lines = o['out'].strip().split('\n')
         mir_err_lines = o['err'].strip().split('\n')
 
-        if self.align_mode == 'manual_align':
-            logger.critical('\nMIR std out: %s\n' % str(mir_out_lines))
-            logger.critical('\nMIR std err: %s\n' % str(mir_err_lines))
+        if self.align_mode in ('Manual-Strict', 'Manual-Hint'):
+            MAlogger.critical('***MIR script***\n' + str(self.mir_script))
+            MAlogger.critical('\nMIR std out: %s\n' % str(mir_out_lines))
+            MAlogger.critical('\nMIR std err: %s\n' % str(mir_err_lines))
 
         # Separate the results into a list of token lists
         afm = np.eye(2, 3, dtype=np.float32)
@@ -879,7 +888,7 @@ class align_ingredient:
 
         logger.debug("\nAIM = " + str(aim))
 
-        if self.align_mode == 'auto_swim':
+        if self.align_mode == 'Auto-SWIM':
             self.afm = aim
 
         #    if self.align_mode == 'check_align':
@@ -894,7 +903,7 @@ class align_ingredient:
 
         '''---------------------------------NEW -------------------------------------'''
         #0214
-        if self.align_mode == 'manual_align':
+        if self.align_mode in ('Manual-Hint', 'Manual-Strict'):
             mir_script_mp = ''
             for i in range(len(self.psta[0])):
                 mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} {self.pmov[0][i]} {self.pmov[1][i]}\n'
@@ -908,7 +917,7 @@ class align_ingredient:
             mir_mp_err_lines = o['err'].strip().split('\n')
             self.mir_mp_out_lines = mir_mp_out_lines
             self.mir_mp_err_lines = mir_mp_err_lines
-            if self.align_mode == 'manual_align':
+            if self.align_mode in ('Manual-Hint', 'Manual-Strict'):
                 MAlogger.critical('\n(MANUAL ALIGN: %s) MIR out: %s' % (self.name, str(mir_mp_out_lines)))
                 MAlogger.critical('\n(MANUAL ALIGN: %s) MIR err: %s' % (self.name, str(mir_mp_err_lines)))
 
@@ -998,7 +1007,7 @@ class align_ingredient:
                 snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
             logging.info(self.snr_report)
 
-            if self.align_mode == 'auto_swim':
+            if self.align_mode == 'Auto-SWIM':
                 self.afm = afm
 
             return self.afm
