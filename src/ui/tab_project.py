@@ -113,7 +113,7 @@ class ProjectTab(QWidget):
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
-        logger.info('')
+        logger.info('Refreshing >>>>')
 
         index = self._tabs.currentIndex()
 
@@ -138,9 +138,7 @@ class ProjectTab(QWidget):
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
 
-
-        # QApplication.processEvents()
-        # self.repaint()
+        logger.info('<<<< Refreshing')
 
     def initSnrViewer(self):
 
@@ -1399,14 +1397,12 @@ QListView::item:!selected:hover
     def dataUpdateMA(self):
 
         caller = inspect.stack()[1].function
-        logger.critical('dataUpdateMA (caller: %s) >>>>' %caller)
         if cfg.data.selected_method() != 'Auto-SWIM':
             self.combo_method.setCurrentText(cfg.data.selected_method())
         self.btnApplyMA.setEnabled(self.validate_MA_points())
         self.btnClearMA.setEnabled(bool(len(self.MA_viewer_ref.pts) + len(self.MA_viewer_base.pts)))
         self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
         self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
-        logger.critical('<<< dataUpdateMA')
 
 
 
@@ -1619,7 +1615,7 @@ QListView::item:!selected:hover
 
 
     def onEnterManualMode(self):
-        logger.critical('onEnterManualMode >>>>')
+        logger.info('onEnterManualMode >>>>')
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         self.w_ng_display_ext.hide() # change layout before initializing viewer
@@ -1647,7 +1643,7 @@ QListView::item:!selected:hover
         self.update_MA_widgets()
         cfg.main_window.dataUpdateWidgets()
 
-        logger.critical('<<<< onEnterManualMode')
+        logger.info('<<<< onEnterManualMode')
 
     # def onExitManualMode(self):
     #     self.MA_ptsListWidget_ref.clear()
@@ -1698,6 +1694,7 @@ QListView::item:!selected:hover
         # if self._allow_zoom_change:
         #     self._allow_zoom_change = False
 
+
         if caller not in  ('slotUpdateZoomSlider', 'setValue'): #Original #0314
             # logger.critical('caller: %s' % caller)
 
@@ -1711,6 +1708,10 @@ QListView::item:!selected:hover
                 if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
                     # logger.info('Setting Neuroglancer Zoom to %g...' %val)
                     self.MA_viewer_ref.set_zoom( val )
+
+                # self.MA_viewer_stage._set_zmag()
+                # self.MA_viewer_ref._set_zmag()
+                # self.MA_viewer_base._set_zmag()
             else:
                 try:
                     val = 1 / self.zoomSlider.value()

@@ -164,7 +164,7 @@ class MAViewer(neuroglancer.Viewer):
             cfg.main_window.warn('Unable to Load Data Store at %s' % path)
             raise e
 
-        logger.critical('Creating Local Volume for %d' %self.index)
+        # logger.critical('Creating Local Volume for %d' %self.index)
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[self.index:self.index+1, :, :],
@@ -178,7 +178,8 @@ class MAViewer(neuroglancer.Viewer):
             s.layout.type = 'yz'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            s.show_scale_bar = False
+            # s.show_scale_bar = False
+            s.show_scale_bar = True
             # s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_axis_lines = False
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
@@ -213,7 +214,7 @@ class MAViewer(neuroglancer.Viewer):
 
         self.set_brightness()
         self.set_contrast()
-        # self.set_zmag()
+        self.set_zmag()
         # self.initZoom()
         # self._set_zmag()
 
@@ -306,17 +307,9 @@ class MAViewer(neuroglancer.Viewer):
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
-
-
         self.draw_point_annotations()
         self.drawSWIMwindow()
-
         self.signals.ptsChanged.emit()
-
-        self._set_zmag()
-
-
-        # self._set_zmag()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
 
 
@@ -549,14 +542,16 @@ class MAViewer(neuroglancer.Viewer):
         logger.info('')
         try:
             state = copy.deepcopy(self.state)
-            state.relativeDisplayScales = val
+            state.relativeDisplayScales = {'z': val}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')
+            print_exception()
         else:
             logger.info('Successfully set Z-mag!')
 
     def _set_zmag(self):
+        logger.critical(f'Setting Z-mag on {self.type}')
         with self.txn() as s:
             s.relativeDisplayScales = {"z": 10}
 
