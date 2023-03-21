@@ -457,7 +457,7 @@ class alignment_process:
 
         # wwx, wwy = window width
         # psta = points stationary array
-        #build #recipe #addingredients
+        #build #recipe #addingredients #ingredients
 
         fn = os.path.basename(self.layer_dict['filename'])
 
