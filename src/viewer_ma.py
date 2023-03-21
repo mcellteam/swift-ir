@@ -214,7 +214,7 @@ class MAViewer(neuroglancer.Viewer):
 
         self.set_brightness()
         self.set_contrast()
-        self.set_zmag()
+        # self.set_zmag()
         # self.initZoom()
         # self._set_zmag()
 

@@ -143,10 +143,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print_exception()
             logger.error('[{self.type}] ERROR on_state_change')
 
-        try:
-            self._set_zmag()
-        except:
-            pass
 
     def url(self):
         return self.get_viewer_url()
@@ -448,7 +444,7 @@ class EMViewer(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        self.set_zmag()
+        # self.set_zmag()
 
 
     def initViewerSlim(self, nglayout=None):
@@ -575,7 +571,7 @@ class EMViewerStage(AbstractEMViewer):
         self.set_brightness()
         self.set_contrast()
         # self.set_zmag()
-        self.set_zmag()
+        # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
         logger.info('\n\n' + self.url() + '\n')
@@ -671,7 +667,7 @@ class EMViewerSnr(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        self.set_zmag()
+        # self.set_zmag()
 
 
 class EMViewerMendenhall(AbstractEMViewer):
