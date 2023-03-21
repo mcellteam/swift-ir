@@ -138,6 +138,9 @@ class ProjectTab(QWidget):
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
 
+        for v in self.get_viewers():
+            v.set_zmag()
+
         logger.info('<<<< Refreshing')
 
     def initSnrViewer(self):
