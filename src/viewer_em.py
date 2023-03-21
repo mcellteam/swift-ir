@@ -534,10 +534,10 @@ class EMViewerStage(AbstractEMViewer):
         _, tensor_y, tensor_x = self.store.shape
 
         logger.info(f'Tensor Shape: {self.store.shape}')
-        # w = cfg.project_tab.MA_webengine_stage.geometry().width()
-        # h = cfg.project_tab.MA_webengine_stage.geometry().height()
+        w = cfg.project_tab.MA_webengine_stage.geometry().width()
+        h = cfg.project_tab.MA_webengine_stage.geometry().height()
         # logger.critical(f'MA_webengine_stage: w={w}, h={h}')
-        # self.initZoom(w=w, h=h, adjust=1.10)
+        self.initZoom(w=w, h=h, adjust=1.10)
 
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
