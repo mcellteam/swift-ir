@@ -2989,6 +2989,18 @@ class MainWindow(QMainWindow):
         self._detachNgButton.clicked.connect(self.update_ng)
         self._detachNgButton.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
 
+
+        def fn():
+            if self._isProjectTab():
+                for v in cfg.project_tab.get_viewers():
+                    v.set_zmag()
+        self._fixAllZmag = QPushButton()
+        self._fixAllZmag.setStatusTip('Fix Z-mag')
+        self._fixAllZmag.setFixedSize(18, 18)
+        self._fixAllZmag.setIcon(qta.icon("mdi.auto-fix", color=ICON_COLOR))
+        self._fixAllZmag.clicked.connect(fn)
+
+
         # self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self._btn_refreshTab)
         self.toolbar.addWidget(QLabel(' '))
@@ -3011,6 +3023,9 @@ class MainWindow(QMainWindow):
         # self.toolbar.addWidget(self._highContrastNgAction)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
+
+
+
 
 
     def _disableGlobTabs(self):
