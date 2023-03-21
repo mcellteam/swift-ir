@@ -5486,14 +5486,14 @@ class MainWindow(QMainWindow):
 
 
     def setPbarText(self, text: str):
-        logger.critical('')
+        # logger.critical('')
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         self.repaint()
 
 
     def showZeroedPbar(self):
-        logger.critical('Showing Progress Bar...')
+        # logger.critical('Showing Progress Bar...')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
@@ -5503,7 +5503,7 @@ class MainWindow(QMainWindow):
 
 
     def hidePbar(self):
-        logger.critical('Hiding Progress Bar...')
+        # logger.critical('Hiding Progress Bar...')
         self.pbar_widget.hide()
         self.statusBar.clearMessage() #Shoehorn
 
