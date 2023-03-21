@@ -228,7 +228,6 @@ class MainWindow(QMainWindow):
 
 
     def refreshTab(self):
-        logger.critical('')
         if not self._working:
             logger.critical('Refreshing...')
             if self._isProjectTab():
@@ -241,6 +240,9 @@ class MainWindow(QMainWindow):
                     #     cfg.project_tab.refreshTab()
                     # self._lastRefresh = time.time()
                 cfg.project_tab.refreshTab()
+
+                for v in cfg.project_tab.get_viewers():
+                    v.set_zmag()
                 self.hud.done()
                 self.updateEnabledButtons()    #0301+
             elif self._getTabType() == 'WebBrowser':
@@ -1477,7 +1479,7 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.slotUpdateZoomSlider()
 
 
-        logger.critical('<<<< dataUpdateWidgets')
+        logger.info('<<<< dataUpdateWidgets')
 
 
 
@@ -2615,7 +2617,6 @@ class MainWindow(QMainWindow):
         run_checks()
 
     def enterExitManAlignMode(self):
-        logger.critical('enterExitManAlignMode >>>>')
         if cfg.data:
             if not cfg.data.is_aligned_and_generated():
                 logger.warning('Cannot enter manual alignment mode until the series is aligned.')
@@ -2626,7 +2627,6 @@ class MainWindow(QMainWindow):
                     self.enter_man_mode()
                 else:
                     self.exit_man_mode()
-        logger.critical('<<<< enterExitManAlignMode')
 
     def enter_man_mode(self):
         logger.critical('')

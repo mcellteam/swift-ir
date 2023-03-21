@@ -91,13 +91,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def diableZoom(self):
         self._blockZoom = True
-        logger.critical('Zoom disabled.')
+        logger.info('Zoom disabled.')
 
     def enableZoom(self):
         self._blockZoom = False
-        logger.critical('Zoom enabled.')
+        logger.info('Zoom enabled.')
 
     def _set_zmag(self):
+        logger.critical(f'Setting Z-mag on {self.type}')
         with self.txn() as s:
             s.relativeDisplayScales = {"z": 10}
 
@@ -141,6 +142,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         except:
             print_exception()
             logger.error('[{self.type}] ERROR on_state_change')
+
+        try:
+            self._set_zmag()
+        except:
+            pass
 
     def url(self):
         return self.get_viewer_url()
@@ -230,10 +236,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         logger.info('')
         try:
             state = copy.deepcopy(self.state)
-            state.relativeDisplayScales = val
+            state.relativeDisplayScales = {'z': val}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')
+            print_exception()
         else:
             logger.info('Successfully set Z-mag!')
 
@@ -329,7 +336,7 @@ class EMViewer(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
+        logger.info(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
 
         caller = inspect.stack()[1].function
         if cfg.data['state']['mode'] == 'stack':
@@ -347,7 +354,6 @@ class EMViewer(AbstractEMViewer):
         mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
           'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
         nglayout = mapping[requested]
-        logger.critical('nglayout = %s' %nglayout)
 
         self.coordinate_space = self.getCoordinateSpace()
         self.get_tensors()
@@ -442,7 +448,7 @@ class EMViewer(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        self._set_zmag()
+        self.set_zmag()
 
 
     def initViewerSlim(self, nglayout=None):
@@ -512,17 +518,15 @@ class EMViewerStage(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\nInitializing [{self.type}] [caller: {caller}]...\n')
+        logger.info(f'\n\nInitializing [{self.type}] [caller: {caller}]...\n')
 
         self.coordinate_space = self.getCoordinateSpace()
 
-        logger.critical('zpos = %d' %cfg.data.zpos)
 
         self.index = cfg.data.zpos
         dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
         # self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
         self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
-        logger.critical('Getting Local Volume...')
         self.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store,
@@ -530,17 +534,15 @@ class EMViewerStage(AbstractEMViewer):
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0]
         )
-        logger.critical('Configuring Shape...')
         # _, tensor_y, tensor_x = cfg.tensor.shape
         _, tensor_y, tensor_x = self.store.shape
 
-        logger.critical(f'Tensor Shape: {self.store.shape}')
+        logger.info(f'Tensor Shape: {self.store.shape}')
         # w = cfg.project_tab.MA_webengine_stage.geometry().width()
         # h = cfg.project_tab.MA_webengine_stage.geometry().height()
         # logger.critical(f'MA_webengine_stage: w={w}, h={h}')
         # self.initZoom(w=w, h=h, adjust=1.10)
 
-        logger.critical('Calling with txn()...')
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
@@ -573,10 +575,10 @@ class EMViewerStage(AbstractEMViewer):
         self.set_brightness()
         self.set_contrast()
         # self.set_zmag()
-        self._set_zmag()
+        self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        logger.critical('\n\n' + self.url() + '\n')
+        logger.info('\n\n' + self.url() + '\n')
 
 
 
@@ -592,7 +594,7 @@ class EMViewerSnr(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
+        logger.info(f'Initializing [{self.type}] [caller: {caller}]...')
 
         self.coordinate_space = self.getCoordinateSpace()
         self.get_tensors()
@@ -669,7 +671,7 @@ class EMViewerSnr(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        self._set_zmag()
+        self.set_zmag()
 
 
 class EMViewerMendenhall(AbstractEMViewer):
