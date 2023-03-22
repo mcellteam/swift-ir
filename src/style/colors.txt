@@ -35,6 +35,8 @@
 #003333 - dark green
 #dadada - light grey
 
+#a30000 - dark candy apple red
+
 
 regex to remove empty lines: ^\s*^
 
