@@ -317,8 +317,10 @@ class MainWindow(QMainWindow):
         self._isProfiling = 0
         self.detachedNg = WebPage()
         self._lastRefresh = 0
-        self._corrSpotDrawerSize = 64
+        # self._corrSpotDrawerSize = 140
+        self._corrSpotDrawerSize = 160
 
+        self._dontReinit = False
 
     def initStyle(self):
         logger.info('')
@@ -361,9 +363,10 @@ class MainWindow(QMainWindow):
         self.correlation_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
         # if self.correlation_signals.isVisible():
         if cfg.project_tab.signalsAction.isChecked():
-            sizes = self._splitter.sizes()
-            sizes[1] = self._corrSpotDrawerSize
-            self._splitter.setSizes(sizes)
+        #     sizes = self._splitter.sizes()
+        #     sizes[1] = self._corrSpotDrawerSize
+        #     self._splitter.setSizes(sizes)
+            QApplication.processEvents()
             self.updateCorrSpotsDrawer()
 
         # self.correlation_signals.setVisible(self.correlation_signals.isHidden())
@@ -372,20 +375,28 @@ class MainWindow(QMainWindow):
 
 
     def forceShowCorrSignalDrawer(self):
+        logger.critical(f'forceShowCorrSignalDrawer [sizes: {self._splitter.sizes()}]>>>>')
         if self._isProjectTab():
             self.correlation_signals.setVisible(True)
-            cfg.project_tab.signalsAction.setChecked()
-            sizes = self._splitter.sizes()
-            sizes[1] = self._corrSpotDrawerSize
-            self._splitter.setSizes(sizes)
+            cfg.project_tab.signalsAction.setChecked(True)
+            # sizes = self._splitter.sizes()
+            # sizes[1] = 160
+            # self._splitter.setSizes(sizes)
+            QApplication.processEvents()
             self.updateCorrSpotsDrawer()
+        logger.critical(f'<<<< forceShowCorrSignalDrawer [sizes: {self._splitter.sizes()}]')
 
 
 
     def updateCorrSpotsDrawer(self):
+        logger.critical(f'updateCorrSpotsDrawer [sizes: {self._splitter.sizes()}] [drawer member: {self._corrSpotDrawerSize}]>>>>')
         caller = inspect.stack()[1].function
         logger.info('caller: %s' % caller)
         if self._isProjectTab():
+
+            # isCorrSigsHidden = self.correlation_signals.isHidden()
+            # logger.critical(f'isCorrSigsHidden = {isCorrSigsHidden}')
+
             if self.correlation_signals.isHidden():
                 logger.warning('Corr spots widget it hidden -- returning...')
                 return
@@ -398,14 +409,22 @@ class MainWindow(QMainWindow):
             snr_vals = cfg.data.snr_components()
             thumbs = cfg.data.get_corr_spot_files()
             n = len(thumbs)
+
+            splitterSizes = self._splitter.sizes()
+            splitterSizes[1] = 140
+            logger.critical(f'Setting _splitter sizes ...')
+            self._splitter.setSizes(splitterSizes)
+            siz = splitterSizes[1]
+
             # logger.info('thumbs: %s' % str(thumbs))
             for i in range(7):
                 # h = max(self.correlation_signals.height() - 38, 64)
                 # h = self.correlation_signals.height() - 16
-                siz = self._splitter.sizes()[1]
+
                 if siz == 0:
                     siz = self._corrSpotDrawerSize
-                h = max(siz - 22, 30)
+                # h = max(siz - 22, 30)
+                h = max(siz - 22, 120)
                 self.corr_signals[i].setFixedSize(h, h)
                 if i < n:
                     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
@@ -426,6 +445,7 @@ class MainWindow(QMainWindow):
                     self.corr_signals[i].show()
                 else:
                     self.corr_signals[i].hide()
+        logger.critical(f'<<<< updateCorrSpotsDrawer [sizes: {self._splitter.sizes()}]')
 
 
     def clearCorrSpotsDrawer(self):
@@ -2058,6 +2078,10 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
+
+        self._dontReinit = True
+
+
         self.showZeroedPbar()
         self.pbarLabel.setText('Loading Project...')
 
@@ -2096,6 +2120,8 @@ class MainWindow(QMainWindow):
         self._sectionSlider.setValue(int(len(cfg.data) / 2))
         # self._forceShowControls() #Todo make a decision on this
         self.update()
+
+        self._dontReinit = False
 
 
 
@@ -2691,7 +2717,6 @@ class MainWindow(QMainWindow):
                     self.exit_man_mode()
 
     def enter_man_mode(self):
-        logger.critical('')
         if cfg.data.is_aligned_and_generated():
             logger.critical('Entering Manual Align Mode...')
             self.tell('Entering Manual Align Mode...')
@@ -2883,11 +2908,13 @@ class MainWindow(QMainWindow):
 
 
     def onComboModeChange(self):
-        logger.critical('onComboModeChange:')
         caller = inspect.stack()[1].function
+
         if self._isProjectTab():
             # if cfg.project_tab._tabs.currentIndex() == 0:
             if caller == 'main':
+                logger.critical('onComboModeChange...')
+
                 index = self.combo_mode.currentIndex()
                 curText = self.combo_mode.currentText()
                 if curText == 'Manual Align Mode':
@@ -3170,8 +3197,19 @@ class MainWindow(QMainWindow):
 
 
     def _onGlobTabChange(self):
+
+        # if self._dontReinit == True:
+        #     logger.critical('\n\n\n<<<<< DONT REINIT! >>>>>\n\n\n')
+        #     return
+
         caller = inspect.stack()[1].function
-        # logger.critical('caller: %s' %caller)
+        logger.info('caller: %s' %caller)
+
+
+        # if caller  == '_setLastTab':
+        #     logger.critical('\n\n\n<<<<< DONT REINIT (caller = _setLastTab)! >>>>>\n\n\n')
+        #     return
+
         cfg.project_tab = None
         cfg.zarr_tab = None
         cfg.emViewer = None
@@ -3199,6 +3237,7 @@ class MainWindow(QMainWindow):
             self._forceHideControls()
 
             self.correlation_signals.hide()
+
 
         elif tabtype == 'ProjectTab':
             logger.critical('Loading Project Tab...')
@@ -4563,7 +4602,8 @@ class MainWindow(QMainWindow):
         # self.cpanel.setFixedWidth(520)
         # self.cpanel.setMaximumHeight(120)
         # self.cpanel.setFixedSize(QSize(520,128))
-        self.cpanel.setFixedHeight(120)
+        # self.cpanel.setFixedHeight(120)
+        self.cpanel.setMinimumHeight(120)
 
 
     def splittersHaveMoved(self, pos, index):
@@ -4881,26 +4921,6 @@ class MainWindow(QMainWindow):
         self.corrspot_q2 = SnrThumbnail(parent=self)
         self.corrspot_q3 = SnrThumbnail(parent=self)
 
-        # self.set_corrspot_size(120)
-
-        # self.corrspot_q0.resize(128,128)
-        # self.corrspot_q1.resize(128,128)
-        # self.corrspot_q2.resize(128,128)
-        # self.corrspot_q3.resize(128,128)
-        # self.corrspot_q0.setFixedSize(128,128)
-        # self.corrspot_q1.setFixedSize(128,128)
-        # self.corrspot_q2.setFixedSize(128,128)
-        # self.corrspot_q3.setFixedSize(128,128)
-        # self.corrspot_q0.setMaximumWidth(128)
-        # self.corrspot_q1.setMaximumWidth(128)
-        # self.corrspot_q2.setMaximumWidth(128)
-        # self.corrspot_q3.setMaximumWidth(128)
-
-        # self.matchpointControlPanel = QWidget()
-        # hbl = QHBoxLayout()
-        # hbl.setContentsMargins(4, 0, 4, 0)
-        # hbl.addWidget(self.matchpointControls)
-
         self.corr_spot_thumbs = QWidget()
         # self.corr_spot_thumbs.setMinimumHeight(30)
         # self.corr_spot_thumbs.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
@@ -5107,7 +5127,8 @@ class MainWindow(QMainWindow):
 
         # self.correlation_signals = QWidget()
         self.correlation_signals = QScrollArea()
-        self.correlation_signals.setMinimumHeight(64)
+        self.correlation_signals.setMinimumHeight(140) #Important
+        self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; QScrollBar {width:0px;}")')
         self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; QScrollBar {width:0px;}")')
         self.correlation_signals.setWidgetResizable(True)
         w = QWidget()

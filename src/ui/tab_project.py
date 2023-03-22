@@ -677,7 +677,7 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
         self.MA_ptsListWidget_ref.itemClicked.connect(self.refListItemClicked)
-        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; ')
 
         self.MA_refNextColorTxt = QLabel('Next Color: ')
         self.MA_refNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
@@ -690,7 +690,7 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
         self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
-        self.MA_ptsListWidget_base.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+        self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.MA_baseNextColorTxt = QLabel('Next Color: ')
         self.MA_baseNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.MA_baseNextColorLab = QLabel()

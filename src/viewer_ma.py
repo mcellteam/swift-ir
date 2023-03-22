@@ -315,6 +315,10 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
+        if cfg.data.method() not in ('Manual-Strict', 'Manual-Hint'):
+            logger.warning('add_matchpoint: User may not select point when using the Auto-SWIM alignment method.')
+            return
+
         logger.info('Adding Manual Points to Buffer...')
         # if not cfg.project_tab.isManualReady():
         #     return
