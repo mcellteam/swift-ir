@@ -96,6 +96,7 @@ def count_widgets(name_or_type) -> int:
 def delete_recursive(dir):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
     cfg.main_window.showZeroedPbar()
+    cfg.main_window.setPbarText('Deleting Files...')
 
     to_delete = []
     to_delete.extend(glob(dir +'/img_aligned.zarr/s*'))
@@ -120,9 +121,6 @@ def delete_recursive(dir):
     cfg.nCompleted = 0
     cfg.nTasks = len(to_delete)
     logger.critical('# directories to delete: %d' % len(to_delete))
-
-    cfg.main_window.showZeroedPbar()
-    cfg.main_window.setPbarText('Deleting Files...')
     cfg.main_window.setPbarMax(cfg.nTasks)
     # logger.critical(f'To Delete: {to_delete}')
     for d in to_delete:
