@@ -1035,15 +1035,22 @@ class ProjectTab(QWidget):
         # self.spinbox_whitening.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.spinbox_whitening.setDecimals(2)
         self.spinbox_whitening.setSingleStep(.01)
-        self.spinbox_whitening.setMinimum(-2)
-        self.spinbox_whitening.setMaximum(2)
+        self.spinbox_whitening.setMinimum(-2.0)
+        self.spinbox_whitening.setMaximum(2.0)
 
 
 
         def fn():
             cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' %cfg.data.zpos)
-            cfg.data.set_manual_swim_window(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
-            cfg.data.set_manual_whitening(cfg.DEFAULT_MANUAL_WHITENING)
+            self.MA_SWIM_window_slider.setValue(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+            self.AS_SWIM_window_slider.setValue(cfg.DEFAULT_SWIM_WINDOW)
+            self.spinbox_whitening.setValue(cfg.DEFAULT_WHITENING)
+
+            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+            self.AS_SWIM_window_lab.setText("%.2g%%" % cfg.data.swim_window())
+            # cfg.data.set_manual_swim_window(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+            # cfg.data.set_manual_whitening(cfg.DEFAULT_MANUAL_WHITENING)
+            # cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
         self.MA_settings_defaults_button = QPushButton('Restore Defaults')
@@ -1056,7 +1063,7 @@ class ProjectTab(QWidget):
         self.MA_swim_window_widget = HWidget(self.MA_SWIM_window_slider, self.MA_SWIM_window_lab)
         # self.MA_swim_window_widget.layout.setAlignment(Qt.AlignLeft)
 
-        self.SA_swim_window_widget = HWidget(self.AS_SWIM_window_slider, self.AS_SWIM_window_lab)
+        self.AS_swim_window_widget = HWidget(self.AS_SWIM_window_slider, self.AS_SWIM_window_lab)
 
 
 
@@ -1077,7 +1084,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.setSpacing(2)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
         self.fl_MA_settings.addRow("Manual Window Size", self.MA_swim_window_widget)
-        self.fl_MA_settings.addRow("Auto-SWIM Window Size", self.SA_swim_window_widget)
+        self.fl_MA_settings.addRow("Auto-SWIM Window Size", self.AS_swim_window_widget)
         self.fl_MA_settings.addRow("Whitening Factor", self.spinbox_whitening)
         self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
@@ -1649,12 +1656,15 @@ QListView::item:!selected:hover
                     #     if cfg.baseViewer.state.cross_section_scale != 1.0:
                     pos = cfg.baseViewer.state.position
                     zoom = cfg.baseViewer.state.cross_section_scale
+                    logger.critical(
+                        f'cfg.baseViewer.state.cross_section_scale = {cfg.baseViewer.state.cross_section_scale}')
                     if isinstance(pos,np.ndarray) or isinstance(zoom, np.ndarray):
                         state = copy.deepcopy(cfg.refViewer.state)
                         if isinstance(pos, np.ndarray):
                             state.position = cfg.baseViewer.state.position
                         if isinstance(zoom, float):
-                            if cfg.baseViewer.state.cross_section_scale < 10_000:
+                            # if cfg.baseViewer.state.cross_section_scale < 10_000:
+                            if cfg.baseViewer.state.cross_section_scale < 100:
                                 if cfg.baseViewer.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
                         cfg.refViewer.set_state(state)
@@ -1673,12 +1683,14 @@ QListView::item:!selected:hover
                     #     if cfg.refViewer.state.cross_section_scale != 1.0:
                     pos = cfg.refViewer.state.position
                     zoom = cfg.refViewer.state.cross_section_scale
+                    logger.critical(f'cfg.refViewer.state.cross_section_scale = {cfg.refViewer.state.cross_section_scale}')
                     if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
                         state = copy.deepcopy(cfg.baseViewer.state)
                         if isinstance(pos, np.ndarray):
                             state.position = cfg.refViewer.state.position
                         if isinstance(zoom, float):
-                            if cfg.refViewer.state.cross_section_scale < 10_000:
+                            # if cfg.refViewer.state.cross_section_scale < 10_000:
+                            if cfg.refViewer.state.cross_section_scale < 100:
                                 if cfg.refViewer.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = cfg.refViewer.state.cross_section_scale
                         cfg.baseViewer.set_state(state)
@@ -1695,7 +1707,7 @@ QListView::item:!selected:hover
             cfg.refViewer.pts.pop(del_key)
             cfg.refViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.updateNeuroglancer()
+        # self.updateNeuroglancer()
 
 
     def deleteMpBase(self):
@@ -1709,7 +1721,7 @@ QListView::item:!selected:hover
             cfg.baseViewer.pts.pop(del_key)
             cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.initNeuroglancer()
+        # self.initNeuroglancer()
 
 
     def deleteAllMpRef(self):
@@ -1719,7 +1731,7 @@ QListView::item:!selected:hover
         self.MA_ptsListWidget_ref.clear()
         cfg.refViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.initNeuroglancer()
+        # self.initNeuroglancer()
 
 
     def deleteAllMpBase(self):
@@ -1729,7 +1741,7 @@ QListView::item:!selected:hover
         self.MA_ptsListWidget_base.clear()
         cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.initNeuroglancer()
+        # self.initNeuroglancer()
 
 
     def deleteAllMp(self):
@@ -2194,11 +2206,11 @@ QListView::item:!selected:hover
         self._btn_resetBrightnessAndContrast.setFixedSize(QSize(58,20))
         self._btn_resetBrightnessAndContrast.clicked.connect(resetBrightessAndContrast)
 
-        self._btn_volumeRendering = QPushButton('Volume')
-        self._btn_volumeRendering.setFixedSize(QSize(58,20))
-        self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
-
-        self.shaderSideButtons = HWidget(self._btn_resetBrightnessAndContrast, self._btn_volumeRendering)
+        # self._btn_volumeRendering = QPushButton('Volume')
+        # self._btn_volumeRendering.setFixedSize(QSize(58,20))
+        # self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
+        # self.shaderSideButtons = HWidget(self._btn_resetBrightnessAndContrast, self._btn_volumeRendering)
+        self.shaderSideButtons = HWidget(self._btn_resetBrightnessAndContrast)
 
 
         self.shaderWidget = QWidget()

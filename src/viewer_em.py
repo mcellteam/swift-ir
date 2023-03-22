@@ -243,13 +243,15 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def _set_zmag(self):
-        logger.info(f'Setting Z-mag on {self.type}')
-        try:
-            # logger.critical(f'Setting Z-mag on {self.type}')
-            with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10}
-        except:
-            print_exception()
+        if self._zmag_set < 8:
+            self._zmag_set += 1
+            logger.info(f'Setting Z-mag on {self.type}')
+            try:
+                # logger.critical(f'Setting Z-mag on {self.type}')
+                with self.txn() as s:
+                    s.relativeDisplayScales = {"z": 10}
+            except:
+                print_exception()
 
     def set_zmag(self, val=10):
         logger.info(f'Setting Z-mag on {self.type}')
@@ -626,6 +628,7 @@ class EMViewerSnr(AbstractEMViewer):
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'EMViewerSnr'
         self.initViewer()
+
 
     def initViewer(self):
         caller = inspect.stack()[1].function
