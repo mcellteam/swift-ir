@@ -2050,6 +2050,8 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
+        self.showZeroedPbar()
+        self.pbarLabel.setText('Loading Project...')
 
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
