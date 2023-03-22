@@ -424,7 +424,7 @@ class SnrPlot(QWidget):
             self.last_snr_click = pt
             # cfg.main_window.jump_to(index)
             cfg.data.zpos = index
-            cfg.set_layer(cfg.data.zpos)
+            # cfg.set_layer(cfg.data.zpos)
             cfg.main_window.dataUpdateWidgets()
             self.updateLayerLinePos()
 
