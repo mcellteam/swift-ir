@@ -468,6 +468,9 @@ class alignment_process:
 
         fn = os.path.basename(self.layer_dict['filename'])
 
+        # clobber = atrm['manual_settings'].get(['fixed_pattern_clobber'])
+        # clobber_arg =
+
         if atrm['method'] == 'Auto-SWIM':
             alignment_option = atrm['method_data'].get('alignment_option')
             MAlogger.critical('\n%s (Method: Auto-SWIM, Option: %s)...' % (fn, alignment_option))
@@ -763,8 +766,22 @@ class align_ingredient:
             #                   ' -k ' + k_arg + \
             #                   ' -t ' + t_arg + \
             #                   ' ' + karg + \
+            # swim_arg_string = 'ww_' + swim_ww_arg + \
+            #                   ' -f3 ' + \
+            #                   ' -i ' + str(self.iters) + \
+            #                   ' -w ' + str(self.wht) + \
+            #                   ' -x ' + str(offx) + \
+            #                   ' -y ' + str(offy) + \
+            #                   ' -b ' + b_arg + \
+            #                   ' ' + self.recipe.im_sta_fn + \
+            #                   ' ' + base_x + \
+            #                   ' ' + base_y + \
+            #                   ' ' + self.recipe.im_mov_fn + \
+            #                   ' ' + adjust_x + \
+            #                   ' ' + adjust_y + \
+            #                   ' ' + rota_arg + \
+            #                   ' ' + afm_arg
             swim_arg_string = 'ww_' + swim_ww_arg + \
-                              ' -f3 ' + \
                               ' -i ' + str(self.iters) + \
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \

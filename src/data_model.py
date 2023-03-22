@@ -478,6 +478,7 @@ class DataModel:
                 layer['alignment'].setdefault('manual_settings', {})
                 layer['alignment']['manual_settings'].setdefault('swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
                 layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
+                layer['alignment']['manual_settings'].setdefault('fixed_pattern_clobber', cfg.DEFAULT_PATTERN_CLOBBER)
                 layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
                 layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('manual_points', {})

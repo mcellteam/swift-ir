@@ -53,7 +53,8 @@ DEFAULT_INITIAL_ROTATION     = float(0.0000)
 DEFAULT_INITIAL_SCALE        = float(1.0000)
 DEFAULT_DTYPE                = '|u1'
 DEFAULT_MANUAL_SWIM_WINDOW   = int(128)
-DEFAULT_MANUAL_WHITENING = float(-0.6800)
+DEFAULT_MANUAL_WHITENING     = float(-0.6800)
+DEFAULT_PATTERN_CLOBBER      = 0 # in pixels
 
 '''Default Image Resolution (Voxel Dimensions)'''
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
