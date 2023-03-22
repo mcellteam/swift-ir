@@ -371,6 +371,14 @@ class MainWindow(QMainWindow):
         # logger.critical('is visible? %r' % self.correlation_signals.isVisible())
 
 
+    def forceShowCorrSignalDrawer(self):
+        if self._isProjectTab():
+            self.correlation_signals.setVisible(True)
+            cfg.project_tab.signalsAction.setChecked()
+            sizes = self._splitter.sizes()
+            sizes[1] = self._corrSpotDrawerSize
+            self._splitter.setSizes(sizes)
+            self.updateCorrSpotsDrawer()
 
 
 
