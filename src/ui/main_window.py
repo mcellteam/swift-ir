@@ -1792,10 +1792,11 @@ class MainWindow(QMainWindow):
             # if not getData('state,manual_mode'):
             #     cfg.emViewer._layer = requested
 
-
+            for viewer in cfg.project_tab.get_viewers():
+                viewer.set_layer(cfg.data.zpos)
 
             # if getData('state,manual_mode'):
-            cfg.project_tab.initNeuroglancer()
+            # cfg.project_tab.initNeuroglancer()
             # cfg.emViewer.loc = requested
             # else:
             #     for v in cfg.project_tab.get_viewers():
