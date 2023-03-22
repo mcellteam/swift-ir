@@ -1782,16 +1782,19 @@ class MainWindow(QMainWindow):
             return
         requested = self._sectionSlider.value()
         if self._isProjectTab():
-            if cfg.emViewer:
-                cfg.emViewer._layer = requested
-            logger.info('Jumping To Section #%d' % requested)
+            logger.critical('Jumping To Section #%d' % requested)
             cfg.data.zpos = requested
-            if getData('state,manual_mode'):
-                cfg.project_tab.initNeuroglancer()
+            # if not getData('state,manual_mode'):
+            #     cfg.emViewer._layer = requested
+
+
+
+            # if getData('state,manual_mode'):
+            cfg.project_tab.initNeuroglancer()
             # cfg.emViewer.loc = requested
-            else:
-                for v in cfg.project_tab.get_viewers():
-                    v.set_layer(requested)
+            # else:
+            #     for v in cfg.project_tab.get_viewers():
+            #         v.set_layer(requested)
             self.dataUpdateWidgets()
 
         try:     self._jumpToLineedit.setText(str(requested))
