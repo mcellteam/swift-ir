@@ -440,8 +440,8 @@ class MainWindow(QMainWindow):
     #     viewers = []
     #     if self._isProjectTab():
     #         if getData('state,manual_mode'):
-    #             viewers.extend([cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref, cfg.project_tab.MA_viewer_stage])
-    #             # return [cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref]
+    #             viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.project_tab.MA_viewer_stage])
+    #             # return [cfg.baseViewer, cfg.refViewer]
     #         tab = cfg.project_tab._tabs.currentIndex()
     #         if tab == 0:
     #             viewers.extend([cfg.emViewer])
@@ -2395,9 +2395,9 @@ class MainWindow(QMainWindow):
     def incrementZoomOut(self):
         # logger.info('')
         if getData('state,manual_mode'):
-            new_cs_scale = cfg.project_tab.MA_viewer_ref.zoom() * 1.1
+            new_cs_scale = cfg.refViewer.zoom() * 1.1
             logger.info(f'new_cs_scale: {new_cs_scale}')
-            cfg.project_tab.MA_viewer_base.set_zoom(new_cs_scale)
+            cfg.baseViewer.set_zoom(new_cs_scale)
         else:
             new_cs_scale = cfg.emViewer.zoom() * 1.1
             logger.info(f'new_cs_scale: {new_cs_scale}')
@@ -2409,9 +2409,9 @@ class MainWindow(QMainWindow):
     def incrementZoomIn(self):
         # logger.info('')
         if getData('state,manual_mode'):
-            new_cs_scale = cfg.project_tab.MA_viewer_ref.zoom() * 0.9
+            new_cs_scale = cfg.refViewer.zoom() * 0.9
             logger.info(f'new_cs_scale: {new_cs_scale}')
-            cfg.project_tab.MA_viewer_base.set_zoom(new_cs_scale)
+            cfg.baseViewer.set_zoom(new_cs_scale)
         else:
             new_cs_scale = cfg.emViewer.zoom() * 0.9
             logger.info(f'new_cs_scale: {new_cs_scale}')
@@ -2648,7 +2648,7 @@ class MainWindow(QMainWindow):
             self.warn('Alignment must be generated before using Manual Point Alignment method.')
 
     def exit_man_mode(self):
-        logger.critical('Exiting Manual Align Mode...')
+        logger.critical('exit_man_mode >>>>')
         self.tell('Exiting Manual Align Mode...')
         self.setWindowTitle(self.window_title)
         if getData('state,previous_mode') == 'stack':
@@ -2674,7 +2674,9 @@ class MainWindow(QMainWindow):
         cfg.project_tab.MA_splitter.hide()
         cfg.project_tab.w_ng_display_ext.show()
         cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
+        QApplication.processEvents() #Critical! - enables viewer to acquire appropriate zoom
         cfg.project_tab.initNeuroglancer()
+        logger.critical('<<<< exit_man_mode')
 
 
 
@@ -3527,11 +3529,11 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 if getData('state,manual_mode'):
                     if not getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
-                        cfg.project_tab.MA_viewer_ref.undrawSWIMwindow()
-                        cfg.project_tab.MA_viewer_base.undrawSWIMwindow()
+                        cfg.refViewer.undrawSWIMwindow()
+                        cfg.baseViewer.undrawSWIMwindow()
                     else:
-                        cfg.project_tab.MA_viewer_ref.drawSWIMwindow()
-                        cfg.project_tab.MA_viewer_base.drawSWIMwindow()
+                        cfg.refViewer.drawSWIMwindow()
+                        cfg.baseViewer.drawSWIMwindow()
         self.maShowSwimWindowAction.triggered.connect(fn)
         maViewMenu.addAction(self.maShowSwimWindowAction)
 

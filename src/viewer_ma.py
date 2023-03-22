@@ -11,6 +11,8 @@ import inspect
 import logging
 import datetime
 import argparse
+import functools
+import time
 from collections import OrderedDict
 import numpy as np
 import numcodecs
@@ -23,6 +25,7 @@ from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, print_exception
 from src.shaders import ann_shader
+from src.ui.timer import Timer
 import src.config as cfg
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
@@ -32,10 +35,13 @@ __all__ = ['MAViewer']
 
 logger = logging.getLogger(__name__)
 
+t = Timer()
+
 
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal()
+    stateChangedAny = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
     ptsChanged = Signal()
@@ -61,7 +67,11 @@ class MAViewer(neuroglancer.Viewer):
                           ]
         self._crossSectionScale = 1
         self._mpCount = 0
+        self._zmag_set = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed_any)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'MAViewer'
 
@@ -73,6 +83,7 @@ class MAViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.scale)), )
 
         # self.restoreManAlignPts()
+
 
 
         self.initViewer()
@@ -91,6 +102,9 @@ class MAViewer(neuroglancer.Viewer):
 
     def __repr__(self):
         return copy.deepcopy(self.state)
+
+
+
 
     def n_annotations(self):
         return len(self.state.layers['ann_points'].annotations)
@@ -141,7 +155,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'\nInitializing [{self.type}] [role: {self.role}] [caller: {caller}]...\n')
+        logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller}]...')
 
         if self.role == 'ref':
             self.index = max(cfg.data.zpos - 1, 0)
@@ -178,8 +192,7 @@ class MAViewer(neuroglancer.Viewer):
             s.layout.type = 'yz'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            # s.show_scale_bar = False
-            s.show_scale_bar = True
+            s.show_scale_bar = False
             # s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_axis_lines = False
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
@@ -217,6 +230,14 @@ class MAViewer(neuroglancer.Viewer):
         # self.set_zmag()
         # self.initZoom()
         # self._set_zmag()
+
+    def on_state_changed_any(self):
+        caller = inspect.stack()[1].function
+        # if self._zmag_set < 10:
+        #     self._zmag_set += 1
+        # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+        logger.info(f'on_state_changed_any {self.type} [{self.role}] [{caller}] >>>>')
+        self.signals.stateChangedAny.emit()
 
 
     def on_state_changed(self):
@@ -309,12 +330,13 @@ class MAViewer(neuroglancer.Viewer):
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
 
+        self.applyMps()
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
-        try:
-            self.set_zmag()
-        except:
-            print_exception()
+        # try:
+        #     self.set_zmag()
+        # except:
+        #     print_exception()
         self.drawSWIMwindow()
         if cfg.data.method() == 'Manual-Strict':
             self.draw_point_annotations()
@@ -322,6 +344,17 @@ class MAViewer(neuroglancer.Viewer):
 
 
 
+
+    def applyMps(self):
+        logger.info(f'Setting Manual Correspondence Points for {self.role} viewer...')
+        cfg.main_window.statusBar.showMessage('Manual Points Saved!', 3000)
+        pts = []
+        for key in self.pts.keys():
+            p = self.pts[key]
+            _, x, y = p.point.tolist()
+            pts.append((x, y))
+        cfg.data.set_manual_points(self.role, pts)
+        cfg.data.print_all_match_points()
 
 
     def draw_point_annotations(self):
@@ -358,7 +391,11 @@ class MAViewer(neuroglancer.Viewer):
             # print_exception()
 
 
+    # @functools.cache
     def drawSWIMwindow(self):
+        logger.info('')
+        t.start()
+
         self.undraw_point_annotations()
         self.undrawSWIMwindow()
 
@@ -425,10 +462,10 @@ class MAViewer(neuroglancer.Viewer):
                     C = [.5, x+half_win, y-half_win]
                     D = [.5, x-half_win, y-half_win]
 
-                    X_A = [.5, x - 25, y + 25]
-                    X_B = [.5, x + 25, y + 25]
-                    X_C = [.5, x + 25, y - 25]
-                    X_D = [.5, x - 25, y - 25]
+                    # X_A = [.5, x - 25, y + 25]
+                    # X_B = [.5, x + 25, y + 25]
+                    # X_C = [.5, x + 25, y - 25]
+                    # X_D = [.5, x - 25, y - 25]
 
                     color = self.mp_colors[i]
 
@@ -482,7 +519,8 @@ class MAViewer(neuroglancer.Viewer):
                 dimensions=self.coordinate_space,
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
+                    # ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=5, )
                 ],
                 annotations=annotations,
                 shader='''
@@ -493,6 +531,9 @@ class MAViewer(neuroglancer.Viewer):
                 ''',
 
             )
+
+        t.stop()
+
 
     def makeSquare(self, size):
         pass
@@ -550,7 +591,9 @@ class MAViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def set_zmag(self, val=10):
-        logger.info('')
+        logger.info(f'Setting Z-mag on {self.type} [{self.role}]')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': val}
@@ -561,10 +604,14 @@ class MAViewer(neuroglancer.Viewer):
         else:
             logger.info('Successfully set Z-mag!')
 
+
     def _set_zmag(self):
-        logger.critical(f'Setting Z-mag on {self.type}')
-        with self.txn() as s:
-            s.relativeDisplayScales = {"z": 10}
+        logger.info(f'Setting Z-mag on {self.type} [{self.role}]')
+        try:
+            with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}
+        except:
+            print_exception()
 
     def initZoom(self):
         logger.info('')
