@@ -87,6 +87,13 @@ class ProjectTable(QWidget):
         t = time.time()
         caller = inspect.stack()[1].function
         logger.info('Setting Table Data (caller: %s)...' % caller)
+
+        cfg.main_window.showZeroedPbar()
+        cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nTasks)
+        cfg.nCompleted = 0
+        cfg.nTasks = len(cfg.data)
+        cfg.main_window.setPbarMax(cfg.nTasks)
+
         cur_selection = self.table.currentIndex().row()
         cur_scroll_pos = self.table.verticalScrollBar().value()
         self.setUpdatesEnabled(False)
@@ -142,6 +149,8 @@ class ProjectTable(QWidget):
                                 self.table.setCellWidget(i, j, tn)
                         else:
                             self.table.setItem(i, j, QTableWidgetItem(str(item)))
+                    cfg.nCompleted += 1
+                    cfg.main_window.updatePbar(cfg.nCompleted)
             else:
                 for i, row in enumerate(self.data):
                     self.table.insertRow(i)
@@ -166,6 +175,7 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
+            cfg.main_window.hidePbar()
             self.setUpdatesEnabled(True)
             self.setColumnWidths()
             self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
