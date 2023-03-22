@@ -225,7 +225,7 @@ class ProjectTab(QWidget):
             # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.emViewer.signals.stateChangedAny.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
@@ -236,7 +236,7 @@ class ProjectTab(QWidget):
 
         self.updateProjectLabels()
 
-        cfg.main_window.dataUpdateWidgets()
+        # cfg.main_window.dataUpdateWidgets()
 
         # self.slotUpdateZoomSlider()
 
@@ -288,7 +288,8 @@ class ProjectTab(QWidget):
 
         self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
         # this fixes detailsSection not displaying immediately on start project
-        self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
+        # self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
+        self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
 
         # self.webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
