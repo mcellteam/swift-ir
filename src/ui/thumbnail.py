@@ -9,7 +9,7 @@ import textwrap
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider
 from qtpy.QtCore import Qt, QRect, QSize, QPoint
-from qtpy.QtGui import QPixmap, QPainter, QColor
+from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
 from src.helpers import absFilePaths
 from src.helpers import print_exception, get_appdir
 from src.funcs_image import ImageSize
@@ -126,6 +126,8 @@ class CorrSignalThumbnail(QLabel):
         self.snr = snr
         self.extra = extra
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
+        # self.setStyleSheet("""border: 3px solid #ffe135;""")
+
 
     def paintEvent(self, event):
         if self.pixmap():
@@ -134,11 +136,30 @@ class CorrSignalThumbnail(QLabel):
                 # currentRatio = self.width() / self.height()
                 # if originalRatio != currentRatio:
                 qp = QPainter(self)
-                pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                # pm.fill()
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                rect.moveBottomLeft(self.rect().bottomLeft())
+                # rect.moveBottomLeft(self.rect().bottomLeft())
+                # rect.moveBottomLeft(self.rect().bottomLeft())
+                rect.moveCenter(self.rect().center())
                 qp.drawPixmap(rect, pm)
-                qp.setPen(QColor('#ff0000'))
+                # pen = QPen()
+                # brush = QBrush()
+                # brush.setColor(QColor("#141414"))
+                # pen.setBrush(brush)
+                # pen.setColor(QColor('#ffe135'))
+                # qp.setPen(pen)
+
+
+                font = QFont()
+                font.setBold(True)
+                font.setPointSize(14)
+                qp.setFont(font)
+                # qp.setPen(QColor('#ff0000'))
+                qp.setPen(QColor('#a30000'))
+
                 if self.snr:
                     loc = QPoint(0, self.rect().height() - 4)
                     if self.extra:

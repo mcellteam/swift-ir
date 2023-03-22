@@ -416,6 +416,8 @@ class MainWindow(QMainWindow):
             self._splitter.setSizes(splitterSizes)
             siz = splitterSizes[1]
 
+            isManMode = getData('state,manual_mode')
+
             # logger.info('thumbs: %s' % str(thumbs))
             for i in range(7):
                 # h = max(self.correlation_signals.height() - 38, 64)
@@ -429,8 +431,14 @@ class MainWindow(QMainWindow):
                 if i < n:
                     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
                     try:
+
                         if snr_vals:
                             self.corr_signals[i].set_data(path=thumbs[i], snr=snr_vals[i])
+                            # if isManMode:
+                            #     # if cfg.data.method() in ('Manual-Hint', 'Manual-Strict'):
+                            self.corr_signals[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+
+
                         else:
                             self.corr_signals[i].set_data(path=thumbs[i], snr=0.0)
 
@@ -2768,7 +2776,8 @@ class MainWindow(QMainWindow):
         cfg.project_tab.w_ng_display_ext.show()
         cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
         QApplication.processEvents() #Critical! - enables viewer to acquire appropriate zoom
-        cfg.project_tab.initNeuroglancer()
+        # cfg.project_tab.initNeuroglancer()
+        cfg.emViewer.set_layer(cfg.data.zpos)
         logger.critical('<<<< exit_man_mode')
 
 
@@ -4065,19 +4074,6 @@ class MainWindow(QMainWindow):
     #     '''Reads MainWindow to Update Project Data.'''
     #     logger.debug('widgetsUpdateData:')
 
-    def set_corrspot_size(self, size):
-        # self.corrspot_q0.setFixedHeight(h)
-        # self.corrspot_q1.setFixedHeight(h)
-        # self.corrspot_q2.setFixedHeight(h)
-        # self.corrspot_q3.setFixedHeight(h)
-        self.corrspot_q0.setFixedSize(size,size)
-        self.corrspot_q1.setFixedSize(size,size)
-        self.corrspot_q2.setFixedSize(size,size)
-        self.corrspot_q3.setFixedSize(size,size)
-        # self.corrspot_q0.resize(size,size)
-        # self.corrspot_q1.resize(size,size)
-        # self.corrspot_q2.resize(size,size)
-        # self.corrspot_q3.resize(size,size)
 
 
 
@@ -4086,7 +4082,8 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         if caller == 'main':
             logger.info(f'caller: {caller}')
-            cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
+            # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
+            cfg.data.set_swim_window(float(self._swimWindowControl.value()) / 100.)
 
     def _valueChangedWhitening(self):
         # logger.info('')
@@ -4917,13 +4914,6 @@ class MainWindow(QMainWindow):
         vbl = VBL()
         vbl.addWidget(gb)
 
-        # self.matchpointControls.setLayout(vbl)
-
-        self.corrspot_q0 = SnrThumbnail(parent=self)
-        self.corrspot_q1 = SnrThumbnail(parent=self)
-        self.corrspot_q2 = SnrThumbnail(parent=self)
-        self.corrspot_q3 = SnrThumbnail(parent=self)
-
         self.corr_spot_thumbs = QWidget()
         # self.corr_spot_thumbs.setMinimumHeight(30)
         # self.corr_spot_thumbs.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
@@ -4959,6 +4949,7 @@ class MainWindow(QMainWindow):
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         hbl.addWidget(w)
         self.corr_spot_thumbs.setLayout(hbl)
+        # self.corr_spot_thumbs.setStyleSheet('background-color: #ffe135; color: #f3f6fb; border-radius: 5px; ')
         # self.corr_spot_thumbs.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
 
         '''Show/Hide Primary Tools Buttons'''

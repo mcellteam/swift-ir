@@ -21,6 +21,7 @@ import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, QUrl
+from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, print_exception
@@ -35,7 +36,7 @@ __all__ = ['MAViewer']
 
 logger = logging.getLogger(__name__)
 
-t = Timer()
+# t = Timer()
 
 
 class WorkerSignals(QObject):
@@ -230,7 +231,8 @@ class MAViewer(neuroglancer.Viewer):
         self.set_brightness()
         self.set_contrast()
         # self.set_zmag()
-        # self.initZoom()
+        QApplication.processEvents()
+        self.initZoom()
         # self._set_zmag()
 
     def on_state_changed_any(self):
@@ -238,6 +240,7 @@ class MAViewer(neuroglancer.Viewer):
         # if self._zmag_set < 10:
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+
         logger.info(f'on_state_changed_any {self.type} [{self.role}] [{caller}] >>>>')
         self.signals.stateChangedAny.emit()
 
@@ -401,7 +404,7 @@ class MAViewer(neuroglancer.Viewer):
     # @functools.cache
     def drawSWIMwindow(self):
         logger.info('')
-        t.start()
+        # t.start()
 
         self.undraw_point_annotations()
         self.undrawSWIMwindow()
@@ -539,7 +542,7 @@ class MAViewer(neuroglancer.Viewer):
 
             )
 
-        t.stop()
+        # t.stop()
 
 
     def makeSquare(self, size):
@@ -622,6 +625,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def initZoom(self):
         logger.info('')
+        adjust = 1.08
 
         if self.cs_scale:
             with self.txn() as s:
@@ -638,7 +642,7 @@ class MAViewer(neuroglancer.Viewer):
 
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20
-                s.crossSectionScale = cs_scale
+                s.crossSectionScale = cs_scale * adjust
 
 
 
