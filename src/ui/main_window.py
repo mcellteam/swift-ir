@@ -5549,7 +5549,7 @@ class MainWindow(QMainWindow):
     def updatePbar(self, x=None):
         if x == None: x = cfg.nCompleted
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\n[caller: {caller}] Updating pbar, x={x}\n')
+        logger.info(f'[caller: {caller}] Updating pbar, x={x}')
         self.pbar.setValue(x)
         # self.repaint()
         QApplication.processEvents()
@@ -5559,14 +5559,14 @@ class MainWindow(QMainWindow):
         # logger.critical('')
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
-        logger.critical('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
+        # logger.info('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         # self.repaint()
         QApplication.processEvents()
 
 
     def showZeroedPbar(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\nShowing Progress Bar [caller: {caller}]...\n')
+        logger.info(f'Showing Progress Bar [caller: {caller}]...')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
