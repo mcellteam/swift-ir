@@ -904,7 +904,7 @@ class MainWindow(QMainWindow):
 
         if cfg.ignore_pbar:
             self.showZeroedPbar()
-            self.setPbarText('Computing Affine')
+            self.setPbarText('Computing Affine...')
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=compute_affines(scale, start, end))
@@ -916,7 +916,7 @@ class MainWindow(QMainWindow):
         if cfg.ignore_pbar:
             cfg.nCompleted +=1
             self.updatePbar()
-            self.setPbarText('Generating Correlation Signal Thumbnails')
+            self.setPbarText('Generating Correlation Signal Thumbnails...')
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
@@ -934,7 +934,7 @@ class MainWindow(QMainWindow):
             if cfg.ignore_pbar:
                 cfg.nCompleted += 1
                 self.updatePbar()
-                self.setPbarText('Generating Alignment')
+                self.setPbarText('Generating Alignment...')
 
             try:
                 if cfg.USE_EXTRA_THREADING:
@@ -950,7 +950,7 @@ class MainWindow(QMainWindow):
             if cfg.ignore_pbar:
                 cfg.nCompleted += 1
                 self.updatePbar()
-                self.setPbarText('Generating Aligned Thumbnail')
+                self.setPbarText('Generating Aligned Thumbnail...')
 
             try:
                 if cfg.USE_EXTRA_THREADING:

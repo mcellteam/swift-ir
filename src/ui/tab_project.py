@@ -1016,7 +1016,7 @@ class ProjectTab(QWidget):
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
         self.MA_settings_defaults_button = QPushButton('Restore Defaults')
-        self.MA_settings_defaults_button.setMaximumSize(QSize(90, 18))
+        self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
         self.MA_settings_defaults_button.clicked.connect(fn)
 
 
@@ -1672,7 +1672,7 @@ QListView::item:!selected:hover
             cfg.baseViewer.pts.pop(del_key)
             cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.updateNeuroglancer()
+        self.initNeuroglancer()
 
 
     def deleteAllMpRef(self):
@@ -1682,7 +1682,7 @@ QListView::item:!selected:hover
         self.MA_ptsListWidget_ref.clear()
         cfg.refViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.updateNeuroglancer()
+        self.initNeuroglancer()
 
 
     def deleteAllMpBase(self):
@@ -1692,7 +1692,7 @@ QListView::item:!selected:hover
         self.MA_ptsListWidget_base.clear()
         cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.updateNeuroglancer()
+        self.initNeuroglancer()
 
 
     def deleteAllMp(self):
@@ -1708,6 +1708,7 @@ QListView::item:!selected:hover
         self.update_MA_widgets()
         cfg.refViewer.undraw_point_annotations()
         cfg.baseViewer.undraw_point_annotations()
+        self.initNeuroglancer()
 
 
     # def applyMps(self):
