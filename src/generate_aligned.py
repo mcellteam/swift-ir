@@ -115,7 +115,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
     if cfg.ignore_pbar:
         cfg.nCompleted += 1
         cfg.main_window.updatePbar()
-        cfg.main_window.setPbarText('Copy-converting Alignment to Zarr')
+        cfg.main_window.setPbarText('Copy-converting Alignment to Zarr...')
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
