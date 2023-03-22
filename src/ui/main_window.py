@@ -2706,6 +2706,7 @@ class MainWindow(QMainWindow):
             self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
             self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
             cfg.project_tab.onEnterManualMode()
+            cfg.main_window.forceShowCorrSignalDrawer()
 
         else:
             self.warn('Alignment must be generated before using Manual Point Alignment method.')
