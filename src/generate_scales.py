@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_scales(dm):
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(cfg.data) * len(dm.downscales()))
     pbar_text = 'Generating Scale Image Hierarchy (%d Cores)...' % cpus
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)

@@ -24,8 +24,7 @@ logger = logging.getLogger(__name__)
 def compute_affines(scale, start=0, end=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     scale_val = get_scale_val(scale)
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
+
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
@@ -69,6 +68,9 @@ def compute_affines(scale, start=0, end=None):
         temp_file = os.path.join(dm.dest(), "temp_project_file.json")
         with open(temp_file, 'w') as f:
             f.write(dm.to_json())
+
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks)
+        pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
 
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.taskPrefix = 'Alignment Computed for '

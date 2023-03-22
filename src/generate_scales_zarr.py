@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 Z_STRIDE = 1
 
 def generate_zarr_scales(data):
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(cfg.data) * len(cfg.data.scales()))
+
     pbar_text = 'Generating Zarr Scale Arrays (%d Cores)...' % cpus
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)

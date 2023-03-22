@@ -382,6 +382,11 @@ class MainWindow(QMainWindow):
                 logger.warning('Corr spots widget it hidden -- returning...')
                 return
 
+            colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
+                      '#152c74', '#404f74', '#f3e375', '#5c4ccc',
+                      '#d6acd6', '#aaa672', '#152c74', '#404f74'
+                      ]
+
             snr_vals = cfg.data.snr_components()
             thumbs = cfg.data.get_corr_spot_files()
             n = len(thumbs)
@@ -401,9 +406,15 @@ class MainWindow(QMainWindow):
                             self.corr_signals[i].set_data(path=thumbs[i], snr=snr_vals[i])
                         else:
                             self.corr_signals[i].set_data(path=thumbs[i], snr=0.0)
+
+                        # if cfg.data.method() != 'Auto-SWIM':
+                        #     if getData('state,manual_mode'):
+                        #         self.corr_signals[i].setStyleSheet(f"""border-width: 3px; border-color: {colors[i]};""")
+
                     except:
                         # print_exception()
                         self.corr_signals[i].set_no_image()
+
                     self.corr_signals[i].show()
                 else:
                     self.corr_signals[i].hide()
@@ -740,7 +751,8 @@ class MainWindow(QMainWindow):
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
         self._disableGlobTabs()
-        self.showZeroedPbar()
+        if not cfg.ignore_pbar:
+            self.showZeroedPbar()
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.scale)
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
@@ -777,6 +789,7 @@ class MainWindow(QMainWindow):
 
 
     def alignAll(self):
+        cfg.ignore_pbar = False
         '''MUST handle bounding box for partial-stack alignments.'''
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
         scale = cfg.data.scale
@@ -802,6 +815,7 @@ class MainWindow(QMainWindow):
 
 
     def alignRange(self):
+        cfg.ignore_pbar = False
         start = int(self.startRangeInput.text())
         end = int(self.endRangeInput.text()) + 1
         self.tell('Re-aligning Sections #%d through #%d (%s)...' %
@@ -822,10 +836,13 @@ class MainWindow(QMainWindow):
 
     # def alignOne(self, stageit=False):
     def alignOne(self):
+        cfg.ignore_pbar = True
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
+        cfg.nCompleted = 0
+        cfg.nTasks = 4
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -834,6 +851,7 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False,
             # stageit=stageit,
             stageit=True,
+            align_one=True,
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
@@ -841,14 +859,19 @@ class MainWindow(QMainWindow):
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
         self.tell('**** Processes Complete ****')
+        cfg.ignore_pbar = False
 
 
     def alignOneMp(self):
+        cfg.ignore_pbar = True
         logger.critical('Realigning Manually...')
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
+        cfg.nCompleted = 0
+        cfg.nTasks = 5
+        self.setPbarMax(5)
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -856,6 +879,7 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False,
             stageit=True,
+            align_one=True,
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
@@ -863,16 +887,24 @@ class MainWindow(QMainWindow):
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
         self.tell('**** Processes Complete ****')
+        cfg.ignore_pbar = False
 
 
-    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit):
+    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False):
         #Todo change printout based upon alignment scope, i.e. for single layer
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
+        # if caller in ('alignOneMp','alignOne'):
+        #     ALIGN_ONE = True
+
         logger.info('')
         if not self.verify_alignment_readiness(): return
         self.onAlignmentStart(scale=scale)
         m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
         self.tell("%s Affines (%s)..." %(m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
+
+        if cfg.ignore_pbar:
+            self.showZeroedPbar()
+            self.setPbarText('Computing Affine')
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=compute_affines(scale, start, end))
@@ -881,6 +913,10 @@ class MainWindow(QMainWindow):
         except:   print_exception(); self.err('An Exception Was Raised During Alignment.')
         # else:     logger.info('Affine Computation Finished')
 
+        if cfg.ignore_pbar:
+            cfg.nCompleted +=1
+            self.updatePbar()
+            self.setPbarText('Generating Correlation Signal Thumbnails')
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
@@ -889,10 +925,17 @@ class MainWindow(QMainWindow):
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
         # else:   logger.info('Correlation Spot Thumbnail Generation Finished')
 
+
         # if cfg.project_tab._tabs.currentIndex() == 1:
         #     cfg.project_tab.project_table.setScaleData()
 
         if self._toggleAutogenerate.isChecked():
+
+            if cfg.ignore_pbar:
+                cfg.nCompleted += 1
+                self.updatePbar()
+                self.setPbarText('Generating Alignment')
+
             try:
                 if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(fn=generate_aligned(
@@ -904,6 +947,11 @@ class MainWindow(QMainWindow):
             finally:
                 logger.info('Generate Alignment Finished')
 
+            if cfg.ignore_pbar:
+                cfg.nCompleted += 1
+                self.updatePbar()
+                self.setPbarText('Generating Aligned Thumbnail')
+
             try:
                 if cfg.USE_EXTRA_THREADING:
                     self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
@@ -913,6 +961,11 @@ class MainWindow(QMainWindow):
                 print_exception()
             finally:
                 logger.info('Generate Aligned Thumbnails Finished')
+
+            if cfg.ignore_pbar:
+                cfg.nCompleted += 1
+                self.updatePbar()
+                self.setPbarText('Aligning')
 
         self.pbarLabel.setText('')
         self.hidePbar()
@@ -1282,7 +1335,7 @@ class MainWindow(QMainWindow):
     #         cfg.project_tab.unaligned_label.hide()
     #         cfg.project_tab.generated_label.hide()
 
-    @Slot()
+    # @Slot()
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
@@ -5493,32 +5546,40 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(x)
 
 
-    def updatePbar(self, x):
+    def updatePbar(self, x=None):
+        if x == None: x = cfg.nCompleted
+        caller = inspect.stack()[1].function
+        logger.critical(f'\n\n[caller: {caller}] Updating pbar, x={x}\n')
         self.pbar.setValue(x)
-        self.repaint()
+        # self.repaint()
+        QApplication.processEvents()
 
 
     def setPbarText(self, text: str):
         # logger.critical('')
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
-        self.repaint()
+        logger.critical('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
+        # self.repaint()
+        QApplication.processEvents()
 
 
     def showZeroedPbar(self):
-        # logger.critical('Showing Progress Bar...')
+        caller = inspect.stack()[1].function
+        logger.critical(f'\n\nShowing Progress Bar [caller: {caller}]...\n')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()
         # self.pbar_widget.repaint()
         # self.repaint()
-        self.update()
+        QApplication.processEvents()
 
 
     def hidePbar(self):
         # logger.critical('Hiding Progress Bar...')
         self.pbar_widget.hide()
         self.statusBar.clearMessage() #Shoehorn
+        QApplication.processEvents()
 
 
 
