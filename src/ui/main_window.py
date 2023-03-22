@@ -2721,6 +2721,7 @@ class MainWindow(QMainWindow):
         self.alignMatchPointAction.setText('Align Manually')
         self._changeScaleCombo.setEnabled(True)
         self.dataUpdateWidgets()
+        self.updateCorrSpotsDrawer() #Caution - Likely Redundant!
         QApplication.restoreOverrideCursor()
         # cfg.project_tab.onExitManualMode()
         cfg.project_tab.MA_ptsListWidget_ref.clear()
