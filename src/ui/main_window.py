@@ -497,9 +497,6 @@ class MainWindow(QMainWindow):
     #     return viewers
 
 
-
-
-
     def _callbk_showHidePython(self):
         logger.info('')
         self._dev_console.setVisible(self._dev_console.isHidden())
