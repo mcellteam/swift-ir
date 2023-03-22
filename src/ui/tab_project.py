@@ -1585,27 +1585,29 @@ QListView::item:!selected:hover
 
 
     def dataUpdateMA(self):
+        if getData('state,manual_mode'):
 
-        caller = inspect.stack()[1].function
-        if cfg.data.selected_method() != 'Auto-SWIM':
-            self.combo_method.setCurrentText(cfg.data.selected_method())
-        self.btnClearMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
-        self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
-        self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
+            caller = inspect.stack()[1].function
+            if cfg.data.method() != 'Auto-SWIM':
+                self.combo_method.setCurrentText(cfg.data.method())
 
-        if cfg.data.method() == 'Auto-SWIM':
-            self.msg_MAinstruct.hide()
-        else:
-            self.msg_MAinstruct.show()
-        self._combo_method_switch = False
-        self.combo_method.setCurrentText(cfg.data.method())
-        self._combo_method_switch = True
-        self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
-        self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
-        self.AS_SWIM_window_slider.setValue(cfg.data.swim_window())
-        self.AS_SWIM_window_lab.setText("%.2g%%" % 100 * cfg.data.swim_window())
+            self.btnClearMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
+            self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
+            self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
 
-        self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+            if cfg.data.method() == 'Auto-SWIM':
+                self.msg_MAinstruct.hide()
+            else:
+                self.msg_MAinstruct.show()
+            self._combo_method_switch = False
+            self.combo_method.setCurrentText(cfg.data.method())
+            self._combo_method_switch = True
+            self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+            self.AS_SWIM_window_slider.setValue(cfg.data.swim_window())
+            self.AS_SWIM_window_lab.setText("%.2g%%" % 100 * cfg.data.swim_window())
+
+            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
 
 
 
