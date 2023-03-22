@@ -198,16 +198,16 @@ class ProjectTab(QWidget):
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
             cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_widgets)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
-            # cfg.refViewer.signals.ptsChanged.connect(self.applyMps)
-            # cfg.baseViewer.signals.ptsChanged.connect(self.applyMps)
-            # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
             cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
-            # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
             cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
+
+
+            cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
+
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
             cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider)
-
 
             # cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer.set_zmag)
             # cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer.set_zmag)
@@ -225,7 +225,7 @@ class ProjectTab(QWidget):
             # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.emViewer.signals.stateChangedAny.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
