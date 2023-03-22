@@ -151,7 +151,7 @@ class ProjectTable(QWidget):
                             self.table.setItem(i, j, QTableWidgetItem(str(item)))
                     cfg.nCompleted += 1
                     cfg.main_window.updatePbar(cfg.nCompleted)
-                    cfg.main_window.setPbarText('Loading Table Thumbnails for %s...' %cfg.data.base_image_name(l=i))
+                    cfg.main_window.setPbarText('Loading - %s...' %cfg.data.base_image_name(l=i))
             else:
                 for i, row in enumerate(self.data):
                     self.table.insertRow(i)
