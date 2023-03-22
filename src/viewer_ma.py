@@ -72,6 +72,8 @@ class MAViewer(neuroglancer.Viewer):
         # self.shared_state.add_changed_callback(self.on_state_changed_any)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
 
+        self.signals.ptsChanged.connect(self.drawSWIMwindow)
+
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'MAViewer'
 

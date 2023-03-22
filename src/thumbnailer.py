@@ -30,37 +30,33 @@ class Thumbnailer:
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
     def generate_main(self):
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-        pbar_text = 'Generating Source Image Thumbnails (%d Cores)...' % cpus
+        pbar_text = 'Generating Source Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            logger.info('Generating Source Thumbnails...')
             coarsest_scale = cfg.data.smallest_scale()
             src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
             od = os.path.join(cfg.data.dest(), 'thumbnails')
             dt = self.generate_thumbnails(
-                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, cpus=cpus)
+                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text)
             cfg.data.set_t_thumbs(dt)
 
 
     def generate_aligned(self, start, end):
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-        pbar_text = 'Generating Aligned Image Thumbnails (%d Cores)...' % cpus
+        pbar_text = 'Generating Aligned Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
             src = os.path.join(cfg.data.dest(), cfg.data.scale, 'img_aligned')
             od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
             dt = self.generate_thumbnails(
-                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, cpus=cpus)
+                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text)
             cfg.data.set_t_thumbs_aligned(dt)
 
 
     def generate_corr_spot(self, start, end):
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
 
-        pbar_text = 'Generating Correlation Spot Thumbnails (%d Cores)...' % cpus
+        pbar_text = 'Generating Correlation Spot Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -88,7 +84,7 @@ class Thumbnailer:
             dt = self.generate_thumbnails(src=src, od=od,
                                           rmdir=rmdir, prefix='',
                                           start=start, end=end,
-                                          pbar_text=pbar_text, cpus=cpus,
+                                          pbar_text=pbar_text,
                                           filenames=filenames
                                           )
             cfg.data.set_t_thumbs_spot(dt)
@@ -110,7 +106,6 @@ class Thumbnailer:
                             start=0,
                             end=None,
                             pbar_text='',
-                            cpus=None,
                             filenames=None,
                             target_size=cfg.TARGET_THUMBNAIL_SIZE
                             ):
@@ -147,6 +142,8 @@ class Thumbnailer:
         if filenames == None:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
 
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(filenames))
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         tnLogger.info(f'\n==== {timestamp} ====\n'
                       f'Generating Thumbnails...\n'
@@ -164,8 +161,8 @@ class Thumbnailer:
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
 
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-        task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text)
+
+        task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
         task_queue.taskPrefix = 'Thumbnail Generated for '
         basefilenames = [os.path.basename(x) for x in filenames]
         task_queue.taskNameList = basefilenames

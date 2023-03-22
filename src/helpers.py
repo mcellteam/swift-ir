@@ -103,19 +103,21 @@ def delete_recursive(dir):
     to_delete.extend(glob(dir +'/img_src.zarr/s*'))
     to_delete.append(dir +'/thumbnails')
     scales = glob(dir + '/scale_*')
-    for s in scales:
-        if os.path.exists(os.path.join(dir, s, 'thumbnails_corr_spots')):
-            to_delete.append(os.path.join(dir, s, 'thumbnails_corr_spots'))
-        if os.path.exists(os.path.join(dir, s, 'bias_data')):
-            to_delete.append(os.path.join(dir, s, 'bias_data'))
-        if os.path.exists(os.path.join(dir, s, 'img_aligned')):
-            to_delete.append(os.path.join(dir, s, 'img_aligned'))
-        if os.path.exists(os.path.join(dir, s, 'thumbnails_aligned')):
-            to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
-        if os.path.exists(os.path.join(dir, s, 'img_src')):
-            to_delete.append(os.path.join(dir, s, 'img_src'))
-        if os.path.exists(os.path.join(dir, s, 'history')):
-            to_delete.append(os.path.join(dir, s, 'history'))
+    if scales:
+        for s in natural_sort(scales)[::-1]:
+            if os.path.exists(os.path.join(dir, s, 'history')):
+                to_delete.append(os.path.join(dir, s, 'history'))
+            if os.path.exists(os.path.join(dir, s, 'thumbnails_corr_spots')):
+                to_delete.append(os.path.join(dir, s, 'thumbnails_corr_spots'))
+            if os.path.exists(os.path.join(dir, s, 'bias_data')):
+                to_delete.append(os.path.join(dir, s, 'bias_data'))
+            if os.path.exists(os.path.join(dir, s, 'img_aligned')):
+                to_delete.append(os.path.join(dir, s, 'img_aligned'))
+            if os.path.exists(os.path.join(dir, s, 'thumbnails_aligned')):
+                to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
+            if os.path.exists(os.path.join(dir, s, 'img_src')):
+                to_delete.append(os.path.join(dir, s, 'img_src'))
+
     to_delete.append(dir)
     to_delete.append(dir) #delete twice
     cfg.nCompleted = 0

@@ -25,11 +25,11 @@ logger = logging.getLogger(__name__)
 def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=True, stageit=False):
     logger.critical(f'\n\n\n\ngenerating aligned reallocate_zarr={reallocate_zarr}...')
 
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+
     scale_val = get_scale_val(scale)
-    pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
+
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        cfg.main_window.warn('Generating Scale %d Alignment w/ MIR...' % (scale_val))
     else:
         logger.critical('Generating Aligned Images...')
         dm = cfg.data
@@ -76,7 +76,11 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
         logger.info(f'Aligned Size              : {rect[2:]}')
         logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
         # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale, rect) #0129-
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+        if end:
+            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end)))
+        else:
+            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(cfg.data))))
+        pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.taskPrefix = 'Alignment Generated for '
         task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
@@ -107,6 +111,11 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=T
         except:
             print_exception()
             logger.warning('Task Queue encountered a problem')
+
+    if cfg.ignore_pbar:
+        cfg.nCompleted += 1
+        cfg.main_window.updatePbar()
+        cfg.main_window.setPbarText('Copy-converting Alignment to Zarr')
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:

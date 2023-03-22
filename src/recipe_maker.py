@@ -389,8 +389,8 @@ class alignment_process:
         siz = ImageSize(self.im_sta_fn)
         atrm = self.layer_dict['alignment'] # (A)lign (T)o (R)ef (M)ethod
         # wsf = atrm['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
-        wsf = atrm['manual_settings']['swim_window_px']
-        wht = atrm['manual_settings']['swim_whitening']
+        wsf = atrm['method_data']['win_scale_factor']
+        wht = atrm['method_data']['whitening_factor']
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
 
         # init_rot = self.layer_dict['alignment']['method_options']['initial_rotation']
@@ -449,7 +449,9 @@ class alignment_process:
 
         # Set up a window size for match point alignment (1/32 of x dimension)
         # s_mp = int(siz[0] / 32.0) # size match point #orig
-        s_mp = 128 # size match point
+        # s_mp = 128 # size match point
+        # s_mp = 128 # size match point
+        s_mp = atrm['manual_settings'].get('swim_window_px')
 
         logger.critical("  psta_1   = " + str(psta_1))
         logger.critical("  psta_2x2 = " + str(psta_2x2))
@@ -467,8 +469,9 @@ class alignment_process:
         fn = os.path.basename(self.layer_dict['filename'])
 
         if atrm['method'] == 'Auto-SWIM':
-            MAlogger.critical('\n%s (Method: Auto-SWIM)...' % fn)
             alignment_option = atrm['method_data'].get('alignment_option')
+            MAlogger.critical('\n%s (Method: Auto-SWIM, Option: %s)...' % (fn, alignment_option))
+
             if alignment_option == 'refine_affine':
                 '''refine_affine'''
                 # self.init_affine_matrix - result from previous alignment at coarser scale
@@ -487,10 +490,10 @@ class alignment_process:
                 '''psta_1 is list of x,y coordinates'''
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)
-                ingredient_1 = align_ingredient(name=self.im_mov_fn, ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest)
+                ingredient_1 = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest)
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
-                ingredient_2x2 = align_ingredient(name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
-                ingredient_2x2b = align_ingredient(name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
+                ingredient_2x2 = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
+                ingredient_2x2b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest)
                 # ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
@@ -823,6 +826,7 @@ class align_ingredient:
 
 
         for i,l in enumerate(swim_out_lines):
+            MAlogger.critical('SWIM Out Line # %d: '%i + str(l))
             toks = l.replace('(', ' ').replace(')', ' ').strip().split()
             self.mir_toks[i] = str(toks)
             MAlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
@@ -916,9 +920,8 @@ class align_ingredient:
             mir_mp_err_lines = o['err'].strip().split('\n')
             self.mir_mp_out_lines = mir_mp_out_lines
             self.mir_mp_err_lines = mir_mp_err_lines
-            if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
-                MAlogger.critical('\n(MANUAL ALIGN: %s) MIR out: %s' % (self.name, str(mir_mp_out_lines)))
-                MAlogger.critical('\n(MANUAL ALIGN: %s) MIR err: %s' % (self.name, str(mir_mp_err_lines)))
+            MAlogger.critical('\n(MANUAL ALIGN: %s) MIR out: %s' % (self.name, str(mir_mp_out_lines)))
+            MAlogger.critical('\n(MANUAL ALIGN: %s) MIR err: %s' % (self.name, str(mir_mp_err_lines)))
 
             afm = np.eye(2, 3, dtype=np.float32)
             self.ww = (0.0, 0.0)

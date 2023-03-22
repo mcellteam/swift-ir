@@ -140,8 +140,8 @@ class DataModel:
     @zpos.setter
     def zpos(self, index):
         # self._data['data']['Current Section (Index)'] = index
-        if index in range(len(self)):
-            self['data']['z_position'] = index
+        if int(index) in range(len(self)):
+            self['data']['z_position'] = int(index)
         else:
             logger.warning(f'\n\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n\n')
 

@@ -122,18 +122,19 @@ class TaskQueue(QObject):
         self.retries = retries
 
         cfg.main_window.shutdownNeuroglancer()
-        cfg.main_window.showZeroedPbar() #0208+
 
-        cfg.nCompleted += 1
-        try:
-            self.parent.setPbarMax(self.n_tasks)
-            if self.pbar_text:
-                self.parent.setPbarText(text=self.pbar_text)
-                # self.parent.statusBar.showMessage(self.pbar_text)
-            self.parent.pbar_widget.show()
-            self.parent.update()
-        except:
-            logger.error('An exception was raised while setting up progress bar')
+        if not cfg.ignore_pbar:
+            cfg.main_window.showZeroedPbar() #0208+
+            cfg.nCompleted += 1
+            try:
+                self.parent.setPbarMax(self.n_tasks)
+                if self.pbar_text:
+                    self.parent.setPbarText(text=self.pbar_text)
+                    # self.parent.statusBar.showMessage(self.pbar_text)
+                self.parent.pbar_widget.show()
+                self.parent.update()
+            except:
+                logger.error('An exception was raised while setting up progress bar')
 
         logger.info('Starting Task Queue: %s...' % self.pbar_text)
         cfg.main_window.tell('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
@@ -141,7 +142,7 @@ class TaskQueue(QObject):
 
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
-            # sys.stderr.write('Starting Worker %d >>>>\n' % i)
+            sys.stderr.write('Starting Worker %d >>>>' % i)
             logger.info('Starting Worker %d...' % i)
             try:
                 if cfg.DAEMON_THREADS:
@@ -163,7 +164,7 @@ class TaskQueue(QObject):
         self.workers = []
 
         for i in range(self.n_workers):
-            # sys.stderr.write('Restarting Worker %d...' % i)
+            sys.stderr.write('Restarting Worker %d >>>>' % i)
             # time.sleep(.1)
             try:
                 if cfg.DAEMON_THREADS:
@@ -285,17 +286,23 @@ class TaskQueue(QObject):
                         # QApplication.processEvents()
                         sys.exit(1)
 
+                    if not cfg.ignore_pbar:
+                        try:
 
-                    try:
-                        self.parent.updatePbar(self.n_tasks - realtime)
-                        if self.taskPrefix and self.taskNameList:
-                            name = self.taskNameList[img_index]
-                            # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
-                            self.parent.statusBar.showMessage(self.taskPrefix + name)
-                    except:
-                        # print_exception()
-                        logger.warning('An exception was raised while updating progress bar')
-                        print_exception()
+                            self.parent.updatePbar(self.n_tasks - realtime)
+                            if self.taskPrefix and self.taskNameList:
+                                try:
+                                    name = self.taskNameList[img_index]
+                                    # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
+                                    self.parent.statusBar.showMessage(self.taskPrefix + name)
+                                except:
+                                    # print_exception()
+                                    logger.warning('Improperly sized taskNameList! [size=%d] '
+                                                   '[prefix=%s]' %(len(self.taskNameList), self.taskPrefix))
+                        except:
+                            # print_exception()
+                            logger.warning(f'An exception was raised while updating progress bar [{self.taskPrefix}]')
+                            print_exception()
 
                     # .get method is BLOCKING by default for mp.Queue
                     task_id, outs, errs, rc, dt = self.result_queue.get()

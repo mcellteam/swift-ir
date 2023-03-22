@@ -623,6 +623,7 @@ class EMViewerSnr(AbstractEMViewer):
         super().__init__(**kwags)
         # self.shared_state.add_changed_callback(self.on_state_changed)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'EMViewerSnr'
         self.initViewer()
 

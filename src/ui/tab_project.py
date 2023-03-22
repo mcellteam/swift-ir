@@ -142,6 +142,8 @@ class ProjectTab(QWidget):
         logger.info('<<<< Refreshing')
 
     def initSnrViewer(self):
+        try:                   del cfg.snrViewer
+        except AttributeError: pass
 
         # cfg.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
         # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
@@ -149,6 +151,7 @@ class ProjectTab(QWidget):
         # cfg.snrViewer.initViewerSbs(orientation='vertical')
         self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
         cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)
         self.updateNeuroglancer()
 
 
@@ -222,6 +225,8 @@ class ProjectTab(QWidget):
             # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            # cfg.emViewer.signals.stateChangedAny.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
             # cfg.emViewer.signals.stateChanged.connect(self.slotUpdateZoomSlider)
@@ -871,13 +876,6 @@ class ProjectTab(QWidget):
                 cfg.main_window.hud.done()
             else:
                 logger.warning('(!) validate points is misconfigured')
-        self.btnApplyMA = QPushButton('Apply')
-        self.btnApplyMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnApplyMA.setFixedHeight(20)
-        self.btnApplyMA.setFixedWidth(60)
-        self.btnApplyMA.clicked.connect(fn)
-        self.btnApplyMA.setEnabled(False)
-        self.btnApplyMA.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -985,16 +983,11 @@ class ProjectTab(QWidget):
         self.MA_SWIM_window_slider = QSlider(Qt.Orientation.Horizontal, self)
         self.MA_SWIM_window_slider.setStatusTip(tip)
         self.MA_SWIM_window_slider.setRange(8, 512)
-        self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
         self.MA_SWIM_window_slider.valueChanged.connect(fn)
         self.MA_SWIM_window_slider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.MA_SWIM_window_slider.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.MA_SWIM_window_slider.setFixedWidth(100)
         self.MA_SWIM_window_lab = QLabel()
-        self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
-
-
-
 
         tip = "SWIM whitening factor"
         def fn():
@@ -1006,7 +999,6 @@ class ProjectTab(QWidget):
         self.spinbox_whitening.setStatusTip(tip)
         # self.spinbox_whitening.setFixedHeight(26)
         # self._whiteningControl.setValue(cfg.DEFAULT_WHITENING)
-        self.spinbox_whitening.setValue(cfg.data.manual_whitening())
         self.spinbox_whitening.valueChanged.connect(fn)
         self.spinbox_whitening.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.spinbox_whitening.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1555,7 +1547,6 @@ QListView::item:!selected:hover
         caller = inspect.stack()[1].function
         if cfg.data.selected_method() != 'Auto-SWIM':
             self.combo_method.setCurrentText(cfg.data.selected_method())
-        self.btnApplyMA.setEnabled(self.validate_MA_points())
         self.btnClearMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
         self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
         self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)

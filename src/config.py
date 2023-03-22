@@ -119,6 +119,7 @@ nTasks = 0
 nCompleted = 0
 CancelProcesses = False
 event = None
+ignore_pbar = False
 
 SHADER = shader_default_ = '''#uicontrol vec3 color color(default="white")
 #uicontrol float brightness slider(min=-1, max=1, step=0.01)
