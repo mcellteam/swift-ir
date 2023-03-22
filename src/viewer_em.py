@@ -85,6 +85,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.scale)),
         )
 
+    def getCoordinateSpacePlanar(self):
+        return ng.CoordinateSpace(
+            names=['z', 'y', 'x'],
+            units=['nm', 'nm', 'nm'],
+            scales=[1,1,1],
+        )
+
+
     # @abc.abstractmethod
     # def on_state_changed(self):
     #     pass
@@ -229,7 +237,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def set_zmag(self, val=10):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': val}
@@ -382,10 +391,9 @@ class EMViewer(AbstractEMViewer):
         is_aligned = cfg.data.is_aligned_and_generated()
         _, tensor_y, tensor_x = cfg.tensor.shape
 
-        w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
-        h = cfg.project_tab.webengine.height()
+        # w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+        # h = cfg.project_tab.webengine.height()
         # self.initZoom(w=w, h=h, adjust=1.10)
-        # self.initZoom(w=w, h=h)
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
@@ -413,7 +421,6 @@ class EMViewer(AbstractEMViewer):
             s.concurrent_downloads = 512'''
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-
             s.layout = ng.row_layout(self.grps)
             if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
                 s.crossSectionBackgroundColor = '#808080'
@@ -443,6 +450,10 @@ class EMViewer(AbstractEMViewer):
         self.set_contrast()
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+        w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+        h = cfg.project_tab.webengine.height()
+        self.initZoom(w=w, h=h, adjust=1.10)
 
         # self.set_zmag()
 
@@ -527,17 +538,17 @@ class EMViewerStage(AbstractEMViewer):
             volume_type='image',
             data=self.store,
             # data=self.store[self.index:self.index+1, :, :],
-            dimensions=self.coordinate_space,
+            # dimensions=self.coordinate_space,
+            # dimensions=[1,1,1],
+            dimensions=self.getCoordinateSpacePlanar(),
             voxel_offset=[0, 0, 0]
         )
         # _, tensor_y, tensor_x = cfg.tensor.shape
         _, tensor_y, tensor_x = self.store.shape
 
         logger.info(f'Tensor Shape: {self.store.shape}')
-        w = cfg.project_tab.MA_webengine_stage.geometry().width()
-        h = cfg.project_tab.MA_webengine_stage.geometry().height()
-        # logger.critical(f'MA_webengine_stage: w={w}, h={h}')
-        self.initZoom(w=w, h=h, adjust=1.10)
+
+        # self.initZoom(w=w, h=h, adjust=1.10)
 
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
@@ -561,6 +572,10 @@ class EMViewerStage(AbstractEMViewer):
             s.showSlices=False
             s.position = [0, tensor_y / 2, tensor_x / 2]
 
+
+            # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
+
+
         with self.config_state.txn() as s:
             s.show_ui_controls = False
             s.show_panel_borders = False
@@ -573,6 +588,11 @@ class EMViewerStage(AbstractEMViewer):
         # self.set_zmag()
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+        w = cfg.project_tab.MA_webengine_stage.geometry().width()
+        h = cfg.project_tab.MA_webengine_stage.geometry().height()
+        logger.critical(f'MA_webengine_stage: w={w}, h={h}')
+        self.initZoom(w=w, h=h, adjust=1.10)
 
         logger.info('\n\n' + self.url() + '\n')
 
@@ -616,10 +636,9 @@ class EMViewerSnr(AbstractEMViewer):
             )
 
         _, tensor_y, tensor_x = cfg.tensor.shape
-        h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
-        w = cfg.project_tab.snrPlotSplitter.sizes()[1]
-        # self.initZoom(h=h, w=w, adjust=1.18)
-        self.initZoom(h=h, w=w, adjust=1.20)
+        # h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
+        # w = cfg.project_tab.snrPlotSplitter.sizes()[1]
+        # self.initZoom(h=h, w=w, adjust=1.20)
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
@@ -653,6 +672,8 @@ class EMViewerSnr(AbstractEMViewer):
             s.showSlices = False
             s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
 
+            # s.relativeDisplayScales = {"z": 10}
+
         with self.config_state.txn() as s:
             s.show_ui_controls = False
             # s.show_panel_borders = False
@@ -666,6 +687,10 @@ class EMViewerSnr(AbstractEMViewer):
         self.set_contrast()
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+        h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
+        w = cfg.project_tab.snrPlotSplitter.sizes()[1]
+        self.initZoom(h=h, w=w, adjust=1.20)
 
         # self.set_zmag()
 

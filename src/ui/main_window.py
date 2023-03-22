@@ -2959,7 +2959,8 @@ class MainWindow(QMainWindow):
         self._changeScaleWidget = QWidget()
         self._changeScaleWidget.setLayout(hbl)
 
-        self.controlsButton = QPushButton('Controls')
+        self.controlsButton = QPushButton()
+        self.controlsButton.setText(('Controls', 'Hide')[self.cpanelMainWidgets.isVisible()])
         self.controlsButton.setStatusTip('Show Controls')
         self.controlsButton.setFixedHeight(18)
         self.controlsButton.setFixedWidth(70)
@@ -3974,42 +3975,37 @@ class MainWindow(QMainWindow):
     def _valueChangedSwimWindow(self):
         # logger.info('')
         caller = inspect.stack()[1].function
-        # if caller == 'initControlPanel': return
         if caller == 'main':
             logger.info(f'caller: {caller}')
-            cfg.data.set_swim_window(float(self._swimWindowControl.value()) / 100.)
+            cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
 
     def _valueChangedWhitening(self):
         # logger.info('')
         caller = inspect.stack()[1].function
         # if caller != 'initControlPanel':
         if caller == 'main':
-            logger.info(f'caller: {caller}')
             cfg.data.set_whitening(float(self._whiteningControl.value()))
 
 
     def _valueChangedPolyOrder(self):
-        # logger.info('')
+        logger.info('')
         caller = inspect.stack()[1].function
-        if caller == 'initControlPanel': return
-        logger.info(f'caller: {caller}')
-        if self._polyBiasCombo.currentText() == 'None':
-            cfg.data.set_use_poly_order(False)
-        else:
-            cfg.data.set_use_poly_order(True)
-            cfg.data.set_poly_order(self._polyBiasCombo.currentText())
+        if caller == 'main':
+            if self._polyBiasCombo.currentText() == 'None':
+                cfg.data.set_use_poly_order(False)
+            else:
+                cfg.data.set_use_poly_order(True)
+                cfg.data.set_poly_order(self._polyBiasCombo.currentText())
 
 
     def _toggledAutogenerate(self) -> None:
         # logger.info('')
         caller = inspect.stack()[1].function
-        if caller == 'initControlPanel': return
-        logger.info(f'caller: {caller}')
-
-        if self._toggleAutogenerate.isChecked():
-            self.tell('Images will be generated automatically after alignment')
-        else:
-            self.tell('Images will not be generated automatically after alignment')
+        if caller == 'main':
+            if self._toggleAutogenerate.isChecked():
+                self.tell('Images will be generated automatically after alignment')
+            else:
+                self.tell('Images will not be generated automatically after alignment')
 
 
     def rechunk(self):

@@ -93,7 +93,7 @@ class MAViewer(neuroglancer.Viewer):
         return copy.deepcopy(self.state)
 
     def n_annotations(self):
-        return len(self.state.layers['ann'].annotations)
+        return len(self.state.layers['ann_points'].annotations)
 
     def updateHighContrastMode(self):
         with self.txn() as s:
@@ -292,6 +292,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
+        logger.info('Adding Manual Points to Buffer...')
         # if not cfg.project_tab.isManualReady():
         #     return
 
@@ -307,21 +308,29 @@ class MAViewer(neuroglancer.Viewer):
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
-        self.draw_point_annotations()
-        self.drawSWIMwindow()
+
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
+        try:
+            self.set_zmag()
+        except:
+            print_exception()
+        self.drawSWIMwindow()
+        if cfg.data.method() == 'Manual-Strict':
+            self.draw_point_annotations()
+        logger.critical(f'{self.pts}')
+
 
 
 
 
     def draw_point_annotations(self):
-        logger.critical('Drawing point annotations...')
+        logger.info('Drawing point annotations...')
         try:
             anns = list(self.pts.values())
             if anns:
                 with self.txn() as s:
-                    s.layers['ann'].annotations = anns
+                    s.layers['ann_points'].annotations = anns
         except:
             # print_exception()
             logger.warning('Unable to draw donut annotations or none to draw')
@@ -329,10 +338,10 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def undraw_point_annotations(self):
-        logger.critical('Undrawing point annotations...')
+        # logger.info('Undrawing point annotations...')
         try:
             with self.txn() as s:
-                s.layers['ann'].annotations = None
+                s.layers['ann_swim'].annotations = None
         except:
             # print_exception()
             logger.warning('No donut annotations to delete')
@@ -340,25 +349,25 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def undrawSWIMwindow(self):
-        logger.critical('Undrawing SWIM Window')
+        # logger.info('Undrawing SWIM Window')
         try:
             with self.txn() as s:
-                s.layers['SWIM Window'].annotations = None
+                s.layers['ann_auto'].annotations = None
         except:
             logger.warning('No annotations to clear')
             # print_exception()
 
 
     def drawSWIMwindow(self):
-        logger.critical('Drawing SWIM window...')
+        self.undraw_point_annotations()
         self.undrawSWIMwindow()
 
         marker_size = 1
 
         if cfg.data.method() == 'Auto-SWIM':
         # if not cfg.project_tab.tgl_alignMethod.isChecked():
-            logger.critical('Drawing SWIM Window for automatic SWIM alignment...')
-            self.undraw_point_annotations()
+            logger.info('Drawing SWIM Window Layer for Auto-SWIM Alignment...')
+
 
             sw = cfg.data.swim_window() # SWIM Window
             image_w = cfg.data.image_size()[0]
@@ -399,20 +408,22 @@ class MAViewer(neuroglancer.Viewer):
             ]
 
         else:
-            logger.critical('Drawing SWIM Windows for manual alignment...')
-            manual_sw = 128
+            logger.info('Drawing SWIM Windows Layer for Manual Alignment...')
             points = cfg.data.manual_points()[self.role]
             annotations = []
+            half_win = int(cfg.data.manual_swim_window() / 2)
 
             if len(cfg.data.manual_points()[self.role]) > 0:
                 for i in range(len(points)):
                     pt = points[i]
                     x = pt[0]
                     y = pt[1]
-                    A = [.5, x-64, y+64]
-                    B = [.5, x+64, y+64]
-                    C = [.5, x+64, y-64]
-                    D = [.5, x-64, y-64]
+
+
+                    A = [.5, x-half_win, y+half_win]
+                    B = [.5, x+half_win, y+half_win]
+                    C = [.5, x+half_win, y-half_win]
+                    D = [.5, x-half_win, y-half_win]
 
                     X_A = [.5, x - 25, y + 25]
                     X_B = [.5, x + 25, y + 25]
@@ -438,10 +449,10 @@ class MAViewer(neuroglancer.Viewer):
 
                     x = coords[1]
                     y = coords[2]
-                    A = [.5, x-64, y+64]
-                    B = [.5, x+64, y+64]
-                    C = [.5, x+64, y-64]
-                    D = [.5, x-64, y-64]
+                    A = [.5, x-half_win, y+half_win]
+                    B = [.5, x+half_win, y+half_win]
+                    C = [.5, x+half_win, y-half_win]
+                    D = [.5, x-half_win, y-half_win]
 
                     X_A = [.5, x - 25, y + 25]
                     X_B = [.5, x + 25, y + 25]
@@ -456,18 +467,18 @@ class MAViewer(neuroglancer.Viewer):
                     # annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
                     # annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
 
-        box = ng.AxisAlignedBoundingBoxAnnotation(
-            point_a=[5, 50, 50],
-            point_b=[5, 500, 500],
-            id="bounding-box",
-        )
+        # box = ng.AxisAlignedBoundingBoxAnnotation(
+        #     point_a=[.5, 50, 50],
+        #     point_b=[.5, 500, 500],
+        #     id="bounding-box",
+        # )
 
 
         with self.txn() as s:
-            s.layers["bounding-box"] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotations=[box])
-            s.layers['SWIM Window'] = ng.LocalAnnotationLayer(
+            # s.layers['bounding-box'] = ng.LocalAnnotationLayer(
+            #     dimensions=self.coordinate_space,
+            #     annotations=[box])
+            s.layers['ann_swim'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),

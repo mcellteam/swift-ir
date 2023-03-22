@@ -13,7 +13,7 @@ import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
-    QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit
+    QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
 from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, QDoubleValidator
 from qtpy.QtWebEngineWidgets import *
@@ -79,6 +79,7 @@ class ProjectTab(QWidget):
         self.MA_base_cscale = None
         self.MA_base_zoom = None
         self._allow_zoom_change = True
+        self._combo_mode_switch = True
 
         h = self.MA_webengine_ref.geometry().height()
         self.MA_stageSplitter.setSizes([int(.7*h), int(.3*h)])
@@ -137,9 +138,6 @@ class ProjectTab(QWidget):
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
-
-        for v in self.get_viewers():
-            v.set_zmag()
 
         logger.info('<<<< Refreshing')
 
@@ -664,6 +662,7 @@ class ProjectTab(QWidget):
         self.fl_actionsMA.setContentsMargins(0, 0, 0, 0)
         self.gb_actionsMA.setLayout(self.fl_actionsMA)
 
+
         self.automatic_label = QLabel()
         self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
         # font = QFont()
@@ -697,16 +696,18 @@ class ProjectTab(QWidget):
         # self.tgl_alignMethod.setFixedSize(44,26)
 
         def fn():
-            caller = inspect.stack()[1].function
-            logger.critical('caller: %s' % caller)
-            # request = self.combo_method.currentText()
-            # cfg.data.set_selected_method(request)
-            cfg.data.set_selected_method(self.combo_method.currentText())
-            self.set_method_label_text()
-            self.MA_viewer_ref.drawSWIMwindow()
-            self.MA_viewer_base.drawSWIMwindow()
+            if self._combo_mode_switch:
+                caller = inspect.stack()[1].function
+                logger.critical('caller: %s' % caller)
+                # request = self.combo_method.currentText()
+                # cfg.data.set_selected_method(request)
+                cfg.data.set_selected_method(self.combo_method.currentText())
+                self.set_method_label_text()
+                self.MA_viewer_ref.drawSWIMwindow()
+                self.MA_viewer_base.drawSWIMwindow()
         self.combo_method = QComboBox(self)
         self.combo_method.setFixedHeight(18)
+        self.combo_method.setFixedWidth(96)
         self.combo_method.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['Manual-Hint', 'Manual-Strict']
         items = ['Auto-SWIM', 'Manual-Hint', 'Manual-Strict']
@@ -895,22 +896,24 @@ class ProjectTab(QWidget):
         self.msg_MAinstruct.setFixedSize(290, 22)
         self.msg_MAinstruct.hide()
 
-        def fn():
-            # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-        self.cb_showYellowFrame = QCheckBox('Show Frame')
-        self.cb_showYellowFrame.setChecked(getData('state,stage_viewer,show_yellow_frame'))
-        self.cb_showYellowFrame.toggled.connect(lambda val: setData('state,stage_viewer,show_yellow_frame', val))
-        # self.cb_showYellowFrame.toggled.connect(self.initNeuroglancer)
-        self.cb_showYellowFrame.toggled.connect(fn)
+        # def fn():
+        #     # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+        #     self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+        # self.cb_showYellowFrame = QCheckBox('Show Frame')
+        # self.cb_showYellowFrame.setChecked(getData('state,stage_viewer,show_yellow_frame'))
+        # self.cb_showYellowFrame.toggled.connect(lambda val: setData('state,stage_viewer,show_yellow_frame', val))
+        # # self.cb_showYellowFrame.toggled.connect(self.initNeuroglancer)
+        # self.cb_showYellowFrame.toggled.connect(fn)
 
         self.labNoArrays = QLabel('')
+
 
         self.stageDetails = VWidget()
         lab = QLabel('No. Generated Arrays: 1')
         lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.stageDetails.addWidget(HWidget(lab, self.labNoArrays))
         #Todo self.labNoArrays
+
 
         self.gb_stageInfoText = QGroupBox()
         vbl = VBL()
@@ -919,15 +922,117 @@ class ProjectTab(QWidget):
         self.gb_stageInfoText.setLayout(vbl)
 
 
-        self.MA_webengine_widget = VWidget()
-        self.MA_webengine_widget.addWidget(self.MA_webengine_stage)
-        self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
+        # self.MA_webengine_widget = VWidget()
+        # self.MA_webengine_widget.addWidget(self.MA_webengine_stage)
+        # self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
+
+        self.MA_points_tab = VWidget(self.gb_stageInfoText, self.MA_sbw, self.gb_actionsMA)
+
+        """  MA Settings Tab  """
+
+        tip = "The square region size (px) used for computing alignment"
+        def fn():
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                cfg.data.set_manual_swim_window(float(self.MA_SWIM_window_slider.value()))
+                self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+                self.MA_viewer_ref.drawSWIMwindow()
+                self.MA_viewer_base.drawSWIMwindow()
+        # self.MA_SWIM_window_slider = QSpinBox(self)
+        self.MA_SWIM_window_slider = QSlider(Qt.Orientation.Horizontal, self)
+        self.MA_SWIM_window_slider.setStatusTip(tip)
+        self.MA_SWIM_window_slider.setRange(8, 512)
+        self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+        self.MA_SWIM_window_slider.valueChanged.connect(fn)
+        self.MA_SWIM_window_slider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        # self.MA_SWIM_window_slider.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.MA_SWIM_window_slider.setFixedWidth(100)
+        self.MA_SWIM_window_lab = QLabel()
+        self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+
+
+
+
+        tip = "SWIM whitening factor"
+        def fn():
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                cfg.data.set_manual_whitening(float(self.spinbox_whitening.value()))
+        self.spinbox_whitening = QDoubleSpinBox(self)
+        self.spinbox_whitening.setFixedWidth(80)
+        self.spinbox_whitening.setStatusTip(tip)
+        # self.spinbox_whitening.setFixedHeight(26)
+        # self._whiteningControl.setValue(cfg.DEFAULT_WHITENING)
+        self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+        self.spinbox_whitening.valueChanged.connect(fn)
+        self.spinbox_whitening.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        # self.spinbox_whitening.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spinbox_whitening.setDecimals(2)
+        self.spinbox_whitening.setSingleStep(.01)
+        self.spinbox_whitening.setMinimum(-2)
+        self.spinbox_whitening.setMaximum(2)
+
+
+
+        def fn():
+            cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' %cfg.data.zpos)
+            cfg.data.set_manual_swim_window(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+            cfg.data.set_manual_whitening(cfg.DEFAULT_MANUAL_WHITENING)
+            self.MA_viewer_ref.drawSWIMwindow()
+            self.MA_viewer_base.drawSWIMwindow()
+        self.MA_settings_defaults_button = QPushButton('Restore Defaults')
+        self.MA_settings_defaults_button.setMaximumSize(QSize(90, 18))
+        self.MA_settings_defaults_button.clicked.connect(fn)
+
+
+
+
+        self.MA_swim_window_widget = HWidget(self.MA_SWIM_window_slider, self.MA_SWIM_window_lab)
+        self.MA_swim_window_widget.layout.setAlignment(Qt.AlignLeft)
+
+
+
+
+        # lab.setStatusTip(tip)
+
+        # lay = QHBoxLayout()
+        # lay.setContentsMargins(0, 0, 0, 0)
+        # lay.addWidget(lab, alignment=Qt.AlignLeft)
+        # lay.addWidget(self.MA_SWIM_window_slider, alignment=Qt.AlignLeft)
+        # self.MA_swimWindow = QWidget()
+        # self.MA_swimWindow.setLayout(lay)
+
+
+        self.gb_MA_settings = QGroupBox()
+        self.fl_MA_settings = QFormLayout()
+        self.fl_MA_settings.setSpacing(2)
+        self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
+        self.fl_MA_settings.addRow("Manual Window Size", self.MA_swim_window_widget)
+        self.fl_MA_settings.addRow("Whitening Factor", self.spinbox_whitening)
+        self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
+        self.gb_MA_settings.setLayout(self.fl_MA_settings)
+
+        # self.MA_settings = QWidget()
+
+
+        self.MA_tabs = QTabWidget()
+        self.MA_tabs.setStyleSheet("""
+        QTabBar::tab {
+        height: 16px;
+        font-size: 9px;
+        margin: 0px;
+        padding: 0px;
+        }
+        """)
+        self.MA_tabs.addTab(self.MA_points_tab, 'Points')
+        self.MA_tabs.addTab(self.gb_MA_settings, 'Settings')
+
 
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
-        self.MA_stageSplitter.addWidget(self.MA_webengine_widget)
-        self.MA_stageSplitter.addWidget(VWidget(self.gb_stageInfoText, self.MA_sbw, self.gb_actionsMA))
+        self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
+        self.MA_stageSplitter.addWidget(self.MA_tabs)
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
 
@@ -1284,6 +1389,13 @@ QListView::item:!selected:hover
 
             # self.MA_viewer_stage.initViewer()
             # self.update_MA_widgets()
+
+            self._combo_mode_switch = False
+            self.combo_method.setCurrentText(cfg.data.method())
+            self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+            self._combo_mode_switch = True
         else:
             cfg.main_window.warn('The current section is the first section')
 
@@ -1305,6 +1417,12 @@ QListView::item:!selected:hover
 
             # self.MA_viewer_stage.initViewer()
             # self.update_MA_widgets()
+            self._combo_mode_switch = False
+            self.combo_method.setCurrentText(cfg.data.method())
+            self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+            self._combo_mode_switch = True
         else:
             cfg.main_window.warn('The current section is the last section')
 
@@ -1382,9 +1500,9 @@ QListView::item:!selected:hover
 
     def validate_MA_points(self):
         # if cfg.data.selected_method() != 'Auto-SWIM':
-        if len(self.MA_viewer_ref.pts.keys()) >= 3:
-            if self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys():
-                return True
+        # if len(self.MA_viewer_ref.pts.keys()) >= 3:
+        if self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys():
+            return True
         return False
 
 
@@ -1643,8 +1761,21 @@ QListView::item:!selected:hover
         self.MA_viewer_ref.signals.ptsChanged.connect(self.applyMps)
         self.MA_viewer_base.signals.ptsChanged.connect(self.applyMps)
 
+        self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+        self.MA_SWIM_window_lab.setText("%dpx" %cfg.data.manual_swim_window())
+        self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+
         self.update_MA_widgets()
         cfg.main_window.dataUpdateWidgets()
+
+
+
+        #
+        # val = 10
+        # self.MA_viewer_ref.set_zmag()
+        # self.MA_viewer_base.set_zmag()
+        # self.MA_viewer_stage.set_zmag()
+
 
         logger.info('<<<< onEnterManualMode')
 
@@ -1779,6 +1910,10 @@ QListView::item:!selected:hover
                 state = copy.deepcopy(self.MA_viewer_base.state)
                 state.relative_display_scales = {'z': val}
                 self.MA_viewer_base.set_state(state)
+                state = copy.deepcopy(self.MA_viewer_stage.state)
+                state.relative_display_scales = {'z': val}
+                self.MA_viewer_base.set_state(state)
+
             else:
                 # logger.info('val = %d' % val)
                 state = copy.deepcopy(cfg.emViewer.state)
