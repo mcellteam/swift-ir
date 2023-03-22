@@ -192,7 +192,7 @@ class ProjectTab(QWidget):
             self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
 
             self.AS_SWIM_window_slider.setValue(cfg.data.swim_window())
-            self.AS_SWIM_window_lab.setText("%.2g%%" % 100 * cfg.data.swim_window())
+            self.AS_SWIM_window_lab.setText("%.2f%%" % float(100) * cfg.data.swim_window())
 
 
             self.spinbox_whitening.setValue(cfg.data.manual_whitening())
@@ -1002,7 +1002,7 @@ class ProjectTab(QWidget):
             logger.info('caller: %s' %caller)
             if caller == 'main':
                 cfg.data.set_swim_window(float(self.AS_SWIM_window_slider.value()))
-                self.AS_SWIM_window_lab.setText("%.2g%%" % 100 * cfg.data.swim_window())
+                self.AS_SWIM_window_lab.setText("%.2f%%" % float(100) * cfg.data.swim_window())
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
         # self.AS_SWIM_window_slider = QSpinBox(self)
@@ -1048,7 +1048,7 @@ class ProjectTab(QWidget):
             self.spinbox_whitening.setValue(cfg.DEFAULT_WHITENING)
 
             self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
-            self.AS_SWIM_window_lab.setText("%.2g%%" % 100 * cfg.data.swim_window())
+            self.AS_SWIM_window_lab.setText("%.2f%%" % float(100) * cfg.data.swim_window())
             # cfg.data.set_manual_swim_window(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
             # cfg.data.set_manual_whitening(cfg.DEFAULT_MANUAL_WHITENING)
             # cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
@@ -1605,7 +1605,7 @@ QListView::item:!selected:hover
             self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
             self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
             self.AS_SWIM_window_slider.setValue(cfg.data.swim_window())
-            self.AS_SWIM_window_lab.setText("%.2g%%" % 100 * cfg.data.swim_window())
+            self.AS_SWIM_window_lab.setText("%.2f%%" % float(100) * cfg.data.swim_window())
 
             self.spinbox_whitening.setValue(cfg.data.manual_whitening())
 
