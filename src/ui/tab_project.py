@@ -79,7 +79,7 @@ class ProjectTab(QWidget):
         self.MA_base_cscale = None
         self.MA_base_zoom = None
         self._allow_zoom_change = True
-        self._combo_mode_switch = True
+        self._combo_method_switch = True
 
         h = self.MA_webengine_ref.geometry().height()
         self.MA_stageSplitter.setSizes([int(.7*h), int(.3*h)])
@@ -91,11 +91,11 @@ class ProjectTab(QWidget):
         index = self._tabs.currentIndex()
 
         if getData('state,manual_mode'):
-            pts_ref = self.MA_viewer_ref.pts
-            pts_base = self.MA_viewer_base.pts
+            pts_ref = cfg.refViewer.pts
+            pts_base = cfg.baseViewer.pts
             self.initNeuroglancer()
-            self.MA_viewer_ref.pts = pts_ref
-            self.MA_viewer_base.pts = pts_base
+            cfg.refViewer.pts = pts_ref
+            cfg.baseViewer.pts = pts_base
             # self.updateNeuroglancer()
 
         if index == 0:
@@ -118,17 +118,17 @@ class ProjectTab(QWidget):
 
         index = self._tabs.currentIndex()
 
-        if getData('state,manual_mode'):
-            pts_ref = self.MA_viewer_ref.pts
-            pts_base = self.MA_viewer_base.pts
-            self.initNeuroglancer()
-            self.MA_viewer_ref.pts = pts_ref
-            self.MA_viewer_base.pts = pts_base
-            # self.updateNeuroglancer()
+        man_mode = getData('state,manual_mode')
+
+        if man_mode:
+            pts_ref = cfg.refViewer.pts
+            pts_base = cfg.baseViewer.pts
 
         if index == 0:
-            # self.updateNeuroglancer()
             self.initNeuroglancer()
+            if man_mode:
+                cfg.refViewer.pts = pts_ref
+                cfg.baseViewer.pts = pts_base
         elif index == 1:
             self.project_table.setScaleData()
         elif index == 2:
@@ -143,12 +143,12 @@ class ProjectTab(QWidget):
 
     def initSnrViewer(self):
 
-        # self.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-        # self.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-        self.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
-        # self.snrViewer.initViewerSbs(orientation='vertical')
-        self.snrWebengine.setUrl(QUrl(self.snrViewer.url()))
-        self.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        # cfg.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+        # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+        cfg.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
+        # cfg.snrViewer.initViewerSbs(orientation='vertical')
+        self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
+        cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         self.updateNeuroglancer()
 
 
@@ -164,34 +164,74 @@ class ProjectTab(QWidget):
 
 
     def initNeuroglancer(self):
-        logger.info(f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...')
+        logger.critical(f'\n\n----------------------------------------------------\n'
+                        f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...\n'
+                        f'----------------------------------------------------\n')
+        try:                   del cfg.refViewer
+        except AttributeError: pass
+        try:                   del cfg.baseViewer
+        except AttributeError: pass
+        try:                   del cfg.stageViewer
+        except AttributeError: pass
+        try:                   del cfg.emViewer
+        except AttributeError: pass
 
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
-            self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
-            self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-            # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
-            self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
-            self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
-            self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
-            self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
-            self.MA_viewer_base.signals.zoomChanged.connect(self.setZoomSlider)
+
+
+            cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
+            cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
+
+            self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+
+            # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
+
+            cfg.refViewer.signals.ptsChanged.connect(self.update_MA_widgets)
+            cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
+            cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_widgets)
+            cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
+            # cfg.refViewer.signals.ptsChanged.connect(self.applyMps)
+            # cfg.baseViewer.signals.ptsChanged.connect(self.applyMps)
+            # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
+            cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
+            # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
+            cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
+
+            # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
+            cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider)
+
+
+            # cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer.set_zmag)
+            # cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer.set_zmag)
+            # cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer.set_zmag)
+
+            cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag)
+            cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag)
+            cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer._set_zmag)
+
             self.update_MA_widgets()
         else:
+
             # if caller != '_onGlobTabChange':
             logger.info('Initializing...')
             # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
+            # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
             # cfg.emViewer.signals.stateChanged.connect(self.slotUpdateZoomSlider)
             cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
-            self.zoomSlider.valueChanged.connect(self.onZoomSlider)
+            # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
 
         self.updateProjectLabels()
 
+        cfg.main_window.dataUpdateWidgets()
 
         # self.slotUpdateZoomSlider()
 
@@ -202,9 +242,9 @@ class ProjectTab(QWidget):
         for viewer in self.get_viewers():
             viewer.initViewer()
         # if getData('state,MANUAL_MODE'):
-        #     self.MA_viewer_base.initViewer()
-        #     self.MA_viewer_ref.initViewer()
-        #     self.MA_viewer_stage.initViewer()
+        #     cfg.baseViewer.initViewer()
+        #     cfg.refViewer.initViewer()
+        #     cfg.stageViewer.initViewer()
         #     self.update_MA_widgets() # <-- !!!
         # else:
         #     self.viewer.initViewer()
@@ -215,13 +255,13 @@ class ProjectTab(QWidget):
     # def setViewerModifications(self):
     #     logger.info('')
     #     if getData('state,MANUAL_MODE'):
-    #         self.MA_viewer_base.set_brightness()
-    #         self.MA_viewer_ref.set_brightness()
-    #         self.MA_viewer_stage.set_brightness()
+    #         cfg.baseViewer.set_brightness()
+    #         cfg.refViewer.set_brightness()
+    #         cfg.stageViewer.set_brightness()
     #
-    #         self.MA_viewer_base.set_contrast()
-    #         self.MA_viewer_ref.set_contrast()
-    #         self.MA_viewer_stage.set_contrast()
+    #         cfg.baseViewer.set_contrast()
+    #         cfg.refViewer.set_contrast()
+    #         cfg.stageViewer.set_contrast()
     #     else:
     #         self.viewer.set_brightness()
     #         self.viewer.set_contrast()
@@ -261,7 +301,7 @@ class ProjectTab(QWidget):
         self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
-        self._overlayLab = QLabel()
+        self._overlayLab = QLabel('Test Label')
         self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 28px;""")
         self._overlayLab.hide()
 
@@ -607,11 +647,11 @@ class ProjectTab(QWidget):
         # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
 
         # NO CHANGE----------------------
-        # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        # self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_list_ref)
-        # self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_list_base)
-        # self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
-        # self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
+        # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+        # cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_ref)
+        # cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_base)
+        # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
+        # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
         # NO CHANGE----------------------
 
         # MA Stage Buffer Widget
@@ -696,15 +736,19 @@ class ProjectTab(QWidget):
         # self.tgl_alignMethod.setFixedSize(44,26)
 
         def fn():
-            if self._combo_mode_switch:
+            if self._combo_method_switch:
                 caller = inspect.stack()[1].function
                 logger.critical('caller: %s' % caller)
                 # request = self.combo_method.currentText()
                 # cfg.data.set_selected_method(request)
                 cfg.data.set_selected_method(self.combo_method.currentText())
                 self.set_method_label_text()
-                self.MA_viewer_ref.drawSWIMwindow()
-                self.MA_viewer_base.drawSWIMwindow()
+                cfg.refViewer.drawSWIMwindow()
+                cfg.baseViewer.drawSWIMwindow()
+                if cfg.data.method() == 'Auto-SWIM':
+                    self.msg_MAinstruct.hide()
+                else:
+                    self.msg_MAinstruct.show()
         self.combo_method = QComboBox(self)
         self.combo_method.setFixedHeight(18)
         self.combo_method.setFixedWidth(96)
@@ -752,8 +796,8 @@ class ProjectTab(QWidget):
                 self.update_MA_widgets()
                 self.set_method_label_text()
                 # self.tgl_alignMethod.setChecked(False)
-                self.MA_viewer_ref.undrawSWIMwindow()
-                self.MA_viewer_base.undrawSWIMwindow()
+                cfg.refViewer.undrawSWIMwindow()
+                cfg.baseViewer.undrawSWIMwindow()
             except:
                 print_exception()
             else:
@@ -802,8 +846,7 @@ class ProjectTab(QWidget):
 
         def fn():
             cfg.main_window.hud.post('Aligning...')
-            if self.btnApplyMA.isEnabled():
-                self.btnApplyMA.click()
+            # self.applyMps()
 
             cfg.main_window.alignOneMp()
             # cfg.main_window.regenerateOne()
@@ -819,12 +862,12 @@ class ProjectTab(QWidget):
         def fn():
             cfg.main_window.hud.post('Applying Manual Points...')
             if self.validate_MA_points():
-                self.applyMps()
+                # self.applyMps()
                 cfg.data.set_selected_method(self.combo_method.currentText())
                 self.update_MA_widgets()
                 self.set_method_label_text()
-                cfg.project_tab.MA_viewer_ref.drawSWIMwindow()
-                cfg.project_tab.MA_viewer_base.drawSWIMwindow()
+                cfg.refViewer.drawSWIMwindow()
+                cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window.hud.done()
             else:
                 logger.warning('(!) validate points is misconfigured')
@@ -897,8 +940,8 @@ class ProjectTab(QWidget):
         self.msg_MAinstruct.hide()
 
         # def fn():
-        #     # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-        #     self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+        #     # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
+        #     cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
         # self.cb_showYellowFrame = QCheckBox('Show Frame')
         # self.cb_showYellowFrame.setChecked(getData('state,stage_viewer,show_yellow_frame'))
         # self.cb_showYellowFrame.toggled.connect(lambda val: setData('state,stage_viewer,show_yellow_frame', val))
@@ -936,8 +979,8 @@ class ProjectTab(QWidget):
             if caller == 'main':
                 cfg.data.set_manual_swim_window(float(self.MA_SWIM_window_slider.value()))
                 self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
-                self.MA_viewer_ref.drawSWIMwindow()
-                self.MA_viewer_base.drawSWIMwindow()
+                cfg.refViewer.drawSWIMwindow()
+                cfg.baseViewer.drawSWIMwindow()
         # self.MA_SWIM_window_slider = QSpinBox(self)
         self.MA_SWIM_window_slider = QSlider(Qt.Orientation.Horizontal, self)
         self.MA_SWIM_window_slider.setStatusTip(tip)
@@ -978,8 +1021,8 @@ class ProjectTab(QWidget):
             cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' %cfg.data.zpos)
             cfg.data.set_manual_swim_window(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
             cfg.data.set_manual_whitening(cfg.DEFAULT_MANUAL_WHITENING)
-            self.MA_viewer_ref.drawSWIMwindow()
-            self.MA_viewer_base.drawSWIMwindow()
+            cfg.refViewer.drawSWIMwindow()
+            cfg.baseViewer.drawSWIMwindow()
         self.MA_settings_defaults_button = QPushButton('Restore Defaults')
         self.MA_settings_defaults_button.setMaximumSize(QSize(90, 18))
         self.MA_settings_defaults_button.clicked.connect(fn)
@@ -1380,22 +1423,16 @@ QListView::item:!selected:hover
             # self.initNeuroglancer()
             cfg.main_window.layer_left()
             # self.updateNeuroglancer()
-            # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
-            # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
-            # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+            # cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            # cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
+            # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
 
-            # self.MA_viewer_base.set_position(pos)
-            # self.MA_viewer_base.set_zoom(zoom)
+            # cfg.baseViewer.set_position(pos)
+            # cfg.baseViewer.set_zoom(zoom)
 
-            # self.MA_viewer_stage.initViewer()
+            # cfg.stageViewer.initViewer()
             # self.update_MA_widgets()
 
-            self._combo_mode_switch = False
-            self.combo_method.setCurrentText(cfg.data.method())
-            self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
-            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
-            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
-            self._combo_mode_switch = True
         else:
             cfg.main_window.warn('The current section is the first section')
 
@@ -1408,21 +1445,16 @@ QListView::item:!selected:hover
             cfg.main_window.layer_right()
             # self.updateNeuroglancer()
 
-            # self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
-            # self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
-            # self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
+            # cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            # cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
+            # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
 
-            # self.MA_viewer_base.set_position(pos)
-            # self.MA_viewer_base.set_zoom(zoom)
+            # cfg.baseViewer.set_position(pos)
+            # cfg.baseViewer.set_zoom(zoom)
 
-            # self.MA_viewer_stage.initViewer()
+            # cfg.stageViewer.initViewer()
             # self.update_MA_widgets()
-            self._combo_mode_switch = False
-            self.combo_method.setCurrentText(cfg.data.method())
-            self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
-            self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
-            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
-            self._combo_mode_switch = True
+
         else:
             cfg.main_window.warn('The current section is the last section')
 
@@ -1500,19 +1532,22 @@ QListView::item:!selected:hover
 
     def validate_MA_points(self):
         # if cfg.data.selected_method() != 'Auto-SWIM':
-        # if len(self.MA_viewer_ref.pts.keys()) >= 3:
-        if self.MA_viewer_ref.pts.keys() == self.MA_viewer_base.pts.keys():
+        # if len(cfg.refViewer.pts.keys()) >= 3:
+        if cfg.refViewer.pts.keys() == cfg.baseViewer.pts.keys():
             return True
         return False
 
 
     def update_MA_widgets(self):
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' %caller)
+        logger.critical('update_MA_widgets [caller: %s] >>>>' %caller)
         if getData('state,manual_mode'):
             self.update_MA_list_base()
             self.update_MA_list_ref()
         self.dataUpdateMA()
+
+        # self.applyMps()
+        logger.critical('<<<< update_MA_widgets ')
 
 
     def dataUpdateMA(self):
@@ -1521,44 +1556,56 @@ QListView::item:!selected:hover
         if cfg.data.selected_method() != 'Auto-SWIM':
             self.combo_method.setCurrentText(cfg.data.selected_method())
         self.btnApplyMA.setEnabled(self.validate_MA_points())
-        self.btnClearMA.setEnabled(bool(len(self.MA_viewer_ref.pts) + len(self.MA_viewer_base.pts)))
+        self.btnClearMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
         self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
         self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
+
+        if cfg.data.method() == 'Auto-SWIM':
+            self.msg_MAinstruct.hide()
+        else:
+            self.msg_MAinstruct.show()
+        self._combo_method_switch = False
+        self.combo_method.setCurrentText(cfg.data.method())
+        self._combo_method_switch = True
+        self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+        self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
+        self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+
 
 
 
     def update_MA_list_ref(self):
         logger.info('')
-        # self.MA_viewer_ref.pts = {}
+        # cfg.refViewer.pts = {}
         self.MA_ptsListWidget_ref.clear()
         self.MA_ptsListWidget_ref.update()
         n = 0
-        for key in self.MA_viewer_ref.pts.keys():
-            p = self.MA_viewer_ref.pts[key]
+        for i, key in enumerate(cfg.refViewer.pts.keys()):
+            p = cfg.refViewer.pts[key]
             _, x, y = p.point.tolist()
-            item = QListWidgetItem('(%.1f,  %.1f)' % (x, y))
+            item = QListWidgetItem('%d: y=%.1f,  x=%.1f' % (i, x, y))
             item.setBackground(QColor(self.mp_colors[n]))
             self.MA_ptsListWidget_ref.addItem(item)
             n += 1
         self.MA_refNextColorLab.setStyleSheet(
-            f'''background-color: {self.MA_viewer_ref.getNextUnusedColor()}''')
+            f'''background-color: {cfg.refViewer.getNextUnusedColor()}''')
 
 
     def update_MA_list_base(self):
         logger.info('')
-        # self.MA_viewer_base.pts = {}
+        # cfg.baseViewer.pts = {}
         self.MA_ptsListWidget_base.clear()
         self.MA_ptsListWidget_base.update()
         n = 0
-        for key in self.MA_viewer_base.pts.keys():
-            p = self.MA_viewer_base.pts[key]
+        for i, key in enumerate(cfg.baseViewer.pts.keys()):
+            p = cfg.baseViewer.pts[key]
             _, x, y = p.point.tolist()
-            item = QListWidgetItem('(%.1f,  %.1f)' % (x, y))
+            item = QListWidgetItem('%d: y=%.1f,  x=%.1f' % (i, x, y))
             item.setBackground(QColor(self.mp_colors[n]))
             self.MA_ptsListWidget_base.addItem(item)
             n += 1
         self.MA_baseNextColorLab.setStyleSheet(
-            f'''background-color: {self.MA_viewer_base.getNextUnusedColor()}''')
+            f'''background-color: {cfg.baseViewer.getNextUnusedColor()}''')
 
 
     def update_MA_ref_state(self):
@@ -1569,20 +1616,20 @@ QListView::item:!selected:hover
         # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_ref.isVisible():
-                if self.MA_viewer_base.state.cross_section_scale:
-                    # if self.MA_viewer_base.state.cross_section_scale < 10_000:
-                    #     if self.MA_viewer_base.state.cross_section_scale != 1.0:
-                    pos = self.MA_viewer_base.state.position
-                    zoom = self.MA_viewer_base.state.cross_section_scale
+                if cfg.baseViewer.state.cross_section_scale:
+                    # if cfg.baseViewer.state.cross_section_scale < 10_000:
+                    #     if cfg.baseViewer.state.cross_section_scale != 1.0:
+                    pos = cfg.baseViewer.state.position
+                    zoom = cfg.baseViewer.state.cross_section_scale
                     if isinstance(pos,np.ndarray) or isinstance(zoom, np.ndarray):
-                        state = copy.deepcopy(self.MA_viewer_ref.state)
+                        state = copy.deepcopy(cfg.refViewer.state)
                         if isinstance(pos, np.ndarray):
-                            state.position = self.MA_viewer_base.state.position
+                            state.position = cfg.baseViewer.state.position
                         if isinstance(zoom, float):
-                            if self.MA_viewer_base.state.cross_section_scale < 10_000:
-                                if self.MA_viewer_base.state.cross_section_scale != 1.0:
-                                    state.cross_section_scale = self.MA_viewer_base.state.cross_section_scale
-                        self.MA_viewer_ref.set_state(state)
+                            if cfg.baseViewer.state.cross_section_scale < 10_000:
+                                if cfg.baseViewer.state.cross_section_scale != 1.0:
+                                    state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
+                        cfg.refViewer.set_state(state)
 
 
     def update_MA_base_state(self):
@@ -1593,20 +1640,20 @@ QListView::item:!selected:hover
         # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
         if caller != 'on_state_change':
             if self.MA_webengine_base.isVisible():
-                if self.MA_viewer_ref.state.cross_section_scale:
-                    # if self.MA_viewer_ref.state.cross_section_scale < 10_000:
-                    #     if self.MA_viewer_ref.state.cross_section_scale != 1.0:
-                    pos = self.MA_viewer_ref.state.position
-                    zoom = self.MA_viewer_ref.state.cross_section_scale
+                if cfg.refViewer.state.cross_section_scale:
+                    # if cfg.refViewer.state.cross_section_scale < 10_000:
+                    #     if cfg.refViewer.state.cross_section_scale != 1.0:
+                    pos = cfg.refViewer.state.position
+                    zoom = cfg.refViewer.state.cross_section_scale
                     if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-                        state = copy.deepcopy(self.MA_viewer_base.state)
+                        state = copy.deepcopy(cfg.baseViewer.state)
                         if isinstance(pos, np.ndarray):
-                            state.position = self.MA_viewer_ref.state.position
+                            state.position = cfg.refViewer.state.position
                         if isinstance(zoom, float):
-                            if self.MA_viewer_ref.state.cross_section_scale < 10_000:
-                                if self.MA_viewer_ref.state.cross_section_scale != 1.0:
-                                    state.cross_section_scale = self.MA_viewer_ref.state.cross_section_scale
-                        self.MA_viewer_base.set_state(state)
+                            if cfg.refViewer.state.cross_section_scale < 10_000:
+                                if cfg.refViewer.state.cross_section_scale != 1.0:
+                                    state.cross_section_scale = cfg.refViewer.state.cross_section_scale
+                        cfg.baseViewer.set_state(state)
 
 
     def deleteMpRef(self):
@@ -1617,8 +1664,8 @@ QListView::item:!selected:hover
         if self.MA_ptsListWidget_ref.currentItem():
             del_key = self.MA_ptsListWidget_ref.currentItem().background().color().name()
             logger.info('del_key is %s' % del_key)
-            self.MA_viewer_ref.pts.pop(del_key)
-            self.MA_viewer_ref.draw_point_annotations()
+            cfg.refViewer.pts.pop(del_key)
+            cfg.refViewer.draw_point_annotations()
         self.update_MA_widgets()
         self.updateNeuroglancer()
 
@@ -1631,8 +1678,8 @@ QListView::item:!selected:hover
         if self.MA_ptsListWidget_base.currentItem():
             del_key = self.MA_ptsListWidget_base.currentItem().background().color().name()
             logger.info('del_key is %s' % del_key)
-            self.MA_viewer_base.pts.pop(del_key)
-            self.MA_viewer_base.draw_point_annotations()
+            cfg.baseViewer.pts.pop(del_key)
+            cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
         self.updateNeuroglancer()
 
@@ -1640,9 +1687,9 @@ QListView::item:!selected:hover
     def deleteAllMpRef(self):
         logger.info('Deleting All Reference Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Reference Image Manual Correspondence Points from Buffer...')
-        self.MA_viewer_ref.pts.clear()
+        cfg.refViewer.pts.clear()
         self.MA_ptsListWidget_ref.clear()
-        self.MA_viewer_ref.draw_point_annotations()
+        cfg.refViewer.draw_point_annotations()
         self.update_MA_widgets()
         self.updateNeuroglancer()
 
@@ -1650,9 +1697,9 @@ QListView::item:!selected:hover
     def deleteAllMpBase(self):
         logger.info('Deleting All Base Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
-        self.MA_viewer_base.pts.clear()
+        cfg.baseViewer.pts.clear()
         self.MA_ptsListWidget_base.clear()
-        self.MA_viewer_base.draw_point_annotations()
+        cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
         self.updateNeuroglancer()
 
@@ -1661,40 +1708,39 @@ QListView::item:!selected:hover
         logger.info('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.data.clearMps()
-        self.MA_viewer_ref.pts.clear()
+        cfg.refViewer.pts.clear()
         self.MA_ptsListWidget_ref.clear()
-        self.MA_viewer_base.pts.clear()
+        cfg.baseViewer.pts.clear()
         self.MA_ptsListWidget_base.clear()
-        self.MA_viewer_ref.draw_point_annotations()
-        self.MA_viewer_base.draw_point_annotations()
+        cfg.refViewer.draw_point_annotations()
+        cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
-        self.applyMps()
-        self.MA_viewer_ref.undraw_point_annotations()
-        self.MA_viewer_base.undraw_point_annotations()
+        cfg.refViewer.undraw_point_annotations()
+        cfg.baseViewer.undraw_point_annotations()
 
 
-    def applyMps(self):
-
-        if self.validate_MA_points():
-            cfg.main_window.hud.post('Saving Manual Correspondence Points...')
-            logger.info('Saving Manual Correspondence Points...')
-            cfg.main_window.statusBar.showMessage('Manual Points Saved!', 3000)
-            ref_pts, base_pts = [], []
-            for key in self.MA_viewer_ref.pts.keys():
-                p = self.MA_viewer_ref.pts[key]
-                _, x, y = p.point.tolist()
-                ref_pts.append((x, y))
-            for key in self.MA_viewer_base.pts.keys():
-                p = self.MA_viewer_base.pts[key]
-                _, x, y = p.point.tolist()
-                base_pts.append((x, y))
-            logger.info('Setting+Saving Reference manual points: %s' % str(ref_pts))
-            logger.info('Setting+Saving Working manual points: %s' % str(base_pts))
-            cfg.data.set_manual_points('ref', ref_pts)
-            cfg.data.set_manual_points('base', base_pts)
-            cfg.data.print_all_match_points()
-            cfg.main_window._saveProjectToFile(silently=True)
-            cfg.main_window.hud.post('Match Points Saved!')
+    # def applyMps(self):
+    #
+    #     if self.validate_MA_points():
+    #         cfg.main_window.hud.post('Saving Manual Correspondence Points...')
+    #         logger.info('Saving Manual Correspondence Points...')
+    #         cfg.main_window.statusBar.showMessage('Manual Points Saved!', 3000)
+    #         ref_pts, base_pts = [], []
+    #         for key in cfg.refViewer.pts.keys():
+    #             p = cfg.refViewer.pts[key]
+    #             _, x, y = p.point.tolist()
+    #             ref_pts.append((x, y))
+    #         for key in cfg.baseViewer.pts.keys():
+    #             p = cfg.baseViewer.pts[key]
+    #             _, x, y = p.point.tolist()
+    #             base_pts.append((x, y))
+    #         logger.info('Setting+Saving Reference manual points: %s' % str(ref_pts))
+    #         logger.info('Setting+Saving Working manual points: %s' % str(base_pts))
+    #         cfg.data.set_manual_points('ref', ref_pts)
+    #         cfg.data.set_manual_points('base', base_pts)
+    #         cfg.data.print_all_match_points()
+    #         # cfg.main_window._saveProjectToFile(silently=True)
+    #         # cfg.main_window.hud.post('Match Points Saved!')
 
 
     def eventFilter(self, source, event):
@@ -1747,34 +1793,37 @@ QListView::item:!selected:hover
 
         self.update()
 
-        self.MA_viewer_ref = MAViewer(role='ref', webengine=self.MA_webengine_ref)
-        self.MA_viewer_base = MAViewer(role='base', webengine=self.MA_webengine_base)
-        self.MA_viewer_stage = EMViewerStage(webengine=self.MA_webengine_stage)
-        self.MA_viewer_stage.initViewer()
-        # self.MA_viewer_stage.initViewer()
-        # self.MA_viewer_ref.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314-
-        self.MA_viewer_ref.signals.ptsChanged.connect(self.update_MA_widgets)
-        self.MA_viewer_base.signals.ptsChanged.connect(self.update_MA_widgets)
-        self.MA_viewer_ref.shared_state.add_changed_callback(self.update_MA_base_state)
-        self.MA_viewer_base.shared_state.add_changed_callback(self.update_MA_ref_state)
+        # cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+        # cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
+        # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
+        # # cfg.stageViewer.initViewer()
+        # # cfg.stageViewer.initViewer()
+        # # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314-
+        # cfg.refViewer.signals.ptsChanged.connect(self.update_MA_widgets)
+        # cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_widgets)
+        # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
+        # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
+        #
+        # cfg.refViewer.signals.ptsChanged.connect(self.applyMps)
+        # cfg.baseViewer.signals.ptsChanged.connect(self.applyMps)
+        #
+        # self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
+        # self.MA_SWIM_window_lab.setText("%dpx" %cfg.data.manual_swim_window())
+        # self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+        #
+        # self.update_MA_widgets()
 
-        self.MA_viewer_ref.signals.ptsChanged.connect(self.applyMps)
-        self.MA_viewer_base.signals.ptsChanged.connect(self.applyMps)
+        # cfg.main_window.dataUpdateWidgets()
 
-        self.MA_SWIM_window_slider.setValue(cfg.data.manual_swim_window())
-        self.MA_SWIM_window_lab.setText("%dpx" %cfg.data.manual_swim_window())
-        self.spinbox_whitening.setValue(cfg.data.manual_whitening())
-
-        self.update_MA_widgets()
-        cfg.main_window.dataUpdateWidgets()
+        self.initNeuroglancer()
 
 
 
         #
         # val = 10
-        # self.MA_viewer_ref.set_zmag()
-        # self.MA_viewer_base.set_zmag()
-        # self.MA_viewer_stage.set_zmag()
+        # cfg.refViewer.set_zmag()
+        # cfg.baseViewer.set_zmag()
+        # cfg.stageViewer.set_zmag()
 
 
         logger.info('<<<< onEnterManualMode')
@@ -1834,18 +1883,18 @@ QListView::item:!selected:hover
 
             if getData('state,manual_mode'):
                 val = 1 / self.zoomSlider.value()
-                # state = copy.deepcopy(self.MA_viewer_ref.state)
+                # state = copy.deepcopy(cfg.refViewer.state)
                 # state.cross_section_scale = 1 / val
                 # state.cross_section_scale = val * val
                 # state.cross_section_scale = 1 / (val * val)
-                # self.MA_viewer_ref.set_state(state)
+                # cfg.refViewer.set_state(state)
                 if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
                     # logger.info('Setting Neuroglancer Zoom to %g...' %val)
-                    self.MA_viewer_ref.set_zoom( val )
+                    cfg.refViewer.set_zoom( val )
 
-                # self.MA_viewer_stage._set_zmag()
-                # self.MA_viewer_ref._set_zmag()
-                # self.MA_viewer_base._set_zmag()
+                # cfg.stageViewer._set_zmag()
+                # cfg.refViewer._set_zmag()
+                # cfg.baseViewer._set_zmag()
             else:
                 try:
                     val = 1 / self.zoomSlider.value()
@@ -1872,7 +1921,7 @@ QListView::item:!selected:hover
     #     logger.critical(f'caller: {caller}')
     #     try:
     #         if getData('state,manual_mode'):
-    #             val = self.MA_viewer_ref.state.cross_section_scale
+    #             val = cfg.refViewer.state.cross_section_scale
     #         else:
     #             val = cfg.emViewer.state.cross_section_scale
     #         if val:
@@ -1904,15 +1953,15 @@ QListView::item:!selected:hover
             # for viewer in cfg.main_window.get_viewers():
             val = self.ZdisplaySlider.value()
             if getData('state,manual_mode'):
-                state = copy.deepcopy(self.MA_viewer_ref.state)
+                state = copy.deepcopy(cfg.refViewer.state)
                 state.relative_display_scales = {'z': val}
-                self.MA_viewer_ref.set_state(state)
-                state = copy.deepcopy(self.MA_viewer_base.state)
+                cfg.refViewer.set_state(state)
+                state = copy.deepcopy(cfg.baseViewer.state)
                 state.relative_display_scales = {'z': val}
-                self.MA_viewer_base.set_state(state)
-                state = copy.deepcopy(self.MA_viewer_stage.state)
+                cfg.baseViewer.set_state(state)
+                state = copy.deepcopy(cfg.stageViewer.state)
                 state.relative_display_scales = {'z': val}
-                self.MA_viewer_base.set_state(state)
+                cfg.baseViewer.set_state(state)
 
             else:
                 # logger.info('val = %d' % val)
@@ -2290,14 +2339,15 @@ QListView::item:!selected:hover
         logger.critical('Getting Viewers...')
         viewers = []
         if getData('state,manual_mode'):
-            viewers.extend([self.MA_viewer_base, self.MA_viewer_ref, self.MA_viewer_stage])
-            # viewers.extend([self.MA_viewer_base, self.MA_viewer_ref])
+            viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.stageViewer])
+            # viewers.extend([cfg.baseViewer, cfg.refViewer])
             # return [cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref]
         tab = self._tabs.currentIndex()
         if tab == 0:
-            viewers.extend([cfg.emViewer])
+            if not getData('state,manual_mode'):
+                viewers.extend([cfg.emViewer])
         elif tab == 3:
-            viewers.extend([self.snrViewer])
+            viewers.extend([cfg.snrViewer])
         return viewers
 
     def paintEvent(self, pe):

@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal(int)
+    stateChangedAny = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
 
@@ -62,6 +63,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.type = 'AbstractEMViewer'
         # logger.info('viewer constructed!')
         caller = inspect.stack()[1].function
+        self._zmag_set = 0
 
 
     def __repr__(self):
@@ -89,7 +91,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=[1,1,1],
+            scales=list(cfg.data.resolution(s=cfg.data.scale)),
         )
 
 
@@ -105,10 +107,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._blockZoom = False
         logger.info('Zoom enabled.')
 
-    def _set_zmag(self):
-        logger.critical(f'Setting Z-mag on {self.type}')
-        with self.txn() as s:
-            s.relativeDisplayScales = {"z": 10}
+
+    def on_state_changed_any(self):
+        # if self._zmag_set < 10:
+        #     self._zmag_set += 1
+        # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+        logger.info(f'on_state_changed_any [{self.type}] >>>>')
+        self.signals.stateChangedAny.emit()
+
 
     def on_state_changed(self):
         if self._blockZoom:
@@ -236,9 +242,19 @@ class AbstractEMViewer(neuroglancer.Viewer):
             #layer.volumeRendering = True
         self.set_state(state)
 
+    def _set_zmag(self):
+        logger.info(f'Setting Z-mag on {self.type}')
+        try:
+            # logger.critical(f'Setting Z-mag on {self.type}')
+            with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}
+        except:
+            print_exception()
+
     def set_zmag(self, val=10):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        logger.info(f'Setting Z-mag on {self.type}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': val}
@@ -335,7 +351,11 @@ class EMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed_any)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+
         self.type = 'EMViewer'
         self.initViewer()
 
@@ -433,7 +453,7 @@ class EMViewer(AbstractEMViewer):
             s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'],)
             if is_aligned:
                 s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'],)
-            s.showSlices=False
+            # s.showSlices=False
             s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
 
             # s.layers["bounding-box"] = ng.AnnotationLayer(annotations=[box], ) #0316
@@ -507,7 +527,8 @@ class EMViewer(AbstractEMViewer):
             # s.viewer_size = [100,100]
 
         self._layer = self.get_loc()
-        self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
+        # self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
         self.set_brightness()
@@ -520,6 +541,8 @@ class EMViewerStage(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.type = 'EMViewerStage'
+        # self.shared_state.add_changed_callback(self.on_state_changed_any)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.initViewer()
 
 
@@ -528,7 +551,6 @@ class EMViewerStage(AbstractEMViewer):
         logger.info(f'\n\nInitializing [{self.type}] [caller: {caller}]...\n')
 
         self.coordinate_space = self.getCoordinateSpace()
-
 
         self.index = cfg.data.zpos
         dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
@@ -548,9 +570,6 @@ class EMViewerStage(AbstractEMViewer):
 
         logger.info(f'Tensor Shape: {self.store.shape}')
 
-        # self.initZoom(w=w, h=h, adjust=1.10)
-
-
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
         with self.txn() as s:
@@ -565,16 +584,14 @@ class EMViewerStage(AbstractEMViewer):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
-            s.show_scale_bar = True
+            # s.show_scale_bar = True
+            s.show_scale_bar = False
             s.show_axis_lines = False
             s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
-            s.showSlices=False
+            # s.showSlices=False
             s.position = [0, tensor_y / 2, tensor_x / 2]
-
-
             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
-
 
         with self.config_state.txn() as s:
             s.show_ui_controls = False
@@ -592,9 +609,9 @@ class EMViewerStage(AbstractEMViewer):
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
         logger.critical(f'MA_webengine_stage: w={w}, h={h}')
-        self.initZoom(w=w, h=h, adjust=1.10)
+        self.initZoom(w=w, h=h, adjust=1.02)
 
-        logger.info('\n\n' + self.url() + '\n')
+        # logger.info('\n\n' + self.url() + '\n')
 
 
 
@@ -604,7 +621,8 @@ class EMViewerSnr(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'EMViewerSnr'
         self.initViewer()
 
@@ -669,7 +687,7 @@ class EMViewerSnr(AbstractEMViewer):
                 s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'], )
 
             s.layout = ng.column_layout(self.grps)  # col
-            s.showSlices = False
+            # s.showSlices = False
             s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
 
             # s.relativeDisplayScales = {"z": 10}
@@ -699,7 +717,8 @@ class EMViewerMendenhall(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'EMViewerMendenhall'
 
     def initViewer(self):
