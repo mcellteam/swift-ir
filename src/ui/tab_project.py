@@ -142,8 +142,8 @@ class ProjectTab(QWidget):
         logger.info('<<<< Refreshing')
 
     def initSnrViewer(self):
-        try:                   del cfg.snrViewer
-        except AttributeError: pass
+        # try:                   del cfg.snrViewer
+        # except AttributeError: pass
 
         # cfg.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
         # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
@@ -170,14 +170,14 @@ class ProjectTab(QWidget):
         logger.critical(f'\n\n----------------------------------------------------\n'
                         f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...\n'
                         f'----------------------------------------------------\n')
-        try:                   del cfg.refViewer
-        except AttributeError: pass
-        try:                   del cfg.baseViewer
-        except AttributeError: pass
-        try:                   del cfg.stageViewer
-        except AttributeError: pass
-        try:                   del cfg.emViewer
-        except AttributeError: pass
+        # try:                   del cfg.refViewer
+        # except AttributeError: pass
+        # try:                   del cfg.baseViewer
+        # except AttributeError: pass
+        # try:                   del cfg.stageViewer
+        # except AttributeError: pass
+        # try:                   del cfg.emViewer
+        # except AttributeError: pass
 
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):
@@ -935,7 +935,7 @@ class ProjectTab(QWidget):
         self.MA_sbw = HWidget(gb1, gb2)
         self.MA_sbw.layout.setSpacing(0)
         self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select at least 3 corresponding points")
-        self.msg_MAinstruct.setFixedSize(290, 22)
+        self.msg_MAinstruct.setFixedSize(310, 22)
         self.msg_MAinstruct.hide()
 
         # def fn():
@@ -968,7 +968,7 @@ class ProjectTab(QWidget):
         # self.MA_webengine_widget.addWidget(self.MA_webengine_stage)
         # self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
 
-        self.MA_points_tab = VWidget(self.gb_stageInfoText, self.MA_sbw, self.gb_actionsMA)
+        self.MA_points_tab = VWidget(self.gb_stageInfoText, self.MA_sbw)
 
         """  MA Settings Tab  """
 
@@ -1068,7 +1068,7 @@ class ProjectTab(QWidget):
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
-        self.MA_stageSplitter.addWidget(self.MA_tabs)
+        self.MA_stageSplitter.addWidget(VWidget(self.MA_tabs, self.gb_actionsMA))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
 
@@ -1697,19 +1697,22 @@ QListView::item:!selected:hover
 
 
     def deleteAllMp(self):
+        logger.critical('deleteAllMp >>>>')
         logger.info('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.data.clearMps()
         cfg.refViewer.pts.clear()
-        self.MA_ptsListWidget_ref.clear()
         cfg.baseViewer.pts.clear()
+        self.MA_ptsListWidget_ref.clear()
         self.MA_ptsListWidget_base.clear()
-        cfg.refViewer.draw_point_annotations()
-        cfg.baseViewer.draw_point_annotations()
-        self.update_MA_widgets()
+        # cfg.refViewer.draw_point_annotations()
+        # cfg.baseViewer.draw_point_annotations()
+        # self.update_MA_widgets()
         cfg.refViewer.undraw_point_annotations()
         cfg.baseViewer.undraw_point_annotations()
-        self.initNeuroglancer()
+        # self.initNeuroglancer()
+
+        logger.critical('<<<< deleteAllMp')
 
 
     # def applyMps(self):

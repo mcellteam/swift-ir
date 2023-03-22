@@ -346,7 +346,8 @@ class MAViewer(neuroglancer.Viewer):
         self.drawSWIMwindow()
         if cfg.data.method() == 'Manual-Strict':
             self.draw_point_annotations()
-        logger.critical(f'{self.pts}')
+        logger.critical(f'pts = {self.pts}')
+        logger.critical(f'dict = {cfg.data.manpoints_pretty()}')
 
 
 
