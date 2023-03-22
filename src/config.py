@@ -40,14 +40,16 @@ is_mendenhall = False
 WIDTH, HEIGHT = 1180, 720
 
 '''Default Alignment Params'''
-DEFAULT_SWIM_WINDOW       = float(0.8125)
-DEFAULT_WHITENING         = float(-0.6800)
-DEFAULT_POLY_ORDER        = int(0)
-DEFAULT_NULL_BIAS         = bool(False)
-DEFAULT_BOUNDING_BOX      = bool(False)
-DEFAULT_INITIAL_ROTATION  = float(0.0000)
-DEFAULT_INITIAL_SCALE     = float(1.0000)
-DEFAULT_DTYPE             = '|u1'
+DEFAULT_SWIM_WINDOW          = float(0.8125)
+DEFAULT_WHITENING            = float(-0.6800)
+DEFAULT_POLY_ORDER           = int(0)
+DEFAULT_NULL_BIAS            = bool(False)
+DEFAULT_BOUNDING_BOX         = bool(False)
+DEFAULT_INITIAL_ROTATION     = float(0.0000)
+DEFAULT_INITIAL_SCALE        = float(1.0000)
+DEFAULT_DTYPE                = '|u1'
+DEFAULT_MANUAL_SWIM_WINDOW   = int(128)
+DEFAULT_MANUAL_WHITENING = float(-0.6800)
 
 '''Default Image Resolution (Voxel Dimensions)'''
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50

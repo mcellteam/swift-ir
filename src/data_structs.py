@@ -57,6 +57,7 @@ data_template = \
 layer_template = \
     {
         "alignment": {
+            "manual_settings": {},
             "method_data": {},
             "method_options": {},
             "method": "Auto-SWIM",

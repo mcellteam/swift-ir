@@ -388,7 +388,9 @@ class alignment_process:
         MAlogger.info('Running align_alignment_process.auto_swim_align...')
         siz = ImageSize(self.im_sta_fn)
         atrm = self.layer_dict['alignment'] # (A)lign (T)o (R)ef (M)ethod
-        wsf = atrm['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
+        # wsf = atrm['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
+        wsf = atrm['manual_settings']['swim_window_px']
+        wht = atrm['manual_settings']['swim_whitening']
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
 
         # init_rot = self.layer_dict['alignment']['method_options']['initial_rotation']
@@ -458,8 +460,6 @@ class alignment_process:
 
         self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn, dest=self.dest) # Call to align_recipe
 
-        wht = atrm['method_data']['whitening_factor']
-
         # wwx, wwy = window width
         # psta = points stationary array
         #build #recipe #addingredients #ingredients
@@ -475,11 +475,11 @@ class alignment_process:
                 # ingredient_4x4 = align_ingredient(ww=int(sx_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 # ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 # self.recipe.add_ingredient(ingredient_4x4)
-                ingredient_2x2 = align_ingredient(name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
+                ingredient_2x2 = align_ingredient(mode='SWIM',name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_2x2)
             elif alignment_option == 'apply_affine':
                 '''apply_affine'''
-                ingredient_apply_affine = align_ingredient(name=self.im_mov_fn, afm=self.init_affine_matrix, align_mode='apply_affine_align', ad=self.align_dir)
+                ingredient_apply_affine = align_ingredient(name=self.im_mov_fn, afm=self.init_affine_matrix, mode='apply_affine_align', ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_apply_affine)
             else:
                 '''init_affine'''
@@ -510,8 +510,8 @@ class alignment_process:
             # ingredient_1_mp = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
             ingredient_1_mp = align_ingredient(mode='Manual-Hint',name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
-            ingredient_2_mp = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest) # <-- CALL TO SWIM
-            ingredient_2_mp_b = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest) #0221+
+            ingredient_2_mp = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest) # <-- CALL TO SWIM
+            ingredient_2_mp_b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest) #0221+
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
             self.recipe.add_ingredient(ingredient_2_mp_b)  # This one will use the previous Affine and refine it #0221+
@@ -665,9 +665,9 @@ class align_ingredient:
     #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
     #        supplied afm matrix but do not refine the afm matrix
     def __init__(self,
-                 mode='Auto-SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
+                 mode='SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
                  iters=2, rota=None, ad=None, dest=None, ):
-        self.align_mode = mode
+        self.ingredient_mode = mode
         self.name = os.path.basename(name)
         self.swim_drift = 0.0
         self.afm = afm
@@ -678,7 +678,6 @@ class align_ingredient:
         self.wht = wht
         self.rota = rota
         self.iters = iters
-        # self.align_mode = align_mode
         self.snr = None
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
@@ -701,7 +700,7 @@ class align_ingredient:
 
     def __str__(self):
         s = "ingredient:\n"
-        s += "  mode: " + str(self.align_mode) + "\n"
+        s += "  mode: " + str(self.ingredient_mode) + "\n"
         s += "  ww: " + str(self.ww) + "\n"
         s += "  psta:\n" + prefix_lines('    ', str(self.psta)) + "\n"
         s += "  pmov:\n" + prefix_lines('    ', str(self.pmov)) + "\n"
@@ -786,8 +785,8 @@ class align_ingredient:
         o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string)
 
 
-        MAlogger.critical(f'ALIGNMENT MODE : {self.align_mode}')
-        if self.align_mode in ('Manual-Hint', 'Manual-Strict'):
+        MAlogger.critical(f'INGREDIENT MODE : {self.ingredient_mode}')
+        if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
             MAlogger.critical('SWIM argument string: %s' % self.swim_str)
             MAlogger.critical('SWIM argument string: %s' % self.swim_str)
             MAlogger.critical('\nSWIM stdout: %s' % str(self.swim_out_lines))
@@ -846,7 +845,7 @@ class align_ingredient:
         mir_out_lines = o['out'].strip().split('\n')
         mir_err_lines = o['err'].strip().split('\n')
 
-        if self.align_mode in ('Manual-Strict', 'Manual-Hint'):
+        if self.ingredient_mode in ('Manual-Strict', 'Manual-Hint'):
             MAlogger.critical('***MIR script***\n' + str(self.mir_script))
             MAlogger.critical('\nMIR std out: %s\n' % str(mir_out_lines))
             MAlogger.critical('\nMIR std err: %s\n' % str(mir_err_lines))
@@ -888,7 +887,7 @@ class align_ingredient:
 
         logger.debug("\nAIM = " + str(aim))
 
-        if self.align_mode == 'Auto-SWIM':
+        if self.ingredient_mode == 'SWIM':
             self.afm = aim
 
         #    if self.align_mode == 'check_align':
@@ -903,7 +902,7 @@ class align_ingredient:
 
         '''---------------------------------NEW -------------------------------------'''
         #0214
-        if self.align_mode in ('Manual-Hint', 'Manual-Strict'):
+        if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
             mir_script_mp = ''
             for i in range(len(self.psta[0])):
                 mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} {self.pmov[0][i]} {self.pmov[1][i]}\n'
@@ -917,7 +916,7 @@ class align_ingredient:
             mir_mp_err_lines = o['err'].strip().split('\n')
             self.mir_mp_out_lines = mir_mp_out_lines
             self.mir_mp_err_lines = mir_mp_err_lines
-            if self.align_mode in ('Manual-Hint', 'Manual-Strict'):
+            if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
                 MAlogger.critical('\n(MANUAL ALIGN: %s) MIR out: %s' % (self.name, str(mir_mp_out_lines)))
                 MAlogger.critical('\n(MANUAL ALIGN: %s) MIR err: %s' % (self.name, str(mir_mp_err_lines)))
 
@@ -1007,7 +1006,7 @@ class align_ingredient:
                 snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
             logging.info(self.snr_report)
 
-            if self.align_mode == 'Auto-SWIM':
+            if self.ingredient_mode == 'SWIM':
                 self.afm = afm
 
             return self.afm

@@ -475,6 +475,9 @@ class DataModel:
                 layer = scale['stack'][layer_index]
                 layer.setdefault('alignment', {})
                 layer['alignment'].setdefault('method_data', {})
+                layer['alignment'].setdefault('manual_settings', {})
+                layer['alignment']['manual_settings'].setdefault('swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+                layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
                 layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
                 layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('manual_points', {})
@@ -1060,6 +1063,31 @@ class DataModel:
         return float(self._data['data']['scales'][self.scale]['stack'][
                          self.zpos]['alignment']['method_data']['win_scale_factor'])
 
+
+
+    def manual_whitening(self) -> float:
+        '''Returns the SWIM Window for the Current Layer when using Manual Alignment.'''
+        return float(self._data['data']['scales'][self.scale]['stack'][
+                         self.zpos]['alignment']['manual_settings']['swim_whitening'])
+
+    def set_manual_whitening(self, f: float) -> None:
+        '''Sets the Whitening Factor for the Current Layer when using Manual Alignment.'''
+        self._data['data']['scales'][self.scale]['stack'][self.zpos][
+            'alignment']['manual_settings']['swim_whitening'] = f
+
+
+    def manual_swim_window(self) -> int:
+        '''Returns the SWIM Window for the Current Layer when using Manual Alignment.'''
+        return int(self._data['data']['scales'][self.scale]['stack'][
+                         self.zpos]['alignment']['manual_settings']['swim_window_px'])
+
+
+    def set_manual_swim_window(self, val: int) -> None:
+        '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
+        logger.critical(f'Setting Local SWIM Window to {val}...')
+        self._data['data']['scales'][self.scale]['stack'][self.zpos][
+            'alignment']['manual_settings']['swim_window_px'] = val
+
     def has_bb(self, s=None) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None: s = self.scale
@@ -1189,8 +1217,17 @@ class DataModel:
 
     def set_swim_window(self, f: float) -> None:
         '''Sets the SWIM Window for the Current Layer.'''
+        logger.critical(f'Setting Local SWIM Window to {f}...')
         self._data['data']['scales'][self.scale]['stack'][self.zpos][
             'alignment']['method_data']['win_scale_factor'] = f
+
+    def set_swim_window_global(self, f: float) -> None:
+        '''Sets the SWIM Window for the Current Layer.'''
+        logger.critical(f'Setting Global SWIM Window to {f}...')
+        for s in self.scales():
+            scale = self._data['data']['scales'][s]['stack']
+            for layer in scale:
+                layer['alignment']['method_data']['win_scale_factor'] = f
 
     def set_use_bounding_rect(self, b: bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
