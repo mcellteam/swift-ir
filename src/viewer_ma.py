@@ -252,8 +252,8 @@ class MAViewer(neuroglancer.Viewer):
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         calname = str(calframe[1][3])
-        if calname == '<lambda>':
-            return
+        # if calname == '<lambda>':
+        #     return
 
 
         self.signals.stateChanged.emit()
