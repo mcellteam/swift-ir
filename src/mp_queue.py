@@ -8,6 +8,7 @@ import sys
 import time
 import queue
 import inspect
+import datetime
 
 import psutil
 from qtpy.QtCore import QObject
@@ -248,8 +249,9 @@ class TaskQueue(QObject):
 
     def collect_results(self):
         t0 = time.time()
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         self.MPQLogger.critical('\n\nGathering Results...')
-        self.MPQLogger.critical(f'Time              : {t0}')
+        self.MPQLogger.critical(f'Time              : {timestamp}')
         self.MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
         self.MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
         self.MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')

@@ -49,7 +49,8 @@ __all__ = ['run_json_project', 'alignment_process']
 
 logger = logging.getLogger(__name__)
 MAlogger = logging.getLogger('MAlogger')
-swimLogger = logging.getLogger('swimLogger')
+
+
 
 
 def run_json_project(project,
@@ -79,14 +80,9 @@ def run_json_project(project,
     fh.setLevel(logging.DEBUG)
     MAlogger.addHandler(fh)
 
-    swimLogger = logging.getLogger('swimLogger')
-    # if (swimLogger.hasHandlers()):
-    #     logger.info('Clearing swimLogger file handlers...')
-    #     swimLogger.handlers.clear()
-    swimLogger.propagate = False
-    fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'swim.log'))
-    fh.setLevel(logging.DEBUG)
-    swimLogger.addHandler(fh)
+
+
+
 
     # Evaluate Status of Project and set appropriate flags here:
     proj_status = evaluate_project_status(project)
@@ -697,6 +693,10 @@ class align_ingredient:
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
         self.ad = ad
+        self.scale_directory = os.path.abspath(
+            os.path.dirname(os.path.dirname(self.ad)))  # self.ad = project/scale_X/img_aligned/
+        self.project_directory = os.path.abspath(
+            os.path.dirname(self.scale_directory))  # self.ad = project/scale_X/img_aligned/
         self.swim_str = None
         self.mir_script = None
         self.mir_script_mp = None
@@ -706,6 +706,18 @@ class align_ingredient:
         self.swim_err_lines = None
         self.dest = dest
         self.mir_toks = {}
+
+
+        # if (swimLogger.hasHandlers()):
+        #     logger.info('Clearing swimLogger file handlers...')
+        #     swimLogger.handlers.clear()
+
+        self.swimLogger = logging.getLogger('swimLogger')
+        # self.swimLogger.propagate = False
+
+        fh = logging.FileHandler(os.path.join(self.project_directory, 'logs', 'swim.log'))
+        # fh.setLevel(logging.DEBUG)
+        self.swimLogger.addHandler(fh)
 
 
         # Configure platform-specific path to executables for C SWiFT-IR
@@ -775,22 +787,8 @@ class align_ingredient:
             #                   ' -k ' + k_arg + \
             #                   ' -t ' + t_arg + \
             #                   ' ' + karg + \
-            swim_arg_string = 'ww_' + swim_ww_arg + \
-                              ' -f3 ' + \
-                              ' -i ' + str(self.iters) + \
-                              ' -w ' + str(self.wht) + \
-                              ' -x ' + str(offx) + \
-                              ' -y ' + str(offy) + \
-                              ' -b ' + b_arg + \
-                              ' ' + self.recipe.im_sta_fn + \
-                              ' ' + base_x + \
-                              ' ' + base_y + \
-                              ' ' + self.recipe.im_mov_fn + \
-                              ' ' + adjust_x + \
-                              ' ' + adjust_y + \
-                              ' ' + rota_arg + \
-                              ' ' + afm_arg
             # swim_arg_string = 'ww_' + swim_ww_arg + \
+            #                   ' -f3 ' + \
             #                   ' -i ' + str(self.iters) + \
             #                   ' -w ' + str(self.wht) + \
             #                   ' -x ' + str(offx) + \
@@ -804,12 +802,35 @@ class align_ingredient:
             #                   ' ' + adjust_y + \
             #                   ' ' + rota_arg + \
             #                   ' ' + afm_arg
+            swim_arg_string = 'ww_' + swim_ww_arg + \
+                              ' -i ' + str(self.iters) + \
+                              ' -w ' + str(self.wht) + \
+                              ' -x ' + str(offx) + \
+                              ' -y ' + str(offy) + \
+                              ' -b ' + b_arg + \
+                              ' ' + self.recipe.im_sta_fn + \
+                              ' ' + base_x + \
+                              ' ' + base_y + \
+                              ' ' + self.recipe.im_mov_fn + \
+                              ' ' + adjust_x + \
+                              ' ' + adjust_y + \
+                              ' ' + rota_arg + \
+                              ' ' + afm_arg
 
             # default -f is 3x3
             # logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
 
-        swimLogger.log('multi_swim_arg_string:\n{multi_swim_arg_string}\n\n')
+        self.swimLogger.critical(f'Stationary Img : {os.path.basename(self.recipe.im_sta_fn)} / Moving Img : {os.path.basename(self.recipe.im_mov_fn)')
+        self.swimLogger.critical(f'SWIM Arguments:')
+        self.swimLogger.critical(f'Window Width      : ww_{swim_ww_arg}')
+        self.swimLogger.critical(f'X offset          : {offx}')
+        self.swimLogger.critical(f'Y offset          : {offy}')
+        self.swimLogger.critical(f'base_x            : {base_x}')
+        self.swimLogger.critical(f'base_y            : {base_y}')
+        self.swimLogger.critical(f'AFM               : {afm_arg}')
+        self.swimLogger.critical(f'Whitening         : {self.wht}')
+        self.swimLogger.critical(f'Raw SWIM argument string:\n{multi_swim_arg_string}\n\n')
 
         '''SWIM'''
         self.swim_str = multi_swim_arg_string
