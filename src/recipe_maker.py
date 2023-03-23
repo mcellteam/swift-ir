@@ -49,6 +49,7 @@ __all__ = ['run_json_project', 'alignment_process']
 
 logger = logging.getLogger(__name__)
 MAlogger = logging.getLogger('MAlogger')
+swimLogger = logging.getLogger('swimLogger')
 
 
 def run_json_project(project,
@@ -74,10 +75,18 @@ def run_json_project(project,
     logger.addHandler(fh)
     logger.critical(f'run_json_project option:{alignment_option}, {str(use_scale)}, '
                     f'start: {start_layer}, num layers: {num_layers}>>>>')
-
     fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'manual_align.log'))
     fh.setLevel(logging.DEBUG)
     MAlogger.addHandler(fh)
+
+    swimLogger = logging.getLogger('swimLogger')
+    # if (swimLogger.hasHandlers()):
+    #     logger.info('Clearing swimLogger file handlers...')
+    #     swimLogger.handlers.clear()
+    swimLogger.propagate = False
+    fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'manual_align.log'))
+    fh.setLevel(logging.DEBUG)
+    swimLogger.addHandler(fh)
 
     # Evaluate Status of Project and set appropriate flags here:
     proj_status = evaluate_project_status(project)
@@ -799,6 +808,8 @@ class align_ingredient:
             # default -f is 3x3
             # logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
+
+        swimLogger.log('multi_swim_arg_string:\n{multi_swim_arg_string}\n\n')
 
         '''SWIM'''
         self.swim_str = multi_swim_arg_string

@@ -764,6 +764,8 @@ class MainWindow(QMainWindow):
 
     def onAlignmentStart(self, scale):
         logger.info('')
+
+
         if self._toggleAutogenerate.isChecked():
             cfg.nTasks = 5
         else:
@@ -773,14 +775,21 @@ class MainWindow(QMainWindow):
         cfg.event = multiprocessing.Event()
 
         dt = datetime.datetime.now()
-        path = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
-        open(path, 'a+').close()
-        with open(path, 'a+') as f:
+
+        logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
+        mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
+        manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
+        open(logger_log, 'a+').close()
+        open(manual_log, 'a+').close()
+        open(mp_log, 'a+').close()
+        with open(logger_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        path = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
-        open(path, 'a+').close()
-        with open(path, 'a+') as f:
+        with open(manual_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        with open(mp_log, 'a+') as f:
+            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+
+
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
         self._disableGlobTabs()

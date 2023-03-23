@@ -162,7 +162,7 @@ class Thumbnailer:
 
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
-        task_queue = TaskQueue(n_tasks=len(cfg.data), parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
+        task_queue = TaskQueue(n_tasks=len(filenames), parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
         task_queue.taskPrefix = 'Thumbnail Generated for '
         basefilenames = [os.path.basename(x) for x in filenames]
         task_queue.taskNameList = basefilenames
