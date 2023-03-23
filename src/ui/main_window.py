@@ -127,6 +127,8 @@ class MainWindow(QMainWindow):
         # self.initView()
         self.initLaunchTab()
 
+        cfg.event = multiprocessing.Event()
+
         # self.alignmentFinished.connect(self.updateProjectTable)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
@@ -558,7 +560,7 @@ class MainWindow(QMainWindow):
         cfg.nTasks = 3
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
-        cfg.event = multiprocessing.Event()
+        # cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         self.set_status('Autoscaling...')
@@ -648,7 +650,7 @@ class MainWindow(QMainWindow):
         cfg.nTasks = 2
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
-        cfg.event = multiprocessing.Event()
+        # cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         logger.info('Regenerate Aligned Images...')
@@ -764,15 +766,6 @@ class MainWindow(QMainWindow):
     def onAlignmentStart(self, scale):
         logger.info('')
 
-
-        if self._toggleAutogenerate.isChecked():
-            cfg.nTasks = 5
-        else:
-            cfg.nTasks = 3
-        cfg.nCompleted = 0
-        cfg.CancelProcesses = False
-        cfg.event = multiprocessing.Event()
-
         dt = datetime.datetime.now()
 
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
@@ -787,7 +780,6 @@ class MainWindow(QMainWindow):
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
         with open(mp_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-
 
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
@@ -838,6 +830,13 @@ class MainWindow(QMainWindow):
         # This SHOULD always work. Only set bounding box here. Then, during a single or partial alignment,
         # generate_aligned will use the correct value that is consistent with the other images
         # at the same scale
+        if self._toggleAutogenerate.isChecked():
+            cfg.nTasks = 5
+        else:
+            cfg.nTasks = 3
+        cfg.nCompleted = 0
+        cfg.CancelProcesses = False
+        # cfg.event = multiprocessing.Event()
         cfg.data['data']['scales'][scale]['use_bounding_rect'] = self._bbToggle.isChecked()
         self.align(
             scale=cfg.data.scale,
@@ -859,6 +858,13 @@ class MainWindow(QMainWindow):
         cfg.ignore_pbar = False
         start = int(self.startRangeInput.text())
         end = int(self.endRangeInput.text()) + 1
+        if self._toggleAutogenerate.isChecked():
+            cfg.nTasks = 5
+        else:
+            cfg.nTasks = 3
+        cfg.nCompleted = 0
+        cfg.CancelProcesses = False
+        # cfg.event = multiprocessing.Event()
         self.tell('Re-aligning Sections #%d through #%d (%s)...' %
                   (start, end, cfg.data.scale_pretty()))
         self.align(
@@ -882,7 +888,7 @@ class MainWindow(QMainWindow):
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
         cfg.nCompleted = 0
-        cfg.nTasks = 1
+        cfg.nTasks = 2
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -938,9 +944,10 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
-
         logger.info('')
         if not self.verify_alignment_readiness(): return
+
+
         self.onAlignmentStart(scale=scale)
         m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
         self.tell("%s Affines (%s)..." %(m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
@@ -1038,7 +1045,7 @@ class MainWindow(QMainWindow):
         cfg.nTasks = 3
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
-        cfg.event = multiprocessing.Event()
+        # cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         self.stopNgServer() #0202-
