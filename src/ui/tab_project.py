@@ -798,6 +798,14 @@ class ProjectTab(QWidget):
         # self.fl_actionsMA.addWidget(HWidget(vw, self.tgl_alignMethod, self.combo_method))
         self.fl_actionsMA.addWidget(HWidget(vw, self.combo_method))
 
+
+        self.btnRunSwimMA = QPushButton('SWIM')
+        self.btnRunSwimMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btnRunSwimMA.setMaximumHeight(20)
+        self.btnRunSwimMA.setMaximumWidth(60)
+        self.btnRunSwimMA.clicked.connect(cfg.main_window.alignOne)
+        self.btnRunSwimMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+
         def fn():
             try:
                 self.deleteAllMp()
@@ -857,7 +865,7 @@ class ProjectTab(QWidget):
             cfg.main_window.hud.post('Aligning...')
             # self.applyMps()
 
-            cfg.main_window.alignOneMp()
+            cfg.main_window.alignGenerateOne()
             # cfg.main_window.regenerateOne()
             cfg.main_window.hud.done()
         self.btnRealignMA = QPushButton('Align && Regenerate')
@@ -910,6 +918,7 @@ class ProjectTab(QWidget):
         self.fl_actionsMA.addWidget(
             HWidget(
                 w_change_section,
+                self.btnRunSwimMA,
                 self.btnClearMA,))
 
         self.fl_actionsMA.addWidget(
