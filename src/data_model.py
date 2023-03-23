@@ -67,6 +67,8 @@ class DataModel:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
 
+        self.zpos = self._data['data']['z_position']
+
 
     def __call__(self):
         return self.stack()
