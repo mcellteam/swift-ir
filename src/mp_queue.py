@@ -27,7 +27,12 @@ __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
 
-# MPQLogger = logging.getLogger('MPQLogger')
+MPQLogger = logging.getLogger('MPQLogger')
+fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
+fh.setLevel(logging.DEBUG)
+MPQLogger.addHandler(fh)
+
+
 
 # mpl = mp.log_to_stderr()
 # mpl.setLevel(logging.INFO)
@@ -78,7 +83,7 @@ def watchdog(wd_queue):
 
 
 class TaskQueue(QObject):
-    def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None, pbar_text=None):
+    def __init__(self, n_tasks, parent=None, start_method='forkserver', pbar_text=None):
         QObject.__init__(self)
         self.parent = parent
         self.start_method = start_method
@@ -90,14 +95,11 @@ class TaskQueue(QObject):
         self.pbar_text = pbar_text if pbar_text != None else ''
         if sys.version_info >= (3, 7):
             self.close_worker = True
-        self.logging_handler = logging_handler
 
         self.taskNameList = None
         self.taskPrefix = None
 
-        # fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
-        # fh.setLevel(logging.DEBUG)
-        # MPQLogger.addHandler(fh)
+
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=1) -> None:
@@ -240,7 +242,13 @@ class TaskQueue(QObject):
 
     def collect_results(self):
 
-        # MPQLogger.critical(str(self.task_dict))
+        MPQLogger.critical('\n\nGathering Results...')
+        MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
+        MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
+        MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')
+        MPQLogger.critical(f'Pbar Text         : {self.pbar_text}')
+        MPQLogger.critical(f'Task Prefix       : {self.taskPrefix}')
+
 
         t0 = time.time()
         '''Run All Tasks and Collect Results'''
@@ -249,14 +257,10 @@ class TaskQueue(QObject):
         n_tasks = len(self.task_dict)
         realtime = n_pending
         retries_tot = 0
-        # try:
-        #     self.parent.setPbarMax(self.n_tasks)
-        #     if self.pbar_text:
-        #         self.parent.setPbarText(text=self.pbar_text)
-        #         # self.parent.statusBar.showMessage(self.pbar_text)
-        #     self.parent.pbar_widget.show()
-        # except:
-        #     logger.error('An exception was raised while setting up progress bar')
+
+        logger.critical('\n\nlen(self.task_dict) = %d' %len(self.task_dict))
+        logger.critical('\n\nn_tasks             = %d' %n_tasks)
+
         logger.info('Collecting Results...')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
