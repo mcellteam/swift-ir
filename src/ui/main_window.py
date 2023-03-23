@@ -898,7 +898,7 @@ class MainWindow(QMainWindow):
         self._working = False
         self.enableAllTabs()
         self.updateCorrSpotsDrawer()
-        cfg.project_tab.updateNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
