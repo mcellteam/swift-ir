@@ -97,6 +97,10 @@ class TaskQueue(QObject):
         self.taskPrefix = None
 
         self.MPQLogger = logging.getLogger('MPQLogger')
+        if (self.MPQLogger.hasHandlers()):
+            logger.info('Clearing MPQLogger file handlers...')
+            self.MPQLogger.handlers.clear()
+        self.MPQLogger.propagate = False # dont print to console
         fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
         fh.setLevel(logging.DEBUG)
         self.MPQLogger.addHandler(fh)
@@ -104,7 +108,7 @@ class TaskQueue(QObject):
 
 
     # def start(self, n_workers, retries=10) -> None:
-    def start(self, n_workers, retries=1) -> None:
+    def start(self, n_workers, retries=0) -> None:
 
         if cfg.CancelProcesses == True:
             cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
@@ -245,11 +249,14 @@ class TaskQueue(QObject):
     def collect_results(self):
 
         self.MPQLogger.critical('\n\nGathering Results...')
+        self.MPQLogger.critical(f'Time              : {time.time()}')
         self.MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
         self.MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
         self.MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')
         self.MPQLogger.critical(f'Pbar Text         : {self.pbar_text}')
         self.MPQLogger.critical(f'Task Prefix       : {self.taskPrefix}')
+        self.MPQLogger.critical(f'# Workers         : {self.n_workers}')
+        self.MPQLogger.critical(f'Example Task      : {str(self.task_dict[0])}')
 
 
         t0 = time.time()
@@ -260,8 +267,7 @@ class TaskQueue(QObject):
         realtime = n_pending
         retries_tot = 0
 
-        logger.critical('\n\nlen(self.task_dict) = %d' %len(self.task_dict))
-        logger.critical('\n\nn_tasks             = %d' %n_tasks)
+        logger.critical('\n\nlen(self.task_dict) = %d, n_tasks = %d\n' %(len(self.task_dict), n_tasks))
 
         logger.info('Collecting Results...')
         try:
@@ -350,9 +356,7 @@ class TaskQueue(QObject):
                         self.requeue_task(task_id)
                 retries_tot += 1
 
-            self.MPQLogger.critical('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
-            self.MPQLogger.critical('    Failed Tasks: %d\n' % (n_pending))
-            self.MPQLogger.critical('    Retries: %d\n\n' % (retries_tot - 1))
+            self.MPQLogger.critical('    Finished Collecting Results for %d Tasks' % (len(self.task_dict)))
             if n_pending == 0:
                 logger.info('Tasks Successful  : %d' % (n_tasks - n_pending))
                 logger.info('Tasks Failed      : %d' % n_pending)
@@ -360,7 +364,7 @@ class TaskQueue(QObject):
 
                 self.MPQLogger.critical('Tasks Successful  : %d' % (n_tasks - n_pending))
                 self.MPQLogger.critical('Tasks Failed      : %d' % n_pending)
-                self.MPQLogger.critical('══════ Complete ══════')
+                self.MPQLogger.critical(f'══════ Complete [{self.pbar_text}] ══════')
 
                 cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
                 cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
