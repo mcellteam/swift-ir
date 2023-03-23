@@ -277,8 +277,6 @@ class ProjectTab(QWidget):
     #         self.viewer.set_contrast()
 
 
-
-
     def get_layout(self, requested=None):
         if requested == None:
             requested = cfg.data['ui']['ng_layout']
