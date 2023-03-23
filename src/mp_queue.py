@@ -78,10 +78,7 @@ def watchdog(wd_queue):
 
 
 class TaskQueue(QObject):
-    MPQLogger = logging.getLogger('MPQLogger')
-    fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
-    fh.setLevel(logging.DEBUG)
-    MPQLogger.addHandler(fh)
+
 
     def __init__(self, n_tasks, parent=None, start_method='forkserver', pbar_text=None):
         QObject.__init__(self)
@@ -98,6 +95,11 @@ class TaskQueue(QObject):
 
         self.taskNameList = None
         self.taskPrefix = None
+
+        MPQLogger = logging.getLogger('MPQLogger')
+        fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
+        fh.setLevel(logging.DEBUG)
+        MPQLogger.addHandler(fh)
 
 
 
