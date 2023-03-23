@@ -49,7 +49,12 @@ def generate_zarr_scales(data):
 
         task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.taskPrefix = 'Downscales Converted to Zarr for '
-        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()]
+
+        tasknamelist = []
+        for scale in data.scales():
+            for ID, img in enumerate(imgs):
+                tasknamelist.append('%s, %s' % (os.path.basename(img), scale))
+        task_queue.taskNameList = tasknamelist
         task_queue.start(cpus)
         script = 'src/job_convert_zarr.py'
 

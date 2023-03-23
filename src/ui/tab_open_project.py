@@ -17,7 +17,7 @@ from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
-    create_project_structure_directories, makedirs_exist_ok, natural_sort
+    create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
@@ -244,6 +244,7 @@ class OpenProject(QWidget):
             logger.info(f"Removing Extant Project File '{path_proj}'...")
             os.remove(filename)
 
+
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path, mendenhall=mendenhall)
 
@@ -263,6 +264,7 @@ class OpenProject(QWidget):
             logger.critical('result = %s' %str(result))
 
             makedirs_exist_ok(path, exist_ok=True)
+            initLogFiles()
             cfg.main_window._autosave(silently=True)
             cfg.main_window.autoscale()
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')

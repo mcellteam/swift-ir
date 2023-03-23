@@ -247,9 +247,9 @@ class TaskQueue(QObject):
 
 
     def collect_results(self):
-
+        t0 = time.time()
         self.MPQLogger.critical('\n\nGathering Results...')
-        self.MPQLogger.critical(f'Time              : {time.time()}')
+        self.MPQLogger.critical(f'Time              : {t0}')
         self.MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
         self.MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
         self.MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')
@@ -259,15 +259,12 @@ class TaskQueue(QObject):
         self.MPQLogger.critical(f'Example Task      : {str(self.task_dict[0])}')
 
 
-        t0 = time.time()
         '''Run All Tasks and Collect Results'''
         logger.info(f'Running Multiprocessing Tasks ({self.retries} retries allowed)...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         n_tasks = len(self.task_dict)
         realtime = n_pending
         retries_tot = 0
-
-        logger.critical('\n\nlen(self.task_dict) = %d, n_tasks = %d\n' %(len(self.task_dict), n_tasks))
 
         logger.info('Collecting Results...')
         try:

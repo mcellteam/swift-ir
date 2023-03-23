@@ -61,7 +61,7 @@ from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exc
     tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, get_appdir, \
     makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, configure_project_paths, handleError, \
     append_project_path, isNeuroglancerRunning, count_widgets, find_allocated_widgets, cleanup_project_list, \
-    update_preferences_model, delete_recursive
+    update_preferences_model, delete_recursive, initLogFiles
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
     QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
     mendenhall_dialog, RechunkDialog
@@ -2093,9 +2093,13 @@ class MainWindow(QMainWindow):
     #     self.comboboxNgLayout.setCurrentText(layout)
 
 
+
+
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
+
+        initLogFiles()
 
         self._dontReinit = True
 
@@ -2138,8 +2142,9 @@ class MainWindow(QMainWindow):
         self._sectionSlider.setValue(int(len(cfg.data) / 2))
         # self._forceShowControls() #Todo make a decision on this
         self.update()
-
         self._dontReinit = False
+
+
 
 
 
