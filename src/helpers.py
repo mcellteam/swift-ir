@@ -41,7 +41,7 @@ __all__ = ['run_checks','is_tacc','is_linux','is_mac','create_paged_tiff', 'chec
            'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
            'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
            'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets',
-           'absFilePaths', 'validate_file',
+           'absFilePaths', 'validate_file', 'initLogFiles',
            ]
 
 logger = logging.getLogger(__name__)
@@ -761,13 +761,18 @@ def make_absolute(file_path, proj_path):
     return abs_path
 
 
-def create_project_structure_directories(destination, scales) -> None:
-    logpath = os.path.join(destination, 'logs')
+def initLogFiles():
+    logpath = os.path.join(cfg.data.dest(), 'logs')
     if not os.path.exists(logpath):
         os.mkdir(logpath)
-    open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
     open(os.path.join(logpath, 'exceptions.log'), 'a').close()
+    open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
     open(os.path.join(logpath, 'recipe_maker.log'), 'a').close()
+    open(os.path.join(logpath, 'swim.log'), 'a').close()
+    open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
+
+
+def create_project_structure_directories(destination, scales) -> None:
 
     for scale in scales:
         subdir_path = os.path.join(destination, scale)

@@ -84,7 +84,7 @@ def run_json_project(project,
     #     logger.info('Clearing swimLogger file handlers...')
     #     swimLogger.handlers.clear()
     swimLogger.propagate = False
-    fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'manual_align.log'))
+    fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'swim.log'))
     fh.setLevel(logging.DEBUG)
     swimLogger.addHandler(fh)
 
