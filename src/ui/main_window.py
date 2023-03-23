@@ -890,11 +890,13 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False,
             # stageit=stageit,
-            stageit=True,
+            stageit=False,
             align_one=True,
+            swim_only=True,
         )
         self.onAlignmentEnd(start=start, end=end)
-        cfg.project_tab.initNeuroglancer()
+        # cfg.project_tab.initNeuroglancer()
+        self.updateCorrSpotsDrawer()
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
@@ -902,7 +904,7 @@ class MainWindow(QMainWindow):
         cfg.ignore_pbar = False
 
 
-    def alignOneMp(self):
+    def alignGenerateOne(self):
         cfg.ignore_pbar = True
         logger.critical('Realigning Manually...')
         self.tell('Re-aligning Section #%d (%s)...' %
@@ -930,10 +932,10 @@ class MainWindow(QMainWindow):
         cfg.ignore_pbar = False
 
 
-    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False):
+    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False):
         #Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
-        # if caller in ('alignOneMp','alignOne'):
+        # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
 
         logger.info('')
@@ -956,7 +958,7 @@ class MainWindow(QMainWindow):
         if cfg.ignore_pbar:
             cfg.nCompleted +=1
             self.updatePbar()
-            self.setPbarText('Generating Correlation Signal Thumbnails...')
+            self.setPbarText('Scaling Correlation Signal Thumbnails...')
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
@@ -969,43 +971,44 @@ class MainWindow(QMainWindow):
         # if cfg.project_tab._tabs.currentIndex() == 1:
         #     cfg.project_tab.project_table.setScaleData()
 
-        if self._toggleAutogenerate.isChecked():
+        if not swim_only:
+            if self._toggleAutogenerate.isChecked():
 
-            if cfg.ignore_pbar:
-                cfg.nCompleted += 1
-                self.updatePbar()
-                self.setPbarText('Generating Alignment...')
+                if cfg.ignore_pbar:
+                    cfg.nCompleted += 1
+                    self.updatePbar()
+                    self.setPbarText('Generating Alignment...')
 
-            try:
-                if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=generate_aligned(
-                        scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
-                    self.threadpool.start(self.worker)
-                else: generate_aligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
-            except:
-                print_exception()
-            finally:
-                logger.info('Generate Alignment Finished')
+                try:
+                    if cfg.USE_EXTRA_THREADING:
+                        self.worker = BackgroundWorker(fn=generate_aligned(
+                            scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
+                        self.threadpool.start(self.worker)
+                    else: generate_aligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
+                except:
+                    print_exception()
+                finally:
+                    logger.info('Generate Alignment Finished')
 
-            if cfg.ignore_pbar:
-                cfg.nCompleted += 1
-                self.updatePbar()
-                self.setPbarText('Generating Aligned Thumbnail...')
+                if cfg.ignore_pbar:
+                    cfg.nCompleted += 1
+                    self.updatePbar()
+                    self.setPbarText('Generating Aligned Thumbnail...')
 
-            try:
-                if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
-                    self.threadpool.start(self.worker)
-                else: cfg.thumb.generate_aligned(start=start, end=end)
-            except:
-                print_exception()
-            finally:
-                logger.info('Generate Aligned Thumbnails Finished')
+                try:
+                    if cfg.USE_EXTRA_THREADING:
+                        self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
+                        self.threadpool.start(self.worker)
+                    else: cfg.thumb.generate_aligned(start=start, end=end)
+                except:
+                    print_exception()
+                finally:
+                    logger.info('Generate Aligned Thumbnails Finished')
 
-            if cfg.ignore_pbar:
-                cfg.nCompleted += 1
-                self.updatePbar()
-                self.setPbarText('Aligning')
+                if cfg.ignore_pbar:
+                    cfg.nCompleted += 1
+                    self.updatePbar()
+                    self.setPbarText('Aligning')
 
         self.pbarLabel.setText('')
         self.hidePbar()
@@ -3713,8 +3716,8 @@ class MainWindow(QMainWindow):
         self.alignAllAction.setShortcut('Ctrl+A')
         alignMenu.addAction(self.alignAllAction)
 
-        self.alignOneAction = QAction('Align One', self)
-        self.alignOneAction.triggered.connect(self.alignOne)
+        self.alignOneAction = QAction('Align + Generate One', self)
+        self.alignOneAction.triggered.connect(self.alignGenerateOne)
         alignMenu.addAction(self.alignOneAction)
 
         self.alignMatchPointAction = QAction('Align Manually', self)
@@ -4891,7 +4894,7 @@ class MainWindow(QMainWindow):
         # self.realign_matchpoint_button.setStatusTip('Realign The Current Layer')
         # self.realign_matchpoint_button.setStyleSheet("font-size: 9px;")
         # self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.realign_matchpoint_button.clicked.connect(self.alignOneMp)
+        # self.realign_matchpoint_button.clicked.connect(self.alignGenerateOne)
         # self.realign_matchpoint_button.setFixedSize(normal_button_size)
 
         self.matchpoint_text_snr = QLabel()
