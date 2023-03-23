@@ -389,9 +389,9 @@ class MainWindow(QMainWindow):
 
 
     def updateCorrSpotsDrawer(self):
-        logger.critical(f'updateCorrSpotsDrawer [sizes: {self._splitter.sizes()}] [drawer member: {self._corrSpotDrawerSize}]>>>>')
+        logger.info(f'updateCorrSpotsDrawer [sizes: {self._splitter.sizes()}] [drawer member: {self._corrSpotDrawerSize}]>>>>')
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
+        # logger.info('caller: %s' % caller)
         if self._isProjectTab():
 
             # isCorrSigsHidden = self.correlation_signals.isHidden()
@@ -412,7 +412,7 @@ class MainWindow(QMainWindow):
 
             splitterSizes = self._splitter.sizes()
             splitterSizes[1] = 140
-            logger.critical(f'Setting _splitter sizes ...')
+            logger.critical(f'Setting _splitter sizes to {splitterSizes}')
             self._splitter.setSizes(splitterSizes)
             siz = splitterSizes[1]
 
@@ -453,7 +453,7 @@ class MainWindow(QMainWindow):
                     self.corr_signals[i].show()
                 else:
                     self.corr_signals[i].hide()
-        logger.critical(f'<<<< updateCorrSpotsDrawer [sizes: {self._splitter.sizes()}]')
+        logger.critical(f'<<<< updateCorrSpotsDrawer [actual sizes: {self._splitter.sizes()}]')
 
 
     def clearCorrSpotsDrawer(self):
