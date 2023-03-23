@@ -806,8 +806,7 @@ class MainWindow(QMainWindow):
         # self.alignmentFinished.emit()
         try:
             self.pbarLabel.setText('')
-            self.hidePbar()
-            self.enableAllTabs()
+
             cfg.project_tab.snr_plot.initSnrPlot()
             self.updateEnabledButtons()
             self.updateProjectTable() #+
@@ -825,6 +824,7 @@ class MainWindow(QMainWindow):
             print_exception()
         finally:
             self._working = False
+            self.hidePbar()
             self.enableAllTabs()
             self._autosave()
 
@@ -895,6 +895,8 @@ class MainWindow(QMainWindow):
             swim_only=True,
         )
         # self.onAlignmentEnd(start=start, end=end)
+        self._working = False
+        self.enableAllTabs()
         # cfg.project_tab.initNeuroglancer()
         self.updateCorrSpotsDrawer()
         self.tell('Section #%d Alignment Complete' % start)
