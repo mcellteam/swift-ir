@@ -137,9 +137,7 @@ class MainWindow(QMainWindow):
         if not cfg.NO_SPLASH:
             self.show_splash()
 
-        # if cfg.DEV_MODE:
-        #     self.profilingTimerButton.click()
-
+        self.pbar_cancel_button.setEnabled(cfg.DAEMON_THREADS)
         self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
 
 
@@ -358,7 +356,7 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_showHideCorrSpots(self):
-        logger.critical('')
+        logger.info('')
         # self.correlation_signals.setVisible(self.correlation_signals.isHidden())
         self.correlation_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
         # if self.correlation_signals.isVisible():
@@ -3645,6 +3643,21 @@ class MainWindow(QMainWindow):
         self.ngShowYellowFrameAction.setText('Boundary')
         self.ngShowYellowFrameAction.triggered.connect(fn)
         viewMenu.addAction(self.ngShowYellowFrameAction)
+        
+        
+        
+        self.toggleCorrSigsAction = QAction(self)
+        def fn():
+            if self._isProjectTab():
+                cfg.project_tab.signalsAction.toggle()
+                self._callbk_showHideCorrSpots()
+        # self.toggleCorrSpotsAction.setCheckable(True)
+        # self.toggleCorrSpotsAction.setChecked(getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
+        # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
+        self.toggleCorrSigsAction.setText('Toggle Correlation Signals')
+        # self.toggleCorrSigsAction.triggered.connect(fn)
+        self.toggleCorrSigsAction.triggered.connect(fn)
+        viewMenu.addAction(self.toggleCorrSigsAction)
 
         maViewMenu = viewMenu.addMenu('Manual Align Mode')
 
