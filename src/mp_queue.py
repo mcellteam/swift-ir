@@ -96,10 +96,10 @@ class TaskQueue(QObject):
         self.taskNameList = None
         self.taskPrefix = None
 
-        MPQLogger = logging.getLogger('MPQLogger')
+        self.MPQLogger = logging.getLogger('MPQLogger')
         fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
         fh.setLevel(logging.DEBUG)
-        MPQLogger.addHandler(fh)
+        self.MPQLogger.addHandler(fh)
 
 
 
@@ -244,12 +244,12 @@ class TaskQueue(QObject):
 
     def collect_results(self):
 
-        MPQLogger.critical('\n\nGathering Results...')
-        MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
-        MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
-        MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')
-        MPQLogger.critical(f'Pbar Text         : {self.pbar_text}')
-        MPQLogger.critical(f'Task Prefix       : {self.taskPrefix}')
+        self.MPQLogger.critical('\n\nGathering Results...')
+        self.MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
+        self.MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
+        self.MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')
+        self.MPQLogger.critical(f'Pbar Text         : {self.pbar_text}')
+        self.MPQLogger.critical(f'Task Prefix       : {self.taskPrefix}')
 
 
         t0 = time.time()
@@ -304,7 +304,8 @@ class TaskQueue(QObject):
                                 except:
                                     # print_exception()
                                     logger.warning('Improperly sized taskNameList! [size=%d] '
-                                                   '[prefix=%s]' %(len(self.taskNameList), self.taskPrefix))
+                                                   '[prefix=%s] '
+                                                   '[n_tasks=%d]' %(len(self.taskNameList), self.taskPrefix, self.n_tasks))
                                 QApplication.processEvents()
                         except:
                             # print_exception()
@@ -349,20 +350,20 @@ class TaskQueue(QObject):
                         self.requeue_task(task_id)
                 retries_tot += 1
 
-            caller = inspect.stack()[1].function
-            logger.critical('caller: %s' % inspect.stack()[1].function)
-            logger.debug('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
-            logger.debug('    Failed Tasks: %d\n' % (n_pending))
-            logger.debug('    Retries: %d\n\n' % (retries_tot - 1))
+            self.MPQLogger.critical('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
+            self.MPQLogger.critical('    Failed Tasks: %d\n' % (n_pending))
+            self.MPQLogger.critical('    Retries: %d\n\n' % (retries_tot - 1))
             if n_pending == 0:
                 logger.info('Tasks Successful  : %d' % (n_tasks - n_pending))
                 logger.info('Tasks Failed      : %d' % n_pending)
-                # logger.info('Retries           : %d' % (retries_tot - 1))
                 logger.info('══════ Complete ══════')
+
+                self.MPQLogger.critical('Tasks Successful  : %d' % (n_tasks - n_pending))
+                self.MPQLogger.critical('Tasks Failed      : %d' % n_pending)
+                self.MPQLogger.critical('══════ Complete ══════')
 
                 cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
                 cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
-                # cfg.main_window.tell('Retries           : %d' % (retries_tot - 1))
                 cfg.main_window.tell('══════ Complete ══════')
             else:
                 # if caller == 'generate_aligned':
