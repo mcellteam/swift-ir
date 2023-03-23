@@ -1793,8 +1793,9 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        # logger.info('caller: %s' % str(caller))
-        if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'):
+        logger.info('caller: %s' % str(caller))
+        # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
+        if caller in ('dataUpdateWidgets'):
             return
         requested = self._sectionSlider.value()
         if self._isProjectTab():
