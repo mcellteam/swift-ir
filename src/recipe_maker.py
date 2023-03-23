@@ -821,7 +821,7 @@ class align_ingredient:
             # logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
 
-        self.swimLogger.critical(f'Stationary Img : {os.path.basename(self.recipe.im_sta_fn)} / Moving Img : {os.path.basename(self.recipe.im_mov_fn)')
+        self.swimLogger.critical(f'Stationary Img : {os.path.basename(self.recipe.im_sta_fn)} / Moving Img : {os.path.basename(self.recipe.im_mov_fn)}')
         self.swimLogger.critical(f'SWIM Arguments:')
         self.swimLogger.critical(f'Window Width      : ww_{swim_ww_arg}')
         self.swimLogger.critical(f'X offset          : {offx}')
