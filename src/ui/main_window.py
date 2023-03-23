@@ -876,13 +876,12 @@ class MainWindow(QMainWindow):
 
     # def alignOne(self, stageit=False):
     def alignOne(self):
-        cfg.ignore_pbar = True
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
         cfg.nCompleted = 0
-        cfg.nTasks = 4
+        cfg.nTasks = 1
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -894,14 +893,13 @@ class MainWindow(QMainWindow):
             align_one=True,
             swim_only=True,
         )
-        self.onAlignmentEnd(start=start, end=end)
+        # self.onAlignmentEnd(start=start, end=end)
         # cfg.project_tab.initNeuroglancer()
         self.updateCorrSpotsDrawer()
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
         self.tell('**** Processes Complete ****')
-        cfg.ignore_pbar = False
 
 
     def alignGenerateOne(self):
