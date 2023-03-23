@@ -705,7 +705,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def updateProjectTable(self):
-        logger.info('SLOT: Updating Project Table...')
+        caller = inspect.stack()[1].function
+        logger.info(f'SLOT: Updating Project Table [caller: {caller}]...')
         cfg.project_tab.project_table.setScaleData()
 
 
