@@ -782,6 +782,7 @@ def create_project_structure_directories(destination, scales) -> None:
         # staged_path = os.path.join(subdir_path, 'img_staged')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
         history_path = os.path.join(subdir_path, 'history')
+        tmp_path = os.path.join(subdir_path, 'tmp')
 
         try:
             os.makedirs(subdir_path)
@@ -790,6 +791,8 @@ def create_project_structure_directories(destination, scales) -> None:
             # os.makedirs(staged_path)
             os.makedirs(bias_data_path)
             os.makedirs(history_path)
+            os.makedirs(tmp_path)
+
         except:
             print_exception()
             logger.warning('There Was A Problem Creating Directory Structure')

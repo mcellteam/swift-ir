@@ -33,6 +33,7 @@ from src.ui.process_monitor import HeadupDisplay
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
 from src.ui.toggle_animated import AnimatedToggle
 from src.ui.joystick import Joystick
+from src import DataModel
 
 
 __all__ = ['ProjectTab']
@@ -83,6 +84,10 @@ class ProjectTab(QWidget):
 
         h = self.MA_webengine_ref.geometry().height()
         self.MA_stageSplitter.setSizes([int(.7*h), int(.3*h)])
+
+    def load_data_from_treeview(self):
+        self.datamodel = DataModel(self.treeview_model.to_json())
+        cfg.data = self.datamodel
 
     def _onTabChange(self):
         logger.info('')
@@ -208,19 +213,24 @@ class ProjectTab(QWidget):
 
 
             cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
+            # cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
 
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
-            cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider)
+            cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible
 
             # cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer.set_zmag)
             # cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer.set_zmag)
             # cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer.set_zmag)
 
-            cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag)
-            cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag)
-            cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer._set_zmag)
+            cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag) # Not responsible
+            cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag) # Not responsible
+            cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer._set_zmag) # Not responsible
+
+
+            cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
+            cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
+
 
             self.update_MA_widgets()
         else:
@@ -654,6 +664,7 @@ class ProjectTab(QWidget):
         # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
+        self.MA_webengine_base.setFocus()
 
         # NO CHANGE----------------------
         # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
@@ -817,8 +828,7 @@ class ProjectTab(QWidget):
                 cfg.baseViewer.undrawSWIMwindow()
             except:
                 print_exception()
-            else:
-                self.btnClearMA.setEnabled(False)
+
         self.btnClearMA = QPushButton('Clear')
         self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setMaximumHeight(20)
@@ -946,8 +956,9 @@ class ProjectTab(QWidget):
 
         self.MA_sbw = HWidget(gb1, gb2)
         self.MA_sbw.layout.setSpacing(0)
-        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select at least 3 corresponding points")
-        self.msg_MAinstruct.setFixedSize(310, 22)
+        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select corresponding points (3 points for affine)\n"
+                                              "type 's' to SWIM")
+        self.msg_MAinstruct.setFixedSize(360, 34)
         self.msg_MAinstruct.hide()
 
         # def fn():
@@ -1379,17 +1390,16 @@ QListView::item:!selected:hover
         ])
 
 
-        self.w_ng_display_ext = VWidget()
-        # self.w_ng_display_ext.setStyleSheet('background-color: #222222; color: #f3f6fb;')
-        self.w_ng_display_ext.layout.setSpacing(0)
-        self.w_ng_display_ext.addWidget(self.w_ng_extended_toolbar)
-        self.w_ng_display_ext.addWidget(self.shaderToolbar)
-        self.w_ng_display_ext.addWidget(self.w_ng_display)
+        # self.w_ng_display_ext = VWidget()
+        # # self.w_ng_display_ext.setStyleSheet('background-color: #222222; color: #f3f6fb;')
+        # self.w_ng_display_ext.layout.setSpacing(0)
+        # self.w_ng_display_ext.addWidget(self.w_ng_extended_toolbar)
+        # self.w_ng_display_ext.addWidget(self.shaderToolbar)
 
 
-        self.weSplitter = HSplitter(self.w_ng_display_ext, self.MA_splitter)
-        self.weSplitter.setCollapsible(0, False)
-        self.weSplitter.setCollapsible(1, False)
+        self.ngCombinedHwidget = HWidget(self.w_ng_display, self.MA_splitter)
+
+        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.ngCombinedHwidget)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.layout.setSpacing(0)
@@ -1397,7 +1407,7 @@ QListView::item:!selected:hover
 
         self.ng_browser_container_outer = HWidget(
             self.ngVertLab,
-            self.weSplitter,
+            self.ngCombinedOutterVwidget,
             self.sideSliders,
         )
         self.ng_browser_container_outer.layout.setSpacing(0)
@@ -1596,7 +1606,7 @@ QListView::item:!selected:hover
             if cfg.data.method() != 'Auto-SWIM':
                 self.combo_method.setCurrentText(cfg.data.method())
 
-            self.btnClearMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
+            # self.btnClearMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
             self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
 
@@ -1664,17 +1674,18 @@ QListView::item:!selected:hover
                     #     if cfg.baseViewer.state.cross_section_scale != 1.0:
                     pos = cfg.baseViewer.state.position
                     zoom = cfg.baseViewer.state.cross_section_scale
-                    logger.critical(
-                        f'cfg.baseViewer.state.cross_section_scale = {cfg.baseViewer.state.cross_section_scale}')
                     if isinstance(pos,np.ndarray) or isinstance(zoom, np.ndarray):
                         state = copy.deepcopy(cfg.refViewer.state)
                         if isinstance(pos, np.ndarray):
                             state.position = cfg.baseViewer.state.position
                         if isinstance(zoom, float):
                             # if cfg.baseViewer.state.cross_section_scale < 10_000:
-                            if cfg.baseViewer.state.cross_section_scale < 100:
+                            # if cfg.baseViewer.state.cross_section_scale < 100:
+                            if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.baseViewer.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
+                                    logger.info(
+                                        f'Updating ref viewer state -> {cfg.refViewer.state.cross_section_scale}')
                         cfg.refViewer.set_state(state)
 
 
@@ -1691,15 +1702,17 @@ QListView::item:!selected:hover
                     #     if cfg.refViewer.state.cross_section_scale != 1.0:
                     pos = cfg.refViewer.state.position
                     zoom = cfg.refViewer.state.cross_section_scale
-                    logger.critical(f'cfg.refViewer.state.cross_section_scale = {cfg.refViewer.state.cross_section_scale}')
+
                     if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
                         state = copy.deepcopy(cfg.baseViewer.state)
                         if isinstance(pos, np.ndarray):
                             state.position = cfg.refViewer.state.position
                         if isinstance(zoom, float):
                             # if cfg.refViewer.state.cross_section_scale < 10_000:
-                            if cfg.refViewer.state.cross_section_scale < 100:
+                            # if cfg.refViewer.state.cross_section_scale < 100:
+                            if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.refViewer.state.cross_section_scale != 1.0:
+                                    logger.info(f'Updating base viewer state -> {cfg.refViewer.state.cross_section_scale}')
                                     state.cross_section_scale = cfg.refViewer.state.cross_section_scale
                         cfg.baseViewer.set_state(state)
 
@@ -1837,7 +1850,8 @@ QListView::item:!selected:hover
         logger.info('onEnterManualMode >>>>')
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
-        self.w_ng_display_ext.hide() # change layout before initializing viewer
+        # self.w_ng_display_ext.hide() # change layout before initializing viewer
+        self.w_ng_display.hide() # change layout before initializing viewer
         self.MA_splitter.show() # change layout before initializing viewer
         self.ngVertLab.setText('Manual Alignment Mode')
         # self.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
@@ -1910,6 +1924,7 @@ QListView::item:!selected:hover
 
 
     def setZoomSlider(self):
+        logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
         if self._allow_zoom_change:
             caller = inspect.stack()[1].function
             zoom = cfg.emViewer.zoom()
@@ -2073,7 +2088,7 @@ QListView::item:!selected:hover
         logger.info('Updating Project Tree...')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.setModel(self.treeview_model)
-        self.treeview.header().resizeSection(0, 200)
+        self.treeview.header().resizeSection(0, 380)
         self.treeview.expandAll()
         self.treeview.update()
         self.repaint()
@@ -2085,8 +2100,9 @@ QListView::item:!selected:hover
         self.treeview = QTreeView()
         self.treeview.setAnimated(True)
         self.treeview.setIndentation(20)
-        self.treeview.header().resizeSection(0, 200)
+        self.treeview.header().resizeSection(0, 380)
         self.treeview_model = JsonModel()
+        self.treeview_model.signals.dataModelChanged.connect(self.load_data_from_treeview)
         self.treeview.setModel(self.treeview_model)
         self.treeview.setAlternatingRowColors(True)
         self._wdg_treeview = QWidget()

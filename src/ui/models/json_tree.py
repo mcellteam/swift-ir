@@ -57,16 +57,21 @@ def get_index(findkeys, treeitem=cfg.project_tab.treeview_model._rootItem):
 
 '''
 import json
+import logging
 import sys
 from typing import Any, List, Dict, Union
 import qtpy
 from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView, QAbstractItemView
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
-from qtpy.QtCore import Qt, QAbstractItemModel, QAbstractTableModel, QModelIndex
+from qtpy.QtCore import Qt, QAbstractItemModel, QAbstractTableModel, QModelIndex, Signal
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QHeaderView, QTableView
 
 import src.config as cfg
+
+__all__ = ['JsonModel']
+
+logger = logging.getLogger(__name__)
 
 class TreeItem:
     """A Json item corresponding to a line in QTreeView"""
@@ -169,6 +174,8 @@ class TreeItem:
 
         return rootItem
 
+class WorkerSignals(QObject):
+    dataModelChanged = Signal()
 
 class JsonModel(QAbstractItemModel):
     """ An editable previewmodel of Json datamodel """
@@ -178,6 +185,7 @@ class JsonModel(QAbstractItemModel):
 
         self._rootItem = TreeItem()
         self._headers = ("key", "value")
+        self.signals = WorkerSignals()
 
     def clear(self):
         """ Clear datamodel from the previewmodel """
@@ -201,7 +209,6 @@ class JsonModel(QAbstractItemModel):
         """Override from QAbstractItemModel
         Return datamodel from a json item according index and role
         """
-        # role = Qt.DisplayRole  # 0718+
 
         if not index.isValid():
             return None
@@ -219,8 +226,8 @@ class JsonModel(QAbstractItemModel):
             if index.column() == 1:
                 return item.value
 
-    # def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole):
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole):
+
         """Override from QAbstractItemModel
 
         Set json item according index and role
@@ -231,13 +238,18 @@ class JsonModel(QAbstractItemModel):
             role (Qt.ItemDataRole)
 
         """
-        role = Qt.DisplayRole #0718+
-
+        #Critical - Uncomment this line to prevent editing
+        if not cfg.DEV_MODE:
+            role = Qt.DisplayRole #0718+
         if role == Qt.EditRole:
+            print('\n\nRole was EDIT role\n')
             if index.column() == 1:
                 item = index.internalPointer()
                 item.value = str(value)
+                self.signals.dataModelChanged.emit()
                 return True
+
+
 
         return False
 
@@ -308,18 +320,20 @@ class JsonModel(QAbstractItemModel):
         Return column number. For the previewmodel, it always return 2 columns
         """
         return 2
-    if qtpy.PYSIDE6:
-        def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-            """Override from QAbstractItemModel
 
-            Return flags of index
-            """
-            flags = super(JsonModel, self).flags(index)
+    #Critical Uncomment these flags to make table non-editable
+    # if qtpy.PYSIDE6:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        """Override from QAbstractItemModel
 
-            if index.column() == 1:
-                return Qt.ItemIsEditable | flags
-            else:
-                return flags
+        Return flags of index
+        """
+        flags = super(JsonModel, self).flags(index)
+
+        if index.column() == 1:
+            return Qt.ItemIsEditable | flags
+        else:
+            return flags
 
     def to_json(self, item=None):
 
