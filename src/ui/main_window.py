@@ -498,8 +498,11 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_showHidePython(self):
-        logger.info('')
+        logger.critical(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self._dev_console.setVisible(self._dev_console.isHidden())
+        logger.critical(f'QApplication.focusWidget = {QApplication.focusWidget()}')
+        self.pythonConsole.setFocus()
+        logger.critical(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self.pythonButton.setText(('Python','Hide')[self._dev_console.isVisible()])
         self.pythonButton.setStatusTip(('Show Python Console','Hide Python Console')[self._dev_console.isVisible()])
 
@@ -771,6 +774,7 @@ class MainWindow(QMainWindow):
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
         manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
+        swim_log = os.path.join(cfg.data.dest(), 'logs', 'swim.log')
         open(logger_log, 'a+').close()
         open(manual_log, 'a+').close()
         open(mp_log, 'a+').close()
@@ -779,6 +783,8 @@ class MainWindow(QMainWindow):
         with open(manual_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
         with open(mp_log, 'a+') as f:
+            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        with open(swim_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
 
         self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
@@ -803,7 +809,6 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self.updateProjectTable() #+
             self.updateMenus()
-            cfg.project_tab.updateTreeWidget()
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
@@ -1384,6 +1389,7 @@ class MainWindow(QMainWindow):
     #     else:
     #         cfg.project_tab.aligned_label.hide()
     #         cfg.project_tab.unaligned_label.hide()
+    #         cfg.project_tab.generated_label.hide()
     #         cfg.project_tab.generated_label.hide()
 
     # @Slot()
@@ -2113,7 +2119,6 @@ class MainWindow(QMainWindow):
 
         self._dontReinit = True
 
-
         self.showZeroedPbar()
         self.pbarLabel.setText('Loading Project...')
 
@@ -2764,7 +2769,6 @@ class MainWindow(QMainWindow):
             self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
             self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
             cfg.project_tab.onEnterManualMode()
-            cfg.main_window.forceShowCorrSignalDrawer()
 
         else:
             self.warn('Alignment must be generated before using Manual Point Alignment method.')
@@ -2795,10 +2799,11 @@ class MainWindow(QMainWindow):
         cfg.project_tab.MA_ptsListWidget_base.clear()
         cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
         cfg.project_tab.MA_splitter.hide()
-        cfg.project_tab.w_ng_display_ext.show()
+        # cfg.project_tab.w_ng_display_ext.show()
+        cfg.project_tab.w_ng_display.show()
         cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
         QApplication.processEvents() #Critical! - enables viewer to acquire appropriate zoom
-        # cfg.project_tab.initNeuroglancer()
+        cfg.project_tab.initNeuroglancer()
         cfg.emViewer.set_layer(cfg.data.zpos)
         logger.critical('<<<< exit_man_mode')
 
@@ -3568,6 +3573,12 @@ class MainWindow(QMainWindow):
         self.refreshAction.setShortcut('Ctrl+R')
         self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
+
+        self.showPythonAction = QAction('Show &Python', self)
+        self.showPythonAction.triggered.connect(self._callbk_showHidePython)
+        self.showPythonAction.setShortcut('Ctrl+P')
+        fileMenu.addAction(self.showPythonAction)
+
 
         def fn():
             self.globTabs.removeTab(self.globTabs.currentIndex())
@@ -5613,7 +5624,7 @@ class MainWindow(QMainWindow):
     def updatePbar(self, x=None):
         if x == None: x = cfg.nCompleted
         caller = inspect.stack()[1].function
-        logger.info(f'[caller: {caller}] Updating pbar, x={x}')
+        # logger.info(f'[caller: {caller}] Updating pbar, x={x}')
         self.pbar.setValue(x)
         # self.repaint()
         QApplication.processEvents()
@@ -5630,7 +5641,7 @@ class MainWindow(QMainWindow):
 
     def showZeroedPbar(self):
         caller = inspect.stack()[1].function
-        logger.info(f'Showing Progress Bar [caller: {caller}]...')
+        logger.info(f'Showing Zeroed Progress Bar [caller: {caller}]...')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Multiprocessing Tasks...')
         self.pbar_widget.show()

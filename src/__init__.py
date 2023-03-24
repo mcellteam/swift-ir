@@ -3,6 +3,8 @@
 
 __all__ = []
 
+from src.data_model import DataModel
+
 from . import ui
 from .ui import *
 __all__.extend(ui.__all__)
@@ -21,6 +23,7 @@ __all__.extend(config.__all__)
 from . import data_model
 from .data_model import *
 __all__.extend(data_model.__all__)
+
 
 from . import swiftir
 from .swiftir import *

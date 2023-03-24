@@ -46,6 +46,7 @@ class WorkerSignals(QObject):
     zoomChanged = Signal(float)
     mpUpdate = Signal()
     ptsChanged = Signal()
+    swimAction = Signal()
 
 
 class MAViewer(neuroglancer.Viewer):
@@ -214,8 +215,12 @@ class MAViewer(neuroglancer.Viewer):
 
         self.actions.add('add_manpoint', self.add_matchpoint)
 
+
+        self.actions.add('swim', self.swim)
+
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
+            s.input_event_bindings.viewer['keys'] = 'swim'
             s.show_ui_controls = False
             s.show_panel_borders = False
 
@@ -227,6 +232,7 @@ class MAViewer(neuroglancer.Viewer):
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            self.webengine.setFocus()
 
         self.set_brightness()
         self.set_contrast()
@@ -315,6 +321,12 @@ class MAViewer(neuroglancer.Viewer):
             state = copy.deepcopy(self.state)
             state.layers.clear()
             self.set_state(state)
+
+    def swim(self, s):
+        logger.critical('Running SWIM...')
+        # cfg.main_window.alignOne()
+        self.signals.swimAction.emit()
+
 
 
     def add_matchpoint(self, s):
@@ -671,7 +683,7 @@ class MAViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def set_zmag(self, val=10):
-        logger.info(f'Setting Z-mag on {self.type} [{self.role}]')
+        logger.info(f'Setting Z-mag on {self.type} to {val} [{self.role}]')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
@@ -697,10 +709,13 @@ class MAViewer(neuroglancer.Viewer):
                 print_exception()
 
     def initZoom(self):
-        logger.info('')
+
+
+        logger.critical(f'Initializing Zoom [{self.role}]')
         adjust = 1.08
 
         if self.cs_scale:
+            logger.critical(f'Setting zoom to self.cs_scale, {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
@@ -712,7 +727,7 @@ class MAViewer(neuroglancer.Viewer):
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
-
+            logger.critical(f'Setting zoom to calculated value times adjust ({adjust}), {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20
                 s.crossSectionScale = cs_scale * adjust

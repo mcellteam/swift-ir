@@ -82,13 +82,18 @@ class DataModel:
     def __repr__(self):
         return self.to_json()
 
+    def __str__(self):
+        return self.dest() + '.swiftir'
+
     def __copy__(self):
+        logger.critical('\n\n\nCreating __copy__ of DataModel...\n\n')
         cls = self.__class__
         result = cls.__new__(cls)
         result.__dict__.update(self.__dict__)
         return result
 
     def __deepcopy__(self, memo):
+        logger.critical('\n\n\nCreating __deepcopy__ of DataModel...\n\n')
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -432,6 +437,7 @@ class DataModel:
     def set_defaults(self):
         # logger.critical(f'caller: {inspect.stack()[1].function}')
 
+        self._data.setdefault('developer_mode', cfg.DEV_MODE)
         self._data.setdefault('data', {})
         self._data.setdefault('rendering', {})
         self._data.setdefault('state', {})
@@ -476,6 +482,19 @@ class DataModel:
             for layer_index in range(len(scale['stack'])):
                 layer = scale['stack'][layer_index]
                 layer.setdefault('alignment', {})
+                layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
+                layer['alignment'].setdefault('swim_settings', {})
+                layer['alignment']['swim_settings'].setdefault('karg', False)
+                layer['alignment']['swim_settings'].setdefault('karg_path', os.path.join(self.dest(), s, 'tmp'))
+                layer['alignment']['swim_settings'].setdefault('karg_name', 'karg_out')
+                layer['alignment']['swim_settings'].setdefault('targ', False)
+                layer['alignment']['swim_settings'].setdefault('targ_path', os.path.join(self.dest(), s, 'tmp'))
+                layer['alignment']['swim_settings'].setdefault('targ_name', 'targ_out')
+                layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise', False)
+                layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise_px', 3)
+                layer['alignment']['swim_settings'].setdefault('extra_kwargs', '')
+                layer['alignment']['swim_settings'].setdefault('extra_args', '')
+                layer['alignment']['swim_settings'].setdefault('use_logging', True)
                 layer['alignment'].setdefault('method_data', {})
                 layer['alignment'].setdefault('manual_settings', {})
                 layer['alignment']['manual_settings'].setdefault('swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
