@@ -349,10 +349,8 @@ class alignment_process:
         MAlogger.info('Running align_alignment_process.auto_swim_align...')
 
         siz = ImageSize(self.im_sta_fn)
-        alData = self.layer_dict['alignment'] # (A)lign (T)o (R)ef (M)ethod
-        swimSettings = alData['swim_settings']
-        # wsf = alData['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
-        wsf = alData['method_data']['win_scale_factor']
+        alData = self.layer_dict['alignment']            # (A)lign (T)o (R)ef (M)ethod
+        wsf = alData['method_data']['win_scale_factor']  # (W)indow (S)cale (F)actor
         wht = alData['method_data']['whitening_factor']
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
 
@@ -396,24 +394,9 @@ class alignment_process:
         sy_2x2 = int(wsf * sy)
         psta_2x2 = pa
 
-        # Set up 4x4 points and windows
-        # nx, ny = 4, 4
-        # pa = np.zeros((2, nx * ny))
-        # sx = int(wwx_f / 4.0)  # Initial Size of each window
-        # sy = int(wwy_f / 4.0)  # Initial Size of each window # THIS WAS MISSING
-        # for x in range(nx):
-        #     for y in range(ny):
-        #         pa[0, x + nx * y] = int(0.5 * sx + sx * x)
-        #         pa[1, x + nx * y] = int(0.5 * sx + sx * y)
-        # sx_4x4 = int(wsf * sx)
-        # sy_4x4 = int(wsf * sy)
-        # #    sx_4x4 = int(sx)
-        # psta_4x4 = pa
-
         # Set up a window size for match point alignment (1/32 of x dimension)
         # s_mp = int(siz[0] / 32.0) # size match point #orig
-        # s_mp = 128 # size match point
-        s_mp = alData['manual_settings'].get('swim_window_px')
+        s_mp = alData['manual_settings'].get('swim_window_px') # size match point
 
         logger.critical("  psta_1   = " + str(psta_1))
         logger.critical("  psta_2x2 = " + str(psta_2x2))
@@ -432,9 +415,6 @@ class alignment_process:
 
         fn = os.path.basename(self.layer_dict['filename'])
 
-        # clobber = alData['manual_settings'].get(['fixed_pattern_clobber'])
-        # clobber_arg =
-
         alignment_option = alData['method_data'].get('alignment_option')
 
         if alignment_option == 'init_affine':
@@ -448,7 +428,6 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_2x2b)
-                # self.recipe.add_ingredient(ingredient_4x4)
             elif alData['method'] == 'Manual-Hint':
                 MAlogger.critical('\n%s (Method: Manual-Hint)...' % fn)
                 self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
@@ -463,10 +442,9 @@ class alignment_process:
                                                    dest=self.dest, ID='_2_mp')  # <-- CALL TO SWIM
                 ingredient_2_mp_b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
                                                      pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='2_mp_b_')  # 0221+
-                self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
-                self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
-                self.recipe.add_ingredient(ingredient_2_mp_b)  # This one will use the previous Affine and refine it #0221+
-                # self.recipe.add_ingredient(ingredient_4x4)
+                self.recipe.add_ingredient(ingredient_1_mp)    # set the Affine matrix
+                self.recipe.add_ingredient(ingredient_2_mp)    # further refinement
+                self.recipe.add_ingredient(ingredient_2_mp_b)  # further refinement
             elif alData['method'] == 'Manual-Strict':
                 MAlogger.critical('\n%s (Method: Manual-Strict)...' % fn)
                 self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
@@ -498,7 +476,6 @@ class alignment_process:
                 self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
                 self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
                 self.recipe.add_ingredient(ingredient_2_mp_b)  # This one will use the previous Affine and refine it #0221+
-                # self.recipe.add_ingredient(ingredient_4x4)
             elif alData['method'] == 'Manual-Strict':
                 MAlogger.critical('\n%s (Method: Manual-Strict)...' % fn)
                 self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
@@ -520,9 +497,8 @@ class alignment_process:
         # self.recipe.add_ingredient(ingredient_check_align)
 
         self.recipe.execute()  # DOES the alignment
-        self.setCafm(c_afm, bias_mat=None)  # returns new current cafm
+        # self.setCafm(c_afm, bias_mat=None)  # returns new current cafm
         SWIMlogger.critical(f'New Cumulative AFM: {c_afm}')
-        logger.critical('c_afm = %s' % str(c_afm))
 
         # Retrieve alignment result
         snr = self.recipe.ingredients[-1].snr
@@ -562,36 +538,36 @@ class alignment_process:
         current_time = datetime.datetime.now()
         alData['method_results']['datetime'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        if save:
-            self.saveAligned()
+        # if save:
+        #     self.saveAligned()
 
         return self.cumulative_afm
 
-    def setCafm(self, c_afm, bias_mat=None):
-        logger.debug('setCafm >>>>')
-        '''Calculate new cumulative python_swiftir for current stack location'''
-        self.cumulative_afm = swiftir.composeAffine(self.recipe.afm, c_afm)
-        # matrix multiplication of current python_swiftir matrix with cafm (cumulative) -jy
-        # current cumulative "at this point in the stack"
+    # def setCafm(self, c_afm, bias_mat=None):
+    #     logger.debug('setCafm >>>>')
+    #     '''Calculate new cumulative python_swiftir for current stack location'''
+    #     self.cumulative_afm = swiftir.composeAffine(self.recipe.afm, c_afm)
+    #     # matrix multiplication of current python_swiftir matrix with cafm (cumulative) -jy
+    #     # current cumulative "at this point in the stack"
+    #
+    #     # Apply bias_mat if given
+    #     if type(bias_mat) != type(None):
+    #         self.cumulative_afm = swiftir.composeAffine(bias_mat, self.cumulative_afm)
+    #
+    #     return self.cumulative_afm
 
-        # Apply bias_mat if given
-        if type(bias_mat) != type(None):
-            self.cumulative_afm = swiftir.composeAffine(bias_mat, self.cumulative_afm)
-
-        return self.cumulative_afm
-
-    def saveAligned(self, rect=None, apodize=False, grayBorder=False):
-        im_mov = swiftir.loadImage(self.im_mov_fn)
-        im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
-        #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
-        ofn = os.path.join(self.align_dir, os.path.basename(self.im_mov_fn))
-        if apodize:
-            im_apo = swiftir.apodize2(im_aligned, wfrac=1 / 3.)
-            swiftir.saveImage(im_apo, ofn)
-        else:
-            swiftir.saveImage(im_aligned, ofn)
-        del im_mov
-        del im_aligned
+    # def saveAligned(self, rect=None, apodize=False, grayBorder=False):
+    #     im_mov = swiftir.loadImage(self.im_mov_fn)
+    #     im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
+    #     #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
+    #     ofn = os.path.join(self.align_dir, os.path.basename(self.im_mov_fn))
+    #     if apodize:
+    #         im_apo = swiftir.apodize2(im_aligned, wfrac=1 / 3.)
+    #         swiftir.saveImage(im_apo, ofn)
+    #     else:
+    #         swiftir.saveImage(im_aligned, ofn)
+    #     del im_mov
+    #     del im_aligned
 
 
 # Universal class for alignment recipes
@@ -771,12 +747,12 @@ class align_ingredient:
             swim_arg_string += ' -b ' + b_arg
             if self.alData['swim_settings']['karg']:
                 self.parent.SWIMlogger.critical(f'Adding karg argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                k_arg_name = self.alData['swim_settings']['karg_name'] + '%d_' %i + self.ID
+                k_arg_name = self.ID + self.alData['swim_settings']['karg_name'] + '_%d_' %i
                 k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                 swim_arg_string += f" -k {k_arg_path}"
             if self.alData['swim_settings']['targ']:
                 self.parent.SWIMlogger.critical(f'Adding targ argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                t_arg_name = self.alData['swim_settings']['targ_name'] + '%d_' %i + self.ID
+                t_arg_name = self.ID + self.alData['swim_settings']['targ_name'] + '_%d_' %i
                 t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
                 swim_arg_string += f" -t {t_arg_path}"
             swim_arg_string += self.alData['swim_settings']['extra_kwargs']
@@ -793,6 +769,15 @@ class align_ingredient:
             # default -f is 3x3
             # logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
+
+
+        '''SWIM'''
+        self.swim_str = multi_swim_arg_string
+        o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string)
+
+        self.swim_out_lines = swim_out_lines = o['out'].strip().split('\n')
+        self.swim_err_lines = swim_err_lines = o['err'].strip().split('\n')
+        swim_results.append({'out': swim_out_lines, 'err': swim_err_lines})
 
 
         self.parent.SWIMlogger.critical(f'SWIM Arguments:\n'
@@ -813,31 +798,21 @@ class align_ingredient:
                                         f"targ              : {self.alData['swim_settings']['targ']}\n"
                                         f"     name         : {t_arg_name}\n"
                                         f"     path         : {t_arg_path}\n"
-                                        f'Raw SWIM argument string:\n{multi_swim_arg_string}\n\n')
+                                        f'Raw SWIM argument string:\n{multi_swim_arg_string}\n'
+                                        f'SWIM OUT:\n{self.swim_out_lines}\n'
+                                        f'SWIM ERR:\n{self.swim_err_lines}')
 
-        '''SWIM'''
-        self.swim_str = multi_swim_arg_string
-        o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string)
-
-
-        self.swim_out_lines = swim_out_lines = o['out'].strip().split('\n')
-        self.swim_err_lines = swim_err_lines = o['err'].strip().split('\n')
-        swim_results.append({'out': swim_out_lines, 'err': swim_err_lines})
 
         if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
             self.parent.MAlogger.critical(f'SWIM OUT:\n{self.swim_out_lines}\n'
                                           f'SWIM ERR:\n{self.swim_err_lines}')
 
-        # self.parent.SWIMlogger.critical(f'SWIM OUT:\n{self.swim_out_lines}\n'
-        #                                 f'SWIM ERR:\n{self.swim_err_lines}')
-
-
 
         mir_script = ""
         snr_list = []
         dx = dy = 0.0
-        # loop over SWIM output to build the MIR script:
 
+        # loop over SWIM output to build the MIR script:
         for i,l in enumerate(swim_out_lines):
             MAlogger.critical('SWIM Out Line # %d: '%i + str(l))
             toks = l.replace('(', ' ').replace(')', ' ').strip().split()
@@ -876,9 +851,6 @@ class align_ingredient:
             aim = copy.deepcopy(self.afm)
             aim[0, 2] += dx # "what swim said, how far to move it"
             aim[1, 2] += dy
-
-            #TODO: may be better to add the offset to the input afm #0810
-
         else:
             ''' Extract AFM from these lines:
             AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
@@ -915,7 +887,7 @@ class align_ingredient:
         return self.afm
 
     def execute(self):
-        '''RETURN AN AFFINE MATRIX'''
+        # RETURNS AN AFFINE MATRIX
 
         '''---------------------------------NEW -------------------------------------'''
         #0214
@@ -995,27 +967,6 @@ class align_ingredient:
 
             afm = self.run_swim_c()
 
-            # if self.recipe.swiftir_mode == 'c':
-            #     afm = self.run_swim_c()
-            # else:
-            #     pass
-            #     # 0720
-            #     logger.info("Running python version of swim")
-            #     self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-            #     sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
-            #     for i in range(self.iters):
-            #         logger.debug('psta = ' + str(self.psta))
-            #         logger.debug('pmov = ' + str(self.pmov))
-            #         mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
-            #         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-            #         logger.debug('  dp,ss,snr_report = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
-            #         self.pmov = self.pmov + dp
-            #         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-            #         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-            #         logger.debug('  Affine err:  %g' % (err))
-            #         logger.debug('  SNR:  ' + str(snr))
-            #     self.snr = snr
-
             snr_array = np.array(self.snr)
             self.snr = snr_array
             self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
@@ -1026,70 +977,6 @@ class align_ingredient:
                 self.afm = afm
 
             return self.afm
-
-
-def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
-    logger.info('\n%%%% Static Function Call to align_images %%%%\n')
-    if global_afm is None:
-        global_afm = swiftir.identityAffine()
-
-    im_sta = swiftir.loadImage(im_sta_fn)
-    im_mov = swiftir.loadImage(im_mov_fn)
-
-    pa = np.zeros((2, 1))
-    wwx = int(im_sta.shape[0])
-    wwy = int(im_sta.shape[1])
-    cx = int(wwx / 2)
-    cy = int(wwy / 2)
-    pa[0, 0] = cx
-    pa[1, 0] = cy
-    psta_1 = pa
-
-    nx = 2
-    ny = 2
-    pa = np.zeros((2, nx * ny))
-    s = int(im_sta.shape[0] / 2)
-    for x in range(nx):
-        for y in range(ny):
-            pa[0, x + nx * y] = int(0.5 * s + s * x)
-            pa[1, x + nx * y] = int(0.5 * s + s * y)
-    s_2x2 = s
-    psta_2x2 = pa
-
-    nx = 4
-    ny = 4
-    pa = np.zeros((2, nx * ny))
-    s = int(im_sta.shape[0] / 4)
-    for x in range(nx):
-        for y in range(ny):
-            pa[0, x + nx * y] = int(0.5 * s + s * x)
-            pa[1, x + nx * y] = int(0.5 * s + s * y)
-    s_4x4 = s
-    psta_4x4 = pa
-
-    recipe = align_recipe(im_sta, im_mov, im_sta_fn=im_sta_fn, im_mov_fn=im_mov_fn)
-
-    ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1)
-    ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
-    ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
-    ingredient_check_align = align_ingredient(ww=(wwx, wwy), psta=psta_1, iters=1, align_mode='check_align')
-
-    recipe.add_ingredient(ingredient_1)
-    recipe.add_ingredient(ingredient_2x2)
-    recipe.add_ingredient(ingredient_4x4)
-    recipe.add_ingredient(ingredient_check_align)
-
-    recipe.execute()
-
-    global_afm = swiftir.composeAffine(recipe.afm, global_afm)
-    im_aligned = swiftir.affineImage(global_afm, im_mov)
-    ofn = os.path.join(align_dir, os.path.basename(im_mov_fn))
-    try:
-        swiftir.saveImage(im_aligned, ofn)
-    except Exception:
-        logger.warning(traceback.format_exc())
-
-    return global_afm, recipe
 
 
 if __name__ == '__main__':
