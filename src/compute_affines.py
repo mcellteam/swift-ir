@@ -11,7 +11,6 @@ import psutil
 import logging
 from datetime import datetime
 from pathlib import Path
-import neuroglancer as ng
 import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.helpers import print_exception, rename_layers, get_scale_val
@@ -87,13 +86,13 @@ def compute_affines(scale, start=0, end=None):
             index = dm_().index(layer)
             if not layer['skipped']:
                 task_args = [sys.executable,
-                             align_job,            # Python program to run (single_alignment_job)
-                             temp_file,            # Temp project file name
-                             alignment_option,     # Init, Refine, or Apply
-                             str(scale_val),       # Scale to use or 0
-                             str(cfg.CODE_MODE),   # Python or C mode
-                             str(index),           # First l number to run from Project file #ATTN!
-                             str(1),               # Number of layers to run                 #ATTN!
+                             align_job,             # Python program to run (single_alignment_job)
+                             temp_file,             # Temp project file name
+                             alignment_option,      # Init, Refine, or Apply
+                             str(scale_val),        # Scale to use or 0
+                             str(cfg.CODE_MODE),    # Python or C mode
+                             str(index),            # First l number to run from Project file #ATTN!
+                             str(1),                # Number of layers to run                 #ATTN!
                              str(cfg.USE_FILE_IO),  # Use File IO instead of Pipe
                              str(size[0])]
                 # if index == 5:

@@ -52,10 +52,6 @@ MAlogger = logging.getLogger('MAlogger')
 SWIMlogger = logging.getLogger('SWIMlogger')
 
 
-
-
-
-
 def run_json_project(project,
                      alignment_option='init_affine',
                      use_scale=0,
@@ -72,7 +68,6 @@ def run_json_project(project,
     :param start_layer: Layer index number to start at, defaults to 0.
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
     '''
-
 
     fh = logging.FileHandler(os.path.join(project['data']['destination_path'], 'logs', 'logger.log'))
     fh.setLevel(logging.DEBUG)
@@ -206,43 +201,27 @@ def run_json_project(project,
 
         for i in range(1, len(s_tbd)):
             if not s_tbd[i]['skipped']:
-                if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
-                    '''refine_affine or apply_affine'''
-                    logger.info('about to enter align_alignment_process...')
-                    align_proc = alignment_process(
-                        align_dir=align_dir,
-                        layer_dict=s_tbd[i],
-                        init_affine_matrix=afm_scaled[i],
-                        dest=project['data']['destination_path'],
-                    )
+
+                if alignment_option in ('refine_affine', 'apply_affine'):
+                    init_afm = afm_scaled[i]
                 else:
-                    '''init_affine'''
-                    align_proc = alignment_process(
-                        align_dir=align_dir,
-                        layer_dict=s_tbd[i],
-                        init_affine_matrix=ident,
-                        dest=project['data']['destination_path'],
-                    )
+                    init_afm = ident
+
+                align_proc = alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_afm=init_afm,
+                    dest=project['data']['destination_path'],
+                )
                 align_list.append({'i': i, 'proc': align_proc, 'do': (i in range_to_process)})
 
         c_afm = swiftir.identityAffine() # Initialize cafm to identity matrix
 
         # Align Forward Change:
         if (range_to_process[0] != 0) and not alone:
-            logger.debug(80 * "@")
-            logger.debug("Not starting at zero, initialize the cafm to non-identity from previous aligned image")
-            logger.debug(80 * "@")
+            # "Not starting at zero, initialize the cafm to non-identity from previous aligned image"
             # Set the cafm to the afm of the previously aligned image
             # TODO: Check this for handling skips!!!
             prev_aligned_index = range_to_process[0] - 1
             method_results = s_tbd[prev_aligned_index]['alignment']['method_results']
             c_afm = method_results['cumulative_afm']  # Note that this might be wrong type (list not a matrix)
-
-        # Align Forward Change:
-        if (range_to_process[0] != 0) and not alone:
-            logger.debug(80 * "@")
-            logger.debug("Initialize to non-zero biases")
-            logger.debug(80 * "@")
 
         # Calculate AFM for each align_item (i.e for each ref-base pair of images)
         for item in align_list:
@@ -264,13 +243,7 @@ def run_json_project(project,
         logger.info('\n\n<<<< run_json_project\n\n')
         return (project, True)
 
-    else:  # if scale_tbd:
-
-        logger.info(30 * "|=|")
-        logger.info("Returning False")
-        logger.info(30 * "|=|")
-
-        logger.info('\n\n<<<< run_json_project\n\n')
+    else:
         return (project, False)
 
 
@@ -329,7 +302,7 @@ class alignment_process:
                  im_mov_fn=None,
                  align_dir='./',
                  layer_dict=None,
-                 init_affine_matrix=None,
+                 init_afm=None,
                  cumulative_afm=None,
                  dest=None,
                  ):
@@ -347,31 +320,12 @@ class alignment_process:
             self.layer_dict = layer_dict
             self.im_sta_fn = self.layer_dict['reference']
             self.im_mov_fn = self.layer_dict['filename']
-
             self.align_mode = self.layer_dict['alignment']['method']
 
-
-        # else:
-        #     self.layer_dict = {
-        #         "images": {
-        #             "ref": {"filename": im_sta_fn},
-        #             "base": {"filename": im_mov_fn}
-        #         },
-        #         "alignment": {
-        #             "method": "Auto-SWIM",
-        #             # "method_options": [
-        #             #     "Auto Swim Align",
-        #             #     "Match Point Align"
-        #             # ],
-        #             "method_options": {},
-        #             "method_data": {},
-        #             "method_results": {}
-        #         }
-        #     }
-        if type(init_affine_matrix) == type(None):
-            self.init_affine_matrix = swiftir.identityAffine()
+        if type(init_afm) == type(None):
+            self.init_afm = swiftir.identityAffine()
         else:
-            self.init_affine_matrix = init_affine_matrix
+            self.init_afm = init_afm
         self.cumulative_afm = swiftir.identityAffine()
 
     def __str__(self):
@@ -384,9 +338,6 @@ class alignment_process:
         else:
             s += "  rec:\n" + prefix_lines('    ', str(self.recipe)) + "\n"
         return s
-
-    # TODO ============================================================
-    '''#0707 NOTE: called in run_project_json'''
 
     def align(self, c_afm, save=True):
         logger.info('Running align_alignment_process.align_all...')
@@ -462,7 +413,6 @@ class alignment_process:
         # Set up a window size for match point alignment (1/32 of x dimension)
         # s_mp = int(siz[0] / 32.0) # size match point #orig
         # s_mp = 128 # size match point
-        # s_mp = 128 # size match point
         s_mp = alData['manual_settings'].get('swim_window_px')
 
         logger.critical("  psta_1   = " + str(psta_1))
@@ -527,8 +477,8 @@ class alignment_process:
         elif alignment_option == 'refine_affine':
             if alData['method'] == 'Auto-SWIM':
                 '''refine_affine'''
-                # self.init_affine_matrix - result from previous alignment at coarser scale
-                ingredient_2x2 = align_ingredient(mode='SWIM',name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir, ID='_2x2')
+                # self.init_afm - result from previous alignment at coarser scale
+                ingredient_2x2 = align_ingredient(mode='SWIM',name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_afm, wht=wht, ad=self.align_dir, ID='_2x2')
                 self.recipe.add_ingredient(ingredient_2x2)
             elif alData['method'] == 'Manual-Hint':
                 MAlogger.critical('\n%s (Method: Manual-Hint)...' % fn)
@@ -560,14 +510,10 @@ class alignment_process:
                                                    pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest)
                 self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
 
-
-
         # elif alignment_option == 'apply_affine':
         #     '''apply_affine'''
-        #     ingredient_apply_affine = align_ingredient(name=self.im_mov_fn, afm=self.init_affine_matrix, mode='apply_affine_align', ad=self.align_dir)
+        #     ingredient_apply_affine = align_ingredient(name=self.im_mov_fn, afm=self.init_afm, mode='apply_affine_align', ad=self.align_dir)
         #     self.recipe.add_ingredient(ingredient_apply_affine)
-
-
 
         # ingredient_check_align = \
         #     align_ingredient(ww=(wwx_f, wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)
@@ -575,6 +521,7 @@ class alignment_process:
 
         self.recipe.execute()  # DOES the alignment
         self.setCafm(c_afm, bias_mat=None)  # returns new current cafm
+        SWIMlogger.critical(f'New Cumulative AFM: {c_afm}')
         logger.critical('c_afm = %s' % str(c_afm))
 
         # Retrieve alignment result
@@ -748,15 +695,6 @@ class align_ingredient:
         self.dest = dest
         self.mir_toks = {}
         self.ID=ID
-
-
-
-        # if (swimLogger.hasHandlers()):
-        #     logger.info('Clearing swimLogger file handlers...')
-        #     swimLogger.handlers.clear()
-
-        # self.swimLogger.propagate = False
-
 
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')['tacc.utexas' in platform.node()]
@@ -1023,8 +961,7 @@ class align_ingredient:
             snr_array = self.snr
             self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
                 snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-            # logger.critical('AFM:\n' + str(afm))
-            # logger.critical('snr_report:\n' + self.snr_report)
+
             return self.afm
             '''------------------------------ END NEW ----------------------------------'''
 
@@ -1158,176 +1095,4 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 if __name__ == '__main__':
     logger.info("Running " + __file__ + ".__main__()")
 
-    CODE_MODE = 'c'
-
-    # "Tile_r1-c1_LM9R5CA1series_247.jpg",
-    # "Tile_r1-c1_LM9R5CA1series_248.jpg",
-
-    # These are the defaults
-    f1 = "vj_097_shift_rot_skew_crop_1.jpg"
-    f2 = "vj_097_shift_rot_skew_crop_2.jpg"
-    out = os.path.join("../../../../..", "aligned")
-
-    # Process and remove the fixed positional arguments
-    args = sys.argv
-    args = args[1:]  # Shift out this file name (argv[0])
-    if (len(args) > 0) and (not args[0].startswith('-')):
-        f1 = args[0]
-        f2 = args[0]
-        args = args[1:]  # Shift out the first file name argument
-        if (len(args) > 0) and (not args[0].startswith('-')):
-            f2 = args[0]
-            args = args[1:]  # Shift out the second file name argument
-            if (len(args) > 0) and (not args[0].startswith('-')):
-                out = args[0]
-                args = args[1:]  # Shift out the dest argument
-
-    # Now all of the remaining arguments should be optional
-    xbias = 0
-    ybias = 0
-    match_points = None
-    layer_dict = None
-    cumulative_afm = None
-
-    while len(args) > 0:
-        logger.info("Current args: " + str(args))
-        if args[0] == '-c':
-            logger.info("Running in 'c' mode")
-            global_swiftir_mode = 'c'
-            args = args[1:]
-        elif args[0] == '-xb':
-            args = args[1:]
-            xbias = float(args[0])
-            args = args[1:]
-        elif args[0] == '-yb':
-            args = args[1:]
-            ybias = float(args[0])
-            args = args[1:]
-        elif args[0] == '-cafm':
-            # This will be -cafm 0.1,0.2,0.3,0.4,0.5,0.6
-            #   representing [ [0.1,0.2,0.3], [0.4,0.5,0.6] ]
-            args = args[1:]
-            cafm = [float(v) for v in args[0].split(' ')[1].split(',')]
-            if len(cafm) == 6:
-                cumulative_afm = [cafm[0:3], cafm[3:6]]
-            args = args[1:]
-        elif args[0] == '-match':
-            # This will be -match 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2
-            #   representing [ [ [0.1,0.2], [0.3,0.4], [0.5,0.6] ], [ [0.7,0.8], [0.9,1.0], [1.1,1.2] ] ]
-            # Note that the first sub-array are all the match points from the first image,
-            #   and the second sub-array are corresponding match points from second image
-            # Example for tests/vj_097_shift_rot_skew_crop_1.jpg and tests/vj_097_shift_rot_skew_crop_2.jpg:
-            #   327.8,332.0,539.4,208.8,703.3,364.3,266.2,659.9,402.1,249.4,605.2,120.5,776.2,269.0,353.0,580.0
-            args = args[1:]
-            match = [float(v) for v in args[0].split(',')]
-            args = args[1:]
-            # Force the number of points to be a multiple of 4 (2 per point by 2 per pair)
-            npts = (len(match) / 2) / 2
-            if npts > 0:
-                match_points = [[], []]
-                # Split the original one dimensional array into 2 parts (one for each image)
-                m = [match[0:npts * 2], match[npts * 2:]]
-                # Group the floats for each image into pairs representing points
-                match_points[0] = [[m[0][2 * i], m[0][(2 * i) + 1]] for i in range(len(m[0]) / 2)]
-                match_points[1] = [[m[1][2 * i], m[1][(2 * i) + 1]] for i in range(len(m[1]) / 2)]
-
-                # Build the l dictionary with the match points
-                layer_dict = {
-                    "images": {
-                        "base": {
-                            "metadata": {
-                                "manual_points": match_points[0]
-                            }
-                        },
-                        "ref": {
-                            "metadata": {
-                                "manual_points": match_points[1]
-                            }
-                        }
-                    },
-                    "alignment": {
-                        "selected_method": "Match Point Align",
-                        "method_options": [
-                            "Auto-SWIM",
-                            "Manual-Hint",
-                            "Manual-Strict"
-                        ],
-                        "method_data": {},
-                        "method_results": {}
-                    }
-                }
-
-    logger.debug("Creating the alignment process")
-    align_proc = alignment_process(f1,
-                                   f2,
-                                   out,
-                                   layer_dict=layer_dict,
-                                   cumulative_afm=cumulative_afm)
-
-    if CODE_MODE == 'c':
-        logger.debug("Loading the images")
-        if not (align_proc.recipe is None):
-            if not (align_proc.recipe.ingredients is None):
-                im_sta = swiftir.loadImage(f1)
-                im_mov = swiftir.loadImage(f2)
-                for ing in align_proc.recipe.ingredients:
-                    ing.im_sta = im_sta
-                    ing.im_mov = im_mov
-
-    logger.debug("Performing the alignment")
-    align_proc.align()
-
-
-
-'''run_json_project is called by:
-single_scale_job.py
-    updated_model, need_to_write_json =  run_json_project(
-                                         datamodel = project_dict,
-                                         alignment_option = alignment_option,
-                                         s = s,
-                                         code_mode = code_mode,
-                                         start_layer = start_layer,
-                                         num_layers = num_layers )
-
-single_alignment_job.py
-   updated_model, need_to_write_json =  run_json_project(
-                                         datamodel = project_dict,
-                                         alignment_option = alignment_option,
-                                         s = s,
-                                         code_mode = code_mode,
-                                         start_layer = start_layer,
-                                         num_layers = num_layers )
-
-project_runner.py
-            self.updated_model, self.need_to_write_json = run_json_project(
-                    datamodel=self.datamodel,
-                    alignment_option=self.alignment_option,
-                    s=self.s,
-                    code_mode=self.code_mode,
-                    start_layer=self.start_layer,
-                    num_layers=self.num_layers)
-            self.datamodel = self.updated_model
-
-
-swiftir.py functions:
-loadImage
-saveImage
-affineImage # USES cv2
-apodize2
-mirIterate # USES cv2 (mirAffine)!
-stationaryToMoving
-stationaryPatches  # USES cv2 (fft)!
-movingPatches  # USES cv2 (fft)!
-multiSwim  #no cv2
-composeAffine  #no cv2
-
-wsf = alData['method_data']['win_scale_factor']  # window size s factor
-#    Previously hard-coded values for wsf chosen by trial-and-error
-#    wsf = 0.80  # Most common good value for wsf
-#    wsf = 0.75  # Also a good value for most projects
-#    wsf = 0.90
-#    wsf = 1.0
-
-
-'''
 
