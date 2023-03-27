@@ -907,18 +907,18 @@ class align_ingredient:
             MAlogger.critical('\n(MANUAL ALIGN: %s) MIR out: %s' % (self.name, str(mir_mp_out_lines)))
             MAlogger.critical('\n(MANUAL ALIGN: %s) MIR err: %s' % (self.name, str(mir_mp_err_lines)))
 
-            afm = np.eye(2, 3, dtype=np.float32)
+
             self.ww = (0.0, 0.0)
 
             '''Extract AFM from these lines:
             AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
             AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043'''
-
+            afm = np.eye(2, 3, dtype=np.float32)
             for line in mir_mp_out_lines:
                 logger.info("Line: " + str(line))
                 toks = line.strip().split()
-                # if (toks[0] == 'AF'):
-                if (toks[0] == 'AI'):
+                if (toks[0] == 'AF'):
+                # if (toks[0] == 'AI'):
                     afm[0, 0] = float(toks[1])
                     afm[0, 1] = float(toks[2])
                     afm[0, 2] = float(toks[3])
