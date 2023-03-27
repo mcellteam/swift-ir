@@ -202,7 +202,7 @@ class ProjectTab(QWidget):
 
             self.spinbox_whitening.setValue(cfg.data.manual_whitening())
 
-            # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
+            cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
 
             cfg.refViewer.signals.ptsChanged.connect(self.update_MA_widgets)
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
@@ -1680,8 +1680,8 @@ QListView::item:!selected:hover
                             state.position = cfg.baseViewer.state.position
                         if isinstance(zoom, float):
                             # if cfg.baseViewer.state.cross_section_scale < 10_000:
-                            # if cfg.baseViewer.state.cross_section_scale < 100:
-                            if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
+                            if cfg.baseViewer.state.cross_section_scale < 100:
+                            # if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.baseViewer.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
                                     logger.info(
@@ -1709,8 +1709,8 @@ QListView::item:!selected:hover
                             state.position = cfg.refViewer.state.position
                         if isinstance(zoom, float):
                             # if cfg.refViewer.state.cross_section_scale < 10_000:
-                            # if cfg.refViewer.state.cross_section_scale < 100:
-                            if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
+                            if cfg.refViewer.state.cross_section_scale < 100:
+                            # if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.refViewer.state.cross_section_scale != 1.0:
                                     logger.info(f'Updating base viewer state -> {cfg.refViewer.state.cross_section_scale}')
                                     state.cross_section_scale = cfg.refViewer.state.cross_section_scale
@@ -1981,24 +1981,24 @@ QListView::item:!selected:hover
             # self._allow_zoom_change = True
 
 
-    # def slotUpdateZoomSlider(self):
-    #     # Lets only care about REF <--> slider
-    #
-    #     caller = inspect.stack()[1].function
-    #     logger.critical(f'caller: {caller}')
-    #     try:
-    #         if getData('state,manual_mode'):
-    #             val = cfg.refViewer.state.cross_section_scale
-    #         else:
-    #             val = cfg.emViewer.state.cross_section_scale
-    #         if val:
-    #             if val != 0:
-    #                 # new_val = float(sqrt(val))
-    #                 new_val = float(val * val)
-    #                 logger.critical('new_val = %s' %str(new_val))
-    #                 self.zoomSlider.setValue(new_val)
-    #     except:
-    #         print_exception()
+    def slotUpdateZoomSlider(self):
+        # Lets only care about REF <--> slider
+
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
+        try:
+            if getData('state,manual_mode'):
+                val = cfg.refViewer.state.cross_section_scale
+            else:
+                val = cfg.emViewer.state.cross_section_scale
+            if val:
+                if val != 0:
+                    # new_val = float(sqrt(val))
+                    new_val = float(val * val)
+                    logger.critical('new_val = %s' %str(new_val))
+                    self.zoomSlider.setValue(new_val)
+        except:
+            print_exception()
 
 
 
