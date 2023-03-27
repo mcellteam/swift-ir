@@ -637,7 +637,7 @@ class align_ingredient:
     #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
     #        supplied afm matrix but do not refine the afm matrix
     def __init__(self, mode='SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
-                 iters=1, rota=None, ad=None, dest=None, alData=None, ID=''):
+                 iters=1, rota=None, ad=None, dest=None, ID=''):
         self.parent = None
         self.alData = None
         self.ingredient_mode = mode

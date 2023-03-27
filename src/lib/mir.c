@@ -48,6 +48,7 @@
 // gcc -o mir mir.c -O3 -m64 -mtune=core2 -msse3 -march=core2 -funroll-all-loops -Wl,-z-ffast-math -lfftw3f -ljpeg -ltiff -lm
 // 51.95user 79.02system 2:21.32elapsed 92%CPU
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
