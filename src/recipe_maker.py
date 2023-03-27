@@ -637,7 +637,7 @@ class align_ingredient:
     #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
     #        supplied afm matrix but do not refine the afm matrix
     def __init__(self, mode='SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
-                 iters=1, rota=None, ad=None, dest=None, ID=''):
+                 iters=1, rota=None, ad=None, dest=None, alData=None, ID=''):
         self.parent = None
         self.alData = None
         self.ingredient_mode = mode
@@ -745,12 +745,12 @@ class align_ingredient:
             swim_arg_string += ' -b ' + b_arg
             if self.alData['swim_settings']['karg']:
                 self.parent.SWIMlogger.critical(f'Adding karg argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                k_arg_name = 'pt%d_' %i + self.ID + self.alData['swim_settings']['karg_name']
+                k_arg_name = self.ID + 'pt=%d_' %i + self.alData['swim_settings']['karg_name']
                 k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                 swim_arg_string += f" -k {k_arg_path}"
             if self.alData['swim_settings']['targ']:
                 self.parent.SWIMlogger.critical(f'Adding targ argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                t_arg_name = 'pt%d_' %i + self.ID + self.alData['swim_settings']['targ_name']
+                t_arg_name = self.ID + 'pt=%d_' %i + self.alData['swim_settings']['targ_name']
                 t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
                 swim_arg_string += f" -t {t_arg_path}"
             swim_arg_string += self.alData['swim_settings']['extra_kwargs']
@@ -907,18 +907,18 @@ class align_ingredient:
             MAlogger.critical('\n(MANUAL ALIGN: %s) MIR out: %s' % (self.name, str(mir_mp_out_lines)))
             MAlogger.critical('\n(MANUAL ALIGN: %s) MIR err: %s' % (self.name, str(mir_mp_err_lines)))
 
-
+            afm = np.eye(2, 3, dtype=np.float32)
             self.ww = (0.0, 0.0)
 
             '''Extract AFM from these lines:
             AF  0.939259 0.0056992 6.42837  -0.0344578 1.00858 36.085
             AI  1.06445 -0.00601489 -6.62562  0.0363665 0.991285 -36.0043'''
-            afm = np.eye(2, 3, dtype=np.float32)
+
             for line in mir_mp_out_lines:
                 logger.info("Line: " + str(line))
                 toks = line.strip().split()
                 # if (toks[0] == 'AF'):
-                if (toks[0] == 'AI'): #Critical be sure to use inverse affine
+                if (toks[0] == 'AI'):
                     afm[0, 0] = float(toks[1])
                     afm[0, 1] = float(toks[2])
                     afm[0, 2] = float(toks[3])
