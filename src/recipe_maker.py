@@ -422,9 +422,9 @@ class alignment_process:
                 '''init_affine'''
                 '''Number of SWIMs is equal to number of points in list of SWIM windows (e.g. psta_1)'''
                 '''psta_1 is list of x,y coordinates'''
-                ingredient_1 = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest, ID='1_')
-                ingredient_2x2 = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest, ID='2x2_')
-                ingredient_2x2b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest, ID='2x2b_')
+                ingredient_1 = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr1_1x1_')
+                ingredient_2x2 = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr2_2x2_')
+                ingredient_2x2b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr3_2x2_')
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_2x2b)
@@ -435,16 +435,15 @@ class alignment_process:
                 # First ingredient is to calculate the Affine matrix from match points alone
                 # ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
                 ingredient_1_mp = align_ingredient(mode='Manual-Hint', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='1_mp_')
+                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr1_hint_')
                 # Second ingredient is to refine the Affine matrix by swimming at each match point
                 ingredient_2_mp = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir,
-                                                   dest=self.dest, ID='_2_mp')  # <-- CALL TO SWIM
-                ingredient_2_mp_b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                     pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='2_mp_b_')  # 0221+
+                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr2_SWIM_')  # <-- CALL TO SWIM
+                # ingredient_2_mp_b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
+                #                                      pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr3_SWIM_')  # 0221+
                 self.recipe.add_ingredient(ingredient_1_mp)    # set the Affine matrix
                 self.recipe.add_ingredient(ingredient_2_mp)    # further refinement
-                self.recipe.add_ingredient(ingredient_2_mp_b)  # further refinement
+                # self.recipe.add_ingredient(ingredient_2_mp_b)  # further refinement
             elif alData['method'] == 'Manual-Strict':
                 MAlogger.critical('\n%s (Method: Manual-Strict)...' % fn)
                 self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
@@ -466,13 +465,12 @@ class alignment_process:
                 # ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
                 # ingredient_1_mp = align_ingredient(name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref, pmov=self.mp_base, align_mode='manual_align', wht=wht, ad=self.align_dir, dest=self.dest)
                 ingredient_1_mp = align_ingredient(mode='Manual-Hint', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='1_mp_')
+                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr1_hint_r_')
                 # Second ingredient is to refine the Affine matrix by swimming at each match point
                 ingredient_2_mp = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir,
-                                                   dest=self.dest, ID='_2_mp')  # <-- CALL TO SWIM
+                                                   pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr2_SWIM_r_')  # <-- CALL TO SWIM
                 ingredient_2_mp_b = align_ingredient(mode='SWIM', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                     pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='2_mp_b_')  # 0221+
+                                                     pmov=self.mp_base, wht=wht, ad=self.align_dir, dest=self.dest, ID='ingr2_SWIM_r_')  # 0221+
                 self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
                 self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
                 self.recipe.add_ingredient(ingredient_2_mp_b)  # This one will use the previous Affine and refine it #0221+
@@ -639,7 +637,7 @@ class align_ingredient:
     #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
     #        supplied afm matrix but do not refine the afm matrix
     def __init__(self, mode='SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
-                 iters=2, rota=None, ad=None, dest=None, alData=None, ID=''):
+                 iters=1, rota=None, ad=None, dest=None, alData=None, ID=''):
         self.parent = None
         self.alData = None
         self.ingredient_mode = mode
@@ -747,12 +745,12 @@ class align_ingredient:
             swim_arg_string += ' -b ' + b_arg
             if self.alData['swim_settings']['karg']:
                 self.parent.SWIMlogger.critical(f'Adding karg argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                k_arg_name = self.ID + self.alData['swim_settings']['karg_name'] + '_%d_' %i
+                k_arg_name = 'pt=%d_' %i + self.ID + self.alData['swim_settings']['karg_name']
                 k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                 swim_arg_string += f" -k {k_arg_path}"
             if self.alData['swim_settings']['targ']:
                 self.parent.SWIMlogger.critical(f'Adding targ argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                t_arg_name = self.ID + self.alData['swim_settings']['targ_name'] + '_%d_' %i
+                t_arg_name = 'pt=%d_' %i + self.ID + self.alData['swim_settings']['targ_name']
                 t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
                 swim_arg_string += f" -t {t_arg_path}"
             swim_arg_string += self.alData['swim_settings']['extra_kwargs']
