@@ -745,12 +745,12 @@ class align_ingredient:
             swim_arg_string += ' -b ' + b_arg
             if self.alData['swim_settings']['karg']:
                 self.parent.SWIMlogger.critical(f'Adding karg argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                k_arg_name = 'pt=%d_' %i + self.ID + self.alData['swim_settings']['karg_name']
+                k_arg_name = 'pt%d_' %i + self.ID + self.alData['swim_settings']['karg_name']
                 k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                 swim_arg_string += f" -k {k_arg_path}"
             if self.alData['swim_settings']['targ']:
                 self.parent.SWIMlogger.critical(f'Adding targ argument for {os.path.basename(self.recipe.im_mov_fn)}')
-                t_arg_name = 'pt=%d_' %i + self.ID + self.alData['swim_settings']['targ_name']
+                t_arg_name = 'pt%d_' %i + self.ID + self.alData['swim_settings']['targ_name']
                 t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
                 swim_arg_string += f" -t {t_arg_path}"
             swim_arg_string += self.alData['swim_settings']['extra_kwargs']
