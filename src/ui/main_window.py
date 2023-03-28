@@ -1809,28 +1809,27 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info('caller: %s' % str(caller))
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
-        if caller in ('dataUpdateWidgets'):
-            return
-        requested = self._sectionSlider.value()
-        if self._isProjectTab():
-            logger.critical('Jumping To Section #%d' % requested)
-            cfg.data.zpos = requested
-            # if not getData('state,manual_mode'):
-            #     cfg.emViewer._layer = requested
+        if caller == 'main':
+            requested = self._sectionSlider.value()
+            if self._isProjectTab():
+                logger.critical('Jumping To Section #%d' % requested)
+                cfg.data.zpos = requested
+                # if not getData('state,manual_mode'):
+                #     cfg.emViewer._layer = requested
 
-            for viewer in cfg.project_tab.get_viewers():
-                viewer.set_layer(cfg.data.zpos)
+                for viewer in cfg.project_tab.get_viewers():
+                    viewer.set_layer(cfg.data.zpos)
 
-            # if getData('state,manual_mode'):
-            # cfg.project_tab.initNeuroglancer()
-            # cfg.emViewer.loc = requested
-            # else:
-            #     for v in cfg.project_tab.get_viewers():
-            #         v.set_layer(requested)
-            self.dataUpdateWidgets()
+                # if getData('state,manual_mode'):
+                # cfg.project_tab.initNeuroglancer()
+                # cfg.emViewer.loc = requested
+                # else:
+                #     for v in cfg.project_tab.get_viewers():
+                #         v.set_layer(requested)
+                self.dataUpdateWidgets()
 
-        try:     self._jumpToLineedit.setText(str(requested))
-        except:  logger.warning('Current Section Widget Failed to Update')
+            try:     self._jumpToLineedit.setText(str(requested))
+            except:  logger.warning('Current Section Widget Failed to Update')
 
 
     @Slot()
