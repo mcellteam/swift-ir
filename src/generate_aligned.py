@@ -22,7 +22,7 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=True, stageit=False):
+def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False):
     logger.critical(f'\n\n\n\ngenerating aligned reallocate_zarr={reallocate_zarr}...')
 
 
