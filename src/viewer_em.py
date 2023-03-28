@@ -110,6 +110,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed_any(self):
+        logger.critical(f'zpos={cfg.data.zpos}')
         # if self._zmag_set < 10:
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
