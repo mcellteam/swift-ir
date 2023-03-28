@@ -1882,7 +1882,10 @@ class MainWindow(QMainWindow):
                 if self._isProjectTab():
                     # self.jump_to(cfg.data.zpos)
                     # self.updateToolbar()
-                    cfg.project_tab.updateProjectLabels()
+                    try:
+                        cfg.project_tab.updateProjectLabels()
+                    except:
+                        pass
                     self.updateEnabledButtons()
                     self._bbToggle.setChecked(cfg.data.has_bb())
                     self.dataUpdateWidgets()

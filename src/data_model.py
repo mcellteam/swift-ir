@@ -211,9 +211,12 @@ class DataModel:
         #     return True
         # else:
         #     return False
-        if len(os.listdir(os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val()))) > 3:
-            return True
-        else:
+        try:
+            if len(os.listdir(os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val()))) > 3:
+                return True
+            else:
+                return False
+        except:
             return False
 
 
