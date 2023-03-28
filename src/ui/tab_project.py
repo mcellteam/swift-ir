@@ -1787,9 +1787,10 @@ QListView::item:!selected:hover
         cfg.main_window.hud.post('Deleting All Reference Image Manual Correspondence Points from Buffer...')
         cfg.refViewer.pts.clear()
         self.MA_ptsListWidget_ref.clear()
-        cfg.refViewer.draw_point_annotations()
         self.update_MA_widgets()
-        # self.initNeuroglancer()
+        # cfg.refViewer.draw_point_annotations()
+        cfg.refViewer.drawSWIMwindow()
+        cfg.baseViewer.drawSWIMwindow()
 
 
     def deleteAllMpBase(self):
@@ -1797,9 +1798,10 @@ QListView::item:!selected:hover
         cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
         cfg.baseViewer.pts.clear()
         self.MA_ptsListWidget_base.clear()
-        cfg.baseViewer.draw_point_annotations()
         self.update_MA_widgets()
-        # self.initNeuroglancer()
+        # cfg.baseViewer.draw_point_annotations()
+        cfg.refViewer.drawSWIMwindow()
+        cfg.baseViewer.drawSWIMwindow()
 
 
     def deleteAllMp(self):
