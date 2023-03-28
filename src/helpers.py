@@ -767,7 +767,7 @@ def initLogFiles():
         os.mkdir(logpath)
     open(os.path.join(logpath, 'exceptions.log'), 'a').close()
     open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
-    open(os.path.join(logpath, 'recipe_maker.log'), 'a').close()
+    open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
     open(os.path.join(logpath, 'swim.log'), 'a').close()
     open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
 
