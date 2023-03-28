@@ -2745,12 +2745,12 @@ class MainWindow(QMainWindow):
 
     def enterExitManAlignMode(self):
         if cfg.data:
-            if not cfg.data.is_aligned_and_generated():
-                logger.warning('Cannot enter manual alignment mode until the series is aligned.')
-                self.warn('Align the series first and then use Manual Alignment.')
-                return
             if self._isProjectTab():
                 if not getData('state,manual_mode'):
+                    if not cfg.data.is_aligned_and_generated():
+                        logger.warning('Cannot enter manual alignment mode until the series is aligned.')
+                        self.warn('Align the series first and then use Manual Alignment.')
+                        return
                     self.enter_man_mode()
                 else:
                     self.exit_man_mode()
