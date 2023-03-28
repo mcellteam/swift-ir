@@ -181,8 +181,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # return self.state.position
 
     def set_position(self, val):
-        with self.txn() as s:
-            s.position = val
+        if self.type != 'EMViewerStage':  # Critical!
+            with self.txn() as s:
+                s.position = val
 
     def moveUpBy(self, val):
         pos = self.position()
@@ -214,15 +215,17 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # return self.state.crossSectionScale
 
     def set_zoom(self, val):
-        self._blockZoom = True
-        with self.txn() as s:
-            s.crossSectionScale = val
-        self._blockZoom = False
+        if self.type != 'EMViewerStage':  # Critical!
+            self._blockZoom = True
+            with self.txn() as s:
+                s.crossSectionScale = val
+            self._blockZoom = False
 
     def set_layer(self, index):
-        state = copy.deepcopy(self.state)
-        state.position[0] = index
-        self.set_state(state)
+        if self.type != 'EMViewerStage': #Critical!
+            state = copy.deepcopy(self.state)
+            state.position[0] = index
+            self.set_state(state)
 
     def set_brightness(self, val=None):
         state = copy.deepcopy(self.state)
