@@ -859,6 +859,12 @@ class DataModel:
         logger.info(f"Writing manual points to project dictionary, s={s}, l={l}")
         self.stack()[l]['alignment']['manual_points'][role] = matchpoints
         self.set_manual_points_mir(role, matchpoints, s, l)
+        if role == 'base':
+            if l+1 in range(0,len(self)):
+                self.stack()[l+1]['alignment']['manual_points']['ref'] = matchpoints
+                self.set_manual_points_mir('ref', matchpoints, s, l+1)
+
+
 
 
     # def set_manual_points_color(self, role, matchpoints, colors, s=None, l=None):
