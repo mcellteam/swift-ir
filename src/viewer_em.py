@@ -246,7 +246,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def _set_zmag(self):
         if self._zmag_set < 8:
             self._zmag_set += 1
-            logger.info(f'Setting Z-mag on {self.type}')
+            logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
             try:
                 # logger.critical(f'Setting Z-mag on {self.type}')
                 with self.txn() as s:
@@ -255,7 +255,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 print_exception()
 
     def set_zmag(self, val=10):
-        logger.info(f'Setting Z-mag on {self.type}')
+        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
