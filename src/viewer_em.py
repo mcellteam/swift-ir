@@ -56,7 +56,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.cs_scale = None
         self._crossSectionScale = 1
         self.created = datetime.datetime.now()
-        self._layer = None
+        # self._layer = None
+        self._layer = cfg.data.zpos
         self.scale = cfg.data.scale
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self._blockZoom = False
