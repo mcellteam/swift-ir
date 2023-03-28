@@ -876,8 +876,9 @@ class ProjectTab(QWidget):
             cfg.main_window.hud.post('Aligning...')
             # self.applyMps()
 
-            cfg.main_window.alignGenerateOne()
-            # cfg.main_window.regenerateOne()
+            cfg.main_window.alignOne()
+            # cfg.main_window.alignGenerateOne()
+            cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
             cfg.main_window.hud.done()
         self.btnRealignMA = QPushButton('Align && Regenerate')
         # self.btnRealignMA.setStyleSheet()
@@ -957,7 +958,7 @@ class ProjectTab(QWidget):
 
         self.MA_sbw = HWidget(gb1, gb2)
         self.MA_sbw.layout.setSpacing(0)
-        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select corresponding points (3 points for affine)\n"
+        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select at least 3 corresponding points\n"
                                               "type 's' to SWIM")
         self.msg_MAinstruct.setFixedSize(360, 34)
         self.msg_MAinstruct.hide()

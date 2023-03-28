@@ -650,7 +650,7 @@ class MainWindow(QMainWindow):
     def regenerate(self, scale, start=0, end=None) -> None:
         if self._working == True: self.warn('Another Process is Already Running'); return
         if not cfg.data.is_aligned(s=scale): self.warn('Scale Must Be Aligned First'); return
-        cfg.nTasks = 2
+        cfg.nTasks = 3
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
@@ -934,6 +934,7 @@ class MainWindow(QMainWindow):
             reallocate_zarr=False,
             stageit=True,
             align_one=True,
+            swim_only=False
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
