@@ -677,7 +677,7 @@ class MAViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def set_zmag(self, val=10):
-        logger.info(f'Setting Z-mag on {self.type} to {val} [{self.role}]')
+        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} to {val} [{self.role}]')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
@@ -694,7 +694,7 @@ class MAViewer(neuroglancer.Viewer):
     def _set_zmag(self):
 
         if self._zmag_set < 8:
-            logger.info(f'Setting Z-mag on {self.type} [{self.role}]')
+            logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} [{self.role}]')
             self._zmag_set += 1
             try:
                 with self.txn() as s:

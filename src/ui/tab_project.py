@@ -2043,7 +2043,7 @@ QListView::item:!selected:hover
 
 
     def setZmag(self, val):
-        logger.info(f'Setting Z-mag to {val}...')
+        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val}...')
         try:
             state = copy.deepcopy(cfg.emViewer.state)
             state.relative_display_scales = {'z': val}
