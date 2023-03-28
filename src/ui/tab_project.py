@@ -1660,7 +1660,7 @@ QListView::item:!selected:hover
             _, x, y = p.point.tolist()
             item = QListWidgetItem('%d: y=%.1f,  x=%.1f' % (i, x, y))
             # item.setBackground(QColor(self.mp_colors[n]))
-            item.setBackground(QColor(list(cfg.baseViewer.pts)[i]))
+            item.setBackground(QColor(list(cfg.refViewer.pts)[i]))
             self.MA_ptsListWidget_ref.addItem(item)
             n += 1
         self.MA_refNextColorLab.setStyleSheet(
