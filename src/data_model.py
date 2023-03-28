@@ -204,10 +204,17 @@ class DataModel:
     def is_aligned_and_generated(self, s=None) -> bool:
         if s == None: s = self.scale
         #Todo improve this, cache it or something
-        if s in get_scales_with_generated_alignments(self.scales()):
+
+        # if s in get_scales_with_generated_alignments(self.scales()):
+        #     return True
+        # else:
+        #     return False
+        if len(os.listdir(os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val()))) > 3:
             return True
         else:
             return False
+
+
 
     def numCorrSpots(self, s=None, l=None):
         if s == None: s = self.scale
