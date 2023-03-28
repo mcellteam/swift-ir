@@ -811,12 +811,12 @@ class ProjectTab(QWidget):
         self.fl_actionsMA.addWidget(HWidget(vw, self.combo_method))
 
 
-        self.btnRunSwimMA = QPushButton('SWIM')
+        self.btnRunSwimMA = QPushButton('Quick SWIM')
         self.btnRunSwimMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRunSwimMA.setMaximumHeight(20)
         self.btnRunSwimMA.setMaximumWidth(60)
         self.btnRunSwimMA.clicked.connect(cfg.main_window.alignOne)
-        self.btnRunSwimMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btnRunSwimMA.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif;')
 
         def fn():
             try:
@@ -1887,6 +1887,9 @@ QListView::item:!selected:hover
 
     def onEnterManualMode(self):
         logger.info('onEnterManualMode >>>>')
+        logger.info('Deleting viewers...')
+        for v in self.get_viewers():
+            del v
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         # self.w_ng_display_ext.hide() # change layout before initializing viewer
