@@ -564,7 +564,7 @@ class MainWindow(QMainWindow):
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
-        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         self.set_status('Autoscaling...')
         self._disableGlobTabs()
@@ -654,7 +654,7 @@ class MainWindow(QMainWindow):
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
-        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         logger.info('Regenerate Aligned Images...')
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
@@ -787,7 +787,7 @@ class MainWindow(QMainWindow):
         with open(swim_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
 
-        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.stopPlaybackTimer()
         self._disableGlobTabs()
         if not cfg.ignore_pbar:
@@ -1052,7 +1052,7 @@ class MainWindow(QMainWindow):
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
-        self.pbarLabel.setText('Processing (0/%d)...' % cfg.nTasks)
+        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         self.stopNgServer() #0202-
         self._disableGlobTabs()
@@ -5605,7 +5605,7 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
 
         self.pbar_widget.setLayout(self.status_bar_layout)
-        self.pbarLabel = QLabel('Processing... ')
+        self.pbarLabel = QLabel('Task... ')
         self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)
         self.status_bar_layout.addWidget(self.pbar_cancel_button)
@@ -5632,7 +5632,7 @@ class MainWindow(QMainWindow):
     def setPbarText(self, text: str):
         # logger.critical('')
         self.pbar.setFormat('(%p%) ' + text)
-        self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
+        self.pbarLabel.setText('Task (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         # logger.info('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         # self.repaint()
         QApplication.processEvents()
