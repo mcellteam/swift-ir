@@ -1888,8 +1888,6 @@ QListView::item:!selected:hover
     def onEnterManualMode(self):
         logger.info('onEnterManualMode >>>>')
         logger.info('Deleting viewers...')
-        for v in self.get_viewers():
-            del v
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         # self.w_ng_display_ext.hide() # change layout before initializing viewer

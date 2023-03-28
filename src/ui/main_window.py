@@ -2758,6 +2758,11 @@ class MainWindow(QMainWindow):
     def enter_man_mode(self):
         if cfg.data.is_aligned_and_generated():
             logger.critical('Entering Manual Align Mode...')
+            for v in cfg.project_tab.get_viewers():
+                try:
+                    del v
+                except:
+                    logger.warning(f'Unable to delete viewer: {str(v)}')
             self.tell('Entering Manual Align Mode...')
             self.combo_mode.setCurrentIndex(2)
             setData('state,previous_mode', getData('state,mode'))
@@ -2777,6 +2782,14 @@ class MainWindow(QMainWindow):
     def exit_man_mode(self):
         logger.critical('exit_man_mode >>>>')
         self.tell('Exiting Manual Align Mode...')
+
+        try:
+            del cfg.refViewer
+            del cfg.baseViewer
+            del cfg.stageViewer
+        except:
+            print_exception()
+
         self.setWindowTitle(self.window_title)
         if getData('state,previous_mode') == 'stack':
             setData('state,ng_layout', '4panel')
