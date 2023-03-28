@@ -600,20 +600,20 @@ def get_scales_with_generated_alignments(scales) -> list:
 def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
     caller = inspect.stack()[1].function
-    # logger.info('called by %s' % inspect.stack()[1].function)
+    logger.critical('called by %s' % inspect.stack()[1].function)
     if cfg.data:
         zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
-            logger.debug(f"Path Not Found: {zarr_path}")
+            logger.critical(f"Path Not Found: {zarr_path}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-            logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
+            logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '.zarray')):
-            logger.debug(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
+            logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-            logger.debug(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+            logger.critical(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
             result = False
         else:
             result = True
