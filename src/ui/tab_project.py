@@ -1095,6 +1095,7 @@ class ProjectTab(QWidget):
             # cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
+            self.update()
         self.MA_settings_defaults_button = QPushButton('Restore Defaults')
         self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
         self.MA_settings_defaults_button.clicked.connect(fn)
