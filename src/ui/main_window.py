@@ -3018,7 +3018,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setStatusTip('Refresh')
 
         self.combo_mode = QComboBox(self)
-        self.combo_mode.setFixedSize(160, 18)
+        self.combo_mode.setFixedSize(150, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Stack View', 'Comparison View', 'Manual Align Mode']
         self.combo_mode.addItems(items)

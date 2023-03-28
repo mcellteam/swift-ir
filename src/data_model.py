@@ -146,6 +146,8 @@ class DataModel:
 
     @zpos.setter
     def zpos(self, index):
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
         if int(index) in range(len(self)):
             self['data']['z_position'] = int(index)
