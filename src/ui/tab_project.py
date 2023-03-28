@@ -1761,6 +1761,8 @@ QListView::item:!selected:hover
             if del_key in cfg.baseViewer.pts.keys():
                 cfg.baseViewer.pts.pop(del_key)
             # cfg.baseViewer.draw_point_annotations()
+        cfg.refViewer.applyMps()
+        cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
         self.update_MA_widgets()
@@ -1779,6 +1781,8 @@ QListView::item:!selected:hover
             if del_key in cfg.refViewer.pts.keys():
                 cfg.refViewer.pts.pop(del_key)
             # cfg.baseViewer.draw_point_annotations()
+        cfg.refViewer.applyMps()
+        cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
         self.update_MA_widgets()
@@ -1792,6 +1796,8 @@ QListView::item:!selected:hover
         self.MA_ptsListWidget_ref.clear()
         self.update_MA_widgets()
         # cfg.refViewer.draw_point_annotations()
+        cfg.refViewer.applyMps()
+        cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
 
@@ -1803,6 +1809,8 @@ QListView::item:!selected:hover
         self.MA_ptsListWidget_base.clear()
         self.update_MA_widgets()
         # cfg.baseViewer.draw_point_annotations()
+        cfg.refViewer.applyMps()
+        cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
 
@@ -1819,6 +1827,8 @@ QListView::item:!selected:hover
         # cfg.refViewer.draw_point_annotations()
         # cfg.baseViewer.draw_point_annotations()
         # self.update_MA_widgets()
+        cfg.refViewer.applyMps()
+        cfg.baseViewer.applyMps()
         cfg.refViewer.undraw_point_annotations()
         cfg.baseViewer.undraw_point_annotations()
         # self.initNeuroglancer()

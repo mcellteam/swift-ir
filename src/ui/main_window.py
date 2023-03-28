@@ -44,6 +44,9 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget
 
+
+
+
 import src.config as cfg
 import src.shaders
 from src.background_worker import BackgroundWorker
@@ -3552,6 +3555,9 @@ class MainWindow(QMainWindow):
         fileMenu = self.menu.addMenu('File')
 
         self.newAction = QAction('&New Project...', self)
+        # def fn():
+        #     if self._isProjectTab():
+        #         cfg.project_tab.
         self.newAction.triggered.connect(self.new_project)
         self.newAction.setShortcut('Ctrl+N')
         self.addAction(self.newAction)
