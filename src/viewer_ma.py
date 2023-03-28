@@ -73,9 +73,7 @@ class MAViewer(neuroglancer.Viewer):
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(self.on_state_changed_any)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-
         self.signals.ptsChanged.connect(self.drawSWIMwindow)
-
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'MAViewer'
 
@@ -87,9 +85,6 @@ class MAViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.scale)), )
 
         # self.restoreManAlignPts()
-
-
-
         self.initViewer()
 
 
@@ -528,9 +523,6 @@ class MAViewer(neuroglancer.Viewer):
                 ng.LineAnnotation(id='L14', pointA=BC, pointB=C, props=[color3, marker_size]),
                 ng.LineAnnotation(id='L15', pointA=C, pointB=CD, props=[color3, marker_size]),
                 ng.LineAnnotation(id='L16', pointA=CD, pointB=CP, props=[color3, marker_size]),
-
-
-
 
             ]
 

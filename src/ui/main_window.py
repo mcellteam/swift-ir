@@ -3251,8 +3251,6 @@ class MainWindow(QMainWindow):
 
         cfg.project_tab = None
         cfg.zarr_tab = None
-        cfg.emViewer = None
-        cfg.data = None
         self.globTabs.show() #nec?
         self.enableAllTabs()  #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
