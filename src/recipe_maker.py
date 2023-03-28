@@ -445,11 +445,11 @@ class alignment_process:
                 # Second ingredient is to refine the Affine matrix by swimming at each match point
                 ingredient_2_mp = align_ingredient(mode='SWIM-Manual', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
                                                    pmov=self.mp_base, wht=wht, ad=self.align_dir, ID='ingr2_SWIM_')  # <-- CALL TO SWIM
-                ingredient_2_mp_b = align_ingredient(mode='SWIM-Manual', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
-                                                     pmov=self.mp_base, wht=wht, ad=self.align_dir, ID='ingr3_SWIM_')  # 0221+
+                # ingredient_2_mp_b = align_ingredient(mode='SWIM-Manual', name=self.im_mov_fn, ww=s_mp, psta=self.mp_ref,
+                #                                      pmov=self.mp_base, wht=wht, ad=self.align_dir, ID='ingr3_SWIM_')  # 0221+
                 self.recipe.add_ingredient(ingredient_1_mp)    # set the Affine matrix
                 self.recipe.add_ingredient(ingredient_2_mp)    # further refinement
-                self.recipe.add_ingredient(ingredient_2_mp_b)  # further refinement
+                # self.recipe.add_ingredient(ingredient_2_mp_b)  # further refinement
             elif alData['method'] == 'Manual-Strict':
                 MAlogger.critical('\n%s (Method: Manual-Strict)...' % fn)
                 self.mp_base = np.array(self.layer_dict['alignment']['manual_points_mir']['base']).transpose()
@@ -617,7 +617,7 @@ class align_ingredient:
     #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
     #        supplied afm matrix but do not refine the afm matrix
     def __init__(self, mode='SWIM', name=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68,
-                 iters=3, rota=None, ad=None, ID=''):
+                 iters=1, rota=None, ad=None, ID=''):
         self.parent = None
         self.alData = None
         self.ingredient_mode = mode
