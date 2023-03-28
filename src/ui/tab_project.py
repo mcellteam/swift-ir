@@ -1707,6 +1707,7 @@ QListView::item:!selected:hover
                         if isinstance(zoom, float):
                             # if cfg.baseViewer.state.cross_section_scale < 10_000:
                             if cfg.baseViewer.state.cross_section_scale < 100:
+                            # if cfg.baseViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
                             # if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.baseViewer.state.cross_section_scale != 1.0:
                                     state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
@@ -1736,6 +1737,7 @@ QListView::item:!selected:hover
                         if isinstance(zoom, float):
                             # if cfg.refViewer.state.cross_section_scale < 10_000:
                             if cfg.refViewer.state.cross_section_scale < 100:
+                            # if cfg.refViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
                             # if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.refViewer.state.cross_section_scale != 1.0:
                                     logger.info(f'Updating base viewer state -> {cfg.refViewer.state.cross_section_scale}')

@@ -241,6 +241,10 @@ class MAViewer(neuroglancer.Viewer):
         caller = inspect.stack()[1].function
         logger.critical(f'zpos={cfg.data.zpos}')
 
+        # if not self.cs_scale:
+        #     if self.state.crossSectionScale < .001:
+        #         self.cs_scale = self.state.crossSectionScale
+
         # if self._zmag_set < 10:
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
@@ -260,13 +264,13 @@ class MAViewer(neuroglancer.Viewer):
         #     return
 
 
-        self.signals.stateChanged.emit()
-
+        # self.signals.stateChanged.emit()
+        #
         # zoom = self.state.cross_section_scale
         # if zoom:
-        #     if zoom != self._crossSectionScale:
-        #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-        #         self.signals.zoomChanged.emit(zoom)
+        #     # if zoom != self._crossSectionScale:
+        #     #     logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+        #     #     self.signals.zoomChanged.emit(zoom)
         #     self._crossSectionScale = zoom
 
 
