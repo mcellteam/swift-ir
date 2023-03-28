@@ -634,11 +634,6 @@ class align_ingredient:
         self.snr = None
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
-        # self.ad = ad
-        # self.scale_directory = os.path.abspath(
-        #     os.path.dirname(os.path.dirname(self.ad)))  # self.ad = project/scale_X/img_aligned/
-        # self.project_directory = os.path.abspath(
-        #     os.path.dirname(self.scale_directory))  # self.ad = project/scale_X/img_aligned/
         self.swim_str = None
         self.mir_script = None
         self.mir_script_mp = None
@@ -705,15 +700,10 @@ class align_ingredient:
         # k_arg = os.path.join(scale_dir, 'keep_' + os.path.basename(self.recipe.im_mov_fn))
         # t_arg = os.path.join(scale_dir, 'target_' + os.path.basename(self.recipe.im_mov_fn))
 
-        #  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx paty rota # NOT THIS
-        #  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx paty afm0 afm1 afm2 afm3
-        #  ^ initial rotation form of SWIM
-
         # f'{self.psta[0][i]} {self.psta[1][i]} {self.pmov[0][i]} {self.pmov[1][i]}\n'
 
         # for i in range(len(self.psta[0])):
         #     mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} {self.pmov[0][i]} {self.pmov[1][i]}\n'
-
 
         k_arg_path, t_arg_path = '', ''
         k_arg_name, t_arg_name = '', ''
@@ -759,10 +749,7 @@ class align_ingredient:
             swim_arg_string += ' ' + rota_arg
             swim_arg_string += ' ' + afm_arg
             swim_arg_string += self.alData['swim_settings']['extra_args']
-            self.parent.SWIMlogger.critical('2')
 
-            # default -f is 3x3
-            # logger.critical('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
 
 

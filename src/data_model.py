@@ -93,7 +93,8 @@ class DataModel:
         return result
 
     def __deepcopy__(self, memo):
-        logger.critical('\n\n\nCreating __deepcopy__ of DataModel...\n\n')
+        caller = inspect.stack()[1].function
+        logger.critical(f'\n\n\nCreating __deepcopy__ of DataModel [{caller}]...\n\n')
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
