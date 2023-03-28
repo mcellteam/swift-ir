@@ -371,6 +371,7 @@ class MAViewer(neuroglancer.Viewer):
             _, x, y = p.point.tolist()
             pts.append((x, y))
         cfg.data.set_manual_points(self.role, pts)
+        # cfg.data.set_manual_points_color(self.role, pts)
         cfg.data.print_all_match_points()
 
 

@@ -861,6 +861,15 @@ class DataModel:
         self.set_manual_points_mir(role, matchpoints, s, l)
 
 
+    # def set_manual_points_color(self, role, matchpoints, colors, s=None, l=None):
+    #     if s == None: s = self.scale
+    #     if l == None: l = self.zpos
+    #     logger.critical('l=%d, s=%s, role=%s, mps=%s' % (l, s, role, str(matchpoints)))
+    #     logger.info(f"Writing manual points to project dictionary, s={s}, l={l}")
+    #     self.stack()[l]['alignment']['manual_points_color'][color][role] = matchpoints
+    #     self.set_manual_points_mir(role, matchpoints, s, l)
+
+
     def set_manual_points_mir(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
