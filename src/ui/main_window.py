@@ -2245,7 +2245,7 @@ class MainWindow(QMainWindow):
                         name += ".swiftir"
                     logger.info('Save Name: %s' % name)
                     with open(name, 'w') as f: f.write(proj_json)
-                    del data_cp
+                    data_cp = None
                     self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
                 except:
                     print_exception()
@@ -2760,7 +2760,7 @@ class MainWindow(QMainWindow):
             logger.critical('Entering Manual Align Mode...')
             for v in cfg.project_tab.get_viewers():
                 try:
-                    del v
+                    v = None
                 except:
                     logger.warning(f'Unable to delete viewer: {str(v)}')
             self.tell('Entering Manual Align Mode...')
@@ -2784,9 +2784,9 @@ class MainWindow(QMainWindow):
         self.tell('Exiting Manual Align Mode...')
 
         try:
-            del cfg.refViewer
-            del cfg.baseViewer
-            del cfg.stageViewer
+            cfg.refViewer = None
+            cfg.baseViewer = None
+            cfg.stageViewer = None
         except:
             print_exception()
 
