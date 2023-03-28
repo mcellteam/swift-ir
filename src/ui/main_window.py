@@ -5632,7 +5632,7 @@ class MainWindow(QMainWindow):
     def setPbarText(self, text: str):
         # logger.critical('')
         self.pbar.setFormat('(%p%) ' + text)
-        self.pbarLabel.setText('Task (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
+        self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         # logger.info('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         # self.repaint()
         QApplication.processEvents()
