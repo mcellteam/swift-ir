@@ -1420,7 +1420,10 @@ class MainWindow(QMainWindow):
                         except:
                             print_exception()
 
-                logger.critical(f'cfg.data.zpos = {cfg.data.zpos}')
+                if cfg.project_tab._tabs.currentIndex() == 3:
+                    cfg.snrViewer.set_layer(cfg.data.zpos)
+
+                # logger.critical(f'cfg.data.zpos = {cfg.data.zpos}')
                 # self.statusBar.showMessage(cfg.data.name_base(), 1000)
 
                 self.statusBar.showMessage(cfg.data.name_base())
@@ -1445,6 +1448,7 @@ class MainWindow(QMainWindow):
                 cur = cfg.data.zpos
                 if self.notes.isVisible():
                     self.updateNotes()
+
 
                 self._btn_prevSection.setEnabled(cur > 0)
                 self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
