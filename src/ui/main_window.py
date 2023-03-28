@@ -1397,7 +1397,9 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.info(f'Updating widgets (caller: {caller})...')
+        logger.info(f'Updating widgets (caller: {caller}, zpos={cfg.data.zpos})...')
+        if ng_layer:
+            logger.info(f'ng_layer (requested): {ng_layer}')
 
         if self._isProjectTab():
             if cfg.data:
@@ -1408,14 +1410,17 @@ class MainWindow(QMainWindow):
                     self.warn("Can't update GUI now - working...")
                     return
                 if isinstance(ng_layer, int):
-                    try:
-                        if 0 <= ng_layer < len(cfg.data):
-                            logger.debug(f'Setting Layer: {ng_layer}')
-                            cfg.data.zpos = ng_layer
-                            # self._sectionSlider.setValue(ng_layer)
-                    except:
-                        print_exception()
+                    if type(ng_layer) != bool:
+                        logger.info (f'ng_layer is type {type(ng_layer)}')
+                        try:
+                            if 0 <= ng_layer < len(cfg.data):
+                                logger.critical(f'Setting Layer: {ng_layer}')
+                                cfg.data.zpos = ng_layer
+                                # self._sectionSlider.setValue(ng_layer)
+                        except:
+                            print_exception()
 
+                logger.critical(f'cfg.data.zpos = {cfg.data.zpos}')
                 # self.statusBar.showMessage(cfg.data.name_base(), 1000)
 
                 self.statusBar.showMessage(cfg.data.name_base())
@@ -1589,7 +1594,7 @@ class MainWindow(QMainWindow):
                 except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
                 # cfg.project_tab.slotUpdateZoomSlider()
 
-        logger.info('<<<< dataUpdateWidgets')
+        logger.info(f'<<<< dataUpdateWidgets [zpos={cfg.data.zpos}]')
 
 
 
@@ -1807,9 +1812,10 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' % str(caller))
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
         if caller == 'main':
+
+            logger.critical(f'zpos = {cfg.data.zpos} >>>>')
             requested = self._sectionSlider.value()
             if self._isProjectTab():
                 logger.critical('Jumping To Section #%d' % requested)
@@ -1830,6 +1836,7 @@ class MainWindow(QMainWindow):
 
             try:     self._jumpToLineedit.setText(str(requested))
             except:  logger.warning('Current Section Widget Failed to Update')
+            logger.critical(f'<<<< zpos = {cfg.data.zpos}')
 
 
     @Slot()
