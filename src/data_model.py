@@ -456,6 +456,7 @@ class DataModel:
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
         self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
+        self._data['state']['stage_viewer'].setdefault('show_overlay_message', True)
         self._data['state'].setdefault('manual_mode', False)
         self._data['state'].setdefault('mode', 'comparison')
         self._data['state'].setdefault('previous_mode', 'comparison')
@@ -888,6 +889,11 @@ class DataModel:
     #     self.stack()[l]['alignment']['manual_points_color'][color][role] = matchpoints
     #     self.set_manual_points_mir(role, matchpoints, s, l)
 
+
+    def manual_points_mir(self, role, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self.stack()[l]['alignment']['manual_points_mir'][role]
 
     def set_manual_points_mir(self, role, matchpoints, s=None, l=None):
         if s == None: s = self.scale

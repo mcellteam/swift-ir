@@ -15,7 +15,8 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
-from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, QDoubleValidator
+from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, QDoubleValidator, \
+    QIntValidator
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import getOpt, setOpt, getData, setData
@@ -155,7 +156,8 @@ class ProjectTab(QWidget):
         cfg.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
         # cfg.snrViewer.initViewerSbs(orientation='vertical')
         self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
-        cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        # cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        cfg.snrViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
         cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)
         self.updateNeuroglancer()
 
@@ -213,8 +215,8 @@ class ProjectTab(QWidget):
             cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
 
 
-            cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            # cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
+            # cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
 
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
@@ -240,8 +242,8 @@ class ProjectTab(QWidget):
             logger.info('Initializing...')
             # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer = EMViewer(webengine=self.webengine)
-            cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            # cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.emViewer.signals.stateChangedAny.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
@@ -302,8 +304,8 @@ class ProjectTab(QWidget):
 
         self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
         # this fixes detailsSection not displaying immediately on start project
-        # self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
-        self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+        self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
+        # self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
 
         # self.webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
@@ -350,7 +352,6 @@ class ProjectTab(QWidget):
         vbl.addWidget(lab, alignment=Qt.AlignBaseline)
         vbl.addWidget(self.hud_overlay)
         self._ProcessMonitorWidget.setLayout(vbl)
-
 
 
         w = QWidget()
@@ -687,7 +688,13 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; font-weight: 600px;')
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
+
         self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
+        def fn():
+            self.MA_ptsListWidget_base.selectionModel().clear()
+
+        self.MA_ptsListWidget_ref.itemSelectionChanged.connect(fn)
         self.MA_ptsListWidget_ref.setMaximumHeight(64)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
@@ -700,7 +707,12 @@ class ProjectTab(QWidget):
         # self.MA_refNextColorLab.setMaximumHeight(12)
         self.MA_refNextColorLab.setFixedSize(60, 18)
 
+
         self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
+        def fn():
+            self.MA_ptsListWidget_ref.selectionModel().clear()
+        self.MA_ptsListWidget_base.itemSelectionChanged.connect(fn)
         self.MA_ptsListWidget_base.setMaximumHeight(64)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
@@ -811,7 +823,7 @@ class ProjectTab(QWidget):
         self.fl_actionsMA.addWidget(HWidget(vw, self.combo_method))
 
 
-        self.btnRunSwimMA = QPushButton('Quick SWIM')
+        self.btnRunSwimMA = QPushButton('Quick &SWIM')
         self.btnRunSwimMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRunSwimMA.setMaximumHeight(20)
         self.btnRunSwimMA.setMaximumWidth(60)
@@ -958,10 +970,9 @@ class ProjectTab(QWidget):
 
         self.MA_sbw = HWidget(gb1, gb2)
         self.MA_sbw.layout.setSpacing(0)
-        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select at least 3 corresponding points\n"
-                                              "type 's' to SWIM")
-        self.msg_MAinstruct.setFixedSize(360, 34)
-        self.msg_MAinstruct.hide()
+        self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
+        self.msg_MAinstruct.setFixedSize(300, 24)
+        self.msg_MAinstruct.setVisible(getData('state,stage_viewer,show_overlay_message'))
 
         # def fn():
         #     # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
@@ -972,20 +983,18 @@ class ProjectTab(QWidget):
         # # self.cb_showYellowFrame.toggled.connect(self.initNeuroglancer)
         # self.cb_showYellowFrame.toggled.connect(fn)
 
-        self.labNoArrays = QLabel('')
-
-
-        self.stageDetails = VWidget()
-        lab = QLabel('No. Generated Arrays: 1')
-        lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        self.stageDetails.addWidget(HWidget(lab, self.labNoArrays))
+        # self.labNoArrays = QLabel('')
+        # self.stageDetails = VWidget()
+        # lab = QLabel('No. Generated Arrays: 1')
+        # lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.stageDetails.addWidget(HWidget(lab, self.labNoArrays))
         #Todo self.labNoArrays
 
 
         self.gb_stageInfoText = QGroupBox()
         vbl = VBL()
         vbl.setSpacing(0)
-        vbl.addWidget(self.stageDetails)
+        # vbl.addWidget(self.stageDetails)
         self.gb_stageInfoText.setLayout(vbl)
 
 
@@ -993,7 +1002,47 @@ class ProjectTab(QWidget):
         # self.MA_webengine_widget.addWidget(self.MA_webengine_stage)
         # self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
 
-        self.MA_points_tab = VWidget(self.gb_stageInfoText, self.MA_sbw)
+
+        self.btnTranslate = QPushButton('Go')
+        self.btnTranslate.setFixedSize(QSize(22,18))
+        self.btnTranslate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btnTranslate.clicked.connect(self.onTranslate)
+
+        self.le_x_translate = QLineEdit()
+        self.le_x_translate.returnPressed.connect(self.onTranslate_x)
+        self.le_x_translate.setFixedSize(QSize(48,18))
+        self.le_x_translate.setValidator(QIntValidator())
+        # self.le_x_translate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.le_x_translate.setText('0')
+        # self.le_x_translate.setMinimum(-99_999)
+        # self.le_x_translate.setMaximum(99_999)
+        # self.le_x_translate.setSuffix('px')
+        self.le_x_translate.setAlignment(Qt.AlignCenter)
+
+        self.le_y_translate = QLineEdit()
+        self.le_y_translate.returnPressed.connect(self.onTranslate_y)
+        self.le_y_translate.setFixedSize(QSize(48,18))
+        self.le_y_translate.setValidator(QIntValidator())
+        # self.le_y_translate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.le_y_translate.setText('0')
+        # self.le_y_translate.setMinimum(-99_999)
+        # self.le_y_translate.setMaximum(99_999)
+        # self.le_y_translate.setSuffix('px')
+        self.le_y_translate.setAlignment(Qt.AlignCenter)
+
+        self.translatePointsWidget = HWidget(
+            QLabel('Move Selection:'),
+            ExpandingWidget(self),
+            QLabel('up:'),
+            self.le_y_translate,
+            ExpandingWidget(self),
+            QLabel('right:'),
+            self.le_x_translate,
+            self.btnTranslate
+        )
+
+
+        self.MA_points_tab = VWidget(self.MA_sbw, self.translatePointsWidget)
 
         """  MA Settings Tab  """
 
@@ -1076,17 +1125,25 @@ class ProjectTab(QWidget):
         # self.spinbox_whitening.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.spinbox_whitening.setDecimals(2)
         self.spinbox_whitening.setSingleStep(.01)
-        self.spinbox_whitening.setMinimum(-2.0)
-        self.spinbox_whitening.setMaximum(2.0)
+        self.spinbox_whitening.setMinimum(-1.0)
+        self.spinbox_whitening.setMaximum(0.0)
 
 
 
         def fn():
             cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' %cfg.data.zpos)
-            self.slider_MA_swim_window.setValue(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
-            self.spinbox_MA_swim_window.setValue(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
-            self.slider_AS_swim_window.setValue(cfg.DEFAULT_SWIM_WINDOW)
-            self.spinbox_whitening.setValue(cfg.DEFAULT_WHITENING)
+            cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
+            cfg.data.set_manual_swim_window(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+            cfg.data.set_swim_window(cfg.DEFAULT_SWIM_WINDOW)
+            setData('state,stage_viewer,show_overlay_message', True)
+
+
+            self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window())
+            self.spinbox_MA_swim_window.setValue(cfg.data.manual_swim_window())
+            self.slider_AS_swim_window.setValue(cfg.data.swim_window())
+            self.spinbox_whitening.setValue(cfg.data.whitening())
+            self.toggle_showInstructionOverlay.setChecked(True)
+
 
             # self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
             self.AS_SWIM_window_lab.setText("%.2f%%" % (float(100) * float(cfg.data.swim_window())))
@@ -1120,13 +1177,29 @@ class ProjectTab(QWidget):
         # self.MA_swimWindow.setLayout(lay)
 
 
+
+        self.toggle_showInstructionOverlay = AnimatedToggle()
+        self.toggle_showInstructionOverlay.setFixedSize(42,22)
+        def fn():
+            isChecked = self.toggle_showInstructionOverlay.isChecked()
+            setData('state,stage_viewer,show_overlay_message', isChecked)
+            self.msg_MAinstruct.setVisible(isChecked)
+        self.toggle_showInstructionOverlay.toggled.connect(fn)
+        self.toggle_showInstructionOverlay.setChecked(getData('state,stage_viewer,show_overlay_message'))
+
+
         self.gb_MA_settings = QGroupBox()
+        # self.gb_MA_settings.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings = QFormLayout()
+        self.fl_MA_settings.setVerticalSpacing(4)
+        self.fl_MA_settings.setHorizontalSpacing(6)
+        self.fl_MA_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings.setSpacing(2)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
         self.fl_MA_settings.addRow("Manual Window", self.MA_swim_window_widget)
         self.fl_MA_settings.addRow("Auto-SWIM Window", self.AS_swim_window_widget)
         self.fl_MA_settings.addRow("Whitening Factor", self.spinbox_whitening)
+        self.fl_MA_settings.addRow("Show Instruction Overlay", self.toggle_showInstructionOverlay)
         self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
 
@@ -1434,9 +1507,123 @@ QListView::item:!selected:hover
         )
         self.ng_browser_container_outer.layout.setSpacing(0)
 
+
+    def onTranslate(self):
+        if (self.MA_ptsListWidget_base.selectedIndexes() == []) and (self.MA_ptsListWidget_ref.selectedIndexes() == []):
+            cfg.main_window.warn('No points are selected in the list')
+            return
+
+        selections = []
+        if len(self.MA_ptsListWidget_ref.selectedIndexes()) > 0:
+            role = 'ref'
+            for sel in self.MA_ptsListWidget_ref.selectedIndexes():
+                selections.append(int(sel.data()[0]))
+        else:
+            role = 'base'
+            for sel in self.MA_ptsListWidget_base.selectedIndexes():
+                selections.append(int(sel.data()[0]))
+
+        pts_old = cfg.data.manual_points()[role]
+        pts_new = pts_old
+
+        d = {'ref': cfg.refViewer, 'base': cfg.baseViewer}
+        viewer = d[role]
+
+        for sel in selections:
+            new_x = pts_old[sel][1] - int(self.le_x_translate.text())
+            new_y = pts_old[sel][0] - int(self.le_y_translate.text())
+            pts_new[sel] = (new_y, new_x)
+
+        cfg.data.set_manual_points(role=role, matchpoints=pts_new)
+        viewer.restoreManAlignPts()
+        viewer.drawSWIMwindow()
+        # if role == 'ref':
+        #     self.update_MA_list_ref()
+        # elif role == 'base':
+        #     self.update_MA_list_base()
+
+        cfg.main_window._callbk_unsavedChanges()
+
+
+    def onTranslate_x(self):
+        if (self.MA_ptsListWidget_base.selectedIndexes() == []) and (self.MA_ptsListWidget_ref.selectedIndexes() == []):
+            cfg.main_window.warn('No points are selected in the list')
+            return
+
+        selections = []
+        if len(self.MA_ptsListWidget_ref.selectedIndexes()) > 0:
+            role = 'ref'
+            for sel in self.MA_ptsListWidget_ref.selectedIndexes():
+                selections.append(int(sel.data()[0]))
+        else:
+            role = 'base'
+            for sel in self.MA_ptsListWidget_base.selectedIndexes():
+                selections.append(int(sel.data()[0]))
+
+        pts_old = cfg.data.manual_points()[role]
+        pts_new = pts_old
+
+        d = {'ref': cfg.refViewer, 'base': cfg.baseViewer}
+        viewer = d[role]
+
+        for sel in selections:
+            new_x = pts_old[sel][1] - int(self.le_x_translate.text())
+            new_y = pts_old[sel][0]
+            pts_new[sel] = (new_y, new_x)
+
+        cfg.data.set_manual_points(role=role, matchpoints=pts_new)
+        viewer.restoreManAlignPts()
+        viewer.drawSWIMwindow()
+        # if role == 'ref':
+        #     self.update_MA_list_ref()
+        # elif role == 'base':
+        #     self.update_MA_list_base()
+
+        cfg.main_window._callbk_unsavedChanges()
+
+
+    def onTranslate_y(self):
+        if (self.MA_ptsListWidget_base.selectedIndexes() == []) and (self.MA_ptsListWidget_ref.selectedIndexes() == []):
+            cfg.main_window.warn('No points are selected in the list')
+            return
+
+        selections = []
+        if len(self.MA_ptsListWidget_ref.selectedIndexes()) > 0:
+            role = 'ref'
+            for sel in self.MA_ptsListWidget_ref.selectedIndexes():
+                selections.append(int(sel.data()[0]))
+        else:
+            role = 'base'
+            for sel in self.MA_ptsListWidget_base.selectedIndexes():
+                selections.append(int(sel.data()[0]))
+
+        pts_old = cfg.data.manual_points()[role]
+        pts_new = pts_old
+
+        d = {'ref': cfg.refViewer, 'base': cfg.baseViewer}
+        viewer = d[role]
+
+        for sel in selections:
+            new_x = pts_old[sel][1]
+            new_y = pts_old[sel][0] - int(self.le_y_translate.text())
+            pts_new[sel] = (new_y, new_x)
+
+        cfg.data.set_manual_points(role=role, matchpoints=pts_new)
+        viewer.restoreManAlignPts()
+        viewer.drawSWIMwindow()
+        # if role == 'ref':
+        #     self.update_MA_list_ref()
+        # elif role == 'base':
+        #     self.update_MA_list_base()
+
+        cfg.main_window._callbk_unsavedChanges()
+
+
+
+
     def onNgLayoutCombobox(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        logger.critical(f'caller: {caller}')
         if caller in ('main','<lambda>'):
             choice = self.comboNgLayout.currentText()
             logger.critical('Setting ui,ng_layout to %s' % str(choice))
@@ -1469,12 +1656,12 @@ QListView::item:!selected:hover
         self.unaligned_label.hide()
         self.generated_label.hide()
 
-        if cfg.data['state']['mode'] == 'stack':
-            setData('state,ng_layout', '4panel')
-            cfg.main_window.combo_mode.setCurrentIndex(0)
-        elif cfg.data['state']['mode'] == 'comparison':
-            setData('state,ng_layout', 'xy')
-            cfg.main_window.combo_mode.setCurrentIndex(1)
+        # if cfg.data['state']['mode'] == 'stack':
+        #     setData('state,ng_layout', '4panel')
+        #     cfg.main_window.combo_mode.setCurrentIndex(0)
+        # elif cfg.data['state']['mode'] == 'comparison':
+        #     setData('state,ng_layout', 'xy')
+        #     cfg.main_window.combo_mode.setCurrentIndex(1)
 
         # self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
         if cfg.data.is_aligned_and_generated():
@@ -1659,10 +1846,14 @@ QListView::item:!selected:hover
         n = 0
         for i, key in enumerate(cfg.refViewer.pts.keys()):
             p = cfg.refViewer.pts[key]
-            _, x, y = p.point.tolist()
-            item = QListWidgetItem('%d: y=%.1f,  x=%.1f' % (i, x, y))
+            _, y, x = p.point.tolist()
+            item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
             # item.setBackground(QColor(self.mp_colors[n]))
-            item.setBackground(QColor(list(cfg.refViewer.pts)[i]))
+            # item.setBackground(QColor(list(cfg.refViewer.pts)[i]))
+            item.setForeground(QColor(list(cfg.refViewer.pts)[i]))
+            font = QFont()
+            font.setBold(True)
+            item.setFont(font)
             self.MA_ptsListWidget_ref.addItem(item)
             n += 1
         self.MA_refNextColorLab.setStyleSheet(
@@ -1678,9 +1869,13 @@ QListView::item:!selected:hover
         for i, key in enumerate(cfg.baseViewer.pts.keys()):
             p = cfg.baseViewer.pts[key]
             _, x, y = p.point.tolist()
-            item = QListWidgetItem('%d: y=%.1f,  x=%.1f' % (i, x, y))
+            item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
             # item.setBackground(QColor(self.mp_colors[n]))
-            item.setBackground(QColor(list(cfg.baseViewer.pts)[i]))
+            # item.setBackground(QColor(list(cfg.baseViewer.pts)[i]))
+            item.setForeground(QColor(list(cfg.baseViewer.pts)[i]))
+            font = QFont()
+            font.setBold(True)
+            item.setFont(font)
             self.MA_ptsListWidget_base.addItem(item)
             n += 1
         self.MA_baseNextColorLab.setStyleSheet(
