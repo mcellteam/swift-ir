@@ -2146,7 +2146,10 @@ class MainWindow(QMainWindow):
         setData('state,manual_mode', False)
         setData('state,mode', 'comparison')
         setData('state,ng_layout', 'xy')
-        self.combo_mode.setCurrentIndex(1)
+
+        # self.combo_mode.setCurrentIndex(1)
+        logger.critical(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
+        self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
 
         self.updateDtWidget()
         cfg.project_tab.updateTreeWidget()
@@ -2780,10 +2783,12 @@ class MainWindow(QMainWindow):
                 except:
                     logger.warning(f'Unable to delete viewer: {str(v)}')
             self.tell('Entering Manual Align Mode...')
-            self.combo_mode.setCurrentIndex(2)
+            # self.combo_mode.setCurrentIndex(2)
             setData('state,previous_mode', getData('state,mode'))
             setData('state,mode', 'manual_align')
             setData('state,manual_mode', True)
+
+            self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
             self.stopPlaybackTimer()
             self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
             self.alignMatchPointAction.setText('Exit Manual Align Mode')
@@ -2796,46 +2801,76 @@ class MainWindow(QMainWindow):
             self.warn('Alignment must be generated before using Manual Point Alignment method.')
 
     def exit_man_mode(self):
-        logger.critical('exit_man_mode >>>>')
-        self.tell('Exiting Manual Align Mode...')
 
-        try:
-            cfg.refViewer = None
-            cfg.baseViewer = None
-            cfg.stageViewer = None
-        except:
-            print_exception()
+        if self._isProjectTab():
+            logger.critical('exit_man_mode >>>>')
+            self.tell('Exiting Manual Align Mode...')
 
-        self.setWindowTitle(self.window_title)
-        if getData('state,previous_mode') == 'stack':
-            setData('state,ng_layout', '4panel')
-            setData('state,mode', 'stack')
-            self.combo_mode.setCurrentIndex(0)
-        elif getData('state,previous_mode') == 'comparison':
-            setData('state,ng_layout', 'xy')
-            setData('state,mode', 'comparison')
-            self.combo_mode.setCurrentIndex(1)
-        else:
-            setData('state,mode', 'comparison')
-            self.combo_mode.setCurrentIndex(1)
-        setData('state,manual_mode', False)
-        self.alignMatchPointAction.setText('Align Manually')
-        self._changeScaleCombo.setEnabled(True)
-        self.dataUpdateWidgets()
-        self.updateCorrSpotsDrawer() #Caution - Likely Redundant!
-        QApplication.restoreOverrideCursor()
-        # cfg.project_tab.onExitManualMode()
-        cfg.project_tab.MA_ptsListWidget_ref.clear()
-        cfg.project_tab.MA_ptsListWidget_base.clear()
-        cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
-        cfg.project_tab.MA_splitter.hide()
-        # cfg.project_tab.w_ng_display_ext.show()
-        cfg.project_tab.w_ng_display.show()
-        cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
-        QApplication.processEvents() #Critical! - enables viewer to acquire appropriate zoom
-        cfg.project_tab.initNeuroglancer()
-        cfg.emViewer.set_layer(cfg.data.zpos)
-        logger.critical('<<<< exit_man_mode')
+            try:
+                cfg.refViewer = None
+                cfg.baseViewer = None
+                cfg.stageViewer = None
+            except:
+                print_exception()
+
+            self.setWindowTitle(self.window_title)
+            prev_mode = getData('state,previous_mode')
+
+
+
+            if prev_mode == 'stack-xy':
+                setData('state,mode', 'stack-xy')
+                setData('state,ng_layout', 'xy')
+
+                self.combo_mode.setCurrentIndex(0)
+            elif prev_mode == 'stack-4panel':
+                setData('state,mode', 'stack-4panel')
+                setData('state,ng_layout', '4panel')
+
+            else:
+                setData('state,mode', 'comparison')
+                setData('state,ng_layout', 'xy')
+
+            self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
+
+            # if getData('state,previous_mode') != 'manual_align':
+
+                # requested_key = self.prettyToModeKey(curText)
+                # if getData('state,mode') == 'manual_align':
+                #     if requested_key != 'manual_align':
+                #         self.exit_man_mode()
+                # setData('state,previous_mode', getData('state,mode'))
+                # setData('state,mode', requested_key)
+                # if requested_key == 'stack-4panel':
+                #     setData('state,ng_layout', '4panel')
+                # elif requested_key == 'stack-xy':
+                #     setData('state,ng_layout', 'xy')
+                # elif requested_key == 'comparison':
+                #     setData('state,ng_layout', 'xy')
+                # elif requested_key == 'manual_align':
+                #     setData('state,ng_layout', 'xy')
+
+
+
+
+            setData('state,manual_mode', False)
+            self.alignMatchPointAction.setText('Align Manually')
+            self._changeScaleCombo.setEnabled(True)
+            self.dataUpdateWidgets()
+            self.updateCorrSpotsDrawer() #Caution - Likely Redundant!
+            QApplication.restoreOverrideCursor()
+            # cfg.project_tab.onExitManualMode()
+            cfg.project_tab.MA_ptsListWidget_ref.clear()
+            cfg.project_tab.MA_ptsListWidget_base.clear()
+            cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
+            cfg.project_tab.MA_splitter.hide()
+            # cfg.project_tab.w_ng_display_ext.show()
+            cfg.project_tab.w_ng_display.show()
+            cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
+            QApplication.processEvents() #Critical! - enables viewer to acquire appropriate zoom
+            cfg.project_tab.initNeuroglancer()
+            cfg.emViewer.set_layer(cfg.data.zpos)
+            logger.critical('<<<< exit_man_mode')
 
 
 
@@ -2959,17 +2994,21 @@ class MainWindow(QMainWindow):
         # print(f'# of widgets : {num_widgets}')
         # print(h.heap())
 
-    def modeKeyToCombo(self, key):
-        if key == 'stack':
-            return 'Stack View'
+    def modeKeyToPretty(self, key):
+        if key == 'stack-xy':
+            return 'Stack View (xy plane)'
+        elif key == 'stack-4panel':
+            return 'Stack View (4 panel)'
         elif key == 'comparison':
             return 'Comparison View'
         elif key == 'manual_align':
             return 'Manual Align Mode'
 
-    def comboToModeKey(self, key):
-        if key == 'Stack View':
-            return 'stack'
+    def prettyToModeKey(self, key):
+        if key == 'Stack View (xy plane)':
+            return 'stack-xy'
+        elif key == 'Stack View (4 panel)':
+            return 'stack-4panel'
         elif key == 'Comparison View':
             return 'comparison'
         elif key == 'Manual Align Mode':
@@ -2978,37 +3017,43 @@ class MainWindow(QMainWindow):
 
     def onComboModeChange(self):
         caller = inspect.stack()[1].function
+        logger.critical('')
 
         if self._isProjectTab():
             # if cfg.project_tab._tabs.currentIndex() == 0:
             if caller == 'main':
                 logger.critical('onComboModeChange...')
-
-                index = self.combo_mode.currentIndex()
+                # index = self.combo_mode.currentIndex()
                 curText = self.combo_mode.currentText()
                 if curText == 'Manual Align Mode':
                     if not cfg.data.is_aligned():
-                        # cfg.data['state']['mode'] = 'stack'
                         self.warn('Align the series first and then use Manual Alignment.')
-                        self.combo_mode.setCurrentText(self.modeKeyToCombo(cfg.data['state']['mode']))
+                        self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                         return
-                cfg.data['state']['previous_mode'] = cfg.data['state']['mode']
+                requested_key = self.prettyToModeKey(curText)
+                logger.info(f'Requested key: {requested_key}')
                 if getData('state,mode') == 'manual_align':
-                    if index in (0,1):
+                    if requested_key != 'manual_align':
                         self.exit_man_mode()
-                if index == 0:
-                    cfg.data['state']['mode'] = 'stack'
-                    cfg.data['state']['ng_layout'] = '4panel'
-                elif index == 1:
-                    cfg.data['state']['mode'] = 'comparison'
-                    cfg.data['state']['ng_layout'] = 'xy'
-                elif index == 2:
-                    cfg.data['state']['mode'] = 'manual_align'
+                setData('state,previous_mode', getData('state,mode'))
+                setData('state,mode', requested_key)
+                if requested_key == 'stack-4panel':
+                    setData('state,ng_layout', '4panel')
+                elif requested_key == 'stack-xy':
+                    setData('state,ng_layout', 'xy')
+                elif requested_key == 'comparison':
+                    setData('state,ng_layout', 'xy')
+                elif requested_key == 'manual_align':
+                    setData('state,ng_layout', 'xy')
                     self.enter_man_mode()
                 self.dataUpdateWidgets()
+                cfg.project_tab.comboNgLayout.setCurrentText(getData('state,ng_layout'))
                 cfg.project_tab.initNeuroglancer()
 
-            cfg.project_tab.updateCursor()
+            # cfg.project_tab.updateCursor()
+        else:
+            self.combo_mode.setCurrentText(self.modeKeyToPretty('comparison'))
+
 
 
 
@@ -3036,7 +3081,7 @@ class MainWindow(QMainWindow):
         self.combo_mode = QComboBox(self)
         self.combo_mode.setFixedSize(150, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        items = ['Stack View', 'Comparison View', 'Manual Align Mode']
+        items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
         self.combo_mode.addItems(items)
         self.combo_mode.currentTextChanged.connect(self.onComboModeChange)
 
@@ -3310,12 +3355,8 @@ class MainWindow(QMainWindow):
             logger.critical('Loading Project Tab...')
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
-            cfg.emViewer = cfg.project_tab.viewer
             cfg.zarr_tab = None
             self._lastRefresh = 0
-            self.cpanel.show()
-            # self.updateDtWidget() # 0212 #0301-
-            # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: #222222; }""")
             self.statusBar.setStyleSheet("""
                     font-size: 10px;
                     font-weight: 600;
@@ -3324,13 +3365,12 @@ class MainWindow(QMainWindow):
                     margin: 0px;
                     padding: 0px;
                     """)
-            if cfg.data['state']['mode'] == 'stack':
-                self.combo_mode.setCurrentIndex(0)
-            elif cfg.data['state']['mode'] == 'comparison':
-                self.combo_mode.setCurrentIndex(1)
+            logger.critical(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
+            self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
             self._bbToggle.setChecked(cfg.data.has_bb()) #0309+
+            cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
             cfg.project_tab.initNeuroglancer()
 
             try:

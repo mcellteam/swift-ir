@@ -110,11 +110,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed_any(self):
-        logger.critical(f'zpos={cfg.data.zpos}')
+        # logger.critical(f'zpos={cfg.data.zpos}')
+        logger.info(f'on_state_changed_any [{self.type}] >>>>')
         # if self._zmag_set < 10:
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-        logger.info(f'on_state_changed_any [{self.type}] >>>>')
         self.signals.stateChangedAny.emit()
 
 
@@ -250,7 +250,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def _set_zmag(self):
         if self._zmag_set < 8:
             self._zmag_set += 1
-            logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
+            # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
             try:
                 # logger.critical(f'Setting Z-mag on {self.type}')
                 with self.txn() as s:
@@ -259,7 +259,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 print_exception()
 
     def set_zmag(self, val=10):
-        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
+        # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
@@ -305,7 +305,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def initZoom(self, w, h, adjust=1.10):
-        # logger.info(f'w={w}, h={h}')
+        logger.critical(f'w={w}, h={h}')
         # self._blockZoom = True
 
         if self.cs_scale:
@@ -371,7 +371,7 @@ class EMViewer(AbstractEMViewer):
         logger.info(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
 
         caller = inspect.stack()[1].function
-        if cfg.data['state']['mode'] == 'stack':
+        if getData('state,mode') in ('stack-4panel', 'stack-xy'):
             # cfg.data['ui']['ng_layout'] = '4panel'
             self.initViewerSlim()
         elif cfg.data['state']['mode'] == 'comparison':
@@ -496,6 +496,8 @@ class EMViewer(AbstractEMViewer):
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
             nglayout = mapping[requested]
 
+        logger.critical(f'nglayout: {nglayout}')
+
         zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
         path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
         if not os.path.exists(path):
@@ -512,6 +514,13 @@ class EMViewer(AbstractEMViewer):
             dimensions=self.coordinate_space,
             voxel_offset=[0, ] * 3,
         )
+
+        if getData('state,ng_layout') == 'xy':
+            # logger.info('Initializing zoom for xy plane ...')
+            w = cfg.project_tab.webengine.width()
+            h = cfg.project_tab.webengine.height()
+            self.initZoom(w=w, h=h, adjust=1.10)
+
 
         with self.txn() as s:
             s.layout.type = nglayout
