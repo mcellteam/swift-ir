@@ -517,7 +517,7 @@ class EMViewer(AbstractEMViewer):
 
         if getData('state,ng_layout') == 'xy':
             # logger.info('Initializing zoom for xy plane ...')
-            w = cfg.project_tab.webengine.width()
+            w = cfg.main_window.width()
             h = cfg.project_tab.webengine.height()
             self.initZoom(w=w, h=h, adjust=1.10)
 

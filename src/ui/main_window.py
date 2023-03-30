@@ -1359,7 +1359,6 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_light()
 
 
-
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
 
