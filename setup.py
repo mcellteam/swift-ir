@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 # setup(use_scm_version=True)
 
-with open("README.md", "r") as fh:
+with open("README_SWIFTIR.md", "r") as fh:
     long_description = fh.read()
 
 setup(
@@ -17,7 +17,7 @@ setup(
     platforms=["any"],
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
     packages=find_packages(),
-    python_requires=">=3.9",
+    python_requires=">=3.7",
     entry_points={
         "console_scripts": [
             "alignem = alignEM:main",
