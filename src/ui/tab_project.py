@@ -704,7 +704,7 @@ class ProjectTab(QWidget):
         self.MA_refNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.MA_refNextColorLab = QLabel()
         # self.MA_refNextColorLab.setMaximumHeight(12)
-        self.MA_refNextColorLab.setFixedSize(60, 18)
+        self.MA_refNextColorLab.setFixedSize(20, 20)
 
 
         self.MA_ptsListWidget_base = QListWidget()
@@ -722,7 +722,7 @@ class ProjectTab(QWidget):
         self.MA_baseNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.MA_baseNextColorLab = QLabel()
         # self.MA_baseNextColorLab.setMaximumHeight(12)
-        self.MA_baseNextColorLab.setFixedSize(60, 18)
+        self.MA_baseNextColorLab.setFixedSize(20, 20)
 
         self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab)
         self.baseNextColorWidget.setMaximumHeight(14)
@@ -1441,6 +1441,9 @@ QListView::item:!selected:hover
         #     self.labNgLayout,
         #     self.comboNgLayout,
         # )
+
+        # test = QPushButton()
+
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
@@ -1518,24 +1521,28 @@ QListView::item:!selected:hover
         self.ng_browser_container_outer.layout.setSpacing(0)
 
     def hideSecondaryNgTools(self):
-        self.labShowHide.setVisible(False)
-        cfg.main_window.ngShowUiControlsAction.setVisible(False)
-        cfg.main_window.ngShowScaleBarAction.setVisible(False)
-        cfg.main_window.ngShowYellowFrameAction.setVisible(False)
-        cfg.main_window.ngShowAxisLinesAction.setVisible(False)
-        self.showHudOverlayAction.setVisible(False)
-        self.labNgLayout.setVisible(False)
-        self.comboNgLayout.setVisible(False)
+        for i in range(0,12):
+            self.w_ng_extended_toolbar.actions()[i].setVisible(False)
+        # self.labShowHide.setVisible(False)
+        # cfg.main_window.ngShowUiControlsAction.setVisible(False)
+        # cfg.main_window.ngShowScaleBarAction.setVisible(False)
+        # cfg.main_window.ngShowYellowFrameAction.setVisible(False)
+        # cfg.main_window.ngShowAxisLinesAction.setVisible(False)
+        # self.showHudOverlayAction.setVisible(False)
+        # self.labNgLayout.setVisible(False)
+        # self.comboNgLayout.setVisible(False)
 
     def showSecondaryNgTools(self):
-        self.labShowHide.setVisible(True)
-        cfg.main_window.ngShowUiControlsAction.setVisible(True)
-        cfg.main_window.ngShowScaleBarAction.setVisible(True)
-        cfg.main_window.ngShowYellowFrameAction.setVisible(True)
-        cfg.main_window.ngShowAxisLinesAction.setVisible(True)
-        self.showHudOverlayAction.setVisible(True)
-        self.labNgLayout.setVisible(True)
-        self.comboNgLayout.setVisible(True)
+        for i in range(0,12):
+            self.w_ng_extended_toolbar.actions()[i].setVisible(True)
+        # self.labShowHide.setVisible(True)
+        # cfg.main_window.ngShowUiControlsAction.setVisible(True)
+        # cfg.main_window.ngShowScaleBarAction.setVisible(True)
+        # cfg.main_window.ngShowYellowFrameAction.setVisible(True)
+        # cfg.main_window.ngShowAxisLinesAction.setVisible(True)
+        # self.showHudOverlayAction.setVisible(True)
+        # self.labNgLayout.setVisible(True)
+        # self.comboNgLayout.setVisible(True)
 
 
     def onTranslate(self):
