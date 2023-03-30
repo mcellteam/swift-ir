@@ -38,7 +38,8 @@ class SnrPlot(QWidget):
         self.plot = self.view.addPlot()
         # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
         self._curLayerLine = pg.InfiniteLine(
-            pen='w',
+            # pen='w',
+            pen=pg.mkPen('w', width=3),
             movable=False,
             angle=90,
             label='Section #{value:.0f}',
