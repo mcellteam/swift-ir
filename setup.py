@@ -1,5 +1,4 @@
-# import setuptools
-# from setuptools import find_packages  # or find_namespace_packages
+import setuptools
 from setuptools import setup, find_packages
 # setup(use_scm_version=True)
 
@@ -7,7 +6,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="src",
+    name="alignem",
     version="0.0.1",
     author="Joel Yancey,",
     author_email="joelgyancey@ucla.edu",
@@ -16,7 +15,8 @@ setup(
     long_description_content_type="text/markdown",
     platforms=["any"],
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
-    packages=find_packages(),
+    # packages=find_packages(),
+    packages=setuptools.find_packages(where="./src", exclude=("./tests",)),
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [

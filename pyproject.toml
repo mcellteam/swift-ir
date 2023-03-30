@@ -20,19 +20,21 @@ license = {text = "Mozilla Public License Version 2.0"}
 dependencies = [
             'numpy',
             'psutil',
-            'opencv-python-headless',
             'pillow',
             'zarr',
             'tifffile',
             'imagecodecs',
             'neuroglancer',
             'qtconsole',
-            'PyQt5==5.15.2',
+            'PyQt5',
             'pyqtwebengine',
             'qtpy',
             'qtawesome',
             'pyqtgraph',
 ]
+
+[tools.setuptools]
+packages = ["src"]
 
 
 
