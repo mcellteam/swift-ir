@@ -99,9 +99,7 @@ def delete_recursive(dir):
     cfg.main_window.setPbarText('Deleting Files...')
 
     to_delete = []
-    to_delete.extend(glob(dir +'/img_aligned.zarr/s*'))
-    to_delete.extend(glob(dir +'/img_src.zarr/s*'))
-    to_delete.append(dir +'/thumbnails')
+
     scales = glob(dir + '/scale_*')
     if scales:
         for s in natural_sort(scales)[::-1]:
@@ -117,7 +115,9 @@ def delete_recursive(dir):
                 to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
             if os.path.exists(os.path.join(dir, s, 'img_src')):
                 to_delete.append(os.path.join(dir, s, 'img_src'))
-
+    to_delete.extend(glob(dir +'/img_aligned.zarr/s*'))
+    to_delete.extend(glob(dir +'/img_src.zarr/s*'))
+    to_delete.append(dir +'/thumbnails')
     to_delete.append(dir)
     to_delete.append(dir) #delete twice
     cfg.nCompleted = 0

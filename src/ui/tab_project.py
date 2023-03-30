@@ -1450,7 +1450,7 @@ QListView::item:!selected:hover
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
         self.w_ng_extended_toolbar.addAction(self.showHudOverlayAction)
-        self.w_ng_extended_toolbar.addWidget(QLabel('      '))
+        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
