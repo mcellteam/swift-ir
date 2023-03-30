@@ -16,7 +16,7 @@ setup(
     platforms=["any"],
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
     # packages=find_packages(),
-    packages=setuptools.find_packages(where="./src", exclude=("./tests",)),
+    packages=setuptools.find_packages(where=".", exclude=("./tests",)),
     python_requires=">=3.7",
     entry_points={
         "console_scripts": [
