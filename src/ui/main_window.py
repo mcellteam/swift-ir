@@ -1826,7 +1826,7 @@ class MainWindow(QMainWindow):
 
         requested = self._sectionSlider.value()
         if self._isProjectTab():
-            logger.critical('Jumping To Section #%d' % requested)
+            logger.info('Jumping To Section #%d' % requested)
             cfg.data.zpos = requested
             # if not getData('state,manual_mode'):
             #     cfg.emViewer._layer = requested
@@ -1848,7 +1848,6 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        logger.info('')
         if self._isProjectTab():
             self._changeScaleCombo.show()
             logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
@@ -2775,30 +2774,32 @@ class MainWindow(QMainWindow):
                     self.exit_man_mode()
 
     def enter_man_mode(self):
-        if cfg.data.is_aligned_and_generated():
-            logger.critical('Entering Manual Align Mode...')
-            for v in cfg.project_tab.get_viewers():
-                try:
-                    v = None
-                except:
-                    logger.warning(f'Unable to delete viewer: {str(v)}')
-            self.tell('Entering Manual Align Mode...')
-            # self.combo_mode.setCurrentIndex(2)
-            setData('state,previous_mode', getData('state,mode'))
-            setData('state,mode', 'manual_align')
-            setData('state,manual_mode', True)
+        if self._isProjectTab():
+            if cfg.data.is_aligned_and_generated():
+                logger.critical('Entering Manual Align Mode...')
+                self.tell('Entering Manual Align Mode...')
+                # for v in cfg.project_tab.get_viewers():
+                #     try:
+                #         v = None
+                #     except:
+                #         logger.warning(f'Unable to delete viewer: {str(v)}')
 
-            self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
-            self.stopPlaybackTimer()
-            self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
-            self.alignMatchPointAction.setText('Exit Manual Align Mode')
-            self.matchpoint_text_snr.setText(cfg.data.snr_report())
-            self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
-            self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-            cfg.project_tab.onEnterManualMode()
+                # self.combo_mode.setCurrentIndex(2)
+                setData('state,previous_mode', getData('state,mode'))
+                setData('state,mode', 'manual_align')
+                setData('state,manual_mode', True)
 
-        else:
-            self.warn('Alignment must be generated before using Manual Point Alignment method.')
+                self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
+                self.stopPlaybackTimer()
+                self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
+                self.alignMatchPointAction.setText('Exit Manual Align Mode')
+                self.matchpoint_text_snr.setText(cfg.data.snr_report())
+                self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
+                self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
+                cfg.project_tab.onEnterManualMode()
+
+            else:
+                self.warn('Alignment must be generated before using Manual Point Alignment method.')
 
     def exit_man_mode(self):
 
@@ -2806,17 +2807,15 @@ class MainWindow(QMainWindow):
             logger.critical('exit_man_mode >>>>')
             self.tell('Exiting Manual Align Mode...')
 
-            try:
-                cfg.refViewer = None
-                cfg.baseViewer = None
-                cfg.stageViewer = None
-            except:
-                print_exception()
+            # try:
+            #     cfg.refViewer = None
+            #     cfg.baseViewer = None
+            #     cfg.stageViewer = None
+            # except:
+            #     print_exception()
 
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
-
-
 
             if prev_mode == 'stack-xy':
                 setData('state,mode', 'stack-xy')
@@ -2833,26 +2832,6 @@ class MainWindow(QMainWindow):
 
             self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
 
-            # if getData('state,previous_mode') != 'manual_align':
-
-                # requested_key = self.prettyToModeKey(curText)
-                # if getData('state,mode') == 'manual_align':
-                #     if requested_key != 'manual_align':
-                #         self.exit_man_mode()
-                # setData('state,previous_mode', getData('state,mode'))
-                # setData('state,mode', requested_key)
-                # if requested_key == 'stack-4panel':
-                #     setData('state,ng_layout', '4panel')
-                # elif requested_key == 'stack-xy':
-                #     setData('state,ng_layout', 'xy')
-                # elif requested_key == 'comparison':
-                #     setData('state,ng_layout', 'xy')
-                # elif requested_key == 'manual_align':
-                #     setData('state,ng_layout', 'xy')
-
-
-
-
             setData('state,manual_mode', False)
             self.alignMatchPointAction.setText('Align Manually')
             self._changeScaleCombo.setEnabled(True)
@@ -2860,6 +2839,7 @@ class MainWindow(QMainWindow):
             self.updateCorrSpotsDrawer() #Caution - Likely Redundant!
             QApplication.restoreOverrideCursor()
             # cfg.project_tab.onExitManualMode()
+            cfg.project_tab.showSecondaryNgTools()
             cfg.project_tab.MA_ptsListWidget_ref.clear()
             cfg.project_tab.MA_ptsListWidget_base.clear()
             cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
@@ -3312,12 +3292,15 @@ class MainWindow(QMainWindow):
 
     def _onGlobTabChange(self):
 
+
         # if self._dontReinit == True:
         #     logger.critical('\n\n\n<<<<< DONT REINIT! >>>>>\n\n\n')
         #     return
 
         caller = inspect.stack()[1].function
         logger.info('caller: %s' %caller)
+        if caller not in ('onStartProject', '_setLastTab'):
+            self.shutdownNeuroglancer() #0329+
 
 
         # if caller  == '_setLastTab':
@@ -3370,8 +3353,11 @@ class MainWindow(QMainWindow):
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
             self._bbToggle.setChecked(cfg.data.has_bb()) #0309+
-            cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
-            cfg.project_tab.initNeuroglancer()
+            # cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
+
+            logger.critical('Setting global viewer reference...')
+            cfg.emViewer = cfg.project_tab.viewer
+            # cfg.project_tab.initNeuroglancer()
 
             try:
                 cfg.project_tab.signalsAction.setChecked(False)
@@ -5241,8 +5227,7 @@ class MainWindow(QMainWindow):
         # self.correlation_signals = QWidget()
         self.correlation_signals = QScrollArea()
         self.correlation_signals.setMinimumHeight(140) #Important
-        self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; QScrollBar {width:0px;}")')
-        self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; QScrollBar {width:0px;}")')
+        # self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; QScrollBar {width:0px;}")')
         self.correlation_signals.setWidgetResizable(True)
         w = QWidget()
         vbl = VBL()

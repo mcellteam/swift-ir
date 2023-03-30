@@ -21,6 +21,7 @@ import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, QUrl
+from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, obj_to_string, print_exception
@@ -437,10 +438,6 @@ class EMViewer(AbstractEMViewer):
         #     id="bounding-box",
         # )
 
-
-
-                # (annotations=[box])
-
         with self.txn() as s:
             '''other settings: 
             s.displayDimensions = ["z", "y", "x"]
@@ -478,8 +475,11 @@ class EMViewer(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
-        h = cfg.project_tab.webengine.height()
+
+        # w = cfg.project_tab.w_ng_display.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+        #Critical must use main_window width
+        w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+        h = cfg.project_tab.w_ng_display.height()
         self.initZoom(w=w, h=h, adjust=1.10)
 
         # self.set_zmag()
@@ -621,7 +621,6 @@ class EMViewerStage(AbstractEMViewer):
         # self.set_zmag()
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
         logger.critical(f'MA_webengine_stage: w={w}, h={h}')

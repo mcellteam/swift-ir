@@ -38,6 +38,7 @@ class SnrPlot(QWidget):
         self.plot = self.view.addPlot()
         # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
         self._curLayerLine = pg.InfiniteLine(
+            pen='w',
             movable=False,
             angle=90,
             label='Section #{value:.0f}',
@@ -46,16 +47,17 @@ class SnrPlot(QWidget):
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
         self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.92, anchor=(1, 1), color='#f3f6fb')
+        f = QFont('Tahoma')
+        f.setBold(True)
+        f.setPointSize(12)
+        self._snr_label.setFont(f)
+        self.plot.addItem(self._curLayerLine)
         self._mp_lines = []
         self._mp_labels = []
         self._skip_lines = []
         self._skip_labels = []
         self._error_bars = {}
-        f = QFont()
-        f.setBold(True)
-        f.setPointSize(12)
-        self._snr_label.setFont(f)
-        self.plot.addItem(self._curLayerLine)
+
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
         # pg.setConfigOptions(antialias=True)
         self._plot_colors = ['#FEFE62', '#40B0A6', '#D41159',
@@ -149,7 +151,7 @@ class SnrPlot(QWidget):
                 labelOpts={'position': .1, 'color': (255, 225, 53), 'fill': (200, 200, 200, 50), 'movable': True}
             )
             self._mp_lines.append(line)
-            label = pg.InfLineLabel(line, f'Match Point', position=0.32, color='#32CD32',rotateAxis=(1, 0), anchor=(1, 1))
+            label = pg.InfLineLabel(line, f'Manual Align', position=0.32, color='#32CD32',rotateAxis=(1, 0), anchor=(.8, 1))
             self._mp_labels.append(label)
             line.setPos([layer[0] + offset, 1])
             self.plot.addItem(line)
