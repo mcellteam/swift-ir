@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 # setup(use_scm_version=True)
 
-with open("README_SWIFTIR.md", "r") as fh:
+with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
