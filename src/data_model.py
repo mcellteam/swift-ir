@@ -86,7 +86,7 @@ class DataModel:
         return self.dest() + '.swiftir'
 
     def __copy__(self):
-        logger.critical('\n\n\nCreating __copy__ of DataModel...\n\n')
+        logger.info('Creating __copy__ of DataModel...')
         cls = self.__class__
         result = cls.__new__(cls)
         result.__dict__.update(self.__dict__)
@@ -94,7 +94,7 @@ class DataModel:
 
     def __deepcopy__(self, memo):
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\n\nCreating __deepcopy__ of DataModel [{caller}]...\n\n')
+        logger.critical(f'Creating __deepcopy__ of DataModel [{caller}]...')
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -148,7 +148,7 @@ class DataModel:
     @zpos.setter
     def zpos(self, index):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        # logger.critical(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
         if int(index) in range(len(self)):
             self['data']['z_position'] = int(index)
@@ -1509,17 +1509,17 @@ class DataModel:
         self._data['data']['scales'][scale]['stack'][len(cfg.data) - 1]['filename'] = file
         self._data['data']['scales'][scale]['stack'][len(cfg.data) - 1]['reference'] = ''
 
-    def append_empty(self):
-        logger.critical('MainWindow.append_empty:')
-        scale = self.scale
-        used_for_this_role = ['base' in l['images'].keys() for l in self.stack(s=scale)]
-        layer_index = -1
-        if False in used_for_this_role:
-            layer_index = used_for_this_role.index(False)
-        else:
-            self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
-            layer_index_for_new_role = len(self['data']['scales'][scale]['stack']) - 1
-        self._data['data']['scales'][scale]['stack'][layer_index]['filename'] = ''
+    # def append_empty(self):
+    #     logger.critical('MainWindow.append_empty:')
+    #     scale = self.scale
+    #     used_for_this_role = ['base' in l['images'].keys() for l in self.stack(s=scale)]
+    #     layer_index = -1
+    #     if False in used_for_this_role:
+    #         layer_index = used_for_this_role.index(False)
+    #     else:
+    #         self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
+    #         layer_index_for_new_role = len(self['data']['scales'][scale]['stack']) - 1
+    #     self._data['data']['scales'][scale]['stack'][layer_index]['filename'] = ''
 
 
     # def add_img(self, scale, layer, role, filename=''):

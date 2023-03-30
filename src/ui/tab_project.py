@@ -48,7 +48,6 @@ class ProjectTab(QWidget):
                  path=None,
                  datamodel=None):
         super().__init__(parent)
-        logger.info('')
         logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         self.parent = parent
         self.path = path
@@ -86,6 +85,7 @@ class ProjectTab(QWidget):
         h = self.MA_webengine_ref.geometry().height()
         self.MA_stageSplitter.setSizes([int(.7*h), int(.3*h)])
 
+
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
         cfg.data = self.datamodel
@@ -96,18 +96,18 @@ class ProjectTab(QWidget):
         QApplication.restoreOverrideCursor()
         index = self._tabs.currentIndex()
 
-        if getData('state,manual_mode'):
-            pts_ref = cfg.refViewer.pts
-            pts_base = cfg.baseViewer.pts
-            self.initNeuroglancer()
-            cfg.refViewer.pts = pts_ref
-            cfg.baseViewer.pts = pts_base
-            # self.updateNeuroglancer()
+        # if getData('state,manual_mode'):
+        #     pts_ref = cfg.refViewer.pts
+        #     pts_base = cfg.baseViewer.pts
+        #     self.initNeuroglancer()
+        #     cfg.refViewer.pts = pts_ref
+        #     cfg.baseViewer.pts = pts_base
 
         if index == 0:
             # self.updateNeuroglancer()
             # self.initNeuroglancer()
-            cfg.emViewer.set_layer(cfg.data.zpos)
+            if cfg.emViewer:
+                cfg.emViewer.set_layer(cfg.data.zpos)
         elif index == 1:
             pass
         elif index == 2:
@@ -159,7 +159,7 @@ class ProjectTab(QWidget):
         # cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         cfg.snrViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
         cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)
-        self.updateNeuroglancer()
+        # self.updateNeuroglancer()
 
 
     def shutdownNeuroglancer(self):
@@ -190,7 +190,6 @@ class ProjectTab(QWidget):
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
 
-
             cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
             cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
@@ -211,8 +210,8 @@ class ProjectTab(QWidget):
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
             cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_widgets)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
-            cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
-            cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
+            # cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
+            # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
 
 
             # cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
@@ -240,8 +239,8 @@ class ProjectTab(QWidget):
 
             # if caller != '_onGlobTabChange':
             logger.info('Initializing...')
-            # self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-            cfg.emViewer = EMViewer(webengine=self.webengine)
+            self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
+            # cfg.emViewer = EMViewer(webengine=self.webengine)
             # cfg.emViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
             cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.emViewer.signals.stateChangedAny.connect(cfg.main_window.dataUpdateWidgets)
@@ -710,6 +709,7 @@ class ProjectTab(QWidget):
 
         self.MA_ptsListWidget_base = QListWidget()
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
+        self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
         def fn():
             self.MA_ptsListWidget_ref.selectionModel().clear()
         self.MA_ptsListWidget_base.itemSelectionChanged.connect(fn)
@@ -771,7 +771,7 @@ class ProjectTab(QWidget):
         def fn():
             if self._combo_method_switch:
                 caller = inspect.stack()[1].function
-                logger.critical('caller: %s' % caller)
+                logger.info('caller: %s' % caller)
                 # request = self.combo_method.currentText()
                 # cfg.data.set_selected_method(request)
                 cfg.data.set_selected_method(self.combo_method.currentText())
@@ -842,7 +842,7 @@ class ProjectTab(QWidget):
             except:
                 print_exception()
 
-        self.btnClearMA = QPushButton('Clear')
+        self.btnClearMA = QPushButton('Reset')
         self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setMaximumHeight(20)
         self.btnClearMA.setMaximumWidth(60)
@@ -1137,13 +1137,11 @@ class ProjectTab(QWidget):
             cfg.data.set_swim_window(cfg.DEFAULT_SWIM_WINDOW)
             setData('state,stage_viewer,show_overlay_message', True)
 
-
             self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window())
             self.spinbox_MA_swim_window.setValue(cfg.data.manual_swim_window())
             self.slider_AS_swim_window.setValue(cfg.data.swim_window())
             self.spinbox_whitening.setValue(cfg.data.whitening())
             self.toggle_showInstructionOverlay.setChecked(True)
-
 
             # self.MA_SWIM_window_lab.setText("%dpx" % cfg.data.manual_swim_window())
             self.AS_SWIM_window_lab.setText("%.2f%%" % (float(100) * float(cfg.data.swim_window())))
@@ -1431,6 +1429,18 @@ QListView::item:!selected:hover
         # self.w_ng_extended_toolbar.addWidget(self._highContrastNgAction)
 
         # self.w_ng_extended_toolbar.addWidget(QLabel(' '))
+
+        # self.secondary_ng_tools = HWidget(
+        #     self.labShowHide,
+        #     cfg.main_window.ngShowUiControlsAction,
+        #     cfg.main_window.ngShowScaleBarAction,
+        #     cfg.main_window.ngShowYellowFrameAction,
+        #     cfg.main_window.ngShowAxisLinesAction,
+        #     self.showHudOverlayAction,
+        #     QLabel('      '),
+        #     self.labNgLayout,
+        #     self.comboNgLayout,
+        # )
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
@@ -1440,7 +1450,7 @@ QListView::item:!selected:hover
         self.w_ng_extended_toolbar.addWidget(QLabel('      '))
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
-        self.w_ng_extended_toolbar.addWidget(QLabel('      '))
+        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
@@ -1506,6 +1516,26 @@ QListView::item:!selected:hover
             self.sideSliders,
         )
         self.ng_browser_container_outer.layout.setSpacing(0)
+
+    def hideSecondaryNgTools(self):
+        self.labShowHide.setVisible(False)
+        cfg.main_window.ngShowUiControlsAction.setVisible(False)
+        cfg.main_window.ngShowScaleBarAction.setVisible(False)
+        cfg.main_window.ngShowYellowFrameAction.setVisible(False)
+        cfg.main_window.ngShowAxisLinesAction.setVisible(False)
+        self.showHudOverlayAction.setVisible(False)
+        self.labNgLayout.setVisible(False)
+        self.comboNgLayout.setVisible(False)
+
+    def showSecondaryNgTools(self):
+        self.labShowHide.setVisible(True)
+        cfg.main_window.ngShowUiControlsAction.setVisible(True)
+        cfg.main_window.ngShowScaleBarAction.setVisible(True)
+        cfg.main_window.ngShowYellowFrameAction.setVisible(True)
+        cfg.main_window.ngShowAxisLinesAction.setVisible(True)
+        self.showHudOverlayAction.setVisible(True)
+        self.labNgLayout.setVisible(True)
+        self.comboNgLayout.setVisible(True)
 
 
     def onTranslate(self):
@@ -1623,13 +1653,11 @@ QListView::item:!selected:hover
 
     def onNgLayoutCombobox(self) -> None:
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
         if caller in ('main','<lambda>'):
             choice = self.comboNgLayout.currentText()
-            logger.critical('Setting ui,ng_layout to %s' % str(choice))
+            logger.info('Setting ui,ng_layout to %s' % str(choice))
             # setData('ui,ng_layout', choice)
             setData('state,ng_layout', choice)
-
             try:
                 cfg.main_window.hud("Setting Neuroglancer Layout to '%s'... " % choice)
                 layout_actions = {
@@ -1797,19 +1825,20 @@ QListView::item:!selected:hover
 
 
     def update_MA_widgets(self):
-        caller = inspect.stack()[1].function
-        logger.critical('update_MA_widgets [caller: %s] >>>>' % caller)
+        logger.info('')
+        # caller = inspect.stack()[1].function
+        # logger.info('update_MA_widgets [caller: %s] >>>>' % caller)
         if getData('state,manual_mode'):
             self.update_MA_list_base()
             self.update_MA_list_ref()
         self.dataUpdateMA()
 
         # self.applyMps()
-        logger.critical('<<<< update_MA_widgets ')
+        # logger.info('<<<< update_MA_widgets ')
 
 
     def dataUpdateMA(self):
-        logger.critical('dataUpdateMA:')
+        logger.info('')
         if getData('state,manual_mode'):
 
             caller = inspect.stack()[1].function
@@ -1839,7 +1868,7 @@ QListView::item:!selected:hover
 
 
     def update_MA_list_ref(self):
-        logger.critical('update_MA_list_ref:')
+        logger.info('')
         # cfg.refViewer.pts = {}
         self.MA_ptsListWidget_ref.clear()
         self.MA_ptsListWidget_ref.update()
@@ -1861,7 +1890,7 @@ QListView::item:!selected:hover
 
 
     def update_MA_list_base(self):
-        logger.critical('update_MA_list_base:')
+        logger.info('')
         # cfg.baseViewer.pts = {}
         self.MA_ptsListWidget_base.clear()
         self.MA_ptsListWidget_base.update()
@@ -1905,9 +1934,9 @@ QListView::item:!selected:hover
                             # if cfg.baseViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
                             # if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.baseViewer.state.cross_section_scale != 1.0:
+                                    logger.info(f'Updating ref viewer state. OLD cs_scale: {state.cross_section_scale}')
+                                    logger.info(f'Updating ref viewer state. NEW cs_scale: {cfg.baseViewer.state.cross_section_scale}')
                                     state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
-                                    logger.info(
-                                        f'Updating ref viewer state -> {cfg.refViewer.state.cross_section_scale}')
                         cfg.refViewer.set_state(state)
 
 
@@ -1935,7 +1964,8 @@ QListView::item:!selected:hover
                             # if cfg.refViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
                             # if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
                                 if cfg.refViewer.state.cross_section_scale != 1.0:
-                                    logger.info(f'Updating base viewer state -> {cfg.refViewer.state.cross_section_scale}')
+                                    logger.info(f'Updating base viewer state. OLD cs_scale: {state.cross_section_scale}')
+                                    logger.info(f'Updating base viewer state. NEW cs_scale: {cfg.refViewer.state.cross_section_scale}')
                                     state.cross_section_scale = cfg.refViewer.state.cross_section_scale
                         cfg.baseViewer.set_state(state)
 
@@ -2099,6 +2129,7 @@ QListView::item:!selected:hover
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         # self.w_ng_display_ext.hide() # change layout before initializing viewer
+        self.hideSecondaryNgTools()
         self.w_ng_display.hide() # change layout before initializing viewer
         self.MA_splitter.show() # change layout before initializing viewer
         self.ngVertLab.setText('Manual Alignment Mode')
@@ -2172,9 +2203,10 @@ QListView::item:!selected:hover
 
 
     def setZoomSlider(self):
-        logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
+        logger.info('')
+        # logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
         if self._allow_zoom_change:
-            caller = inspect.stack()[1].function
+            # caller = inspect.stack()[1].function
             zoom = cfg.emViewer.zoom()
             # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
             self.zoomSlider.setValue(1 / zoom)
@@ -2231,9 +2263,8 @@ QListView::item:!selected:hover
 
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> slider
-
-        caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         try:
             if getData('state,manual_mode'):
                 val = cfg.refViewer.state.cross_section_scale
@@ -2263,7 +2294,7 @@ QListView::item:!selected:hover
 
     def onSliderZmag(self):
         caller = inspect.stack()[1].function
-        logger.critical('caller: %s' % caller)
+        logger.info('caller: %s' % caller)
         try:
             # for viewer in cfg.main_window.get_viewers():
             val = self.ZdisplaySlider.value()
@@ -2652,7 +2683,7 @@ QListView::item:!selected:hover
 
 
     def get_viewers(self):
-        logger.critical('Getting Viewers...')
+        logger.info('Getting Viewers...')
         viewers = []
         if getData('state,manual_mode'):
             viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.stageViewer])

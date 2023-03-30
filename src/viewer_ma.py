@@ -133,6 +133,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def set_zoom(self, val):
+        caller = inspect.stack()[1].function
+        logger.critical(f'Setting zoom to {caller}')
         self._settingZoom = True
         # state = copy.deepcopy(self.state)
         # state.crossSectionScale = val
@@ -239,7 +241,6 @@ class MAViewer(neuroglancer.Viewer):
 
     def on_state_changed_any(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'zpos={cfg.data.zpos}')
 
         # if not self.cs_scale:
         #     if self.state.crossSectionScale < .001:
@@ -249,7 +250,7 @@ class MAViewer(neuroglancer.Viewer):
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
 
-        logger.info(f'on_state_changed_any {self.type} [{self.role}] [{caller}] >>>>')
+        logger.info(f'on_state_changed_any zpos={cfg.data.zpos} [{self.type} {self.role}] [{caller}] >>>>')
         self.signals.stateChangedAny.emit()
 
 
@@ -325,7 +326,7 @@ class MAViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def swim(self, s):
-        logger.critical('Running SWIM...')
+        logger.info('Running SWIM...')
         # cfg.main_window.alignOne()
         self.signals.swimAction.emit()
 
@@ -363,8 +364,7 @@ class MAViewer(neuroglancer.Viewer):
         self.drawSWIMwindow()
         if cfg.data.method() == 'Manual-Strict':
             self.draw_point_annotations()
-        logger.critical(f'pts = {self.pts}')
-        logger.critical(f'dict = {cfg.data.manpoints_pretty()}')
+        logger.info(f'dict = {cfg.data.manpoints_pretty()}')
 
 
 
@@ -583,10 +583,10 @@ class MAViewer(neuroglancer.Viewer):
                 C = [.5, x+half_win, y-half_win]
                 D = [.5, x-half_win, y-half_win]
 
-                X_A = [.5, x - 25, y + 25]
-                X_B = [.5, x + 25, y + 25]
-                X_C = [.5, x + 25, y - 25]
-                X_D = [.5, x - 25, y - 25]
+                # X_A = [.5, x - 25, y + 25]
+                # X_B = [.5, x + 25, y + 25]
+                # X_C = [.5, x + 25, y - 25]
+                # X_D = [.5, x - 25, y - 25]
 
                 annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=[color, marker_size]))
                 annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=[color, marker_size]))
@@ -709,13 +709,9 @@ class MAViewer(neuroglancer.Viewer):
                 print_exception()
 
     def initZoom(self):
-
-
-        logger.critical(f'Initializing Zoom [{self.role}]')
         adjust = 1.08
-
         if self.cs_scale:
-            logger.critical(f'Setting zoom to self.cs_scale, {self.cs_scale} [{self.role}]')
+            logger.critical(f'Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
@@ -727,7 +723,7 @@ class MAViewer(neuroglancer.Viewer):
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
-            logger.critical(f'Setting zoom to calculated value times adjust ({adjust}), {self.cs_scale} [{self.role}]')
+            logger.critical(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20
                 s.crossSectionScale = cs_scale * adjust
