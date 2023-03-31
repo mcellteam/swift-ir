@@ -696,19 +696,19 @@ class MainWindow(QMainWindow):
 
 
     def verify_alignment_readiness(self) -> bool:
-
+        logger.critical('verify_alignment_readiness:')
+        ans = False
         if not cfg.data:
             self.warn('No project yet!')
-            return False
         elif self._working == True:
             self.warn('Another Process is Running')
-            return False
         elif not cfg.data.is_alignable():
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.warn(warning_msg)
-            return False
         else:
             return True
+
+        logger.critical(f'Returning: {ans}')
 
 
     @Slot()
@@ -891,6 +891,7 @@ class MainWindow(QMainWindow):
 
     # def alignOne(self, stageit=False):
     def alignOne(self):
+        logger.critical('\n\nAligning One...\n')
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
@@ -953,7 +954,7 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
-        logger.info('')
+        logger.critical(f'Aligning start:{start}, end: {end}, scale: {scale}..........')
         if not self.verify_alignment_readiness(): return
 
 

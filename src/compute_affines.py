@@ -25,9 +25,13 @@ def compute_affines(scale, start=0, end=None):
     scale_val = get_scale_val(scale)
 
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        cfg.main_window.warn('Canceling Compute Affine Tasks')
     else:
         logger.critical('Computing Affines...')
+
+        scratchpath = os.path.join(cfg.data.dest(), 'logs', 'scratch.log')
+        if os.path.exists(scratchpath):
+            os.remove(scratchpath)
 
         dm = cfg.data
 
@@ -39,7 +43,7 @@ def compute_affines(scale, start=0, end=None):
         alignment_dict = dm['data']['scales'][scale]['stack']
 
         alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
-        logger.info('Start Layer: %s / # Layers: %s' % (str(start), str(end)))
+        logger.info('Start Layer: %s /End layer: %s' % (str(start), str(end)))
 
         # path = os.path.join(dm.dest(), scale, 'img_aligned')
         # if checkForTiffs(path):
