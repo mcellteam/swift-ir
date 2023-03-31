@@ -62,8 +62,8 @@ def run_json_project(project,
     RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
 
     scratchpath = os.path.join(pd, 'logs', 'scratch.log')
-    if os.path.exists(scratchpath):
-        os.remove(scratchpath)
+    # if os.path.exists(scratchpath):
+    #     os.remove(scratchpath)
     fh = logging.FileHandler(scratchpath)
     fh.setLevel(logging.DEBUG)
     scratchlogger.addHandler(fh)
@@ -92,6 +92,9 @@ def run_json_project(project,
             next_scale_key = 'scale_' + str(next_scale)
             upscale = (float(next_scale) / float(scale_tbd))
             allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
+    scratchlogger.critical(f'next_scale = {next_scale}, scale_tbd = {scale_tbd}, upscale = {upscale}')
+
+
 
     if scale_tbd:
 
@@ -124,6 +127,7 @@ def run_json_project(project,
 
         #   Copy skipped, swim, and match point settings
         for i in range(len(s_tbd)):
+            scratchlogger.critical(f"i = : {i}")
             # fix path for base and ref filenames for scale_tbd
             base_fn = os.path.basename(s_tbd[i]['filename'])
             s_tbd[i]['filename'] = os.path.join(scale_tbd_dir, 'img_src', base_fn)
@@ -132,6 +136,7 @@ def run_json_project(project,
                 s_tbd[i]['reference'] = os.path.join(scale_tbd_dir, 'img_src', ref_fn)
 
             alData = s_tbd[i]['alignment']
+
             mr = alData['method_results']
             md = alData['method_data']
 
@@ -154,17 +159,28 @@ def run_json_project(project,
             s_tbd[i]['alignment'] = alData # put updated alData into s_tbd
 
             # if there are match points, copy and scale them for scale_tbd
-            if alData['method'] in ('Manual-Hint', 'Manual-Strict'):
-                mp_ref = (np.array(alData['manual_points']['ref']) * upscale).tolist()
-                mp_base = (np.array(alData['manual_points']['base']) * upscale).tolist()
-                alData['manual_points']['ref'] = mp_ref
-                alData['manual_points']['base'] = mp_base
+            # if next_scale:
+            #     # prevAlData = project['data']['scales'][next_scale]['stack']['alignment']
+            #     # if prevAlData['method'] in ('Manual-Hint', 'Manual-Strict'):
+            #     if alData['method'] in ('Manual-Hint', 'Manual-Strict'):
+            #         # alData['method'] =
+            #         scratchlogger.critical(f"ref points ng (BEFORE): {alData['manual_points']['ref']}")
+            #         scratchlogger.critical(f"ref points mir (BEFORE): {alData['manual_points_mir']['ref']}")
+            #
+            #         mp_ref = (np.array(alData['manual_points']['ref']) * upscale).tolist()
+            #         mp_base = (np.array(alData['manual_points']['base']) * upscale).tolist()
+            #         alData['manual_points']['ref'] = mp_ref
+            #         alData['manual_points']['base'] = mp_base
+            #
+            #
+            #         mp_ref_mir = (np.array(alData['manual_points_mir']['ref']) * upscale).tolist()
+            #         mp_base_mir = (np.array(alData['manual_points_mir']['base']) * upscale).tolist()
+            #         alData['manual_points_mir']['ref'] = mp_ref_mir
+            #         alData['manual_points_mir']['base'] = mp_base_mir
+            #
+            #         scratchlogger.critical(f"ref points ng (AFTER): {alData['manual_points']['ref']}")
+            #         scratchlogger.critical(f"ref points mir (AFTER): {alData['manual_points_mir']['ref']}")
 
-
-                mp_ref_mir = (np.array(alData['manual_points_mir']['ref']) * upscale).tolist()
-                mp_base_mir = (np.array(alData['manual_points_mir']['base']) * upscale).tolist()
-                alData['manual_points_mir']['ref'] = mp_ref_mir
-                alData['manual_points_mir']['base'] = mp_base_mir
 
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
             # Copy the affine_matrices from s_tbd and s the translation part to use as the initial guess for s_tbd
@@ -199,7 +215,6 @@ def run_json_project(project,
             c_afm = method_results['cumulative_afm']  # Note that this might be wrong type (list not a matrix)
 
         # Calculate AFM for each align_item (i.e for each ref-base pair of images)
-        scratchlogger.critical(f'align_list = {align_list}')
         for item in align_list:
             if item['do']:
                 '''Only these WILL be aligned'''
@@ -478,7 +493,6 @@ class align_ingredient:
 
 
     def run_swim(self):
-        scratchlogger.critical('Running Swim........')
         wwx_f = self.recipe.siz[0]  # Window Width in x (Full Size)
         wwy_f = self.recipe.siz[1]  # Window Width in y (Full Size)
         cx, cy = int(wwx_f / 2.0), int(wwy_f / 2.0)
@@ -493,7 +507,6 @@ class align_ingredient:
         swim_results = []
         multi_swim_arg_string = ""
         scale_dir = os.path.abspath(os.path.dirname(os.path.dirname(self.recipe.ad)))
-        SWIMlogger.critical('Constructing SWIM string........')
         for i in range(len(self.psta[0])):
             b_arg = os.path.join(scale_dir, 'corr_spots', 'corr_spot_%d_' %i + os.path.basename(self.recipe.im_mov_fn))
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
@@ -542,16 +555,18 @@ class align_ingredient:
         swim_err_lines = o['err'].strip().split('\n')
         swim_results.append({'out': swim_output, 'err': swim_err_lines})
 
+        SWIMlogger.critical(f'SWIM OUT:\n{swim_output}\n'
+                            f'SWIM ERR:\n{swim_err_lines}')
+
         if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
             MAlogger.critical(f'SWIM OUT:\n{swim_output}\n'
                               f'SWIM ERR:\n{swim_err_lines}')
 
-        RMlogger.critical('<<<< Returning SWIM Output')
         return swim_output
 
 
     def ingest_swim_output(self, swim_output):
-        scratchlogger.critical(f'\nIngesting SWIM output:\n{swim_output}\n')
+        SWIMlogger.critical(f'\nIngesting SWIM output:\n{swim_output}\n')
 
         mir_script = ""
         snr_list = []
