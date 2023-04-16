@@ -2201,16 +2201,17 @@ class MainWindow(QMainWindow):
     def exit_app(self):
         logger.info("Asking user to confirm exit application...")
 
-
         dlg = ExitAppDialog()
         dlg.show()
         fg = self.frameGeometry()
 
-        x = (fg.width() / 2) - (dlg.width() / 2)
-        y = (fg.height() / 2) + (dlg.height() / 2)
+        # logger.critical(f'dlg.width() = {dlg.width()}')
+        # logger.critical(f'dlg.height() = {dlg.height()}')
+        # # x = (fg.width() / 2) - (dlg.width() / 2)
+        # # y = (fg.height() / 2) + (dlg.height() / 2)
         # x = (fg.width()/2)
         # y = (fg.height()/2)
-        dlg.move(x, y)
+        # dlg.move(x, y)
 
 
         if dlg.exec():

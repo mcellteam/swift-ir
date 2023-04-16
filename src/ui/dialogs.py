@@ -21,6 +21,7 @@ class ExitAppDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setFixedSize(240, 100)
+        self.setModal(True)
 
         self.setWindowFlags(Qt.FramelessWindowHint)
         # self.setAutoFillBackground(False)

@@ -1266,14 +1266,11 @@ class ProjectTab(QWidget):
             combobox-popup: 0;
             background: transparent;
         }
-        
-        
         QComboBox QAbstractItemView {
             border-bottom-right-radius: 10px;
             border-bottom-left-radius: 10px;
             border-top-right-radius: 0px;
             border-top-left-radius: 0px;
-
         }
         QComboBox:hover {
             border: 2px solid #339933;
@@ -1286,33 +1283,28 @@ class ProjectTab(QWidget):
             background-color: rgba(0, 0, 0, 200)
         }
         QListView::item:selected
-{
-    color: #31cecb;
-    background-color: #454e5e;
-    border: 2px solid magenta;
-    border-radius: 10px;
-}
-
-QListView::item:!selected
-{
-    color:white;
-    background-color: transparent;
-    border: none;
-    padding-left : 10px;
-
-}
-
-
-QListView::item:!selected:hover
-{
-    color: #bbbcba;
-    background-color: #454e5e;
-    border: transparent;
-    padding-left : 10px;
-    border-radius: 10px;
-    }
-
-
+        {
+            color: #31cecb;
+            background-color: #454e5e;
+            border: 2px solid magenta;
+            border-radius: 10px;
+        }
+        QListView::item:!selected
+        {
+            color:white;
+            background-color: transparent;
+            border: none;
+            padding-left : 10px;
+        
+        }
+        QListView::item:!selected:hover
+        {
+            color: #bbbcba;
+            background-color: #454e5e;
+            border: transparent;
+            padding-left : 10px;
+            border-radius: 10px;
+        }
         """)
         self.comboNgLayout.setFixedSize(60, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1423,17 +1415,11 @@ QListView::item:!selected:hover
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addAction(self._highContrastNgAction)
-        # self.w_ng_extended_toolbar.addWidget(self.aligned_label)
-        # self.w_ng_extended_toolbar.addWidget(self.unaligned_label)
-        # self.w_ng_extended_toolbar.addWidget(self.generated_label)
 
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
         # self.w_ng_extended_toolbar.setPalette(ng_pal)
-
         # self.w_ng_extended_toolbar.addWidget(self.cb_show_ng_ui_controls)
         # self.w_ng_extended_toolbar.setLayout(hbl)
-
-
 
         self.shaderAction = QAction()
         self.shaderAction.setCheckable(True)
