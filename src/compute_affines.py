@@ -81,33 +81,26 @@ def compute_affines(scale, start=0, end=None):
 
         # START TASK QUEUE
         task_queue.start(cpus)
-        align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
-
-        size = cfg.data.image_size(s=scale)
+        align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
+        logger.critical(f'script path: {align_job}')
 
         # ADD ALIGNMENT TASKS TO QUEUE
-        for layer in substack:
-            index = dm_().index(layer)
-            if not layer['skipped']:
+        for sec in substack:
+            zpos = dm_().index(sec)
+
+            if not sec['skipped']:
                 task_args = [sys.executable,
                              align_job,             # Python program to run (single_alignment_job)
                              temp_file,             # Temp project file name
-                             alignment_option,      # Init, Refine, or Apply
                              str(scale_val),        # Scale to use or 0
-                             str(cfg.CODE_MODE),    # Python or C mode
-                             str(index),            # First l number to run from Project file #ATTN!
-                             str(1),                # Number of layers to run                 #ATTN!
+                             str(zpos),             # Section index to run recipe alignment
                              str(cfg.USE_FILE_IO),  # Use File IO instead of Pipe
-                             str(size[0])]
-                # if index == 5:
-                #     task_args[3] = 'bogus_align'
-                # if index == 8:
-                #     task_args[1] = 'bogus_script.py'
+                             str(cfg.DEV_MODE),     # Use development mode
+                             ]
                 task_queue.add_task(task_args)
-                if cfg.PRINT_EXAMPLE_ARGS:
-                    if index in range(start, start + 3):
-                        e = [str(p) for p in task_args] # example
-                        logger.info("Layer #%d (example):\n  %s\n  %s\n  %s\n  %s" % (index, e[0],e[1],e[2]," ".join(e[3::])))
+                # if cfg.PRINT_EXAMPLE_ARGS:
+                #     if zpos in range(start, start + 3):
+                logger.info("Section #%d (example):\n%s" % (zpos, "\n  ".join(task_args)))
 
         # task_queue.work_q.join()
         # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
@@ -119,9 +112,15 @@ def compute_affines(scale, start=0, end=None):
 
         # Sort the tasks by layers rather than by process IDs
         task_dict = {}
+        index_arg = 3
         for k in task_queue.task_dict.keys():
             t = task_queue.task_dict[k]
-            task_dict[int(t['args'][5])] = t
+            # logger.critical(
+            #     f"arg 0 = {str(t['args'][0])}\n"
+            #     f"arg 1 = {str(t['args'][1])}\n"
+            #     f"arg 2 = {str(t['args'][2])}\n"
+            #     f"arg 3 = {str(t['args'][3])}")
+            task_dict[int(t['args'][index_arg])] = t
 
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
         updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
@@ -153,7 +152,7 @@ def compute_affines(scale, start=0, end=None):
                 # Get the same s from both the old and new datamodel models
                 al_stack_old = updated_model['data']['scales'][scale]['stack']
                 al_stack_new = fdm_new['data']['scales'][scale]['stack']
-                layer_index = int(task_list[tnum]['args'][5]) # may differ from tnum!
+                layer_index = int(task_list[tnum]['args'][index_arg]) # may differ from tnum!
                 al_stack_old[layer_index] = al_stack_new[layer_index]
                 if task_list[tnum]['statusBar'] == 'task_error':
                     ref_fn = al_stack_old[layer_index]['reference']

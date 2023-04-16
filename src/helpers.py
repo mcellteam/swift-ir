@@ -93,7 +93,7 @@ def count_widgets(name_or_type) -> int:
     return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
 
 
-def delete_recursive(dir):
+def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
     cfg.main_window.showZeroedPbar()
     cfg.main_window.setPbarText('Deleting Files...')
@@ -101,28 +101,31 @@ def delete_recursive(dir):
     to_delete = []
 
     scales = glob(dir + '/scale_*')
-    if scales:
-        for s in natural_sort(scales)[::-1]:
-            if os.path.exists(os.path.join(dir, s, 'history')):
-                to_delete.append(os.path.join(dir, s, 'history'))
-            if os.path.exists(os.path.join(dir, s, 'thumbnails_corr_spots')):
-                to_delete.append(os.path.join(dir, s, 'thumbnails_corr_spots'))
-            if os.path.exists(os.path.join(dir, s, 'bias_data')):
-                to_delete.append(os.path.join(dir, s, 'bias_data'))
-            if os.path.exists(os.path.join(dir, s, 'img_aligned')):
-                to_delete.append(os.path.join(dir, s, 'img_aligned'))
-            if os.path.exists(os.path.join(dir, s, 'thumbnails_aligned')):
-                to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
-            if os.path.exists(os.path.join(dir, s, 'img_src')):
-                to_delete.append(os.path.join(dir, s, 'img_src'))
+    for s in scales:
+        if keep_core_dirs:
+            if s == 'scale_1':
+                continue
+        if os.path.exists(os.path.join(dir, s, 'history')):
+            to_delete.append(os.path.join(dir, s, 'history'))
+        if os.path.exists(os.path.join(dir, s, 'thumbnails_corr_spots')):
+            to_delete.append(os.path.join(dir, s, 'thumbnails_corr_spots'))
+        if os.path.exists(os.path.join(dir, s, 'bias_data')):
+            to_delete.append(os.path.join(dir, s, 'bias_data'))
+        if os.path.exists(os.path.join(dir, s, 'img_aligned')):
+            to_delete.append(os.path.join(dir, s, 'img_aligned'))
+        if os.path.exists(os.path.join(dir, s, 'thumbnails_aligned')):
+            to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
+        if os.path.exists(os.path.join(dir, s, 'img_src')):
+            to_delete.append(os.path.join(dir, s, 'img_src'))
     to_delete.extend(glob(dir +'/img_aligned.zarr/s*'))
     to_delete.extend(glob(dir +'/img_src.zarr/s*'))
-    to_delete.append(dir +'/thumbnails')
-    to_delete.append(dir)
-    to_delete.append(dir) #delete twice
+    if not keep_core_dirs:
+        to_delete.append(dir +'/thumbnails')
+        to_delete.append(dir)
+        to_delete.append(dir) #delete twice
     cfg.nCompleted = 0
     cfg.nTasks = len(to_delete)
-    logger.critical('# directories to delete: %d' % len(to_delete))
+    logger.info('# directories to delete: %d' % len(to_delete))
     cfg.main_window.setPbarMax(cfg.nTasks)
     # logger.critical(f'To Delete: {to_delete}')
     for d in to_delete:
@@ -563,8 +566,6 @@ def get_scale_key(scale_val) -> str:
 
 
 def get_scale_val(scale_of_any_type) -> int:
-    '''Converts s key to integer (i.e. 'scale_1' as string -> 1 as int)
-    TODO: move this to glanceem_utils'''
     scale = scale_of_any_type
     try:
         if type(scale) == type(1):
@@ -763,8 +764,7 @@ def make_absolute(file_path, proj_path):
 
 def initLogFiles():
     logpath = os.path.join(cfg.data.dest(), 'logs')
-    if not os.path.exists(logpath):
-        os.mkdir(logpath)
+    os.makedirs(logpath, exist_ok=True)
     open(os.path.join(logpath, 'exceptions.log'), 'a').close()
     open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
     open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
@@ -775,29 +775,24 @@ def initLogFiles():
 def create_project_structure_directories(destination, scales) -> None:
 
     for scale in scales:
-        subdir_path = os.path.join(destination, scale)
         cfg.main_window.hud('Creating directories for %s...' % scale)
-        src_path = os.path.join(subdir_path, 'img_src')
-        aligned_path = os.path.join(subdir_path, 'img_aligned')
-        # staged_path = os.path.join(subdir_path, 'img_staged')
+        subdir_path    = os.path.join(destination, scale)
+        src_path       = os.path.join(subdir_path, 'img_src')
+        aligned_path   = os.path.join(subdir_path, 'img_aligned')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
-        history_path = os.path.join(subdir_path, 'history')
-        tmp_path = os.path.join(subdir_path, 'tmp')
+        history_path   = os.path.join(subdir_path, 'history')
+        tmp_path       = os.path.join(subdir_path, 'tmp')
 
         try:
-            os.makedirs(subdir_path)
-            os.makedirs(src_path)
-            os.makedirs(aligned_path)
-            # os.makedirs(staged_path)
-            os.makedirs(bias_data_path)
-            os.makedirs(history_path)
-            os.makedirs(tmp_path)
-
+            os.makedirs(subdir_path, exist_ok=True)
+            os.makedirs(src_path, exist_ok=True)
+            os.makedirs(aligned_path, exist_ok=True)
+            os.makedirs(bias_data_path, exist_ok=True)
+            os.makedirs(history_path, exist_ok=True)
+            os.makedirs(tmp_path, exist_ok=True)
         except:
             print_exception()
-            logger.warning('There Was A Problem Creating Directory Structure')
-        cfg.main_window.hud.done()
-
+            logger.warning('Exception Raised While Creating Directory Structure')
 
 
 def is_not_hidden(path):

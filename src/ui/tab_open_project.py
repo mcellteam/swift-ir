@@ -44,6 +44,7 @@ class OpenProject(QWidget):
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects(parent=self)
         self.initUI()
+        self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
 
     def initUI(self):
         # User Projects Widget
@@ -75,6 +76,7 @@ class OpenProject(QWidget):
         hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(w)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
+        hbl.addWidget(QLabel('Row Height'))
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
         controls.setLayout(hbl)
 
@@ -105,17 +107,20 @@ class OpenProject(QWidget):
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
-        self._buttonOpen = QPushButton('Open')
+        self._buttonOpen = QPushButton('Open Project')
+        self._buttonOpen.setStyleSheet("font-size: 10px;")
         self._buttonOpen.clicked.connect(self.open_project_selected)
-        self._buttonOpen.setFixedSize(64, 20)
+        self._buttonOpen.setFixedSize(70, 20)
 
-        self._buttonDelete = QPushButton('Delete')
+        self._buttonDelete = QPushButton('Delete Project')
+        self._buttonDelete.setStyleSheet("font-size: 10px;")
         self._buttonDelete.clicked.connect(self.delete_project)
-        self._buttonDelete.setFixedSize(64, 20)
+        self._buttonDelete.setFixedSize(70, 20)
 
-        self._buttonNew = QPushButton('New')
+        self._buttonNew = QPushButton('New Project')
+        self._buttonNew.setStyleSheet("font-size: 10px;")
         self._buttonNew.clicked.connect(self.new_project)
-        self._buttonNew.setFixedSize(64, 20)
+        self._buttonNew.setFixedSize(70, 20)
 
         # self._buttonNew = QPushButton('Remember')
         # self._buttonNew.setStyleSheet("font-size: 9px;")
@@ -206,7 +211,7 @@ class OpenProject(QWidget):
 
 
     def new_project(self, mendenhall=False):
-        logger.critical('Starting A New Project...')
+        logger.info('\n\nStarting A New Project...\n')
         cfg.main_window.tell('Starting A New Project...')
         cfg.main_window.stopPlaybackTimer()
         if cfg.project_tab:
@@ -258,12 +263,10 @@ class OpenProject(QWidget):
             if result == 1:
                 cfg.main_window.warn('No images were imported - canceling new project')
                 return
-
+            cfg.data.set_defaults()
             recipe_dialog = ScaleProjectDialog(parent=self)
             result = recipe_dialog.exec()
-            logger.critical('result = %s' %str(result))
-
-            makedirs_exist_ok(path, exist_ok=True)
+            # makedirs_exist_ok(path, exist_ok=True)
             initLogFiles()
             cfg.main_window._autosave(silently=True)
             cfg.main_window.autoscale()
@@ -275,7 +278,7 @@ class OpenProject(QWidget):
             # self.onStartProject(mendenhall=True)
             # turn OFF onStartProject for Mendenhall
 
-        logger.critical(f'Appending {filename} to .swift_cache...')
+        logger.info(f'Appending {filename} to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
@@ -348,15 +351,15 @@ class OpenProject(QWidget):
         elif validate_project_selection(path):
 
             isOpen = cfg.main_window.isProjectOpen(path)
-            logger.critical(f'isOpen = {isOpen}')
-            logger.info('path = %s' % path)
+            # logger.info(f'isOpen = {isOpen}')
+            # logger.info('path = %s' % path)
             if isOpen:
                 cfg.main_window.globTabs.setCurrentIndex(cfg.main_window.getProjectIndex(path))
                 return
 
             # filename = self.selected_file
             filename = self.selectionReadout.text()
-            logger.critical(f'Opening Project {filename}...')
+            logger.info(f'Opening Project {filename}...')
             cfg.main_window.tell('Loading Project "%s"' % filename)
             try:
                 with open(filename, 'r') as f:
@@ -381,7 +384,7 @@ class OpenProject(QWidget):
 
 
     def delete_project(self):
-        logger.critical('')
+        logger.info('')
         # project_file = self.selected_file
         project_file = self.selectionReadout.text()
         project = os.path.splitext(project_file)[0]
@@ -410,7 +413,7 @@ class OpenProject(QWidget):
             cfg.main_window.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
             logger.warning('Executing Delete Project Permanently Instruction...')
 
-        logger.critical(f'Deleting Project File: {project_file}...')
+        logger.info(f'Deleting Project File: {project_file}...')
         cfg.main_window.warn(f'Deleting Project File: {project_file}...')
         try:
             os.remove(project_file)
@@ -435,7 +438,6 @@ class OpenProject(QWidget):
         cfg.main_window.tell('Wrapping up...')
         configure_project_paths()
         if cfg.main_window.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
-            logger.critical('Reloading table of projects data...')
             try:
                 cfg.main_window.globTabs.currentWidget().user_projects.set_data()
             except:
@@ -515,20 +517,6 @@ class UserProjects(QWidget):
                                  "QPushButton{background-color: #ffe135;}")
         self.table.setColumnCount(10)
         self.set_headers()
-
-
-        # self.row_height_slider = Slider(self)
-        # self.row_height_slider.valueChanged.connect(self.updateRowHeight)
-        # # self.row_height_slider.setValue(self.initial_row_height)
-        # # self.updateRowHeight(self.initial_row_height)
-        #
-        # controls = QWidget()
-        # controls.setFixedHeight(18)
-        # hbl = QHBoxLayout()
-        # hbl.setContentsMargins(4, 0, 4, 0)
-        # hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
-        # controls.setLayout(hbl)
-
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)

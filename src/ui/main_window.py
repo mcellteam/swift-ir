@@ -32,7 +32,7 @@ import pyqtgraph.console
 import pyqtgraph as pg
 import qtawesome as qta
 from rechunker import rechunk
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QEventLoop
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QEventLoop, QRect
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor
 from qtpy.QtWebEngineWidgets import *
@@ -42,7 +42,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget
+    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox
 
 
 
@@ -59,15 +59,11 @@ from src.generate_scales import generate_scales
 from src.thumbnailer import Thumbnailer
 from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exception, get_scale_val, \
-    natural_sort, make_affine_widget_HTML,  \
-    is_tacc, create_project_structure_directories, get_scales_with_generated_alignments, tracemalloc_start, \
-    tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, exist_aligned_zarr_cur_scale, get_appdir, \
-    makedirs_exist_ok, are_aligned_images_generated, exist_aligned_zarr, configure_project_paths, handleError, \
-    append_project_path, isNeuroglancerRunning, count_widgets, find_allocated_widgets, cleanup_project_list, \
+    natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
+    exist_aligned_zarr_cur_scale, exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
-    QFileDialogPreview, import_images_dialog, new_project_dialog, open_project_dialog, export_affines_dialog, \
-    mendenhall_dialog, RechunkDialog
+    open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
@@ -79,9 +75,8 @@ from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
-from src.viewer_em import EMViewer
 from src.ui.tab_open_project import OpenProject
-from src.ui.thumbnail import Thumbnail, SnrThumbnail, CorrSignalThumbnail
+from src.ui.thumbnail import CorrSignalThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
 
 # from src.ui.components import AutoResizingTextEdit
@@ -623,6 +618,7 @@ class MainWindow(QMainWindow):
 
         self.enableAllTabs()
         # cfg.project_tab.initNeuroglancer()
+        # cfg.data.set_manual_swim_windows_to_default()
         self.pbarLabel.setText('')
         self.tell('**** Processes Complete ****')
         logger.info('<<<< autoscale <<<<')
@@ -651,8 +647,10 @@ class MainWindow(QMainWindow):
 
 
     def regenerate(self, scale, start=0, end=None) -> None:
-        if self._working == True: self.warn('Another Process is Already Running'); return
-        if not cfg.data.is_aligned(s=scale): self.warn('Scale Must Be Aligned First'); return
+        if self._working == True:
+            self.warn('Another Process is Already Running'); return
+        if not cfg.data.is_aligned(s=scale):
+            self.warn('Scale Must Be Aligned First'); return
         cfg.nTasks = 3
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
@@ -696,7 +694,7 @@ class MainWindow(QMainWindow):
 
 
     def verify_alignment_readiness(self) -> bool:
-        logger.critical('verify_alignment_readiness:')
+        logger.info('')
         ans = False
         if not cfg.data:
             self.warn('No project yet!')
@@ -706,9 +704,10 @@ class MainWindow(QMainWindow):
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.warn(warning_msg)
         else:
-            return True
+            ans = True
 
-        logger.critical(f'Returning: {ans}')
+        logger.info(f'Returning: {ans}')
+        return ans
 
 
     @Slot()
@@ -798,6 +797,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.scale)
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
+
         self._autosave()
         self.stopNgServer()  # 0202-
 
@@ -807,7 +807,6 @@ class MainWindow(QMainWindow):
         # self.alignmentFinished.emit()
         try:
             self.pbarLabel.setText('')
-
             cfg.project_tab.snr_plot.initSnrPlot()
             self.updateEnabledButtons()
             self.updateProjectTable() #+
@@ -1035,95 +1034,45 @@ class MainWindow(QMainWindow):
 
 
     def rescale(self):
+        if self._isProjectTab():
 
-        #Todo clear SNR data!
+            msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
+            dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
+            if dlg.exec():
+                recipe_dialog = ScaleProjectDialog(parent=self)
+                if recipe_dialog.exec():
 
-        if not cfg.data:
-            self.warn('No data yet!')
-            return
+                    self.stopNgServer()  # 0202-
+                    self._disableGlobTabs()
 
-        if getData('state,manual_mode'):
-            self.hud.warn('Please Exit Manual Alignment Mode Before Rescaling.')
-            return
+                    self.tell('Clobbering the Project Directory %s...')
+                    try:
+                        delete_recursive(dir=cfg.data.dest(), keep_core_dirs=True)
+                    except:
+                        print_exception()
+                        self.err('The Above Error Was Encountered During Clobber of the Project Directory')
+                    else:
+                        self.hud.done()
 
-        msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
-        dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
-        if not dlg.exec():
-            logger.info('Rescale Canceled')
-            return
+                    cfg.nTasks = 3
+                    cfg.nCompleted = 0
+                    cfg.CancelProcesses = False
+                    self.showZeroedPbar()
+                    self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
+                    # makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
+                    self.hud.post("Re-scaling...")
+                    try:
+                        self.autoscale(make_thumbnails=False)
+                    except:
+                        print_exception()
+                    else:
+                        self._autosave()
+                        self.tell('Rescaling Successful')
+                    finally:
+                        self.onStartProject()
+                        self.hidePbar()
 
-        cfg.nTasks = 3
-        cfg.nCompleted = 0
-        cfg.CancelProcesses = False
-        # cfg.event = multiprocessing.Event()
-        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
-        self.showZeroedPbar()
-        self.stopNgServer() #0202-
-        self._disableGlobTabs()
-
-        for scale in cfg.data.scales():
-            logger.info('Clearing Method Results, %s' % cfg.data.scale_pretty(s=scale))
-            cfg.data.clear_method_results(scale=scale, start=0, end=None)
-
-        path = cfg.data.dest()
-        filenames = cfg.data.get_source_img_paths()
-        scales = cfg.data.scales()
-        self._scales_combobox_switch = 0 #refactor this out
-        self.hud.post("Removing Extant Scale Directories...")
-        try:
-            for scale in scales:
-                # if s != 'scale_1':
-                p = os.path.join(path, scale)
-                if os.path.exists(p):
-                    logger.info(f'removing path {p}...')
-                    shutil.rmtree(p)
-        except:
-            print_exception()
-        else:
-            self.hud.done()
-        finally:
-            self.updateDtWidget() #0212+
-            cfg.project_tab.updateTreeWidget()
-
-        self.post = self.hud.post("Removing Zarr Scale Directories...")
-        try:
-            p = os.path.join(path, 'img_src.zarr')
-            if os.path.exists(p):
-                logger.info(f'removing path {p}...')
-                shutil.rmtree(p, ignore_errors=True)
-            p = os.path.join(path, 'img_aligned.zarr')
-            if os.path.exists(p):
-                logger.info(f'removing path {p}...')
-                shutil.rmtree(p, ignore_errors=True)
-        except:
-            print_exception()
-        else:
-            self.hud.done()
-
-        recipe_dialog = ScaleProjectDialog(parent=self)
-        if recipe_dialog.exec():
-            logger.info('ConfigProjectDialog - Passing...')
-            pass
-        else:
-            logger.info('ConfigProjectDialog - Returning...')
-            return
-        logger.info('Clobbering The Project Dictionary...')
-        makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
-        logger.info(str(filenames))
-        self.hud.post("Re-scaling...")
-
-        try:
-            self.autoscale(make_thumbnails=False)
-        except:
-            print_exception()
-        else:
-            self._autosave()
-            self.tell('Rescaling Successful')
-        finally:
-            self.hidePbar()
-            self.enableAllTabs()
-            self.onStartProject()
-        self.tell('**** Processes Complete ****')
+                    self.tell('**** Processes Complete ****')
 
 
     def generate_multiscale_zarr(self):
@@ -1159,6 +1108,7 @@ class MainWindow(QMainWindow):
             msg = 'Verify reset the reject list.'
             reply = QMessageBox.question(self, 'Verify Reset Reject List', msg, QMessageBox.Cancel | QMessageBox.Ok)
             if reply == QMessageBox.Ok:
+                cfg.main_window.tell('Resetting Skips...')
                 cfg.data.clear_all_skips()
         else:
             self.warn('No Skips To Clear.')
@@ -1459,7 +1409,7 @@ class MainWindow(QMainWindow):
                 if getData('state,manual_mode'):
                     cfg.project_tab.dataUpdateMA()
                     # if prev_loc != cfg.data.zpos:
-                    # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.selected_method() != 'Auto-SWIM')
+                    # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
                     cfg.project_tab.set_method_label_text()
 
                 if cfg.project_tab._tabs.currentIndex() == 2:
@@ -1473,7 +1423,7 @@ class MainWindow(QMainWindow):
                 self._jumpToLineedit.setText(str(cur)) #0131+
 
                 if cfg.project_tab.detailsCorrSpots.isVisible():
-                    if cfg.data.selected_method() == 'Auto-SWIM':
+                    if cfg.data.method() == 'Auto-SWIM':
                         snr_vals = cfg.data.snr_components()
                         n = len(snr_vals)
                         if (n >= 1) and (snr_vals[0] > .001):
@@ -1492,7 +1442,7 @@ class MainWindow(QMainWindow):
                             cfg.project_tab.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
                         else:
                             cfg.project_tab.cs3.set_no_image()
-                    elif cfg.data.selected_method() == 'Manual-Hint':
+                    elif cfg.data.method() == 'Manual-Hint':
                         files = cfg.data.get_corr_spot_files()
                         snr_vals = cfg.data.snr_components()
                         n = len(files)
@@ -1519,7 +1469,7 @@ class MainWindow(QMainWindow):
                     Filename{br}:{br}{a}{cfg.data.filename_basename()}{b}{nl}
                     Reference:{br}{a}{cfg.data.reference_basename()}{b}{nl}
                     Modified{br}:{br}{a}{cfg.data.modified}{b}{nl}"""
-                    method = cfg.data.selected_method()
+                    method = cfg.data.method()
                     if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}"
                     elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
                     elif method == 'Manual-Strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
@@ -1562,7 +1512,7 @@ class MainWindow(QMainWindow):
                         components = cfg.data.snr_components()
                         str0 = ('%.3f' % cfg.data.snr()).rjust(9)
                         str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
-                        if cfg.data.selected_method() == 'Auto-SWIM':
+                        if cfg.data.method() == 'Auto-SWIM':
                             q0 = ('%.3f' % components[0]).rjust(9)
                             q1 = ('%.3f' % components[1]).rjust(9)
                             q2 = ('%.3f' % components[2]).rjust(9)
@@ -1576,7 +1526,7 @@ class MainWindow(QMainWindow):
                                 f"Btm,Left{br*2}:{q2}{nl}"
                                 f"Btm,Right{br}:{q3}"
                             )
-                        elif cfg.data.selected_method() in ('Manual-Hint', 'Manual-Strict'):
+                        elif cfg.data.method() in ('Manual-Hint', 'Manual-Strict'):
                             txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
                                   f"Prev. SNR{br}:{str1}{nl}" \
                                   f"Components"
@@ -1872,9 +1822,9 @@ class MainWindow(QMainWindow):
                 caller = inspect.stack()[1].function
                 logger.info('caller: %s' % caller)
                 if caller in ('main', 'scale_up', 'scale_down'):
-                    if getData('state,manual_mode'):
-                        self.exit_man_mode()
-                    # logger.info(f'caller: {caller}')
+                    # if getData('state,manual_mode'):
+                    #     self.exit_man_mode()
+                    # 0414-
                     index = self._changeScaleCombo.currentIndex()
                     cfg.data.scale = cfg.data.scales()[index]
                     self.onScaleChange() #0129-
@@ -1939,92 +1889,6 @@ class MainWindow(QMainWindow):
     def show_warning(self, title, text):
         QMessageBox.warning(None, title, text)
 
-
-    def new_project(self, mendenhall=False):
-
-        ''' NOT IN USE => SEE tab_open_project.py '''
-
-        logger.critical('Starting A New Project...')
-        self.tell('Starting A New Project...')
-        self.stopPlaybackTimer()
-        if cfg.project_tab:
-            logger.info('Data is not None. Asking user to confirm new data...')
-            msg = QMessageBox(QMessageBox.Warning,
-                              'Confirm New Project',
-                              'Please confirm create new project.',
-                              buttons=QMessageBox.Cancel | QMessageBox.Ok)
-            msg.setIcon(QMessageBox.Question)
-            msg.setDefaultButton(QMessageBox.Cancel)
-            reply = msg.exec_()
-            if reply == QMessageBox.Ok:
-                logger.info("Response was 'OK'")
-            else:
-                logger.info("Response was not 'OK' - Returning")
-                self.warn('New Project Canceled.')
-                return
-
-        self.tell('New Project Path:')
-        filename = new_project_dialog()
-        if filename in ['', None]:
-            logger.info('New Project Canceled.')
-            self.warn("New Project Canceled.")
-            return
-        if not filename.endswith('.swiftir'):
-            filename += ".swiftir"
-        if os.path.exists(filename):
-            logger.warning("The file '%s' already exists." % filename)
-            self.warn("The file '%s' already exists." % filename)
-            path_proj = os.path.splitext(filename)[0]
-            self.tell(f"Removing Extant Project Directory '{path_proj}'...")
-            logger.info(f"Removing Extant Project Directory '{path_proj}'...")
-            shutil.rmtree(path_proj, ignore_errors=True)
-            self.tell(f"Removing Extant Project File '{path_proj}'...")
-            logger.info(f"Removing Extant Project File '{path_proj}'...")
-            os.remove(filename)
-
-        path, extension = os.path.splitext(filename)
-        cfg.data = DataModel(name=path, mendenhall=mendenhall)
-
-        cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=cfg.data)
-        cfg.dataById[id(cfg.project_tab)] = cfg.data
-
-        # makedirs_exist_ok(path, exist_ok=True)
-
-        if not mendenhall:
-            try:
-                self.import_multiple_images()
-            except:
-                logger.warning('Import Images Dialog Was Canceled - Returning')
-                self.warn('Canceling New Project')
-                print_exception()
-                return
-
-            recipe_dialog = ScaleProjectDialog(parent=self)
-            if recipe_dialog.exec():
-                logger.info('ConfigProjectDialog - Passing...')
-                pass
-            else:
-                logger.info('ConfigProjectDialog - Returning...')
-                return
-
-
-            makedirs_exist_ok(path, exist_ok=True)
-            self._autosave(silently=True)
-            self.autoscale()
-            # self.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
-            self.globTabs.addTab(cfg.project_tab, os.path.basename(path))
-            self._setLastTab()
-            self.onStartProject()
-        else:
-            create_project_structure_directories(cfg.data.dest(), ['scale_1'])
-            # self.onStartProject(mendenhall=True)
-            # turn OFF onStartProject for Mendenhall
-
-        logger.critical(f'Appending {filename} to .swift_cache...')
-        userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-        with open(userprojectspath, 'a') as f:
-            f.write(filename + '\n')
-        self._autosave()
 
 
     # def delete_project(self):
@@ -2147,7 +2011,7 @@ class MainWindow(QMainWindow):
         setData('state,ng_layout', 'xy')
 
         # self.combo_mode.setCurrentIndex(1)
-        logger.critical(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
+        logger.info(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
         self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
 
         self.updateDtWidget()
@@ -2168,9 +2032,8 @@ class MainWindow(QMainWindow):
         self.reload_scales_combobox()
         self.enableAllTabs()
         self.updateNotes()
-
+        self._autosave() #0412+
         self.hud.done()
-        self.tell('Updating Table Data...')
         cfg.project_tab.project_table.setScaleData()
         self.hud.done()
         self._sectionSlider.setValue(int(len(cfg.data) / 2))
@@ -2332,36 +2195,69 @@ class MainWindow(QMainWindow):
         self.shutdownInstructions()
 
 
-    def exit_app(self):
-        logger.info("Exiting The Application...")
 
-        quit_msg = "Are you sure you want to exit the program?"
-        reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            pass
+
+
+    def exit_app(self):
+        logger.info("Asking user to confirm exit application...")
+
+
+        dlg = ExitAppDialog()
+        if dlg.exec():
+            logger.info('User Choice: Exit')
         else:
+            logger.info('User Choice: Cancel')
             return
 
-        self.set_status('Exiting...')
+        self.hud('Exiting...')
         if self._unsaved_changes:
             self.tell('Exit AlignEM-SWiFT?')
+            self.tell('Exit AlignEM-SWiFT?')
             message = "There are unsaved changes.\n\nSave before exiting?"
-            msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
+            msg = QMessageBox(QMessageBox.Warning, "Save Changes", message)
+            msg.setParent(self)
+            msg.setFixedSize(360,180)
+
+            # fg = self.frameGeometry()
+            fg = self.geometry()
+            x = (fg.width() - msg.width()) / 2
+            y = (fg.height() - msg.height()) / 2
+            msg.move(x, y)
+
+            msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
+            msg.setStyleSheet("""
+                background-color: #141414;
+                color: #ede9e8;
+                font-size: 11px;
+                font-weight: 600;
+                font-family: Tahoma, sans-serif;
+    
+                border-color: #339933;
+                border-width: 2px;
+                
+                QLabel{ color: white}
+
+            """)
             msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            buttonSave = msg.button(QMessageBox.Save)
+            buttonSave.setText('Save && Exit')
+            buttonDiscard = msg.button(QMessageBox.Discard)
+            buttonDiscard.setText('Exit Without Saving')
             msg.setDefaultButton(QMessageBox.Save)
-            msg.setIcon(QMessageBox.Question)
+            # msg.setIcon(QMessageBox.Question)
+            # msg.setWindowIcon(qta.icon('fa.question', color='#ede9e8'))
             reply = msg.exec_()
             if reply == QMessageBox.Cancel:
-                logger.info('reply=Cancel. Returning control to the app.')
-                self.tell('Canceling exit application')
+                logger.info('User Choice: Cancel')
+                self.tell('Canceling Exit')
                 return
             if reply == QMessageBox.Save:
-                logger.info('reply=Save')
+                logger.info('User Choice: Save and Exit')
                 self.save()
                 self.set_status('Wrapping up...')
                 logger.info('Project saved. Exiting')
             if reply == QMessageBox.Discard:
-                logger.info('reply=Discard Exiting without saving')
+                logger.info('User Choice: Discard Saved Changes')
         else:
             logger.info('No Unsaved Changes - Exiting')
 
@@ -2863,7 +2759,7 @@ class MainWindow(QMainWindow):
 
     def print_all_matchpoints(self):
         if cfg.project_tab:
-            cfg.data.print_all_matchpoints()
+            cfg.data.print_all_manpoints()
 
 
     def show_all_matchpoints(self):
@@ -2997,12 +2893,11 @@ class MainWindow(QMainWindow):
 
     def onComboModeChange(self):
         caller = inspect.stack()[1].function
-        logger.critical('')
 
         if self._isProjectTab():
             # if cfg.project_tab._tabs.currentIndex() == 0:
             if caller == 'main':
-                logger.critical('onComboModeChange...')
+                logger.info('')
                 # index = self.combo_mode.currentIndex()
                 curText = self.combo_mode.currentText()
                 if curText == 'Manual Align Mode':
@@ -3348,7 +3243,7 @@ class MainWindow(QMainWindow):
                     margin: 0px;
                     padding: 0px;
                     """)
-            logger.critical(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
+            logger.info(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
             self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
@@ -3391,19 +3286,20 @@ class MainWindow(QMainWindow):
 
 
     def new_mendenhall_protocol(self):
-        self.new_project(mendenhall=True)
-        scale = cfg.data.scale
-        cfg.data['data']['cname'] = 'none'
-        cfg.data['data']['clevel'] = 5
-        cfg.data['data']['chunkshape'] = (1, 512, 512)
-        cfg.data['data']['scales'][scale]['resolution_x'] = 2
-        cfg.data['data']['scales'][scale]['resolution_y'] = 2
-        cfg.data['data']['scales'][scale]['resolution_z'] = 50
-        self.mendenhall = Mendenhall(parent=self, data=cfg.data)
-        self.mendenhall.set_directory()
-        self.mendenhall.start_watching()
-        cfg.data.set_source_path(self.mendenhall.sink)
-        self._saveProjectToFile()
+        # self.new_project(mendenhall=True)
+        # scale = cfg.data.scale
+        # cfg.data['data']['cname'] = 'none'
+        # cfg.data['data']['clevel'] = 5
+        # cfg.data['data']['chunkshape'] = (1, 512, 512)
+        # cfg.data['data']['scales'][scale]['resolution_x'] = 2
+        # cfg.data['data']['scales'][scale]['resolution_y'] = 2
+        # cfg.data['data']['scales'][scale]['resolution_z'] = 50
+        # self.mendenhall = Mendenhall(parent=self, data=cfg.data)
+        # self.mendenhall.set_directory()
+        # self.mendenhall.start_watching()
+        # cfg.data.set_source_path(self.mendenhall.sink)
+        # self._saveProjectToFile()
+        pass
 
 
     def open_mendenhall_protocol(self):
@@ -3580,14 +3476,15 @@ class MainWindow(QMainWindow):
 
         fileMenu = self.menu.addMenu('File')
 
-        self.newAction = QAction('&New Project...', self)
+        # self.newAction = QAction('&New Project...', self)
         # def fn():
-        #     if self._isProjectTab():
-        #         cfg.project_tab.
-        self.newAction.triggered.connect(self.new_project)
-        self.newAction.setShortcut('Ctrl+N')
-        self.addAction(self.newAction)
-        fileMenu.addAction(self.newAction)
+        #     if self._isOpenProjTab():
+        #
+        #         self.getCurrentTabWidget()
+        # self.newAction.triggered.connect(self.new_project)
+        # self.newAction.setShortcut('Ctrl+N')
+        # self.addAction(self.newAction)
+        # fileMenu.addAction(self.newAction)
 
         self.openAction = QAction('&Open...', self)
         # self.openAction.triggered.connect(self.open_project)
@@ -4182,13 +4079,13 @@ class MainWindow(QMainWindow):
 
 
 
-    def _valueChangedSwimWindow(self):
-        # logger.info('')
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            logger.info(f'caller: {caller}')
-            # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-            cfg.data.set_swim_window(float(self._swimWindowControl.value()) / 100.)
+    # def _valueChangedSwimWindow(self):
+    #     # logger.info('')
+    #     caller = inspect.stack()[1].function
+    #     if caller == 'main':
+    #         logger.info(f'caller: {caller}')
+    #         # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
+    #         cfg.data.set_swim_window_px(self._swimWindowControl.value())
 
     def _valueChangedWhitening(self):
         # logger.info('')
@@ -4360,16 +4257,22 @@ class MainWindow(QMainWindow):
         lab.setAlignment(right)
         # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #f3f6fb;')
-        self._swimWindowControl = QDoubleSpinBox(self)
-        self._swimWindowControl.setSuffix('%')
+        self._swimWindowControl = QSpinBox(self)
+        self._swimWindowControl.setSuffix('px')
         self._swimWindowControl.setFixedHeight(26)
+        def fn():
+            # logger.info('')
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                logger.info(f'caller: {caller}')
+                # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
+                cfg.data.set_swim_window_px(self._swimWindowControl.value())
+
+        self._swimWindowControl.valueChanged.connect(fn)
         self._swimWindowControl.valueChanged.connect(self._callbk_unsavedChanges)
-        self._swimWindowControl.valueChanged.connect(self._valueChangedSwimWindow)
         self._swimWindowControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # self._swimWindowControl.setValue(cfg.DEFAULT_SWIM_WINDOW)
         self._swimWindowControl.setFixedSize(std_input_size)
-        self._swimWindowControl.setDecimals(2)
-        # self._swimWindowControl.setEnabled(False)
         lab.setStatusTip(tip)
         self._swimWindowControl.setStatusTip(tip)
         lay = QHBoxLayout()
@@ -5696,18 +5599,15 @@ class MainWindow(QMainWindow):
 
 
     def showZeroedPbar(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'Showing Zeroed Progress Bar [caller: {caller}]...')
+        logger.info('')
         self.pbar.setValue(0)
-        self.setPbarText('Preparing Multiprocessing Tasks...')
+        self.setPbarText('Preparing Tasks...')
         self.pbar_widget.show()
-        # self.pbar_widget.repaint()
-        # self.repaint()
         QApplication.processEvents()
 
 
     def hidePbar(self):
-        # logger.critical('Hiding Progress Bar...')
+        logger.info('')
         self.pbar_widget.hide()
         self.statusBar.clearMessage() #Shoehorn
         QApplication.processEvents()
@@ -5748,6 +5648,8 @@ class MainWindow(QMainWindow):
 
     def store_var(self, name, var):
         setattr(cfg, name, var)
+
+
 
 
 

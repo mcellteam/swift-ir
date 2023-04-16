@@ -79,7 +79,7 @@ class Thumbnailer:
             for name in baseFileNames[start:end]:
                 filenames.extend(glob(os.path.join(src, '*' + name)))
 
-            tnLogger.info('Generating the following corr spot thumbnails:\n%s' %str(filenames))
+            # tnLogger.info('Generating the following corr spot thumbnails:\n%s' %str(filenames))
 
             dt = self.generate_thumbnails(src=src, od=od,
                                           rmdir=rmdir, prefix='',
@@ -158,8 +158,7 @@ class Thumbnailer:
                       f'cpus      : {cpus}\n'
                       f'# files   : {len(filenames)}'
                       )
-        tnLogger.info('filenames : \n' + '\n'.join(filenames))
-
+        # tnLogger.info('filenames : \n' + '\n'.join(filenames))
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
         task_queue = TaskQueue(n_tasks=len(filenames), parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
@@ -176,7 +175,7 @@ class Thumbnailer:
             task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
-                logger.info('\nTQ Params:\n  (1) %s\n  (2) %s\n  (3) %s\n  (4) %s' % task)
+                logger.info('\nTQ Params:\n  %s\n  %s\n  %s\n  %s' % task)
 
         dt = task_queue.collect_results()
 

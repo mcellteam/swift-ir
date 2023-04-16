@@ -35,8 +35,7 @@ def generate_multiscale_zarr(src, out):
     task_queue = TaskQueue(n_tasks=len(tasks), parent=cfg.main_window, pbar_text='Generating Multiscale Zarr (%d Cores)...' % cpus)
     task_queue.start(cpus)
     for task in tasks:
-        script = 'src/job_convert_zarr_scales.py'
-        script = 'src/job_convert_zarr.py' #1124
+        script = 'src/job_convert_zarr.py'
         task_args = [sys.executable,
                      script,
                      str(task[0]),          # ID

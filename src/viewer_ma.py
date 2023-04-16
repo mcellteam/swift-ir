@@ -377,9 +377,9 @@ class MAViewer(neuroglancer.Viewer):
             p = self.pts[key]
             _, x, y = p.point.tolist()
             pts.append((x, y))
-        cfg.data.set_manual_points(self.role, pts)
+        cfg.data.set_manpoints(self.role, pts)
         # cfg.data.set_manual_points_color(self.role, pts)
-        cfg.data.print_all_match_points()
+        cfg.data.print_all_manpoints()
 
 
     def draw_point_annotations(self):
@@ -538,11 +538,11 @@ class MAViewer(neuroglancer.Viewer):
             '''SWIM Annotations for Manual Alignments'''
 
             logger.info('Drawing SWIM Windows Layer for Manual Alignment...')
-            points = cfg.data.manual_points()[self.role]
+            points = cfg.data.manpoints()[self.role]
             annotations = []
-            half_win = int(cfg.data.manual_swim_window() / 2)
+            half_win = int(cfg.data.manual_swim_window_px() / 2)
 
-            # if len(cfg.data.manual_points()[self.role]) > 0:
+            # if len(cfg.data.manpoints()[self.role]) > 0:
             #     for i in range(len(points)):
             #         pt = points[i]
             #         x = pt[0]

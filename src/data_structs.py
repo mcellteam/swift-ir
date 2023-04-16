@@ -61,7 +61,7 @@ layer_template = \
             "method_data": {},
             "method_options": {},
             "method": "Auto-SWIM",
-            "manual_points": {
+            "manpoints": {
                 "ref": [],
                 'base': []
             },
@@ -80,6 +80,6 @@ image_template = \
         "filename": None,
         "metadata": {
             "annotations": [],
-            "manual_points": []
+            "manpoints": []
         }
     }

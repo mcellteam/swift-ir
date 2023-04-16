@@ -306,7 +306,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def initZoom(self, w, h, adjust=1.10):
-        logger.critical(f'w={w}, h={h}')
+        # logger.info(f'w={w}, h={h}')
         # self._blockZoom = True
 
         if self.cs_scale:
