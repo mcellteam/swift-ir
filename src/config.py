@@ -44,7 +44,6 @@ is_mendenhall = False
 WIDTH, HEIGHT = 1180, 720
 
 '''Default Alignment Params'''
-DEFAULT_SWIM_WINDOW          = float(0.8125)
 DEFAULT_WHITENING            = float(-0.6800)
 DEFAULT_POLY_ORDER           = int(0)
 DEFAULT_NULL_BIAS            = bool(False)

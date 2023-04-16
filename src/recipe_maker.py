@@ -57,7 +57,7 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
         prev_afm[1][2] *= upscale
         init_afm = prev_afm
 
-    s_tbd[zpos]['alignment']['method_results'].setdefault('affine_matrix', init_afm)
+    s_tbd[zpos]['alignment']['method_results'].setdefault('affine_matrix', init_afm.tolist())
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr', [])
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
 

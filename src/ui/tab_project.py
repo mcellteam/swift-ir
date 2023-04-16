@@ -2381,16 +2381,41 @@ QListView::item:!selected:hover
         self.btnCurSection.setFixedSize(80,18)
         self.btnCurSection.clicked.connect(fn)
 
-        self.le_tree_jumpTo = QLineEdit()
-        self.le_tree_jumpTo.setFixedHeight(18)
-        self.le_tree_jumpTo.setFixedWidth(30)
         def fn():
-            requested = int(self.le_tree_jumpTo.text())
+            self.updateTreeWidget()
+            self.treeview.collapseAll()
+        self.btnReloadDataTree = QPushButton('Reload')
+        self.btnReloadDataTree.setStatusTip('Jump to the data for current section and scale')
+        self.btnReloadDataTree.setStyleSheet('font-size: 10px;')
+        self.btnReloadDataTree.setFixedSize(80,18)
+        self.btnReloadDataTree.clicked.connect(fn)
+
+        self.le_tree_jumpToScale = QLineEdit()
+        self.le_tree_jumpToScale.setFixedHeight(18)
+        self.le_tree_jumpToScale.setFixedWidth(30)
+        def fn():
+            requested = int(self.le_tree_jumpToScale.text())
             if requested in cfg.data.scale_vals():
                 self.updateTreeWidget()
                 self.treeview_model.jumpToScale(s=get_scale_key(requested))
+        self.le_tree_jumpToScale.returnPressed.connect(fn)
 
-        self.le_tree_jumpTo.returnPressed.connect(fn)
+
+        self.le_tree_jumpToSec = QLineEdit()
+        self.le_tree_jumpToSec.setFixedHeight(18)
+        self.le_tree_jumpToSec.setFixedWidth(30)
+        def fn():
+            requested = int(self.le_tree_jumpToSec.text())
+
+            logger.critical(f'self.le_tree_jumpToScale.text() = {self.le_tree_jumpToScale.text()}')
+            logger.critical(f'type(self.le_tree_jumpToScale.text()) = {type(self.le_tree_jumpToScale.text())}')
+            logger.critical(f'len(self.le_tree_jumpToScale.text()) = {len(self.le_tree_jumpToScale.text())}')
+
+            if requested in cfg.data.scale_vals():
+                self.updateTreeWidget()
+                self.treeview_model.jumpToSection(sec=requested)
+        self.le_tree_jumpToSec.returnPressed.connect(fn)
+
 
         self.treeHbl = QHBoxLayout()
         self.treeHbl.setContentsMargins(2, 0, 2, 0)
@@ -2402,12 +2427,15 @@ QListView::item:!selected:hover
         spcr.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         hbl = HBL()
+        hbl.addWidget(self.btnReloadDataTree)
         hbl.addWidget(self.btnCollapseAll)
         hbl.addWidget(self.btnExpandAll)
         hbl.addWidget(QLabel('  Jump To:'))
         hbl.addWidget(self.btnCurSection)
-        hbl.addWidget(QLabel('  Jump To Scale:'))
-        hbl.addWidget(self.le_tree_jumpTo)
+        hbl.addWidget(QLabel('  Scale:'))
+        hbl.addWidget(self.le_tree_jumpToScale)
+        hbl.addWidget(QLabel('  Section #:'))
+        hbl.addWidget(self.le_tree_jumpToSec)
         hbl.addWidget(spcr)
         btns = QWidget()
         btns.setMaximumHeight(22)

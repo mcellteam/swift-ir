@@ -2212,16 +2212,22 @@ class MainWindow(QMainWindow):
         self.hud('Exiting...')
         if self._unsaved_changes:
             self.tell('Exit AlignEM-SWiFT?')
-            self.tell('Exit AlignEM-SWiFT?')
             message = "There are unsaved changes.\n\nSave before exiting?"
             msg = QMessageBox(QMessageBox.Warning, "Save Changes", message)
             msg.setParent(self)
-            msg.setFixedSize(330,180)
+            msg.show() #Critical
+
+            logger.critical(f'msg.width() = {msg.width()}')
+            logger.critical(f'msg.height() = {msg.height()}')
+            # msg_width = 640
+            # msg_height = 480
 
             # fg = self.frameGeometry()
             fg = self.geometry()
-            x = (fg.width() - msg.width()) / 2
-            y = (fg.height() - msg.height()) / 2
+            x = (fg.width()/2) - (msg.width() / 2)
+            y = (fg.height()/2) - (msg.height() / 2)
+            # x = (fg.width()/2)
+            # y = (fg.height()/2)
             msg.move(x, y)
 
             msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
@@ -2231,12 +2237,8 @@ class MainWindow(QMainWindow):
                 font-size: 11px;
                 font-weight: 600;
                 font-family: Tahoma, sans-serif;
-    
                 border-color: #339933;
                 border-width: 2px;
-                
-                QLabel{ color: white}
-
             """)
             msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             buttonSave = msg.button(QMessageBox.Save)
