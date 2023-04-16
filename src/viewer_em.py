@@ -689,7 +689,7 @@ class EMViewerSnr(AbstractEMViewer):
             else:
                 s.crossSectionBackgroundColor = '#222222'
             s.show_scale_bar = False
-            s.show_default_annotations = False
+            s.show_default_annotations = True
             s.show_axis_lines = True
 
             self.grps = []
