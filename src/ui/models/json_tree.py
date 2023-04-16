@@ -419,6 +419,12 @@ class JsonModel(QAbstractItemModel):
         self.getIndex(findkeys=keys, expand=True)
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
+    def jumpToScale(self, s=None):
+        if s == None: s = cfg.data.scale
+        keys = ['data', 'scales', s]
+        self.getIndex(findkeys=keys, expand=True)
+        cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
+
 
 
 

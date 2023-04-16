@@ -17,6 +17,74 @@ from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc
 logger = logging.getLogger(__name__)
 
 
+class ExitAppDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(240, 100)
+
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        # self.setAutoFillBackground(False)
+
+        self.setWindowTitle("Confirm Exit")
+        self.setStyleSheet("""
+            background-color: #141414;
+            color: #ede9e8;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: Tahoma, sans-serif;
+        
+            border-color: #339933;
+            border-width: 2px;
+        
+        """)
+
+        btns = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        self.buttonBox = QDialogButtonBox(btns)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout = QVBoxLayout()
+        message = QLabel('Exit Align-EM-SWiFT?')
+        self.layout.addWidget(message, alignment=Qt.AlignCenter)
+        self.layout.addWidget(self.buttonBox, alignment=Qt.AlignCenter)
+        self.setLayout(self.layout)
+
+
+class SaveExitAppDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        # self.setFixedSize(240, 100)
+
+        # self.setWindowFlags(Qt.FramelessWindowHint)
+        # self.setAutoFillBackground(False)
+
+        self.setWindowTitle("Confirm Exit")
+        self.setStyleSheet("""
+            background-color: #141414;
+            color: #ede9e8;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: Tahoma, sans-serif;
+
+            border-color: #339933;
+            border-width: 2px;
+
+        """)
+
+        btns = QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+
+        self.buttonBox = QDialogButtonBox(btns)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout = QVBoxLayout()
+        message = QLabel('There are unsaved changed. Save before exiting Align-EM-SWiFT?')
+        self.layout.addWidget(message, alignment=Qt.AlignCenter)
+        self.layout.addWidget(self.buttonBox, alignment=Qt.AlignCenter)
+        self.setLayout(self.layout)
+
+
 
 def import_images_dialog():
     '''Dialog for importing images. Returns list of filenames.'''

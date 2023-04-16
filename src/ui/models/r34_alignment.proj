@@ -68,7 +68,7 @@
                 ],
                 "snr_report": "SNR: --"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -150,7 +150,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.8 n:16)  <7.3  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -232,7 +232,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.3 n:16)  <8.1  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -314,7 +314,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.5 n:16)  <6.9  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -396,7 +396,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.0 n:16)  <7.3  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -478,7 +478,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.0 n:16)  <9.7  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -560,7 +560,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-1.9 n:16)  <9.3  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -642,7 +642,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-2.4 n:16)  <9.9  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -724,7 +724,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-2.8 n:16)  <9.4  19.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -806,7 +806,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.8 n:16)  <8.4  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -888,7 +888,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-2.8 n:16)  <9.4  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -970,7 +970,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-1.5 n:16)  <11.1  17.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1052,7 +1052,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.3 n:16)  <10.0  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1134,7 +1134,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.4 n:16)  <8.8  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1216,7 +1216,7 @@
                 ],
                 "snr_report": "SNR: 14.4 (+-2.2 n:16)  <11.3  20.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1298,7 +1298,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.4 n:16)  <7.7  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1380,7 +1380,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.1 n:16)  <7.8  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1462,7 +1462,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-1.8 n:16)  <9.5  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1543,7 +1543,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-1.9 n:15)  <9.9  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1625,7 +1625,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-1.9 n:16)  <10.0  16.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1707,7 +1707,7 @@
                 ],
                 "snr_report": "SNR: 19.4 (+-3.2 n:16)  <15.1  25.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1789,7 +1789,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-1.8 n:16)  <8.7  16.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1871,7 +1871,7 @@
                 ],
                 "snr_report": "SNR: 13.1 (+-2.1 n:16)  <9.2  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -1953,7 +1953,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-1.7 n:16)  <10.6  16.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2035,7 +2035,7 @@
                 ],
                 "snr_report": "SNR: 15.8 (+-3.0 n:16)  <12.0  25.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2117,7 +2117,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-2.4 n:16)  <10.2  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2199,7 +2199,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.4 n:16)  <9.0  17.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2281,7 +2281,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.5 n:16)  <8.0  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2363,7 +2363,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-1.9 n:16)  <9.2  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2445,7 +2445,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.9 n:16)  <7.1  17.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2527,7 +2527,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.3 n:16)  <8.5  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2609,7 +2609,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-2.3 n:16)  <10.4  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2691,7 +2691,7 @@
                 ],
                 "snr_report": "SNR: 14.7 (+-2.3 n:16)  <12.1  20.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2773,7 +2773,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.0 n:16)  <9.7  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2855,7 +2855,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-1.9 n:16)  <9.8  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -2937,7 +2937,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.8 n:16)  <7.6  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3019,7 +3019,7 @@
                 ],
                 "snr_report": "SNR: 8.5 (+-1.2 n:16)  <6.4  10.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3101,7 +3101,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.3 n:16)  <9.6  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3183,7 +3183,7 @@
                 ],
                 "snr_report": "SNR: 7.7 (+-1.6 n:16)  <5.1  11.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3265,7 +3265,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.4 n:16)  <8.3  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3347,7 +3347,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-3.0 n:16)  <7.7  18.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3429,7 +3429,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.9 n:16)  <8.1  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3511,7 +3511,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.8 n:16)  <9.5  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3593,7 +3593,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-3.5 n:16)  <9.4  22.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3675,7 +3675,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.7 n:16)  <10.6  20.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3757,7 +3757,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.0 n:16)  <8.4  20.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3839,7 +3839,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.5 n:16)  <7.9  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -3921,7 +3921,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.0 n:16)  <7.9  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4003,7 +4003,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.3 n:16)  <9.4  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4085,7 +4085,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.5 n:16)  <6.5  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4167,7 +4167,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.2 n:16)  <8.5  17.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4249,7 +4249,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.6 n:16)  <7.0  16.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4331,7 +4331,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.5 n:16)  <8.7  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4413,7 +4413,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.2 n:16)  <7.9  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4495,7 +4495,7 @@
                 ],
                 "snr_report": "SNR: 10.7 (+-2.4 n:16)  <5.4  14.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4577,7 +4577,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-1.6 n:16)  <8.8  14.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4659,7 +4659,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-2.6 n:16)  <5.6  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4741,7 +4741,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.2 n:16)  <8.2  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4823,7 +4823,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.1 n:16)  <7.8  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4905,7 +4905,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.3 n:16)  <7.7  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -4987,7 +4987,7 @@
                 ],
                 "snr_report": "SNR: 7.9 (+-1.8 n:16)  <5.0  12.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5069,7 +5069,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.6 n:16)  <6.8  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5151,7 +5151,7 @@
                 ],
                 "snr_report": "SNR: 10.4 (+-1.7 n:16)  <7.9  14.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5233,7 +5233,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.2 n:16)  <8.2  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5315,7 +5315,7 @@
                 ],
                 "snr_report": "SNR: 11.2 (+-1.8 n:16)  <8.2  14.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5397,7 +5397,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.0 n:16)  <5.6  14.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5479,7 +5479,7 @@
                 ],
                 "snr_report": "SNR: 8.6 (+-1.5 n:16)  <5.6  10.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5561,7 +5561,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.4 n:16)  <8.1  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5643,7 +5643,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.2 n:16)  <8.1  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5725,7 +5725,7 @@
                 ],
                 "snr_report": "SNR: 8.4 (+-1.4 n:16)  <5.7  10.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5807,7 +5807,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.5 n:16)  <8.7  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5889,7 +5889,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-1.9 n:16)  <7.1  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -5971,7 +5971,7 @@
                 ],
                 "snr_report": "SNR: 9.8 (+-1.5 n:16)  <6.9  12.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6053,7 +6053,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.6 n:16)  <7.4  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6135,7 +6135,7 @@
                 ],
                 "snr_report": "SNR: 10.4 (+-1.9 n:16)  <5.8  12.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6217,7 +6217,7 @@
                 ],
                 "snr_report": "SNR: 8.8 (+-1.8 n:16)  <6.2  12.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6299,7 +6299,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.5 n:16)  <8.2  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6381,7 +6381,7 @@
                 ],
                 "snr_report": "SNR: 10.0 (+-1.9 n:16)  <6.5  13.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6463,7 +6463,7 @@
                 ],
                 "snr_report": "SNR: 10.5 (+-1.8 n:16)  <7.5  14.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6545,7 +6545,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-1.9 n:16)  <7.3  14.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6627,7 +6627,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-3.5 n:16)  <7.0  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6709,7 +6709,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-2.4 n:16)  <7.5  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6791,7 +6791,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-2.5 n:16)  <6.2  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6873,7 +6873,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.3 n:16)  <8.1  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -6955,7 +6955,7 @@
                 ],
                 "snr_report": "SNR: 10.8 (+-1.9 n:16)  <5.5  14.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7037,7 +7037,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.5 n:16)  <6.9  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7119,7 +7119,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.2 n:16)  <7.9  16.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7197,7 +7197,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.2 n:12)  <9.3  17.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7279,7 +7279,7 @@
                 ],
                 "snr_report": "SNR: 10.7 (+-1.7 n:16)  <7.7  13.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7361,7 +7361,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.1 n:16)  <6.3  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7443,7 +7443,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.1 n:16)  <7.5  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7525,7 +7525,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-2.6 n:16)  <7.0  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7607,7 +7607,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.9 n:16)  <5.8  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7689,7 +7689,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.5 n:16)  <7.6  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7771,7 +7771,7 @@
                 ],
                 "snr_report": "SNR: 10.6 (+-2.1 n:16)  <7.2  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7853,7 +7853,7 @@
                 ],
                 "snr_report": "SNR: 10.7 (+-1.8 n:16)  <7.9  13.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -7935,7 +7935,7 @@
                 ],
                 "snr_report": "SNR: 8.4 (+-1.4 n:16)  <5.9  10.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8017,7 +8017,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-3.1 n:16)  <9.8  22.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8099,7 +8099,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.2 n:16)  <9.7  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8181,7 +8181,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-1.6 n:16)  <9.5  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8263,7 +8263,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-2.8 n:16)  <8.3  20.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8345,7 +8345,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-2.4 n:16)  <7.8  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8427,7 +8427,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.3 n:16)  <8.7  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8509,7 +8509,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.1 n:16)  <7.9  15.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8591,7 +8591,7 @@
                 ],
                 "snr_report": "SNR: 10.6 (+-1.8 n:16)  <8.5  15.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8673,7 +8673,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-1.8 n:16)  <7.8  15.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8755,7 +8755,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-1.5 n:16)  <7.9  14.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8837,7 +8837,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.0 n:16)  <7.8  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -8919,7 +8919,7 @@
                 ],
                 "snr_report": "SNR: 9.8 (+-1.3 n:16)  <7.2  11.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9001,7 +9001,7 @@
                 ],
                 "snr_report": "SNR: 10.5 (+-1.8 n:16)  <8.4  14.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9083,7 +9083,7 @@
                 ],
                 "snr_report": "SNR: 10.9 (+-2.2 n:16)  <7.2  14.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9165,7 +9165,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-1.8 n:16)  <9.8  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9247,7 +9247,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.1 n:16)  <8.2  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9329,7 +9329,7 @@
                 ],
                 "snr_report": "SNR: 8.3 (+-1.5 n:16)  <6.0  10.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9411,7 +9411,7 @@
                 ],
                 "snr_report": "SNR: 9.2 (+-1.4 n:16)  <6.8  12.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9493,7 +9493,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.3 n:16)  <8.3  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9575,7 +9575,7 @@
                 ],
                 "snr_report": "SNR: 10.6 (+-1.7 n:16)  <7.5  13.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9657,7 +9657,7 @@
                 ],
                 "snr_report": "SNR: 9.4 (+-2.0 n:16)  <5.4  13.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9739,7 +9739,7 @@
                 ],
                 "snr_report": "SNR: 9.9 (+-2.5 n:16)  <6.6  13.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9821,7 +9821,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-1.7 n:16)  <10.1  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9903,7 +9903,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-2.0 n:16)  <8.0  14.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -9985,7 +9985,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.6 n:16)  <6.2  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10067,7 +10067,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.5 n:16)  <7.2  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10149,7 +10149,7 @@
                 ],
                 "snr_report": "SNR: 14.8 (+-2.3 n:16)  <11.4  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10231,7 +10231,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.0 n:16)  <9.6  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10313,7 +10313,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.3 n:16)  <8.4  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10395,7 +10395,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.3 n:16)  <7.7  15.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10477,7 +10477,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.6 n:16)  <6.5  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10559,7 +10559,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-1.7 n:16)  <9.7  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10641,7 +10641,7 @@
                 ],
                 "snr_report": "SNR: 7.8 (+-1.6 n:16)  <5.6  12.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10723,7 +10723,7 @@
                 ],
                 "snr_report": "SNR: 8.7 (+-1.4 n:16)  <6.3  11.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10805,7 +10805,7 @@
                 ],
                 "snr_report": "SNR: 6.7 (+-1.7 n:16)  <4.9  10.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10887,7 +10887,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-1.6 n:16)  <8.6  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -10969,7 +10969,7 @@
                 ],
                 "snr_report": "SNR: 10.1 (+-1.8 n:16)  <7.4  13.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11051,7 +11051,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-1.7 n:16)  <9.7  15.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11133,7 +11133,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.0 n:16)  <8.3  15.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11215,7 +11215,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-2.1 n:16)  <8.5  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11297,7 +11297,7 @@
                 ],
                 "snr_report": "SNR: 8.6 (+-1.7 n:16)  <5.4  11.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11379,7 +11379,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.1 n:16)  <7.4  14.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11461,7 +11461,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-2.1 n:16)  <7.4  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11543,7 +11543,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-1.9 n:16)  <8.7  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11625,7 +11625,7 @@
                 ],
                 "snr_report": "SNR: 11.2 (+-1.5 n:16)  <8.5  14.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11707,7 +11707,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-2.7 n:16)  <7.4  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11789,7 +11789,7 @@
                 ],
                 "snr_report": "SNR: 10.2 (+-2.1 n:16)  <6.7  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11871,7 +11871,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.2 n:16)  <7.2  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -11953,7 +11953,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.2 n:16)  <7.5  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12035,7 +12035,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.2 n:16)  <7.3  15.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12117,7 +12117,7 @@
                 ],
                 "snr_report": "SNR: 10.3 (+-1.9 n:16)  <7.2  13.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12199,7 +12199,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-1.7 n:16)  <8.4  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12281,7 +12281,7 @@
                 ],
                 "snr_report": "SNR: 9.5 (+-1.8 n:16)  <6.3  13.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12363,7 +12363,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-1.7 n:16)  <8.0  13.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12445,7 +12445,7 @@
                 ],
                 "snr_report": "SNR: 7.7 (+-2.9 n:16)  <4.9  16.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12527,7 +12527,7 @@
                 ],
                 "snr_report": "SNR: 8.3 (+-2.0 n:16)  <5.3  11.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12609,7 +12609,7 @@
                 ],
                 "snr_report": "SNR: 9.6 (+-1.8 n:16)  <5.7  14.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12691,7 +12691,7 @@
                 ],
                 "snr_report": "SNR: 9.2 (+-1.4 n:16)  <6.6  11.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12773,7 +12773,7 @@
                 ],
                 "snr_report": "SNR: 6.4 (+-1.2 n:16)  <4.7  8.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12855,7 +12855,7 @@
                 ],
                 "snr_report": "SNR: 9.3 (+-2.0 n:16)  <6.5  12.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -12937,7 +12937,7 @@
                 ],
                 "snr_report": "SNR: 9.7 (+-2.8 n:16)  <4.8  15.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13019,7 +13019,7 @@
                 ],
                 "snr_report": "SNR: 9.9 (+-2.9 n:16)  <4.9  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13101,7 +13101,7 @@
                 ],
                 "snr_report": "SNR: 8.8 (+-2.2 n:16)  <5.5  14.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13183,7 +13183,7 @@
                 ],
                 "snr_report": "SNR: 10.5 (+-2.5 n:16)  <5.9  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13265,7 +13265,7 @@
                 ],
                 "snr_report": "SNR: 8.4 (+-1.8 n:16)  <5.1  11.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13347,7 +13347,7 @@
                 ],
                 "snr_report": "SNR: 10.7 (+-2.3 n:16)  <7.2  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13429,7 +13429,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-1.0 n:16)  <10.7  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13511,7 +13511,7 @@
                 ],
                 "snr_report": "SNR: 8.7 (+-1.2 n:16)  <6.4  10.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13593,7 +13593,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.3 n:16)  <8.6  16.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13675,7 +13675,7 @@
                 ],
                 "snr_report": "SNR: 8.8 (+-1.3 n:16)  <6.3  11.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13757,7 +13757,7 @@
                 ],
                 "snr_report": "SNR: 6.2 (+-1.1 n:16)  <4.4  8.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13839,7 +13839,7 @@
                 ],
                 "snr_report": "SNR: 6.9 (+-0.8 n:16)  <5.8  8.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -13921,7 +13921,7 @@
                 ],
                 "snr_report": "SNR: 8.7 (+-1.2 n:16)  <7.2  11.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14003,7 +14003,7 @@
                 ],
                 "snr_report": "SNR: 10.0 (+-1.2 n:16)  <7.9  12.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14085,7 +14085,7 @@
                 ],
                 "snr_report": "SNR: 9.1 (+-2.0 n:16)  <6.1  13.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14167,7 +14167,7 @@
                 ],
                 "snr_report": "SNR: 8.8 (+-1.7 n:16)  <6.1  12.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14249,7 +14249,7 @@
                 ],
                 "snr_report": "SNR: 10.1 (+-1.8 n:16)  <6.5  13.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14331,7 +14331,7 @@
                 ],
                 "snr_report": "SNR: 7.7 (+-1.2 n:16)  <4.9  10.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14413,7 +14413,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-2.2 n:16)  <5.9  14.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14495,7 +14495,7 @@
                 ],
                 "snr_report": "SNR: 9.2 (+-1.7 n:16)  <5.0  11.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14577,7 +14577,7 @@
                 ],
                 "snr_report": "SNR: 9.2 (+-1.6 n:16)  <6.8  12.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14659,7 +14659,7 @@
                 ],
                 "snr_report": "SNR: 10.7 (+-2.0 n:16)  <6.1  14.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14741,7 +14741,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-1.9 n:16)  <6.9  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14823,7 +14823,7 @@
                 ],
                 "snr_report": "SNR: 9.2 (+-1.4 n:16)  <6.9  11.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14905,7 +14905,7 @@
                 ],
                 "snr_report": "SNR: 8.7 (+-2.1 n:16)  <4.8  11.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -14987,7 +14987,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-1.3 n:16)  <8.8  13.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15069,7 +15069,7 @@
                 ],
                 "snr_report": "SNR: 7.9 (+-1.6 n:16)  <4.6  11.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15151,7 +15151,7 @@
                 ],
                 "snr_report": "SNR: 8.8 (+-2.3 n:16)  <5.0  14.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15233,7 +15233,7 @@
                 ],
                 "snr_report": "SNR: 8.5 (+-1.8 n:16)  <6.4  12.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15315,7 +15315,7 @@
                 ],
                 "snr_report": "SNR: 9.8 (+-2.0 n:16)  <5.9  13.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15397,7 +15397,7 @@
                 ],
                 "snr_report": "SNR: 9.4 (+-2.1 n:16)  <7.0  14.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15479,7 +15479,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-3.2 n:16)  <6.0  16.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15561,7 +15561,7 @@
                 ],
                 "snr_report": "SNR: 10.0 (+-2.4 n:16)  <5.6  13.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15643,7 +15643,7 @@
                 ],
                 "snr_report": "SNR: 9.9 (+-1.9 n:16)  <7.0  13.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15725,7 +15725,7 @@
                 ],
                 "snr_report": "SNR: 10.3 (+-2.2 n:16)  <5.5  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15807,7 +15807,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.1 n:16)  <8.5  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15889,7 +15889,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-2.2 n:16)  <6.5  14.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -15983,7 +15983,7 @@
                 ],
                 "snr_report": "SNR: --"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16065,7 +16065,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-3.5 n:16)  <7.5  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16147,7 +16147,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.4 n:16)  <9.2  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16229,7 +16229,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-3.1 n:16)  <7.4  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16311,7 +16311,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-2.2 n:16)  <8.9  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16393,7 +16393,7 @@
                 ],
                 "snr_report": "SNR: 15.2 (+-2.2 n:16)  <11.5  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16475,7 +16475,7 @@
                 ],
                 "snr_report": "SNR: 14.6 (+-2.2 n:16)  <10.3  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16557,7 +16557,7 @@
                 ],
                 "snr_report": "SNR: 15.2 (+-2.8 n:16)  <10.4  20.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16639,7 +16639,7 @@
                 ],
                 "snr_report": "SNR: 14.9 (+-3.4 n:16)  <10.1  22.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16721,7 +16721,7 @@
                 ],
                 "snr_report": "SNR: 14.6 (+-3.3 n:16)  <9.4  20.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16803,7 +16803,7 @@
                 ],
                 "snr_report": "SNR: 15.4 (+-3.2 n:16)  <10.1  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16885,7 +16885,7 @@
                 ],
                 "snr_report": "SNR: 15.3 (+-1.9 n:16)  <11.9  19.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -16967,7 +16967,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.8 n:16)  <11.1  20.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17049,7 +17049,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-3.0 n:16)  <9.7  21.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17131,7 +17131,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-2.8 n:16)  <9.3  20.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17213,7 +17213,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-3.3 n:16)  <6.9  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17295,7 +17295,7 @@
                 ],
                 "snr_report": "SNR: 14.6 (+-2.4 n:16)  <8.8  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17377,7 +17377,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-2.3 n:16)  <10.5  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17459,7 +17459,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.2 n:16)  <11.2  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17541,7 +17541,7 @@
                 ],
                 "snr_report": "SNR: 14.8 (+-2.6 n:16)  <10.7  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17623,7 +17623,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.2 n:16)  <9.5  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17705,7 +17705,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.2 n:16)  <9.6  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17787,7 +17787,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.6 n:16)  <9.9  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17869,7 +17869,7 @@
                 ],
                 "snr_report": "SNR: 15.3 (+-2.1 n:16)  <10.7  18.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -17951,7 +17951,7 @@
                 ],
                 "snr_report": "SNR: 14.7 (+-2.4 n:16)  <11.3  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18033,7 +18033,7 @@
                 ],
                 "snr_report": "SNR: 15.5 (+-2.8 n:16)  <11.3  21.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18115,7 +18115,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.6 n:16)  <10.2  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18197,7 +18197,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.8 n:16)  <8.6  20.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18279,7 +18279,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.1 n:16)  <10.0  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18361,7 +18361,7 @@
                 ],
                 "snr_report": "SNR: 14.6 (+-3.5 n:16)  <7.7  20.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18443,7 +18443,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.4 n:16)  <8.5  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18525,7 +18525,7 @@
                 ],
                 "snr_report": "SNR: 15.6 (+-2.7 n:16)  <12.1  21.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18607,7 +18607,7 @@
                 ],
                 "snr_report": "SNR: 16.2 (+-2.5 n:16)  <13.0  22.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18689,7 +18689,7 @@
                 ],
                 "snr_report": "SNR: 15.4 (+-2.3 n:16)  <11.3  19.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18771,7 +18771,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.4 n:16)  <10.7  19.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18853,7 +18853,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-3.1 n:16)  <8.6  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -18935,7 +18935,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.3 n:16)  <10.0  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19017,7 +19017,7 @@
                 ],
                 "snr_report": "SNR: 15.1 (+-2.7 n:16)  <10.6  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19099,7 +19099,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-3.7 n:16)  <4.8  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19181,7 +19181,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.8 n:16)  <9.3  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19263,7 +19263,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-3.5 n:16)  <8.0  21.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19345,7 +19345,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-3.8 n:16)  <5.2  20.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19427,7 +19427,7 @@
                 ],
                 "snr_report": "SNR: 15.5 (+-3.3 n:16)  <11.3  23.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19509,7 +19509,7 @@
                 ],
                 "snr_report": "SNR: 15.3 (+-4.1 n:16)  <10.2  25.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19591,7 +19591,7 @@
                 ],
                 "snr_report": "SNR: 15.9 (+-3.1 n:16)  <11.9  23.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19673,7 +19673,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-3.5 n:16)  <8.7  23.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19755,7 +19755,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-2.8 n:16)  <8.9  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19837,7 +19837,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.4 n:16)  <8.6  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -19919,7 +19919,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.8 n:16)  <10.2  19.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20001,7 +20001,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.8 n:16)  <7.0  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20083,7 +20083,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.4 n:16)  <9.6  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20165,7 +20165,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-3.0 n:16)  <8.0  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20247,7 +20247,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-3.1 n:16)  <9.0  21.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20329,7 +20329,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.6 n:16)  <8.3  19.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20411,7 +20411,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-3.3 n:16)  <6.1  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20493,7 +20493,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.5 n:16)  <7.2  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20575,7 +20575,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.2 n:16)  <5.8  20.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20657,7 +20657,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.4 n:16)  <9.3  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20739,7 +20739,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.5 n:16)  <9.0  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20821,7 +20821,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.7 n:16)  <9.3  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20903,7 +20903,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.3 n:16)  <6.1  18.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -20985,7 +20985,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-3.1 n:16)  <6.7  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21067,7 +21067,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.6 n:16)  <10.1  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21149,7 +21149,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.6 n:16)  <8.8  18.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21231,7 +21231,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-1.9 n:16)  <9.0  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21313,7 +21313,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.4 n:16)  <6.2  16.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21395,7 +21395,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.8 n:16)  <4.8  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21477,7 +21477,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.7 n:16)  <9.4  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21559,7 +21559,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.4 n:16)  <8.8  17.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21641,7 +21641,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.0 n:16)  <8.4  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21723,7 +21723,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.2 n:16)  <9.6  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21805,7 +21805,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.6 n:16)  <8.3  20.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21887,7 +21887,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-1.8 n:16)  <9.3  15.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -21969,7 +21969,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-3.1 n:16)  <8.6  20.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22051,7 +22051,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.4 n:16)  <6.1  14.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22133,7 +22133,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-3.0 n:16)  <6.7  20.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22215,7 +22215,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.8 n:16)  <9.4  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22297,7 +22297,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.7 n:16)  <6.8  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22379,7 +22379,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.1 n:16)  <8.2  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22461,7 +22461,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-2.3 n:16)  <7.7  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22543,7 +22543,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-4.1 n:16)  <7.2  21.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22625,7 +22625,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.8 n:16)  <7.6  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22707,7 +22707,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-3.2 n:16)  <5.8  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22789,7 +22789,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.5 n:16)  <9.4  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22871,7 +22871,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-2.3 n:16)  <5.7  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -22953,7 +22953,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.7 n:16)  <7.6  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23035,7 +23035,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.4 n:16)  <9.1  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23117,7 +23117,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.5 n:16)  <10.0  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23199,7 +23199,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-1.8 n:16)  <8.5  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23281,7 +23281,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.6 n:16)  <7.1  18.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23363,7 +23363,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.6 n:16)  <7.8  19.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23445,7 +23445,7 @@
                 ],
                 "snr_report": "SNR: 14.4 (+-3.0 n:16)  <8.5  18.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23527,7 +23527,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-3.4 n:16)  <6.5  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23609,7 +23609,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.9 n:16)  <7.7  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23691,7 +23691,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.2 n:16)  <8.1  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23773,7 +23773,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.3 n:16)  <8.2  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23855,7 +23855,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.6 n:16)  <6.7  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -23937,7 +23937,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-3.7 n:16)  <10.2  25.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24019,7 +24019,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.3 n:16)  <11.1  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24101,7 +24101,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.2 n:16)  <9.7  19.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24183,7 +24183,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-3.2 n:16)  <8.6  22.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24265,7 +24265,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-3.0 n:16)  <8.7  19.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24347,7 +24347,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.6 n:16)  <9.3  20.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24429,7 +24429,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.5 n:16)  <8.6  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24511,7 +24511,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-1.9 n:16)  <8.6  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24593,7 +24593,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.0 n:16)  <9.3  17.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24675,7 +24675,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.3 n:16)  <7.0  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24757,7 +24757,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.3 n:16)  <8.2  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24839,7 +24839,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.6 n:16)  <9.6  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -24921,7 +24921,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-1.8 n:16)  <8.9  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25003,7 +25003,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.6 n:16)  <7.9  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25085,7 +25085,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.2 n:16)  <9.9  17.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25167,7 +25167,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.5 n:16)  <9.1  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25249,7 +25249,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.4 n:16)  <8.4  15.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25331,7 +25331,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.6 n:16)  <8.4  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25413,7 +25413,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.5 n:16)  <9.0  18.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25495,7 +25495,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.1 n:16)  <8.0  15.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25577,7 +25577,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.4 n:16)  <7.3  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25659,7 +25659,7 @@
                 ],
                 "snr_report": "SNR: 10.9 (+-3.1 n:16)  <6.8  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25741,7 +25741,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.5 n:16)  <7.6  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25823,7 +25823,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.2 n:16)  <8.6  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25905,7 +25905,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.1 n:16)  <6.4  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -25987,7 +25987,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.8 n:16)  <8.0  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26069,7 +26069,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-3.3 n:16)  <5.5  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26151,7 +26151,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.9 n:16)  <7.2  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26233,7 +26233,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.5 n:16)  <9.6  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26315,7 +26315,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-3.0 n:16)  <7.6  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26397,7 +26397,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.2 n:16)  <7.1  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26479,7 +26479,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-2.2 n:16)  <10.5  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26561,7 +26561,7 @@
                 ],
                 "snr_report": "SNR: 10.9 (+-2.2 n:16)  <7.5  15.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26643,7 +26643,7 @@
                 ],
                 "snr_report": "SNR: 10.2 (+-2.0 n:16)  <7.3  15.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26725,7 +26725,7 @@
                 ],
                 "snr_report": "SNR: 10.5 (+-2.7 n:16)  <6.6  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26807,7 +26807,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-1.9 n:16)  <9.4  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26889,7 +26889,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.1 n:16)  <8.3  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -26971,7 +26971,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-1.9 n:16)  <9.4  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27053,7 +27053,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.3 n:16)  <9.9  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27135,7 +27135,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.5 n:16)  <9.3  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27217,7 +27217,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-3.3 n:16)  <5.5  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27299,7 +27299,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.8 n:16)  <7.5  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27381,7 +27381,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.4 n:16)  <8.4  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27463,7 +27463,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.4 n:16)  <9.5  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27545,7 +27545,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.0 n:16)  <8.7  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27627,7 +27627,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-3.0 n:16)  <7.3  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27709,7 +27709,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.4 n:16)  <7.9  17.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27791,7 +27791,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.5 n:16)  <8.1  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27873,7 +27873,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.5 n:16)  <8.2  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -27955,7 +27955,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.6 n:16)  <8.9  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28037,7 +28037,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.4 n:16)  <7.9  15.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28119,7 +28119,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.0 n:16)  <8.9  16.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28201,7 +28201,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.7 n:16)  <7.2  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28283,7 +28283,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.2 n:16)  <8.1  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28365,7 +28365,7 @@
                 ],
                 "snr_report": "SNR: 8.9 (+-2.6 n:16)  <5.5  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28447,7 +28447,7 @@
                 ],
                 "snr_report": "SNR: 10.5 (+-2.2 n:16)  <6.3  14.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28529,7 +28529,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.7 n:16)  <5.7  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28611,7 +28611,7 @@
                 ],
                 "snr_report": "SNR: 10.3 (+-1.9 n:16)  <7.3  13.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28693,7 +28693,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-3.4 n:16)  <6.0  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28775,7 +28775,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-3.0 n:16)  <4.9  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28857,7 +28857,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-3.3 n:16)  <4.4  16.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -28939,7 +28939,7 @@
                 ],
                 "snr_report": "SNR: 10.9 (+-3.2 n:16)  <4.4  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29021,7 +29021,7 @@
                 ],
                 "snr_report": "SNR: 9.5 (+-2.6 n:16)  <6.0  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29103,7 +29103,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-3.1 n:16)  <5.9  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29185,7 +29185,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.7 n:16)  <8.5  19.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29267,7 +29267,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-2.6 n:16)  <7.8  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29349,7 +29349,7 @@
                 ],
                 "snr_report": "SNR: 14.7 (+-1.3 n:16)  <11.8  16.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29431,7 +29431,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-2.2 n:16)  <6.9  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29513,7 +29513,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-2.3 n:16)  <8.9  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29595,7 +29595,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-1.8 n:16)  <8.7  14.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29677,7 +29677,7 @@
                 ],
                 "snr_report": "SNR: 9.8 (+-2.7 n:16)  <6.0  14.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29759,7 +29759,7 @@
                 ],
                 "snr_report": "SNR: 9.5 (+-1.5 n:16)  <6.7  12.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29841,7 +29841,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.2 n:16)  <5.9  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -29923,7 +29923,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-1.7 n:16)  <8.3  13.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30005,7 +30005,7 @@
                 ],
                 "snr_report": "SNR: 10.9 (+-2.2 n:16)  <7.9  15.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30087,7 +30087,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-2.0 n:16)  <8.0  14.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30169,7 +30169,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-2.2 n:16)  <6.5  15.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30251,7 +30251,7 @@
                 ],
                 "snr_report": "SNR: 11.1 (+-2.3 n:16)  <7.4  15.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30333,7 +30333,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.4 n:16)  <6.5  16.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30415,7 +30415,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.7 n:16)  <7.2  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30497,7 +30497,7 @@
                 ],
                 "snr_report": "SNR: 11.6 (+-2.1 n:16)  <8.4  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30579,7 +30579,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-2.3 n:16)  <7.1  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30661,7 +30661,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.2 n:16)  <7.5  16.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30743,7 +30743,7 @@
                 ],
                 "snr_report": "SNR: 11.5 (+-3.0 n:16)  <4.4  15.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30825,7 +30825,7 @@
                 ],
                 "snr_report": "SNR: 9.4 (+-2.0 n:16)  <4.4  12.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30907,7 +30907,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.0 n:16)  <8.8  15.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -30989,7 +30989,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.6 n:16)  <7.5  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31071,7 +31071,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.6 n:16)  <6.4  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31153,7 +31153,7 @@
                 ],
                 "snr_report": "SNR: 9.6 (+-2.1 n:16)  <7.2  14.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31235,7 +31235,7 @@
                 ],
                 "snr_report": "SNR: 10.6 (+-2.0 n:16)  <6.2  13.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31317,7 +31317,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-2.1 n:16)  <8.8  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31399,7 +31399,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-3.7 n:16)  <5.8  17.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31481,7 +31481,7 @@
                 ],
                 "snr_report": "SNR: 11.2 (+-2.8 n:16)  <5.7  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31563,7 +31563,7 @@
                 ],
                 "snr_report": "SNR: 11.2 (+-2.4 n:16)  <7.7  15.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31645,7 +31645,7 @@
                 ],
                 "snr_report": "SNR: 11.3 (+-2.5 n:16)  <5.8  15.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31727,7 +31727,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.5 n:16)  <9.4  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31809,7 +31809,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.6 n:16)  <7.0  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31903,7 +31903,7 @@
                 ],
                 "snr_report": "SNR: --"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -31985,7 +31985,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-3.8 n:16)  <7.8  21.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32067,7 +32067,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.5 n:16)  <8.6  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32149,7 +32149,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.4 n:16)  <7.8  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32231,7 +32231,7 @@
                 ],
                 "snr_report": "SNR: 15.0 (+-2.6 n:16)  <7.8  19.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32313,7 +32313,7 @@
                 ],
                 "snr_report": "SNR: 15.8 (+-2.8 n:16)  <11.5  20.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32395,7 +32395,7 @@
                 ],
                 "snr_report": "SNR: 14.8 (+-2.6 n:16)  <10.0  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32477,7 +32477,7 @@
                 ],
                 "snr_report": "SNR: 15.5 (+-3.1 n:16)  <9.8  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32559,7 +32559,7 @@
                 ],
                 "snr_report": "SNR: 15.2 (+-3.4 n:16)  <9.8  22.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32641,7 +32641,7 @@
                 ],
                 "snr_report": "SNR: 15.0 (+-3.5 n:16)  <9.9  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32723,7 +32723,7 @@
                 ],
                 "snr_report": "SNR: 16.0 (+-3.3 n:16)  <10.3  22.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32805,7 +32805,7 @@
                 ],
                 "snr_report": "SNR: 15.9 (+-2.2 n:16)  <12.7  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32887,7 +32887,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-3.2 n:16)  <11.2  21.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -32969,7 +32969,7 @@
                 ],
                 "snr_report": "SNR: 14.7 (+-3.1 n:16)  <10.5  21.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33051,7 +33051,7 @@
                 ],
                 "snr_report": "SNR: 14.6 (+-3.3 n:16)  <9.5  23.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33133,7 +33133,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-3.8 n:16)  <6.3  23.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33215,7 +33215,7 @@
                 ],
                 "snr_report": "SNR: 15.5 (+-2.6 n:16)  <9.3  21.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33297,7 +33297,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.5 n:16)  <10.6  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33379,7 +33379,7 @@
                 ],
                 "snr_report": "SNR: 15.3 (+-2.7 n:16)  <12.1  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33461,7 +33461,7 @@
                 ],
                 "snr_report": "SNR: 15.1 (+-3.0 n:16)  <10.8  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33543,7 +33543,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.6 n:16)  <8.8  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33625,7 +33625,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.2 n:16)  <10.1  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33707,7 +33707,7 @@
                 ],
                 "snr_report": "SNR: 15.2 (+-2.5 n:16)  <10.9  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33789,7 +33789,7 @@
                 ],
                 "snr_report": "SNR: 16.0 (+-2.4 n:16)  <10.8  20.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33871,7 +33871,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.6 n:16)  <10.8  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -33953,7 +33953,7 @@
                 ],
                 "snr_report": "SNR: 15.6 (+-3.0 n:16)  <11.9  23.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34035,7 +34035,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.7 n:16)  <10.2  19.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34117,7 +34117,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-3.1 n:16)  <8.7  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34199,7 +34199,7 @@
                 ],
                 "snr_report": "SNR: 14.4 (+-1.9 n:16)  <10.9  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34281,7 +34281,7 @@
                 ],
                 "snr_report": "SNR: 15.0 (+-3.4 n:16)  <7.6  21.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34363,7 +34363,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.7 n:16)  <8.2  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34445,7 +34445,7 @@
                 ],
                 "snr_report": "SNR: 15.8 (+-2.8 n:16)  <10.9  21.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34527,7 +34527,7 @@
                 ],
                 "snr_report": "SNR: 16.8 (+-2.7 n:16)  <13.4  22.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34609,7 +34609,7 @@
                 ],
                 "snr_report": "SNR: 15.9 (+-2.9 n:16)  <11.2  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34691,7 +34691,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.6 n:16)  <10.5  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34773,7 +34773,7 @@
                 ],
                 "snr_report": "SNR: 15.0 (+-3.4 n:16)  <9.1  21.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34855,7 +34855,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.6 n:16)  <10.2  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -34937,7 +34937,7 @@
                 ],
                 "snr_report": "SNR: 16.0 (+-2.9 n:16)  <10.2  20.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35019,7 +35019,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-4.2 n:16)  <4.9  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35101,7 +35101,7 @@
                 ],
                 "snr_report": "SNR: 14.9 (+-3.2 n:16)  <9.0  20.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35183,7 +35183,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-3.8 n:16)  <7.3  21.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35265,7 +35265,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-4.3 n:16)  <5.9  22.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35347,7 +35347,7 @@
                 ],
                 "snr_report": "SNR: 15.6 (+-4.1 n:16)  <10.0  24.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35429,7 +35429,7 @@
                 ],
                 "snr_report": "SNR: 15.5 (+-4.4 n:16)  <9.5  26.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35511,7 +35511,7 @@
                 ],
                 "snr_report": "SNR: 16.2 (+-3.1 n:16)  <11.5  22.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35593,7 +35593,7 @@
                 ],
                 "snr_report": "SNR: 15.1 (+-4.0 n:16)  <9.5  23.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35675,7 +35675,7 @@
                 ],
                 "snr_report": "SNR: 14.4 (+-3.1 n:16)  <9.6  20.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35757,7 +35757,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-2.7 n:16)  <9.6  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35839,7 +35839,7 @@
                 ],
                 "snr_report": "SNR: 14.9 (+-2.9 n:16)  <10.9  20.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -35921,7 +35921,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.0 n:16)  <6.9  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36003,7 +36003,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.7 n:16)  <9.8  20.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36085,7 +36085,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-3.4 n:16)  <8.7  20.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36167,7 +36167,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-3.2 n:16)  <8.9  21.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36249,7 +36249,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.1 n:16)  <8.0  21.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36331,7 +36331,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-3.3 n:16)  <6.5  17.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36413,7 +36413,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-2.5 n:16)  <8.2  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36495,7 +36495,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-3.3 n:16)  <6.6  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36577,7 +36577,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.5 n:16)  <9.8  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36659,7 +36659,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-2.9 n:16)  <8.8  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36741,7 +36741,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-3.2 n:16)  <8.0  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36823,7 +36823,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-3.3 n:16)  <6.5  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36905,7 +36905,7 @@
                 ],
                 "snr_report": "SNR: 13.1 (+-3.3 n:16)  <7.0  20.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -36987,7 +36987,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.6 n:16)  <10.5  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37069,7 +37069,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.8 n:16)  <9.0  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37151,7 +37151,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.1 n:16)  <9.4  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37233,7 +37233,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.5 n:16)  <5.6  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37315,7 +37315,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.8 n:16)  <4.8  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37397,7 +37397,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.8 n:16)  <10.0  20.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37479,7 +37479,7 @@
                 ],
                 "snr_report": "SNR: 14.2 (+-2.8 n:16)  <9.6  19.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37561,7 +37561,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.1 n:16)  <9.5  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37643,7 +37643,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.6 n:16)  <10.6  20.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37725,7 +37725,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.7 n:16)  <9.5  21.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37807,7 +37807,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.0 n:16)  <9.5  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37889,7 +37889,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-3.2 n:16)  <9.9  21.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -37971,7 +37971,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.7 n:16)  <6.7  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38053,7 +38053,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-3.3 n:16)  <7.6  22.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38135,7 +38135,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.2 n:16)  <9.8  22.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38217,7 +38217,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-3.0 n:16)  <6.9  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38299,7 +38299,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.4 n:16)  <9.5  19.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38381,7 +38381,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.6 n:16)  <7.8  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38463,7 +38463,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-4.4 n:16)  <7.2  22.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38545,7 +38545,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-3.0 n:16)  <7.4  19.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38627,7 +38627,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.1 n:16)  <7.0  17.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38709,7 +38709,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-2.9 n:16)  <7.4  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38791,7 +38791,7 @@
                 ],
                 "snr_report": "SNR: 12.3 (+-2.5 n:16)  <6.3  16.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38873,7 +38873,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.7 n:16)  <7.6  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -38955,7 +38955,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.5 n:16)  <8.3  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39037,7 +39037,7 @@
                 ],
                 "snr_report": "SNR: 14.4 (+-2.7 n:16)  <11.0  19.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39119,7 +39119,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.0 n:16)  <8.6  16.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39201,7 +39201,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.9 n:16)  <6.6  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39283,7 +39283,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-3.3 n:16)  <8.1  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39365,7 +39365,7 @@
                 ],
                 "snr_report": "SNR: 14.6 (+-3.1 n:16)  <8.6  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39447,7 +39447,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-3.7 n:16)  <6.5  21.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39529,7 +39529,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-2.8 n:16)  <8.3  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39611,7 +39611,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.2 n:16)  <9.2  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39693,7 +39693,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.2 n:16)  <9.4  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39775,7 +39775,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.9 n:16)  <7.9  19.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39857,7 +39857,7 @@
                 ],
                 "snr_report": "SNR: 14.7 (+-3.3 n:16)  <11.2  24.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -39939,7 +39939,7 @@
                 ],
                 "snr_report": "SNR: 14.8 (+-2.6 n:16)  <10.2  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40021,7 +40021,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-2.4 n:16)  <10.6  19.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40103,7 +40103,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.3 n:16)  <9.4  22.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40185,7 +40185,7 @@
                 ],
                 "snr_report": "SNR: 14.0 (+-2.6 n:16)  <8.8  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40267,7 +40267,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-2.6 n:16)  <10.6  21.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40349,7 +40349,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.6 n:16)  <8.7  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40431,7 +40431,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.2 n:16)  <9.5  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40513,7 +40513,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.3 n:16)  <8.6  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40595,7 +40595,7 @@
                 ],
                 "snr_report": "SNR: 13.6 (+-2.2 n:16)  <8.1  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40677,7 +40677,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.4 n:16)  <8.4  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40759,7 +40759,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-2.4 n:16)  <9.5  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40841,7 +40841,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.1 n:16)  <9.6  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -40923,7 +40923,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.8 n:16)  <7.8  17.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41005,7 +41005,7 @@
                 ],
                 "snr_report": "SNR: 14.9 (+-2.5 n:16)  <10.2  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41087,7 +41087,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.7 n:16)  <9.3  20.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41169,7 +41169,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.7 n:16)  <8.8  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41251,7 +41251,7 @@
                 ],
                 "snr_report": "SNR: 13.2 (+-2.6 n:16)  <9.0  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41333,7 +41333,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.5 n:16)  <10.1  19.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41415,7 +41415,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.2 n:16)  <7.8  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41497,7 +41497,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.9 n:16)  <7.5  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41579,7 +41579,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-3.2 n:16)  <7.0  16.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41661,7 +41661,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.9 n:16)  <7.9  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41743,7 +41743,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.5 n:16)  <9.4  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41825,7 +41825,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-3.9 n:16)  <6.1  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41907,7 +41907,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-3.1 n:16)  <8.3  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -41989,7 +41989,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-3.7 n:16)  <5.7  19.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42071,7 +42071,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.3 n:16)  <8.2  18.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42153,7 +42153,7 @@
                 ],
                 "snr_report": "SNR: 15.1 (+-3.1 n:16)  <9.4  20.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42235,7 +42235,7 @@
                 ],
                 "snr_report": "SNR: 14.5 (+-3.6 n:16)  <7.1  19.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42317,7 +42317,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-3.3 n:16)  <7.0  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42399,7 +42399,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-2.5 n:16)  <10.6  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42481,7 +42481,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.5 n:16)  <8.2  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42563,7 +42563,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.0 n:16)  <8.0  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42645,7 +42645,7 @@
                 ],
                 "snr_report": "SNR: 11.0 (+-3.2 n:16)  <5.6  17.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42727,7 +42727,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.1 n:16)  <9.5  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42809,7 +42809,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.3 n:16)  <8.4  17.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42891,7 +42891,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.3 n:16)  <8.0  17.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -42973,7 +42973,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.6 n:16)  <9.7  18.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43055,7 +43055,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-3.4 n:16)  <6.9  19.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43137,7 +43137,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-3.7 n:16)  <4.6  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43219,7 +43219,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.0 n:16)  <7.8  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43301,7 +43301,7 @@
                 ],
                 "snr_report": "SNR: 13.3 (+-2.7 n:16)  <9.3  20.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43383,7 +43383,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.6 n:16)  <10.1  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43465,7 +43465,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.1 n:16)  <8.8  16.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43547,7 +43547,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-3.5 n:16)  <6.8  18.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43629,7 +43629,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-2.7 n:16)  <7.1  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43711,7 +43711,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-2.8 n:16)  <7.6  18.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43793,7 +43793,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.9 n:16)  <8.5  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43875,7 +43875,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-3.1 n:16)  <9.8  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -43957,7 +43957,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-2.4 n:16)  <8.6  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44039,7 +44039,7 @@
                 ],
                 "snr_report": "SNR: 13.8 (+-2.5 n:16)  <9.1  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44121,7 +44121,7 @@
                 ],
                 "snr_report": "SNR: 12.2 (+-3.1 n:16)  <5.1  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44203,7 +44203,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-2.2 n:16)  <8.1  15.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44285,7 +44285,7 @@
                 ],
                 "snr_report": "SNR: 9.9 (+-2.9 n:16)  <5.1  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44367,7 +44367,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.8 n:16)  <6.3  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44449,7 +44449,7 @@
                 ],
                 "snr_report": "SNR: 13.0 (+-3.2 n:16)  <5.2  17.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44531,7 +44531,7 @@
                 ],
                 "snr_report": "SNR: 11.2 (+-2.2 n:16)  <7.9  15.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44613,7 +44613,7 @@
                 ],
                 "snr_report": "SNR: 12.8 (+-3.6 n:16)  <6.4  19.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44695,7 +44695,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-3.5 n:16)  <5.6  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44777,7 +44777,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-3.4 n:16)  <4.9  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44859,7 +44859,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-3.6 n:16)  <4.1  21.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -44941,7 +44941,7 @@
                 ],
                 "snr_report": "SNR: 10.2 (+-2.8 n:16)  <6.5  16.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45023,7 +45023,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-3.2 n:16)  <6.0  18.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45105,7 +45105,7 @@
                 ],
                 "snr_report": "SNR: 15.0 (+-3.2 n:16)  <8.7  22.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45187,7 +45187,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.8 n:16)  <8.4  20.0>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45269,7 +45269,7 @@
                 ],
                 "snr_report": "SNR: 15.9 (+-1.5 n:16)  <12.4  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45351,7 +45351,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.4 n:16)  <7.9  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45433,7 +45433,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-2.5 n:16)  <9.4  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45515,7 +45515,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.2 n:16)  <8.9  15.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45597,7 +45597,7 @@
                 ],
                 "snr_report": "SNR: 9.9 (+-2.6 n:16)  <5.6  14.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45679,7 +45679,7 @@
                 ],
                 "snr_report": "SNR: 10.7 (+-1.9 n:16)  <6.6  13.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45761,7 +45761,7 @@
                 ],
                 "snr_report": "SNR: 13.1 (+-2.5 n:16)  <6.7  18.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45843,7 +45843,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.0 n:16)  <8.7  16.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -45925,7 +45925,7 @@
                 ],
                 "snr_report": "SNR: 12.1 (+-2.5 n:16)  <8.0  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46007,7 +46007,7 @@
                 ],
                 "snr_report": "SNR: 12.5 (+-2.3 n:16)  <9.1  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46089,7 +46089,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.9 n:16)  <5.7  18.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46171,7 +46171,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-2.8 n:16)  <7.2  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46253,7 +46253,7 @@
                 ],
                 "snr_report": "SNR: 13.5 (+-2.5 n:16)  <6.8  17.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46335,7 +46335,7 @@
                 ],
                 "snr_report": "SNR: 14.3 (+-3.0 n:16)  <7.2  18.9>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46417,7 +46417,7 @@
                 ],
                 "snr_report": "SNR: 12.4 (+-2.4 n:16)  <8.8  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46499,7 +46499,7 @@
                 ],
                 "snr_report": "SNR: 13.4 (+-2.7 n:16)  <7.2  18.1>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46581,7 +46581,7 @@
                 ],
                 "snr_report": "SNR: 13.7 (+-2.7 n:16)  <8.4  19.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46663,7 +46663,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-3.5 n:16)  <3.9  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46745,7 +46745,7 @@
                 ],
                 "snr_report": "SNR: 10.4 (+-2.5 n:16)  <4.4  13.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46827,7 +46827,7 @@
                 ],
                 "snr_report": "SNR: 12.6 (+-2.4 n:16)  <9.6  17.8>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46909,7 +46909,7 @@
                 ],
                 "snr_report": "SNR: 13.9 (+-3.0 n:16)  <8.5  19.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -46991,7 +46991,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-2.6 n:16)  <7.3  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47073,7 +47073,7 @@
                 ],
                 "snr_report": "SNR: 10.6 (+-2.4 n:16)  <7.2  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47155,7 +47155,7 @@
                 ],
                 "snr_report": "SNR: 11.4 (+-2.3 n:16)  <6.5  14.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47237,7 +47237,7 @@
                 ],
                 "snr_report": "SNR: 12.9 (+-2.5 n:16)  <9.2  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47319,7 +47319,7 @@
                 ],
                 "snr_report": "SNR: 11.7 (+-3.0 n:16)  <6.9  17.4>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47401,7 +47401,7 @@
                 ],
                 "snr_report": "SNR: 11.9 (+-3.2 n:16)  <5.6  16.5>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47483,7 +47483,7 @@
                 ],
                 "snr_report": "SNR: 12.0 (+-2.7 n:16)  <7.0  16.7>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47565,7 +47565,7 @@
                 ],
                 "snr_report": "SNR: 11.8 (+-2.6 n:16)  <5.7  15.3>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47647,7 +47647,7 @@
                 ],
                 "snr_report": "SNR: 14.1 (+-2.5 n:16)  <10.4  18.2>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {
@@ -47729,7 +47729,7 @@
                 ],
                 "snr_report": "SNR: 12.7 (+-2.7 n:16)  <7.0  16.6>"
               },
-              "selected_method": "Auto Swim Align"
+              "method": "Auto Swim Align"
             },
             "images": {
               "aligned": {

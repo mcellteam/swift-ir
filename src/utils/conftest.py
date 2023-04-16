@@ -72,7 +72,7 @@ def _webdriver_internal(request):
 # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    # execute all other hooks to obtain the report object
+    # assemble_recipe all other hooks to obtain the report object
     outcome = yield
     rep = outcome.get_result()
 

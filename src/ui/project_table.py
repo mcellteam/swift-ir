@@ -87,6 +87,7 @@ class ProjectTable(QWidget):
         t = time.time()
         caller = inspect.stack()[1].function
         logger.info('Setting Table Data (caller: %s)...' % caller)
+        cfg.main_window.tell('Updating Table Data...')
 
         cfg.main_window.showZeroedPbar()
         cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nTasks)

@@ -6,6 +6,7 @@ AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
 import os
+import re
 import copy
 import json
 import inspect
@@ -18,10 +19,9 @@ from datetime import datetime
 from dataclasses import dataclass
 from functools import cached_property
 import numpy as np
-import src.config as cfg
+
 from src.data_structs import data_template, layer_template
-from src.helpers import print_exception, natural_sort, exist_aligned_zarr,  \
-    get_scale_val, get_scale_key, get_scales_with_generated_alignments
+from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments
 from src.funcs_image import ComputeBoundingRect, ImageSize
 
 __all__ = ['DataModel']
@@ -62,7 +62,6 @@ class DataModel:
             self.set_system_info()
         if not quietly:
             self._data['modified'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.set_defaults()
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
@@ -155,16 +154,16 @@ class DataModel:
         else:
             logger.warning(f'\n\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n\n')
 
-    #Deprecated
-    @property
-    def layer(self):
-        '''Returns the Current Layer as an Integer.'''
-        return self._data['data']['z_position']
-
-    # Deprecated
-    @layer.setter
-    def layer(self, index):
-        self._data['data']['z_position'] = index
+    # #Deprecated
+    # @property
+    # def layer(self):
+    #     '''Returns the Current Layer as an Integer.'''
+    #     return self._data['data']['z_position']
+    #
+    # # Deprecated
+    # @layer.setter
+    # def layer(self, index):
+    #     self._data['data']['z_position'] = index
 
     @property
     def brightness(self):
@@ -192,17 +191,44 @@ class DataModel:
 
 
     def is_aligned(self, s=None):
-        # logger.info('')
+        caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         if s == None: s = self.scale
         snr_list = self.snr_list(s=s)
-        if not snr_list:
-            return False
         if sum(snr_list) < 1:
-            # logger.info('is_aligned is returning False')
+            # logger.info(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
             return False
         else:
-            # logger.info('is_aligned is returning True')
+            # logger.info(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
             return True
+
+    def is_alignable(self) -> bool:
+        '''Checks if the current scale is able to be aligned'''
+        # logger.info('')
+        try:
+            scales_list = self.scales()
+            cur_scale_key = self.scale
+            coarsest_scale = scales_list[-1]
+            if cur_scale_key == coarsest_scale:
+                logger.info("is cur scale alignable? returning True")
+                return True
+
+            cur_scale_index = scales_list.index(cur_scale_key)
+            next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+
+            # logger.info(f'cur_scale_key = {cur_scale_key}')
+            # logger.info(f'coarsest_scale = {coarsest_scale}')
+            # logger.info(f'cur_scale_index = {cur_scale_index}')
+            # logger.info(f'next_coarsest_scale_key = {next_coarsest_scale_key}')
+
+            if not self.is_aligned(s=next_coarsest_scale_key):
+                logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
+                return False
+            else:
+                logger.critical(f'is {self.scale} alignable? Returning True')
+                return True
+        except:
+            print_exception()
 
     def is_aligned_and_generated(self, s=None) -> bool:
         if s == None: s = self.scale
@@ -213,7 +239,7 @@ class DataModel:
         # else:
         #     return False
         try:
-            if len(os.listdir(os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val()))) > 3:
+            if len(os.listdir(os.path.join(self.dest(), 'img_aligned.zarr', 's%d' % self.scale_val()))) > 3:
                 return True
             else:
                 return False
@@ -358,13 +384,13 @@ class DataModel:
 
     def thumbnails_ref(self) -> list:
         paths = []
-        for l in cfg.data.stack():
+        for l in self.stack():
             paths.append(os.path.join(self.dest(), 'thumbnails', os.path.basename(l['reference'])))
         return paths
 
     def thumbnails_aligned(self) -> list:
         paths = []
-        for layer in range(0, len(cfg.data)):
+        for layer in range(0, len(self)):
             paths.append(os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.base_image_name(l=layer)))
         return paths
 
@@ -435,8 +461,8 @@ class DataModel:
 
 
     def get_corr_spot_files(self):
-        path = os.path.join(cfg.data.dest(), self.scale, 'thumbnails_corr_spots')
-        return natural_sort(glob(os.path.join(path, '*' + cfg.data.base_image_name())))
+        path = os.path.join(self.dest(), self.scale, 'thumbnails_corr_spots')
+        return natural_sort(glob(os.path.join(path, '*' + self.base_image_name())))
 
     def smallest_scale(self):
         return natural_sort(self._data['data']['scales'].keys())[-1]
@@ -449,6 +475,7 @@ class DataModel:
 
     def set_defaults(self):
         # logger.critical(f'caller: {inspect.stack()[1].function}')
+        import src.config as cfg
 
         self._data.setdefault('developer_mode', cfg.DEV_MODE)
         self._data.setdefault('data', {})
@@ -479,8 +506,12 @@ class DataModel:
         ''')
         # self._data['data'].setdefault('shader', cfg.SHADER)
 
+        # img_size = self.image_size(self.scales()[0]) # largest scale size
+        # man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
+        # auto_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
+
         # for s in self.scales():
-        for s in self._data['data']['scales'].keys():
+        for s in self.scales():
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
             scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
@@ -493,11 +524,16 @@ class DataModel:
             scale.setdefault('t_thumbs_aligned', 0.0)
             scale.setdefault('t_thumbs_spot', 0.0)
 
-            for layer_index in range(len(scale['stack'])):
-                layer = scale['stack'][layer_index]
+            # man_ww = man_ww_full / self.scale_val(s)
+            # auto_ww = man_ww_full / self.scale_val(s)
+
+            for i in range(len(self)):
+                layer = scale['stack'][i]
                 layer.setdefault('alignment', {})
+                layer.setdefault('image_src_size', None)
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
+                # layer['alignment']['swim_settings'].setdefault('auto_swim_window_px', auto_ww)
                 layer['alignment']['swim_settings'].setdefault('karg', False)
                 layer['alignment']['swim_settings'].setdefault('karg_path', os.path.join(self.dest(), s, 'tmp'))
                 layer['alignment']['swim_settings'].setdefault('karg_name', 'karg_out')
@@ -511,21 +547,27 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('use_logging', True)
                 layer['alignment'].setdefault('method_data', {})
                 layer['alignment'].setdefault('manual_settings', {})
-                layer['alignment']['manual_settings'].setdefault('swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+                layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
                 layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
                 layer['alignment']['manual_settings'].setdefault('fixed_pattern_clobber', cfg.DEFAULT_PATTERN_CLOBBER)
                 layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
                 layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-                layer['alignment'].setdefault('manual_points', {})
-                layer['alignment']['manual_points'].setdefault('ref', [])
-                layer['alignment']['manual_points'].setdefault('base', [])
-                layer['alignment'].setdefault('manual_points_mir', {})
-                layer['alignment']['manual_points_mir'].setdefault('ref', [])
-                layer['alignment']['manual_points_mir'].setdefault('base', [])
+                layer['alignment'].setdefault('manpoints', {})
+                layer['alignment']['manpoints'].setdefault('ref', [])
+                layer['alignment']['manpoints'].setdefault('base', [])
+                layer['alignment'].setdefault('manpoints_mir', {})
+                layer['alignment']['manpoints_mir'].setdefault('ref', [])
+                layer['alignment']['manpoints_mir'].setdefault('base', [])
                 if s == self.coarsest_scale_key():
                     layer['alignment']['method_data']['alignment_option'] = 'init_affine'
                 else:
                     layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
+
+                # layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', man_ww)
+
+        self.set_auto_swim_windows_to_default()
+        self.set_manual_swim_windows_to_default()
+
 
 
     def set_source_path(self, dir):
@@ -604,24 +646,18 @@ class DataModel:
 
 
     def snr_list(self, s=None) -> list[float]:
-        caller = inspect.stack()[1].function
-        # logger.info('caller: %s...' % inspect.stack()[1].function)
-        ''' n is 4 for a 2x2 SWIM'''
-        if self.method_results():
-            try:
-                return [self.snr(s=s, l=i) for i in range(len(self))]
-            except:
-                return []
-        else:
-            logger.warning('No Method Results, No SNR List - Returning Empty List (caller: %s)' %caller)
-
+        try:
+            return [self.snr(s=s, l=i) for i in range(len(self))]
+        except:
+            logger.warning(f'No SNR Data Found. Returning 0s List [caller: {inspect.stack()[1].function}]...')
+            return [0] * len(self)
 
 
     def snr_prev_list(self, s=None, l=None):
         # logger.info('caller: %s' % inspect.stack()[1].function)
         if s == None: s = self.scale
         try:
-            return [self.snr_prev(s=s, l=i) for i in range(len(cfg.data))]
+            return [self.snr_prev(s=s, l=i) for i in range(len(self))]
         except:
             return []
 
@@ -634,13 +670,12 @@ class DataModel:
         # logger.critical('')
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        mr = cfg.data.method_results(s=s, l=l)
         try:
-            return mr['snr']
+            return self.method_results(s=s, l=l)['snr']
         except:
             # print_exception()
-            logger.critical('No SNR components for section %d' %l)
-        # if self.selected_method(s=s, l=l) == 'Manual-Hint':
+            logger.warning('No SNR components for section %d' %l)
+        # if self.method(s=s, l=l) == 'Manual-Hint':
         #     files = self.get_corr_spot_files()
         #     n = len(files)
         #     if ('snr' in mr) and (n == len(mr['snr'])):
@@ -696,7 +731,7 @@ class DataModel:
     def snr_errorbars(self, s=None):
         '''Note Length Of Return Array has size self.n_sections() - 1 (!)'''
         if s == None: s = self.scale
-        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(0, len(cfg.data))])
+        return np.array([self.snr_errorbar_size(s=s, l=l) for l in range(0, len(self))])
 
 
     def check_snr_status(self, s=None) -> list:
@@ -714,7 +749,7 @@ class DataModel:
         # logger.critical(f'self.scalesAlignedAndGenerated: {self.scalesAlignedAndGenerated}')
         try:
             for s in self.scales():
-                if cfg.data.is_aligned(s=s):
+                if self.is_aligned(s=s):
                     m = max(self.snr_list(s=s))
                     # logger.critical(f'm: {m}')
                     max_snr.append(m)
@@ -730,71 +765,133 @@ class DataModel:
         # logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = self.scale
         # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
-        return statistics.fmean(self.snr_list(s=scale)[1:])
+        try:
+            return statistics.fmean(self.snr_list(s=scale)[1:])
+        except:
+            logger.warning('No SNR data found - returning 0.0...')
+            return 0.0
 
 
     def snr_prev_average(self, scale=None) -> float:
         # logger.info('caller: %s...' % inspect.stack()[1].function)
         if scale == None: scale = self.scale
         # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
-        return statistics.fmean(self.snr_prev_list(s=scale)[1:])
+        try:
+            return statistics.fmean(self.snr_prev_list(s=scale)[1:])
+        except:
+            logger.warning('No previous SNR data found - returning 0.0...')
+            return 0.0
 
-
-    def print_all_matchpoints(self):
-        logger.info('Match Points:')
-        for i, l in enumerate(self.stack()):
-            r = self._data['data']['scales'][self.scale]['stack'][
-                l]['alignment']['manual_points']['ref']
-            b = self._data['data']['scales'][self.scale]['stack'][
-                l]['alignment']['manual_points']['base']
-            if r != []:
-                logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
-            if b != []:
-                logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
-
-
-    def add_manpoint(self, coordinates, role, s=None, l=None) -> None:
+    def method(self, s=None, l=None):
+        '''Gets the alignment method
+        Returns:
+            str: the alignment method for a single section
+        '''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        if role == 'base':
-            self._data['data']['scales'][s]['stack'][l][
-                'alignment']['manual_points']['base'].append(coordinates)
-        elif role == 'ref':
-            self._data['data']['scales'][s]['stack'][l][
-                'alignment']['manual_points']['ref'].append(coordinates)
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
 
+    def set_method(self, method, l=None):
+        '''Sets the alignment method of a single section for current scale and all coarser scales.
+        Args:
+            method (str): The alignment method
+        Returns:
+            None
+        '''
+        if l == None: l = self.zpos
+        assert method in ('Auto-SWIM, Manual-Hint, Manual-Strict')
 
-    def manual_points(self, s=None, l=None):
+        # scale_vals = [x for x in self.scale_vals() if x <= self.scale_val()]
+        # scales = [get_scale_key(x) for x in scale_vals]
+        for s in self.scales():
+            self._data['data']['scales'][s]['stack'][l]['alignment']['method'] = method
+            logger.info(f'New method set for section #{l}, {s} : {method}...')
+
+        logger.info(f'self.method()                        : {self.method()}...')
+
+    def set_all_methods_automatic(self):
+        '''Sets the alignment method of all sections and all scales to Auto-SWIM.'''
+        for s in self.scales():
+            for l in range(len(self)):
+                self._data['data']['scales'][s]['stack'][l]['alignment']['method'] = 'Auto-SWIM'
+        self.set_manual_swim_windows_to_default()
+
+    def manpoints(self, s=None, l=None):
+        '''Returns manual correspondence points in Neuroglancer format'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l][
-            'alignment']['manual_points']
+            'alignment']['manpoints']
+
+    def set_manpoints(self, role, matchpoints, l=None):
+        '''Sets manual correspondence points for a single section at the current scale, and applies
+         scaling factor then sets the same points for all scale levels above the current scale.'''
+        if l == None: l = self.zpos
+        logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
+        # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
+        # scales      = [get_scale_key(x) for x in scale_vals]
+        glob_coords = []
+        fac = self.scale_val()
+        for p in matchpoints:
+            glob_coords.append((p[0] * fac, p[1] * fac))
+
+        cur_scale_ww = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px']
+        scale_1_ww = cur_scale_ww * fac
+
+        for s in self.scales():
+            # set manual points in Neuroglancer coordinate system
+            fac = get_scale_val(s)
+            coords = []
+            for p in glob_coords:
+                coords.append((p[0] / fac, p[1] / fac))
+            logger.info(f'Setting manual points for {s}: {coords}')
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints'][role] = coords
+
+            # set manual points in MIR coordinate system
+            img_width = self.image_size(s=s)[0]
+            mir_coords = [[img_width - pt[1], pt[0]] for pt in coords]
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir'][role] = mir_coords
+
+            # scale and set manual alignment window width
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px'] \
+                = scale_1_ww / fac
+
+            if role == 'base':
+                if l+1 in range(0,len(self)):
+                    self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints']['ref'] = coords
+                    self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints_mir']['ref'] = mir_coords
+
+    def manpoints_mir(self, role, s=None, l=None):
+        '''Returns manual correspondence points in MIR format'''
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir'][role]
 
     def manpoints_pretty(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        ref = cfg.data.manual_points()['ref']
-        base = cfg.data.manual_points()['base']
+        ref = self.manpoints()['ref']
+        base = self.manpoints()['base']
         return (['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in ref],
                 ['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in base])
 
     def manpoints_rounded(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        ref = cfg.data.manual_points()['ref']
-        base = cfg.data.manual_points()['base']
+        ref = self.manpoints()['ref']
+        base = self.manpoints()['base']
         return zip([(round(x1), round(y1)) for x1, y1 in ref],
                 [(round(x1), round(y1)) for x1, y1 in base])
 
 
-    def find_layers_with_matchpoints(self, s=None) -> list:
+    def find_layers_with_manpoints(self, s=None) -> list:
         '''Returns the list of layers that have match points'''
         if s == None: s = self.scale
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.stack()):
-                r = layer['alignment']['manual_points']['ref']
-                b = layer['alignment']['manual_points']['base']
+                r = layer['alignment']['manpoints']['ref']
+                b = layer['alignment']['manpoints']['base']
                 if (r != []) or (b != []):
                     indexes.append(i)
                     names.append(os.path.basename(layer['filename']))
@@ -804,23 +901,16 @@ class DataModel:
             logger.warning('Unable to To Return List of Match Point Layers')
             return []
 
+    def print_all_manpoints(self):
+        logger.info('Match Points:')
+        for i, sec in enumerate(self.stack()):
+            r = sec['alignment']['manpoints']['ref']
+            b = sec['alignment']['manpoints']['base']
+            if r != []:
+                logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
+            if b != []:
+                logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
 
-    def print_all_match_points(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        for i,layer in enumerate(self.stack()):
-            r = layer['alignment']['manual_points']['ref']
-            b = layer['alignment']['manual_points']['base']
-            if r != [] or b != []:
-                # combined = {'ref': r, 'base': b}
-                logger.info('____Layer %d Matchpoints____\n  Ref: %s\n  Base: %s' % (i, str(r), str(b)))
-
-
-    def getmp(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        # return self._data['data']['scales'][s]['stack'][l]['alignment']['manual_points']['ref']
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['manual_points']
 
     def getmpFlat(self, s=None, l=None):
         # logger.critical('')
@@ -828,7 +918,7 @@ class DataModel:
         if l == None: l = self.zpos
 
         try:
-            mps = self._data['data']['scales'][s]['stack'][l]['alignment']['manual_points']
+            mps = self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
             logger.info('mps = %s' %str(mps))
             # ref = [(0, x[0], x[1]) for x in mps['ref']]
             # base = [(0, x[0], x[1]) for x in mps['base']]
@@ -841,16 +931,21 @@ class DataModel:
             print_exception()
             return {'ref': [], 'base': []}
 
-    def clearMps(self, s=None, l=None):
-        if s == None: s = self.scale
+    def clearMps(self, l=None):
         if l == None: l = self.zpos
-        self._data['data']['scales'][s]['stack'][l]['alignment']['manual_points']['ref'] = []
-        self._data['data']['scales'][s]['stack'][l]['alignment']['manual_points']['base'] = []
+        # scale_vals = [x for x in self.scale_vals() if x >= self.scale_val()]
+        # scales = [get_scale_key(x) for x in scale_vals]
+        for s in self.scales():
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']['ref'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']['base'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir']['ref'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir']['base'] = []
 
-    def clearAllMps(self):
-        for layer in self.stack():
-            layer['alignment']['manual_points']['ref'] = []
-            layer['alignment']['manual_points']['base'] = []
+
+    # def clearAllMps(self):
+    #     for layer in self.stack():
+    #         layer['alignment']['manpoints']['ref'] = []
+    #         layer['alignment']['manpoints']['base'] = []
 
     def annotations(self, s=None, l=None):
         if s == None: s = self.scale
@@ -864,43 +959,6 @@ class DataModel:
         logger.info(f'Base, Annotations: {str(b)}')
         logger.info(f'Base, Annotations: {str(a)}')
         return combined
-
-
-    def set_manual_points(self, role, matchpoints, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        logger.critical('l=%d, s=%s, role=%s, mps=%s' % (l, s, role, str(matchpoints)))
-        logger.info(f"Writing manual points to project dictionary, s={s}, l={l}")
-        self.stack()[l]['alignment']['manual_points'][role] = matchpoints
-        self.set_manual_points_mir(role, matchpoints, s, l)
-        if role == 'base':
-            if l+1 in range(0,len(self)):
-                self.stack()[l+1]['alignment']['manual_points']['ref'] = matchpoints
-                self.set_manual_points_mir('ref', matchpoints, s, l+1)
-
-
-
-
-    # def set_manual_points_color(self, role, matchpoints, colors, s=None, l=None):
-    #     if s == None: s = self.scale
-    #     if l == None: l = self.zpos
-    #     logger.critical('l=%d, s=%s, role=%s, mps=%s' % (l, s, role, str(matchpoints)))
-    #     logger.info(f"Writing manual points to project dictionary, s={s}, l={l}")
-    #     self.stack()[l]['alignment']['manual_points_color'][color][role] = matchpoints
-    #     self.set_manual_points_mir(role, matchpoints, s, l)
-
-
-    def manual_points_mir(self, role, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self.stack()[l]['alignment']['manual_points_mir'][role]
-
-    def set_manual_points_mir(self, role, matchpoints, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        img_width = cfg.data.image_size()[0]
-        lst = [[img_width - pt[1], pt[0]] for pt in matchpoints]
-        self.stack()[l]['alignment']['manual_points_mir'][role] = lst
 
 
     def afm(self, s=None, l=None) -> list:
@@ -1091,7 +1149,7 @@ class DataModel:
 
     def skips_indices(self) -> list:
         try:
-            return list(list(zip(*cfg.data.skips_list()))[0])
+            return list(list(zip(*self.skips_list()))[0])
         except:
             return []
 
@@ -1100,7 +1158,7 @@ class DataModel:
         if s == None: s = self.scale
         lst = []
         try:
-            for i in range(len(cfg.data)):
+            for i in range(len(self)):
                 if self._data['data']['scales'][s]['stack'][i]['skipped'] == True:
                     f = os.path.basename(self._data['data']['scales'][s]['stack'][i]['filename'])
                     lst.append(f)
@@ -1114,11 +1172,11 @@ class DataModel:
         return float(self._data['data']['scales'][self.scale]['stack'][
                          self.zpos]['alignment']['method_data']['whitening_factor'])
 
-    def swim_window(self) -> float:
-        '''Returns the SWIM Window for the Current Layer.'''
-        return float(self._data['data']['scales'][self.scale]['stack'][
-                         self.zpos]['alignment']['method_data']['win_scale_factor'])
 
+    def set_whitening(self, f: float) -> None:
+        '''Sets the Whitening Factor for the Current Layer.'''
+        self._data['data']['scales'][self.scale]['stack'][self.zpos][
+            'alignment']['method_data']['whitening_factor'] = f
 
 
     def manual_whitening(self) -> float:
@@ -1131,18 +1189,91 @@ class DataModel:
         self._data['data']['scales'][self.scale]['stack'][self.zpos][
             'alignment']['manual_settings']['swim_whitening'] = f
 
+    def swim_window(self) -> float:
+        '''Returns the SWIM Window for the Current Layer.'''
+        return float(self.stack()[self.zpos]['alignment']['method_data']['win_scale_factor'])
 
-    def manual_swim_window(self) -> int:
-        '''Returns the SWIM Window for the Current Layer when using Manual Alignment.'''
-        return int(self._data['data']['scales'][self.scale]['stack'][
-                         self.zpos]['alignment']['manual_settings']['swim_window_px'])
+    def swim_window_px(self):
+        '''Returns the SWIM Window in pixels'''
+        return self.stack()[self.zpos]['alignment']['swim_settings']['auto_swim_window_px']
 
 
-    def set_manual_swim_window(self, val: int) -> None:
+    def set_swim_window_px(self, pixels=None):
+        '''Returns the SWIM Window for the Current Layer.'''
+        if pixels == None:
+            self.set_auto_swim_windows_to_default(current_only=True)
+        else:
+            s1_ww = pixels * self.scale_val()
+            for s in self.scales():
+                self.stack(s=s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = s1_ww / get_scale_val(s)
+
+    # def set_swim_window(self, perc=None) -> None:
+    #     '''Sets the SWIM Window for the Current Layer.'''
+    #     logger.info('')
+    #     # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
+    #     # scales      = [get_scale_key(x) for x in scale_vals]
+    #     # for s in scales:
+    #     #     self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['method_data']['win_scale_factor'] = f
+    #
+    #     if perc == None:
+    #         self.set_auto_swim_windows_to_default()
+    #     else:
+    #         ww = self.swim_window()
+    #         s1_ww = ww * perc
+    #         for s in self.scales():
+    #             self.stack(s=s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = s1_ww / get_scale_val(s)
+
+    def set_auto_swim_windows_to_default(self, current_only=False) -> None:
+        logger.info('')
+        import src.config as cfg
+        img_size = self.image_size(self.scales()[0])  # largest scale size
+        man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
+        for s in self.scales():
+            man_ww = man_ww_full / self.scale_val(s)
+            if current_only:
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = man_ww
+            else:
+                for i in range(len(self)):
+                    self.stack(s)[i]['alignment']['swim_settings']['auto_swim_window_px'] = man_ww
+
+    def manual_swim_window_px(self) -> float:
+        '''Returns the SWIM Window for the Current Layer.'''
+        return float(self.stack()[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'])
+
+    def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.critical(f'Setting Local SWIM Window to {val}...')
-        self._data['data']['scales'][self.scale]['stack'][self.zpos][
-            'alignment']['manual_settings']['swim_window_px'] = val
+        logger.critical(f'Setting Local SWIM Window to {pixels}...')
+        if pixels == None:
+            self.set_manual_swim_windows_to_default(current_only=True)
+        else:
+            s1_ww = pixels * self.scale_val()
+            for s in self.scales():
+                man_ww = s1_ww / self.scale_val(s)
+                self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+
+    def set_manual_swim_windows_to_default(self, current_only=False) -> None:
+        logger.info('')
+        import src.config as cfg
+        img_size = self.image_size(self.scales()[0])  # largest scale size
+        man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
+        for s in self.scales():
+            man_ww = man_ww_full / self.scale_val(s)
+            if current_only:
+                self.stack(s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+            else:
+                for i in range(len(self)):
+                    self.stack(s)[i]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+
+
+    def set_manual_swim_windows_to_cur_val(self) -> None:
+        logger.info('')
+        ww = self.swim_window()
+        scale_1_ww = ww * self.scale_val()
+        # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
+        # scales      = [get_scale_key(x) for x in scale_vals]
+        for s in self.scales():
+            self._data['data']['scales'][s]['stack'][self.zpos][
+                'alignment']['manual_settings']['manual_swim_window_px'] = scale_1_ww / get_scale_val(s)
 
     def has_bb(self, s=None) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
@@ -1266,25 +1397,6 @@ class DataModel:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['data']['scales'][s]['stack'][l]['skipped'] = b
 
-    def set_whitening(self, f: float) -> None:
-        '''Sets the Whitening Factor for the Current Layer.'''
-        self._data['data']['scales'][self.scale]['stack'][self.zpos][
-            'alignment']['method_data']['whitening_factor'] = f
-
-    def set_swim_window(self, f: float) -> None:
-        '''Sets the SWIM Window for the Current Layer.'''
-        logger.critical(f'Setting Local SWIM Window to {f}...')
-        self._data['data']['scales'][self.scale]['stack'][self.zpos][
-            'alignment']['method_data']['win_scale_factor'] = f
-
-    def set_swim_window_global(self, f: float) -> None:
-        '''Sets the SWIM Window for the Current Layer.'''
-        logger.critical(f'Setting Global SWIM Window to {f}...')
-        for s in self.scales():
-            scale = self._data['data']['scales'][s]['stack']
-            for layer in scale:
-                layer['alignment']['method_data']['win_scale_factor'] = f
-
     def set_use_bounding_rect(self, b: bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None:
@@ -1328,31 +1440,8 @@ class DataModel:
         except:
             logger.warning('Unable to set alignment dict')
 
-    def remove_aligned(self, scale, start, end):
-        '''
-        Removes previously generated aligned images for the current s, starting at l 'start_layer'.
-        :param use_scale: The s to remove aligned images from.
-        :type use_scale: str
-
-        :param start_layer: The starting l index from which to remove all aligned images, defaults to 0.
-        :type start_layer: int
-        '''
-        cfg.main_window.hud.post(f'Removing Aligned for Current Scale...')
-        try:
-            for layer in self._data['data']['scales'][scale]['stack'][start:end]:
-                ifn = layer['images'].get('filename', None)
-                layer['images'].pop('aligned', None)
-                if ifn != None:
-                    try:     os.remove(ifn)
-                    except:  logger.warning(f'os.remove({ifn}) Raised An Exception')
-        except:
-            print_exception()
-            cfg.main_window.warn('An Exception Was Raisied While Removing Previous Alignment...')
-        else:
-            cfg.main_window.hud.done()
-
     def set_afm(self, afm: list, s=None, l=None) -> None:
-        '''set afm as list of lists of floats'''
+        '''Sets afm as list of lists of floats'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
@@ -1362,7 +1451,7 @@ class DataModel:
             print_exception()
 
     def set_cafm(self, cafm: list, s=None, l=None) -> None:
-        '''set cafm as list of lists of floats'''
+        '''Sets cafm as list of lists of floats'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
@@ -1372,30 +1461,10 @@ class DataModel:
             print_exception()
 
 
-    def method(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
-
-    def selected_method(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
-
-    def set_selected_method(self, method, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        assert method in ('Auto-SWIM, Manual-Hint, Manual-Strict')
-        cfg.main_window.hud.post(f'Setting method for section #{l} ({s}) to {method}...')
-        self._data['data']['scales'][s]['stack'][l]['alignment']['method'] = method
-        logger.info(f'Method for section #{l} ({s}) set to {method}...')
-
-    def set_all_methods_automatic(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        cfg.main_window.hud.post('Setting Method for All Sections to Automatic-SWIM...')
-        for i in range(len(self)):
-            self._data['data']['scales'][s]['stack'][l]['alignment']['method'] = 'Auto-SWIM'
+    # def method(self, s=None, l=None):
+    #     if s == None: s = self.scale
+    #     if l == None: l = self.zpos
+    #     return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
 
 
     def set_destination_absolute(self, head):
@@ -1467,33 +1536,9 @@ class DataModel:
         next_coarsest_scale_key = scales_list[cur_scale_index + 1]
         return next_coarsest_scale_key
 
-    def is_alignable(self) -> bool:
-        '''Checks if the current scale is able to be aligned'''
-        try:
-            if len(cfg.data) < 1:
-                logger.debug("Returning False because # sections is < 1")
-                return False
-            scales_list = self.scales()
-            cur_scale_key = self.scale
-            coarsest_scale = scales_list[-1]
-            if cur_scale_key == coarsest_scale:
-                logger.debug("is_alignable returning True because: "
-                             "cur_scale_key == coarsest_scale) is True")
-                return True
-            cur_scale_index = scales_list.index(cur_scale_key)
-            next_coarsest_scale_key = scales_list[cur_scale_index + 1]
-            if not cfg.data.is_aligned(s=next_coarsest_scale_key):
-                logger.debug("is_alignable returning False because: "
-                             "not exist_aligned_zarr(next_coarsest_scale_key) is True")
-                return False
-            else:
-                logger.debug('Returning True')
-                return True
-        except:
-            print_exception()
+
 
     def clear_all_skips(self):
-        cfg.main_window.tell('Resetting Skips...')
         try:
             for scale in self.scales():
                 scale_key = str(scale)
@@ -1506,8 +1551,8 @@ class DataModel:
         scale = self.scale
         # logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
         self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
-        self._data['data']['scales'][scale]['stack'][len(cfg.data) - 1]['filename'] = file
-        self._data['data']['scales'][scale]['stack'][len(cfg.data) - 1]['reference'] = ''
+        self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
+        self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
 
     # def append_empty(self):
     #     logger.critical('MainWindow.append_empty:')
@@ -1529,38 +1574,6 @@ class DataModel:
     #     self._data['data']['scales'][scale]['stack'][layer]['img'] = copy.deepcopy(image_template) # 0119+
     #     self._data['data']['scales'][scale]['stack'][layer]['img'] = filename                      # 0119+
 
-
-    def update_datamodel(self, updated_model):
-        '''This function is called by align_layers and regenerate_aligned. It is called when
-        'run_json_project' returns with need_to_write_json=false'''
-        logger.info('Updating Data Model...')
-        # Load the alignment stack after the alignment has completed
-        aln_image_stack = []
-        scale = self.scale
-        for layer in self.stack():
-            image_name = None
-            if 'base' in layer['images'].keys():
-                # image_name = layer['images']['base']['filename']
-                image_name = layer['filename']
-            # Convert from the base name to the standard aligned name:
-            name = None
-            if image_name is not None:
-                if scale == "scale_1":
-                    name = os.path.join(os.path.abspath(self._data['data']['destination_path']),
-                                        scale, 'img_aligned', os.path.split(image_name)[-1])
-                else:
-                    name_parts = os.path.split(image_name)
-                    if len(name_parts) >= 2:
-                        name = os.path.join(os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]))
-            aln_image_stack.append(name)
-            logger.info("Adding aligned image %s" % name)
-            # layer['images']['aligned'] = {}
-            # layer['images']['aligned']['filename'] = name
-            layer['filename'] = name
-        try:
-            cfg.main_window.load_images_in_role('aligned', aln_image_stack)
-        except:
-            print_exception()
 
     def anySkips(self) -> bool:
         if len(self.skips_list()) > 0:
@@ -1606,28 +1619,6 @@ class DataModel:
                 new_stack = [deepcopy(l) for l in self.stack(s='scale_1')]
                 self._data['data']['scales'][key] = \
                     {'stack': new_stack, 'method_data': { 'alignment_option': 'init_affine' } }
-
-    # def set_default_data(self):
-    #     '''Ensure Proper Data Structure (that the previewmodel is usable)...'''
-    #     logger.debug('Ensuring called by %s' % inspect.stack()[1].function)
-    #     '''  '''
-    #     scales_dict = self._data['data']['scales']
-    #     coarsest = list(scales_dict.keys())[-1]
-    #     for scale_key in scales_dict.keys():
-    #         scale = scales_dict[scale_key]
-    #         scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
-    #         scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
-    #         scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
-    #         for layer_index in range(len(scale['stack'])):
-    #             layer = scale['stack'][layer_index]
-    #             layer.setdefault('alignment', {})
-    #             layer['alignment'].setdefault('method_data', {})
-    #             layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-    #             layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-    #             if scale_key == coarsest:
-    #                 layer['alignment']['method_data']['alignment_option'] = 'init_affine'
-    #             else:
-    #                 layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
 
 
     def link_reference_sections(self):
@@ -1782,22 +1773,6 @@ class DataModel:
                     self._current_version) + '" but found ' + str(
                     self._data['version'])
 
-    # def update_init_rot(self):
-    #     image_scales_to_run = [self.scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
-    #     for s in sorted(image_scales_to_run):  # i.e. string '1 2 4'
-    #         scale_key = self.get_scale_key(s)
-    #         for i, l in enumerate(self._data['data']['scales'][scale_key]['stack']):
-    #             l['alignment']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
-    #     logger.critical('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
-    #
-    # def update_init_scale(self):
-    #     image_scales_to_run = [self.scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
-    #     for s in sorted(image_scales_to_run):  # i.e. string '1 2 4'
-    #         scale_key = self.get_scale_key(s)
-    #         for i, l in enumerate(self._data['data']['scales'][scale_key]['stack']):
-    #             l['alignment']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
-    #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
-
 
     def clear_method_results(self, scale=None, start=0, end=None):
         if scale == None: scale = self.scale
@@ -1819,6 +1794,33 @@ class DataModel:
     # You can think of a property as a collection of methods bundled together
     # loc = property(fget=layer, fset=set_layer, fdel=None, doc='Location In Stack Property')
 
+def get_scale_key(scale_val) -> str:
+    '''Create a key like "scale_#" from either an integer or a string'''
+    s = str(scale_val)
+    while s.startswith('scale_'):
+        s = s[len('scale_'):]
+    return 'scale_' + s
+
+
+def get_scale_val(scale_of_any_type) -> int:
+    '''Converts s key to integer (i.e. 'scale_1' as string -> 1 as int)
+    TODO: move this to glanceem_utils'''
+    scale = scale_of_any_type
+    try:
+        if type(scale) == type(1):
+            return scale
+        else:
+            while scale.startswith('scale_'):
+                scale = scale[len('scale_'):]
+            return int(scale)
+    except:
+        logger.warning('Unable to return s value')
+
+def natural_sort(l):
+    '''Natural sort a list of strings regardless of zero padding'''
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
 
 @dataclass
 class StripNullFields:

@@ -45,7 +45,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
         try:
             task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
             # task_proc = sp.Popen(task, shell=False, stdout=sys.stdout, stderr=sys.stderr, bufsize=1)
-            outs, errs = task_proc.communicate() # execute the task and capture output
+            outs, errs = task_proc.communicate() # assemble_recipe the task and capture output
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
             rc = task_proc.returncode
@@ -250,15 +250,15 @@ class TaskQueue(QObject):
     def collect_results(self):
         t0 = time.time()
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        self.MPQLogger.critical('\n\nGathering Results...')
-        self.MPQLogger.critical(f'Time              : {timestamp}')
-        self.MPQLogger.critical(f'# Tasks           : {self.n_tasks}')
-        self.MPQLogger.critical(f'len(task dict)    : {len(self.task_dict)}')
-        self.MPQLogger.critical(f'len(taskNameList) : {len(self.taskNameList)}')
-        self.MPQLogger.critical(f'Pbar Text         : {self.pbar_text}')
-        self.MPQLogger.critical(f'Task Prefix       : {self.taskPrefix}')
-        self.MPQLogger.critical(f'# Workers         : {self.n_workers}')
-        self.MPQLogger.critical(f'Example Task      : {str(self.task_dict[0])}')
+        self.MPQLogger.critical(f'\n\nGathering Results...\n'
+                                f'Time              : {timestamp}\n'
+                                f'# Tasks           : {self.n_tasks}\n'
+                                f'len(task dict)    : {len(self.task_dict)}\n'
+                                f'len(taskNameList) : {len(self.taskNameList)}\n'
+                                f'Pbar Text         : {self.pbar_text}\n'
+                                f'Task Prefix       : {self.taskPrefix}\n'
+                                f'# Workers         : {self.n_workers}\n'
+                                f'Example Task      : {str(self.task_dict[0])}')
 
 
         '''Run All Tasks and Collect Results'''
@@ -329,12 +329,12 @@ class TaskQueue(QObject):
                     else:
                         self.task_dict[task_id]['statusBar'] = 'task_error'
                         retry_list.append(task_id)
-                        # logger.info(f'\n_________TaskQueue.collect_results()_________\n'
-                        #             f'task_id : {task_id}\n'
-                        #             f'outs    : {outs}\n'
-                        #             f'errs    : {errs}'
-                        #             f'rc : {rc}, dt : {dt:.2f}'
-                        #             f'\n_____________________________________________')  # *** lots of output for alignment
+                        logger.info(f'\n_________TaskQueue.collect_results()_________\n'
+                                    f'task_id : {task_id}\n'
+                                    f'outs    : {outs}\n'
+                                    f'errs    : {errs}'
+                                    f'rc : {rc}, dt : {dt:.2f}'
+                                    f'\n_____________________________________________')  # *** lots of output for alignment
                     self.task_dict[task_id]['dt'] = dt
                     realtime -= 1
 
@@ -361,30 +361,22 @@ class TaskQueue(QObject):
                 logger.info('Tasks Failed      : %d' % n_pending)
                 logger.info('══════ Complete ══════')
 
-                self.MPQLogger.critical('Tasks Successful  : %d' % (n_tasks - n_pending))
-                self.MPQLogger.critical('Tasks Failed      : %d' % n_pending)
-                self.MPQLogger.critical(f'══════ Complete [{self.pbar_text}] ══════')
+                self.MPQLogger.critical(f'Tasks Successful  : {n_tasks - n_pending}\n'
+                                        f'Tasks Failed      : {n_pending}\n'
+                                        f'══════ Complete [{self.pbar_text}] ══════')
 
                 cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
                 cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
                 cfg.main_window.tell('══════ Complete ══════')
             else:
-                # if caller == 'generate_aligned':
-                #     cfg.main_window.tell('Tasks Successful  : %d' % n_tasks)
-                #     cfg.main_window.tell('Tasks Failed      : %d' % 0)
-                #     # cfg.main_window.tell('Retries           : %d' % (retries_tot - 1))
-                #     cfg.main_window.tell('══════ Complete ══════')
-                # else:
                 cfg.main_window.warn('Something Went Wrong')
                 cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
                 cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
-                # logger.warning('Retries          : %d' % (retries_tot - 1))
                 cfg.main_window.warn('══════ Complete ══════')
 
                 logger.warning('Something Went Wrong')
                 logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))
                 logger.warning('Failed Tasks      : %d' % n_pending)
-                # logger.warning('Retries          : %d' % (retries_tot - 1))
                 logger.warning('══════ Complete ══════')
         except:
             print_exception()
@@ -480,7 +472,7 @@ task = ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src//lib/bin_darwin
 Good example of a single_alignment_job run:
 project_runner.do_alignment | Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
-  /Users/joelyancey/Downloads/alignEM-joel-dev-pyside6/source/src/src/job_single_alignment.py
+  /Users/joelyancey/Downloads/alignEM-joel-dev-pyside6/source/src/src/job_recipe_alignment.py
   /Users/joelyancey/glanceem_swift/test_projects/test_last_push/project_runner_job_file.json
   init_affine
   4
