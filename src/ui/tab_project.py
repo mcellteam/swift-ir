@@ -106,8 +106,7 @@ class ProjectTab(QWidget):
         if index == 0:
             # self.updateNeuroglancer()
             # self.initNeuroglancer()
-            if cfg.emViewer:
-                cfg.emViewer.set_layer(cfg.data.zpos)
+            cfg.emViewer.set_layer(cfg.data.zpos)
         elif index == 1:
             pass
         elif index == 2:
@@ -184,6 +183,8 @@ class ProjectTab(QWidget):
         # except AttributeError: pass
 
         caller = inspect.stack()[1].function
+
+        logger.critical(f"Manual Mode? {getData('state,manual_mode')}")
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
 
@@ -192,7 +193,7 @@ class ProjectTab(QWidget):
             cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
 
             cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
-            cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
+            # cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
 
             cfg.refViewer.signals.ptsChanged.connect(self.update_MA_widgets)
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
@@ -202,11 +203,11 @@ class ProjectTab(QWidget):
             # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
 
             # cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
+            # cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis #WasOn
 
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
-            cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible
+            # cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
 
             # cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer.set_zmag)
             # cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer.set_zmag)
@@ -1123,7 +1124,7 @@ class ProjectTab(QWidget):
             setData('state,stage_viewer,show_overlay_message', True)
 
             self.slider_AS_swim_window.setValue(cfg.data.swim_window_px())
-            self.AS_SWIM_window_le.setText(cfg.data.swim_window_px())
+            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()))
 
             self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
             self.MA_SWIM_window_le.setText(cfg.data.manual_swim_window_px())
@@ -1788,19 +1789,6 @@ class ProjectTab(QWidget):
         return False
 
 
-    def update_MA_widgets(self):
-        logger.info('')
-        # caller = inspect.stack()[1].function
-        # logger.info('update_MA_widgets [caller: %s] >>>>' % caller)
-        if getData('state,manual_mode'):
-            self.update_MA_list_base()
-            self.update_MA_list_ref()
-        self.dataUpdateMA()
-
-        # self.applyMps()
-        # logger.info('<<<< update_MA_widgets ')
-
-
     def dataUpdateMA(self):
         logger.critical('')
         if getData('state,manual_mode'):
@@ -1831,7 +1819,13 @@ class ProjectTab(QWidget):
             self.toggle_showInstructionOverlay.setChecked(getData('state,stage_viewer,show_overlay_message'))
 
 
-
+    def update_MA_widgets(self):
+        logger.info('')
+        # caller = inspect.stack()[1].function
+        # logger.info('update_MA_widgets [caller: %s] >>>>' % caller)
+        self.update_MA_list_base()
+        self.update_MA_list_ref()
+        # self.dataUpdateMA()
 
 
     def update_MA_list_ref(self):

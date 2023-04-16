@@ -82,7 +82,6 @@ def compute_affines(scale, start=0, end=None):
         # START TASK QUEUE
         task_queue.start(cpus)
         align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
-        logger.critical(f'script path: {align_job}')
 
         # ADD ALIGNMENT TASKS TO QUEUE
         for sec in substack:

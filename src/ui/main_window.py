@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
 
     def hardRestartNg(self):
         caller = inspect.stack()[1].function
-        logger.critical('\n\n\n**HARD** Restarting Neuroglancer (caller: %s)...\n\n' % caller)
+        logger.critical('\n\n**HARD** Restarting Neuroglancer (caller: %s)...\n' % caller)
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_BEFORE)
         if self._isProjectTab() or self._isZarrTab():
@@ -451,7 +451,7 @@ class MainWindow(QMainWindow):
                     self.corr_signals[i].show()
                 else:
                     self.corr_signals[i].hide()
-        logger.critical(f'<<<< updateCorrSpotsDrawer [actual sizes: {self._splitter.sizes()}]')
+        logger.info(f'<<<< updateCorrSpotsDrawer [actual sizes: {self._splitter.sizes()}]')
 
 
     def clearCorrSpotsDrawer(self):
@@ -514,7 +514,7 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_showHideControls(self):
-        logger.critical('')
+        logger.info('')
         self.cpanelMainWidgets.setVisible(self.cpanelMainWidgets.isHidden())
         self.controlsButton.setText(('Controls','Hide')[self.cpanelMainWidgets.isVisible()])
         self.controlsButton.setStatusTip(('Show Control Panel','Hide Control Panel')[self.cpanelMainWidgets.isVisible()])
@@ -890,7 +890,7 @@ class MainWindow(QMainWindow):
 
     # def alignOne(self, stageit=False):
     def alignOne(self):
-        logger.critical('\n\nAligning One...\n')
+        logger.critical('Aligning One...')
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
@@ -1549,6 +1549,9 @@ class MainWindow(QMainWindow):
                     else:
                         self._polyBiasCombo.setCurrentText('None')
                 except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+                try:     self._bbToggle.setChecked(cfg.data.has_bb())
+                except:  logger.warning('Bounding Box Toggle Failed to Update')
+
                 # cfg.project_tab.slotUpdateZoomSlider()
 
         logger.info(f'<<<< dataUpdateWidgets [zpos={cfg.data.zpos}]')
@@ -1817,36 +1820,26 @@ class MainWindow(QMainWindow):
 
 
     def fn_scales_combobox(self) -> None:
-        if self._scales_combobox_switch:
-            if self._isProjectTab():
-                caller = inspect.stack()[1].function
-                logger.info('caller: %s' % caller)
-                if caller in ('main', 'scale_up', 'scale_down'):
-                    # if getData('state,manual_mode'):
-                    #     self.exit_man_mode()
-                    # 0414-
-                    index = self._changeScaleCombo.currentIndex()
-                    cfg.data.scale = cfg.data.scales()[index]
-                    self.onScaleChange() #0129-
-
-
-    def onScaleChange(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'Changing Scales (caller: {caller})...')
         if not self._working:
-            if caller != 'OnStartProject':
+            if self._scales_combobox_switch:
                 if self._isProjectTab():
-                    # self.jump_to(cfg.data.zpos)
-                    # self.updateToolbar()
-                    try:
-                        cfg.project_tab.updateProjectLabels()
-                    except:
-                        pass
-                    self.updateEnabledButtons()
-                    self._bbToggle.setChecked(cfg.data.has_bb())
-                    self.dataUpdateWidgets()
-                    self._showSNRcheck()
-                    cfg.project_tab.refreshTab()
+                    caller = inspect.stack()[1].function
+                    logger.info('caller: %s' % caller)
+                    if caller in ('main', 'scale_up', 'scale_down'):
+                        # if getData('state,manual_mode'):
+                        #     self.exit_man_mode()
+                        # 0414-
+                        index = self._changeScaleCombo.currentIndex()
+                        cfg.data.scale = cfg.data.scales()[index]
+                        try:
+                            cfg.project_tab.updateProjectLabels()
+                        except:
+                            pass
+                        self.updateEnabledButtons()
+                        self.dataUpdateWidgets()
+                        self._showSNRcheck()
+                        cfg.project_tab.refreshTab()
+
 
 
     def export_afms(self):
@@ -2233,13 +2226,13 @@ class MainWindow(QMainWindow):
             # msg_width = 640
             # msg_height = 480
 
-            fg = self.frameGeometry()
-            # fg = self.geometry()
-            x = (fg.width()/2) - (msg.width() / 2)
-            y = (fg.height()/2) + (msg.height() / 2)
-            # x = (fg.width()/2)
-            # y = (fg.height()/2)
-            msg.move(x, y)
+            # fg = self.frameGeometry()
+            # # fg = self.geometry()
+            # x = (fg.width()/2) - (msg.width() / 2)
+            # y = (fg.height()/2) + (msg.height() / 2)
+            # # x = (fg.width()/2)
+            # # y = (fg.height()/2)
+            # msg.move(x, y)
 
             msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
             msg.setStyleSheet("""
