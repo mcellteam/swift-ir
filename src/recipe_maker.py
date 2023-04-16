@@ -1,19 +1,4 @@
 #!/usr/bin/env python3
-'''afm = affine forward matrix
-aim = affine inverse matrix
-pa = point array
-wwx_f = window width x - full
-wwy_f = window width y - full
-wsf = window scaling factor (example 0.8125)
-psta = stationary points (ref image)
-sx_2x2 = size of windows for 2x2
-
-Notes:
-- mir has a -v flag for more output
-- wsf = 0.80 (Most common good value for wsf) = 0.75  (Also a good value for most projects)
-- psta is list of x,y coordinates (points stationary array)
-'''
-
 
 import os
 import re
@@ -34,10 +19,10 @@ scratchlogger = logging.getLogger('scratch.log')
 
 
 def run_recipe(project, scale_val, zpos=0, dev_mode=False):
-    '''Align one s - either the one specified in "s" or the coarsest without an AFM.
+    '''Assemble and execute an alignment recipe
     :param project: project data dictionary expressed as JSON-formatted string.
-    :param scale_val: Scale value to run the alignment recipe on.
-    :param zpos: Z-index of target section within the stack.
+    :param scale_val: scale to run the alignment recipe on.
+    :param zpos: z-index of current section within the stack.
     '''
     pd = project['data']['destination_path']
     scale_key = 'scale_' + str(scale_val)
@@ -512,8 +497,14 @@ def convert_rotation(val):
     deg2rad = 2*np.pi/360.
     return np.sin(deg2rad*val)
 
+
 if __name__ == '__main__':
     RMlogger.info("Running " + __file__ + ".__main__()")
 
 
+'''
+Notes:
+  - mir has a -v flag for more output
+  - wsf = 0.80 (Most common good value for wsf) = 0.75  (Also a good value for most projects)
 
+'''
