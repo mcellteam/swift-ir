@@ -222,10 +222,10 @@ class DataModel:
             # logger.info(f'next_coarsest_scale_key = {next_coarsest_scale_key}')
 
             if not self.is_aligned(s=next_coarsest_scale_key):
-                logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
+                # logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
                 return False
             else:
-                logger.critical(f'is {self.scale} alignable? Returning True')
+                # logger.critical(f'is {self.scale} alignable? Returning True')
                 return True
         except:
             print_exception()
@@ -835,8 +835,8 @@ class DataModel:
         for p in matchpoints:
             glob_coords.append((p[0] * fac, p[1] * fac))
 
-        cur_scale_ww = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px']
-        scale_1_ww = cur_scale_ww * fac
+        # cur_scale_ww = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px']
+        # scale_1_ww = cur_scale_ww * fac
 
         for s in self.scales():
             # set manual points in Neuroglancer coordinate system
@@ -852,9 +852,9 @@ class DataModel:
             mir_coords = [[img_width - pt[1], pt[0]] for pt in coords]
             self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir'][role] = mir_coords
 
-            # scale and set manual alignment window width
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px'] \
-                = scale_1_ww / fac
+            # # scale and set manual alignment window width
+            # self._data['data']['scales'][s]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px'] \
+            #     = scale_1_ww / fac
 
             if role == 'base':
                 if l+1 in range(0,len(self)):
@@ -1236,9 +1236,9 @@ class DataModel:
                 for i in range(len(self)):
                     self.stack(s)[i]['alignment']['swim_settings']['auto_swim_window_px'] = man_ww
 
-    def manual_swim_window_px(self) -> float:
+    def manual_swim_window_px(self) -> int:
         '''Returns the SWIM Window for the Current Layer.'''
-        return float(self.stack()[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'])
+        return int(self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'])
 
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
@@ -1252,18 +1252,18 @@ class DataModel:
                 self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
 
     def set_manual_swim_windows_to_default(self, current_only=False) -> None:
-        logger.info('')
         import src.config as cfg
         img_size = self.image_size(self.scales()[0])  # largest scale size
         man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
         for s in self.scales():
             man_ww = man_ww_full / self.scale_val(s)
-            logger.critical(f'Manual SWIM window size for {s} to {man_ww}')
+            logger.info(f'Manual SWIM window size for {s} to {man_ww}')
             if current_only:
                 self.stack(s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
             else:
                 for i in range(len(self)):
                     self.stack(s)[i]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+
 
 
     def set_manual_swim_windows_to_cur_val(self) -> None:

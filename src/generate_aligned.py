@@ -23,15 +23,13 @@ logger = logging.getLogger(__name__)
 
 
 def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False):
-    logger.critical(f'\n\n\n\ngenerating aligned reallocate_zarr={reallocate_zarr}...')
-
 
     scale_val = get_scale_val(scale)
 
     if cfg.CancelProcesses:
         cfg.main_window.warn('Generating Scale %d Alignment w/ MIR...' % (scale_val))
     else:
-        logger.critical('Generating Aligned Images...')
+        logger.info('Generating Aligned Images...')
         dm = cfg.data
 
         if ng.is_server_running():
@@ -60,7 +58,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         bias_path = os.path.join(dm.dest(), scale, 'bias_data')
         t_sb = time.time()
         save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
-        logger.critical('save bias time: %.3f' %(time.time() - t_sb))
+        logger.info('save bias time: %.3f' %(time.time() - t_sb))
         if end == None:
             end = len(dm)
         n_tasks = len(list(range(start,end)))
@@ -123,7 +121,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
     else:
         logger.info('Generating Zarr...')
         if reallocate_zarr:
-            logger.critical('\n\npreallocating...\n')
+            logger.info('Preallocating...')
             preallocate_zarr(name='img_aligned.zarr',
                              group='s%d' % scale_val,
                              dimx=rect[2],
@@ -138,7 +136,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
         for i in range(len(cfg.data)):
             if not os.path.exists(os.path.join(stage_path, str(i))):
-                logger.critical('creating group: %s...' %str(i))
+                logger.info('creating group: %s' %str(i))
                 root.create_group(str(i))
 
         if cfg.CancelProcesses:

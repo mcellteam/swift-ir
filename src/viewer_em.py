@@ -496,7 +496,6 @@ class EMViewer(AbstractEMViewer):
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
             nglayout = mapping[requested]
 
-        logger.critical(f'nglayout: {nglayout}')
 
         zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
         path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
@@ -623,7 +622,6 @@ class EMViewerStage(AbstractEMViewer):
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
         w = cfg.project_tab.MA_webengine_stage.geometry().width()
         h = cfg.project_tab.MA_webengine_stage.geometry().height()
-        logger.critical(f'MA_webengine_stage: w={w}, h={h}')
         self.initZoom(w=w, h=h, adjust=1.02)
 
         # logger.info('\n\n' + self.url() + '\n')
