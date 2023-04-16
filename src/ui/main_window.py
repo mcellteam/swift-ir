@@ -2218,8 +2218,8 @@ class MainWindow(QMainWindow):
             msg.setParent(self)
             msg.setFixedSize(360,180)
 
-            # fg = self.frameGeometry()
-            fg = self.geometry()
+            fg = self.frameGeometry()
+            # fg = self.geometry()
             x = (fg.width() - msg.width()) / 2
             y = (fg.height() - msg.height()) / 2
             msg.move(x, y)

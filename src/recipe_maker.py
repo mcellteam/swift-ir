@@ -14,8 +14,8 @@ __all__ = ['run_recipe']
 MAlogger      = logging.getLogger('MAlogger')
 SWIMlogger    = logging.getLogger('SWIMlogger')
 MIRlogger     = logging.getLogger('MIRlogger')
-RMlogger      = logging.getLogger('recipemaker.log')
-scratchlogger = logging.getLogger('scratch.log')
+RMlogger      = logging.getLogger('recipemaker')
+scratchlogger = logging.getLogger('scratch')
 
 
 def run_recipe(project, scale_val, zpos=0, dev_mode=False):
