@@ -27,7 +27,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
     scale_val = get_scale_val(scale)
 
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Generating Scale %d Alignment w/ MIR...' % (scale_val))
+        cfg.main_window.warn('Canceling Generate Alignment')
     else:
         logger.info('Generating Aligned Images...')
         dm = cfg.data

@@ -396,7 +396,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def undraw_point_annotations(self):
-        # logger.info('Undrawing point annotations...')
+        logger.info('Undrawing point annotations...')
         try:
             with self.txn() as s:
                 s.layers['ann_swim'].annotations = None
@@ -407,22 +407,24 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def undrawSWIMwindow(self):
-        # logger.info('Undrawing SWIM Window')
+        caller = inspect.stack()[1].function
+        logger.critical(f'Undrawing SWIM Windows [caller: {caller}]...')
         try:
             with self.txn() as s:
                 s.layers['ann_auto'].annotations = None
         except:
             logger.warning('No annotations to clear')
             # print_exception()
+        pass
 
 
     # @functools.cache
     def drawSWIMwindow(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
         # t.start()
 
         self.undraw_point_annotations()
-        self.undrawSWIMwindow()
 
         marker_size = 1
 
@@ -537,8 +539,10 @@ class MAViewer(neuroglancer.Viewer):
         else:
             '''SWIM Annotations for Manual Alignments'''
 
-            logger.info('Drawing SWIM Windows Layer for Manual Alignment...')
+            logger.critical('Drawing SWIM Windows Layer for Manual Alignment...')
             points = cfg.data.manpoints()[self.role]
+            logger.critical(f'len(points) : {len(points)}')
+            # logger.critical(f'dictionary points:\n{points}')
             annotations = []
             half_win = int(cfg.data.manual_swim_window_px() / 2)
 
@@ -570,6 +574,9 @@ class MAViewer(neuroglancer.Viewer):
             #         # annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
             # else:
             pts_list = list(self.pts.items())
+
+            logger.critical(f'len(pts_list) : {len(pts_list)}')
+            # logger.critical(f"pts list:\n{pts_list}")
 
             for i in range(len(pts_list)):
                 pt = pts_list[i]

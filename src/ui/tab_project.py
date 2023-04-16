@@ -184,7 +184,7 @@ class ProjectTab(QWidget):
 
         caller = inspect.stack()[1].function
 
-        logger.critical(f"Manual Mode? {getData('state,manual_mode')}")
+        logger.info(f"Manual Mode? {getData('state,manual_mode')}")
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
 
@@ -823,8 +823,15 @@ class ProjectTab(QWidget):
                 self.update_MA_widgets()
                 self.set_method_label_text()
                 # self.tgl_alignMethod.setChecked(False)
-                cfg.refViewer.undrawSWIMwindow()
-                cfg.baseViewer.undrawSWIMwindow()
+
+
+
+                # cfg.refViewer.undrawSWIMwindow()
+                # cfg.baseViewer.undrawSWIMwindow()
+                cfg.refViewer.undraw_point_annotations()
+                cfg.baseViewer.undraw_point_annotations()
+
+
             except:
                 print_exception()
 
@@ -1934,6 +1941,8 @@ class ProjectTab(QWidget):
 
 
     def deleteMpRef(self):
+        # todo .currentItem().background().color().name() is no longer viable
+
         logger.info('Deleting A Reference Image Manual Correspondence Point from Buffer...')
         cfg.main_window.hud.post('Deleting A Reference Image Manual Correspondence Point from Buffer...')
         # for item in self.MA_ptsListWidget_ref.selectedItems():
@@ -1956,6 +1965,8 @@ class ProjectTab(QWidget):
 
 
     def deleteMpBase(self):
+        #todo .currentItem().background().color().name() is no longer viable
+
         logger.info('Deleting A Base Image Manual Correspondence Point from Buffer...')
         cfg.main_window.hud.post('Deleting A Base Image Manual Correspondence Point from Buffer...')
         # for item in self.MA_ptsListWidget_base.selectedItems():

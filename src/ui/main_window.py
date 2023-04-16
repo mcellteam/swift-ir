@@ -1364,7 +1364,6 @@ class MainWindow(QMainWindow):
                     return
                 if isinstance(ng_layer, int):
                     if type(ng_layer) != bool:
-                        logger.info (f'ng_layer is type {type(ng_layer)}')
                         try:
                             if 0 <= ng_layer < len(cfg.data):
                                 logger.critical(f'Setting Layer: {ng_layer}')
@@ -2194,6 +2193,16 @@ class MainWindow(QMainWindow):
     def exit_app(self):
         logger.info("Asking user to confirm exit application...")
 
+        style = """
+                background-color: #141414;
+                color: #ede9e8;
+                font-size: 11px;
+                font-weight: 600;
+                font-family: Tahoma, sans-serif;
+                border-color: #339933;
+                border-width: 2px;
+            """
+
         dlg = ExitAppDialog()
         dlg.show()
         fg = self.frameGeometry()
@@ -2227,23 +2236,16 @@ class MainWindow(QMainWindow):
             # msg_height = 480
 
             # fg = self.frameGeometry()
-            # # fg = self.geometry()
-            # x = (fg.width()/2) - (msg.width() / 2)
-            # y = (fg.height()/2) + (msg.height() / 2)
+            # fg = self.geometry()
+            # x = (fg.width()/2) #- (msg.width() / 2)
+            x = (fg.width()/3) #- (msg.width() / 2)
+            y = (fg.height()/2)
             # # x = (fg.width()/2)
             # # y = (fg.height()/2)
-            # msg.move(x, y)
+            msg.move(x, y)
 
             msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
-            msg.setStyleSheet("""
-                background-color: #141414;
-                color: #ede9e8;
-                font-size: 11px;
-                font-weight: 600;
-                font-family: Tahoma, sans-serif;
-                border-color: #339933;
-                border-width: 2px;
-            """)
+            msg.setStyleSheet(style)
             msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             buttonSave = msg.button(QMessageBox.Save)
             buttonSave.setText('Save && Exit')
@@ -3653,8 +3655,8 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 if getData('state,manual_mode'):
                     if not getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
-                        cfg.refViewer.undrawSWIMwindow()
-                        cfg.baseViewer.undrawSWIMwindow()
+                        cfg.refViewer.undraw_point_annotations()
+                        cfg.baseViewer.undraw_point_annotations()
                     else:
                         cfg.refViewer.drawSWIMwindow()
                         cfg.baseViewer.drawSWIMwindow()
