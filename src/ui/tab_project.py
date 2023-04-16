@@ -201,7 +201,6 @@ class ProjectTab(QWidget):
             # cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
             # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
 
-
             # cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
             cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis
 
@@ -1446,6 +1445,10 @@ QListView::item:!selected:hover
                 self.shaderToolbar.hide()
                 self.shaderAction.setStatusTip('Show Brightness & Contrast Shaders')
             else:
+                self.contrastSlider.setValue(cfg.data.contrast)
+                self.contrastLE.setText('%.2f' % cfg.data.contrast)
+                self.brightnessSlider.setValue(cfg.data.brightness)
+                self.brightnessLE.setText('%.2f' % cfg.data.brightness)
                 self.shaderToolbar.show()
                 self.shaderAction.setStatusTip('Hide Brightness & Contrast Shaders')
         self.shaderAction.triggered.connect(fn)
@@ -1486,6 +1489,7 @@ QListView::item:!selected:hover
         )
         self.ng_browser_container_outer.layout.setSpacing(0)
 
+
     def hideSecondaryNgTools(self):
         for i in range(0,12):
             self.w_ng_extended_toolbar.actions()[i].setVisible(False)
@@ -1497,6 +1501,7 @@ QListView::item:!selected:hover
         # self.showHudOverlayAction.setVisible(False)
         # self.labNgLayout.setVisible(False)
         # self.comboNgLayout.setVisible(False)
+
 
     def showSecondaryNgTools(self):
         for i in range(0,12):
@@ -1811,7 +1816,7 @@ QListView::item:!selected:hover
 
 
     def dataUpdateMA(self):
-        logger.info('')
+        logger.critical('')
         if getData('state,manual_mode'):
 
             caller = inspect.stack()[1].function
@@ -2405,15 +2410,15 @@ QListView::item:!selected:hover
         self.le_tree_jumpToSec.setFixedHeight(18)
         self.le_tree_jumpToSec.setFixedWidth(30)
         def fn():
+            logger.info('')
             requested = int(self.le_tree_jumpToSec.text())
-
-            logger.critical(f'self.le_tree_jumpToScale.text() = {self.le_tree_jumpToScale.text()}')
-            logger.critical(f'type(self.le_tree_jumpToScale.text()) = {type(self.le_tree_jumpToScale.text())}')
-            logger.critical(f'len(self.le_tree_jumpToScale.text()) = {len(self.le_tree_jumpToScale.text())}')
-
-            if requested in cfg.data.scale_vals():
-                self.updateTreeWidget()
-                self.treeview_model.jumpToSection(sec=requested)
+            if (len(self.le_tree_jumpToScale.text()) > 0) and \
+                    (int(self.le_tree_jumpToScale.text()) in cfg.data.scale_vals()):
+                requested_scale = int(self.le_tree_jumpToScale.text())
+            else:
+                requested_scale = cfg.data.scale
+            self.updateTreeWidget()
+            self.treeview_model.jumpToSection(sec=requested, s=get_scale_key(requested_scale))
         self.le_tree_jumpToSec.returnPressed.connect(fn)
 
 
@@ -2543,50 +2548,7 @@ QListView::item:!selected:hover
         # self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
         # self.shaderSideButtons = HWidget(self._btn_resetBrightnessAndContrast, self._btn_volumeRendering)
         self.shaderSideButtons = HWidget(self._btn_resetBrightnessAndContrast)
-
-
         self.shaderWidget = QWidget()
-        # self.shaderWidget.setFixedHeight(128)
-        # self.shaderText = QPlainTextEdit()
-        # style = '''
-        # border-width: 1px;
-        # border-radius: 5px;
-        # color: #141414;
-        # background-color: #f3f6fb;
-        # font-size: 12px;
-        # font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        # '''
-        # self.shaderText.setStyleSheet(style)
-
-        # self.shaderSideButtons.setFixedWidth(60)
-        # self.shaderSideButtons.setStyleSheet("""
-        # QPushButton {background-color: #ede9e8; color: #141414;}
-        # QPushButton::pressed {background-color: #ede9e8; color: #141414; border-bottom-style: solid;
-        # border-bottom-color: #ede9e8; border-bottom-width: 2px; }
-        # QPushButton::hover {color: #161c20;}
-        # """)
-
-
-        # self.normalizedSlider = RangeSlider()
-        # self.normalizedSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # # self.normalizedSlider.setFixedWidth(120)
-        # self.normalizedSlider.setMin(1)
-        # self.normalizedSlider.setStart(1)
-        # self.normalizedSlider.setMax(255)
-        # self.normalizedSlider.setEnd(255)
-        # self.normalizedSlider.startValueChanged.connect(self.fn_shader_control)
-        # self.normalizedSlider.endValueChanged.connect(self.fn_shader_control)
-        #
-        # self.normalizedSliderWidget = QWidget()
-        # self.normalizedSliderWidget.setFixedWidth(120)
-        # vbl = QVBoxLayout()
-        # vbl.setSpacing(1)
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # lab = QLabel('Normalize:')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        # vbl.addWidget(lab)
-        # vbl.addWidget(self.normalizedSlider)
-        # self.normalizedSliderWidget.setLayout(vbl)
 
         self.brightnessLE = QLineEdit()
         self.brightnessLE.setStyleSheet("""QLineEdit {
