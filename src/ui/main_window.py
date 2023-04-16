@@ -496,11 +496,11 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_showHidePython(self):
-        logger.critical(f'QApplication.focusWidget = {QApplication.focusWidget()}')
+        logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self._dev_console.setVisible(self._dev_console.isHidden())
-        logger.critical(f'QApplication.focusWidget = {QApplication.focusWidget()}')
+        logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self.pythonConsole.setFocus()
-        logger.critical(f'QApplication.focusWidget = {QApplication.focusWidget()}')
+        logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self.pythonButton.setText(('Python','Hide')[self._dev_console.isVisible()])
         self.pythonButton.setStatusTip(('Show Python Console','Hide Python Console')[self._dev_console.isVisible()])
 
@@ -2203,6 +2203,16 @@ class MainWindow(QMainWindow):
 
 
         dlg = ExitAppDialog()
+        dlg.show()
+        fg = self.frameGeometry()
+
+        x = (fg.width() / 2) - (dlg.width() / 2)
+        y = (fg.height() / 2) + (dlg.height() / 2)
+        # x = (fg.width()/2)
+        # y = (fg.height()/2)
+        dlg.move(x, y)
+
+
         if dlg.exec():
             logger.info('User Choice: Exit')
         else:
@@ -2215,17 +2225,17 @@ class MainWindow(QMainWindow):
             message = "There are unsaved changes.\n\nSave before exiting?"
             msg = QMessageBox(QMessageBox.Warning, "Save Changes", message)
             msg.setParent(self)
-            msg.show() #Critical
+            msg.show() #Critical - reveals window size
 
             logger.critical(f'msg.width() = {msg.width()}')
             logger.critical(f'msg.height() = {msg.height()}')
             # msg_width = 640
             # msg_height = 480
 
-            # fg = self.frameGeometry()
-            fg = self.geometry()
+            fg = self.frameGeometry()
+            # fg = self.geometry()
             x = (fg.width()/2) - (msg.width() / 2)
-            y = (fg.height()/2) - (msg.height() / 2)
+            y = (fg.height()/2) + (msg.height() / 2)
             # x = (fg.width()/2)
             # y = (fg.height()/2)
             msg.move(x, y)
