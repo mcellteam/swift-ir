@@ -550,7 +550,7 @@ class DataModel:
                 layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
                 layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
                 layer['alignment']['manual_settings'].setdefault('fixed_pattern_clobber', cfg.DEFAULT_PATTERN_CLOBBER)
-                layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+                layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC)
                 layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('manpoints', {})
                 layer['alignment']['manpoints'].setdefault('ref', [])
@@ -1258,6 +1258,7 @@ class DataModel:
         man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
         for s in self.scales():
             man_ww = man_ww_full / self.scale_val(s)
+            logger.critical(f'Manual SWIM window size for {s} to {man_ww}')
             if current_only:
                 self.stack(s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
             else:
