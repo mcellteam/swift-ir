@@ -472,7 +472,7 @@ class ProjectTab(QWidget):
         self.detailsCorrSpots.hide()
 
 
-        overlay_style = "background-color: rgba(255, 255, 255, 0); color: #f3f6fb;"
+        overlay_style = "background-color: rgba(255, 255, 255, 0); color: #f3f6fb; border-radius: 4px;"
 
         self.detailsSection = QLabel()
         self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
@@ -1172,7 +1172,7 @@ class ProjectTab(QWidget):
             self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()))
 
             self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
-            self.MA_SWIM_window_le.setText(cfg.data.manual_swim_window_px())
+            self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
 
             self.spinbox_whitening.setValue(cfg.data.whitening())
             self.toggle_showInstructionOverlay.setChecked(True)
@@ -1855,15 +1855,15 @@ class ProjectTab(QWidget):
             self._combo_method_switch = True
             self.spinbox_whitening.setValue(cfg.data.manual_whitening())
 
+            img_siz = cfg.data.image_size()
+            self.AS_SWIM_window_le.setValidator(QIntValidator(64, min(img_siz[0], img_siz[1])))
+            self.MA_SWIM_window_le.setValidator(QIntValidator(64, min(img_siz[0], img_siz[1])))
+
             self.slider_AS_swim_window.setValue(cfg.data.swim_window_px())
             self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()))
 
             self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
-
-            img_siz = cfg.data.image_size()
-            self.AS_SWIM_window_le.setValidator(QIntValidator(64, min(img_siz[0], img_siz[1])))
-            self.MA_SWIM_window_le.setValidator(QIntValidator(64, min(img_siz[0], img_siz[1])))
 
             self.toggle_showInstructionOverlay.setChecked(getData('state,stage_viewer,show_overlay_message'))
 
@@ -2140,6 +2140,7 @@ class ProjectTab(QWidget):
     def onEnterManualMode(self):
         logger.info('onEnterManualMode >>>>')
         logger.info('Deleting viewers...')
+
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
         # self.w_ng_display_ext.hide() # change layout before initializing viewer

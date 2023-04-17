@@ -2818,6 +2818,8 @@ class MainWindow(QMainWindow):
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
 
+                # cfg.project_tab.cpanelFrame.hide()
+
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
@@ -2863,6 +2865,8 @@ class MainWindow(QMainWindow):
                 setData('state,ng_layout', 'xy')
 
             self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
+
+            # cfg.project_tab.cpanelFrame.show()
 
             setData('state,manual_mode', False)
             self.alignMatchPointAction.setText('Align Manually')
