@@ -57,12 +57,12 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         # print_example_cafms(scale_dict)
         bias_path = os.path.join(dm.dest(), scale, 'bias_data')
         t_sb = time.time()
-        save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+        # save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
         logger.info('save bias time: %.3f' %(time.time() - t_sb))
         if end == None:
             end = len(dm)
         n_tasks = len(list(range(start,end)))
-        if dm.has_bb():
+        if dm.use_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
             logger.info(f'Bounding Box              : ON\nNew Bounding Box          : {str(rect)}')
@@ -211,7 +211,7 @@ def tryRemoveFile(directory):
         pass
 
 def tryRemoveDatFiles(dm, scale, path):
-    bb_str = str(dm.has_bb())
+    bb_str = str(dm.use_bb())
     poly_order_str = str(dm.poly_order())
     null_cafm_str = str(dm.null_cafm())
     bias_data_path = os.path.join(path, scale, 'bias_data')

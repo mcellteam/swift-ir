@@ -8,9 +8,10 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, \
-    QTableWidget, QTableWidgetItem, QSlider
-from qtpy.QtCore import Qt, QRect, QAbstractTableModel
+    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy
+from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
+from src.ui.layouts import VBL, HBL, VWidget, HWidget
 from src.helpers import print_exception
 
 import src.config as cfg
@@ -23,6 +24,8 @@ cfg.project_tab.project_table.updateTableDimensions(100)
 
 
 class ProjectTable(QWidget):
+    tableFinishedLoading = Signal()
+
     def __init__(self, parent):
         super().__init__(parent)
         caller = inspect.stack()[1].function
@@ -30,7 +33,10 @@ class ProjectTable(QWidget):
         # self.INITIAL_ROW_HEIGHT = 128
         self.INITIAL_ROW_HEIGHT = 100
         self.data = None
+
         self.table = QTableWidget()
+        self.table.hide()
+
         # self.model = TableModel(data='')
         # self.table.setModel(self.model)
         self.table.verticalHeader().hide()
@@ -51,6 +57,8 @@ class ProjectTable(QWidget):
 
         # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
         # self.initUI()
+
+        self.tableFinishedLoading.connect(self.onTableFinishedLoading)
 
     # def onDoubleClick(self, item=None):
     #     print(type(item))
@@ -88,16 +96,19 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info('Setting Table Data (caller: %s)...' % caller)
         cfg.main_window.tell('Updating Table Data...')
+        self.table.setUpdatesEnabled(False)
+        # self.setUpdatesEnabled(False)
 
-        cfg.main_window.showZeroedPbar()
+
         cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nTasks)
         cfg.nCompleted = 0
         cfg.nTasks = len(cfg.data)
         cfg.main_window.setPbarMax(cfg.nTasks)
+        cfg.main_window.showZeroedPbar()
 
         cur_selection = self.table.currentIndex().row()
         cur_scroll_pos = self.table.verticalScrollBar().value()
-        self.setUpdatesEnabled(False)
+        # self.setUpdatesEnabled(False)
         self.table.clearContents()
         self.table.clear()
         self.table.setRowCount(0)
@@ -177,8 +188,14 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
+            self.table.setUpdatesEnabled(True)
+            # self.setUpdatesEnabled(True)
+            self.tableFinishedLoading.emit()
+            # self.table.show()
+            # self.loadScreenLabel.hide()
+
             cfg.main_window.hidePbar()
-            self.setUpdatesEnabled(True)
+            # self.setUpdatesEnabled(True)
             self.setColumnWidths()
             self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
             self.set_column_headers()
@@ -290,6 +307,13 @@ class ProjectTable(QWidget):
     #     max_val = max(ImageSize(next(absFilePaths(thumb_path))))
     #     # self.row_height_slider.setMaximum(max_val)
 
+    def onTableFinishedLoading(self):
+        logger.critical('')
+        self.loadScreenLabel.hide()
+        self.table.show()
+
+
+
 
     def initUI(self):
         logger.info('Initializing Table UI...')
@@ -316,24 +340,58 @@ class ProjectTable(QWidget):
         # self.row_height_hlayout.addWidget(self.thumbnailPixelsLabel, alignment=Qt.AlignmentFlag.AlignLeft)
         # self.row_height_widget.setLayout(self.row_height_hlayout)
 
-        logger.info('Initializing Table Controls...')
+
+        self.btnReloadTable = QPushButton('Reload')
+        self.btnReloadTable.setFixedHeight(18)
+        self.btnReloadTable.setFixedWidth(70)
+        self.btnReloadTable.clicked.connect(self.setScaleData)
 
         self.controls = QWidget()
         self.controls.setObjectName('controls')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.addWidget(QLabel('Row Height:'), alignment=Qt.AlignLeft)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignLeft)
+        hbl.addWidget(self.btnReloadTable, alignment=Qt.AlignLeft)
         # self.controls_hlayout.addWidget(self.font_size_widget)
         hbl.addStretch()
+        self.controls.setMaximumHeight(22)
         self.controls.setLayout(hbl)
 
-        logger.info('Initializing Table Layout...')
+        def initTable():
+            logger.info('')
+            self.loadScreenLabel.setText('<center>Loading...</center>')
+            self.setScaleData()
+            # self.loadScreenLabel.hide()
+            # self.table.show()
 
-        layout =QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setContentsMargins(0, 0, 0, 0)
+        # self.btnLoadTable = QPushButton('Load Table')
+        # self.btnLoadTable.setFixedSize(120,30)
+        # self.btnLoadTable.setStyleSheet('font-size: 13px; font-weight: 650;')
+        # self.btnLoadTable.clicked.connect(initTable)
+
+        # self.loadScreenWidget = VWidget(self.btnLoadTable)
+        # self.loadScreenWidget.setAutoFillBackground(True)
+        # self.loadScreenWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.loadScreenWidget.setStyleSheet('background-color: #222222; color: #ede9e8;')
+
+        self.loadScreenLabel = ClickLabel('<center>Load Table</center>')
+        self.loadScreenLabel.setCursor(Qt.PointingHandCursor)
+        self.loadScreenLabel.clicked.connect(initTable)
+        self.loadScreenLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.loadScreenLabel.setStyleSheet(
+            'background-color: #222222; '
+            'color: #ede9e8; '
+            'text-align: center; '
+            'font-size: 14px;'
+            'font-weight: 650;')
+
+        layout = VBL()
+        # layout.addWidget(self.loadScreenWidget, alignment=Qt.AlignCenter)
+        # layout.addWidget(self.loadScreenLabel, alignment=Qt.AlignCenter)
+        layout.addWidget(self.loadScreenLabel)
         layout.addWidget(self.table)
-        layout.addWidget(self.controls)
+        layout.addWidget(self.controls, alignment=Qt.AlignBottom)
 
         self.setLayout(layout)
 #
@@ -412,7 +470,13 @@ class Slider(QSlider):
         self.setTickInterval(1)
 
 
+class ClickLabel(QLabel):
+    clicked=Signal()
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
 
+    def mousePressEvent(self, ev):
+        self.clicked.emit()
 
 
 # class ThumbnailDelegate(QStyledItemDelegate):

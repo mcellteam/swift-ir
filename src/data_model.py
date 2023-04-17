@@ -1276,10 +1276,6 @@ class DataModel:
             self._data['data']['scales'][s]['stack'][self.zpos][
                 'alignment']['manual_settings']['manual_swim_window_px'] = scale_1_ww / get_scale_val(s)
 
-    def has_bb(self, s=None) -> bool:
-        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        if s == None: s = self.scale
-        return bool(self._data['data']['scales'][s]['use_bounding_rect'])
 
     def bounding_rect(self, s=None):
         if s == None: s = self.scale
@@ -1397,6 +1393,16 @@ class DataModel:
         if l == None: l = self.zpos
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['data']['scales'][s]['stack'][l]['skipped'] = b
+
+    def use_bb(self, s=None) -> bool:
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        if s == None: s = self.scale
+        return bool(self._data['data']['scales'][s]['use_bounding_rect'])
+
+    def set_use_bb(self, use, s=None):
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        if s == None: s = self.scale
+        self._data['data']['scales'][s]['use_bounding_rect'] = use
 
     def set_use_bounding_rect(self, b: bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''

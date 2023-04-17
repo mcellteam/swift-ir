@@ -97,15 +97,16 @@ def compute_affines(scale, start=0, end=None):
                              str(cfg.DEV_MODE),     # Use development mode
                              ]
                 task_queue.add_task(task_args)
-                # if cfg.PRINT_EXAMPLE_ARGS:
-                #     if zpos in range(start, start + 3):
-                logger.info("Section #%d (example):\n%s" % (zpos, "\n  ".join(task_args)))
+                if cfg.PRINT_EXAMPLE_ARGS:
+                    if zpos in range(start, start + 3):
+                        logger.info("Section #%d (example):\n%s" % (zpos, "\n  ".join(task_args)))
 
         # task_queue.work_q.join()
         # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
         dt = task_queue.collect_results()
         dm.set_t_align(dt, s=scale)
 
+        t0 = time.time()
         if cfg.CancelProcesses:
             return
 
@@ -123,6 +124,8 @@ def compute_affines(scale, start=0, end=None):
 
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
         updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
+
+        logger.critical('Reading task results and updating data model...')
 
         for tnum in range(len(task_list)):
 
@@ -167,6 +170,8 @@ def compute_affines(scale, start=0, end=None):
         cfg.data = updated_model #0809-
         write_run_to_file(dm)
 
+        t1 = time.time()
+
         # logger.info('Collating Correlation Spot Images...')
         # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')
         # task_queue = TaskQueue(n_tasks=len(substack),
@@ -195,6 +200,10 @@ def compute_affines(scale, start=0, end=None):
         # except:
         #     print_exception()
         #     logger.warning('Task Queue encountered a problem')
+
+        t9 = time.time()
+        dt = t9 - t0
+        logger.critical(f'onAlignmentEnd, dt = {dt}')
 
         logger.info('<<<< Compute Affines End <<<<')
 

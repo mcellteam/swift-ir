@@ -55,6 +55,7 @@ class ProjectTab(QWidget):
         self.datamodel = datamodel
         self.setUpdatesEnabled(True)
         self.webengine = QWebEngineView()
+        self.webengine.setStyleSheet('background-color: #222222;')
 
         # self.setStyleSheet("""QWidget {background: #000000;}""")
         self.setAutoFillBackground(True)
@@ -301,6 +302,8 @@ class ProjectTab(QWidget):
         # self.webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.w_ng_display = QWidget()
+        # self.w_ng_display.setStyleSheet('background-color: #222222;')
+        self.w_ng_display.setAutoFillBackground(True)
         self.w_ng_display.setObjectName('w_ng_display')
         self.ng_gl = QGridLayout()
         self.ng_gl.addWidget(self.webengine, 0, 0, 5, 5)
@@ -314,11 +317,19 @@ class ProjectTab(QWidget):
         self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 28px;""")
         self._overlayLab.hide()
 
-
         self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
         self.hud_overlay.setFixedWidth(220)
         self.hud_overlay.setFixedHeight(60)
         self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        # self.hud_overlay.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
+        # self.hud_overlay.setStyleSheet("""
+        #     background-color: #f3f6fb;
+        #     color: #141414;
+        #     font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        #     font-size: 7px;
+        #     border-radius: 4px;
+        #     """
+        # )
         self.hud_overlay.setStyleSheet("""
                     font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
                     font-size: 7px;
@@ -331,14 +342,18 @@ class ProjectTab(QWidget):
         self._ProcessMonitorWidget = QWidget()
         # self._ProcessMonitorWidget.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
         lab = QLabel('Process Monitor')
-        lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb;')
-        # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb;')
+        lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
         vbl = QVBoxLayout()
         vbl.setSpacing(1)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(lab, alignment=Qt.AlignBaseline)
         vbl.addWidget(self.hud_overlay)
         self._ProcessMonitorWidget.setLayout(vbl)
+        # self.setStyleSheet('background-color: #f3f6fb;')
+
+        # with open('src/style/cpanel.qss', 'r') as f:
+        #     self._ProcessMonitorWidget.setStyleSheet(f.read())
 
 
         w = QWidget()
@@ -1202,7 +1217,8 @@ class ProjectTab(QWidget):
         self.MA_gl.setSpacing(1)
         self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
         self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
-        self.MA_gl.addWidget(self.msg_MAinstruct, 2, 0, 1, 4, alignment=Qt.AlignCenter)
+        self.MA_gl.addWidget(self.msg_MAinstruct, 3, 0, 1, 4, alignment=Qt.AlignCenter | Qt.AlignBottom)
+        # self.MA_gl.addWidget(self.msg_MAinstruct, 3, 0, 1, 4, alignment=Qt.AlignCenter)
         # self.MA_ng_widget.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
         self.MA_ng_widget.setLayout(self.MA_gl)
 
@@ -1476,12 +1492,15 @@ class ProjectTab(QWidget):
         self.sideSliders.layout.setSpacing(0)
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
 
+
         self.ng_browser_container_outer = HWidget(
             self.ngVertLab,
             self.ngCombinedOutterVwidget,
             self.sideSliders,
         )
         self.ng_browser_container_outer.layout.setSpacing(0)
+
+
 
 
     def hideSecondaryNgTools(self):
@@ -2108,40 +2127,10 @@ class ProjectTab(QWidget):
         # self.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
         self.set_method_label_text()
 
+        # cfg.main_window._changeScaleCombo.setEnabled(False)
+
         self.update()
-
-        # cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
-        # cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
-        # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
-        # # cfg.stageViewer.initViewer()
-        # # cfg.stageViewer.initViewer()
-        # # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314-
-        # cfg.refViewer.signals.ptsChanged.connect(self.update_MA_widgets)
-        # cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_widgets)
-        # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
-        # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
-        #
-        # cfg.refViewer.signals.ptsChanged.connect(self.applyMps)
-        # cfg.baseViewer.signals.ptsChanged.connect(self.applyMps)
-        #
-        # self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
-        # self.MA_SWIM_window_lab.setText("%dpx" %cfg.data.manual_swim_window_px())
-        # self.spinbox_whitening.setValue(cfg.data.manual_whitening())
-        #
-        # self.update_MA_widgets()
-
-        # cfg.main_window.dataUpdateWidgets()
-
         self.initNeuroglancer()
-
-
-
-        #
-        # val = 10
-        # cfg.refViewer.set_zmag()
-        # cfg.baseViewer.set_zmag()
-        # cfg.stageViewer.set_zmag()
-
 
         logger.info('<<<< onEnterManualMode')
 
@@ -2210,6 +2199,7 @@ class ProjectTab(QWidget):
                 if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
                     # logger.info('Setting Neuroglancer Zoom to %g...' %val)
                     cfg.refViewer.set_zoom( val )
+                    cfg.baseViewer.set_zoom( val )
 
                 # cfg.stageViewer._set_zmag()
                 # cfg.refViewer._set_zmag()
@@ -2336,7 +2326,9 @@ class ProjectTab(QWidget):
 
 
     def updateTreeWidget(self):
-        logger.info('Updating Project Tree...')
+        # time consuming - refactor?
+
+        logger.critical('Updating Project Tree...')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.setModel(self.treeview_model)
         self.treeview.header().resizeSection(0, 380)
