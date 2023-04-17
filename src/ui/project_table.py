@@ -349,13 +349,13 @@ class ProjectTable(QWidget):
         self.controls = QWidget()
         self.controls.setObjectName('controls')
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.setContentsMargins(0, 2, 0, 2)
         hbl.addWidget(QLabel('Row Height:'), alignment=Qt.AlignLeft)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignLeft)
         hbl.addWidget(self.btnReloadTable, alignment=Qt.AlignLeft)
         # self.controls_hlayout.addWidget(self.font_size_widget)
         hbl.addStretch()
-        self.controls.setMaximumHeight(22)
+        self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
 
         def initTable():

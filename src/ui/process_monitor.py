@@ -59,7 +59,7 @@ class HeadupDisplay(QWidget):
 
     COLORS_OVERLAY = {
         logging.DEBUG: '#F3F6FB',
-        logging.INFO: '#f3f6fb',
+        logging.INFO: '#141414',
         logging.WARNING: '#8B4000',
         logging.ERROR: '#FD001B',
         logging.CRITICAL: '#decfbe',
@@ -201,19 +201,18 @@ class HeadupDisplay(QWidget):
         """)
 
 
-    def set_theme_light(self):
+    def set_theme_overlay(self):
 
         self.textedit.setStyleSheet("""
             color: #ffa213;
-            /*background-color:  #8bb8e8;*/
-            /*background-color:  #ede9e8;*/
-            background-color:  #f3f6fb;
+            background-color: rgba(255,255,255,0.65);
             /*border-style: solid;*/
             border-style: inset;
             border-color: #1b1e23;
             border-width: 1px;
-            border-radius: 4px;  
-            font-size: 9px;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            font-size: 7px;
             font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
             margin: 0px 0px 0px 0px;
         """)
