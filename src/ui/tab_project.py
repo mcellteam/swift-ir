@@ -15,8 +15,8 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
-from qtpy.QtGui import QPainter, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, QDoubleValidator, \
-    QIntValidator
+from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
+    QDoubleValidator, QIntValidator
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import getOpt, setOpt, getData, setData, get_scale_key
@@ -310,7 +310,7 @@ class ProjectTab(QWidget):
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
         self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
-        self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('Test Label')
@@ -318,9 +318,11 @@ class ProjectTab(QWidget):
         self._overlayLab.hide()
 
         self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
-        self.hud_overlay.setFixedWidth(220)
-        self.hud_overlay.setFixedHeight(60)
+        # self.hud_overlay.setFixedWidth(240)
+        # self.hud_overlay.setFixedHeight(70)
         self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        # self.hud_overlay.set_theme_default()
+        self.hud_overlay.set_theme_overlay()
         # self.hud_overlay.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
         # self.hud_overlay.setStyleSheet("""
         #     background-color: #f3f6fb;
@@ -330,22 +332,42 @@ class ProjectTab(QWidget):
         #     border-radius: 4px;
         #     """
         # )
-        self.hud_overlay.setStyleSheet("""
-                    font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-                    font-size: 7px;
-                    background-color: rgba(0,0,0,0.5);
-                    color: #FFFF66;
-                    padding: 1px;
-                    border-radius: 4px;
-                    """)
+        # self.hud_overlay.setStyleSheet("""
+        #             font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        #             font-size: 7px;
+        #             background-color: rgba(255,255,255,0.5);
+        #             color: #141414;
+        #             padding: 1px;
+        #             border-radius: 2px;
+        #             """)
 
         self._ProcessMonitorWidget = QWidget()
-        # self._ProcessMonitorWidget.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
-        lab = QLabel('Process Monitor')
+        # self._ProcessMonitorWidget.setStyleSheet('background: none;')
+        # self._ProcessMonitorWidget.setStyleSheet("""
+        #     background-color: rgba(255,255,255,0.5);
+        #     color: #141414;
+        #     font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        #     font-size: 7px;
+        #     border-radius: 4px;
+        #     """
+        # )
+        # palette = QPalette()
+        # palette.setColor(QPalette.Highlight, QColor('aqua'))
+        # palette.setColor(QPalette.Text, QColor('#000000'))
+        # self._ProcessMonitorWidget.setPalette(palette)
+
+        self._ProcessMonitorWidget.setStyleSheet('background: none;')
+        self._ProcessMonitorWidget.setFixedWidth(260)
+        self._ProcessMonitorWidget.setFixedHeight(70)
+        lab = QLabel('Head-up Display')
         # lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb;')
-        lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
+        lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; '
+                          'font-size: 9px; font-weight: 500;'
+                          'border-top-left-radius: 4px;'
+                          'border-top-right-radius: 4px;'
+                          'padding-left: 2px;')
         vbl = QVBoxLayout()
-        vbl.setSpacing(1)
+        vbl.setSpacing(0)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(lab, alignment=Qt.AlignBaseline)
         vbl.addWidget(self.hud_overlay)
@@ -358,7 +380,7 @@ class ProjectTab(QWidget):
 
         w = QWidget()
         w.setWindowFlags(Qt.FramelessWindowHint)
-        w.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # w.setAttribute(Qt.WA_TransparentForMouseEvents)
         vbl = QVBoxLayout()
         # vbl.addWidget(self.hud_overlay)
         vbl.addWidget(self._ProcessMonitorWidget)
@@ -394,6 +416,7 @@ class ProjectTab(QWidget):
 
         self.detailsCorrSpots = QWidget()
         self.corrSpotClabel = ClickLabel("<b>Signal</b>")
+        self.corrSpotClabel.setStyleSheet('Show/Hide Correlation Signals')
         self.corrSpotClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0);color: #f3f6fb;")
         self.corrSpotClabel.setAutoFillBackground(False)
         self.corrSpotClabel.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -1256,7 +1279,7 @@ class ProjectTab(QWidget):
                     logger.warning('Cant update contrast mode setting for %s' %str(v))
                     print_exception()
         self._highContrastNgAction.triggered.connect(fn)
-        self._highContrastNgAction.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
+        self._highContrastNgAction.setStatusTip('Neuroglancer background setting')
 
 
 

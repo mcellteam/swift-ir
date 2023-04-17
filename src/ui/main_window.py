@@ -890,7 +890,7 @@ class MainWindow(QMainWindow):
             self.present_snr_results(start=start, end=end)
             prev_snr_average = cfg.data.snr_prev_average()
             snr_average = cfg.data.snr_average()
-            self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (prev_snr_average, snr_average))
+            self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
             self.updateDtWidget()
             cfg.project_tab.updateTreeWidget()
             self.dataUpdateWidgets()
@@ -924,6 +924,7 @@ class MainWindow(QMainWindow):
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
+        cfg.data.set_has_bb(cfg.data.use_bb())
         cfg.data['data']['scales'][scale]['use_bounding_rect'] = self._bbToggle.isChecked()
         self.align(
             scale=cfg.data.scale,
@@ -936,6 +937,7 @@ class MainWindow(QMainWindow):
         )
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
+
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
         self.tell('**** Processes Complete ****')
@@ -1199,12 +1201,19 @@ class MainWindow(QMainWindow):
         if cfg.data:
             swim_val = self._swimWindowControl.value() / 100.
             whitening_val = self._whiteningControl.value()
-            self.tell('Applying These Settings To All Scales + Layers...')
-            self.tell('  SWIM Window  : %.3f%%' % self._swimWindowControl.value())
-            self.tell('  Whitening    : %.3f' % whitening_val)
-            for layer in cfg.data.stack(s=cfg.data.scale):
-                layer['alignment']['method_data']['win_scale_factor'] = swim_val
-                layer['alignment']['method_data']['whitening_factor'] = whitening_val
+            self.tell('Applying Settings To All Scales + Layers...\n'
+                      '  SWIM Window : %dpx\n'
+                      '  Whitening   : %.3f' % (self._swimWindowControl.value(), whitening_val))
+            for s in cfg.data.scales():
+                cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
+                if self._polyBiasCombo.currentText() == 'None':
+                    cfg.data.set_use_poly_order(False)
+                else:
+                    cfg.data.set_use_poly_order(True)
+                    cfg.data.set_poly_order(int(self._polyBiasCombo.currentText()), s=s)
+                for layer in cfg.data.stack(s=s):
+                    layer['alignment']['method_data']['win_scale_factor'] = swim_val
+                    layer['alignment']['method_data']['whitening_factor'] = whitening_val
 
 
     def enableAllButtons(self):
@@ -1387,7 +1396,7 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(style)
         # self.cpanel.setStyleSheet(style)
         # self.hud.set_theme_default()
-        self.hud.set_theme_light()
+        self.hud.set_theme_overlay()
 
 
     def reset_groupbox_styles(self):
@@ -1621,7 +1630,6 @@ class MainWindow(QMainWindow):
                 try:     self._whiteningControl.setValue(cfg.data.whitening())
                 except:  logger.warning('Whitening Input Widget Failed to Update')
                 try:
-                    logger.critical(f'Updating SWIM window widget [{cfg.data.swim_window_px()}]')
                     self._swimWindowControl.setMaximum(min(cfg.data.image_size()))
                     self._swimWindowControl.setValue(cfg.data.swim_window_px())
                 except:
@@ -2094,6 +2102,7 @@ class MainWindow(QMainWindow):
 
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
+        self.tell('Loading project...')
         logger.critical('\n\nLoading project...\n')
 
         setData('state,manual_mode', False)
@@ -2354,8 +2363,9 @@ class MainWindow(QMainWindow):
             # fg = self.frameGeometry()
             # fg = self.geometry()
             # x = (fg.width()/2) #- (msg.width() / 2)
-            x = (fg.width()/3) #- (msg.width() / 2)
-            y = (fg.height()/2)
+            # x = (fg.width()/3) #- (msg.width() / 2)
+            x = (fg.width() - msg.width()) / 2
+            y = (fg.height() - msg.height()) / 2
             # # x = (fg.width()/2)
             # # y = (fg.height()/2)
             msg.move(x, y)
@@ -2739,15 +2749,14 @@ class MainWindow(QMainWindow):
             # self._bbToggle.setEnabled(state)
             if cfg.project_tab:
                 if state:
-                    self.tell('Bounding Box is now ON. Warning: Output dimensions may grow large.')
+                    self.tell('Bounding Box is ON. Warning: Output dimensions may grow larger than source.')
                     cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
                 else:
-                    self.tell('Bounding Box is now OFF. Output dimensions will match source.')
+                    self.tell('Bounding Box is OFF. Output dimensions will match source.')
                     cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
 
 
     def _callbk_skipChanged(self, state:int):  # 'state' is connected to skipped toggle
-        logger.critical('')
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
         if self._isProjectTab():
@@ -4339,9 +4348,10 @@ class MainWindow(QMainWindow):
         self._skipCheckbox.setEnabled(False)
         vbl = VBL()
         vbl.setContentsMargins(2, 0, 2, 0)
+        vbl.setSpacing(4)
         vbl.addWidget(self._lab_keep_reject, alignment=center)
-        vbl.addWidget(self._skipCheckbox, alignment=center)
-        vbl.setAlignment(vcenter)
+        vbl.addWidget(self._skipCheckbox, alignment=right)
+        # vbl.setAlignment(vcenter)
         self._ctlpanel_skip = QWidget()
         self._ctlpanel_skip.setLayout(vbl)
 
@@ -4358,7 +4368,7 @@ class MainWindow(QMainWindow):
         lab = QLabel("Whitening Factor:")
         lab.setAlignment(center)
         self._whiteningControl = QDoubleSpinBox(self)
-        self._whiteningControl.setFixedHeight(18)
+        self._whiteningControl.setFixedHeight(14)
         self._whiteningControl.valueChanged.connect(self._callbk_unsavedChanges)
         self._whiteningControl.valueChanged.connect(self._valueChangedWhitening)
         self._whiteningControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -4380,14 +4390,14 @@ class MainWindow(QMainWindow):
         self._ctlpanel_whitening = VWidget(lab, w)
 
 
-        tip = "The region size SWIM uses for computing alignment, specified as percentage of image" \
-              "width. (default=81.25%)"
+        tip = "The region size SWIM uses for computing alignment, specified as pixels" \
+              "width. (default=12.5% of image width)"
         lab = QLabel("SWIM Window:")
         lab.setAlignment(center)
         self._swimWindowControl = QSpinBox(self)
         self._swimWindowControl.setSuffix('px')
         self._swimWindowControl.setMaximum(9999)
-        self._swimWindowControl.setFixedHeight(18)
+        self._swimWindowControl.setFixedHeight(14)
         def fn():
             # logger.info('')
             caller = inspect.stack()[1].function
@@ -4591,7 +4601,7 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.addItems(['None', '0', '1', '2', '3', '4'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(56, 18))
+        self._polyBiasCombo.setFixedSize(QSize(62, 18))
         self._polyBiasCombo.setEnabled(False)
         vbl = VBL()
         vbl.setSpacing(0)
@@ -4716,7 +4726,7 @@ class MainWindow(QMainWindow):
 
         self.cpanel_hwidget1.setStyleSheet('background-color: #222222;')
         self.cpanel_hwidget1.setAutoFillBackground(True)
-        self.cpanel_hwidget1.layout.setSpacing(5)
+        self.cpanel_hwidget1.layout.setSpacing(10)
         self.cpanel_hwidget1.setStyleSheet(style)
 
         # cpanel_hwidget2.setStyleSheet('background-color: #222222; color: #f3f6fb; font-size: 10px;')
@@ -4737,7 +4747,13 @@ class MainWindow(QMainWindow):
 
         self.cpanel = VWidget(lab, self.cpanel_hwidget1)
 
-        self.cpanel.setStyleSheet('QWidget {background-color: #222222; color: #f3f6fb; font-size: 10px;}')
+        self.cpanel.setStyleSheet('QWidget {'
+                                  'background-color: #222222; '
+                                  'color: #f3f6fb; '
+                                  'font-size: 10px; '
+                                  'padding-left: 2px;'
+                                  'padding-right: 2px;'
+                                  '}')
         self.cpanel.setAutoFillBackground(True)
         # self.cpanel.setStyleSheet('color: #f3f6fb; font-size: 9px;')
         # with open('src/style/cpanel.qss', 'r') as f:
@@ -5197,7 +5213,7 @@ class MainWindow(QMainWindow):
 
         self.detailsTitle = QLabel('Correlation Signals')
         self.detailsTitle.setFixedHeight(13)
-        self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 2px; margin-top: 2px;')
+        self.detailsTitle.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 600; margin-left: 2px; margin-top: 2px;')
 
 
         # #0210

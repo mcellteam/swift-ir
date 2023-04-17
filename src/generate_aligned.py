@@ -62,7 +62,8 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         if end == None:
             end = len(dm)
         n_tasks = len(list(range(start,end)))
-        if dm.use_bb():
+        # if dm.use_bb():
+        if dm.has_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
             logger.info(f'Bounding Box              : ON\nNew Bounding Box          : {str(rect)}')

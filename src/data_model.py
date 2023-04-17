@@ -1394,15 +1394,28 @@ class DataModel:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['data']['scales'][s]['stack'][l]['skipped'] = b
 
+
+    def has_bb(self, s=None) -> bool:
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        if s == None: s = self.scale
+        return bool(self._data['data']['scales'][s]['has_bounding_rect'])
+
+
+    def set_has_bb(self, b:bool, s=None):
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        if s == None: s = self.scale
+        self._data['data']['scales'][s]['has_bounding_rect'] = b
+
+
     def use_bb(self, s=None) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None: s = self.scale
         return bool(self._data['data']['scales'][s]['use_bounding_rect'])
 
-    def set_use_bb(self, use, s=None):
+    def set_use_bb(self, b:bool, s=None):
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None: s = self.scale
-        self._data['data']['scales'][s]['use_bounding_rect'] = use
+        self._data['data']['scales'][s]['use_bounding_rect'] = b
 
     def set_use_bounding_rect(self, b: bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
@@ -1432,9 +1445,10 @@ class DataModel:
         logger.info(f"Setting Image Sizes Directly, {s}, ImageSize: {size}")
         self._data['data']['scales'][s]['image_src_size'] = size
 
-    def set_poly_order(self, x: int) -> None:
+    def set_poly_order(self, x: int, s=None) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
-        self._data['data']['scales'][self.scale]['poly_order'] = int(x)
+        if s == None: s = self.scale
+        self._data['data']['scales'][s]['poly_order'] = int(x)
 
     def set_use_poly_order(self, b: bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
