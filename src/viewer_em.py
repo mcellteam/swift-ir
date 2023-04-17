@@ -394,7 +394,7 @@ class EMViewer(AbstractEMViewer):
         x_nudge, y_nudge = 0, 0
         if cfg.data.is_aligned_and_generated():
             _, tensor_y, tensor_x = cfg.al_tensor.shape
-            x_nudge, y_nudge = (tensor_x - cfg.al_tensor.shape[2]) / 2, (tensor_y - cfg.al_tensor.shape[1]) / 2
+            x_nudge, y_nudge = (tensor_x - cfg.unal_tensor.shape[2]) / 2, (tensor_y - cfg.unal_tensor.shape[1]) / 2
 
         cfg.refLV = ng.LocalVolume(
             volume_type='image',
