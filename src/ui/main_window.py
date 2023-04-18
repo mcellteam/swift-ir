@@ -721,6 +721,7 @@ class MainWindow(QMainWindow):
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         logger.info('Regenerate Aligned Images...')
+        cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -924,7 +925,7 @@ class MainWindow(QMainWindow):
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
-        cfg.data.set_has_bb(cfg.data.use_bb())
+        cfg.data.set_has_bb(cfg.data.use_bb()) #Critical, also see regenerate
         cfg.data['data']['scales'][scale]['use_bounding_rect'] = self._bbToggle.isChecked()
         self.align(
             scale=cfg.data.scale,
@@ -3174,7 +3175,7 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo = QComboBox(self)
         self._changeScaleCombo.setMinimumWidth(134)
         self._changeScaleCombo.setFixedHeight(16)
-        self._changeScaleCombo.setStyleSheet('font-size: 10px')
+        self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600;')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
 
@@ -4642,8 +4643,8 @@ class MainWindow(QMainWindow):
         # self._ctlpanel_bb.layout.setSpacing(0)
 
 
-        tip = "Recomputes the cumulative affine and generates new aligned images" \
-              "based on the current Null Bias and Bounding Rectangle presets."
+        tip = "Recompute cumulative affine and generate new images" \
+              "based on the current Null Bias and Bounding Box presets."
         self._btn_regenerate = QPushButton('Regenerate')
         # self._btn_regenerate.setStyleSheet('font-size: 10px;')
         self._btn_regenerate.setEnabled(False)
