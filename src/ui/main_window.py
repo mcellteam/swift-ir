@@ -2331,8 +2331,8 @@ class MainWindow(QMainWindow):
 
         dlg = ExitAppDialog()
         dlg.show()
-        fg = self.frameGeometry()
 
+        # fg = self.frameGeometry()
         # logger.critical(f'dlg.width() = {dlg.width()}')
         # logger.critical(f'dlg.height() = {dlg.height()}')
         # # x = (fg.width() / 2) - (dlg.width() / 2)
@@ -2340,7 +2340,6 @@ class MainWindow(QMainWindow):
         # x = (fg.width()/2)
         # y = (fg.height()/2)
         # dlg.move(x, y)
-
 
         if dlg.exec():
             logger.info('User Choice: Exit')
@@ -2361,7 +2360,7 @@ class MainWindow(QMainWindow):
             # msg_width = 640
             # msg_height = 480
 
-            # fg = self.frameGeometry()
+            fg = self.frameGeometry()
             # fg = self.geometry()
             # x = (fg.width()/2) #- (msg.width() / 2)
             # x = (fg.width()/3) #- (msg.width() / 2)
@@ -4331,9 +4330,9 @@ class MainWindow(QMainWindow):
 
     def initControlPanel(self):
 
-        button_size = QSize(54, 20)
-        std_input_size = QSize(60, 20)
-        normal_button_size = QSize(62, 26)
+        button_size = QSize(58, 20)
+        std_input_size = QSize(64, 20)
+        normal_button_size = QSize(68, 28)
         baseline = Qt.AlignmentFlag.AlignBaseline
         vcenter  = Qt.AlignmentFlag.AlignVCenter
         hcenter  = Qt.AlignmentFlag.AlignHCenter
@@ -4429,7 +4428,8 @@ class MainWindow(QMainWindow):
 
 
         # tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
-        self._ctlpanel_applyAllButton = QPushButton("Apply All")
+        self._ctlpanel_applyAllButton = QPushButton("Apply Settings\nEverywhere")
+        self._ctlpanel_applyAllButton.setStyleSheet('font-size: 8px;')
         # self._ctlpanel_applyAllButton = QPushButton("Apply To All")
         self._ctlpanel_applyAllButton.setEnabled(False)
         self._ctlpanel_applyAllButton.setStatusTip('Apply These Settings To The Entire Image Stack')
@@ -4599,19 +4599,20 @@ class MainWindow(QMainWindow):
         lab.setAlignment(right)
         lab.setStatusTip(tip)
         self._polyBiasCombo = QComboBox(self)
-        self._polyBiasCombo.setStyleSheet("font-size: 10px;")
+        self._polyBiasCombo.setStyleSheet("font-size: 10px; padding-left: 6px;")
         self._polyBiasCombo.currentIndexChanged.connect(self._valueChangedPolyOrder)
         self._polyBiasCombo.currentIndexChanged.connect(self._callbk_unsavedChanges)
         self._polyBiasCombo.setStatusTip(tip)
         self._polyBiasCombo.addItems(['None', '0', '1', '2', '3', '4'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(62, 18))
+        self._polyBiasCombo.setFixedSize(QSize(54, 18))
         self._polyBiasCombo.setEnabled(False)
+        self._polyBiasCombo.lineEdit()
         vbl = VBL()
         vbl.setSpacing(0)
         vbl.addWidget(lab, alignment=center)
-        vbl.addWidget(self._polyBiasCombo, alignment=center)
+        vbl.addWidget(self._polyBiasCombo, alignment=right)
         self._ctlpanel_polyOrder = QWidget()
         self._ctlpanel_polyOrder.setLayout(vbl)
 

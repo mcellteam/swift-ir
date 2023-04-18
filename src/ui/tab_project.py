@@ -358,7 +358,7 @@ class ProjectTab(QWidget):
 
         self._ProcessMonitorWidget.setStyleSheet('background: none;')
         self._ProcessMonitorWidget.setFixedWidth(260)
-        self._ProcessMonitorWidget.setFixedHeight(70)
+        self._ProcessMonitorWidget.setFixedHeight(90)
         lab = QLabel('Head-up Display')
         # lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb;')
         lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; '
@@ -861,8 +861,6 @@ class ProjectTab(QWidget):
                 self.update_MA_widgets()
                 self.set_method_label_text()
                 # self.tgl_alignMethod.setChecked(False)
-
-
 
                 # cfg.refViewer.undrawSWIMwindow()
                 # cfg.baseViewer.undrawSWIMwindow()
