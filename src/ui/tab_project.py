@@ -13,8 +13,9 @@ import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
-    QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox
-from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer
+    QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
+    QStackedWidget
+from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer, QEventLoop
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator
 from qtpy.QtWebEngineWidgets import *
@@ -54,8 +55,11 @@ class ProjectTab(QWidget):
         self.viewer = None
         self.datamodel = datamodel
         self.setUpdatesEnabled(True)
-        self.webengine = QWebEngineView()
+        # self.webengine = QWebEngineView()
+        self.webengine = WebEngine(ID='emViewer')
         self.webengine.setStyleSheet('background-color: #222222;')
+
+        self.focusedViewer = None
 
         # self.setStyleSheet("""QWidget {background: #000000;}""")
         self.setAutoFillBackground(True)
@@ -70,10 +74,15 @@ class ProjectTab(QWidget):
         self._tabs.currentChanged.connect(self._onTabChange)
         self.manAlignBufferRef = []
         self.manAlignBufferBase = []
-        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
-                          '#aaa672', '#152c74', '#404f74',
-                          '#f3e375', '#5c4ccc', '#d6acd6',
-                          '#aaa672', '#152c74', '#404f74']
+        # self.mp_colors = ['#f3e375', '#5c4ccc', '#800000',
+        #                   '#aaa672', '#152c74', '#404f74',
+        #                   '#f3e375', '#5c4ccc', '#d6acd6',
+        #                   '#aaa672', '#152c74', '#404f74']
+        self.mp_colors = ['#75bbfd', '#e50000', '#35063e', '#efb435',
+                          '#69d84f', '#894585', '#70b23f', '#d4ffff',
+                          '#388004', '#4c9085', '#fcfc81', '#a5a391',
+                          '#acc2d9', '#fcfc81', '#b2996e', '#a8ff04',
+                          ]
 
         self.bookmark_tab = 0
         self.MA_ref_cscale = None
@@ -358,7 +367,7 @@ class ProjectTab(QWidget):
 
         self._ProcessMonitorWidget.setStyleSheet('background: none;')
         self._ProcessMonitorWidget.setFixedWidth(260)
-        self._ProcessMonitorWidget.setFixedHeight(90)
+        self._ProcessMonitorWidget.setFixedHeight(84)
         lab = QLabel('Head-up Display')
         # lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb;')
         lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; '
@@ -673,9 +682,11 @@ class ProjectTab(QWidget):
         # vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
-        self.MA_webengine_ref = QWebEngineView()
-        self.MA_webengine_base = QWebEngineView()
-        self.MA_webengine_stage = QWebEngineView()
+        self.MA_webengine_ref = WebEngine(ID='ref')
+        self.MA_webengine_base = WebEngine(ID='base')
+        self.MA_webengine_stage = WebEngine(ID='stage')
+        # self.MA_webengine_ref.inFocus.triggered.connect(self.focusedViewerChanged)
+        # self.MA_webengine_base.inFocus.triggered.connect(self.focusedViewerChanged)
         self.MA_webengine_ref.setMinimumWidth(200)
         self.MA_webengine_base.setMinimumWidth(200)
         # self.MA_webengine_ref.setMouseTracking(True)
@@ -800,7 +811,7 @@ class ProjectTab(QWidget):
                 # cfg.data.set_method(request)
                 logger.info(f'Setting method to {self.combo_method.currentText()}...')
                 cfg.data.set_method(self.combo_method.currentText())
-                self.set_method_label_text()
+                # self.set_method_label_text()
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
                 self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
@@ -843,7 +854,7 @@ class ProjectTab(QWidget):
         # vw2.layout.setSpacing(0)
 
         # self.fl_actionsMA.addWidget(HWidget(vw, self.tgl_alignMethod, self.combo_method))
-        self.fl_actionsMA.addWidget(HWidget(vw, self.combo_method))
+        # self.fl_actionsMA.addWidget(HWidget(vw, self.combo_method))
 
 
         self.btnRunSwimMA = QPushButton('Quick &SWIM')
@@ -859,19 +870,19 @@ class ProjectTab(QWidget):
                 self.deleteAllMp()
                 # cfg.data.set_method('Auto-SWIM')
                 self.update_MA_widgets()
-                self.set_method_label_text()
+                # self.set_method_label_text()
                 # self.tgl_alignMethod.setChecked(False)
 
                 # cfg.refViewer.undrawSWIMwindow()
                 # cfg.baseViewer.undrawSWIMwindow()
-                cfg.refViewer.undraw_point_annotations()
-                cfg.baseViewer.undraw_point_annotations()
+                cfg.refViewer.undrawSWIMwindows()
+                cfg.baseViewer.undrawSWIMwindows()
 
 
             except:
                 print_exception()
 
-        self.btnClearMA = QPushButton('Reset')
+        self.btnClearMA = QPushButton('Clear')
         self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setMaximumHeight(20)
         self.btnClearMA.setMaximumWidth(60)
@@ -935,7 +946,7 @@ class ProjectTab(QWidget):
                 # self.applyMps()
                 cfg.data.set_method(self.combo_method.currentText())
                 self.update_MA_widgets()
-                self.set_method_label_text()
+                # self.set_method_label_text()
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window.hud.done()
@@ -963,16 +974,52 @@ class ProjectTab(QWidget):
 
         self.MA_actions = HWidget(self.combo_MA_actions, btn_go)
 
-        sec_label = QLabel('Section:')
-        sec_label.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        w_change_section = HWidget(sec_label, self.btnPrevSection, self.btnNextSection)
-        w_change_section.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        def fn():
+            cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' %cfg.data.zpos)
+            cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
+            cfg.data.set_auto_swim_windows_to_default(current_only=True)
+            cfg.data.set_manual_swim_windows_to_default(current_only=True)
+            cfg.data.set_swim_iterations_glob(val=cfg.DEFAULT_SWIM_ITERATIONS)
+            setData('state,stage_viewer,show_overlay_message', True)
 
+            self.slider_AS_SWIM_window.setValue(cfg.data.swim_window_px()[0])
+            self.slider_AS_2x2_SWIM_window.setValue(cfg.data.set_swim_2x2_px()[0])
+            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
+
+            self.slider_MA_SWIM_window.setValue(cfg.data.manual_swim_window_px())
+            self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
+
+            self.spinbox_whitening.setValue(cfg.data.whitening())
+            self.toggle_showInstructionOverlay.setChecked(True)
+
+            self.spinbox_swim_iters.setValue(cfg.data.swim_iterations())
+
+            cfg.data.alignment_type = 'grid-default'
+            cfg.data.set_method('Auto-SWIM')
+            self.method_rb0.setChecked(True)
+            self.MA_stackedWidget.setCurrentIndex(0)
+
+            cfg.refViewer.drawSWIMwindow()
+            cfg.baseViewer.drawSWIMwindow()
+            self.update()
+            # self.initNeuroglancer()
+        self.MA_settings_defaults_button = QPushButton('Restore Defaults')
+        # self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
+        self.MA_settings_defaults_button.setMaximumHeight(18)
+        self.MA_settings_defaults_button.clicked.connect(fn)
+
+        # sec_label = QLabel('Section:')
+        # sec_label.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # w_change_section = HWidget(sec_label, self.btnPrevSection, self.btnNextSection)
+        # w_change_section.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        #
         self.fl_actionsMA.addWidget(
             HWidget(
-                w_change_section,
+                ExpandingWidget(self),
+                self.MA_settings_defaults_button,
                 self.btnRunSwimMA,
-                self.btnClearMA,))
+                # self.btnClearMA,
+                ))
 
         self.fl_actionsMA.addWidget(
             HWidget(
@@ -1070,28 +1117,31 @@ class ProjectTab(QWidget):
         )
 
 
-        self.MA_points_tab = VWidget(self.MA_sbw, self.translatePointsWidget)
+
 
         """  MA Settings Tab  """
 
 
-        tip = "The square region size (px) used for computing alignment"
+        tip = "Window width for manual alignment (px)"
         def fn():
             caller = inspect.stack()[1].function
-            logger.info('caller: %s' %caller)
             if caller == 'main':
-                cfg.data.set_manual_swim_window_px(int(self.slider_MA_swim_window.value()))
-                self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
+                logger.info('caller: %s' % caller)
+                cfg.data.set_manual_swim_window_px(int(self.slider_MA_SWIM_window.value()))
+                self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
-        self.slider_MA_swim_window = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.slider_MA_swim_window.setStatusTip(tip)
-        self.slider_MA_swim_window.valueChanged.connect(fn)
-        self.slider_MA_swim_window.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
-        # self.slider_MA_swim_window.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.slider_MA_swim_window.setFixedWidth(100)
+                cfg.main_window._callbk_unsavedChanges()
+        # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
+        self.slider_MA_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_MA_SWIM_window.setStatusTip(tip)
+        self.slider_MA_SWIM_window.valueChanged.connect(fn)
+        self.slider_MA_SWIM_window.setFixedWidth(80)
         self.MA_SWIM_window_le = QLineEdit()
+        self.MA_SWIM_window_le.setMaximumWidth(120)
         def fn():
+            caller = inspect.stack()[1].function
+            logger.info('caller: %s' % caller)
             cfg.data.set_manual_swim_window_px(int(self.MA_SWIM_window_le.text()))
             self.dataUpdateMA()
         self.MA_SWIM_window_le.returnPressed.connect(fn)
@@ -1104,7 +1154,7 @@ class ProjectTab(QWidget):
         #     if caller == 'main':
         #         val = float(self.spinbox_MA_swim_window.value())
         #         cfg.data.set_manual_swim_window_px(val)
-        #         self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
+        #         self.slider_MA_SWIM_window.setValue(cfg.data.manual_swim_window_px())
         #         self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
         #         cfg.refViewer.drawSWIMwindow()
         #         cfg.baseViewer.drawSWIMwindow()
@@ -1114,33 +1164,59 @@ class ProjectTab(QWidget):
         # self.spinbox_MA_swim_window.setSingleStep(2)
 
 
-        tip = "The total region size (%) used for computing automatic alignment"
+        tip = "Full window width for automatic alignment (px)"
         def fn():
             caller = inspect.stack()[1].function
-            logger.info('caller: %s' %caller)
             if caller == 'main':
-                cfg.data.set_swim_window_px(int(self.slider_AS_swim_window.value()))
-                self.AS_SWIM_window_lab.setText("%.2f%%" % (float(100) * float(cfg.data.swim_window())))
+                cfg.data.set_swim_window_px(int(self.slider_AS_SWIM_window.value()))
+                self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
+
+                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
+                self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
-        # self.slider_AS_swim_window = QSpinBox(self)
-        self.slider_AS_swim_window = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.slider_AS_swim_window.setStatusTip(tip)
-        self.slider_AS_swim_window.valueChanged.connect(fn)
-        self.slider_AS_swim_window.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
-        # self.slider_AS_swim_window.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.slider_AS_swim_window.setFixedWidth(100)
-        self.AS_SWIM_window_lab = QLabel()
+                cfg.main_window._callbk_unsavedChanges()
+        self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_AS_SWIM_window.setStatusTip(tip)
+        self.slider_AS_SWIM_window.valueChanged.connect(fn)
+        self.slider_AS_SWIM_window.setFixedWidth(80)
         def fn():
             cfg.data.set_swim_window_px(int(self.AS_SWIM_window_le.text()))
             self.dataUpdateMA()
         self.AS_SWIM_window_le = QLineEdit()
+        self.AS_SWIM_window_le.returnPressed.connect(fn)
         self.AS_SWIM_window_le.setFixedHeight(18)
+
+
+        tip = "2x2 window width for automatic alignment (px)"
+        def fn():
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                cfg.data.set_swim_2x2_px(int(self.slider_AS_2x2_SWIM_window.value()))
+                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
+                self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+                cfg.refViewer.drawSWIMwindow()
+                cfg.baseViewer.drawSWIMwindow()
+                cfg.main_window._callbk_unsavedChanges()
+        self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_AS_2x2_SWIM_window.setStatusTip(tip)
+        self.slider_AS_2x2_SWIM_window.valueChanged.connect(fn)
+        self.slider_AS_2x2_SWIM_window.setFixedWidth(80)
+        def fn():
+            cfg.data.set_swim_2x2_px(int(self.AS_2x2_SWIM_window_le.text()))
+            self.dataUpdateMA()
+        self.AS_2x2_SWIM_window_le = QLineEdit()
+        self.AS_2x2_SWIM_window_le.returnPressed.connect(fn)
+        self.AS_2x2_SWIM_window_le.setFixedHeight(18)
+
+
 
         tip = "SWIM whitening factor"
         def fn():
             caller = inspect.stack()[1].function
             if caller == 'main':
+                logger.info('caller: %s' % caller)
                 cfg.data.set_manual_whitening(float(self.spinbox_whitening.value()))  #Refactor
                 cfg.data.set_whitening(float(self.spinbox_whitening.value()))        #Refactor
 
@@ -1158,33 +1234,28 @@ class ProjectTab(QWidget):
         self.spinbox_whitening.setMaximum(0.0)
 
 
-
         def fn():
-            cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' %cfg.data.zpos)
-            cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
-            cfg.data.set_auto_swim_windows_to_default(current_only=True)
-            cfg.data.set_manual_swim_windows_to_default(current_only=True)
-            setData('state,stage_viewer,show_overlay_message', True)
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                val = self.spinbox_swim_iters.value()
+                cfg.data.set_swim_iterations_glob(val=val)
+                logger.info(f'New global # SWIM iterations: {val}')
 
-            self.slider_AS_swim_window.setValue(cfg.data.swim_window_px())
-            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()))
+        self.spinbox_swim_iters = QSpinBox(self)
+        self.spinbox_swim_iters.setStatusTip('# of SWIM iterations/refinements (default: 3)')
+        self.spinbox_swim_iters.setFixedWidth(80)
+        self.spinbox_swim_iters.valueChanged.connect(fn)
+        self.spinbox_swim_iters.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        # self.spinbox_swim_iters.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spinbox_swim_iters.setMinimum(1)
+        self.spinbox_swim_iters.setMaximum(9)
 
-            self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
-            self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
 
-            self.spinbox_whitening.setValue(cfg.data.whitening())
-            self.toggle_showInstructionOverlay.setChecked(True)
+        self.MA_swim_window_widget = HWidget(self.slider_MA_SWIM_window, self.MA_SWIM_window_le, self.btnClearMA)
 
-            cfg.refViewer.drawSWIMwindow()
-            cfg.baseViewer.drawSWIMwindow()
-            self.update()
-            # self.initNeuroglancer()
-        self.MA_settings_defaults_button = QPushButton('Restore Defaults')
-        self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
-        self.MA_settings_defaults_button.clicked.connect(fn)
 
-        self.MA_swim_window_widget = HWidget(self.slider_MA_swim_window, self.MA_SWIM_window_le)
-        self.AS_swim_window_widget = HWidget(self.slider_AS_swim_window, self.AS_SWIM_window_le)
+        self.AS_swim_window_widget = HWidget(self.slider_AS_SWIM_window, self.AS_SWIM_window_le)
+        self.AS_2x2_swim_window_widget = HWidget(self.slider_AS_2x2_SWIM_window, self.AS_2x2_SWIM_window_le)
 
         self.toggle_showInstructionOverlay = AnimatedToggle()
         self.toggle_showInstructionOverlay.setFixedSize(42,22)
@@ -1203,11 +1274,13 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings.setSpacing(2)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
-        self.fl_MA_settings.addRow("Manual Window", self.MA_swim_window_widget)
-        self.fl_MA_settings.addRow("Auto-SWIM Window", self.AS_swim_window_widget)
+        # self.fl_MA_settings.addRow("Manual Window", self.MA_swim_window_widget)
+        self.fl_MA_settings.addRow("SWIM Full Window", self.AS_swim_window_widget)
+        self.fl_MA_settings.addRow("SWIM 2x2 Window", self.AS_2x2_swim_window_widget)
         self.fl_MA_settings.addRow("Whitening Factor", self.spinbox_whitening)
-        self.fl_MA_settings.addRow("Show Instruction Overlay", self.toggle_showInstructionOverlay)
-        self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
+        self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
+        # self.fl_MA_settings.addRow("Show Instruction Overlay", self.toggle_showInstructionOverlay)
+        # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
 
         # self.MA_settings = QWidget()
@@ -1222,14 +1295,64 @@ class ProjectTab(QWidget):
         padding: 0px;
         }
         """)
-        self.MA_tabs.addTab(self.MA_points_tab, 'Points')
-        self.MA_tabs.addTab(self.gb_MA_settings, 'Settings')
+        # self.MA_tabs.addTab(self.MA_points_tab, 'Points')
+        # self.MA_tabs.addTab(self.gb_MA_settings, 'Settings')
+
+
+        self.MA_use_global_defaults_lab = QLabel('Global default settings will be used.')
+        self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
+        self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
+
+        self.method_bg = QButtonGroup(self)
+        self.method_bg.setExclusive(True)
+        self.method_rb0 = QRadioButton('Default Grid')
+        self.method_rb1 = QRadioButton('Custom Grid')
+        self.method_rb2 = QRadioButton('Correspondence Points')
+
+        self.method_bg.addButton(self.method_rb0)
+        self.method_bg.addButton(self.method_rb1)
+        self.method_bg.addButton(self.method_rb2)
+        def fn():
+            if self.method_rb0.isChecked():
+                self.MA_stackedWidget.setCurrentIndex(0)
+                cfg.data.alignment_type = 'grid-default'
+                cfg.data.set_method('Auto-SWIM')
+            elif self.method_rb1.isChecked():
+                self.MA_stackedWidget.setCurrentIndex(1)
+                cfg.data.alignment_type = 'grid-custom'
+                cfg.data.set_method('Auto-SWIM')
+            elif self.method_rb2.isChecked():
+                self.MA_stackedWidget.setCurrentIndex(2)
+                cfg.data.alignment_type = 'manual'
+                cfg.data.set_method('Manual-Hint')
+
+            # cfg.data.set_method(self.combo_method.currentText())
+            # self.set_method_label_text()
+            cfg.refViewer.drawSWIMwindow()
+            cfg.baseViewer.drawSWIMwindow()
+            # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
+            self.msg_MAinstruct.setVisible(cfg.data.alignment_type not in ('grid-default', 'grid-custom'))
+
+
+        self.method_bg.buttonClicked.connect(fn)
+        self.radioboxes_method = HWidget(self.method_rb0, self.method_rb1, self.method_rb2)
+
+        self.MA_points_tab = VWidget(
+            self.MA_swim_window_widget,
+            self.MA_sbw,
+            self.translatePointsWidget)
+
+        self.MA_stackedWidget = QStackedWidget()
+        self.MA_stackedWidget.addWidget(self.MA_use_global_defaults_lab)
+        self.MA_stackedWidget.addWidget(self.gb_MA_settings)
+        self.MA_stackedWidget.addWidget(self.MA_points_tab)
 
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
-        self.MA_stageSplitter.addWidget(VWidget(self.MA_tabs, self.gb_actionsMA))
+        # self.MA_stageSplitter.addWidget(VWidget(self.radioboxes_method, self.MA_tabs, self.gb_actionsMA))
+        self.MA_stageSplitter.addWidget(VWidget(self.radioboxes_method, self.MA_stackedWidget, self.gb_actionsMA))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
 
@@ -1353,7 +1476,8 @@ class ProjectTab(QWidget):
         """)
         self.comboNgLayout.setFixedSize(60, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
+        # items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
+        items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
         self.comboNgLayout.addItems(items)
         # self.comboNgLayout.activated.connect(cfg.main_window.fn_ng_layout_combobox)
         self.comboNgLayout.activated.connect(self.onNgLayoutCombobox)
@@ -1679,7 +1803,7 @@ class ProjectTab(QWidget):
                     'xy-3d': cfg.main_window.ngLayout4Action,
                     'yz-3d': cfg.main_window.ngLayout5Action,
                     'xz-3d': cfg.main_window.ngLayout6Action,
-                    '3d': cfg.main_window.ngLayout7Action,
+                    # '3d': cfg.main_window.ngLayout7Action,
                     '4panel': cfg.main_window.ngLayout8Action
                 }
                 layout_actions[choice].setChecked(True)
@@ -1812,20 +1936,20 @@ class ProjectTab(QWidget):
     #     shutil.copyfile(file, out)
 
 
-    def set_method_label_text(self):
-        method = cfg.data.method()
-        if method == 'Auto-SWIM':
-            self.automatic_label.setText('<i>Auto SWIM Alignment</i>')
-            self.automatic_label.setStyleSheet(
-                'color: #06470c; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
-        elif method == 'Manual-Hint':
-            self.automatic_label.setText('<i>Manual Alignment (Hint)</i>')
-            self.automatic_label.setStyleSheet(
-                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
-        elif method == 'Manual-Strict':
-            self.automatic_label.setText('<i>Manual Alignment (Strict)</i>')
-            self.automatic_label.setStyleSheet(
-                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+    # def set_method_label_text(self):
+    #     method = cfg.data.method()
+    #     if method == 'Auto-SWIM':
+    #         self.automatic_label.setText('<i>Auto SWIM Alignment</i>')
+    #         self.automatic_label.setStyleSheet(
+    #             'color: #06470c; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+    #     elif method == 'Manual-Hint':
+    #         self.automatic_label.setText('<i>Manual Alignment (Hint)</i>')
+    #         self.automatic_label.setStyleSheet(
+    #             'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+    #     elif method == 'Manual-Strict':
+    #         self.automatic_label.setText('<i>Manual Alignment (Strict)</i>')
+    #         self.automatic_label.setStyleSheet(
+    #             'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
 
 
     def validate_MA_points(self):
@@ -1847,32 +1971,59 @@ class ProjectTab(QWidget):
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
             self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
-            self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
+            # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
+            self.msg_MAinstruct.setVisible(cfg.data.alignment_type not in ('grid-default', 'grid-custom'))
             self._combo_method_switch = False
             self.combo_method.setCurrentText(cfg.data.method())
             self._combo_method_switch = True
             self.spinbox_whitening.setValue(cfg.data.manual_whitening())
 
             img_siz = cfg.data.image_size()
-            self.AS_SWIM_window_le.setValidator(QIntValidator(64, min(img_siz[0], img_siz[1])))
-            self.MA_SWIM_window_le.setValidator(QIntValidator(64, min(img_siz[0], img_siz[1])))
+            img_w = img_siz[0]
 
-            self.slider_AS_swim_window.setValue(cfg.data.swim_window_px())
-            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()))
+            # Update line edit widgets validator
+            # Update slider maximum and minimums
+            # Update widgets w/ data
 
-            self.slider_MA_swim_window.setValue(cfg.data.manual_swim_window_px())
+            self.AS_SWIM_window_le.setValidator(QIntValidator(64, img_w))
+            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
+            self.slider_AS_SWIM_window.setMaximum(img_w)
+            self.slider_AS_SWIM_window.setValue(cfg.data.swim_window_px()[0])
+
+            self.AS_2x2_SWIM_window_le.setValidator(QIntValidator(64, int(img_w / 2)))
+            self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
+            self.slider_AS_2x2_SWIM_window.setMaximum(int(img_w / 2))
+            self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+
+            self.MA_SWIM_window_le.setValidator(QIntValidator(64, img_w))
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
+            self.slider_MA_SWIM_window.setMaximum(img_w)
+            self.slider_MA_SWIM_window.setValue(cfg.data.manual_swim_window_px())
+
+            self.spinbox_swim_iters.setValue(cfg.data.swim_iterations())
 
             self.toggle_showInstructionOverlay.setChecked(getData('state,stage_viewer,show_overlay_message'))
+
+            if cfg.data.alignment_type == 'grid-default':
+                self.MA_stackedWidget.setCurrentIndex(0)
+                self.method_rb0.setChecked(True)
+            elif cfg.data.alignment_type == 'grid-custom':
+                self.MA_stackedWidget.setCurrentIndex(1)
+                self.method_rb1.setChecked(True)
+            elif cfg.data.alignment_type == 'manual':
+                self.MA_stackedWidget.setCurrentIndex(2)
+                self.method_rb2.setChecked(True)
 
 
     def update_MA_widgets(self):
         logger.info('')
+        self.setUpdatesEnabled(False)
         # caller = inspect.stack()[1].function
         # logger.info('update_MA_widgets [caller: %s] >>>>' % caller)
         self.update_MA_list_base()
         self.update_MA_list_ref()
         # self.dataUpdateMA()
+        self.setUpdatesEnabled(True)
 
 
     def update_MA_list_ref(self):
@@ -1990,8 +2141,9 @@ class ProjectTab(QWidget):
         #     logger.critical(f'item.text():\n{item.text()}')
         #     self.MA_ptsListWidget_ref.takeItem(self.MA_ptsListWidget_ref.row(item))
         if self.MA_ptsListWidget_ref.currentItem():
-            del_key = self.MA_ptsListWidget_ref.currentItem().background().color().name()
-            logger.info('del_key is %s' % del_key)
+            # del_key = self.MA_ptsListWidget_ref.currentItem().background().color().name()
+            del_key = self.MA_ptsListWidget_ref.currentItem().foreground().color().name()
+            logger.critical('del_key is %s' % del_key)
             cfg.refViewer.pts.pop(del_key)
             if del_key in cfg.baseViewer.pts.keys():
                 cfg.baseViewer.pts.pop(del_key)
@@ -2012,8 +2164,9 @@ class ProjectTab(QWidget):
         # for item in self.MA_ptsListWidget_base.selectedItems():
         #     self.MA_ptsListWidget_base.takeItem(self.MA_ptsListWidget_base.row(item))
         if self.MA_ptsListWidget_base.currentItem():
-            del_key = self.MA_ptsListWidget_base.currentItem().background().color().name()
-            logger.info('del_key is %s' % del_key)
+            # del_key = self.MA_ptsListWidget_base.currentItem().background().color().name()
+            del_key = self.MA_ptsListWidget_base.currentItem().foreground().color().name()
+            logger. critical('del_key is %s' % del_key)
             cfg.baseViewer.pts.pop(del_key)
             if del_key in cfg.refViewer.pts.keys():
                 cfg.refViewer.pts.pop(del_key)
@@ -2066,8 +2219,8 @@ class ProjectTab(QWidget):
         # self.update_MA_widgets()
         cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
-        cfg.refViewer.undraw_point_annotations()
-        cfg.baseViewer.undraw_point_annotations()
+        cfg.refViewer.undrawSWIMwindows()
+        cfg.baseViewer.undrawSWIMwindows()
         # self.initNeuroglancer()
 
         logger.info('<<<< deleteAllMp')
@@ -2147,7 +2300,7 @@ class ProjectTab(QWidget):
         self.MA_splitter.show() # change layout before initializing viewer
         self.ngVertLab.setText('Manual Alignment Mode')
         # self.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
-        self.set_method_label_text()
+        # self.set_method_label_text()
 
         # cfg.main_window._changeScaleCombo.setEnabled(False)
 
@@ -2487,7 +2640,7 @@ class ProjectTab(QWidget):
         self.snr_plt_wid.setStyleSheet('background-color: #222222; font-weight: 550;')
         self._thumbnail_src = QLabel()
         self._thumbnail_aligned = QLabel()
-        self.snrWebengine = QWebEngineView()
+        self.snrWebengine = WebEngine(ID='snr')
         self.snrWebengine.setMinimumWidth(256)
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #222222;')
@@ -2676,7 +2829,13 @@ class ProjectTab(QWidget):
         state.showSlices = False
         cfg.emViewer.set_state(state)
 
+    def focusedViewerChanged(self, focused:str):
+        logger.critical(f'focused: {focused}')
 
+        if self.focusedViewer == 'ref':
+            pass
+        elif self.focusedViewer == 'base':
+            pass
 
     def get_viewers(self):
         logger.info('Getting Viewers...')
@@ -2700,6 +2859,7 @@ class ProjectTab(QWidget):
         p = QPainter(self)
         s = self.style()
         s.drawPrimitive(QStyle.PE_Widget, opt, p, self)
+
 
     # def sizeHint(self):
     #     return QSize(1000,1000)
@@ -2784,6 +2944,29 @@ class ExpandingWidget(QWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+class WebEngine(QWebEngineView):
+
+
+    def __init__(self, ID='webengine'):
+        QWebEngineView.__init__(self)
+        self.ID = ID
+        # self.inFocus = Signal(str)
+        # self.installEventFilter(self)
+
+    # def eventFilter(self, object, event):
+    #     if event.type() == QEvent.Enter:
+    #         # self.inFocus.emit(self.ID)
+    #         logger.info(f"Entering Focus of ({self.ID})")
+    #         # self.stop = True
+    #         # print('program stop is', self.stop)
+    #         # return True
+    #     elif event.type() == QEvent.Leave:
+    #         logger.info(f"Leaving Focus of ({self.ID})")
+    #         # self.stop = False
+    #         # print('program stop is', self.stop)
+    #     return True
+
 
 
 class ClickLabel(QLabel):

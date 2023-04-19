@@ -107,8 +107,8 @@ def delete_recursive(dir, keep_core_dirs=False):
                 continue
         if os.path.exists(os.path.join(dir, s, 'history')):
             to_delete.append(os.path.join(dir, s, 'history'))
-        if os.path.exists(os.path.join(dir, s, 'thumbnails_corr_spots')):
-            to_delete.append(os.path.join(dir, s, 'thumbnails_corr_spots'))
+        if os.path.exists(os.path.join(dir, s, 'signals')):
+            to_delete.append(os.path.join(dir, s, 'signals'))
         if os.path.exists(os.path.join(dir, s, 'bias_data')):
             to_delete.append(os.path.join(dir, s, 'bias_data'))
         if os.path.exists(os.path.join(dir, s, 'img_aligned')):

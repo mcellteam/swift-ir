@@ -189,6 +189,13 @@ class DataModel:
     def scale(self, str):
         self._data['data']['current_scale'] = str
 
+    @property
+    def alignment_type(self):
+        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['alignment_type']
+
+    @alignment_type.setter
+    def alignment_type(self, str):
+        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['alignment_type'] = str
 
     def is_aligned(self, s=None):
         caller = inspect.stack()[1].function
@@ -400,68 +407,68 @@ class DataModel:
         # return self._data['data']['thumbnails'][self.zpos]
         return path
 
-    def corr_signal_path(self, i, s=None, l=None):
+    # def corr_signal_path(self, i, s=None, l=None):
+    #     if s == None: s = self.scale
+    #     if l == None: l = self.zpos
+    #     img = self.base_image_name(s=s, l=l)
+    #     return os.path.join(self.dest(), s, 'signals' , 'corr_spot_%d_' %i + img)
+
+
+    def signal_q0_path(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_%d_' %i + img)
+        return os.path.join(self.dest(), s, 'signals' , '%s_0_Grid.tif' % img)
 
-
-    def corr_spot_q0_path(self, s=None, l=None) -> str:
+    def signal_q1_path(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_0_' + img)
+        return os.path.join(self.dest(), s, 'signals' , '%s_1_Grid.tif' % img)
 
-    def corr_spot_q1_path(self, s=None, l=None) -> str:
+    def signal_q2_path(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_1_' + img)
+        return os.path.join(self.dest(), s, 'signals' , '%s_2_Grid.tif' % img)
 
-    def corr_spot_q2_path(self, s=None, l=None) -> str:
+    def signal_q3_path(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_2_' + img)
+        return os.path.join(self.dest(), s, 'signals' , '%s_3_Grid.tif' % img)
 
-    def corr_spot_q3_path(self, s=None, l=None) -> str:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'thumbnails_corr_spots' , 'corr_spot_3_' + img)
-
-    def corr_spots_q0(self) -> list:
+    def signals_q0(self) -> list:
         names = []
         for img in self.basefilenames():
             # names.append(os.path.join(self.dest(), self.scale, 'corr_spots' , 'corr_spot_0_' + img))
-            names.append(os.path.join(self.dest(), self.scale, 'thumbnails_corr_spots' , 'corr_spot_0_' + img))
+            names.append(os.path.join(self.dest(), self.scale, 'signals' , 'Auto-SWIM_1_' + img))
         return names
 
-    def corr_spots_q1(self) -> list:
+    def signals_q1(self) -> list:
         names = []
         for img in self.basefilenames():
             # names.append(os.path.join(self.dest(), self.scale, 'corr_spots' , 'corr_spot_1_' + img))
-            names.append(os.path.join(self.dest(), self.scale, 'thumbnails_corr_spots' , 'corr_spot_1_' + img))
+            names.append(os.path.join(self.dest(), self.scale, 'signals' , 'Auto-SWIM_1_' + img))
         return names
 
-    def corr_spots_q2(self) -> list:
+    def signals_q2(self) -> list:
         names = []
         for img in self.basefilenames():
             # names.append(os.path.join(self.dest(), self.scale, 'corr_spots' , 'corr_spot_2_' + img))
-            names.append(os.path.join(self.dest(), self.scale, 'thumbnails_corr_spots' , 'corr_spot_2_' + img))
+            names.append(os.path.join(self.dest(), self.scale, 'signals' , 'Auto-SWIM_2_' + img))
         return names
 
-    def corr_spots_q3(self) -> list:
+    def signals_q3(self) -> list:
         names = []
         for img in self.basefilenames():
             # names.append(os.path.join(self.dest(), self.scale, 'corr_spots', 'corr_spot_3_' + img))
-            names.append(os.path.join(self.dest(), self.scale, 'thumbnails_corr_spots', 'corr_spot_3_' + img))
+            names.append(os.path.join(self.dest(), self.scale, 'signals', 'Auto-SWIM_3_' + img))
         return names
 
 
-    def get_corr_spot_files(self):
-        path = os.path.join(self.dest(), self.scale, 'thumbnails_corr_spots')
+    def get_signals_filenames(self):
+        path = os.path.join(self.dest(), self.scale, 'signals')
         return natural_sort(glob(os.path.join(path, '*' + self.base_image_name())))
 
     def smallest_scale(self):
@@ -495,6 +502,8 @@ class DataModel:
         self._data['data'].setdefault('t_scaling', 0.0)
         self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
         self._data['data'].setdefault('t_thumbs', 0.0)
+        self._data['data'].setdefault('defaults', {})
+        self._data['data']['defaults'].setdefault('swim_window_width', {})
         self._data['rendering'].setdefault('normalize', [1,255])
         self._data['rendering'].setdefault('brightness', 0)
         self._data['rendering'].setdefault('contrast', 0)
@@ -533,6 +542,7 @@ class DataModel:
                 layer.setdefault('image_src_size', None)
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
+                layer['alignment'].setdefault('alignment_type', 'grid-default')
                 # layer['alignment']['swim_settings'].setdefault('auto_swim_window_px', auto_ww)
                 layer['alignment']['swim_settings'].setdefault('karg', False)
                 layer['alignment']['swim_settings'].setdefault('karg_path', os.path.join(self.dest(), s, 'tmp'))
@@ -545,6 +555,7 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('extra_kwargs', '')
                 layer['alignment']['swim_settings'].setdefault('extra_args', '')
                 layer['alignment']['swim_settings'].setdefault('use_logging', True)
+                layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
                 layer['alignment'].setdefault('method_data', {})
                 layer['alignment'].setdefault('manual_settings', {})
                 layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
@@ -676,7 +687,7 @@ class DataModel:
             # print_exception()
             logger.warning('No SNR components for section %d' %l)
         # if self.method(s=s, l=l) == 'Manual-Hint':
-        #     files = self.get_corr_spot_files()
+        #     files = self.get_signals_filenames()
         #     n = len(files)
         #     if ('snr' in mr) and (n == len(mr['snr'])):
         #         return mr['snr']
@@ -1167,6 +1178,18 @@ class DataModel:
             logger.warning('Unable to To Return Skips By Name List')
             return []
 
+
+    def swim_iterations(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations']
+
+
+    def set_swim_iterations_glob(self, val:int):
+        for s in self.scales():
+            for i in range(len(self)):
+                self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['iterations'] = val
+
     def whitening(self) -> float:
         '''Returns the Whitening Factor for the Current Layer.'''
         return float(self._data['data']['scales'][self.scale]['stack'][
@@ -1195,17 +1218,50 @@ class DataModel:
 
     def swim_window_px(self):
         '''Returns the SWIM Window in pixels'''
-        return self.stack()[self.zpos]['alignment']['swim_settings']['auto_swim_window_px']
-
+        return tuple(map(int, self.stack()[self.zpos]['alignment']['swim_settings']['auto_swim_window_px']))
 
     def set_swim_window_px(self, pixels=None):
         '''Returns the SWIM Window for the Current Layer.'''
         if pixels == None:
             self.set_auto_swim_windows_to_default(current_only=True)
         else:
-            s1_ww = pixels * self.scale_val()
+            img_w, img_h = self.image_size(s=self.scale)
+            WW_X = pixels
+            WW_Y = (pixels / img_w) * img_h
+
             for s in self.scales():
-                self.stack(s=s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = s1_ww / get_scale_val(s)
+                scale_factor = get_scale_val(s) / self.scale_val()
+                ww_x = WW_X * scale_factor
+                ww_y = WW_Y * scale_factor
+                self.stack(s=s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = \
+                    (ww_x, ww_y)
+
+                if (self.swim_2x2_px()[0] * 2) > ww_x:
+                    self.stack(s=s)[self.zpos]['alignment']['swim_settings']['auto_swim_2x2_px'] = \
+                        ((ww_x / 2), (ww_y / 2))
+
+    def swim_2x2_px(self):
+        '''Returns the SWIM Window in pixels'''
+        return tuple(map(int, self.stack()[self.zpos]['alignment']['swim_settings']['auto_swim_2x2_px']))
+
+    def set_swim_2x2_px(self, pixels=None, scale=None):
+        '''Returns the SWIM Window in pixels'''
+        if pixels == None:
+            self.set_auto_swim_windows_to_default(current_only=True)
+        else:
+            img_w, img_h = self.image_size(s=self.scale)
+            WW_X = pixels
+            WW_Y = (pixels / img_w) * img_h
+            for s in self.scales():
+                scale_factor = get_scale_val(s) / self.scale_val()
+                ww_x = WW_X * scale_factor
+                ww_y = WW_Y * scale_factor
+                if (2 * ww_x) <= self.swim_window_px()[0]:
+                    self.stack(s=s)[self.zpos]['alignment']['swim_settings']['auto_swim_2x2_px'] = \
+                        (ww_x, ww_y)
+                else:
+                    self.stack(s=s)[self.zpos]['alignment']['swim_settings']['auto_swim_2x2_px'] = \
+                        (self.swim_window_px()[0] / 2, self.swim_window_px()[1] / 2)
 
     # def set_swim_window(self, perc=None) -> None:
     #     '''Sets the SWIM Window for the Current Layer.'''
@@ -1227,14 +1283,21 @@ class DataModel:
         logger.info('')
         import src.config as cfg
         img_size = self.image_size(self.scales()[0])  # largest scale size
-        man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
+        # man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
+        factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
+        man_ww_full = img_size[0] * factor, img_size[1] * factor
         for s in self.scales():
-            man_ww = man_ww_full / self.scale_val(s)
+            man_ww_x = man_ww_full[0] / self.scale_val(s)
+            man_ww_y = man_ww_full[1] / self.scale_val(s)
             if current_only:
-                self.stack(s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = man_ww
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = (man_ww_x, man_ww_y)
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['auto_swim_2x2_px'] = ((man_ww_x / 2), (man_ww_y / 2))
             else:
                 for i in range(len(self)):
-                    self.stack(s)[i]['alignment']['swim_settings']['auto_swim_window_px'] = man_ww
+                    self.stack(s)[i]['alignment']['swim_settings']['auto_swim_window_px'] = (man_ww_x, man_ww_y)
+                    self.stack(s)[i]['alignment']['swim_settings']['auto_swim_2x2_px'] = ((man_ww_x / 2), (man_ww_y / 2))
+                    self.stack(s)[i]['alignment']['swim_settings']['default_auto_swim_window_px'] = (man_ww_x, man_ww_y)
+                    self.stack(s)[i]['alignment']['swim_settings']['default_auto_swim_2x2_px'] = ((man_ww_x / 2), (man_ww_y / 2))
 
     def manual_swim_window_px(self) -> int:
         '''Returns the SWIM Window for the Current Layer.'''

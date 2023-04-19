@@ -90,12 +90,13 @@ class align_recipe:
         self.method = self.alData['method']
         self.option = self.alData['method_data']['alignment_option']
         self.wsf    = self.alData['method_data']['win_scale_factor']
+        self.auto_ww    = self.alData['swim_settings']['auto_swim_window_px']
         self.wht    = self.alData['method_data']['whitening_factor']
         self.man_ww = self.alData['manual_settings'].get('manual_swim_window_px')
         self.man_pmov = np.array(self.alData['manpoints_mir'].get('base')).transpose()
         self.man_psta = np.array(self.alData['manpoints_mir'].get('ref')).transpose()
         self.ingredients = []
-        self.iters = 3
+        # self.iters = 3
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
         # Configure platform-specific path to executables for C SWiFT-IR
@@ -115,8 +116,10 @@ class align_recipe:
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))   # Point Array for one point
-        wwx = int(self.wsf * self.siz[0])  # Window Width in x Scaled
-        wwy = int(self.wsf * self.siz[1])  # Window Width in y Scaled
+        # wwx = int(self.wsf * self.siz[0])  # Window Width in x Scaled
+        # wwy = int(self.wsf * self.siz[1])  # Window Width in y Scaled
+        wwx = int(self.auto_ww[0])  # Window Width in x Scaled
+        wwy = int(self.auto_ww[1])  # Window Width in y Scaled
         cx = int(self.siz[0] / 2.0)   # Window Center in x
         cy = int(self.siz[1] / 2.0)   # Window Center in y
         pa[0, 0] = cx
@@ -132,24 +135,26 @@ class align_recipe:
             for y in range(ny):
                 pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
                 pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
-        sx_2x2 = int(self.wsf * sx)
-        sy_2x2 = int(self.wsf * sy)
+        # sx_2x2 = int(self.wsf * sx)
+        # sy_2x2 = int(self.wsf * sy)
+        sx_2x2 = int(self.auto_ww[0] / 2)
+        sy_2x2 = int(self.auto_ww[1] / 2)
         psta_2x2 = pa
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
         if self.method == 'Auto-SWIM':
             if self.option == 'init_affine':
                 self.add_ingredients([
-                    align_ingredient(mode='SWIM', ww=(wwx, wwy), psta=psta_1, ID='ingr1_1x1_'),
-                    align_ingredient(mode='SWIM', ww=(sx_2x2, sy_2x2), psta=psta_2x2, ID='ingr2_2x2_'),
-                    align_ingredient(mode='SWIM', ww=(sx_2x2, sy_2x2), psta=psta_2x2, ID='ingr3_2x2_')])
+                    align_ingredient(mode='Grid', ww=(wwx, wwy), psta=psta_1, ID='Grid1x1'),
+                    align_ingredient(mode='Grid', ww=(sx_2x2, sy_2x2), psta=psta_2x2, ID='Grid2x2-a'),
+                    align_ingredient(mode='Grid', ww=(sx_2x2, sy_2x2), psta=psta_2x2, ID='Grid2x2-b')])
             elif self.option == 'refine_affine':
-                self.add_ingredients([align_ingredient(mode='SWIM', ww=(sx_2x2, sy_2x2), psta=psta_2x2, afm=self.init_afm, ID='_2x2')])
+                self.add_ingredients([align_ingredient(mode='Grid', ww=(sx_2x2, sy_2x2), psta=psta_2x2, afm=self.init_afm, ID='Grid2x2')])
         elif self.method == 'Manual-Hint':
             self.add_ingredients([
-                align_ingredient(mode='Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov, ID='ingr1_hint_r_'),
-                align_ingredient(mode='SWIM-Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov, ID='ingr2_SWIM_r_'),
-                align_ingredient(mode='SWIM-Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov, ID='ingr3_SWIM_r_')])
+                align_ingredient(mode='Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov),
+                align_ingredient(mode='Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov, ID='Manual-a'),
+                align_ingredient(mode='Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov, ID='Manual-b')])
         elif self.method == 'Manual-Strict':
             self.add_ingredients([align_ingredient(mode='Manual', ww=self.man_ww, psta=self.man_psta, pmov=self.man_pmov)])
 
@@ -214,7 +219,7 @@ class align_ingredient:
     def __init__(self, mode, ww=None, psta=None, pmov=None, afm=None, rota=None, ID=''):
         self.recipe = None
         self.alData = None
-        self.ingredient_mode = mode
+        self.mode = mode
         self.swim_drift = 0.0
         self.afm = afm
         self.ww = ww
@@ -230,7 +235,7 @@ class align_ingredient:
 
     def __str__(self):
         s = "ingredient:\n"
-        s += "  mode: " + str(self.ingredient_mode) + "\n"
+        s += "  mode: " + str(self.mode) + "\n"
         s += "  ww: " + str(self.ww) + "\n"
         s += "  psta:\n" + prefix_lines('    ', str(self.psta)) + "\n"
         s += "  pmov:\n" + prefix_lines('    ', str(self.pmov)) + "\n"
@@ -255,7 +260,7 @@ class align_ingredient:
 
     def execute_ingredient(self):
         # Returns an affine matrix
-        if self.ingredient_mode == 'Manual':
+        if self.mode == 'MIR':
             self.afm = self.run_manual_mir()
         else:
             swim_output = self.run_swim()
@@ -271,15 +276,21 @@ class align_ingredient:
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         rota_arg = ''
         if type(self.ww) == type((1, 2)):
-            swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
+            # swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
+            swim_ww_arg = str(int(self.recipe.auto_ww[0])) + "x" + str(int(self.recipe.auto_ww[1])) #<--
         else:
             swim_ww_arg = str(int(self.ww))
+
+        iters = self.alData['swim_settings']['iterations']
 
         multi_arg_str = ArgString(sep='\n')
 
         for i in range(len(self.psta[0])):
 
-            b_arg = os.path.join(self.recipe.scale_dir, 'corr_spots', 'corr_spot_%d_%s' % (i, os.path.basename(self.recipe.im_mov_fn)))
+            b_arg = os.path.join(
+                self.recipe.scale_dir,
+                'signals_raw',
+                '%s_%d_%s.tif' % (os.path.basename(self.recipe.im_mov_fn), i, self.mode))
             offx = int(self.psta[0][i] - cx)
             offy = int(self.psta[1][i] - cy)
 
@@ -287,35 +298,32 @@ class align_ingredient:
             args.append('ww_' + swim_ww_arg)
             if self.alData['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alData['swim_settings']['clobber_fixed_noise_px'])
-            args.add_flag(flag='-i', arg=str(self.recipe.iters))
+            # args.add_flag(flag='-i', arg=str(self.recipe.iters))
+            args.add_flag(flag='-i', arg=str(iters))
             args.add_flag(flag='-w', arg=str(self.recipe.wht))
-            if self.ingredient_mode != 'SWIM-Manual':
+            if self.mode != 'SWIM-Manual':
                 args.add_flag(flag='-x', arg=str(offx))
                 args.add_flag(flag='-y', arg=str(offy))
             args.add_flag(flag='-b', arg=b_arg)
             if self.alData['swim_settings']['karg']:
-                k_arg_name = 'pt%d_' % i + self.ID + self.alData['swim_settings']['karg_name'] + '.tif'
+                k_arg_name = '%s_%d_%s.tif' % (self.alData['swim_settings']['karg_name'], i, self.mode)
                 k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
             if self.alData['swim_settings']['targ']:
-                t_arg_name = 'pt%d_' % i + self.ID + self.alData['swim_settings']['targ_name'] + '.tif'
+                t_arg_name = '%s_%d_%s.tif' % (self.alData['swim_settings']['targ_name'], i, self.mode)
                 t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
             args.append(self.alData['swim_settings']['extra_kwargs'])
             args.append(self.recipe.im_sta_fn)
-            if self.ingredient_mode == 'SWIM-Manual':
-                args.append(str(self.psta[0][i]))
-                args.append(str(self.psta[1][i]))
+            if self.mode == 'SWIM-Manual':
+                args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
-                args.append(str(cx))
-                args.append(str(cy))
+                args.append('%s %s' % (cx, cy))
             args.append(self.recipe.im_mov_fn)
-            if self.ingredient_mode == 'SWIM-Manual':
-                args.append(str(self.pmov[0][i]))
-                args.append(str(self.pmov[1][i]))
+            if self.mode == 'SWIM-Manual':
+                args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
-                args.append(str(adjust_x))
-                args.append(str(adjust_y))
+                args.append('%s %s' % (adjust_x, adjust_y))
             args.append(rota_arg)
             args.append(afm_arg)
             args.append(self.alData['swim_settings']['extra_args'])
@@ -332,7 +340,7 @@ class align_ingredient:
         swim_output = o['out'].strip().split('\n')
         swim_err_lines = o['err'].strip().split('\n')
 
-        if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
+        if self.mode == 'Manual':
             MAlogger.critical(f'\nSWIM OUT:\n{swim_output}\nSWIM ERR:\n{swim_err_lines}')
 
         return swim_output
@@ -378,7 +386,7 @@ class align_ingredient:
                            f'MIR std out:\n{str(mir_out_lines)}\n'
                            f'MIR std err:\n{str(mir_err_lines)}')
 
-        if self.ingredient_mode in ('Manual-Hint', 'Manual-Strict'):
+        if self.mode == 'Manual':
             MAlogger.critical(f'***MIR script***\n{str(mir_script)}\n'
                               f'MIR std out:\n{str(mir_out_lines)}\n'
                               f'MIR std err:\n{str(mir_err_lines)}')

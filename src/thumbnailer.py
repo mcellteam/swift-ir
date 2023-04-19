@@ -29,7 +29,7 @@ class Thumbnailer:
         logger.info('')
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
-    def generate_main(self):
+    def reduce_main(self):
         pbar_text = 'Generating Source Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
@@ -37,31 +37,31 @@ class Thumbnailer:
             coarsest_scale = cfg.data.smallest_scale()
             src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
             od = os.path.join(cfg.data.dest(), 'thumbnails')
-            dt = self.generate_thumbnails(
+            dt = self.reduce(
                 src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text)
             cfg.data.set_t_thumbs(dt)
 
 
-    def generate_aligned(self, start, end):
+    def reduce_aligned(self, start, end):
         pbar_text = 'Generating Aligned Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
             src = os.path.join(cfg.data.dest(), cfg.data.scale, 'img_aligned')
             od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
-            dt = self.generate_thumbnails(
+            dt = self.reduce(
                 src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text)
             cfg.data.set_t_thumbs_aligned(dt)
 
 
-    def generate_corr_spot(self, start, end):
+    def reduce_signals(self, start, end):
 
         pbar_text = 'Generating Correlation Spot Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(cfg.data.dest(), cfg.data.scale, 'corr_spots')
-            od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_corr_spots')
+            src = os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw')
+            od = os.path.join(cfg.data.dest(), cfg.data.scale, 'signals')
             rmdir = True if (start == 0) and (end == None) else False
 
             baseFileNames = cfg.data.basefilenames()
@@ -73,7 +73,7 @@ class Thumbnailer:
                         try:
                             os.remove(tn)
                         except:
-                            logger.warning('Error removing expired thumbnail: %s' % tn)
+                            logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
             filenames = []
             for name in baseFileNames[start:end]:
@@ -81,34 +81,34 @@ class Thumbnailer:
 
             # tnLogger.info('Generating the following corr spot thumbnails:\n%s' %str(filenames))
 
-            dt = self.generate_thumbnails(src=src, od=od,
-                                          rmdir=rmdir, prefix='',
-                                          start=start, end=end,
-                                          pbar_text=pbar_text,
-                                          filenames=filenames
-                                          )
+            dt = self.reduce(src=src, od=od,
+                             rmdir=rmdir, prefix='',
+                             start=start, end=end,
+                             pbar_text=pbar_text,
+                             filenames=filenames
+                             )
             cfg.data.set_t_thumbs_spot(dt)
-            cfg.main_window.tell('Discarding Full Size Correlation Spots...')
+            cfg.main_window.tell('Discarding Raw (Full Size) Correlation Signals...')
             try:
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'corr_spots'), ignore_errors=True)
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'corr_spots'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw'), ignore_errors=True)
             except:
                 print_exception()
             else:
                 cfg.main_window.hud.done()
 
 
-    def generate_thumbnails(self,
-                            src,
-                            od,
-                            rmdir=False,
-                            prefix='',
-                            start=0,
-                            end=None,
-                            pbar_text='',
-                            filenames=None,
-                            target_size=cfg.TARGET_THUMBNAIL_SIZE
-                            ):
+    def reduce(self,
+               src,
+               od,
+               rmdir=False,
+               prefix='',
+               start=0,
+               end=None,
+               pbar_text='',
+               filenames=None,
+               target_size=cfg.TARGET_THUMBNAIL_SIZE
+               ):
         caller = inspect.stack()[1].function
 
         fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log'))
