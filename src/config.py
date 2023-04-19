@@ -56,6 +56,7 @@ DEFAULT_MANUAL_SWIM_WINDOW_PERC = float(.125)
 DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
 DEFAULT_MANUAL_WHITENING     = float(-0.6800)
 DEFAULT_PATTERN_CLOBBER      = 0 # in pixels
+DEFAULT_SWIM_ITERATIONS      = 3 # in pixels
 
 '''Default Image Resolution (Voxel Dimensions)'''
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50

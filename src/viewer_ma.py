@@ -64,9 +64,15 @@ class MAViewer(neuroglancer.Viewer):
         self.cs_scale = None
         # self.pts = {}
         self.pts = OrderedDict()
-        self.mp_colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
-                          '#152c74', '#404f74', '#f3e375', '#5c4ccc',
-                          '#d6acd6', '#aaa672', '#152c74', '#404f74'
+        # self.mp_colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
+        #                   '#152c74', '#404f74', '#f3e375', '#5c4ccc',
+        #                   '#d6acd6', '#aaa672', '#152c74', '#404f74'
+        #                   ]
+
+        self.mp_colors = ['#75bbfd', '#e50000', '#ffd1df', '#efb435',
+                          '#69d84f', '#894585', '#70b23f', '#d4ffff',
+                          '#388004', '#4c9085', '#fcfc81', '#a5a391',
+                          '#acc2d9', '#fcfc81', '#b2996e', '#a8ff04',
                           ]
         self._crossSectionScale = 1
         self._mpCount = 0
@@ -362,8 +368,6 @@ class MAViewer(neuroglancer.Viewer):
         # except:
         #     print_exception()
         self.drawSWIMwindow()
-        if cfg.data.method() == 'Manual-Strict':
-            self.draw_point_annotations()
         logger.info(f'dict = {cfg.data.manpoints_pretty()}')
 
 
@@ -406,7 +410,7 @@ class MAViewer(neuroglancer.Viewer):
         # pass
 
 
-    def undrawSWIMwindow(self):
+    def undrawSWIMwindows(self):
         caller = inspect.stack()[1].function
         logger.critical(f'Undrawing SWIM Windows [caller: {caller}]...')
         try:
@@ -424,197 +428,115 @@ class MAViewer(neuroglancer.Viewer):
         logger.critical(f'caller: {caller}')
         # t.start()
 
-        self.undraw_point_annotations()
+        # self.undraw_point_annotations()
+        self.undrawSWIMwindows()
 
         marker_size = 1
 
-        if cfg.data.method() == 'Auto-SWIM':
-            '''SWIM Annotations for Automated SWIM Alignments'''
+        if cfg.data.alignment_type == 'grid-custom':
+            logger.info('Drawing SWIM Window Annotations for Auto-SWIM Alignment...')
 
-            # if not cfg.project_tab.tgl_alignMethod.isChecked():
-            logger.info('Drawing SWIM Window Layer for Auto-SWIM Alignment...')
+            img_siz = cfg.data.image_size()
+            img_w, img_h = img_siz[0], img_siz[1]
+            ww_full = cfg.data.swim_window_px() # full window width
+            ww_2x2 = cfg.data.swim_2x2_px() # 2x2 window width
 
-            sw = cfg.data.swim_window()  # SWIM Window
-            image_w = cfg.data.image_size()[0]
-            image_h = cfg.data.image_size()[1]
-            siz_sw = sw * image_w
-            siz_sh = sw * image_h
-            offset_w = (image_w - siz_sw) / 2
-            offset_h = (image_h - siz_sh) / 2
-            half_w = image_w / 2
-            half_h = image_h / 2
+            offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
+            offset_x2 = img_w - offset_x1
+            offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
+            offset_y2 = img_h - offset_y1
 
-            # pointA=[.5, 10, 10], pointB=[.5, 1000, 1000] <- diagonal from upper right to bottom left
-            # square corners, counter-clockwise from upper-left:
-            A = [.5, offset_h + siz_sh, offset_w]
-            B = [.5, offset_h, offset_w]
-            C = [.5, offset_h, offset_w + siz_sw]
-            D = [.5, offset_h + siz_sh, offset_w + siz_sw]
+            cps = [(offset_x1, offset_y1), # upper right
+                   (offset_x1, offset_y2), # bottom right
+                   (offset_x2, offset_y1), # upper left
+                   (offset_x2, offset_y2)] # bottom left
 
-            AB = [.5, half_h, offset_w]
-            BC = [.5, offset_h, half_w]
-            CD = [.5, half_h, offset_w + siz_sw]
-            DA = [.5, offset_h + siz_sh, half_w]
-
-            CP = [.5, half_h, half_w]
-
-            # logger.critical(f'A: {A}')
-            # logger.critical(f'B: {B}')
-            # logger.critical(f'C: {C}')
-            # logger.critical(f'D: {D}')
-            #
-            # logger.critical(f'AB: {AB}')
-            # logger.critical(f'BC: {BC}')
-            # logger.critical(f'CD: {CD}')
-            # logger.critical(f'DA: {DA}')
-            #
-            # logger.critical(f'half_w = {half_w}')
-            # logger.critical(f'half_h = {half_h}')
-            # logger.critical(f'offset_w = {offset_w}')
-            # logger.critical(f'offset_h = {offset_h}')
-            # logger.critical(f'siz_sw = {siz_sw}')
-            # logger.critical(f'siz_sh = {siz_sh}')
-            '''
-            11:46:55 [viewer_ma.drawSWIMwindow:442] A: [0.5, 720.0, 96.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:443] B: [0.5, 304.0, 96.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:444] C: [0.5, 304.0, 928.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:445] D: [0.5, 720.0, 928.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:447] AB: [0.5, 256.0, 96.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:448] BC: [0.5, 304.0, 512.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:449] CD: [0.5, 256.0, 928.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:450] DA: [0.5, 720.0, 512.0]
-            11:46:55 [viewer_ma.drawSWIMwindow:452] half_w = 512.0
-            11:46:55 [viewer_ma.drawSWIMwindow:453] half_h = 256.0
-
-            
-            '''
+            # colors : 0:yellow 1:blue 2:red 3:orange
+            # colors = (self.mp_colors[3], self.mp_colors[2], self.mp_colors[1], self.mp_colors[0])
+            colors = (self.mp_colors[1], self.mp_colors[3], self.mp_colors[0], self.mp_colors[2])
 
 
-            '''
-            A____AB_____B
-            |           |
-            DA   CP    BC
-            |           |
-            D____CD_____C 
-            '''
+            annotations = []
+            for i, pt in enumerate(cps):
+                annotations.extend(
+                    self.makeRect(
+                        prefix=str(i),
+                        coords=pt,
+                        ww_x=ww_2x2[0],
+                        ww_y=ww_2x2[1],
+                        color=colors[i],
+                        marker_size=marker_size
+                    )
+                )
 
-            color0 = self.mp_colors[3]
-            color1 = self.mp_colors[2]
-            color2 = self.mp_colors[1]
-            color3 = self.mp_colors[0]
+        elif cfg.data.alignment_type == 'grid-default':
+            logger.info('Drawing SWIM Window Annotations for Auto-SWIM Alignment...')
+
+            img_siz = cfg.data.image_size()
+            img_w, img_h = img_siz[0], img_siz[1]
+            # ww_full = cfg.data.swim_window_px() # full window width
+            ww_full = cfg.data.stack()[cfg.data.zpos]['alignment']['swim_settings']['default_auto_swim_window_px']
+
+            offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
+            offset_x2 = (img_w / 2) + (ww_full[0] * (1 / 4))
+            offset_y1 = (img_h / 2) - (ww_full[1] * (1 / 4))
+            offset_y2 = (img_h / 2) + (ww_full[1] * (1 / 4))
+
+            # ww_2x2 = cfg.data.swim_2x2_px() # 2x2 window width
+            # offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
+            # offset_x2 = img_w - offset_x1
+            # offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
+            # offset_y2 = img_h - offset_y1
+
+            cps = [(offset_x1, offset_y1), # upper right
+                   (offset_x1, offset_y2), # bottom right
+                   (offset_x2, offset_y1), # upper left
+                   (offset_x2, offset_y2)] # bottom left
+
+            # colors : 0:yellow 1:blue 2:red 3:orange
+            # colors = (self.mp_colors[3], self.mp_colors[2], self.mp_colors[1], self.mp_colors[0])
+            colors = (self.mp_colors[1], self.mp_colors[3], self.mp_colors[0], self.mp_colors[2])
 
 
-            # annotations = [
-            #     ng.LineAnnotation(id='L1', pointA=A, pointB=B, props=['#FFFF00', marker_size]),
-            #     ng.LineAnnotation(id='L2', pointA=B, pointB=C, props=['#FFFF00', marker_size]),
-            #     ng.LineAnnotation(id='L3', pointA=C, pointB=D, props=['#FFFF00', marker_size]),
-            #     ng.LineAnnotation(id='L4', pointA=D, pointB=A, props=['#FFFF00', marker_size]),
-            #     ng.LineAnnotation(id='L5', pointA=AB, pointB=CD, props=['#FFFF00', marker_size]),
-            #     ng.LineAnnotation(id='L6', pointA=DA, pointB=BC, props=['#FFFF00', marker_size]),
-            # ]
-
-            annotations = [
-                ng.LineAnnotation(id='L01', pointA=A, pointB=AB, props=[color0, marker_size]),
-                ng.LineAnnotation(id='L02', pointA=AB, pointB=CP, props=[color0, marker_size]),
-                ng.LineAnnotation(id='L03', pointA=CP, pointB=DA, props=[color0, marker_size]),
-                ng.LineAnnotation(id='L04', pointA=DA, pointB=A, props=[color0, marker_size]),
-
-                ng.LineAnnotation(id='L05', pointA=AB, pointB=B, props=[color1, marker_size]),
-                ng.LineAnnotation(id='L06', pointA=B, pointB=BC, props=[color1, marker_size]),
-                ng.LineAnnotation(id='L07', pointA=BC, pointB=CP, props=[color1, marker_size]),
-                ng.LineAnnotation(id='L08', pointA=CP, pointB=AB, props=[color1, marker_size]),
-
-                ng.LineAnnotation(id='L09', pointA=DA, pointB=CP, props=[color2, marker_size]),
-                ng.LineAnnotation(id='L10', pointA=CP, pointB=CD, props=[color2, marker_size]),
-                ng.LineAnnotation(id='L11', pointA=CD, pointB=D, props=[color2, marker_size]),
-                ng.LineAnnotation(id='L12', pointA=D, pointB=DA, props=[color2, marker_size]),
-
-                ng.LineAnnotation(id='L13', pointA=CP, pointB=BC, props=[color3, marker_size]),
-                ng.LineAnnotation(id='L14', pointA=BC, pointB=C, props=[color3, marker_size]),
-                ng.LineAnnotation(id='L15', pointA=C, pointB=CD, props=[color3, marker_size]),
-                ng.LineAnnotation(id='L16', pointA=CD, pointB=CP, props=[color3, marker_size]),
-
-            ]
+            annotations = []
+            for i, pt in enumerate(cps):
+                annotations.extend(
+                    self.makeRect(
+                        prefix=str(i),
+                        coords=pt,
+                        # ww_x=ww_2x2[0],
+                        # ww_y=ww_2x2[1],
+                        ww_x=ww_full[0] / 2,
+                        ww_y=ww_full[1] / 2,
+                        color=colors[i],
+                        marker_size=marker_size
+                    )
+                )
 
         else:
-            '''SWIM Annotations for Manual Alignments'''
-
-            logger.critical('Drawing SWIM Windows Layer for Manual Alignment...')
-            points = cfg.data.manpoints()[self.role]
-            logger.critical(f'len(points) : {len(points)}')
-            # logger.critical(f'dictionary points:\n{points}')
+            logger.info('Drawing SWIM Window Annotations for Manual Alignment...')
+            pts = list(self.pts.items())
+            assert len(pts) == len(cfg.data.manpoints()[self.role])
             annotations = []
-            half_win = int(cfg.data.manual_swim_window_px() / 2)
-
-            # if len(cfg.data.manpoints()[self.role]) > 0:
-            #     for i in range(len(points)):
-            #         pt = points[i]
-            #         x = pt[0]
-            #         y = pt[1]
-            #
-            #
-            #         A = [.5, y-half_win, x+half_win]
-            #         B = [.5, y+half_win, x+half_win]
-            #         C = [.5, y+half_win, x-half_win]
-            #         D = [.5, y-half_win, x-half_win]
-            #
-            #         # X_A = [.5, x - 25, y + 25]
-            #         # X_B = [.5, x + 25, y + 25]
-            #         # X_C = [.5, x + 25, y - 25]
-            #         # X_D = [.5, x - 25, y - 25]
-            #
-            #         color = self.mp_colors[i]
-            #
-            #         annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=[color, marker_size]))
-            #         annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=[color, marker_size]))
-            #         annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=[color, marker_size]))
-            #         annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=[color, marker_size]))
-            #
-            #         # annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
-            #         # annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
-            # else:
-            pts_list = list(self.pts.items())
-
-            logger.critical(f'len(pts_list) : {len(pts_list)}')
-            # logger.critical(f"pts list:\n{pts_list}")
-
-            for i in range(len(pts_list)):
-                pt = pts_list[i]
-                color = pt[0]
+            ww = cfg.data.manual_swim_window_px()
+            for i, pt in enumerate(pts):
                 coords = pt[1].point
-
-                x = coords[1]
-                y = coords[2]
-                A = [.5, x-half_win, y+half_win]
-                B = [.5, x+half_win, y+half_win]
-                C = [.5, x+half_win, y-half_win]
-                D = [.5, x-half_win, y-half_win]
-
-                # X_A = [.5, x - 25, y + 25]
-                # X_B = [.5, x + 25, y + 25]
-                # X_C = [.5, x + 25, y - 25]
-                # X_D = [.5, x - 25, y - 25]
-
-                annotations.append(ng.LineAnnotation(id='%d_L1'%i, pointA=A, pointB=B, props=[color, marker_size]))
-                annotations.append(ng.LineAnnotation(id='%d_L2'%i, pointA=B, pointB=C, props=[color, marker_size]))
-                annotations.append(ng.LineAnnotation(id='%d_L3'%i, pointA=C, pointB=D, props=[color, marker_size]))
-                annotations.append(ng.LineAnnotation(id='%d_L4'%i, pointA=D, pointB=A, props=[color, marker_size]))
-
-                # annotations.append(ng.LineAnnotation(id='%d_L5'%i, pointA=X_A, pointB=X_C, props=[color, marker_size]))
-                # annotations.append(ng.LineAnnotation(id='%d_L6'%i, pointA=X_B, pointB=X_D, props=[color, marker_size]))
-
-        # box = ng.AxisAlignedBoundingBoxAnnotation(
-        #     point_a=[.5, 50, 50],
-        #     point_b=[.5, 500, 500],
-        #     id="bounding-box",
-        # )
+                color = pt[0]
+                annotations.extend(
+                    self.makeRect(
+                        prefix=str(i),
+                        coords=(coords[2], coords[1]),
+                        ww_x=ww,
+                        ww_y=ww,
+                        color=color,
+                        marker_size=marker_size
+                    )
+                )
 
 
         with self.txn() as s:
-            # s.layers['bounding-box'] = ng.LocalAnnotationLayer(
-            #     dimensions=self.coordinate_space,
-            #     annotations=[box])
-            s.layers['ann_swim'] = ng.LocalAnnotationLayer(
+
+            s.layers['ann_auto'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
@@ -634,8 +556,25 @@ class MAViewer(neuroglancer.Viewer):
         # t.stop()
 
 
-    def makeSquare(self, size):
-        pass
+    def makeRect(self, prefix, coords, ww_x, ww_y, color, marker_size):
+        segments = []
+        x = coords[0]
+        y = coords[1]
+        hw = int(ww_x / 2) # Half-Width
+        hh = int(ww_y / 2) # Half-Height
+        # A = (.5, x - hw, y + hh)
+        # B = (.5, x + hw, y + hh)
+        # C = (.5, x + hw, y - hh)
+        # D = (.5, x - hw, y - hh)
+        A = (.5, y + hh, x - hw)
+        B = (.5, y + hh, x + hw)
+        C = (.5, y - hh, x + hw)
+        D = (.5, y - hh, x - hw)
+        segments.append(ng.LineAnnotation(id=prefix + '_L1', pointA=A, pointB=B, props=[color, marker_size]))
+        segments.append(ng.LineAnnotation(id=prefix + '_L2', pointA=B, pointB=C, props=[color, marker_size]))
+        segments.append(ng.LineAnnotation(id=prefix + '_L3', pointA=C, pointB=D, props=[color, marker_size]))
+        segments.append(ng.LineAnnotation(id=prefix + '_L4', pointA=D, pointB=A, props=[color, marker_size]))
+        return segments
 
 
 
@@ -674,7 +613,6 @@ class MAViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['brightness'] = val
-            # else:   layer.shaderControls['brightness'] = cfg.data.brightness()
             else:   layer.shaderControls['brightness'] = cfg.data.brightness
             # layer.volumeRendering = True
         self.set_state(state)
@@ -684,7 +622,6 @@ class MAViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['contrast'] = val
-            # else:   layer.shaderControls['contrast'] = cfg.data.contrast()
             else:   layer.shaderControls['contrast'] = cfg.data.contrast
             # layer.volumeRendering = True
         self.set_state(state)
@@ -748,8 +685,47 @@ if __name__ == '__main__':
     viewer.initViewer()
 
 
+    '''
+        box = ng.AxisAlignedBoundingBoxAnnotation(
+            point_a=[.5, 50, 50],
+            point_b=[.5, 500, 500],
+            id="bounding-box",
+        )
+        s.layers['bounding-box'] = ng.LocalAnnotationLayer(
+            dimensions=self.coordinate_space,
+            annotations=[box])
+    
+    A____AB_____B
+    |           |
+    DA   CP    BC
+    |           |
+    D____CD_____C 
+    
+    # logger.critical(f'A: {A}')
+    # logger.critical(f'B: {B}')
+    # logger.critical(f'C: {C}')
+    # logger.critical(f'D: {D}')
+    #
+    # logger.critical(f'AB: {AB}')
+    # logger.critical(f'BC: {BC}')
+    # logger.critical(f'CD: {CD}')
+    # logger.critical(f'DA: {DA}')
+    #
+    # logger.critical(f'half_w = {half_w}')
+    # logger.critical(f'half_h = {half_h}')
+    # logger.critical(f'offset_w = {offset_w}')
+    # logger.critical(f'offset_h = {offset_h}')
+    # logger.critical(f'siz_sw = {siz_sw}')
+    # logger.critical(f'siz_sh = {siz_sh}')
 
-
-    from src.funcs_zarr import get_zarr_tensor
-    sf = cfg.data.scale_val(s=cfg.data.scale)
-    path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+    11:46:55 [viewer_ma.drawSWIMwindow:442] A: [0.5, 720.0, 96.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:443] B: [0.5, 304.0, 96.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:444] C: [0.5, 304.0, 928.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:445] D: [0.5, 720.0, 928.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:447] AB: [0.5, 256.0, 96.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:448] BC: [0.5, 304.0, 512.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:449] CD: [0.5, 256.0, 928.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:450] DA: [0.5, 720.0, 512.0]
+    11:46:55 [viewer_ma.drawSWIMwindow:452] half_w = 512.0
+    11:46:55 [viewer_ma.drawSWIMwindow:453] half_h = 256.0
+    '''

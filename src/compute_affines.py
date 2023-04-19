@@ -51,9 +51,9 @@ def compute_affines(scale, start=0, end=None):
         #     # remove_aligned(al_substack) #0903 Moved into conditional
         #     dm.remove_aligned(scale, start, end)
 
-        corr_spots_dir = os.path.join(dm.dest(), scale, 'corr_spots')
-        if not os.path.exists(corr_spots_dir):
-            os.mkdir(corr_spots_dir)
+        signals_raw_dir = os.path.join(dm.dest(), scale, 'signals_raw')
+        if not os.path.exists(signals_raw_dir):
+            os.mkdir(signals_raw_dir)
 
         dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
         if rename_switch:
@@ -183,7 +183,7 @@ def compute_affines(scale, start=0, end=None):
         #     if layer['skipped']:
         #         continue
         #     fn = os.path.basename(layer['images']['base']['filename'])
-        #     out = os.path.join(corr_spots_dir, 'collated_' + fn)
+        #     out = os.path.join(signals_raw_dir, 'collated_' + fn)
         #     # out = os.path.join(dm.dest(), 'collated_' + fn)
         #     task_args = [sys.executable,
         #                  job_script,            # Python program to run (single_alignment_job)

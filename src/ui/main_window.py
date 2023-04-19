@@ -269,6 +269,9 @@ class MainWindow(QMainWindow):
 
     def warn(self, message):
         self.hud.post(message, level=logging.WARNING)
+        self.statusBar.showMessage(message, msecs=3000)
+        # self.statusBar.showMessage(message)
+        # self.statusBar.showMessage("<p style='color:red;'>" + message + "</p>")
         self.update()
 
 
@@ -405,13 +408,20 @@ class MainWindow(QMainWindow):
                 logger.warning('Corr spots widget it hidden -- returning...')
                 return
 
-            colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
-                      '#152c74', '#404f74', '#f3e375', '#5c4ccc',
-                      '#d6acd6', '#aaa672', '#152c74', '#404f74'
+            # colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
+            #           '#152c74', '#404f74', '#f3e375', '#5c4ccc',
+            #           '#d6acd6', '#aaa672', '#152c74', '#404f74'
+            #           ]
+
+            # self.mp_colors
+            colors = ['#75bbfd', '#e50000', '#ffd1df', '#efb435',
+                      '#69d84f', '#894585', '#70b23f', '#d4ffff',
+                      '#388004', '#4c9085', '#fcfc81', '#a5a391',
+                      '#acc2d9', '#fcfc81', '#b2996e', '#a8ff04',
                       ]
 
             snr_vals = cfg.data.snr_components()
-            thumbs = cfg.data.get_corr_spot_files()
+            thumbs = cfg.data.get_signals_filenames()
             n = len(thumbs)
 
             splitterSizes = self._splitter.sizes()
@@ -464,7 +474,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self._isProjectTab():
             snr_vals = cfg.data.snr_components()
-            thumbs = cfg.data.get_corr_spot_files()
+            thumbs = cfg.data.get_signals_filenames()
             n = len(thumbs)
             # logger.info('thumbs: %s' % str(thumbs))
             for i in range(7):
@@ -664,10 +674,10 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.generate_main())
+                    self.worker = BackgroundWorker(fn=cfg.thumb.reduce_main())
                     self.threadpool.start(self.worker)
                 else:
-                    cfg.thumb.generate_main()
+                    cfg.thumb.reduce_main()
 
             except:
                 print_exception()
@@ -737,10 +747,10 @@ class MainWindow(QMainWindow):
 
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
+                self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
                 self.threadpool.start(self.worker)
             else:
-                cfg.thumb.generate_aligned(start=start, end=end)
+                cfg.thumb.reduce_aligned(start=start, end=end)
         except:
             print_exception()
         finally:
@@ -916,7 +926,7 @@ class MainWindow(QMainWindow):
         scale = cfg.data.scale
         # is_realign = cfg.data.is_aligned(s=scale)
         # This SHOULD always work. Only set bounding box here. Then, during a single or partial alignment,
-        # generate_aligned will use the correct value that is consistent with the other images
+        # reduce_aligned will use the correct value that is consistent with the other images
         # at the same scale
         if self._toggleAutogenerate.isChecked():
             cfg.nTasks = 5
@@ -1061,9 +1071,9 @@ class MainWindow(QMainWindow):
             self.setPbarText('Scaling Correlation Signal Thumbnails...')
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.generate_corr_spot(start=start, end=end))
+                self.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
                 self.threadpool.start(self.worker)
-            else: cfg.thumb.generate_corr_spot(start=start, end=end)
+            else: cfg.thumb.reduce_signals(start=start, end=end)
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
         # else:   logger.info('Correlation Spot Thumbnail Generation Finished')
 
@@ -1097,9 +1107,9 @@ class MainWindow(QMainWindow):
 
                 try:
                     if cfg.USE_EXTRA_THREADING:
-                        self.worker = BackgroundWorker(fn=cfg.thumb.generate_aligned(start=start, end=end))
+                        self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
                         self.threadpool.start(self.worker)
-                    else: cfg.thumb.generate_aligned(start=start, end=end)
+                    else: cfg.thumb.reduce_aligned(start=start, end=end)
                 except:
                     print_exception()
                 finally:
@@ -1224,7 +1234,7 @@ class MainWindow(QMainWindow):
         self._btn_regenerate.setEnabled(True)
         self._scaleDownButton.setEnabled(True)
         self._scaleUpButton.setEnabled(True)
-        self._ctlpanel_applyAllButton.setEnabled(True)
+        # self._ctlpanel_applyAllButton.setEnabled(True)
         self._skipCheckbox.setEnabled(True)
         self._whiteningControl.setEnabled(True)
         self._swimWindowControl.setEnabled(True)
@@ -1252,7 +1262,7 @@ class MainWindow(QMainWindow):
             self._btn_clear_skips.setEnabled(True)
             self._swimWindowControl.setEnabled(True)
             self._whiteningControl.setEnabled(True)
-            self._ctlpanel_applyAllButton.setEnabled(True)
+            # self._ctlpanel_applyAllButton.setEnabled(True)
         else:
             self._skipCheckbox.setEnabled(False)
             self._whiteningControl.setEnabled(False)
@@ -1261,7 +1271,7 @@ class MainWindow(QMainWindow):
             self._bbToggle.setEnabled(False)
             self._polyBiasCombo.setEnabled(False)
             self._btn_clear_skips.setEnabled(False)
-            self._ctlpanel_applyAllButton.setEnabled(False)
+            # self._ctlpanel_applyAllButton.setEnabled(False)
 
         if cfg.data:
             # if cfg.data.is_aligned_and_generated(): #0202-
@@ -1468,7 +1478,10 @@ class MainWindow(QMainWindow):
                 # logger.critical(f'cfg.data.zpos = {cfg.data.zpos}')
                 # self.statusBar.showMessage(cfg.data.name_base(), 1000)
 
-                self.statusBar.showMessage(cfg.data.name_base())
+                img_siz = cfg.data.image_size()
+                self.statusBar.showMessage(cfg.data.scale_pretty() + ' - ' +
+                                           'x'.join(map(str,img_siz)) + ' | ' +
+                                           cfg.data.name_base(), msecs=3000)
 
                 cfg.project_tab._overlayRect.hide()
                 cfg.project_tab._overlayLab.hide()
@@ -1499,7 +1512,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.dataUpdateMA()
                     # if prev_loc != cfg.data.zpos:
                     # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
-                    cfg.project_tab.set_method_label_text()
+                    # cfg.project_tab.set_method_label_text()
 
                 if cfg.project_tab._tabs.currentIndex() == 2:
                     cfg.project_tab.treeview_model.jumpToLayer()
@@ -1516,23 +1529,23 @@ class MainWindow(QMainWindow):
                         snr_vals = cfg.data.snr_components()
                         n = len(snr_vals)
                         if (n >= 1) and (snr_vals[0] > .001):
-                            cfg.project_tab.cs0.set_data(path=cfg.data.corr_spot_q0_path(), snr=snr_vals[0])
+                            cfg.project_tab.cs0.set_data(path=cfg.data.signal_q0_path(), snr=snr_vals[0])
                         else:
                             cfg.project_tab.cs0.set_no_image()
                         if (n >= 2):
-                            cfg.project_tab.cs1.set_data(path=cfg.data.corr_spot_q1_path(), snr=snr_vals[1])
+                            cfg.project_tab.cs1.set_data(path=cfg.data.signal_q1_path(), snr=snr_vals[1])
                         else:
                             cfg.project_tab.cs1.set_no_image()
                         if (n >= 3):
-                            cfg.project_tab.cs2.set_data(path=cfg.data.corr_spot_q2_path(), snr=snr_vals[2])
+                            cfg.project_tab.cs2.set_data(path=cfg.data.signal_q2_path(), snr=snr_vals[2])
                         else:
                             cfg.project_tab.cs2.set_no_image()
                         if (n >= 4):
-                            cfg.project_tab.cs3.set_data(path=cfg.data.corr_spot_q3_path(), snr=snr_vals[3])
+                            cfg.project_tab.cs3.set_data(path=cfg.data.signal_q3_path(), snr=snr_vals[3])
                         else:
                             cfg.project_tab.cs3.set_no_image()
                     elif cfg.data.method() == 'Manual-Hint':
-                        files = cfg.data.get_corr_spot_files()
+                        files = cfg.data.get_signals_filenames()
                         snr_vals = cfg.data.snr_components()
                         n = len(files)
                         if n >= 1:
@@ -1632,7 +1645,7 @@ class MainWindow(QMainWindow):
                 except:  logger.warning('Whitening Input Widget Failed to Update')
                 try:
                     self._swimWindowControl.setMaximum(min(cfg.data.image_size()))
-                    self._swimWindowControl.setValue(cfg.data.swim_window_px())
+                    self._swimWindowControl.setValue(cfg.data.swim_window_px()[0])
                 except:
                     logger.warning('Swim Input Widget Failed to Update')
 
@@ -1895,8 +1908,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def reload_scales_combobox(self) -> None:
         if self._isProjectTab():
-            self._changeScaleCombo.show()
             logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
+            self._changeScaleCombo.show()
             self._scales_combobox_switch = 0
             self._changeScaleCombo.clear()
             def pretty_scales():
@@ -1913,34 +1926,35 @@ class MainWindow(QMainWindow):
 
 
     def fn_scales_combobox(self) -> None:
-        if getData('state,manual_mode'):
-            self.hud.warn('Exit manual alignment mode before changing scales')
-            # scale = cfg.data.scale
-            # scale_index = cfg.data.scales()[index]
-            # index = self._changeScaleCombo.currentIndex()
-            # cfg.data.scale = cfg.data.scales()[index]
-            # self._changeScaleCombo.setCurrentText(cfg.data.scale)
-            return
+        caller = inspect.stack()[1].function
+        logger.info('caller: %s' % caller)
+        if caller == 'main':
 
-        if not self._working:
-            if self._scales_combobox_switch:
-                if self._isProjectTab():
-                    caller = inspect.stack()[1].function
-                    logger.info('caller: %s' % caller)
-                    if caller in ('main', 'scale_up', 'scale_down'):
-                        # if getData('state,manual_mode'):
-                        #     self.exit_man_mode()
-                        # 0414-
-                        index = self._changeScaleCombo.currentIndex()
-                        cfg.data.scale = cfg.data.scales()[index]
-                        try:
-                            cfg.project_tab.updateProjectLabels()
-                        except:
-                            pass
-                        self.updateEnabledButtons()
-                        self.dataUpdateWidgets()
-                        self._showSNRcheck()
-                        cfg.project_tab.refreshTab()
+            if getData('state,manual_mode'):
+                self.reload_scales_combobox()
+                logger.warning('Exit manual alignment mode before changing scales')
+                self.warn('Exit manual alignment mode before changing scales!')
+                return
+
+            if not self._working:
+                if self._scales_combobox_switch:
+                    if self._isProjectTab():
+                        caller = inspect.stack()[1].function
+                        logger.info('caller: %s' % caller)
+                        if caller in ('main', 'scale_up', 'scale_down'):
+                            # if getData('state,manual_mode'):
+                            #     self.exit_man_mode()
+                            # 0414-
+                            index = self._changeScaleCombo.currentIndex()
+                            cfg.data.scale = cfg.data.scales()[index]
+                            try:
+                                cfg.project_tab.updateProjectLabels()
+                            except:
+                                pass
+                            self.updateEnabledButtons()
+                            self.dataUpdateWidgets()
+                            self._showSNRcheck()
+                            cfg.project_tab.refreshTab()
 
 
 
@@ -3097,6 +3111,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setStatusTip('Refresh')
 
         self.combo_mode = QComboBox(self)
+        self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600;')
         self.combo_mode.setFixedSize(150, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
@@ -3791,8 +3806,8 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 if getData('state,manual_mode'):
                     if not getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
-                        cfg.refViewer.undraw_point_annotations()
-                        cfg.baseViewer.undraw_point_annotations()
+                        cfg.refViewer.undrawSWIMwindows()
+                        cfg.baseViewer.undrawSWIMwindows()
                     else:
                         cfg.refViewer.drawSWIMwindow()
                         cfg.baseViewer.drawSWIMwindow()
@@ -4340,7 +4355,7 @@ class MainWindow(QMainWindow):
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
-        tip = 'Set Whether to Use or Reject the Current Layer'
+        tip = 'Keep or Reject the Current Section'
         self._lab_keep_reject = QLabel('Reject:')
         self._lab_keep_reject.setStatusTip(tip)
         self._skipCheckbox = QCheckBox()
@@ -4427,16 +4442,16 @@ class MainWindow(QMainWindow):
 
 
 
-        # tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
-        self._ctlpanel_applyAllButton = QPushButton("Apply Settings\nEverywhere")
-        self._ctlpanel_applyAllButton.setStyleSheet('font-size: 8px;')
-        # self._ctlpanel_applyAllButton = QPushButton("Apply To All")
-        self._ctlpanel_applyAllButton.setEnabled(False)
-        self._ctlpanel_applyAllButton.setStatusTip('Apply These Settings To The Entire Image Stack')
-        self._ctlpanel_applyAllButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._ctlpanel_applyAllButton.clicked.connect(self.apply_all)
-        # self._ctlpanel_applyAllButton.setFixedSize(QSize(54, 20))
-        self._ctlpanel_applyAllButton.setFixedSize(normal_button_size)
+        # # tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
+        # self._ctlpanel_applyAllButton = QPushButton("Apply Settings\nEverywhere")
+        # self._ctlpanel_applyAllButton.setStyleSheet('font-size: 8px;')
+        # # self._ctlpanel_applyAllButton = QPushButton("Apply To All")
+        # self._ctlpanel_applyAllButton.setEnabled(False)
+        # self._ctlpanel_applyAllButton.setStatusTip('Apply These Settings To The Entire Image Stack')
+        # self._ctlpanel_applyAllButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self._ctlpanel_applyAllButton.clicked.connect(self.apply_all)
+        # # self._ctlpanel_applyAllButton.setFixedSize(QSize(54, 20))
+        # self._ctlpanel_applyAllButton.setFixedSize(normal_button_size)
 
         # hbl = QHBoxLayout()
         # hbl.setContentsMargins(0, 0, 0, 0)
@@ -4593,8 +4608,7 @@ class MainWindow(QMainWindow):
         self._ctlpanel_toggleAutogenerate.setMaximumHeight(34)
         self._ctlpanel_toggleAutogenerate.setLayout(vbl)
 
-        tip = 'Polynomial bias (default=None). Affects aligned images including their pixel dimension. This' \
-              ' option is set at the coarsest s, in order to form a contiguous dataset.'
+        tip = 'Polynomial bias correction (default=None), alters the generated images including their width and height.'
         lab = QLabel("Corrective Polynomial:")
         lab.setAlignment(right)
         lab.setStatusTip(tip)
@@ -4617,8 +4631,8 @@ class MainWindow(QMainWindow):
         self._ctlpanel_polyOrder.setLayout(vbl)
 
 
-        tip = 'Bounding rectangle (only applies to "Align All"). Caution: Turning this ON may ' \
-              'significantly increase the size of your aligned images.'
+        tip = 'Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may ' \
+              'significantly increase the size of generated images.'
         lab = QLabel("Bounding Box:")
         lab.setAlignment(center)
         lab.setStatusTip(tip)
@@ -4655,7 +4669,7 @@ class MainWindow(QMainWindow):
 
         self._wdg_alignButtons = QWidget()
         hbl = HBL()
-        hbl.addWidget(self._ctlpanel_applyAllButton)
+        # hbl.addWidget(self._ctlpanel_applyAllButton)
         hbl.addWidget(self._btn_regenerate)
         hbl.addWidget(self._btn_alignOne)
         hbl.addWidget(self.sectionRangeSlider)
@@ -4740,8 +4754,8 @@ class MainWindow(QMainWindow):
         # cpanel_hwidget2.layout.setSpacing(0)
         # cpanel_hwidget2.setStyleSheet(style)
 
-        lab = QLabel('Control Panel')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        lab = QLabel('Global Default Settings')
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
         lab.setStyleSheet(
             """
             color: #f3f6fb; 

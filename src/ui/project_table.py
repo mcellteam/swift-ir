@@ -286,10 +286,10 @@ class ProjectTable(QWidget):
 
             if is_aligned:
                 self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.snr_list(),
-                                  cfg.data.thumbnails(), ref, cfg.data.thumbnails_aligned(),
-                                  cfg.data.corr_spots_q0(), cfg.data.corr_spots_q1(),
-                                  cfg.data.corr_spots_q2(), cfg.data.corr_spots_q3(), datetime,
-                                  scale, skips, method, snr_report))
+                                     cfg.data.thumbnails(), ref, cfg.data.thumbnails_aligned(),
+                                     cfg.data.signals_q0(), cfg.data.signals_q1(),
+                                     cfg.data.signals_q2(), cfg.data.signals_q3(), datetime,
+                                     scale, skips, method, snr_report))
             else:
                 self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),
                                   ref, scale, skips, method))
