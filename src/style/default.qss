@@ -1,10 +1,26 @@
+QSplitter {
+  spacing: 0px;
+  padding: 0px;
+  margin: 0px;
+}
+
+QSplitter::handle {
+  background-color: #555555;
+  border: 0px solid #FAFAFA;
+  spacing: 0px;
+  padding: 1px;
+  margin: 0px;
+}
+
+QSplitter::handle:hover {
+  background-color: #339933;
+}
+
 
 QWidget {
     font-size: 11px;
     font-family: Tahoma, sans-serif;
 }
-
-
 
 QDockWidget {
     color: #ede9e8;
@@ -80,6 +96,7 @@ QComboBox {
     font-family: Tahoma, sans-serif;
     border-radius: 4px;
     border-width: 0px;
+    text-align: center;
 
 }
 
@@ -210,12 +227,13 @@ QProgressBar {
 
 /* QProgressBar::chunk { background-color: #339933; } */
 
+/*
 QProgressBar::chunk {
     border: 1px solid #339933;
     width: 6px;
     margin: 1px;
 }
-
+*/
 
  /* ---- QMenu/QMenuBar  ---- */
 
@@ -334,12 +352,12 @@ QScrollBar:vertical {
     /*background-color: #1b1e23;*/
     width: 10px;
  }
+
 QScrollBar:horizontal {
     border: none;
     /*background-color: #1b1e23;*/
-    width: 10px;
+    height: 10px;
 }
-
 
 
 QLineEdit {

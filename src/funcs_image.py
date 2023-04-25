@@ -29,7 +29,7 @@ def imageio_read_image(img_path:str):
     '''
     Load A Single Image Into a Numpy Array
     :param image_path: Path to image on disk.
-    :type image_path: str
+    :cur_method image_path: str
     :return: The image as a numpy array.
     :rtype: numpy.ndarray
     '''
@@ -55,7 +55,7 @@ def ImageSize(file_path):
     moduleauthor:: Tom Bartol - stripped down to bare bones
     moduleauthor:: Paulo Scardine - based on code by Emmanuel Vaisse
     :param file_path: The image to get size of.
-    :type file_path: str.
+    :cur_method file_path: str.
     :returns:  (width, height) for a given img file content
     :rtype: (int, int)
     '''
@@ -129,7 +129,7 @@ def ImageSize(file_path):
             # supported currently
             byteOrder = data[:2]
             boChar = '>' if byteOrder == b'MM' else "<"
-            # maps TIFF type id to size (in bytes)
+            # maps TIFF cur_method id to size (in bytes)
             # and python format char for struct
             tiffTypes = {
                 1: (1, boChar + "B"),  # BYTE
@@ -151,7 +151,7 @@ def ImageSize(file_path):
                 input.seek(ifdOffset)
                 ec = input.read(countSize)
                 ifdEntryCount = struct.unpack(boChar + "H", ec)[0]
-                # 2 bytes: TagId + 2 bytes: type + 4 bytes: count of values + 4
+                # 2 bytes: TagId + 2 bytes: cur_method + 4 bytes: count of values + 4
                 # bytes: value offset
                 ifdEntrySize = 12
                 for i in range(ifdEntryCount):
@@ -160,13 +160,13 @@ def ImageSize(file_path):
                     tag = input.read(2)
                     tag = struct.unpack(boChar + "H", tag)[0]
                     if (tag == 256 or tag == 257):
-                        # if type indicates that value fits into 4 bytes, value
+                        # if cur_method indicates that value fits into 4 bytes, value
                         # offset is not an offset but value itself
                         type = input.read(2)
                         type = struct.unpack(boChar + "H", type)[0]
                         if type not in tiffTypes:
                             raise UnknownImageFormat(
-                                "Unkown TIFF field type:" +
+                                "Unkown TIFF field cur_method:" +
                                 str(type))
                         typeSize = tiffTypes[type][0]
                         typeChar = tiffTypes[type][1]
@@ -781,7 +781,7 @@ class StripNullFields:
 #
 # def write_multipage(arrays, filename, flags=0):
 #     """Write a list of (height, width) or (height, width, nchannels)
-#     arrays to a multipage greyscale, RGB, or RGBA image, with file type
+#     arrays to a multipage greyscale, RGB, or RGBA image, with file cur_method
 #     deduced from the filename.
 #     The `flags` parameter should be one or more values from the IO_FLAGS
 #     class defined in this module, or-ed together with | as appropriate.
@@ -791,7 +791,7 @@ class StripNullFields:
 #     filename = asbytes(filename)
 #     ftype = _FI.FreeImage_GetFIFFromFilename(filename)
 #     if ftype == -1:
-#         raise ValueError('Cannot determine type of file %s' % filename)
+#         raise ValueError('Cannot determine cur_method of file %s' % filename)
 #     create_new = True
 #     read_only = False
 #     keep_cache_in_memory = True
@@ -830,7 +830,7 @@ class StripNullFields:
 #     try:
 #         fi_type = FI_TYPES.fi_types[(dtype, n_channels)]
 #     except KeyError:
-#         raise ValueError('Cannot write arrays of given type and shape.')
+#         raise ValueError('Cannot write arrays of given cur_method and shape.')
 #
 #     itemsize = array.dtype.itemsize
 #     bpp = 8 * itemsize * n_channels
@@ -845,7 +845,7 @@ class StripNullFields:
 #         # swizzle the color components and flip the scanlines to go to
 #         # FreeImage's BGR[A] and upside-down internal memory format
 #         if len(shape) == 3 and _FI.FreeImage_IsLittleEndian() and \
-#                dtype.type == np.uint8:
+#                dtype.cur_method == np.uint8:
 #             wrapped_array[0] = n(array[:, :, 2])
 #             wrapped_array[1] = n(array[:, :, 1])
 #             wrapped_array[2] = n(array[:, :, 0])
@@ -853,7 +853,7 @@ class StripNullFields:
 #                 wrapped_array[3] = n(array[:, :, 3])
 #         else:
 #             wrapped_array[:] = n(array)
-#         if len(shape) == 2 and dtype.type == np.uint8:
+#         if len(shape) == 2 and dtype.cur_method == np.uint8:
 #             palette = _FI.FreeImage_GetPalette(bitmap)
 #             palette = ctypes.c_void_p(palette)
 #             if not palette:
@@ -952,7 +952,7 @@ class StripNullFields:
 #         h = _FI.FreeImage_GetHeight(bitmap)
 #         fi_type = _FI.FreeImage_GetImageType(bitmap)
 #         if not fi_type:
-#             raise ValueError('Unknown image pixel type')
+#             raise ValueError('Unknown image pixel cur_method')
 #         dtype = cls.dtypes[fi_type]
 #         if fi_type == cls.FIT_BITMAP:
 #             bpp = _FI.FreeImage_GetBPP(bitmap)
@@ -981,7 +981,7 @@ class StripNullFields:
 #     root_container_path: Path,
 # ):
 #     store_arrays = []
-#     # sharding = {'@type': 'neuroglancer_uint64_sharded_v1',
+#     # sharding = {'@cur_method': 'neuroglancer_uint64_sharded_v1',
 #     #       'preshift_bits': 9,
 #     #        'hash': 'identity',
 #     #        'minishard_index_encoding': 'gzip',
@@ -1010,7 +1010,7 @@ class StripNullFields:
 #             "multiscale_metadata": {
 #                 "data_type": p.dtype.name,
 #                 "num_channels": 1,
-#                 "type": "image",
+#                 "cur_method": "image",
 #             },
 #         }
 #         try:

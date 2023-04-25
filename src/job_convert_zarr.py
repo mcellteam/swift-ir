@@ -107,7 +107,7 @@ Out[24]:
 [('Name', '/'),
  ('Type', 'zarr.hierarchy.Group'),
  ('Read-only', 'False'),
- ('Store type', 'zarr.storage.DirectoryStore'),
+ ('Store cur_method', 'zarr.storage.DirectoryStore'),
  ('No. members', 37),
  ('No. arrays', 37),
  ('No. groups', 0),

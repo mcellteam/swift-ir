@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 #         coordinate_space=self.coordinate_space,
 #         annotation_type='point',
 #         properties=[
-#             ng.AnnotationPropertySpec(id='size', type='float32'),
-#             ng.AnnotationPropertySpec(id='cell_type', type='uint16'),
-#             ng.AnnotationPropertySpec(id='point_color', type='rgba'),
+#             ng.AnnotationPropertySpec(id='size', cur_method='float32'),
+#             ng.AnnotationPropertySpec(id='cell_type', cur_method='uint16'),
+#             ng.AnnotationPropertySpec(id='point_color', cur_method='rgba'),
 #         ],
 #     )
 #     writer.add_point([0, 0, 0], size=10, cell_type=16, point_color=(0, 255, 0, 255))

@@ -13,9 +13,9 @@ def save_bias_analysis(layers, bias_path):
     """
     Saves bias analysis results to separate '.dat' files in the datamodel directory. Called by 'compute_affines'.
     :param layers: Iterator over the alignment layer datamodel to be saved
-    :type layers: ScaleIterator
+    :cur_method layers: ScaleIterator
     :param bias_path: Path to where the bias datamodel will be saved.
-    :type bias_path: str
+    :cur_method bias_path: str
     """
 
     logger.info('Saving Bias Data (.dat) to Path %s' % bias_path)

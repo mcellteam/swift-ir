@@ -7,7 +7,7 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QTableWidget, QTableWidgetItem, QSlider
+    QTableWidget, QTableWidgetItem, QSlider, QSizePolicy
 from qtpy.QtCore import Qt, QRect, QSize, QPoint
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
 from src.helpers import absFilePaths
@@ -79,17 +79,35 @@ class Thumbnail(QWidget):
 
 
 class ThumbnailFast(QLabel):
-    def __init__(self, parent, path, extra=''):
+    def __init__(self, parent, path=None, extra=''):
         super().__init__(parent)
         self.setScaledContents(True)
-        self.path = path
-        self.setPixmap(QPixmap(self.path))
+        if path:
+            self.path = path
+            self.setPixmap(QPixmap(self.path))
         self.extra = extra
         # self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image_.png')
         # self.repaint()
+        self.border_color = '#000000'
+        self.showBorder = False
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+    def showPixmap(self):
+        self.setPixmap(QPixmap(self.path))
+
+    def updateStylesheet(self):
+        if self.showBorder:
+            self.setStyleSheet(f"border: 3px solid {self.border_color};")
+        else:
+            self.setStyleSheet("")
+
 
     def paintEvent(self, event):
         if self.pixmap():
+            # if self.showBorder:
+            #     self.setStyleSheet(f"border: 3px solid {self.border_color};")
+            # else:
+            #     self.setStyleSheet("")
             try:
                 pm = self.pixmap()
                 originalRatio = pm.width() / pm.height()
@@ -112,6 +130,9 @@ class ThumbnailFast(QLabel):
                 # print_exception()
                 pass
         super().paintEvent(event)
+
+    def resizeEvent(self, e):
+        self.setMaximumWidth(self.height())
 
 
 

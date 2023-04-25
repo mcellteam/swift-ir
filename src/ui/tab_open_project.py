@@ -263,7 +263,7 @@ class OpenProject(QWidget):
             if result == 1:
                 cfg.main_window.warn('No images were imported - canceling new project')
                 return
-            cfg.data.set_defaults()
+            # cfg.data.set_defaults()
             recipe_dialog = ScaleProjectDialog(parent=self)
             result = recipe_dialog.exec()
             # makedirs_exist_ok(path, exist_ok=True)
@@ -499,6 +499,7 @@ class UserProjects(QWidget):
         self.table.setWordWrap(True)
         self.table.setStyleSheet('font-size: 10px;')
         self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)

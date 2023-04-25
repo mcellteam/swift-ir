@@ -65,7 +65,7 @@ class ToggleSwitch(QCheckBox):
 
     def paintEvent(self, e: QPaintEvent):
 
-        contRect = self.contentsRect() #0610 #TypeError: moveCenter(self, QPointF): argument 1 has unexpected type 'QPoint'
+        contRect = self.contentsRect() #0610 #TypeError: moveCenter(self, QPointF): argument 1 has unexpected cur_method 'QPoint'
         # contRect = QPointF(self.contentsRect()) #0613
         self.width = contRect.width() * self._h_scale
         self.height = contRect.height() * self._v_scale

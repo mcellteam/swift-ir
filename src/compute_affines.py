@@ -27,7 +27,12 @@ def compute_affines(scale, start=0, end=None):
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Compute Affine Tasks')
     else:
-        logger.critical('Computing Affines...')
+        logger.info(f'\n\n----------------------------------------------------\n'
+                    f'Computing Affines...\n'
+                    f'----------------------------------------------------\n')
+
+        if end == None:
+            end = cfg.data.count
 
         scratchpath = os.path.join(cfg.data.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
@@ -71,6 +76,8 @@ def compute_affines(scale, start=0, end=None):
         temp_file = os.path.join(dm.dest(), "temp_project_file.json")
         with open(temp_file, 'w') as f:
             f.write(dm.to_json())
+
+        delete_correlation_signals(scale=scale, start=start, end=end)
 
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks)
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
@@ -206,6 +213,16 @@ def compute_affines(scale, start=0, end=None):
         logger.critical(f'onAlignmentEnd, dt = {dt}')
 
         logger.info('<<<< Compute Affines End <<<<')
+
+
+def delete_correlation_signals(scale, start, end):
+    logger.info('')
+    for i in range(start, end):
+        sigs = cfg.data.get_signals_filenames(s=scale, l=i)
+        logger.info(f'Deleting:\n{sigs}')
+        for f in sigs:
+            if os.path.isfile(f):  # this makes the code more robust
+                os.remove(f)
 
 
 def checkForTiffs(path) -> bool:

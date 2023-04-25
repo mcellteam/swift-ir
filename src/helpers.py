@@ -1019,7 +1019,7 @@ def create_paged_tiff():
 #     elif isinstance(paths, Sequence):
 #         result = bag.from_delayed([delf(p) for p in paths])
 #     else:
-#         raise TypeError(f"Input must be a string or a sequence, not {type(paths)}")
+#         raise TypeError(f"Input must be a string or a sequence, not {cur_method(paths)}")
 #
 #     if compute:
 #         return result.compute(scheduler="threads")

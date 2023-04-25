@@ -61,7 +61,7 @@ class ProjectTable(QWidget):
         self.tableFinishedLoading.connect(self.onTableFinishedLoading)
 
     # def onDoubleClick(self, item=None):
-    #     print(type(item))
+    #     print(cur_method(item))
         # userSelectionChanged
         # cfg.main_window.open_project_selected()
 
@@ -122,7 +122,8 @@ class ProjectTable(QWidget):
                 for i, row in enumerate(self.data):
                     # logger.info('Inserting row %d' % i)
                     self.table.insertRow(i)
-                    snr_4x = cfg.data.snr_components(l=i)
+                    # snr_4x = cfg.data.snr_components(l=i)
+                    snr_4x = cfg.data.snr_components(l=i, method='grid-default')
                     for j, item in enumerate(row):
                         if j == 0:
                             # item = '<h4>' + item + '</h4>'
