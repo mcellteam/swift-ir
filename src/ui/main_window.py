@@ -3284,10 +3284,31 @@ class MainWindow(QMainWindow):
         if caller not in ('onStartProject', '_setLastTab'):
             self.shutdownNeuroglancer() #0329+
 
+        tabtype = self._getTabType()
+        if tabtype == 'ProjectTab':
+            logger.critical('Loading Project Tab...')
+            self.cpanelFrame.show()
+            self.statusBar.setStyleSheet("""
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: #ede9e8;
+                    background-color: #222222;
+                    margin: 0px;
+                    padding: 0px;
+                    """)
+        else:
+            self.statusBar.setStyleSheet("""
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: #141414;
+                    background-color: #ede9e8;
+                    margin: 0px;
+                    padding: 0px;
+                    """)
 
-        # if caller  == '_setLastTab':
-        #     logger.critical('\n\n\n<<<<< DONT REINIT (caller = _setLastTab)! >>>>>\n\n\n')
-        #     return
+        if caller  == '_setLastTab':
+            logger.critical('\n\n<<<<< DONT REINIT (caller = _setLastTab)! >>>>>\n')
+            return
 
         cfg.project_tab = None
         cfg.zarr_tab = None
@@ -3295,18 +3316,12 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()  #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
         self._changeScaleCombo.clear()
-        self.clearCorrSpotsDrawer()
+        self._changeScaleCombo.setEnabled(True) #needed for disable on MA
+        # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
-        tabtype = self._getTabType()
+
         self._splitter.hide() #0424-
-        self.statusBar.setStyleSheet("""
-                font-size: 10px;
-                font-weight: 600;
-                color: #141414;
-                background-color: #ede9e8;
-                margin: 0px;
-                padding: 0px;
-                """)
+
 
         # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
