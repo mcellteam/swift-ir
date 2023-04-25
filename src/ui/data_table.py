@@ -88,12 +88,12 @@ class DataTable(QMainWindow):
 
     def selected_rows_changed(self):
         '''Slot That Connects To Selection Changed Signal
-        type(self.selection()['Group_1'])) = <class 'pandas.core.series.Series'>
-        type(self.selection()) = <class 'pandas.core.frame.DataFrame'>
+        cur_method(self.selection()['Group_1'])) = <class 'pandas.core.series.Series'>
+        cur_method(self.selection()) = <class 'pandas.core.frame.DataFrame'>
         '''
 
-        # print("type(self.selection()['Group_1'])) %s" % type(self.selection()['Group_1']))
-        # print("type(self.selection()) %s" % type(self.selection()) )
+        # print("cur_method(self.selection()['Group_1'])) %s" % cur_method(self.selection()['Group_1']))
+        # print("cur_method(self.selection()) %s" % cur_method(self.selection()) )
 
         # This returns the name of the function callER (the function that called this function). Useful trick.
         # We want to short-ciruit this function when called automatically by 'self.clear_selection'
@@ -116,8 +116,8 @@ class DataTable(QMainWindow):
 
     def grp1_avg(self):
         '''Compute Group 1 Average From Selection
-        type(self.selection()) = <class 'pandas.core.frame.DataFrame'>
-        *** Now that we know the type, we can see that '.mean()' is a method/function belonging to a pandas
+        cur_method(self.selection()) = <class 'pandas.core.frame.DataFrame'>
+        *** Now that we know the cur_method, we can see that '.mean()' is a method/function belonging to a pandas
         dataframe... If we wanted to do something other than average, we would want to look at pandas
         documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/basics.html ***
         '''

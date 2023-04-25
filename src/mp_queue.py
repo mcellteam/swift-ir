@@ -252,9 +252,7 @@ class TaskQueue(QObject):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         self.MPQLogger.critical(f'\n\nGathering Results...\n'
                                 f'Time              : {timestamp}\n'
-                                f'# Tasks           : {self.n_tasks}\n'
                                 f'len(task dict)    : {len(self.task_dict)}\n'
-                                f'len(taskNameList) : {len(self.taskNameList)}\n'
                                 f'Pbar Text         : {self.pbar_text}\n'
                                 f'Task Prefix       : {self.taskPrefix}\n'
                                 f'# Workers         : {self.n_workers}\n'
@@ -300,7 +298,7 @@ class TaskQueue(QObject):
                     if not cfg.ignore_pbar:
                         try:
 
-                            self.parent.updatePbar(self.n_tasks - realtime)
+                            self.parent.updatePbar(n_tasks - realtime)
                             if self.taskPrefix and self.taskNameList:
                                 try:
                                     name = self.taskNameList[img_index]
@@ -310,7 +308,7 @@ class TaskQueue(QObject):
                                     # print_exception()
                                     logger.warning('Improperly sized taskNameList! [size=%d] '
                                                    '[prefix=%s] '
-                                                   '[n_tasks=%d]' %(len(self.taskNameList), self.taskPrefix, self.n_tasks))
+                                                   '[n_tasks=%d]' %(len(self.taskNameList), self.taskPrefix, n_tasks))
                                 QApplication.processEvents()
                         except:
                             # print_exception()

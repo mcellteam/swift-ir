@@ -14,6 +14,7 @@ import argparse
 import functools
 import time
 from collections import OrderedDict
+from functools import cache
 import numpy as np
 import numcodecs
 import zarr
@@ -59,29 +60,18 @@ class MAViewer(neuroglancer.Viewer):
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         self._settingZoom = True
-        # self._layer = None
         self._layer = cfg.data.zpos
         self.cs_scale = None
-        # self.pts = {}
         self.pts = OrderedDict()
-        # self.mp_colors = ['#f3e375', '#5c4ccc', '#800000', '#aaa672',
-        #                   '#152c74', '#404f74', '#f3e375', '#5c4ccc',
-        #                   '#d6acd6', '#aaa672', '#152c74', '#404f74'
-        #                   ]
-
-        self.mp_colors = ['#75bbfd', '#e50000', '#ffd1df', '#efb435',
-                          '#69d84f', '#894585', '#70b23f', '#d4ffff',
-                          '#388004', '#4c9085', '#fcfc81', '#a5a391',
-                          '#acc2d9', '#fcfc81', '#b2996e', '#a8ff04',
-                          ]
+        self.colors = cfg.glob_colors
         self._crossSectionScale = 1
         self._mpCount = 0
         self._zmag_set = 0
         self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(self.on_state_changed_any)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        self.signals.ptsChanged.connect(self.drawSWIMwindow)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.signals.ptsChanged.connect(self.drawSWIMwindow)
         self.type = 'MAViewer'
 
         logger.info('viewer constructed!')
@@ -196,17 +186,14 @@ class MAViewer(neuroglancer.Viewer):
 
 
         with self.txn() as s:
-
             s.layout.type = 'yz'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.show_scale_bar = False
-            # s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_axis_lines = False
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
-            # s.crossSectionBackgroundColor = '#808080' # 128 grey
             if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
@@ -228,10 +215,6 @@ class MAViewer(neuroglancer.Viewer):
             s.show_ui_controls = False
             s.show_panel_borders = False
 
-        # if cfg.data.method() != 'Auto-SWIM':
-        #     self.draw_point_annotations()
-
-        # if getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
         self.drawSWIMwindow()
 
         if self.webengine:
@@ -256,7 +239,7 @@ class MAViewer(neuroglancer.Viewer):
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
 
-        logger.info(f'on_state_changed_any zpos={cfg.data.zpos} [{self.type} {self.role}] [{caller}] >>>>')
+        # logger.info(f'on_state_changed_any zpos={cfg.data.zpos} [{self.type} {self.role}] [{caller}] >>>>')
         self.signals.stateChangedAny.emit()
 
 
@@ -288,7 +271,7 @@ class MAViewer(neuroglancer.Viewer):
         for i, point in enumerate(points):
             annotations.append(ng.PointAnnotation(id=repr(point),
                                                   point=point,
-                                                  props=[self.mp_colors[i % 3],
+                                                  props=[self.colors[i % 3],
                                                          size,
                                                          lineweight]))
         self.annotations = annotations
@@ -309,7 +292,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def getNextUnusedColor(self):
-        for c in self.mp_colors:
+        for c in self.colors:
             if c in self.pts:
                 continue
             else:
@@ -355,7 +338,7 @@ class MAViewer(neuroglancer.Viewer):
         _, y, x = s.mouse_voxel_coordinates
         z = 0.5
         # z = 0.1
-        props = [self.mp_colors[len(self.pts)],
+        props = [self.colors[len(self.pts)],
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
@@ -363,10 +346,6 @@ class MAViewer(neuroglancer.Viewer):
         self.applyMps()
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
-        # try:
-        #     self.set_zmag()
-        # except:
-        #     print_exception()
         self.drawSWIMwindow()
         logger.info(f'dict = {cfg.data.manpoints_pretty()}')
 
@@ -399,41 +378,29 @@ class MAViewer(neuroglancer.Viewer):
         # pass
 
 
-    def undraw_point_annotations(self):
-        logger.info('Undrawing point annotations...')
-        try:
-            with self.txn() as s:
-                s.layers['ann_swim'].annotations = None
-        except:
-            # print_exception()
-            logger.warning('No donut annotations to delete')
-        # pass
-
 
     def undrawSWIMwindows(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'Undrawing SWIM Windows [caller: {caller}]...')
         try:
             with self.txn() as s:
-                s.layers['ann_auto'].annotations = None
+                if s.layers['SWIM']:
+                    if 'annotations' in s.layers['SWIM'].to_json().keys():
+                        logger.info(f'Undrawing SWIM windows...')
+                        s.layers['SWIM'].annotations = None
         except:
-            logger.warning('No annotations to clear')
-            # print_exception()
+            logger.warning('Something went wrong while undrawing SWIM windows')
+            print_exception()
         pass
 
 
     # @functools.cache
     def drawSWIMwindow(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
-        # t.start()
 
-        # self.undraw_point_annotations()
         self.undrawSWIMwindows()
-
         marker_size = 1
 
-        if cfg.data.alignment_type == 'grid-custom':
+        if cfg.data.current_method == 'grid-custom':
             logger.info('Drawing SWIM Window Annotations for Auto-SWIM Alignment...')
 
             img_siz = cfg.data.image_size()
@@ -446,35 +413,46 @@ class MAViewer(neuroglancer.Viewer):
             offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
             offset_y2 = img_h - offset_y1
 
-            cps = [(offset_x1, offset_y1), # upper right
-                   (offset_x1, offset_y2), # bottom right
-                   (offset_x2, offset_y1), # upper left
-                   (offset_x2, offset_y2)] # bottom left
-
-            # colors : 0:yellow 1:blue 2:red 3:orange
-            # colors = (self.mp_colors[3], self.mp_colors[2], self.mp_colors[1], self.mp_colors[0])
-            colors = (self.mp_colors[1], self.mp_colors[3], self.mp_colors[0], self.mp_colors[2])
-
+            cps = []
+            colors = []
+            regions = cfg.data.grid_custom_regions
+            # logger.info(f'regions: {regions}')
+            if regions[0]:
+                # quadrant 1
+                cps.append((offset_x2, offset_y1))
+                colors.append(self.colors[0])
+            if regions[1]:
+                # quadrant 2
+                cps.append((offset_x1, offset_y1))
+                colors.append(self.colors[1])
+            if regions[2]:
+                # quadrant 3
+                cps.append((offset_x2, offset_y2))
+                colors.append(self.colors[2])
+            if regions[3]:
+                # quadrant 4
+                cps.append((offset_x1, offset_y2))
+                colors.append(self.colors[3])
 
             annotations = []
             for i, pt in enumerate(cps):
+                # if regions[i]:
                 annotations.extend(
                     self.makeRect(
                         prefix=str(i),
                         coords=pt,
-                        ww_x=ww_2x2[0],
-                        ww_y=ww_2x2[1],
+                        ww_x=ww_2x2[0] - 4,
+                        ww_y=ww_2x2[1] - 4,
                         color=colors[i],
                         marker_size=marker_size
                     )
                 )
 
-        elif cfg.data.alignment_type == 'grid-default':
+        elif cfg.data.current_method == 'grid-default':
             logger.info('Drawing SWIM Window Annotations for Auto-SWIM Alignment...')
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
-            # ww_full = cfg.data.swim_window_px() # full window width
             ww_full = cfg.data.stack()[cfg.data.zpos]['alignment']['swim_settings']['default_auto_swim_window_px']
 
             offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
@@ -488,35 +466,50 @@ class MAViewer(neuroglancer.Viewer):
             # offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
             # offset_y2 = img_h - offset_y1
 
-            cps = [(offset_x1, offset_y1), # upper right
-                   (offset_x1, offset_y2), # bottom right
-                   (offset_x2, offset_y1), # upper left
-                   (offset_x2, offset_y2)] # bottom left
-
-            # colors : 0:yellow 1:blue 2:red 3:orange
-            # colors = (self.mp_colors[3], self.mp_colors[2], self.mp_colors[1], self.mp_colors[0])
-            colors = (self.mp_colors[1], self.mp_colors[3], self.mp_colors[0], self.mp_colors[2])
-
+            cps = []
+            colors = []
+            regions = cfg.data.grid_default_regions
+            logger.info(f'regions: {regions}')
+            if regions[0]:
+                # quadrant 1
+                cps.append((offset_x2, offset_y1))
+                colors.append(self.colors[0])
+            if regions[1]:
+                # quadrant 2
+                cps.append((offset_x1, offset_y1))
+                colors.append(self.colors[1])
+            if regions[2]:
+                # quadrant 3
+                cps.append((offset_x2, offset_y2))
+                colors.append(self.colors[2])
+            if regions[3]:
+                # quadrant 4
+                cps.append((offset_x1, offset_y2))
+                colors.append(self.colors[3])
 
             annotations = []
             for i, pt in enumerate(cps):
-                annotations.extend(
-                    self.makeRect(
-                        prefix=str(i),
-                        coords=pt,
-                        # ww_x=ww_2x2[0],
-                        # ww_y=ww_2x2[1],
-                        ww_x=ww_full[0] / 2,
-                        ww_y=ww_full[1] / 2,
-                        color=colors[i],
-                        marker_size=marker_size
+                if regions[i]:
+                    annotations.extend(
+                        self.makeRect(
+                            prefix=str(i),
+                            coords=pt,
+                            # ww_x=ww_2x2[0],
+                            # ww_y=ww_2x2[1],
+                            ww_x=(ww_full[0] / 2) - 4,
+                            ww_y=(ww_full[1] / 2) - 4,
+                            color=colors[i],
+                            marker_size=marker_size
+                        )
                     )
-                )
 
         else:
             logger.info('Drawing SWIM Window Annotations for Manual Alignment...')
             pts = list(self.pts.items())
-            assert len(pts) == len(cfg.data.manpoints()[self.role])
+            try:
+                assert len(pts) == len(cfg.data.manpoints()[self.role])
+            except:
+                logger.warning(f'len(pts) = {len(pts)}, len(cfg.data.manpoints()[self.role]) = {len(cfg.data.manpoints()[self.role])}')
             annotations = []
             ww = cfg.data.manual_swim_window_px()
             for i, pt in enumerate(pts):
@@ -535,12 +528,12 @@ class MAViewer(neuroglancer.Viewer):
 
 
         with self.txn() as s:
-
-            s.layers['ann_auto'] = ng.LocalAnnotationLayer(
+            # for i,ann in enumerate(annotations):
+            s.layers['SWIM'] = ng.LocalAnnotationLayer(
                 dimensions=self.coordinate_space,
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
-                    # ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
+                    # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
                     ng.AnnotationPropertySpec(id='size', type='float32', default=5, )
                 ],
                 annotations=annotations,
@@ -550,22 +543,16 @@ class MAViewer(neuroglancer.Viewer):
                       setPointMarkerSize(prop_size());
                     }
                 ''',
-
             )
 
-        # t.stop()
 
-
+    @cache
     def makeRect(self, prefix, coords, ww_x, ww_y, color, marker_size):
         segments = []
         x = coords[0]
         y = coords[1]
-        hw = int(ww_x / 2) # Half-Width
-        hh = int(ww_y / 2) # Half-Height
-        # A = (.5, x - hw, y + hh)
-        # B = (.5, x + hw, y + hh)
-        # C = (.5, x + hw, y - hh)
-        # D = (.5, x - hw, y - hh)
+        hw = int(ww_x / 2) # Half-width
+        hh = int(ww_y / 2) # Half-height
         A = (.5, y + hh, x - hw)
         B = (.5, y + hh, x + hw)
         C = (.5, y - hh, x + hw)
@@ -585,7 +572,7 @@ class MAViewer(neuroglancer.Viewer):
         self.pts = OrderedDict()
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
         for i, p in enumerate(pts_data):
-            props = [self.mp_colors[i],
+            props = [self.colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
             self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
@@ -595,9 +582,9 @@ class MAViewer(neuroglancer.Viewer):
         #         dimensions=self.coordinate_space,
         #         annotations=self.pt2ann(points=pts_data),
         #         annotation_properties=[
-        #             ng.AnnotationPropertySpec(id='ptColor', type='rgb', default='white', ),
-        #             ng.AnnotationPropertySpec(id='ptWidth', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
-        #             ng.AnnotationPropertySpec(id='size', type='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
+        #             ng.AnnotationPropertySpec(id='ptColor', cur_method='rgb', default='white', ),
+        #             ng.AnnotationPropertySpec(id='ptWidth', cur_method='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
+        #             ng.AnnotationPropertySpec(id='size', cur_method='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
         #         ],
         #         shader=copy.deepcopy(ann_shader),
         #     )
@@ -644,7 +631,7 @@ class MAViewer(neuroglancer.Viewer):
     def _set_zmag(self):
 
         if self._zmag_set < 8:
-            logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} [{self.role}]')
+            # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} [{self.role}]')
             self._zmag_set += 1
             try:
                 with self.txn() as s:
@@ -667,7 +654,7 @@ class MAViewer(neuroglancer.Viewer):
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
-            logger.critical(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
+            logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20
                 s.crossSectionScale = cs_scale * adjust

@@ -29,7 +29,10 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Generate Alignment')
     else:
-        logger.info('Generating Aligned Images...')
+        logger.info(f'\n\n----------------------------------------------------\n'
+                    f'Generating Aligned Images...\n'
+                    f'----------------------------------------------------\n')
+
         dm = cfg.data
 
         if ng.is_server_running():

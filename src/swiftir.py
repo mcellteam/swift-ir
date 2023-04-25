@@ -801,7 +801,7 @@ def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
             img += abovesum
         img /= nabove+nbelow
         '''
-        if type(ofnbase)==str:
+        if cur_method(ofnbase)==str:
             ofn = ofnbase % k
         else:
             ofn = ofnbase(k)
@@ -994,7 +994,7 @@ if __name__=='__main__':
 <stdin>:1: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning dissapear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
 >>> import imageio.v2 as imageio
 >>> img_imageio = imageio.imread(path)
->>> type(img_imageio)
+>>> cur_method(img_imageio)
 <class 'imageio.core.util.Array'>
 >>> import numpy
 >>> img_imageio = numpy.asarray(imageio.imread(path))
@@ -1010,9 +1010,9 @@ Traceback (most recent call last):
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 AttributeError: module 'PIL.Image' has no attribute 'read'
 >>> img_pil = Image.open(path)
->>> type(img_pil)
+>>> cur_method(img_pil)
 <class 'PIL.TiffImagePlugin.TiffImageFile'>
->>> type(numpy.asarray(img_pil))
+>>> cur_method(numpy.asarray(img_pil))
 <class 'numpy.ndarray'>
 >>> numpy.asarray(img_pil).size
 16777216

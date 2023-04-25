@@ -49,7 +49,7 @@ def get_zarr_tensor(zarr_path):
     Ref: https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
     :param zarr_path:
-    :type zarr_path:
+    :cur_method zarr_path:
     :return: A webengineview into the dataset.
     :rtype: tensorstore.Future
     '''
@@ -129,7 +129,7 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
     Ref: https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
     :param zarr_path:
-    :type zarr_path:
+    :cur_method zarr_path:
     :return: A webengineview into the dataset.
     :rtype: tensorstore.Future
     '''
@@ -155,7 +155,7 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
 def loadTiffsMp(directory:str):
     '''
     :param directory: Directory containing TIF images.
-    :type directory: str
+    :cur_method directory: str
     :return: image_arrays
     :rtype: list[numpy.ndarray]
     '''
@@ -258,14 +258,14 @@ def write_metadata_zarr_multiscale(path):
         metadata = {
             "path": name,
             "coordinateTransformations": [{
-                "type": "s",
+                "cur_method": "s",
                 "s": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
         }
         datasets.append(metadata)
     axes = [
-        {"name": "z", "type": "space", "unit": "nanometer"},
-        {"name": "y", "type": "space", "unit": "nanometer"},
-        {"name": "x", "type": "space", "unit": "nanometer"}
+        {"name": "z", "cur_method": "space", "unit": "nanometer"},
+        {"name": "y", "cur_method": "space", "unit": "nanometer"},
+        {"name": "x", "cur_method": "space", "unit": "nanometer"}
     ]
     root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     root.attrs['multiscales'] = [
@@ -274,7 +274,7 @@ def write_metadata_zarr_multiscale(path):
             "name": "my_data",
             "axes": axes,
             "datasets": datasets,
-            "type": "gaussian",
+            "cur_method": "gaussian",
         }
     ]
 
@@ -289,15 +289,15 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     metadata = {
         "path": name,
         "coordinateTransformations": [{
-            "type": "s",
+            "cur_method": "s",
             "s": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
     }
     datasets.append(metadata)
 
     axes = [
-        {"name": "z", "type": "space", "unit": "nanometer"},
-        {"name": "y", "type": "space", "unit": "nanometer"},
-        {"name": "x", "type": "space", "unit": "nanometer"}
+        {"name": "z", "cur_method": "space", "unit": "nanometer"},
+        {"name": "y", "cur_method": "space", "unit": "nanometer"},
+        {"name": "x", "cur_method": "space", "unit": "nanometer"}
     ]
 
     root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
@@ -307,7 +307,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
             "name": "my_data",
             "axes": axes,
             "datasets": datasets,
-            "type": "gaussian",
+            "cur_method": "gaussian",
         }
     ]
 
@@ -367,10 +367,10 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 
     if __name__ == '__main__':
         # parser = argparse.ArgumentParser()
-        # parser.add_argument("img", type=str, help="Input image")
-        # parser.add_argument("dir_out", type=str, help="Output directory")
-        # parser.add_argument("cname", type=str, help="Compression type name")
-        # parser.add_argument("clevel", type=int, help="Compression level (0-9)")
+        # parser.add_argument("img", cur_method=str, help="Input image")
+        # parser.add_argument("dir_out", cur_method=str, help="Output directory")
+        # parser.add_argument("cname", cur_method=str, help="Compression cur_method name")
+        # parser.add_argument("clevel", cur_method=int, help="Compression level (0-9)")
         # args = parser.parse_args()
 
         of = 'out.zarr'

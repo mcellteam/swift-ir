@@ -112,7 +112,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def on_state_changed_any(self):
         # logger.critical(f'zpos={cfg.data.zpos}')
-        logger.info(f'on_state_changed_any [{self.type}] >>>>')
+        # logger.info(f'on_state_changed_any [{self.type}] >>>>')
         # if self._zmag_set < 10:
         #     self._zmag_set += 1
         # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
@@ -147,7 +147,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                                  'Suppressing The stateChanged Callback Signal' %self.type)
                 else:
                     self._layer = request_layer
-                    logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [type={self.type}]')
+                    logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     self.signals.stateChanged.emit(request_layer)
 
             zoom = self.state.cross_section_scale
@@ -158,7 +158,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 self._crossSectionScale = zoom
         except:
             print_exception()
-            logger.error('[{self.type}] ERROR on_state_change')
+            logger.error(f'[{self.type}] ERROR on_state_change')
 
 
     def url(self):
@@ -843,7 +843,7 @@ ViewerState({
     "crossSectionScale": 1,
     "projectionScale": 1024,
     "layers": [{
-        "type": "annotation",
+        "cur_method": "annotation",
         "source": {
             "url": "local://annotations",
             "transform": {
@@ -857,32 +857,32 @@ ViewerState({
         "tab": "source",
         "annotations": [{
             "point": [0.5, 369, 597.4999389648438],
-            "type": "point",
+            "cur_method": "point",
             "id": "(0.5, 369.0, 597.49994)",
             "props": ["#f3e375", 3, 8]
         }, {
             "point": [0.5, 449, 379.4999694824219],
-            "type": "point",
+            "cur_method": "point",
             "id": "(0.5, 449.0, 379.49997)",
             "props": ["#5c4ccc", 3, 8]
         }],
         "annotationProperties": [{
             "id": "ptColor",
-            "type": "rgb",
+            "cur_method": "rgb",
             "default": "#ffffff"
         }, {
             "id": "ptWidth",
-            "type": "float32",
+            "cur_method": "float32",
             "default": 3
         }, {
             "id": "size",
-            "type": "float32",
+            "cur_method": "float32",
             "default": 8
         }],
         "shader": "void main() { setPointMarkerBorderColor(prop_ptColor()); \nsetPointMarkerBorderWidth(prop_ptWidth()); \nsetPointMarkerSize(prop_size());}\n",
         "name": "ann"
     }, {
-        "type": "image",
+        "cur_method": "image",
         "source": "python://volume/cef5a1ec1ac2735310e4b0eac0f6c086399351cf.bc644314f0d66472a635e053ba4a78252a6a4262",
         "tab": "source",
         "shader": "\n        #uicontrol vec3 color color(default=\"white\")\n        #uicontrol float brightness slider(min=-1, max=1, step=0.01)\n        #uicontrol float contrast slider(min=-1, max=1, step=0.01)\n        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}\n        ",

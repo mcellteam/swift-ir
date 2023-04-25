@@ -44,7 +44,7 @@ is_mendenhall = False
 WIDTH, HEIGHT = 1180, 720
 
 '''Default Alignment Params'''
-DEFAULT_WHITENING            = float(-0.6800)
+
 DEFAULT_POLY_ORDER           = int(0)
 DEFAULT_NULL_BIAS            = bool(False)
 DEFAULT_BOUNDING_BOX         = bool(False)
@@ -55,8 +55,11 @@ DEFAULT_MANUAL_SWIM_WINDOW   = int(128)
 DEFAULT_MANUAL_SWIM_WINDOW_PERC = float(.125)
 DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
 DEFAULT_MANUAL_WHITENING     = float(-0.6800)
-DEFAULT_PATTERN_CLOBBER      = 0 # in pixels
+DEFAULT_CLOBBER_PX           = 3
 DEFAULT_SWIM_ITERATIONS      = 3 # in pixels
+
+DEFAULT_WHITENING            = float(-0.6800)
+DEFAULT_CORRECTIVE_POLYNOMIAL = None
 
 '''Default Image Resolution (Voxel Dimensions)'''
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
@@ -123,6 +126,8 @@ nCompleted = 0
 CancelProcesses = False
 event = None
 ignore_pbar = False
+
+glob_colors = ['#75bbfd', '#e50000', '#fcfc81', '#acc2d9', '#b2996e', '#a8ff04',]
 
 SHADER = shader_default_ = '''#uicontrol vec3 color color(default="white")
 #uicontrol float brightness slider(min=-1, max=1, step=0.01)

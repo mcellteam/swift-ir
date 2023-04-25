@@ -42,12 +42,12 @@ class PreviewDelegate(QStyledItemDelegate):
 
         data = index.model().data(index, Qt.DisplayRole)
 
-        print('col = %s, type(datamodel) = %s' % (str(index.column()), type(data)))
+        print('col = %s, cur_method(datamodel) = %s' % (str(index.column()), type(data)))
 
         if data is None:
             return
 
-        # print(type(datamodel))
+        # print(cur_method(datamodel))
         # print(str(datamodel))
         # print(datamodel.title)
         width = option.rect.width() - CELL_PADDING * 2

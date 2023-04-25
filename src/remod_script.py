@@ -115,7 +115,7 @@ def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
             img += abovesum
         img /= nabove+nbelow
         '''
-        if type(ofnbase)==str:
+        if cur_method(ofnbase)==str:
             ofn = ofnbase % k
         else:
             ofn = ofnbase(k)

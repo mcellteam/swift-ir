@@ -56,20 +56,36 @@ class Thumbnailer:
 
     def reduce_signals(self, start, end):
 
+        logger.critical('Reducing Correlation Signal Images...')
+
+
         pbar_text = 'Generating Correlation Spot Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
             src = os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw')
             od = os.path.join(cfg.data.dest(), cfg.data.scale, 'signals')
-            rmdir = True if (start == 0) and (end == None) else False
+            # rmdir = True if (start == 0) and (end == None) else False
+
+            rmdir = False
+            if end == None:
+                end = cfg.data.count
 
             baseFileNames = cfg.data.basefilenames()
             if not rmdir:
+                logger.critical(f'start: {start}, end: {end}')
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in range(start,end):
-                    old_thumbnails = glob(os.path.join(od, '*' + baseFileNames[i]))
+                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
+                    filename, extension = os.path.splitext(basename)
+                    method = cfg.data.section(l=i)['current_method']
+                    # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
+                    search_path = os.path.join(od, '%s_%s_*%s' % (filename, method, extension))
+                    # logger.critical(f'\n\n\nSearch Path (Pre-Removal):\n{search_path}\n\n')
+                    old_thumbnails = glob(search_path)
+                    # logger.critical(f'\n\n\nFound Files:\n{old_thumbnails}\n\n')
                     for tn in old_thumbnails:
+                        logger.info(f'Removing {tn}...')
                         try:
                             os.remove(tn)
                         except:
@@ -77,9 +93,12 @@ class Thumbnailer:
 
             filenames = []
             for name in baseFileNames[start:end]:
-                filenames.extend(glob(os.path.join(src, '*' + name)))
+                filename, extension = os.path.splitext(name)
+                search_path = os.path.join(src, '%s_*%s' % (filename, extension))
+                logger.critical(f'Search Path: {search_path}')
+                filenames.extend(glob(search_path))
 
-            # tnLogger.info('Generating the following corr spot thumbnails:\n%s' %str(filenames))
+            tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
 
             dt = self.reduce(src=src, od=od,
                              rmdir=rmdir, prefix='',
@@ -158,8 +177,8 @@ class Thumbnailer:
                       f'cpus      : {cpus}\n'
                       f'# files   : {len(filenames)}'
                       )
-        # tnLogger.info('filenames : \n' + '\n'.join(filenames))
-        # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
+        tnLogger.info('filenames : \n' + '\n'.join(filenames))
+        logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
         task_queue = TaskQueue(n_tasks=len(filenames), parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
         task_queue.taskPrefix = 'Thumbnail Generated for '
