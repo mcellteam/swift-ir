@@ -139,13 +139,8 @@ class align_recipe:
     def assemble_recipe(self):
         scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
 
-        # self.stack(s)[self.zpos]['alignment']['swim_settings']['auto_swim_window_px'] = (man_ww_x, man_ww_y)
-        # self.stack(s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = ((man_ww_x / 2), (man_ww_y / 2))
-
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))   # Point Array for one point
-        # wwx = int(self.wsf * self.siz[0])  # Window Width in x Scaled
-        # wwy = int(self.wsf * self.siz[1])  # Window Width in y Scaled
         wwx = int(self.grid_default_ww[0])  # Window Width in x Scaled
         wwy = int(self.grid_default_ww[1])  # Window Width in y Scaled
         cx = int(self.siz[0] / 2.0)   # Window Center in x
@@ -154,7 +149,6 @@ class align_recipe:
         pa[1, 0] = cy
         psta_1 = pa
 
-        # if self.cur_method == 'grid-default':
         # Set up 2x2 points and windows
         nx, ny = 2, 2
         pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
@@ -164,8 +158,6 @@ class align_recipe:
             for y in range(ny):
                 pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
                 pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
-        # sx_2x2 = int(self.wsf * sx)
-        # sy_2x2 = int(self.wsf * sy)
         sx_2x2 = int(self.auto_ww[0] / 2)
         sy_2x2 = int(self.auto_ww[1] / 2)
         psta_2x2 = pa
@@ -259,7 +251,6 @@ class align_recipe:
 
         scratchlogger.critical(f'Final AFM = {self.afm}')
 
-
         time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         snr = self.ingredients[-1].snr
         snr_report = self.ingredients[-1].snr_report
@@ -314,9 +305,6 @@ class align_recipe:
                 except: pass
                 try:    self.layer_dict['alignment']['swim_err']['ingredient_' + str(i)] = self.ingredients[i].swim_err_lines
                 except: pass
-
-
-
 
         scratchlogger.critical(f'<<<< 4 >>>>')
 

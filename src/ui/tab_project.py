@@ -1681,6 +1681,8 @@ class ProjectTab(QWidget):
         def fn():
             cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=False)
             cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=False)
+            cfg.main_window.tell('Settings Applied!')
+            logger.info('Settings applied to current section.')
         self.btn_settings_apply_cur_sec.clicked.connect(fn)
         self.btn_settings_apply_cur_sec.setFixedSize(QSize(128,18))
 
@@ -1689,6 +1691,8 @@ class ProjectTab(QWidget):
         def fn():
             cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=True)
             cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=True)
+            cfg.main_window.tell('Settings Applied!')
+            logger.info('Settings applied to entire project.')
         self.btn_settings_apply_everywhere.clicked.connect(fn)
         self.btn_settings_apply_everywhere.setFixedSize(QSize(128,18))
 
