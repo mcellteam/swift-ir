@@ -266,6 +266,7 @@ class OpenProject(QWidget):
             # cfg.data.set_defaults()
             recipe_dialog = ScaleProjectDialog(parent=self)
             result = recipe_dialog.exec()
+            logger.critical(f'Result: {result}; type: {type(result)}')
             # makedirs_exist_ok(path, exist_ok=True)
             initLogFiles()
             cfg.main_window._autosave(silently=True)
@@ -340,9 +341,8 @@ class OpenProject(QWidget):
         cfg.main_window._setLastTab()
 
     def open_project_selected(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         cfg.main_window.stopPlaybackTimer()
         path = self.selectionReadout.text()
         if validate_zarr_selection(path):
@@ -513,7 +513,19 @@ class UserProjects(QWidget):
         self.table.itemClicked.connect(countItemClickedCalls)
         self.table.itemClicked.connect(self.parent.userSelectionChanged)
         # def onDoubleClick(): self.parent.open_project_selected()
-        self.table.itemDoubleClicked.connect(self.parent.open_project_selected)
+        # self.table.itemDoubleClicked.connect(self.parent.open_project_selected)
+        self.table.doubleClicked.connect(self.parent.open_project_selected) #Critical this always emits
+
+        self.table.itemSelectionChanged.connect(self.parent.userSelectionChanged)  # Works!
+        # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChanged was emitted!'))  # Works!
+        # self.table.itemPressed.connect(lambda: print('itemPressed was emitted!'))
+        # self.table.cellActivated.connect(lambda: print('cellActivated was emitted!'))
+        # self.table.currentItemChanged.connect(lambda: print('currentItemChanged was emitted!'))
+        # self.table.itemDoubleClicked.connect(lambda: print('itemDoubleClicked was emitted!'))
+        # self.table.cellChanged.connect(lambda: print('cellChanged was emitted!'))
+        # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
+        # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
+
         self.table.setStyleSheet("border-radius: 12px; border-width: 3px;"
                                  "QPushButton{background-color: #ffe135;}")
         self.table.setColumnCount(10)

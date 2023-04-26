@@ -282,9 +282,17 @@ class SnrPlot(QWidget):
                 minYRange=ymax,
                 maxYRange=ymax,
             )
-            ax = self.plot.getAxis('bottom')  # This is the trick
-            dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
-            ax.setTicks([dx, []])
+            # ax = self.plot.getAxis('bottom')  # This is the trick
+            # dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
+            # ax.setTicks([dx, []])
+            #
+            # xticks = np.arange(0, cfg.data.count, 10)
+            # ax = self.plot.getAxis("bottom")
+            # ax.setTicks([[(v, str(v)) for v in xticks ]])
+
+            # ticks = np.arange(0, cfg.data.count)
+            # ax = self.plot.getAxis("bottom")
+            # ax.setTicks([[(v, str(v)) for v in ticks ]])
 
             self.updateSpecialLayerLines()
             self.plot.autoRange() # !!!
@@ -299,7 +307,6 @@ class SnrPlot(QWidget):
         x_axis, y_axis = self.get_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
         x_axis = [x+offset for x in x_axis]
-
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
             size=11,
@@ -319,7 +326,6 @@ class SnrPlot(QWidget):
         self.plot.addItem(self.snr_points[s])
         # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
-
         self.updateErrBars(s=s)
 
 
@@ -340,7 +346,6 @@ class SnrPlot(QWidget):
             skip_list = list(zip(*cfg.data.skips_list()))[0]
         except:
             skip_list = [-1]
-
 
         for i, err in enumerate(errbars):
             if i not in skip_list:

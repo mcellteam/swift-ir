@@ -48,10 +48,14 @@ class ProjectTable(QWidget):
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.itemSelectionChanged.connect(self.selection_changed)
-        # self.table.itemClicked.connect(lambda: print('itemClicked was CALLED!'))
-        # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChange was CALLED!')) #Works!
-        # self.table.cellChanged.connect(lambda: print('cellChanged was CALLED!'))
-        # self.table.itemChanged.connect(lambda: print('itemChanged was CALLED!'))
+        # self.table.itemPressed.connect(lambda: print('itemPressed was emitted!'))
+        # self.table.cellActivated.connect(lambda: print('cellActivated was emitted!'))
+        # self.table.currentItemChanged.connect(lambda: print('currentItemChanged was emitted!'))
+        # self.table.itemDoubleClicked.connect(lambda: print('itemDoubleClicked was emitted!'))
+        # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChanged was emitted!')) #Works!
+        # self.table.cellChanged.connect(lambda: print('cellChanged was emitted!'))
+        # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
+        # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
 
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
 
@@ -61,13 +65,14 @@ class ProjectTable(QWidget):
         self.tableFinishedLoading.connect(self.onTableFinishedLoading)
 
     # def onDoubleClick(self, item=None):
-    #     print(cur_method(item))
-        # userSelectionChanged
-        # cfg.main_window.open_project_selected()
+    #     logger.critical('')
+    #     # print(cur_method(item))
+    #     # userSelectionChanged
+    #     # cfg.main_window.open_project_selected()
 
     def selection_changed(self):
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.critical(f'caller: {caller}')
         if caller != 'setScaleData':
             if cfg.project_tab._tabs.currentIndex() == 1:
                 row = self.table.currentIndex().row()

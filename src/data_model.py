@@ -264,10 +264,10 @@ class DataModel:
         if s == None: s = self.scale
         snr_list = self.snr_list(s=s)
         if sum(snr_list) < 1:
-            # logger.info(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
+            logger.critical(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
             return False
         else:
-            # logger.info(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
+            logger.critical(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
             return True
 
     def is_alignable(self) -> bool:
@@ -284,10 +284,10 @@ class DataModel:
             cur_scale_index = scales_list.index(cur_scale_key)
             next_coarsest_scale_key = scales_list[cur_scale_index + 1]
             if not self.is_aligned(s=next_coarsest_scale_key):
-                # logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
+                logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
                 return False
             else:
-                # logger.critical(f'is {self.scale} alignable? Returning True')
+                logger.critical(f'is {self.scale} alignable? Returning True')
                 return True
         except:
             print_exception()
@@ -626,13 +626,16 @@ class DataModel:
 
             for i in range(len(self)):
                 layer = scale['stack'][i]
-                layer.setdefault('alignment', {})
+
                 layer.setdefault('current_method', 'grid-default')
+
                 layer.setdefault('alignment_history', {})
                 layer['alignment_history'].setdefault('grid-default', [])
                 layer['alignment_history'].setdefault('grid-custom', [])
                 layer['alignment_history'].setdefault('manual-hint', [])
                 layer['alignment_history'].setdefault('manual-strict', [])
+
+                layer.setdefault('alignment', {})
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
                 layer['alignment']['swim_settings'].setdefault('karg_path', os.path.join(self.dest(), s, 'tmp'))
@@ -730,9 +733,10 @@ class DataModel:
         if l == 0:
             return 0.0
         try:
-            if method == None:
-                method = self.current_method
-            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
+            # if method == None:
+            #     method = self.current_method
+            # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
+            components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
 
             # value = self.method_results(s=s, l=l)['snr']
             # return statistics.fmean(map(float, value))
@@ -785,8 +789,8 @@ class DataModel:
             method = self.current_method
         logger.info(f'method = {method}')
         try:
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
-            # return self.method_results(s=s, l=l)['snr']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
+            return self.method_results(s=s, l=l)['snr']
         except:
             print_exception()
             logger.warning(f'No SNR components for section {l}, method {method}...')
@@ -905,7 +909,8 @@ class DataModel:
         '''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
+        # return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
+        return self._data['data']['scales'][s]['stack'][l]['current_method']
 
     def set_method(self, method, l=None):
         '''Sets the alignment method of a single section for current scale and all coarser scales.
