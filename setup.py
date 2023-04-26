@@ -16,11 +16,11 @@ setup(
     platforms=["any"],
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
     # packages=find_packages(),
-    packages=setuptools.find_packages(where=".", exclude=("./tests",)),
+    packages=setuptools.find_packages(where=".", exclude=("./tests","/.docs")),
     python_requires=">=3.9",
     entry_points={
         "console_scripts": [
-            "alignem = alignEM:main",
+            "alignem = alignem:main",
         ]
     }
 
