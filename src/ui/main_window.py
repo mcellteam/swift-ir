@@ -319,6 +319,7 @@ class MainWindow(QMainWindow):
         self._lastRefresh = 0
         # self._corrSpotDrawerSize = 140
         self._corrSpotDrawerSize = 160
+        self.count_calls = {}
 
         self._dontReinit = False
 
@@ -1379,6 +1380,10 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
+        self.count_calls.setdefault('dataUpdateWidgets', {})
+        self.count_calls['dataUpdateWidgets'].setdefault(caller, 0)
+        self.count_calls['dataUpdateWidgets'][caller] += 1
+
         logger.info(f'Updating widgets (caller: {caller}, zpos={cfg.data.zpos})...')
         if ng_layer:
             logger.info(f'ng_layer (requested): {ng_layer}')
@@ -2071,6 +2076,7 @@ class MainWindow(QMainWindow):
 
         self.setControlPanelData() #Added 2023-04-23
 
+        logger.critical('Setting FPS spinbox value...')
         self._fps_spinbox.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
 
@@ -3102,7 +3108,7 @@ class MainWindow(QMainWindow):
         self._fps_spinbox = QDoubleSpinBox()
         self._fps_spinbox.setStyleSheet('font-size: 11px')
         # self._fps_spinbox.setStyleSheet('font-size: 11px')
-        self._fps_spinbox.setFixedHeight(16)
+        self._fps_spinbox.setFixedHeight(18)
         self._fps_spinbox.setMinimum(.5)
         self._fps_spinbox.setMaximum(10)
         self._fps_spinbox.setSingleStep(.2)
