@@ -38,6 +38,20 @@ Environment variable QT_API can take the following values:
 To output a string of Mypy CLI args that will reflect the currently selected src API:
 $ qtpy mypy-args
 
+~ ❯ pip show alignem
+Name: alignEM
+Version: 0.0.1
+Summary: AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR.
+Home-page: https://github.com/mcellteam/swift-ir/tree/development_ng
+Author: Joel Yancey,
+Author-email: Joel Yancey <joelgyancey@ucla.edu>, Tom Bartol <bartol@salk.edu>, Arthur Wetzel <awetzel@psc.edu>
+License: Mozilla Public License Version 2.0
+Location: /Users/joelyancey/miniconda3/envs/test_alignem/lib/python3.9/site-packages
+Requires: imagecodecs, neuroglancer, numpy, opencv-python-headless, pillow, psutil, PyQt5, pyqtgraph,
+pyqtwebengine, qtawesome, qtconsole, qtpy, tifffile, tqdm, zarr
+Required-by:
+
+
 """
 import os
 import json
@@ -235,8 +249,6 @@ def main():
 if __name__ == "__main__":
 
     main()
-
-
 
 
 
