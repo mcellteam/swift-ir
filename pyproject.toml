@@ -22,6 +22,7 @@ dependencies = [
             'psutil',
             'pillow',
             'zarr',
+            'tensorstore',
             'tifffile',
             'imagecodecs',
             'neuroglancer',
@@ -31,6 +32,9 @@ dependencies = [
             'qtpy',
             'qtawesome',
             'pyqtgraph',
+            'imageio',
+            'rechunker',
+
 ]
 
 [tools.setuptools]
