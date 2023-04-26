@@ -60,7 +60,7 @@ from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exc
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr_cur_scale, exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles, is_mac
-from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
+from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.models.json_tree import JsonModel
@@ -2083,6 +2083,7 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()
         # dt = 1.105268955230713
 
+
         self.updateNotes()
         self._autosave() #0412+
         self.hud.done()
@@ -2091,7 +2092,6 @@ class MainWindow(QMainWindow):
         # self._forceShowControls() #Todo make a decision on this
         self.update()
         self._dontReinit = False
-
 
         # dt = 1.1060302257537842
 
@@ -2727,6 +2727,8 @@ class MainWindow(QMainWindow):
         run_checks()
 
     def enterExitManAlignMode(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if cfg.data:
             if self._isProjectTab():
                 if not getData('state,manual_mode'):
@@ -3340,6 +3342,11 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
 
             self.setControlPanelData()
+
+            if not getData('state,manual_mode'):
+                cfg.project_tab.showSecondaryNgTools()
+            elif getData('state,manual_mode'):
+                cfg.project_tab.hideSecondaryNgTools()
 
             logger.info('Setting global viewer reference...')
             cfg.emViewer = cfg.project_tab.viewer

@@ -2,26 +2,27 @@
 
 import os
 import json
+import shutil
 import inspect
 import logging
+import platform
 import textwrap
-import shutil
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
-    QSizePolicy, QSpacerItem, QLineEdit, QMessageBox
-from qtpy.QtCore import Qt, QRect
+    QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog
+from qtpy.QtCore import Qt, QRect, QUrl, QDir
 from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence
 
 from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
-    create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles
+    create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles, is_tacc, is_joel
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
-from src.ui.dialogs import ScaleProjectDialog, new_project_dialog, import_images_dialog
+from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
 
 import src.config as cfg
@@ -43,14 +44,30 @@ class OpenProject(QWidget):
         self.filebrowser.setStyleSheet('border-width: 0px;')
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects(parent=self)
+        # self.embed = QFileDialogPreview()
+        # self.embed.setStyleSheet("background-color: #f3f6fb;")
         self.initUI()
         self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
+
+        self.setStyleSheet("""
+        QLineEdit {
+            background-color: #f3f6fb;
+            border-width: 1px;
+            border-style: solid;
+            border-color: #141414;
+            /*selection-background-color: #ffcccb;*/
+            /*background:#daebfe;*/
+            font-size: 11px;
+            font-family: Tahoma, sans-serif;
+        }
+        """)
 
     def initUI(self):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
-        lab = QLabel('Saved AlignEM-SWiFT Projects:')
-        lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
+        # lab = QLabel('Saved AlignEM-SWiFT Projects:')
+        lab = QLabel('Project Management')
+        lab.setStyleSheet('font-size: 13px; font-weight: 600;')
 
         self.row_height_slider = Slider(self)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
@@ -80,22 +97,25 @@ class OpenProject(QWidget):
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
         controls.setLayout(hbl)
 
-        vbl = QVBoxLayout()
-        vbl.setSpacing(1)
-        vbl.setContentsMargins(2, 2, 2, 2)
-        vbl.addWidget(controls)
-        vbl.addWidget(self.user_projects)
-        self.userProjectsWidget.setLayout(vbl)
+        self.new_project_header = QLabel()
+        self.new_project_header.setAlignment(Qt.AlignTop)
+        self.new_project_header.setMinimumHeight(28)
+        self.new_project_header.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px;')
+        self.new_project_header.hide()
 
-
+        self.vbl_projects = QVBoxLayout()
+        self.vbl_projects.setSpacing(1)
+        self.vbl_projects.setContentsMargins(2, 2, 2, 2)
+        self.vbl_projects.addWidget(controls)
+        self.vbl_projects.addWidget(self.user_projects)
+        # self.vbl_projects.addWidget(self.new_project_header)
+        self.userProjectsWidget.setLayout(self.vbl_projects)
 
         # User Files Widget
         self.userFilesWidget = QWidget()
         lab = QLabel('<h3>Open (Project or Zarr):</h3>')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
-
-
 
         w = QWidget()
         w.setContentsMargins(0, 0, 0, 0)
@@ -159,7 +179,6 @@ class OpenProject(QWidget):
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
 
-
         self._splitter = QSplitter()
         self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
@@ -167,11 +186,33 @@ class OpenProject(QWidget):
         self._splitter.addWidget(self.userFilesWidget)
         self._splitter.setSizes([650, 350])
 
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(4, 0, 4, 0)
-        self.layout.addWidget(self._splitter)
-        self.layout.addWidget(self._actions_widget)
-        self.setLayout(self.layout)
+        self.vbl_main = VBL()
+        self.vbl_main.addWidget(self._splitter)
+        self.vbl_main.addWidget(self._actions_widget)
+        self.vbl_main.addWidget(self.new_project_header)
+        # self.vbl_main.addWidget(<temp widgets>)
+
+        # self.layout = QVBoxLayout()
+        # self.layout.setContentsMargins(4, 0, 4, 0)
+        # self.layout.addWidget(self._splitter)
+        # # self.layout.addWidget(self.embed)
+        # self.layout.addWidget(self._actions_widget)
+        # # self.layout.addWidget(self.new_project_header)
+        # self.setLayout(self.layout)
+
+        self.setLayout(self.vbl_main)
+
+    def hideMainUI(self):
+        self._splitter.hide()
+        self._actions_widget.hide()
+        self.new_project_header.show()
+        # pass
+
+
+    def showMainUI(self):
+        self._splitter.show()
+        self._actions_widget.show()
+        self.new_project_header.hide()
 
     def validate_path(self):
         # logger.info(f'caller:{inspect.stack()[1].function}')
@@ -201,40 +242,57 @@ class OpenProject(QWidget):
         self.selected_file = path
         self.setSelectionPathText(path)
 
-        # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
-
-
-
-    # def new_project(self):
-    #     cfg.main_window.new_project()
-
-
 
     def new_project(self, mendenhall=False):
         logger.info('\n\nStarting A New Project...\n')
         cfg.main_window.tell('Starting A New Project...')
+        self.hideMainUI()
         cfg.main_window.stopPlaybackTimer()
-        if cfg.project_tab:
-            logger.info('Data is not None. Asking user to confirm new data...')
-            msg = QMessageBox(QMessageBox.Warning,
-                              'Confirm New Project',
-                              'Please confirm create new project.',
-                              buttons=QMessageBox.Cancel | QMessageBox.Ok)
-            msg.setIcon(QMessageBox.Question)
-            msg.setDefaultButton(QMessageBox.Cancel)
-            reply = msg.exec_()
-            if reply == QMessageBox.Ok:
-                logger.info("Response was 'OK'")
-            else:
-                logger.info("Response was not 'OK' - Returning")
-                self.warn('New Project Canceled.')
-                return
-
         cfg.main_window.tell('New Project Path:')
-        filename = new_project_dialog()
+        self.name_dialog = QFileDialog()
+        self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #141414; """)
+        # self.vbl_projects.addWidget(self.name_dialog)
+        self.vbl_main.addWidget(self.name_dialog)
+        # self.layout.addWidget(self.name_dialog)
+        self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
+        self.new_project_header.setText('New Project (1/3) - Name & Location')
+        self.name_dialog.setWindowTitle('New Project (1/3) - Name & Location')
+        cfg.main_window.set_status('New Project (1/3) - Name & Location')
+        self.name_dialog.setNameFilter("Text Files (*.swiftir)")
+        self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
+        self.name_dialog.setViewMode(QFileDialog.Detail)
+        self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        self.name_dialog.setModal(True)
+        # dialog.setOptions(dialog.DontUseNativeDialog)
+        self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
+        urls = self.name_dialog.sidebarUrls()
+        if '.tacc.utexas.edu' in platform.node():
+            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+        else:
+            urls.append(QUrl.fromLocalFile('/tmp'))
+            if os.path.exists('/Volumes'):
+                urls.append(QUrl.fromLocalFile('/Volumes'))
+            if is_joel():
+                if os.path.exists('/Volumes/3dem_data'):
+                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+        self.name_dialog.setSidebarUrls(urls)
+        cfg.main_window.set_status('Awaiting User Input...')
+        if self.name_dialog.exec() == QFileDialog.Accepted:
+            logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
+            filename = self.name_dialog.selectedFiles()[0]
+            self.name_dialog.close()
+        else:
+            self.showMainUI()
+            self.name_dialog.close()
+            return 1
+
         if filename in ['', None]:
             logger.info('New Project Canceled.')
             cfg.main_window.warn("New Project Canceled.")
+            self.showMainUI()
             return
         if not filename.endswith('.swiftir'):
             filename += ".swiftir"
@@ -258,15 +316,55 @@ class OpenProject(QWidget):
 
         # makedirs_exist_ok(path, exist_ok=True)
 
-        if not mendenhall:
+        if mendenhall:
+            create_project_structure_directories(cfg.data.dest(), ['scale_1'])
+        else:
             result = self.import_multiple_images()
             if result == 1:
                 cfg.main_window.warn('No images were imported - canceling new project')
+                self.showMainUI()
                 return
+
+            # configure_project_paths()
+            # self.user_projects.set_data()
+
             # cfg.data.set_defaults()
-            recipe_dialog = ScaleProjectDialog(parent=self)
-            result = recipe_dialog.exec()
-            logger.critical(f'Result: {result}; type: {type(result)}')
+            # recipe_dialog = ScaleProjectDialog(parent=self)
+            self.new_project_header.setText('New Project (3/3) - Global Configuration')
+            cfg.main_window.set_status('New Project (3/3) - Global Configuration')
+            self.recipe_widget = NewConfigureProjectDialog(parent=self)
+
+            self.recipe_widget.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
+            # self.vbl_projects.addWidget(self.recipe_widget)
+            self.vbl_main.addWidget(self.recipe_widget)
+            # self.layout.addWidget(self.recipe_widget)
+
+            result = self.recipe_widget.exec()
+            logger.info(f'result = {result}, type = {type(result)}')
+
+            if result:
+                logger.info('Save File Path: %s' % path)
+            else:
+                self.showMainUI()
+                self.recipe_widget.close()
+                return 1
+
+            self.showMainUI()
+
+            # logger.info('Showing ScaleProjectDialog...')
+            # # result = recipe_dialog.exec()
+            # if recipe_dialog.exec():
+            #     logger.info('Continuing...')
+            # else:
+            #     logger.info('Returning...')
+            #     return 1
+            # return
+
+
+            # logger.critical(f'result = {result}')
+            # logger.critical(f'result = {type(result)}')
+            #
+            # logger.critical(f'Result: {result}; type: {type(result)}')
             # makedirs_exist_ok(path, exist_ok=True)
             initLogFiles()
             cfg.main_window._autosave(silently=True)
@@ -274,8 +372,7 @@ class OpenProject(QWidget):
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
             cfg.main_window._setLastTab()
             cfg.main_window.onStartProject()
-        else:
-            create_project_structure_directories(cfg.data.dest(), ['scale_1'])
+
             # self.onStartProject(mendenhall=True)
             # turn OFF onStartProject for Mendenhall
 
@@ -289,11 +386,50 @@ class OpenProject(QWidget):
     def import_multiple_images(self):
         ''' Import images into data '''
         cfg.main_window.tell('Import Images:')
-        filenames = import_images_dialog()
+
+        '''Dialog for importing images. Returns list of filenames.'''
+        dialog = QFileDialogPreview()
+        dialog.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
+
+        # self.layout.addWidget(dialog)
+        # self.vbl_projects.addWidget(dialog)
+        self.vbl_main.addWidget(dialog)
+        # dialog.setOption(QFileDialog.DontUseNativeDialog)
+        self.new_project_header.setText('New Project (2/3) - Import TIFF Images')
+        cfg.main_window.set_status('New Project (2/3) - Import TIFF Images')
+        dialog.setWindowTitle('New Project (2/3) - Import TIFF Images')
+        dialog.setNameFilter('Images (*.tif *.tiff)')
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setModal(True)
+        urls = dialog.sidebarUrls()
+        urls.append(QUrl.fromLocalFile(QDir.homePath()))
+        if is_tacc():
+            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+        else:
+            if os.path.exists('/Volumes'):
+                urls.append(QUrl.fromLocalFile('/Volumes'))
+            if is_joel():
+                if os.path.exists('/Volumes/3dem_data'):
+                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+
+        dialog.setSidebarUrls(urls)
+        cfg.main_window.set_status('Awaiting User Input...')
+        logger.info('Awaiting user input...')
+        if dialog.exec_() == QDialog.Accepted:
+            filenames = dialog.selectedFiles()
+        else:
+            logger.warning('Import images dialog did not return a valid file list')
+            cfg.main_window.warn('Import images dialog did not return a valid file list')
+            self.showMainUI()
+            return 1
 
         if filenames == 1:
             logger.warning('New Project Canceled')
             cfg.main_window.warn('No Project Canceled')
+            self.showMainUI()
             return 1
 
         files_sorted = natural_sort(filenames)
@@ -305,8 +441,7 @@ class OpenProject(QWidget):
         for f in files_sorted:
             cfg.data.append_image(f)
 
-        img_size = cfg.data.image_size(s='scale_1')
-        cfg.main_window.tell(f'Dimensions: {img_size[0]}✕{img_size[1]}')
+        cfg.main_window.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
         cfg.data.link_reference_sections()
 
 
@@ -499,7 +634,8 @@ class UserProjects(QWidget):
         self.table.setWordWrap(True)
         self.table.setStyleSheet('font-size: 10px;')
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -754,6 +890,11 @@ class ImageWidget(QLabel):
         if self.pixmap():
             return int(w * (self.pixmap().height() / self.pixmap().width()))
 
+class ExpandingWidget(QWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
 # class Label(QLabel):

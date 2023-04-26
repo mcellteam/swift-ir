@@ -7,17 +7,21 @@ from qtpy.QtCore import Qt, Signal
 __all__ = ['HBL', 'VBL', 'GL', 'HWidget', 'VWidget', 'HSplitter', 'VSplitter', 'YellowTextLabel']
 
 class HBL(QHBoxLayout):
-    def __init__(self):
+    def __init__(self, *args):
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(2)
+        for w in args:
+            self.addWidget(w)
 
 
 class VBL(QVBoxLayout):
-    def __init__(self):
+    def __init__(self, *args):
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(2)
+        for w in args:
+            self.addWidget(w)
 
 
 class GL(QGridLayout):

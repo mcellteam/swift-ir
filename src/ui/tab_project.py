@@ -1416,9 +1416,6 @@ class ProjectTab(QWidget):
         padding: 0px;
         }
         """)
-        # self.MA_tabs.addTab(self.MA_points_tab, 'Points')
-        # self.MA_tabs.addTab(self.gb_MA_settings, 'Settings')
-
 
         self.MA_use_global_defaults_lab = QLabel('Global default settings will be used.')
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
@@ -1751,7 +1748,6 @@ class ProjectTab(QWidget):
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
         self.fl_settings.addWidget(self.btn_settings_apply_everywhere)
-
 
         self.settings_widget = QWidget()
         self.settings_widget.setLayout(self.fl_settings)
@@ -3312,9 +3308,13 @@ class ProjectTab(QWidget):
         self._tabs.setObjectName('project_tabs')
         self._tabs.addTab(self.ng_browser_container_outer, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
-        self._tabs.setTabToolTip(1, os.path.basename(cfg.data.dest()))
         self._tabs.addTab(self._wdg_treeview, ' Data ')
         self._tabs.addTab(self.snrPlotSplitter, ' SNR Plot ')
+        self._tabs.setTabToolTip(0,'3D Data Visualization')
+        self._tabs.setTabToolTip(1,'Project Data Table View')
+        self._tabs.setTabToolTip(2,'Project Data Tree View')
+        self._tabs.setTabToolTip(3,'SNR Plot')
+
         self._tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(1, QTabBar.RightSide, None)
         self._tabs.tabBar().setTabButton(2, QTabBar.RightSide, None)
