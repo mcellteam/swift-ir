@@ -145,7 +145,7 @@ def delete_recursive(dir, keep_core_dirs=False):
 def update_preferences_model():
     logger.info('Updating user preferences model...')
     cfg.settings.setdefault('neuroglancer', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
+    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', True)

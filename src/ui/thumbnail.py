@@ -8,7 +8,7 @@ import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider, QSizePolicy
-from qtpy.QtCore import Qt, QRect, QSize, QPoint
+from qtpy.QtCore import Qt, QRect, QSize, QPoint, QEvent
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
 from src.helpers import absFilePaths
 from src.helpers import print_exception, get_appdir
@@ -91,6 +91,8 @@ class ThumbnailFast(QLabel):
         self.border_color = '#000000'
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+
 
     def showPixmap(self):
         self.setPixmap(QPixmap(self.path))

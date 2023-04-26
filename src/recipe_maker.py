@@ -61,6 +61,8 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr', [])
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
 
+    initial_rotation = float(project['data']['initial_rotation'])
+
     if not s_tbd[zpos]['skipped']:
         if os.path.basename(s_tbd[zpos]['reference']) != '':
             recipe = align_recipe(
@@ -69,7 +71,8 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
                 img_size=img_size,
                 layer_dict=s_tbd[zpos],
                 scale=scale_key,
-                defaults=project['data']['defaults']
+                defaults=project['data']['defaults'],
+                initial_rotation=initial_rotation,
             )
             recipe.assemble_recipe()
             recipe.execute_recipe()
@@ -85,7 +88,7 @@ class align_recipe:
     global RMlogger
     global MAlogger
 
-    def __init__(self, od, init_afm, img_size, layer_dict, scale, defaults):
+    def __init__(self, od, init_afm, img_size, layer_dict, scale, defaults, initial_rotation):
         self.od = od
         self.scale_dir = os.path.abspath(os.path.dirname(self.od))
         self.init_afm = init_afm
@@ -120,6 +123,7 @@ class align_recipe:
         self.man_pmov = np.array(self.alData['manpoints_mir'].get('base')).transpose()
         self.man_psta = np.array(self.alData['manpoints_mir'].get('ref')).transpose()
         self.ingredients = []
+        self.initial_rotation = initial_rotation
         # self.iters = 3
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
@@ -463,7 +467,8 @@ class align_ingredient:
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
                 args.append('%s %s' % (adjust_x, adjust_y))
-            args.append(rota_arg)
+            if abs(self.recipe.initial_rotation) > 0:
+                args.append(convert_rotation(self.recipe.initial_rotation))
             args.append(afm_arg)
             args.append(self.alData['swim_settings']['extra_args'])
 
@@ -653,9 +658,9 @@ def natural_sort(l):
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
 
-def convert_rotation(val):
+def convert_rotation(degrees):
     deg2rad = 2*np.pi/360.
-    return np.sin(deg2rad*val)
+    return np.sin(deg2rad*degrees)
 
 
 if __name__ == '__main__':

@@ -179,11 +179,11 @@ def compute_affines(scale, start=0, end=None):
 
         t1 = time.time()
 
-        # logger.info('Collating Correlation Spot Images...')
+        # logger.info('Collating Correlation Signal Images...')
         # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')
         # task_queue = TaskQueue(n_tasks=len(substack),
         #                        parent=cfg.main_window,
-        #                        pbar_text='Collating Scale %s Correlation Spot Images...' % (scale_val))
+        #                        pbar_text='Collating Scale %s Correlation Signal Images...' % (scale_val))
         # task_queue.start(cpus)
         #
         # for i, layer in enumerate(substack):

@@ -1,3 +1,18 @@
+
+QMessageBox {
+    background-color: #222222;
+}
+
+QMessageBox QLabel {
+    color: #ede9e8;
+}
+
+QToolTip {
+   background-color: #339933;
+   color: #ede9e8;
+   border: #141414 solid 1px
+}
+
 QSplitter {
   spacing: 0px;
   padding: 0px;
@@ -64,7 +79,11 @@ QLabel {
     border-width: 0px;
 }
 
+QCheckBox::indicator {
+    border: 1px solid #ede9e8;
+    background: #ffffff;
 
+}
 QCheckBox {
     font-size: 11px;
     font-family: Tahoma, sans-serif;

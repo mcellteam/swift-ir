@@ -223,12 +223,14 @@ class ProjectTab(QWidget):
             # if caller != '_onGlobTabChange':
             logger.info('Initializing...')
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #0424-
+            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #0424-
             cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer._set_zmag) #0424(?)
             cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
+
+        self.updateProjectLabels()
 
 
     def updateNeuroglancer(self):
@@ -779,7 +781,7 @@ class ProjectTab(QWidget):
                 # self.set_method_label_text()
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
-                self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
+                self.msg_MAinstruct.setVisible(cfg.data.method() in ('manual-hint','manual-strict'))
 
         self.combo_method = QComboBox(self)
         self.combo_method.setFixedHeight(18)
@@ -1325,7 +1327,7 @@ class ProjectTab(QWidget):
         self.toggle_showInstructionOverlay = AnimatedToggle()
         self.toggle_showInstructionOverlay.setFixedSize(42,22)
         def fn():
-            if cfg.data.method() in ('Manual-Hint', 'Manual-Strict'):
+            if cfg.data.method() in ('manual-hint', 'manual-strict'):
                 isChecked = self.toggle_showInstructionOverlay.isChecked()
                 setData('state,stage_viewer,show_overlay_message', isChecked)
                 self.msg_MAinstruct.setVisible(isChecked)
@@ -1396,7 +1398,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
         self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
-        self.fl_MA_settings.addRow("Use Quadrants",self.Q_widget)
+        self.fl_MA_settings.addRow("Use Quadrants", HWidget(self.Q_widget,ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
         # self.fl_MA_settings.addRow("Show Instruction Overlay", self.toggle_showInstructionOverlay)
         # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
@@ -1627,33 +1629,76 @@ class ProjectTab(QWidget):
 
         self.lab_logs = BoldLabel('Logs:')
 
-
+        self.rb_logs_swim_args = QRadioButton('SWIM Args')
+        self.rb_logs_swim_args.setChecked(True)
+        self.rb_logs_swim_out = QRadioButton('SWIM Out')
+        self.rb_logs_mir_args = QRadioButton('MIR')
+        self.rb_logs = QButtonGroup(self)
+        self.rb_logs.setExclusive(True)
+        self.rb_logs.addButton(self.rb_logs_swim_args)
+        self.rb_logs.addButton(self.rb_logs_swim_out)
+        self.rb_logs.addButton(self.rb_logs_mir_args)
 
 
         # self.btns_logs = QWidget()
 
         self.sw_logs = QStackedWidget()
-
         self.lab_ing = QLabel('Ingredients:')
+
         self.btn_ing0 = QPushButton('1')
-        self.btn_ing0.clicked.connect(lambda:
-                                      self.te_logs.setText(cfg.data['data']['scales'][cfg.data.scale]['stack'][
-                                                               cfg.data.zpos]['alignment']['swim_args']['ingredient_0']))
+        def fn():
+            key = 'swim_args'
+            if self.rb_logs_swim_args.isChecked():
+                key = 'swim_args'
+            elif self.rb_logs_swim_out.isChecked():
+                key = 'swim_out'
+            elif self.rb_logs_mir_args.isChecked():
+                key = 'mir_args'
+            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['alignment'][key]['ingredient_0']).split(' ')
+            for i, x in enumerate(args):
+                if x and x[0] == '/':
+                    args[i] = os.path.basename(x)
+            self.te_logs.setText(' '.join(args))
+        self.btn_ing0.clicked.connect(fn)
+
         self.btn_ing1 = QPushButton('2')
-        self.btn_ing1.clicked.connect(lambda:
-                                      self.te_logs.setText(cfg.data['data']['scales'][cfg.data.scale]['stack'][
-                                                               cfg.data.zpos]['alignment']['swim_args']['ingredient_1']))
+        def fn():
+            key = 'swim_args'
+            if self.rb_logs_swim_args.isChecked():
+                key = 'swim_args'
+            elif self.rb_logs_swim_out.isChecked():
+                key = 'swim_out'
+            elif self.rb_logs_mir_args.isChecked():
+                key = 'mir_args'
+            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['alignment'][key]['ingredient_1']).split(' ')
+            for i, x in enumerate(args):
+                if x and x[0] == '/':
+                    args[i] = os.path.basename(x)
+            self.te_logs.setText(' '.join(args))
+        self.btn_ing1.clicked.connect(fn)
+
         self.btn_ing2 = QPushButton('3')
-        self.btn_ing2.clicked.connect(lambda:
-                                      self.te_logs.setText(cfg.data['data']['scales'][cfg.data.scale]['stack'][
-                                                               cfg.data.zpos]['alignment']['swim_args']['ingredient_2']))
+        def fn():
+            key = 'swim_args'
+            if self.rb_logs_swim_args.isChecked():
+                key = 'swim_args'
+            elif self.rb_logs_swim_out.isChecked():
+                key = 'swim_out'
+            elif self.rb_logs_mir_args.isChecked():
+                key = 'mir_args'
+            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['alignment'][key]['ingredient_2']).split(' ')
+            for i, x in enumerate(args):
+                if x and x[0] == '/':
+                    args[i] = os.path.basename(x)
+            self.te_logs.setText(' '.join(args))
+        self.btn_ing2.clicked.connect(fn)
         self.btn_ing0.setFixedSize(QSize(40,18))
         self.btn_ing1.setFixedSize(QSize(40,18))
         self.btn_ing2.setFixedSize(QSize(40,18))
         self.w_ingredients = HWidget(self.lab_ing, ExpandingWidget(self), self.btn_ing0, self.btn_ing1, self.btn_ing2)
 
         self.logs_widget = VWidget(
-            self.lab_logs,
+            HWidget(self.lab_logs, ExpandingWidget(self), self.rb_logs_swim_args, self.rb_logs_swim_out),
             self.te_logs,
             self.w_ingredients,
             HWidget(self.logs_back_btn,
@@ -1706,8 +1751,6 @@ class ProjectTab(QWidget):
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
         self.fl_settings.addWidget(self.btn_settings_apply_everywhere)
-
-
 
 
         self.settings_widget = QWidget()
@@ -2423,7 +2466,7 @@ class ProjectTab(QWidget):
 
         if getData('state,manual_mode'):
             # if self.tgl_alignMethod.isChecked():
-            if cfg.data.method() in ('Manual-Hint', 'Manual-Strict'):
+            if cfg.data.method() in ('manual-hint', 'manual-strict'):
                 pixmap = QPixmap('src/resources/cursor_circle.png')
                 cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
                 QApplication.setOverrideCursor(cursor)
@@ -2502,8 +2545,8 @@ class ProjectTab(QWidget):
         logger.critical(f'caller: {caller} ; call #{self.dataUpdateMA_calls}')
         if getData('state,manual_mode'):
 
-            if cfg.data.method() != 'Auto-SWIM':
-                self.combo_method.setCurrentText(cfg.data.method())
+            # if cfg.data.method() != 'Auto-SWIM':
+            #     self.combo_method.setCurrentText(cfg.data.method())
 
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
@@ -2511,7 +2554,7 @@ class ProjectTab(QWidget):
             # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             self._combo_method_switch = False
-            self.combo_method.setCurrentText(cfg.data.method())
+            self.combo_method.setCurrentText(cfg.data.method()) #Todo #Check
             self._combo_method_switch = True
             self.spinbox_whitening.setValue(cfg.data.manual_whitening())
             self.updateProjectLabels() #0424+

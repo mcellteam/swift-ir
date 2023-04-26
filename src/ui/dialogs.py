@@ -8,11 +8,12 @@ import neuroglancer as ng
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
-    QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy
-from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal
+    QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy, QDial
+from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc
+from src.funcs_image import ImageSize
 
 logger = logging.getLogger(__name__)
 
@@ -86,17 +87,13 @@ class SaveExitAppDialog(QDialog):
         self.setLayout(self.layout)
 
 
-
 def import_images_dialog():
     '''Dialog for importing images. Returns list of filenames.'''
     dialog = QFileDialogPreview()
-    dialog.setOption(QFileDialog.DontUseNativeDialog)
-    # dialog.setWindowTitle('Import Images - %s' % cfg.datamodel.name())
-    name = os.path.basename(cfg.data.dest())
-    dialog.setWindowTitle(f'{name} - Import Images (2/3)')
-    # dialog.setWindowTitle('New Project - Import Images (2/3)')
+    # dialog.setOption(QFileDialog.DontUseNativeDialog)
+    dialog.setWindowTitle('New Project (2/3) - Import TIFF Images')
     dialog.setNameFilter('Images (*.tif *.tiff)')
-    dialog.setFileMode(QFileDialog.ExistingFiles)
+    # dialog.setFileMode(QFileDialog.ExistingFiles)
     dialog.setModal(True)
     urls = dialog.sidebarUrls()
     urls.append(QUrl.fromLocalFile(QDir.homePath()))
@@ -111,7 +108,6 @@ def import_images_dialog():
         if is_joel():
             if os.path.exists('/Volumes/3dem_data'):
                 urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-
 
     dialog.setSidebarUrls(urls)
     cfg.main_window.set_status('Awaiting User Input...')
@@ -133,10 +129,22 @@ class QFileDialogPreview(QFileDialog):
         self.mpPreview.setFixedSize(360, 360)
         self.mpPreview.setAlignment(Qt.AlignCenter)
         self.mpPreview.setObjectName("labelPreview")
+        self.imageDimensionsLabel = QLabel('')
+        self.imageDimensionsLabel.setStyleSheet("""
+            font-size: 11px; 
+            font-weight: 600; 
+            color: #FF0000; 
+            background-color: #ede9e8;
+            padding: 2px;
+        """)
         box = QVBoxLayout()
         box.addWidget(self.mpPreview)
         box.addStretch()
+        # box.addWidget(self.imageDimensionsLabel)
+        self.extra_layout = QVBoxLayout()
+        self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
         self.layout().addLayout(box, 1, 3, 1, 1)
+        self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
         self.currentChanged.connect(self.onChange)
         self.fileSelected.connect(self.onFileSelected)
         self.filesSelected.connect(self.onFilesSelected)
@@ -147,16 +155,21 @@ class QFileDialogPreview(QFileDialog):
         pixmap = QPixmap(path)
         if(pixmap.isNull()):
             self.mpPreview.setText('Preview')
+            self.imageDimensionsLabel.setText('')
         else:
             self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(),
                                                    self.mpPreview.height(),
                                                    Qt.KeepAspectRatio,
                                                    Qt.SmoothTransformation))
+            logger.info(f'Selected File: {path}')
+            img_siz = ImageSize(path)
+            self.imageDimensionsLabel.setText('%dx%dpx' %(img_siz[0], img_siz[1]))
 
     def onFileSelected(self, file):
         self._fileSelected = file
     def onFilesSelected(self, files):
         self._filesSelected = files
+
     def getFileSelected(self):
         return self._fileSelected
     def getFilesSelected(self):
@@ -279,7 +292,7 @@ def new_project_dialog() -> str:
     '''Dialog for saving a datamodel. Returns 'filename'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
-    dialog.setWindowTitle('New Project Name - Set Project Name (1/3)')
+    dialog.setWindowTitle('New Project (1/3) - Name & Location')
     dialog.setNameFilter("Text Files (*.swiftir)")
     dialog.setLabelText(QFileDialog.Accept, "Create")
     dialog.setViewMode(QFileDialog.Detail)
@@ -521,7 +534,8 @@ class ConfigProjectDialog(QDialog):
         self.main_layout.addWidget(self.tab_widget)
         self.main_layout.addWidget(self.buttonWidget)
         self.setLayout(self.main_layout)
-        self.setWindowTitle("New Project - Project Configuration (3/3)")
+        # self.setWindowTitle("New Project - Project Configuration (3/3)")
+        self.setWindowTitle('New Project (3/3) - Global Configuration')
         cfg.main_window.hud('Set Scales and Configure:')
         self.show()
         cfg.main_window.set_status('Awaiting User Input...')
@@ -533,7 +547,6 @@ class ConfigProjectDialog(QDialog):
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
             cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
@@ -717,6 +730,14 @@ class ConfigProjectDialog(QDialog):
         self.resolution_layout.addWidget(self.resolution_label, Qt.AlignLeft)
         self.resolution_layout.addWidget(self.resolution_widget, Qt.AlignRight)
 
+        self.initial_rotation_dial = QDial()
+        self.initial_rotation_dial.setFixedSize(QSize(30,30))
+        self.initial_rotation_dial.setMinimum(-180)
+        self.initial_rotation_dial.setMaximum(180)
+        self.initial_rotation_dial.setValue(0)
+        # self.initial_rotation_dial.move(100, 50)
+        self.initial_rotation_dial.valueChanged.connect(lambda: self.initial_rotation_input.setText(str(self.initial_rotation_dial.value())))
+
         if not cfg.data.is_mendenhall():
             '''Initial Rotation Field'''
             tip = "Initial rotation is sometimes needed to prevent alignment from " \
@@ -729,19 +750,10 @@ class ConfigProjectDialog(QDialog):
             self.initial_rotation_input.setAlignment(Qt.AlignCenter)
             self.initial_rotation_layout = QHBoxLayout()
             self.initial_rotation_layout.addWidget(self.initial_rotation_label, alignment=Qt.AlignLeft)
+            self.initial_rotation_layout.addWidget(ExpandingWidget(self))
+            self.initial_rotation_layout.addWidget(self.initial_rotation_dial, alignment=Qt.AlignRight)
             self.initial_rotation_layout.addWidget(self.initial_rotation_input, alignment=Qt.AlignRight)
             self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-
-            '''Initial Scale Field'''
-            self.initial_scale_label = QLabel("Initial Scale:")
-            self.initial_scale_input = QLineEdit(self)
-            self.initial_scale_input.setFixedWidth(70)
-            self.initial_scale_input.setText(str(cfg.DEFAULT_INITIAL_SCALE))
-            self.initial_scale_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
-            self.initial_scale_input.setAlignment(Qt.AlignCenter)
-            self.initial_scale_layout = QHBoxLayout()
-            self.initial_scale_layout.addWidget(self.initial_scale_label, alignment=Qt.AlignLeft)
-            self.initial_scale_layout.addWidget(self.initial_scale_input, alignment=Qt.AlignRight)
 
         '''Bounding Box Field'''
         self.bounding_rectangle_label = QLabel("Bounding Box:")
@@ -762,7 +774,6 @@ class ConfigProjectDialog(QDialog):
         layout.addLayout(self.resolution_layout, 2, 0)
         if not cfg.data.is_mendenhall():
             layout.addLayout(self.initial_rotation_layout, 3, 0)
-            layout.addLayout(self.initial_scale_layout, 4, 0)
         layout.addLayout(self.bounding_rectangle_layout, 5, 0)
         self.tab1.setLayout(layout)
 
@@ -937,7 +948,6 @@ class ScaleProjectDialog(QDialog):
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
             cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
@@ -1126,6 +1136,15 @@ class ScaleProjectDialog(QDialog):
         self.resolution_layout.addWidget(self.resolution_label, Qt.AlignLeft)
         self.resolution_layout.addWidget(self.resolution_widget, Qt.AlignRight)
 
+
+        self.initial_rotation_dial = QDial()
+        self.initial_rotation_dial.setFixedSize(QSize(30,30))
+        self.initial_rotation_dial.setMinimum(-180)
+        self.initial_rotation_dial.setMaximum(180)
+        self.initial_rotation_dial.setValue(0)
+        # self.initial_rotation_dial.move(100, 50)
+        self.initial_rotation_dial.valueChanged.connect(lambda: self.initial_rotation_input.setText(str(self.initial_rotation_dial.value())))
+
         if not cfg.data.is_mendenhall():
             '''Initial Rotation Field'''
             tip = "Initial rotation is sometimes needed to prevent alignment from " \
@@ -1138,19 +1157,11 @@ class ScaleProjectDialog(QDialog):
             self.initial_rotation_input.setAlignment(Qt.AlignCenter)
             self.initial_rotation_layout = QHBoxLayout()
             self.initial_rotation_layout.addWidget(self.initial_rotation_label, alignment=Qt.AlignLeft)
+            self.initial_rotation_layout.addWidget(ExpandingWidget(self))
+            self.initial_rotation_layout.addWidget(self.initial_rotation_dial, alignment=Qt.AlignRight)
             self.initial_rotation_layout.addWidget(self.initial_rotation_input, alignment=Qt.AlignRight)
             self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
 
-            '''Initial Scale Field'''
-            self.initial_scale_label = QLabel("Initial Scale:")
-            self.initial_scale_input = QLineEdit(self)
-            self.initial_scale_input.setFixedWidth(70)
-            self.initial_scale_input.setText(str(cfg.DEFAULT_INITIAL_SCALE))
-            self.initial_scale_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
-            self.initial_scale_input.setAlignment(Qt.AlignCenter)
-            self.initial_scale_layout = QHBoxLayout()
-            self.initial_scale_layout.addWidget(self.initial_scale_label, alignment=Qt.AlignLeft)
-            self.initial_scale_layout.addWidget(self.initial_scale_input, alignment=Qt.AlignRight)
 
         '''Bounding Box Field'''
         self.bounding_rectangle_label = QLabel("Bounding Box:")
@@ -1171,7 +1182,6 @@ class ScaleProjectDialog(QDialog):
         layout.addLayout(self.resolution_layout, 2, 0)
         if not cfg.data.is_mendenhall():
             layout.addLayout(self.initial_rotation_layout, 3, 0)
-            layout.addLayout(self.initial_scale_layout, 4, 0)
         layout.addLayout(self.bounding_rectangle_layout, 5, 0)
         self.tab1.setLayout(layout)
 
@@ -1225,3 +1235,8 @@ class DefaultsModel(QAbstractListModel):
         return True
 
 
+class ExpandingWidget(QWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

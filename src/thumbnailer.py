@@ -59,7 +59,7 @@ class Thumbnailer:
         logger.critical('Reducing Correlation Signal Images...')
 
 
-        pbar_text = 'Generating Correlation Spot Thumbnails'
+        pbar_text = 'Generating Signal Spot Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:

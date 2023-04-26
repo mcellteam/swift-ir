@@ -59,7 +59,7 @@ from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr_cur_scale, exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
-    update_preferences_model, delete_recursive, initLogFiles
+    update_preferences_model, delete_recursive, initLogFiles, is_mac
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ScaleProjectDialog, ConfigAppDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -95,6 +95,7 @@ class MainWindow(QMainWindow):
     # alignmentFinished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
+    sectionChanged = Signal()
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
@@ -706,7 +707,6 @@ class MainWindow(QMainWindow):
             self.warn(warning_msg)
         else:
             ans = True
-
         logger.info(f'Returning: {ans}')
         return ans
 
@@ -831,6 +831,8 @@ class MainWindow(QMainWindow):
             self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
             self.updateDtWidget()
             cfg.project_tab.updateTreeWidget()
+            cfg.project_tab.updateProjectLabels()
+            self._bbToggle.setChecked(cfg.data.has_bb())
             self.dataUpdateWidgets()
             self._showSNRcheck()
         except:
@@ -1002,7 +1004,7 @@ class MainWindow(QMainWindow):
                 self.threadpool.start(self.worker)
             else: cfg.thumb.reduce_signals(start=start, end=end)
         except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
-        # else:   logger.info('Correlation Spot Thumbnail Generation Finished')
+        # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
 
 
         # if cfg.project_tab._tabs.currentIndex() == 1:
@@ -1382,211 +1384,209 @@ class MainWindow(QMainWindow):
             logger.info(f'ng_layer (requested): {ng_layer}')
 
         if self._isProjectTab():
-            if cfg.data:
-                # prev_loc = cfg.data.zpos
 
-                if self._working == True:
-                    logger.warning(f"Can't update GUI now - working (caller: {caller})...")
-                    self.warn("Can't update GUI now - working...")
-                    return
-                if isinstance(ng_layer, int):
-                    if type(ng_layer) != bool:
-                        try:
-                            if 0 <= ng_layer < len(cfg.data):
-                                logger.critical(f'Setting Layer: {ng_layer}')
-                                cfg.data.zpos = ng_layer
-                                # self._sectionSlider.setValue(ng_layer)
-                        except:
-                            print_exception()
+            if self._working == True:
+                logger.warning(f"Can't update GUI now - working (caller: {caller})...")
+                self.warn("Can't update GUI now - working...")
+                return
+            if isinstance(ng_layer, int):
+                if type(ng_layer) != bool:
+                    try:
+                        if 0 <= ng_layer < len(cfg.data):
+                            logger.critical(f'Setting Layer: {ng_layer}')
+                            cfg.data.zpos = ng_layer
+                            # self._sectionSlider.setValue(ng_layer)
+                    except:
+                        print_exception()
 
-                if cfg.project_tab._tabs.currentIndex() == 3:
-                    cfg.snrViewer.set_layer(cfg.data.zpos)
+            if cfg.project_tab._tabs.currentIndex() == 3:
+                cfg.snrViewer.set_layer(cfg.data.zpos)
 
-                # logger.critical(f'cfg.data.zpos = {cfg.data.zpos}')
-                # self.statusBar.showMessage(cfg.data.name_base(), 1000)
+            # logger.critical(f'cfg.data.zpos = {cfg.data.zpos}')
+            # self.statusBar.showMessage(cfg.data.name_base(), 1000)
 
-                img_siz = cfg.data.image_size()
-                self.statusBar.showMessage(cfg.data.scale_pretty() + ' - ' +
-                                           'x'.join(map(str,img_siz)) + ' | ' +
-                                           cfg.data.name_base(), msecs=3000)
+            img_siz = cfg.data.image_size()
+            self.statusBar.showMessage(cfg.data.scale_pretty() + ' - ' +
+                                       'x'.join(map(str,img_siz)) + ' | ' +
+                                       cfg.data.name_base(), msecs=3000)
 
-                cfg.project_tab._overlayRect.hide()
-                cfg.project_tab._overlayLab.hide()
-                if cfg.data.skipped():
-                    cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                    cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
-                    cfg.project_tab._overlayLab.show()
-                    cfg.project_tab._overlayRect.show()
-                elif ng_layer == 0:
-                    cfg.project_tab._overlayLab.setText('No Reference')
-                    cfg.project_tab._overlayLab.show()
-                # else:
-                #     cfg.project_tab._overlayRect.hide()
-                #     cfg.project_tab._overlayLab.hide()
+            cfg.project_tab._overlayRect.hide()
+            cfg.project_tab._overlayLab.hide()
+            if cfg.data.skipped():
+                cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+                cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
+                cfg.project_tab._overlayLab.show()
+                cfg.project_tab._overlayRect.show()
+            elif ng_layer == 0:
+                cfg.project_tab._overlayLab.setText('No Reference')
+                cfg.project_tab._overlayLab.show()
+            # else:
+            #     cfg.project_tab._overlayRect.hide()
+            #     cfg.project_tab._overlayLab.hide()
 
-                if self.correlation_signals.isVisible():
-                    self.updateCorrSignalsDrawer()
+            if self.correlation_signals.isVisible():
+                self.updateCorrSignalsDrawer()
 
-                cur = cfg.data.zpos
-                if self.notes.isVisible():
-                    self.updateNotes()
+            cur = cfg.data.zpos
+            if self.notes.isVisible():
+                self.updateNotes()
 
 
-                self._btn_prevSection.setEnabled(cur > 0)
-                self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+            self._btn_prevSection.setEnabled(cur > 0)
+            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
 
-                if getData('state,manual_mode'):
-                    cfg.project_tab.dataUpdateMA()
-                    # if prev_loc != cfg.data.zpos:
-                    # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
-                    # cfg.project_tab.set_method_label_text()
+            if getData('state,manual_mode'):
+                cfg.project_tab.dataUpdateMA()
+                # if prev_loc != cfg.data.zpos:
+                # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
+                # cfg.project_tab.set_method_label_text()
 
-                if cfg.project_tab._tabs.currentIndex() == 2:
-                    cfg.project_tab.treeview_model.jumpToLayer()
+            if cfg.project_tab._tabs.currentIndex() == 2:
+                cfg.project_tab.treeview_model.jumpToLayer()
 
-                if cfg.project_tab._tabs.currentIndex() == 3:
-                    cfg.project_tab.snr_plot.updateLayerLinePos()
+            if cfg.project_tab._tabs.currentIndex() == 3:
+                cfg.project_tab.snr_plot.updateLayerLinePos()
 
-                cfg.project_tab.project_table.table.selectRow(cur)
-                self._sectionSlider.setValue(cur)
-                self._jumpToLineedit.setText(str(cur)) #0131+
+            cfg.project_tab.project_table.table.selectRow(cur)
+            self._sectionSlider.setValue(cur)
+            self._jumpToLineedit.setText(str(cur)) #0131+
 
-                if cfg.project_tab.corrSignalsWidget.isVisible():
-                    if cfg.data.method() == 'Auto-SWIM':
-                        snr_vals = cfg.data.snr_components()
-                        n = len(snr_vals)
-                        if (n >= 1) and (snr_vals[0] > .001):
-                            cfg.project_tab.cs0.set_data(path=cfg.data.signal_q0_path(), snr=snr_vals[0])
-                        else:
-                            cfg.project_tab.cs0.set_no_image()
-                        if (n >= 2):
-                            cfg.project_tab.cs1.set_data(path=cfg.data.signal_q1_path(), snr=snr_vals[1])
-                        else:
-                            cfg.project_tab.cs1.set_no_image()
-                        if (n >= 3):
-                            cfg.project_tab.cs2.set_data(path=cfg.data.signal_q2_path(), snr=snr_vals[2])
-                        else:
-                            cfg.project_tab.cs2.set_no_image()
-                        if (n >= 4):
-                            cfg.project_tab.cs3.set_data(path=cfg.data.signal_q3_path(), snr=snr_vals[3])
-                        else:
-                            cfg.project_tab.cs3.set_no_image()
-                    elif cfg.data.method() == 'Manual-Hint':
-                        files = cfg.data.get_signals_filenames()
-                        snr_vals = cfg.data.snr_components()
-                        n = len(files)
-                        if n >= 1:
-                            cfg.project_tab.cs0.show()
-                            cfg.project_tab.cs0.set_data(path=files[0], snr=snr_vals[0])
-                        else:       cfg.project_tab.cs0.set_no_image()
-                        if n >= 2:  cfg.project_tab.cs1.set_data(path=files[1], snr=snr_vals[1])
-                        else:       cfg.project_tab.cs1.set_no_image()
-                        if n >= 3:  cfg.project_tab.cs2.set_data(path=files[2], snr=snr_vals[2])
-                        else:       cfg.project_tab.cs2.set_no_image()
-                        if n >= 4:
-                            cfg.project_tab.cs3.set_data(path=files[3], snr=snr_vals[3])
-                        else:
-                            cfg.project_tab.cs3.set_no_image()
-
-                br = '&nbsp;'
-                a = """<span style='color: #ffe135;'>"""
-                b = """</span>"""
-                nl = '<br>'
-
-                if cfg.project_tab.detailsSection.isVisible():
-                    txt = f"""
-                    Filename{br}:{br}{a}{cfg.data.filename_basename()}{b}{nl}
-                    Reference:{br}{a}{cfg.data.reference_basename()}{b}{nl}
-                    Modified{br}:{br}{a}{cfg.data.modified}{b}{nl}"""
-                    method = cfg.data.method()
-                    if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}"
-                    elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
-                    elif method == 'Manual-Strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
-                    # txt += f"""Reject{br*7}:{br}[{(' ', 'X')[cfg.data.skipped()]}]"""
-                    cfg.project_tab.detailsSection.setText(txt)
-
-                if cfg.project_tab.detailsAFM.isVisible():
-                    afm, cafm = cfg.data.afm(), cfg.data.cafm()
-                    afm_txt, cafm_txt = [], []
-                    for x in range(2):
-                        for y in range(3):
-                            if y == 0:
-                                afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-                                cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
-                            elif y == 1:
-                                afm_txt.append(('%.2f' % afm[x][y]).rjust(8))
-                                cafm_txt.append(('%.2f' % afm[x][y]).rjust(8))
-                            else:
-                                afm_txt.append(('%.2f' % afm[x][y]).rjust(11))
-                                cafm_txt.append(('%.2f' % cafm[x][y]).rjust(11))
-                            if (x == 0) and (y == 2):
-                                afm_txt.append(f'{nl}')
-                                cafm_txt.append(f'{nl}')
-                    cfg.project_tab.detailsAFM.setText(
-                        f"{a}Affine:{b}{nl}" + "".join(afm_txt) +
-                        f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
-
-                if cfg.project_tab.detailsSNR.isVisible():
-                    if cfg.data.zpos == 0:
-                        cfg.project_tab.detailsSNR.setText(
-                            f"Avg. SNR{br * 2}: N/A{nl}"
-                            f"Prev.{br}SNR{br}: N/A{nl}"
-                            f"Components{nl}"
-                            f"Top,Left{br * 2}: N/A{nl}"
-                            f"Top,Right{br}: N/A{nl}"
-                            f"Btm,Left{br * 2}: N/A{nl}"
-                            f"Btm,Right{br}: N/A"
-                        )
+            if cfg.project_tab.corrSignalsWidget.isVisible():
+                if cfg.data.method() in ('grid-default','grid-custom'):
+                    snr_vals = cfg.data.snr_components()
+                    n = len(snr_vals)
+                    if (n >= 1) and (snr_vals[0] > .001):
+                        cfg.project_tab.cs0.set_data(path=cfg.data.signal_q0_path(), snr=snr_vals[0])
                     else:
-                        components = cfg.data.snr_components()
-                        str0 = ('%.3f' % cfg.data.snr()).rjust(9)
-                        str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
-                        if cfg.data.method() == 'Auto-SWIM':
-                            q0 = ('%.3f' % components[0]).rjust(9)
-                            q1 = ('%.3f' % components[1]).rjust(9)
-                            q2 = ('%.3f' % components[2]).rjust(9)
-                            q3 = ('%.3f' % components[3]).rjust(9)
-                            cfg.project_tab.detailsSNR.setText(
-                                f"Avg. SNR{br*2}:{a}{str0}{b}{nl}"
-                                f"Prev.{br}SNR{br}:{str1}{nl}"
-                                f"Components{nl}"
-                                f"Top,Left{br*2}:{q0}{nl}"
-                                f"Top,Right{br}:{q1}{nl}"
-                                f"Btm,Left{br*2}:{q2}{nl}"
-                                f"Btm,Right{br}:{q3}"
-                            )
-                        elif cfg.data.method() in ('Manual-Hint', 'Manual-Strict'):
-                            txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
-                                  f"Prev. SNR{br}:{str1}{nl}" \
-                                  f"Components"
-                            for i in range(len(components)):
-                                txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
+                        cfg.project_tab.cs0.set_no_image()
+                    if (n >= 2):
+                        cfg.project_tab.cs1.set_data(path=cfg.data.signal_q1_path(), snr=snr_vals[1])
+                    else:
+                        cfg.project_tab.cs1.set_no_image()
+                    if (n >= 3):
+                        cfg.project_tab.cs2.set_data(path=cfg.data.signal_q2_path(), snr=snr_vals[2])
+                    else:
+                        cfg.project_tab.cs2.set_no_image()
+                    if (n >= 4):
+                        cfg.project_tab.cs3.set_data(path=cfg.data.signal_q3_path(), snr=snr_vals[3])
+                    else:
+                        cfg.project_tab.cs3.set_no_image()
+                elif cfg.data.method() == 'manual-hint':
+                    files = cfg.data.get_signals_filenames()
+                    snr_vals = cfg.data.snr_components()
+                    n = len(files)
+                    if n >= 1:
+                        cfg.project_tab.cs0.show()
+                        cfg.project_tab.cs0.set_data(path=files[0], snr=snr_vals[0])
+                    else:       cfg.project_tab.cs0.set_no_image()
+                    if n >= 2:  cfg.project_tab.cs1.set_data(path=files[1], snr=snr_vals[1])
+                    else:       cfg.project_tab.cs1.set_no_image()
+                    if n >= 3:  cfg.project_tab.cs2.set_data(path=files[2], snr=snr_vals[2])
+                    else:       cfg.project_tab.cs2.set_no_image()
+                    if n >= 4:
+                        cfg.project_tab.cs3.set_data(path=files[3], snr=snr_vals[3])
+                    else:
+                        cfg.project_tab.cs3.set_no_image()
 
-                            cfg.project_tab.detailsSNR.setText(txt)
+            br = '&nbsp;'
+            a = """<span style='color: #ffe135;'>"""
+            b = """</span>"""
+            nl = '<br>'
 
-                try:     self._jumpToLineedit.setText(str(cur))
-                except:  logger.warning('Current Layer Widget Failed to Update')
-                try:     self._skipCheckbox.setChecked(cfg.data.skipped())
-                except:  logger.warning('Skip Toggle Widget Failed to Update')
+            if cfg.project_tab.detailsSection.isVisible():
+                txt = f"""
+                Filename{br}:{br}{a}{cfg.data.filename_basename()}{b}{nl}
+                Reference:{br}{a}{cfg.data.reference_basename()}{b}{nl}
+                Modified{br}:{br}{a}{cfg.data.modified}{b}{nl}"""
+                method = cfg.data.method()
+                if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}"
+                elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
+                elif method == 'Manual-Strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
+                # txt += f"""Reject{br*7}:{br}[{(' ', 'X')[cfg.data.skipped()]}]"""
+                cfg.project_tab.detailsSection.setText(txt)
 
-                # try:     self._whiteningControl.setValue(cfg.data.whitening())
-                # except:  logger.warning('Whitening Input Widget Failed to Update')
-                # try:
-                #     self._swimWindowControl.setMaximum(min(cfg.data.image_size()))
-                #     self._swimWindowControl.setValue(cfg.data.swim_window_px()[0])
-                # except:
-                #     logger.warning('Swim Input Widget Failed to Update')
-                #
-                # try:
-                #     if cfg.data.null_cafm():
-                #         self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
-                #     else:
-                #         self._polyBiasCombo.setCurrentText('None')
-                # except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
-                # try:     self._bbToggle.setChecked(cfg.data.use_bb())
-                # except:  logger.warning('Bounding Box Toggle Failed to Update')
+            if cfg.project_tab.detailsAFM.isVisible():
+                afm, cafm = cfg.data.afm(), cfg.data.cafm()
+                afm_txt, cafm_txt = [], []
+                for x in range(2):
+                    for y in range(3):
+                        if y == 0:
+                            afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
+                            cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
+                        elif y == 1:
+                            afm_txt.append(('%.2f' % afm[x][y]).rjust(8))
+                            cafm_txt.append(('%.2f' % afm[x][y]).rjust(8))
+                        else:
+                            afm_txt.append(('%.2f' % afm[x][y]).rjust(11))
+                            cafm_txt.append(('%.2f' % cafm[x][y]).rjust(11))
+                        if (x == 0) and (y == 2):
+                            afm_txt.append(f'{nl}')
+                            cafm_txt.append(f'{nl}')
+                cfg.project_tab.detailsAFM.setText(
+                    f"{a}Affine:{b}{nl}" + "".join(afm_txt) +
+                    f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
 
-                # cfg.project_tab.slotUpdateZoomSlider()
+            if cfg.project_tab.detailsSNR.isVisible():
+                if cfg.data.zpos == 0:
+                    cfg.project_tab.detailsSNR.setText(
+                        f"Avg. SNR{br * 2}: N/A{nl}"
+                        f"Prev.{br}SNR{br}: N/A{nl}"
+                        f"Components{nl}"
+                        f"Top,Left{br * 2}: N/A{nl}"
+                        f"Top,Right{br}: N/A{nl}"
+                        f"Btm,Left{br * 2}: N/A{nl}"
+                        f"Btm,Right{br}: N/A"
+                    )
+                else:
+                    components = cfg.data.snr_components()
+                    str0 = ('%.3f' % cfg.data.snr()).rjust(9)
+                    str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
+                    if cfg.data.method() in ('grid-default','grid-custom'):
+                        q0 = ('%.3f' % components[0]).rjust(9)
+                        q1 = ('%.3f' % components[1]).rjust(9)
+                        q2 = ('%.3f' % components[2]).rjust(9)
+                        q3 = ('%.3f' % components[3]).rjust(9)
+                        cfg.project_tab.detailsSNR.setText(
+                            f"Avg. SNR{br*2}:{a}{str0}{b}{nl}"
+                            f"Prev.{br}SNR{br}:{str1}{nl}"
+                            f"Components{nl}"
+                            f"Top,Left{br*2}:{q0}{nl}"
+                            f"Top,Right{br}:{q1}{nl}"
+                            f"Btm,Left{br*2}:{q2}{nl}"
+                            f"Btm,Right{br}:{q3}"
+                        )
+                    elif cfg.data.method() in ('manual-hint', 'manual-strict'):
+                        txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
+                              f"Prev. SNR{br}:{str1}{nl}" \
+                              f"Components"
+                        for i in range(len(components)):
+                            txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
+
+                        cfg.project_tab.detailsSNR.setText(txt)
+
+            try:     self._jumpToLineedit.setText(str(cur))
+            except:  logger.warning('Current Layer Widget Failed to Update')
+            try:     self._skipCheckbox.setChecked(not cfg.data.skipped())
+            except:  logger.warning('Skip Toggle Widget Failed to Update')
+
+            # try:     self._whiteningControl.setValue(cfg.data.whitening())
+            # except:  logger.warning('Whitening Input Widget Failed to Update')
+            # try:
+            #     self._swimWindowControl.setMaximum(min(cfg.data.image_size()))
+            #     self._swimWindowControl.setValue(cfg.data.swim_window_px()[0])
+            # except:
+            #     logger.warning('Swim Input Widget Failed to Update')
+            #
+            # try:
+            #     if cfg.data.null_cafm():
+            #         self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
+            #     else:
+            #         self._polyBiasCombo.setCurrentText('None')
+            # except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
+            try:     self._bbToggle.setChecked(cfg.data.use_bb())
+            except:  logger.warning('Bounding Box Toggle Failed to Update')
+
+            # cfg.project_tab.slotUpdateZoomSlider()
 
         logger.info(f'<<<< dataUpdateWidgets [zpos={cfg.data.zpos}]')
 
@@ -1810,7 +1810,7 @@ class MainWindow(QMainWindow):
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
         if caller in ('dataUpdateWidgets'):
             return
-        if caller == 'main':
+        if caller in ('main', 'onTimer'):
             requested = self._sectionSlider.value()
             if self._isProjectTab():
                 logger.info('Jumping To Section #%d' % requested)
@@ -1821,16 +1821,10 @@ class MainWindow(QMainWindow):
                 for viewer in cfg.project_tab.get_viewers():
                     viewer.set_layer(cfg.data.zpos)
 
-                # if getData('state,manual_mode'):
-                # cfg.project_tab.initNeuroglancer()
-                # cfg.emViewer.loc = requested
-                # else:
-                #     for v in cfg.project_tab.get_viewers():
-                #         v.set_layer(requested)
                 self.dataUpdateWidgets()
 
-            try:     self._jumpToLineedit.setText(str(requested))
-            except:  logger.warning('Current Section Widget Failed to Update')
+        try:     self._jumpToLineedit.setText(str(requested))
+        except:  logger.warning('Current Section Widget Failed to Update')
 
         logger.info('<<<< jump_to_slider')
 
@@ -2041,10 +2035,6 @@ class MainWindow(QMainWindow):
         # dt = 0.000392913818359375
 
         self._dontReinit = True
-
-        # self.showZeroedPbar()
-        # self.pbarLabel.setText('Loading Project...')
-
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
         self.tell('Loading project...')
@@ -2707,7 +2697,7 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         if self._isProjectTab():
             if caller != 'dataUpdateWidgets':
-                skip_state = self._skipCheckbox.isChecked()
+                skip_state = not self._skipCheckbox.isChecked()
                 for s in cfg.data.scales():
                     layer = cfg.data.zpos
                     if layer < len(cfg.data):
@@ -2716,7 +2706,9 @@ class MainWindow(QMainWindow):
                         logger.warning(f'Request layer is out of range ({layer}) - Returning')
                         return
                 if skip_state:
-                    self.tell("Flagged For Skip: %s" % cfg.data.name_base())
+                    self.tell("Include: %s" % cfg.data.name_base())
+                else:
+                    self.tell("Exclude: %s" % cfg.data.name_base())
                 cfg.data.link_reference_sections()
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
@@ -2729,9 +2721,7 @@ class MainWindow(QMainWindow):
     def skip_change_shortcut(self):
         logger.info('')
         if cfg.data:
-            if cfg.project_tab:
-                if self._skipCheckbox.isChecked(): self._skipCheckbox.setChecked(False)
-                else:                              self._skipCheckbox.setChecked(True)
+            self._skipCheckbox.setChecked(not self._skipCheckbox.isChecked())
 
     def runchecks(self):
         run_checks()
@@ -3033,6 +3023,7 @@ class MainWindow(QMainWindow):
 
         # self._btn_refreshTab = QPushButton(' Refresh')
         self._btn_refreshTab = QPushButton()
+        self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
         self._btn_refreshTab.setStyleSheet('font-size: 12px;')
         # self._btn_refreshTab.setFixedSize(68,18)
         self._btn_refreshTab.setFixedSize(18,18)
@@ -3289,26 +3280,20 @@ class MainWindow(QMainWindow):
             logger.critical('Loading Project Tab...')
             self.cpanelFrame.show()
             self.statusBar.setStyleSheet("""
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: #ede9e8;
-                    background-color: #222222;
-                    margin: 0px;
-                    padding: 0px;
+                    font-size: 10px; font-weight: 600;
+                    color: #ede9e8; background-color: #222222;
+                    margin: 0px; padding: 0px;
                     """)
         else:
             self.statusBar.setStyleSheet("""
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: #141414;
-                    background-color: #ede9e8;
-                    margin: 0px;
-                    padding: 0px;
+                    font-size: 10px; font-weight: 600;
+                    color: #141414; background-color: #ede9e8;
+                    margin: 0px; padding: 0px;
                     """)
 
-        if caller  == '_setLastTab':
-            logger.critical('\n\n<<<<< DONT REINIT (caller = _setLastTab)! >>>>>\n')
-            return
+        # if caller  == '_setLastTab':
+        #     logger.critical('\n\n<<<<< DONT REINIT (caller = _setLastTab)! >>>>>\n')
+        #     return
 
         cfg.project_tab = None
         cfg.zarr_tab = None
@@ -3761,7 +3746,7 @@ class MainWindow(QMainWindow):
         self.maShowSwimWindowAction.triggered.connect(fn)
         maViewMenu.addAction(self.maShowSwimWindowAction)
 
-        # self.showCorrSpotsAction = QAction('Show Correlation Spots', self)
+        # self.showCorrSpotsAction = QAction('Show Correlation Signals', self)
         # self.showCorrSpotsAction.setCheckable(True)
         # self.showCorrSpotsAction.setChecked(getOpt('ui,SHOW_CORR_SPOTS'))
         # self.showCorrSpotsAction.triggered.connect(lambda val: setOpt('ui,SHOW_CORR_SPOTS', val))
@@ -4303,22 +4288,25 @@ class MainWindow(QMainWindow):
         right    = Qt.AlignmentFlag.AlignRight
 
         tip = 'Keep or Reject the Current Section'
-        self._lab_keep_reject = QLabel('Reject:')
+        self._lab_keep_reject = QLabel('Include:')
         self._lab_keep_reject.setStatusTip(tip)
-        self._skipCheckbox = QCheckBox()
+        # self._skipCheckbox = QCheckBox()
+        self._skipCheckbox = ToggleSwitch()
         self._skipCheckbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._skipCheckbox.setObjectName('_skipCheckbox')
         self._skipCheckbox.stateChanged.connect(self._callbk_skipChanged)
         self._skipCheckbox.stateChanged.connect(self._callbk_unsavedChanges)
         self._skipCheckbox.setStatusTip(tip)
         self._skipCheckbox.setEnabled(False)
+        self._skipCheckbox.setFixedHeight(28)
         vbl = VBL()
         vbl.setContentsMargins(2, 0, 2, 0)
-        vbl.setSpacing(4)
+        vbl.setSpacing(0)
         vbl.addWidget(self._lab_keep_reject, alignment=center)
         vbl.addWidget(self._skipCheckbox, alignment=right)
         # vbl.setAlignment(vcenter)
         self._ctlpanel_skip = QWidget()
+        self._ctlpanel_skip.setMaximumHeight(34)
         self._ctlpanel_skip.setLayout(vbl)
 
         tip = 'Use All Images (Reset)'
