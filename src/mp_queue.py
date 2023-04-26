@@ -250,13 +250,16 @@ class TaskQueue(QObject):
     def collect_results(self):
         t0 = time.time()
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        self.MPQLogger.critical(f'\n\nGathering Results...\n'
-                                f'Time              : {timestamp}\n'
-                                f'len(task dict)    : {len(self.task_dict)}\n'
-                                f'Pbar Text         : {self.pbar_text}\n'
-                                f'Task Prefix       : {self.taskPrefix}\n'
-                                f'# Workers         : {self.n_workers}\n'
-                                f'Example Task      : {str(self.task_dict[0])}')
+        try:
+            self.MPQLogger.critical(f'\n\nGathering Results...\n'
+                                    f'Time              : {timestamp}\n'
+                                    f'len(task dict)    : {len(self.task_dict)}\n'
+                                    f'Pbar Text         : {self.pbar_text}\n'
+                                    f'Task Prefix       : {self.taskPrefix}\n'
+                                    f'# Workers         : {self.n_workers}\n'
+                                    f'Example Task      : {str(self.task_dict[0])}')
+        except:
+            print_exception()
 
 
         '''Run All Tasks and Collect Results'''

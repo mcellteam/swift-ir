@@ -380,14 +380,19 @@ QScrollBar:horizontal {
 
 
 QLineEdit {
-    background-color: #1b1e23;*/
+    color: #206020;
+    background-color: #f3f6fb;
 	border-width: 1px;
 	border-style: solid;
 	border-color: #141414;
-	/*selection-background-color: #ffcccb;*/
+	selection-background-color: #FFFF66;
 	/*background:#daebfe;*/
 	font-size: 11px;
     font-family: Tahoma, sans-serif;
+}
+
+QLineEdit:focus {
+  border: 1px solid #339933;
 }
 
 QLCDNumber {

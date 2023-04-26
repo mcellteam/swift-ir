@@ -191,6 +191,8 @@ class DataModel:
 
     @property
     def current_method(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
 
     @current_method.setter
