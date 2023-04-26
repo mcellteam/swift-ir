@@ -2083,6 +2083,8 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()
         # dt = 1.105268955230713
 
+        cfg.data.zpos = int(len(cfg.data)/2)
+
 
         self.updateNotes()
         self._autosave() #0412+

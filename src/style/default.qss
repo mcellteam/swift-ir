@@ -63,6 +63,8 @@ QDoubleSpinBox {
     font-family: Tahoma, sans-serif;
     border-radius: 4px;
     border-width: 0px;
+    padding: 2px;
+    padding: 10px;
 }
 
 QSpinBox {
@@ -239,17 +241,17 @@ QProgressBar {
     font-size: 10px;
     font-family: Tahoma, sans-serif;
     border: 1px solid #ede9e8;
-    border-radius: 2px;
+    border-radius: 4px;
     text-align: center;
 
 }
 
-/* QProgressBar::chunk { background-color: #339933; } */
+/* QProgressBar::chunk { background-color: #339933; }*/
 
 /*
 QProgressBar::chunk {
     border: 1px solid #339933;
-    width: 6px;
+    width: 4px;
     margin: 1px;
 }
 */
@@ -389,6 +391,8 @@ QLineEdit {
 	/*background:#daebfe;*/
 	font-size: 11px;
     font-family: Tahoma, sans-serif;
+    border-radius: 3px;
+    padding: 2px;
 }
 
 QLineEdit:focus {
