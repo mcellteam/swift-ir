@@ -9,23 +9,6 @@ packages = [{include = "src"}]
 include = ["alignem.py","tacc_bootstrap","tacc_configure","__init__.py"]
 
 [tool.poetry.dependencies]
-#python = "*"
-#numpy = "*"
-#psutil = "*"
-#Pillow = "*"
-#zarr = "*"
-#tensorstore = "*"
-#tifffile = "*"
-#imagecodecs = "*"
-#neuroglancer = "*"
-#qtconsole = "*"
-#PyQt5 = "*"
-#PyQtWebEngine = "*"
-#QtPy = "*"
-#QtAwesome = "*"
-#pyqtgraph = "*"
-#imageio = "*"
-#rechunker = "*"
 python = "^3.9"
 numpy = "^1.24.3"
 psutil = "^5.9.5"
