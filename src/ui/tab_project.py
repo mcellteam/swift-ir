@@ -1791,7 +1791,7 @@ class ProjectTab(QWidget):
         self.MA_ng_widget.setLayout(self.MA_gl)
 
         self.MA_splitter = HSplitter(self.MA_ng_widget, self.MA_stageSplitter)
-        self.MA_splitter.setSizes([.80 * cfg.WIDTH, .20 * cfg.WIDTH])
+        self.MA_splitter.setSizes([int(.80 * cfg.WIDTH), int(.20 * cfg.WIDTH)])
         self.MA_splitter.setCollapsible(0, False)
         self.MA_splitter.setCollapsible(1, False)
         # self.MA_splitter.setStyleSheet('background-color: #222222; color: #ede9e8;')
