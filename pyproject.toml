@@ -1,44 +1,53 @@
-[tool.setuptools.packages]
-find = {}
+[tool.poetry]
+name = "alignem"
+version = "0.5.4.11"
+description = "AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR."
+authors = ["Joel Yancey <j.y@ucla.edu>"]
+license = "Mozilla Public License Version 2.0"
+readme = "README.md"
+packages = [{include = "src"}]
+include = ["alignem.py","tacc_bootstrap","tacc_configure","__init__.py"]
+
+[tool.poetry.dependencies]
+#python = "*"
+#numpy = "*"
+#psutil = "*"
+#Pillow = "*"
+#zarr = "*"
+#tensorstore = "*"
+#tifffile = "*"
+#imagecodecs = "*"
+#neuroglancer = "*"
+#qtconsole = "*"
+#PyQt5 = "*"
+#PyQtWebEngine = "*"
+#QtPy = "*"
+#QtAwesome = "*"
+#pyqtgraph = "*"
+#imageio = "*"
+#rechunker = "*"
+python = "^3.9"
+numpy = "^1.24.3"
+psutil = "^5.9.5"
+Pillow = "^9.5.0"
+zarr = "^2.14.2"
+tensorstore = "^0.1.36"
+tifffile = "^2023.4.12"
+imagecodecs = "^2023.3.16"
+neuroglancer = "^2.36"
+qtconsole = "^5.4.2"
+PyQt5 = "^5.15.9"
+PyQtWebEngine = "^5.15.6"
+QtPy = "^2.3.1"
+QtAwesome = "^1.2.3"
+pyqtgraph = "^0.13.3"
+imageio = "^2.28.0"
+rechunker = "^0.5.1"
+pylibtiff = "^0.5.1"
+
+[tool.poetry.scripts]
+alignem = 'alignem:main'
 
 [build-system]
-requires = ["setuptools", "wheel", "setuptools_scm"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "alignEM"
-version = "0.0.1"
-authors = [
-    {name = "Joel Yancey", email = "joelgyancey@ucla.edu" },
-    {name = "Tom Bartol", email = "bartol@salk.edu"},
-    {name = "Arthur Wetzel", email = "awetzel@psc.edu"},
-]
-description = "AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR."
-readme = "README.md"
-keywords = ["Image Registration", "Electron Microscopy"]
-license = {text = "Mozilla Public License Version 2.0"}
-dependencies = [
-            'numpy',
-            'psutil',
-            'pillow',
-            'zarr',
-            'tensorstore',
-            'tifffile',
-            'imagecodecs',
-            'neuroglancer',
-            'qtconsole',
-            'PyQt5',
-            'pyqtwebengine',
-            'qtpy',
-            'qtawesome',
-            'pyqtgraph',
-            'imageio',
-            'rechunker',
-
-]
-
-[tools.setuptools]
-packages = ["src"]
-
-
-
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

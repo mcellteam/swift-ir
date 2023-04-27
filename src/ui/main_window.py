@@ -60,7 +60,7 @@ from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exc
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr_cur_scale, exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles, is_mac
-from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, \
+from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.models.json_tree import JsonModel
@@ -88,6 +88,8 @@ from src.ui.python_console import PythonConsole
 __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
+
+logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
 
 class MainWindow(QMainWindow):
     resized = Signal()
@@ -1062,7 +1064,7 @@ class MainWindow(QMainWindow):
             msg ='Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
             dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
             if dlg.exec():
-                recipe_dialog = ScaleProjectDialog(parent=self)
+                recipe_dialog = NewConfigureProjectDialog(parent=self)
                 if recipe_dialog.exec():
 
                     self.stopNgServer()  # 0202-
@@ -4790,7 +4792,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         '''Initialize Main UI'''
-        logger.info('')
+        logger.info(f'Current Directory: {os.getcwd()}')
 
         std_button_size = QSize(96, 20)
         normal_button_size = QSize(64, 24)

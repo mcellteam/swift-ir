@@ -76,8 +76,6 @@ from src.helpers import check_for_binaries, configure_project_paths, initialize_
 import src.config as cfg
 
 
-
-
 WHITE_LIST = {'src'}      # Look for these words in the file path.
 EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
 
@@ -148,6 +146,11 @@ def main():
     # fh = logging.FileHandler('messages.log')
     # logger.addHandler(fh)
     logger.info('Running ' + __file__ + '.__main__()')
+    logger.critical('start cwd: %s' % os.getcwd())
+    logger.critical('directory of this script: %s' % os.path.dirname(__file__))
+    os.chdir(os.path.dirname(__file__))
+    logger.critical('new cwd: %s' % os.getcwd())
+
     check_for_binaries()
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
