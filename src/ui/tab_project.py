@@ -1199,7 +1199,7 @@ class ProjectTab(QWidget):
                 self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
 
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
-                self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
 
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
