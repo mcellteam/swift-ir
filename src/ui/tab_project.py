@@ -1492,7 +1492,6 @@ class ProjectTab(QWidget):
             self.gb_MA_manual_controls,)
 
 
-
         self.rb_targ = QRadioButton('Reference')
         self.rb_targ.setChecked(True)
         self.rb_karg = QRadioButton('Moving')

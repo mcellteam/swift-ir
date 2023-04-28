@@ -29,7 +29,7 @@ To create requirements.txt:
 import sys
 import inspect
 import argparse
-import pandas as pd
+# import pandas as pd
 # from _py_console import PythonConsole
 
 from qtpy.QtCore import QSize, Qt, Slot, QCoreApplication, QAbstractTableModel, QModelIndex
