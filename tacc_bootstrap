@@ -10,7 +10,7 @@
 # $ source tacc_bootstrap
 
 CACHER="0"
-DEBUG="1"
+DEBUG="0"
 PULL="1"
 
 echo "Parsing cli arguments..."
