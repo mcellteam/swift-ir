@@ -31,7 +31,7 @@ import neuroglancer as ng
 import pyqtgraph.console
 import pyqtgraph as pg
 import qtawesome as qta
-from rechunker import rechunk
+# from rechunker import rechunk
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QEventLoop, QRect, QPoint, \
     QPropertyAnimation
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
@@ -89,7 +89,7 @@ __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
 
-logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
+# logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
 
 class MainWindow(QMainWindow):
     resized = Signal()
@@ -3959,9 +3959,9 @@ class MainWindow(QMainWindow):
         self.rescaleAction.triggered.connect(self.rescale)
         actionsMenu.addAction(self.rescaleAction)
 
-        self.rechunkAction = QAction('Rechunk...', self)
-        self.rechunkAction.triggered.connect(self.rechunk)
-        actionsMenu.addAction(self.rechunkAction)
+        # self.rechunkAction = QAction('Rechunk...', self)
+        # self.rechunkAction.triggered.connect(self.rechunk)
+        # actionsMenu.addAction(self.rechunkAction)
 
 
         configMenu = self.menu.addMenu('Configure')
@@ -4225,71 +4225,72 @@ class MainWindow(QMainWindow):
 
 
     def rechunk(self):
-        if self._isProjectTab():
-            if cfg.data.is_aligned_and_generated():
-                target = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val())
-                _src = os.path.join(cfg.data.dest(), 'img_aligned.zarr', '_s%d' % cfg.data.scale_val())
-            else:
-                target = os.path.join(cfg.data.dest(), 'img_src.zarr', 's%d' % cfg.data.scale_val())
-                _src = os.path.join(cfg.data.dest(), 'img_src.zarr', '_s%d' % cfg.data.scale_val())
-
-            dlg = RechunkDialog(self, target=target)
-            if dlg.exec():
-
-                t_start = time.time()
-
-                logger.info('Rechunking...')
-                chunkshape = cfg.data['data']['chunkshape']
-                intermediate = "intermediate.zarr"
-
-                os.rename(target, _src)
-                try:
-                    source = zarr.open(store=_src)
-                    self.tell('Configuring rechunking (target: %s). New chunk shape: %s...' % (target, str(chunkshape)))
-                    logger.info('Configuring rechunk operation (target: %s)...' % target)
-                    rechunked = rechunk(
-                        source=source,
-                        target_chunks=chunkshape,
-                        target_store=target,
-                        max_mem=100_000_000_000,
-                        temp_store=intermediate
-                    )
-                    self.tell('Rechunk plan:\n%s' % str(rechunked))
-                except:
-                    self.warn('Unable to rechunk the array')
-                    print_exception()
-                    os.rename(_src, target) # set name back to original name
-                    return
-
-                self.tell('Rechunking...')
-                logger.info('Rechunking...')
-                rechunked.execute()
-                self.hud.done()
-
-                logger.info('Removing %s...' %intermediate)
-                self.tell('Removing %s...' %intermediate)
-                shutil.rmtree(intermediate, ignore_errors=True)
-                shutil.rmtree(intermediate, ignore_errors=True)
-
-                logger.info('Removing %s...' %_src)
-                self.tell('Removing %s...' %_src)
-                shutil.rmtree(_src, ignore_errors=True)
-                shutil.rmtree(_src, ignore_errors=True)
-                self.hud.done()
-
-                t_end = time.time()
-                dt = t_end - t_start
-                z = zarr.open(store=target)
-                info = str(z.info)
-                self.tell('\n%s' %info)
-
-                self.tell('Rechunking Time: %.2f' % dt)
-                logger.info('Rechunking Time: %.2f' % dt)
-
-                cfg.project_tab.initNeuroglancer()
-
-            else:
-                logger.info('Rechunking Canceled')
+        # if self._isProjectTab():
+        #     if cfg.data.is_aligned_and_generated():
+        #         target = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val())
+        #         _src = os.path.join(cfg.data.dest(), 'img_aligned.zarr', '_s%d' % cfg.data.scale_val())
+        #     else:
+        #         target = os.path.join(cfg.data.dest(), 'img_src.zarr', 's%d' % cfg.data.scale_val())
+        #         _src = os.path.join(cfg.data.dest(), 'img_src.zarr', '_s%d' % cfg.data.scale_val())
+        #
+        #     dlg = RechunkDialog(self, target=target)
+        #     if dlg.exec():
+        #
+        #         t_start = time.time()
+        #
+        #         logger.info('Rechunking...')
+        #         chunkshape = cfg.data['data']['chunkshape']
+        #         intermediate = "intermediate.zarr"
+        #
+        #         os.rename(target, _src)
+        #         try:
+        #             source = zarr.open(store=_src)
+        #             self.tell('Configuring rechunking (target: %s). New chunk shape: %s...' % (target, str(chunkshape)))
+        #             logger.info('Configuring rechunk operation (target: %s)...' % target)
+        #             rechunked = rechunk(
+        #                 source=source,
+        #                 target_chunks=chunkshape,
+        #                 target_store=target,
+        #                 max_mem=100_000_000_000,
+        #                 temp_store=intermediate
+        #             )
+        #             self.tell('Rechunk plan:\n%s' % str(rechunked))
+        #         except:
+        #             self.warn('Unable to rechunk the array')
+        #             print_exception()
+        #             os.rename(_src, target) # set name back to original name
+        #             return
+        #
+        #         self.tell('Rechunking...')
+        #         logger.info('Rechunking...')
+        #         rechunked.execute()
+        #         self.hud.done()
+        #
+        #         logger.info('Removing %s...' %intermediate)
+        #         self.tell('Removing %s...' %intermediate)
+        #         shutil.rmtree(intermediate, ignore_errors=True)
+        #         shutil.rmtree(intermediate, ignore_errors=True)
+        #
+        #         logger.info('Removing %s...' %_src)
+        #         self.tell('Removing %s...' %_src)
+        #         shutil.rmtree(_src, ignore_errors=True)
+        #         shutil.rmtree(_src, ignore_errors=True)
+        #         self.hud.done()
+        #
+        #         t_end = time.time()
+        #         dt = t_end - t_start
+        #         z = zarr.open(store=target)
+        #         info = str(z.info)
+        #         self.tell('\n%s' %info)
+        #
+        #         self.tell('Rechunking Time: %.2f' % dt)
+        #         logger.info('Rechunking Time: %.2f' % dt)
+        #
+        #         cfg.project_tab.initNeuroglancer()
+        #
+        #     else:
+        #         logger.info('Rechunking Canceled')
+        pass
 
 
     def initControlPanel(self):
