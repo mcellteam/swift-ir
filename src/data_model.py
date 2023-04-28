@@ -149,7 +149,7 @@ class DataModel:
         caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
-        if int(index) in range(len(self)):
+        if int(index) in range(0, len(self)):
             self['data']['z_position'] = int(index)
         else:
             logger.warning(f'\n\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n\n')
