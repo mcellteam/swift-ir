@@ -1222,7 +1222,7 @@ class ProjectTab(QWidget):
             if caller == 'main':
                 cfg.data.set_swim_2x2_px(int(self.slider_AS_2x2_SWIM_window.value()))
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
-                self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
@@ -2024,9 +2024,9 @@ class ProjectTab(QWidget):
                 self.shaderToolbar.hide()
                 self.shaderAction.setStatusTip('Show Brightness & Contrast Shaders')
             else:
-                self.contrastSlider.setValue(cfg.data.contrast)
+                self.contrastSlider.setValue(int(cfg.data.contrast))
                 self.contrastLE.setText('%.2f' % cfg.data.contrast)
-                self.brightnessSlider.setValue(cfg.data.brightness)
+                self.brightnessSlider.setValue(int(cfg.data.brightness))
                 self.brightnessLE.setText('%.2f' % cfg.data.brightness)
                 self.shaderToolbar.show()
                 self.shaderAction.setStatusTip('Hide Brightness & Contrast Shaders')
@@ -2551,11 +2551,11 @@ class ProjectTab(QWidget):
             self._combo_method_switch = False
             self.combo_method.setCurrentText(cfg.data.method()) #Todo #Check
             self._combo_method_switch = True
-            self.spinbox_whitening.setValue(cfg.data.manual_whitening())
+            self.spinbox_whitening.setValue(int(cfg.data.manual_whitening()))
             self.updateProjectLabels() #0424+
 
             img_siz = cfg.data.image_size()
-            img_w = img_siz[0]
+            img_w = int(img_siz[0])
 
             # Update line edit widgets validator
             # Update slider maximum and minimums
@@ -2564,19 +2564,19 @@ class ProjectTab(QWidget):
             self.AS_SWIM_window_le.setValidator(QIntValidator(64, img_w))
             self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
             self.slider_AS_SWIM_window.setMaximum(img_w)
-            self.slider_AS_SWIM_window.setValue(cfg.data.swim_window_px()[0])
+            self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_window_px()[0]))
 
             self.AS_2x2_SWIM_window_le.setValidator(QIntValidator(64, int(img_w / 2)))
             self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
             self.slider_AS_2x2_SWIM_window.setMaximum(int(img_w / 2))
-            self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
 
             self.MA_SWIM_window_le.setValidator(QIntValidator(64, img_w))
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
             self.slider_MA_SWIM_window.setMaximum(img_w)
-            self.slider_MA_SWIM_window.setValue(cfg.data.manual_swim_window_px())
+            self.slider_MA_SWIM_window.setValue(int(cfg.data.manual_swim_window_px()))
 
-            self.spinbox_swim_iters.setValue(cfg.data.swim_iterations())
+            self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
 
             self.toggle_showInstructionOverlay.setChecked(getData('state,stage_viewer,show_overlay_message'))
 
@@ -2594,7 +2594,7 @@ class ProjectTab(QWidget):
                 self.Q4.setActivated(grid[3])
 
             self.cb_clobber.setChecked(cfg.data.clobber())
-            self.sb_clobber_pixels.setValue(cfg.data.clobber_px())
+            self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
 
             self.cb_keep_swim_templates.setChecked((cfg.data.targ == True) or (cfg.data.karg == True))
             self.updateMethodSelectWidget(soft=True)
@@ -3342,8 +3342,8 @@ class ProjectTab(QWidget):
             reset_val = 0.0
             cfg.data.brightness = reset_val
             cfg.data.contrast = reset_val
-            self.brightnessSlider.setValue(cfg.data.brightness)
-            self.contrastSlider.setValue(cfg.data.contrast)
+            self.brightnessSlider.setValue(int(cfg.data.brightness))
+            self.contrastSlider.setValue(int(cfg.data.contrast))
             for viewer in self.get_viewers():
                 viewer.set_brightness()
                 viewer.set_contrast()
