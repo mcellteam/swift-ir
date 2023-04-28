@@ -317,7 +317,9 @@ class MainWindow(QMainWindow):
         self._scales_combobox_switch = 0 #1125
         self._isPlayingBack = 0
         self._isProfiling = 0
+        logger.info('WebPage() >>>>')
         self.detachedNg = WebPage()
+        logger.info('<<<< WebPage()')
         self._lastRefresh = 0
         # self._corrSpotDrawerSize = 140
         self._corrSpotDrawerSize = 160
