@@ -935,14 +935,15 @@ class NewConfigureProjectDialog(QDialog):
         self.gb_config.setLayout(self.fl_config)
 
         hbl = QHBoxLayout()
-        hbl.addWidget(self.gb_config, alignment=Qt.AlignLeft | Qt.AlignTop)
-        hbl.addWidget(self.gb_storage_options, alignment=Qt.AlignLeft | Qt.AlignTop)
+        hbl.addWidget(self.gb_config, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        hbl.addWidget(self.gb_storage_options, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        hbl.addWidget(ExpandingWidget(self))
 
         w = QWidget()
         w.setLayout(hbl)
         # w = HWidget(ExpandingWidget(self), self.gb_config, self.gb_storage_options, ExpandingWidget(self))
         # w.layout.setAlignment(Qt.AlignTop)
-        vbl = VBL(w, self.w_buttons)
+        vbl = VBL(w, self.w_buttons, ExpandingWidget(self))
         self.setLayout(vbl)
 
 
@@ -1122,5 +1123,5 @@ class DefaultsModel(QAbstractListModel):
 class ExpandingWidget(QWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

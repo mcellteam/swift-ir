@@ -145,11 +145,11 @@ def main():
     # logging.propagate = False  # stops message propogation to the root handler
     # fh = logging.FileHandler('messages.log')
     # logger.addHandler(fh)
-    logger.info('Running ' + __file__ + '.__main__()')
-    logger.critical('start cwd: %s' % os.getcwd())
-    logger.critical('directory of this script: %s' % os.path.dirname(__file__))
-    os.chdir(os.path.dirname(__file__))
-    logger.critical('new cwd: %s' % os.getcwd())
+    # logger.info('Running ' + __file__ + '.__main__()')
+    # logger.critical('start cwd: %s' % os.getcwd())
+    # logger.critical('directory of this script: %s' % os.path.dirname(__file__))
+    # # os.chdir(os.path.dirname(__file__))
+    # logger.critical('new cwd: %s' % os.getcwd())
 
     check_for_binaries()
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
