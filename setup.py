@@ -8,10 +8,10 @@ with open("README.md", "r") as fh:
 
 setup(
     name="alignem",
-    version="0.5.435",
+    version="0.5.438",
     author="Joel Yancey,",
     author_email="joelgyancey@ucla.edu",
-    description="AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR.",
+    description="AlignEM-SWIFT is a graphical tool for registering serial section electron micrographs using SWiFT-IR.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     platforms=["any"],
