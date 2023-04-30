@@ -3,7 +3,7 @@
 import os
 import logging
 import numpy as np
-from libtiff import TIFF
+# from libtiff import TIFF
 import zarr
 from qtpy.QtCore import QObject, QFileSystemWatcher
 from src.ui.dialogs import mendenhall_dialog
@@ -95,12 +95,13 @@ class Mendenhall(QObject):
         cfg.project_tab.openViewZarr()
 
     def img_to_zarr(self, ID, fn):
-        cfg.main_window.hud.post(f"Converting Image ID ({ID}) '{os.path.basename(fn)}' To Zarr...")
-        tif = TIFF.open(fn)
-        img = tif.read_image()[:, ::-1]  # numpy array
-        store = zarr.open(self.zarr_path)
-        store[ID, :, :] = img
-        store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        # cfg.main_window.hud.post(f"Converting Image ID ({ID}) '{os.path.basename(fn)}' To Zarr...")
+        # tif = TIFF.open(fn)
+        # img = tif.read_image()[:, ::-1]  # numpy array
+        # store = zarr.open(self.zarr_path)
+        # store[ID, :, :] = img
+        # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        pass
 
     def preallocate(self):
         if self.image_size:
