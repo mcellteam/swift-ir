@@ -841,13 +841,8 @@ class ProjectTab(QWidget):
                 self.update_MA_widgets()
                 # self.set_method_label_text()
                 # self.tgl_alignMethod.setChecked(False)
-
-                # cfg.refViewer.undrawSWIMwindow()
-                # cfg.baseViewer.undrawSWIMwindow()
                 cfg.refViewer.undrawSWIMwindows()
                 cfg.baseViewer.undrawSWIMwindows()
-
-
             except:
                 print_exception()
 
@@ -894,7 +889,6 @@ class ProjectTab(QWidget):
         def fn():
             cfg.main_window.hud.post('Aligning...')
             # self.applyMps()
-
             cfg.main_window.alignOne()
             # cfg.main_window.alignGenerateOne()
             cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
