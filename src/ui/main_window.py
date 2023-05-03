@@ -2498,14 +2498,15 @@ class MainWindow(QMainWindow):
 
     def startStopTimer(self):
         logger.info('')
-        if self._isPlayingBack:
-            self.automaticPlayTimer.stop()
-            self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
-        elif cfg.project_tab or cfg.zarr_tab:
-            # self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
-            self.automaticPlayTimer.start()
-            self._btn_automaticPlayTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
-        self._isPlayingBack = not self._isPlayingBack
+        if self._isProjectTab():
+            if self._isPlayingBack:
+                self.automaticPlayTimer.stop()
+                self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+            elif cfg.project_tab or cfg.zarr_tab:
+                # self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
+                self.automaticPlayTimer.start()
+                self._btn_automaticPlayTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
+            self._isPlayingBack = not self._isPlayingBack
 
 
     def stopPlaybackTimer(self):
@@ -2515,29 +2516,31 @@ class MainWindow(QMainWindow):
 
     def incrementZoomOut(self):
         # logger.info('')
-        if getData('state,manual_mode'):
-            new_cs_scale = cfg.refViewer.zoom() * 1.1
-            logger.info(f'new_cs_scale: {new_cs_scale}')
-            cfg.baseViewer.set_zoom(new_cs_scale)
-        else:
-            new_cs_scale = cfg.emViewer.zoom() * 1.1
-            logger.info(f'new_cs_scale: {new_cs_scale}')
-            cfg.emViewer.set_zoom(new_cs_scale)
+        if self._isProjectTab():
+            if getData('state,manual_mode'):
+                new_cs_scale = cfg.refViewer.zoom() * 1.1
+                logger.info(f'new_cs_scale: {new_cs_scale}')
+                cfg.baseViewer.set_zoom(new_cs_scale)
+            else:
+                new_cs_scale = cfg.emViewer.zoom() * 1.1
+                logger.info(f'new_cs_scale: {new_cs_scale}')
+                cfg.emViewer.set_zoom(new_cs_scale)
 
-        cfg.project_tab.zoomSlider.setValue( 1 / new_cs_scale )
+            cfg.project_tab.zoomSlider.setValue( 1 / new_cs_scale )
 
 
     def incrementZoomIn(self):
         # logger.info('')
-        if getData('state,manual_mode'):
-            new_cs_scale = cfg.refViewer.zoom() * 0.9
-            logger.info(f'new_cs_scale: {new_cs_scale}')
-            cfg.baseViewer.set_zoom(new_cs_scale)
-        else:
-            new_cs_scale = cfg.emViewer.zoom() * 0.9
-            logger.info(f'new_cs_scale: {new_cs_scale}')
-            cfg.emViewer.set_zoom(new_cs_scale)
-        cfg.project_tab.zoomSlider.setValue( 1 / new_cs_scale )
+        if self._isProjectTab():
+            if getData('state,manual_mode'):
+                new_cs_scale = cfg.refViewer.zoom() * 0.9
+                logger.info(f'new_cs_scale: {new_cs_scale}')
+                cfg.baseViewer.set_zoom(new_cs_scale)
+            else:
+                new_cs_scale = cfg.emViewer.zoom() * 0.9
+                logger.info(f'new_cs_scale: {new_cs_scale}')
+                cfg.emViewer.set_zoom(new_cs_scale)
+            cfg.project_tab.zoomSlider.setValue( 1 / new_cs_scale )
 
 
     def initShortcuts(self):
@@ -3764,20 +3767,6 @@ class MainWindow(QMainWindow):
                         cfg.baseViewer.drawSWIMwindow()
         self.maShowSwimWindowAction.triggered.connect(fn)
         maViewMenu.addAction(self.maShowSwimWindowAction)
-
-        # self.showCorrSpotsAction = QAction('Show Correlation Signals', self)
-        # self.showCorrSpotsAction.setCheckable(True)
-        # self.showCorrSpotsAction.setChecked(getOpt('ui,SHOW_CORR_SPOTS'))
-        # self.showCorrSpotsAction.triggered.connect(lambda val: setOpt('ui,SHOW_CORR_SPOTS', val))
-        # self.showCorrSpotsAction.triggered.connect(self.update_displayed_controls)
-        # viewMenu.addAction(self.showCorrSpotsAction)
-
-        # self.ngShowPanelBordersAction = QAction('Show Ng Panel Borders', self)
-        # self.ngShowPanelBordersAction.setCheckable(True)
-        # self.ngShowPanelBordersAction.setChecked(getOpt('neuroglancer,SHOW_PANEL_BORDERS'))
-        # self.ngShowPanelBordersAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_PANEL_BORDERS', val))
-        # self.ngShowPanelBordersAction.triggered.connect(self.update_ng)
-        # ngMenu.addAction(self.ngShowPanelBordersAction)
 
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog

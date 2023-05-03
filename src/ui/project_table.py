@@ -195,24 +195,17 @@ class ProjectTable(QWidget):
             print_exception()
         finally:
             self.table.setUpdatesEnabled(True)
-            # self.setUpdatesEnabled(True)
             self.tableFinishedLoading.emit()
-            # self.table.show()
-            # self.loadScreenLabel.hide()
-
             cfg.main_window.hidePbar()
-            # self.setUpdatesEnabled(True)
             self.setColumnWidths()
             self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
             self.set_column_headers()
-
             if cur_selection != -1:
                 self.table.selectRow(cur_selection)
             self.table.verticalScrollBar().setValue(cur_scroll_pos)
             # logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
             # cur_selection = self.table.currentIndex().row()
             self.table.update()
-
             dt = time.time() - t
             logger.info('Table Load Time %s' %str(dt))
 
@@ -329,24 +322,11 @@ class ProjectTable(QWidget):
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        # self.project_table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
         self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
         self.row_height_slider.setMaximumWidth(128)
-
-        # self.row_height_slider.valueChanged.connect(self.updateFontSize)
-        # self.row_height_widget = QWidget()
-        # self.thumbnailPixelsLabel = QLabel()
-        # self.row_height_hlayout = QHBoxLayout()
-        # self.row_height_hlayout.setContentsMargins(2, 2, 2, 2)
-        # self.row_height_hlayout.addWidget(QLabel('Thumbnail Size:'))
-        # self.row_height_hlayout.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.row_height_hlayout.addWidget(self.thumbnailPixelsLabel, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.row_height_widget.setLayout(self.row_height_hlayout)
-
-
         self.btnReloadTable = QPushButton('Reload')
         self.btnReloadTable.setFixedHeight(18)
         self.btnReloadTable.setFixedWidth(70)
