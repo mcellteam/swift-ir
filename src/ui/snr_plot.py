@@ -343,9 +343,13 @@ class SnrPlot(QWidget):
             self._error_bars[s] = None
 
         try:
-            skip_list = list(zip(*cfg.data.skips_list()))[0]
+            skip_list = list(zip(*cfg.data.skips_list()))
+            if skip_list:
+                skip_list = skip_list[0]
         except:
-            skip_list = [-1]
+            # skip_list = [-1]
+            skip_list = []
+            print_exception()
 
         for i, err in enumerate(errbars):
             if i not in skip_list:
@@ -399,7 +403,8 @@ class SnrPlot(QWidget):
                 self.updateLayerLinePos()
                 cfg.main_window.dataUpdateWidgets()
             except:
-                pass
+                print_exception()
+                # pass
 
     def onSnrClick2(self, scale):
         logger.info(f'onSnrClick2 ({scale}):')
