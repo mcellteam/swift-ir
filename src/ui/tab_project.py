@@ -526,7 +526,7 @@ class ProjectTab(QWidget):
         self.detailsRuntime = QLabel()
         self.detailsRuntime.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsRuntime.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.runtimeClabel = ClickLabel('<b>dt</b>')
+        self.runtimeClabel = ClickLabel('<b>Benchmarks</b>')
         self.runtimeClabel.setStyleSheet(overlay_style)
         # self.runtimeClabel.setAutoFillBackground(False)
         self.runtimeClabel.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -534,21 +534,21 @@ class ProjectTab(QWidget):
         def fn():
             self.detailsRuntime.setVisible(not self.detailsRuntime.isVisible())
             self.runtimeClabel.setText(
-                ("<b><span style='color: #FFFF66;'>dt</span></b>",
+                ("<b><span style='color: #FFFF66;'>Benchmarks</span></b>",
                  "<b>dt</b>")[self.detailsRuntime.isHidden()])
         self.runtimeClabel.clicked.connect(fn)
         self.detailsRuntime.setWordWrap(True)
         self.detailsRuntime.setStyleSheet(style)
         self.detailsRuntime.hide()
 
-        sep = "<span style='font-size: 15px; color: #f3f6fb; " \
-                    "font-family: sans-serif;'>&nbsp;&#183;&nbsp;</span>"
+        # sep = "<span style='font-size: 15px; color: #f3f6fb; " \
+        #             "font-family: sans-serif;'>&nbsp;&#183;&nbsp;</span>"
+        sep = "<span style='color: #f3f6fb;'>&nbsp;&#183;&nbsp;</span>"
         sep0, sep1, sep2, sep3 = QLabel(sep), QLabel(sep), QLabel(sep), QLabel(sep)
         self.labelsWidget = HWidget(self.detailsClabel, sep0, self.afmClabel, sep1,
-                                    self.snrClabel, sep2, self.runtimeClabel, sep3)
-                                    # self.corrSignalsClabel)
+                                    self.snrClabel, sep2, self.runtimeClabel)
         self.labelsWidget.setContentsMargins(8, 0, 8, 0)
-        self.labelsWidget.setFixedHeight(20)
+        self.labelsWidget.setFixedHeight(16)
 
         self.detailsDetailsWidget = QWidget()
         self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -1789,19 +1789,20 @@ class ProjectTab(QWidget):
         # self._highContrastNgAction.setFixedSize(16, 16)
         # self._highContrastNgAction.setIconSize(QSize(14,14))
         self._highContrastNgAction.setIcon(qta.icon("mdi.theme-light-dark", color='#ede9e8'))
+        self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
         self._highContrastNgAction.setCheckable(True)
         self._highContrastNgAction.setChecked(getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
         if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
-            self._highContrastNgAction.setText('Neutral')
+            self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
         else:
-            self._highContrastNgAction.setText('Contrast')
+            self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-outline", color='#ede9e8'))
 
         self._highContrastNgAction.triggered.connect(lambda: setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', self._highContrastNgAction.isChecked()))
         def fn():
             if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
-                self._highContrastNgAction.setText('Neutral')
+                self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
             else:
-                self._highContrastNgAction.setText('Contrast')
+                self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-outline", color='#ede9e8'))
             for v in self.get_viewers():
                 try:
                     v.updateHighContrastMode()
@@ -3216,7 +3217,7 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.jumpToTreeLab)
         hbl.addWidget(QLabel(' Scale:'))
         hbl.addWidget(self.le_tree_jumpToScale)
-        hbl.addWidget(QLabel(' Section #:'))
+        hbl.addWidget(QLabel(' Section:'))
         hbl.addWidget(self.le_tree_jumpToSec)
         hbl.addWidget(self.combo_data_tree)
         hbl.addWidget(self.btn_tree_go)

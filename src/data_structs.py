@@ -5,7 +5,6 @@ data_template = \
     {
         "version": 0.50,
         "created": '',
-        # "method": "None",
         "system": {
             "node": None,
         },
@@ -29,9 +28,6 @@ data_template = \
             "destination_path": "",
             "z_position": 0,
             "current_scale": "scale_1",
-            "t_scaling": 0.0,
-            "t_scaling_convert_zarr": 0.0,
-            "t_thumbs": 0.0,
             "thumb_scaling_factor_source": None,
             "scales": {
                 "scale_1": {
@@ -41,11 +37,6 @@ data_template = \
                     "null_cafm_trends": cfg.DEFAULT_NULL_BIAS,
                     "use_bounding_rect": cfg.DEFAULT_BOUNDING_BOX,
                     "stack": [],
-                    "t_align": 0.0,
-                    "t_generate": 0.0,
-                    "t_convert_zarr": 0.0,
-                    "t_thumbs_aligned": 0.0,
-                    "t_thumbs_spot": 0.0,
                     "thumb_scaling_factor_aligned": None,
                     "thumb_scaling_factor_corr_spot": None,
                 }

@@ -373,34 +373,69 @@ class DataModel:
         if l == None: l = self.zpos
         return len(self.snr_components())
 
-    def set_t_scaling(self, dt):
-        self._data['data']['t_scaling'] = dt
+    @property
+    def t_scaling(self):
+        return self._data['data']['benchmarks']['t_scaling']
 
-    def set_t_scaling_convert_zarr(self, dt):
-        self._data['data']['t_scaling_convert_zarr'] = dt
+    @t_scaling.setter
+    def t_scaling(self, dt):
+        self._data['data']['benchmarks']['t_scaling'] = dt
 
-    def set_t_thumbs(self, dt):
-        self._data['data']['t_thumbs'] = dt
+    @property
+    def t_scaling_convert_zarr(self):
+        return self._data['data']['benchmarks']['t_scaling_convert_zarr']
 
-    def set_t_align(self, dt, s=None):
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['t_align'] = dt
+    @t_scaling_convert_zarr.setter
+    def t_scaling_convert_zarr(self, dt):
+        self._data['data']['benchmarks']['t_scaling_convert_zarr'] = dt
 
-    def set_t_generate(self, dt, s=None):
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['t_generate'] = dt
+    @property
+    def t_thumbs(self):
+        return self._data['data']['benchmarks']['t_thumbs']
 
-    def set_t_convert_zarr(self, dt, s=None):
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['t_convert_zarr'] = dt
+    @t_thumbs.setter
+    def t_thumbs(self, dt):
+        self._data['data']['benchmarks']['t_thumbs'] = dt
 
-    def set_t_thumbs_aligned(self, dt, s=None):
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['t_thumbs_aligned'] = dt
+    @property
+    def t_align(self):
+        return self._data['data']['benchmarks']['scales'][self.scale]['t_align']
 
-    def set_t_thumbs_spot(self, dt, s=None):
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['t_thumbs_spot'] = dt
+    @t_align.setter
+    def t_align(self, dt):
+        self._data['data']['benchmarks']['scales'][self.scale]['t_align'] = dt
+
+    @property
+    def t_generate(self):
+        return self._data['data']['benchmarks']['scales'][self.scale]['t_generate']
+
+    @t_generate.setter
+    def t_generate(self, dt):
+        self._data['data']['benchmarks']['scales'][self.scale]['t_generate'] = dt
+
+    @property
+    def t_convert_zarr(self):
+        return self._data['data']['benchmarks']['scales'][self.scale]['t_convert_zarr']
+
+    @t_convert_zarr.setter
+    def t_convert_zarr(self, dt):
+        self._data['data']['benchmarks']['scales'][self.scale]['t_convert_zarr'] = dt
+
+    @property
+    def t_thumbs_aligned(self):
+        return self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_aligned']
+
+    @t_thumbs_aligned.setter
+    def t_thumbs_aligned(self, dt):
+        self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_aligned'] = dt
+
+    @property
+    def t_thumbs_spot(self):
+        return self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_spot']
+
+    @t_thumbs_spot.setter
+    def t_thumbs_spot(self, dt):
+        self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_spot'] = dt
 
     def set_thumb_scaling_factor_source(self, factor:int):
         self._data['data']['thumb_scaling_factor_source'] = factor
@@ -425,7 +460,6 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         self._data['data']['scales'][s]['stack'][l]['notes'] = text
-
 
     def sl(self):
         return (self.scale, self.zpos)
@@ -666,6 +700,11 @@ class DataModel:
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
+        self._data['data'].setdefault('benchmarks', {})
+        self._data['data']['benchmarks'].setdefault('t_scaling', 0.0)
+        self._data['data']['benchmarks'].setdefault('t_scaling_convert_zarr', 0.0)
+        self._data['data']['benchmarks'].setdefault('t_thumbs', 0.0)
+        self._data['data']['benchmarks'].setdefault('scales', {})
         self._data['data'].setdefault('t_scaling', 0.0)
         self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
         self._data['data'].setdefault('t_thumbs', 0.0)
@@ -696,11 +735,13 @@ class DataModel:
             scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
             scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
-            scale.setdefault('t_align', 0.0)
-            scale.setdefault('t_generate', 0.0)
-            scale.setdefault('t_convert_zarr', 0.0)
-            scale.setdefault('t_thumbs_aligned', 0.0)
-            scale.setdefault('t_thumbs_spot', 0.0)
+            self._data['data']['benchmarks']['scales'].setdefault(s, {})
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_align', 0.0)
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_generate', 0.0)
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_convert_zarr', 0.0)
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_thumbs_aligned', 0.0)
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_thumbs_spot', 0.0)
+            # self._data['data']['benchmarks']['scales'][s].setdefault('thumb_scaling_factor_aligned', 0.0)
             self._data['data']['defaults']['scales'].setdefault(s, {})
 
             for i in range(len(self)):

@@ -759,7 +759,7 @@ class NewConfigureProjectDialog(QDialog):
         self.cancelButton.clicked.connect(self.on_cancel)
 
         self.w_buttons = QWidget()
-        self.w_buttons.setLayout(HBL(self.cancelButton, self.applyButton))
+        self.w_buttons.setLayout(HBL(ExpandingWidget(self),self.cancelButton, self.applyButton))
 
         '''Scales Input Field'''
         if do_scales_exist():

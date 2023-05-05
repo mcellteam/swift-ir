@@ -88,7 +88,7 @@ def generate_zarr_scales(data):
 
 
         dt = task_queue.collect_results()
-        cfg.data.set_t_scaling_convert_zarr(dt)
+        cfg.data.t_scaling_convert_zarr = dt
         logger.info('<<<< Generate Zarr Scales End <<<<')
 
 
