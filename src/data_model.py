@@ -283,10 +283,10 @@ class DataModel:
         if s == None: s = self.scale
         snr_list = self.snr_list(s=s)
         if sum(snr_list) < 1:
-            logger.critical(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
+            # logger.info(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
             return False
         else:
-            logger.critical(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
+            # logger.info(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
             return True
 
     def is_alignable(self) -> bool:

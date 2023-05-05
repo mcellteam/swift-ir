@@ -478,7 +478,6 @@ class OpenProject(QWidget):
     def open_project_selected(self):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        cfg.main_window.stopPlaybackTimer()
         path = self.selectionReadout.text()
         if validate_zarr_selection(path):
             self.open_zarr_selected()

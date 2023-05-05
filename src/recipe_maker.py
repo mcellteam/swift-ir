@@ -103,20 +103,22 @@ class align_recipe:
         self.scale=scale
         self.defaults = defaults
 
-        #New
         if self.cur_method == 'grid-default':
-            self.grid_ww = self.defaults[scale]['swim-window-px']
-            self.grid_ww_2x2 = [self.grid_ww[0] / 2,  self.grid_ww[1] / 2]
+            self.grid_ww_1x1 = self.defaults[scale]['swim-window-px']
+            self.grid_ww_2x2 = [self.grid_ww_1x1[0] / 2,  self.grid_ww_1x1[1] / 2]
         else:
-            self.grid_ww = self.alData['swim_settings']['grid-custom-px']
+            self.grid_ww_1x1 = self.alData['swim_settings']['grid-custom-px']
             self.grid_ww_2x2 = self.alData['swim_settings']['grid-custom-2x2-px']
 
         self.option = self.alData['method_data']['alignment_option']
         self.wsf    = self.alData['method_data']['win_scale_factor']
-        self.auto_ww    = self.alData['swim_settings']['grid-custom-px']
+        # self.auto_ww    = self.alData['swim_settings']['grid-custom-px']
+
+
         self.grid_default_ww    = self.alData['swim_settings']['default_auto_swim_window_px']
         self.grid_custom_ww    = self.alData['swim_settings']['grid-custom-px']
-        self.ww_2x2    = self.alData['swim_settings']['grid-custom-2x2-px']
+        # self.ww_2x2    = self.alData['swim_settings']['grid-custom-2x2-px']
+
         self.wht    = self.alData['method_data']['whitening_factor']
         self.man_ww = self.alData['manual_settings'].get('manual_swim_window_px')
         self.hint_or_strict = self.alData['manual_settings'].get('hint-or-strict')
@@ -146,8 +148,10 @@ class align_recipe:
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))   # Point Array for one point
-        wwx = int(self.grid_default_ww[0])  # Window Width in x Scaled
-        wwy = int(self.grid_default_ww[1])  # Window Width in y Scaled
+        # wwx = int(self.grid_default_ww[0])  # Window Width in x Scaled
+        # wwy = int(self.grid_default_ww[1])  # Window Width in y Scaled
+        wwx = int(self.grid_ww_1x1[0])  # Window Width in x Scaled
+        wwy = int(self.grid_ww_1x1[1])  # Window Width in y Scaled
         cx = int(self.siz[0] / 2.0)   # Window Center in x
         cy = int(self.siz[1] / 2.0)   # Window Center in y
         pa[0, 0] = cx
@@ -163,8 +167,10 @@ class align_recipe:
             for y in range(ny):
                 pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
                 pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
-        sx_2x2 = int(self.auto_ww[0] / 2)
-        sy_2x2 = int(self.auto_ww[1] / 2)
+        # sx_2x2 = int(self.auto_ww[0] / 2)
+        # sy_2x2 = int(self.auto_ww[1] / 2)
+        sx_2x2 = int(self.grid_ww_2x2[0] / 2)
+        sy_2x2 = int(self.grid_ww_2x2[1] / 2)
         psta_2x2 = pa
 
         scratchlogger.critical(f'\nsx,sy                  = {sx},{sy}\n'
@@ -181,8 +187,11 @@ class align_recipe:
             img_w = self.siz[0]
             img_h = self.siz[1]
             # ww_full = self.auto_ww # full window width
-            ww_full = self.grid_custom_ww # full window width
-            ww_2x2 =self.ww_2x2 # 2x2 window width
+            # ww_full = self.grid_custom_ww # full window width
+            # ww_2x2 =self.ww_2x2 # 2x2 window width
+
+            ww_full = self.grid_ww_1x1  # full window width
+            ww_2x2 = self.grid_ww_2x2
 
             offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
             offset_x2 = img_w - offset_x1
@@ -208,9 +217,6 @@ class align_recipe:
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
-        ww2x2 = (self.ww_2x2[0], self.ww_2x2[1])
-
-
         if self.cur_method == 'grid-default':
             if self.option == 'init_affine':
                 self.add_ingredients([
@@ -222,8 +228,8 @@ class align_recipe:
         elif self.cur_method == 'grid-custom':
             self.add_ingredients([
                 align_ingredient(mode='SWIM-Grid', ww=self.grid_custom_ww[0], psta=psta_1, ID='Grid1x1'),
-                align_ingredient(mode='SWIM-Grid', ww=ww2x2, psta=psta_2x2, ID='Grid2x2-a'),
-                align_ingredient(mode='SWIM-Grid', ww=ww2x2, psta=psta_2x2, ID='Grid2x2-b', last=True),
+                align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
+                align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-b', last=True),
             ])
         elif self.cur_method == 'manual-hint':
             self.add_ingredients([
@@ -272,7 +278,9 @@ class align_recipe:
         self.layer_dict['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
         self.layer_dict['alignment']['method_results']['datetime'] = time
         self.layer_dict['alignment']['method_results']['wht'] = self.wht
-        self.layer_dict['alignment']['method_results']['auto_ww'] = self.auto_ww
+        # self.layer_dict['alignment']['method_results']['auto_ww'] = self.auto_ww
+        self.layer_dict['alignment']['method_results']['grid_ww_1x1'] = self.grid_ww_1x1
+        self.layer_dict['alignment']['method_results']['grid_ww_2x2'] = self.grid_ww_2x2
         self.layer_dict['alignment']['method_results']['ww_2x2'] = self.ww_2x2
         self.layer_dict['alignment']['method_results']['pts_base'] = self.man_pmov.tolist()
         self.layer_dict['alignment']['method_results']['pts_ref'] = self.man_psta.tolist()

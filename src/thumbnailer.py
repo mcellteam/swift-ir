@@ -56,7 +56,7 @@ class Thumbnailer:
 
     def reduce_signals(self, start, end):
 
-        logger.critical('Reducing Correlation Signal Images...')
+        logger.info('Reducing Correlation Signal Images...')
 
 
         pbar_text = 'Generating Signal Spot Thumbnails'
@@ -73,7 +73,7 @@ class Thumbnailer:
 
             baseFileNames = cfg.data.basefilenames()
             if not rmdir:
-                logger.critical(f'start: {start}, end: {end}')
+                logger.info(f'start: {start}, end: {end}')
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in range(start,end):
                     basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
@@ -95,7 +95,7 @@ class Thumbnailer:
             for name in baseFileNames[start:end]:
                 filename, extension = os.path.splitext(name)
                 search_path = os.path.join(src, '%s_*%s' % (filename, extension))
-                logger.critical(f'Search Path: {search_path}')
+                # logger.info(f'Search Path: {search_path}')
                 filenames.extend(glob(search_path))
 
             tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))

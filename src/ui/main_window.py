@@ -409,6 +409,7 @@ class MainWindow(QMainWindow):
 
 
     def updateCorrSignalsDrawer(self):
+        t0 = time.time()
         caller = inspect.stack()[1].function
         logger.info('caller: %s >>>>' % caller)
         if self._isProjectTab():
@@ -420,8 +421,8 @@ class MainWindow(QMainWindow):
                 n = len(thumbs)
                 splitterSizes = self._splitter.sizes()
 
-                logger.info(f'n             = {n}')
-                logger.info(f'thumbs        = {thumbs}')
+                # logger.info(f'n             = {n}')
+                # logger.info(f'thumbs        = {thumbs}')
                 logger.info(f'splitterSizes = {splitterSizes}')
                 if n == 0:
                     self.corrSignalsWidget.hide()
@@ -430,19 +431,16 @@ class MainWindow(QMainWindow):
                     self._splitter.setSizes(splitterSizes)
                     QApplication.processEvents()
                     return
-                else:
-                    self.corrSignalsWidget.show()
-                    self.lab_corr_signals.hide()
+
+                self.corrSignalsWidget.show()
+                self.lab_corr_signals.hide()
 
                 snr_vals = cfg.data.snr_components()
-                logger.info(f'snr_vals      = {snr_vals}')
-                # splitterSizes[1] = 110
 
                 if splitterSizes[1] == 0:
                     splitterSizes[1] = self._corrSpotDrawerSize
-
-                logger.info(f'Setting _splitter sizes to {splitterSizes}')
-                self._splitter.setSizes(splitterSizes)
+                    logger.info(f'Changing _splitter sizes to {splitterSizes}')
+                    self._splitter.setSizes(splitterSizes)
                 
                 QApplication.processEvents()
                 logger.info(f'_splitter sizes: {self._splitter.sizes()}')
@@ -455,11 +453,13 @@ class MainWindow(QMainWindow):
                 # logger.info('thumbs: %s' % str(thumbs))
                 count = 0
                 if cfg.data.current_method == 'grid-custom':
+                    logger.info('Setting custom grid correlation signals...')
                     for i in range(7):
                         self.corrSignalsList[i].setFixedSize(h, h)
                         self.corrSignalsList[i].hide()
                     regions = cfg.data.grid_custom_regions
                     names = cfg.data.get_grid_custom_filenames()
+                    logger.info('names: %s' % str(names))
                     for i in range(4):
                         if regions[i]:
                             self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
@@ -484,7 +484,7 @@ class MainWindow(QMainWindow):
                         else:
                             self.corrSignalsList[i].hide()
 
-        logger.info(f'<<<< updateCorrSignalsDrawer [actual sizes: {self._splitter.sizes()}]')
+        logger.info(f'<<<< updateCorrSignalsDrawer, sizes: {self._splitter.sizes()}, time elapsed: {time.time() - t0}')
 
 
     def clearCorrSpotsDrawer(self):
@@ -1276,18 +1276,20 @@ class MainWindow(QMainWindow):
 
 
     def layer_left(self):
-        logger.info('')
         if self._isProjectTab():
             requested = cfg.data.zpos - 1
+            logger.info(f'requested: {requested}')
             if requested >= 0:
                 cfg.data.zpos = requested
-            if getData('state,manual_mode'):
-                # cfg.project_tab.MA_layer_left()
-                # self.initAllViewers()
-                cfg.project_tab.initNeuroglancer()
+                if getData('state,manual_mode'):
+                    # cfg.project_tab.MA_layer_left()
+                    # self.initAllViewers()
+                    cfg.project_tab.initNeuroglancer()
+                else:
+                    cfg.emViewer.set_layer(requested)
+                self.dataUpdateWidgets()
             else:
-                cfg.emViewer.set_layer(requested)
-            self.dataUpdateWidgets()
+                self.warn(f'Invalid Index Request: {requested}')
 
 
     def layer_right(self):
@@ -1296,13 +1298,15 @@ class MainWindow(QMainWindow):
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
                 cfg.data.zpos = requested
-            if getData('state,manual_mode'):
-                # cfg.project_tab.MA_layer_right()
-                # self.initAllViewers()
-                cfg.project_tab.initNeuroglancer()
+                if getData('state,manual_mode'):
+                    # cfg.project_tab.MA_layer_right()
+                    # self.initAllViewers()
+                    cfg.project_tab.initNeuroglancer()
+                else:
+                    cfg.emViewer.set_layer(requested)
+                self.dataUpdateWidgets()
             else:
-                cfg.emViewer.set_layer(requested)
-            self.dataUpdateWidgets()
+                self.warn(f'Invalid Index Request: {requested}')
 
 
     def scale_down(self) -> None:
@@ -2315,6 +2319,7 @@ class MainWindow(QMainWindow):
             y = (fg.height() - msg.height()) / 2
             # # x = (fg.width()/2)
             # # y = (fg.height()/2)
+            logger.info(f'x: {x}, y: {y}')
             msg.move(x, y)
 
             msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
@@ -3337,7 +3342,6 @@ class MainWindow(QMainWindow):
 
 
         elif tabtype == 'ProjectTab':
-            logger.critical('Loading Project Tab...')
             self.cpanelFrame.show()
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
@@ -4362,8 +4366,8 @@ class MainWindow(QMainWindow):
         self._ctlpanel_whitening = VWidget(lab, w)
 
 
-        tip = "The region size SWIM uses for computing alignment, specified as pixels" \
-              "width. (default=12.5% of image width)"
+        tip = f"The region size SWIM uses for computing alignment, specified as pixels " \
+              f"width. (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)"
         lab = QLabel("SWIM Window:")
         lab.setAlignment(center)
         self._swimWindowControl = QSpinBox(self)
@@ -5533,7 +5537,7 @@ class MainWindow(QMainWindow):
           padding: 1px;
           margin: 0px;
         }
-        QSplitter::handle:hover {
+        QSplitter::handle:vertical:hover {
           background-color: #339933;
         }
         """)

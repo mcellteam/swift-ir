@@ -1358,18 +1358,6 @@ class ProjectTab(QWidget):
         self.gl_Q.addWidget(self.Q4, 1, 1, 1, 1, alignment=Qt.AlignLeft | Qt.AlignTop)
         self.Q_widget.setLayout(self.gl_Q)
 
-        def fn():
-            if self.cb_keep_swim_templates.isChecked():
-                cfg.data.targ = True
-                cfg.data.karg = True
-            else:
-                cfg.data.targ = False
-                cfg.data.karg = False
-
-        self.cb_keep_swim_templates = QCheckBox()
-        self.cb_keep_swim_templates.toggled.connect(fn)
-
-
         self.gb_MA_settings = QGroupBox()
         # self.gb_MA_settings.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings = QFormLayout()
@@ -1384,8 +1372,8 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("Whitening Factor", self.spinbox_whitening)
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
-        self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
-        self.fl_MA_settings.addRow("Use Quadrants", HWidget(self.Q_widget,ExpandingWidget(self)))
+        # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
+        self.fl_MA_settings.addRow("SWIM Regions", HWidget(self.Q_widget,ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
         # self.fl_MA_settings.addRow("Show Instruction Overlay", self.toggle_showInstructionOverlay)
         # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
@@ -1702,6 +1690,15 @@ class ProjectTab(QWidget):
         self.sb_clobber_pixels.setMinimum(1)
         self.sb_clobber_pixels.setMaximum(16)
 
+        self.cb_keep_swim_templates = QCheckBox()
+        def fn():
+            if self.cb_keep_swim_templates.isChecked():
+                cfg.data.targ = True
+                cfg.data.karg = True
+            else:
+                cfg.data.targ = False
+                cfg.data.karg = False
+        self.cb_keep_swim_templates.toggled.connect(fn)
 
         self.btn_settings_apply_cur_sec = QPushButton('Apply To Current Section')
         def fn():
@@ -1728,6 +1725,7 @@ class ProjectTab(QWidget):
         self.fl_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_settings.setSpacing(2)
         self.fl_settings.setContentsMargins(0, 0, 0, 0)
+        self.fl_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
         self.fl_settings.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
@@ -2713,9 +2711,8 @@ class ProjectTab(QWidget):
             del_key = self.MA_ptsListWidget_ref.currentItem().foreground().color().name()
             logger.critical('del_key is %s' % del_key)
             cfg.refViewer.pts.pop(del_key)
-            if del_key in cfg.baseViewer.pts.keys():
-                cfg.baseViewer.pts.pop(del_key)
-            # cfg.baseViewer.draw_point_annotations()
+            # if del_key in cfg.baseViewer.pts.keys():
+            #     cfg.baseViewer.pts.pop(del_key)
         cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
@@ -2736,9 +2733,8 @@ class ProjectTab(QWidget):
             del_key = self.MA_ptsListWidget_base.currentItem().foreground().color().name()
             logger. critical('del_key is %s' % del_key)
             cfg.baseViewer.pts.pop(del_key)
-            if del_key in cfg.refViewer.pts.keys():
-                cfg.refViewer.pts.pop(del_key)
-            # cfg.baseViewer.draw_point_annotations()
+            # if del_key in cfg.refViewer.pts.keys():
+            #     cfg.refViewer.pts.pop(del_key)
         cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
