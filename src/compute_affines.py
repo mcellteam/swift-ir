@@ -111,7 +111,7 @@ def compute_affines(scale, start=0, end=None):
         # task_queue.work_q.join()
         # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
         dt = task_queue.collect_results()
-        dm.set_t_align(dt, s=scale)
+        dm.t_align = dt
 
         t0 = time.time()
         if cfg.CancelProcesses:

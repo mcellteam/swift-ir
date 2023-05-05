@@ -784,13 +784,13 @@ class MainWindow(QMainWindow):
             s = cfg.data.scale
             try:
                 cfg.project_tab.detailsRuntime.setText(
-                    'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['t_scaling']).rjust(9) +
-                    'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['t_scaling_convert_zarr']).rjust(9) +
-                    'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['t_thumbs']).rjust(9) +
-                    'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_align']).rjust(9) +
-                    'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_generate']).rjust(9) +
-                    'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-                    'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['scales'][s]['t_thumbs_spot']).rjust(9)
+                    'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['t_scaling']).rjust(9) +
+                    'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(9) +
+                    'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['t_thumbs']).rjust(9) +
+                    'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(9) +
+                    'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(9) +
+                    'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(9) +
+                    'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
                 )
             except:
                 logger.warning('detailsTiming cant update')
@@ -5596,14 +5596,14 @@ class MainWindow(QMainWindow):
         # self.statusBar = self.statusBar()
         self.statusBar = QStatusBar()
         self.statusBar.setFixedHeight(21)
-        self.statusBar.setStyleSheet("""
-        font-size: 10px;
-        font-weight: 600;
-        color: #141414;
-        background-color: #ede9e8;
-        margin: 0px;
-        padding: 0px;
-        """)
+        # self.statusBar.setStyleSheet("""
+        # font-size: 10px;
+        # font-weight: 600;
+        # color: #141414;
+        # background-color: #ede9e8;
+        # margin: 0px;
+        # padding: 0px;
+        # """)
         self.setStatusBar(self.statusBar)
 
 

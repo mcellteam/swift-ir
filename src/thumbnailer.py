@@ -39,7 +39,7 @@ class Thumbnailer:
             od = os.path.join(cfg.data.dest(), 'thumbnails')
             dt = self.reduce(
                 src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text)
-            cfg.data.set_t_thumbs(dt)
+            cfg.data.t_thumbs = dt
 
 
     def reduce_aligned(self, start, end):
@@ -51,7 +51,7 @@ class Thumbnailer:
             od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
             dt = self.reduce(
                 src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text)
-            cfg.data.set_t_thumbs_aligned(dt)
+            cfg.data.t_thumbs_aligned = dt
 
 
     def reduce_signals(self, start, end):
@@ -106,7 +106,7 @@ class Thumbnailer:
                              pbar_text=pbar_text,
                              filenames=filenames
                              )
-            cfg.data.set_t_thumbs_spot(dt)
+            cfg.data.t_thumbs_spot = dt
             cfg.main_window.tell('Discarding Raw (Full Size) Correlation Signals...')
             try:
                 shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw'), ignore_errors=True)

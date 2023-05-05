@@ -103,7 +103,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
             task_queue.add_task(args)
             if cfg.PRINT_EXAMPLE_ARGS:
                 if ID in [0,1,2]:
-                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, '\n  '.join(map(str,args))))
+                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, '  '.join(map(str,args))))
                 # if ID is 7:
 
         # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
@@ -111,7 +111,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         #     task_queue.add_task(task)
         try:
             dt = task_queue.collect_results()
-            cfg.data.set_t_generate(dt, s=scale)
+            cfg.data.t_generate = dt
         except:
             print_exception()
             logger.warning('Task Queue encountered a problem')
@@ -171,7 +171,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
             logger.info('Adding Tasks To Multiprocessing Queue...')
             try:
                 dt = task_queue.collect_results()
-                cfg.data.set_t_convert_zarr(dt, s=scale)
+                cfg.data.t_convert_zarr = dt
             except:
                 print_exception()
                 logger.warning('Task Queue encountered a problem')
