@@ -887,9 +887,11 @@ class ProjectTab(QWidget):
         def fn():
             cfg.main_window.hud.post('Aligning...')
             # self.applyMps()
+
+            # Issue #CriticaL #Why does this erase part of the series?!?!
             # cfg.main_window.alignOne()
-            # # cfg.main_window.alignGenerateOne()
             # cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
+
             self.alignGenerateOne()
         self.btnRealignMA = QPushButton('Align && Regenerate')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)

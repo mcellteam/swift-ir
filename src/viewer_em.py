@@ -605,11 +605,13 @@ class EMViewerStage(AbstractEMViewer):
             s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             # s.showSlices=False
-            s.position = [0, tensor_y / 2, tensor_x / 2]
+            # s.position = [0, tensor_y / 2, tensor_x / 2]
+            s.position = [0.5, tensor_y / 2, tensor_x / 2]
             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
 
         with self.config_state.txn() as s:
-            s.show_ui_controls = False
+            # s.show_ui_controls = False
+            s.show_ui_controls = True
             s.show_panel_borders = False
 
         self._crossSectionScale = self.state.cross_section_scale
