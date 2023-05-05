@@ -176,6 +176,7 @@ def initialize_user_preferences():
     except:
         print_exception()
 
+    update_preferences_model()
     '''save user preferences to file'''
     try:
         f = open(userpreferencespath, 'w')
