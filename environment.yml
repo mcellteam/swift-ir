@@ -1,4 +1,4 @@
-name: alignem0430
+name: alignem
 channels:
   - anaconda
   - conda-forge
@@ -194,4 +194,3 @@ dependencies:
       - twine==4.0.2
       - urllib3==1.26.15
       - webencodings==0.5.1
-prefix: /Users/joelyancey/miniconda3/envs/alignem0430
