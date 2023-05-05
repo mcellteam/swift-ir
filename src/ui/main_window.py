@@ -3069,7 +3069,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setStatusTip('Refresh')
 
         self.combo_mode = QComboBox(self)
-        self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600;')
+        self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
         self.combo_mode.setFixedSize(150, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
@@ -3148,7 +3148,7 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo = QComboBox(self)
         self._changeScaleCombo.setMinimumWidth(134)
         self._changeScaleCombo.setFixedHeight(18)
-        self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600;')
+        self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
 
