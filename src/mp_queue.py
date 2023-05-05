@@ -130,7 +130,7 @@ class TaskQueue(QObject):
         self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
 
-        cfg.main_window.shutdownNeuroglancer()
+        # cfg.main_window.shutdownNeuroglancer()
 
         if not cfg.ignore_pbar:
             cfg.main_window.showZeroedPbar() #0208+
