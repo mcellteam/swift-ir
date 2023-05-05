@@ -558,30 +558,36 @@ class MainWindow(QMainWindow):
 
 
     def _callbk_showHideNotes(self):
+        logger.critical(self._splitter.sizes())
         logger.info(f'{self.notes.isVisible()}')
         wasHidden = self.notes.isHidden()
         self.notes.setVisible(wasHidden)
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
-        geo = self.notes.geometry()
-        geo.setHeight(100)
-        self.notes.setGeometry(geo)
+
 
         self.notesButton.setText((' Hide', ' Notes')[self.notes.isHidden()])
         self.notesButton.setStatusTip(('Hide Notepad', 'Show Notepad')[self.notes.isHidden()])
         self.notesButton.setToolTip(('Hide Notepad', 'Show Notepad')[self.notes.isHidden()])
         self.updateNotes()
+        # logger.info(self._splitter.sizes())
         self._splitter.setHidden(
             self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
         # geo = self.notes.geometry()
         # geo.setHeight(100)
         # self.notes.setGeometry(geo)
-        QApplication.processEvents()
-        if self.notes.isVisible():
-            sizes = self._splitter.sizes()
-            sizes[0] = 100
-            self._splitter.setSizes(sizes)
-            QApplication.processEvents()
+        # logger.info(self._splitter.sizes())
+        # QApplication.processEvents()
+        # if self.notes.isVisible():
+        #     sizes = self._splitter.sizes()
+        #     sizes[0] = 100
+        #     self._splitter.setSizes(sizes)
+        #     QApplication.processEvents()
+        self.notes.setFixedHeight(80)
+        # geo = self.notes.geometry()
+        # geo.setHeight(100)
+        # self.notes.setGeometry(geo)
+        # logger.critical(self._splitter.sizes())
 
 
 
@@ -4783,7 +4789,7 @@ class MainWindow(QMainWindow):
 
 
     def splittersHaveMoved(self, pos, index):
-        logger.critical('')
+        logger.info('')
         # self.correlation_signals.setMinimumHeight(16)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
 
         # if not self._dev_console.isVisible():
@@ -5164,6 +5170,7 @@ class MainWindow(QMainWindow):
                 self.notes.update()
 
         self.notes = QWidget()
+        self.notes.setFixedHeight(100)
         self.notes.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.notes.setStyleSheet("""
         color: #f3f6fb; 
@@ -5420,16 +5427,15 @@ class MainWindow(QMainWindow):
         self._splitter.splitterMoved.connect(self.splittersHaveMoved)
         self._splitter.addWidget(self.notes)                # (0)
         self._splitter.addWidget(self.correlation_signals)  # (1)
-        # self._splitter.addWidget(self._dev_console)         # (2)
         self._splitter.addWidget(self._dev_console)         # (2)
         self._splitter.setContentsMargins(0, 0, 0, 0)
         self._splitter.setHandleWidth(1)
         self._splitter.setCollapsible(0, False)
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)
-        self._splitter.setStretchFactor(0, 0)
-        self._splitter.setStretchFactor(1, 0)
-        self._splitter.setStretchFactor(2, 0)
+        # self._splitter.setStretchFactor(0, 0)
+        # self._splitter.setStretchFactor(1, 0)
+        # self._splitter.setStretchFactor(2, 0)
         self._splitter.hide()
 
         '''Documentation Panel'''
@@ -5579,8 +5585,8 @@ class MainWindow(QMainWindow):
         self.newMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
         self.newMainSplitter.setCollapsible(0, False)
         self.newMainSplitter.setCollapsible(1, False)
-        self.newMainSplitter.setStretchFactor(0, 3)
-        self.newMainSplitter.setStretchFactor(1, 0)
+        # self.newMainSplitter.setStretchFactor(0, 3)
+        # self.newMainSplitter.setStretchFactor(1, 0)
 
         self.setCentralWidget(self.newMainSplitter)
 

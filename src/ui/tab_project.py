@@ -372,20 +372,7 @@ class ProjectTab(QWidget):
         # self.ng_gl.addWidget(self.hud_overlay, 4, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
         self.ng_gl.addWidget(w, 4, 2, 1, 3, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
 
-        '''AFM/CAFM Widget'''
-        self.afm_widget_ = QTextEdit()
-        self.afm_widget_.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.afm_widget_.setObjectName('_tool_afmCafm')
-        self.afm_widget_.setReadOnly(True)
-        self._transformationWidget = QWidget()
-        self._transformationWidget.setFixedWidth(170)
-        self._transformationWidget.setMaximumHeight(70)
-        vbl = VBL()
-        vbl.setSpacing(1)
-        vbl.addWidget(self.afm_widget_)
-        self._transformationWidget.setLayout(vbl)
-
-        self.joystick = Joystick()
+        # self.joystick = Joystick()
 
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
