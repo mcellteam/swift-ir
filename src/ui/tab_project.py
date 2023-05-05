@@ -545,8 +545,8 @@ class ProjectTab(QWidget):
                     "font-family: sans-serif;'>&nbsp;&#183;&nbsp;</span>"
         sep0, sep1, sep2, sep3 = QLabel(sep), QLabel(sep), QLabel(sep), QLabel(sep)
         self.labelsWidget = HWidget(self.detailsClabel, sep0, self.afmClabel, sep1,
-                                    self.snrClabel, sep2, self.runtimeClabel, sep3,
-                                    self.corrSignalsClabel)
+                                    self.snrClabel, sep2, self.runtimeClabel, sep3)
+                                    # self.corrSignalsClabel)
         self.labelsWidget.setContentsMargins(8, 0, 8, 0)
         self.labelsWidget.setFixedHeight(20)
 
@@ -884,9 +884,11 @@ class ProjectTab(QWidget):
             cfg.data.set_all_methods_automatic()
             cfg.data.set_auto_swim_windows_to_default()
             cfg.main_window.setControlPanelData()
-            self.dataUpdateMA()
+            cfg.data['data']['defaults']['whitening-factor'] = cfg.DEFAULT_WHITENING
+            cfg.data['data']['defaults']['initial-rotation'] = cfg.DEFAULT_INITIAL_ROTATION
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
+            self.dataUpdateMA()
 
 
         self.btnResetAllMA = QPushButton('Set All To Default Grid')
@@ -1854,7 +1856,7 @@ class ProjectTab(QWidget):
             color: #f3f6fb;
             border: 1px solid #339933;
             border-top: 0px solid #339933;
-            border-radius: 8px;
+            border-radius: 10px;
             background-color: rgba(0, 0, 0, 200)
         }
         QListView::item:selected

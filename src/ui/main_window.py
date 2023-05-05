@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
         self.initPrivateMembers()
         self.initThreadpool(timeout=250)
         self.initOpenGlContext()
-        self.initPythonConsole()
+        # self.initPythonConsole()
         self.initStatusBar()
         self.initPbar()
         self.initControlPanel()
@@ -333,47 +333,47 @@ class MainWindow(QMainWindow):
         self.apply_default_style()
 
 
-    def initPythonConsole(self):
-        logger.info('')
-
-        namespace = {
-            'pg': pg,
-            'np': np,
-            'cfg': src.config,
-            'mw': src.config.main_window,
-            'emViewer': cfg.emViewer,
-            'ng': ng,
-        }
-        text = """
-        Caution - any code executed here is injected into the main event loop of AlignEM-SWiFT!
-        """
-        cfg.py_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
-        self._dev_console = QWidget()
-        self._dev_console.setAutoFillBackground(False)
-        # self._dev_console.setStyleSheet('background: #222222; color: #f3f6fb; border-radius: 5px;')
-        # self._dev_console.setStyleSheet('background: #ede9e8; color: #141414; border-radius: 5px;')
-        self._dev_console.setStyleSheet("""
-                                        QWidget {background-color: #ede9e8; color: #141414;}
-                                        QLineEdit {background-color: #ede9e8; }
-                                        QPlainTextEdit {background-color: #ede9e8; }
-                                        QPushButton""")
-        lab = QLabel('Python Console')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
-        lab.setStyleSheet("""
-            color: #141414;
-            font-size: 10px;
-            font-weight: 600;
-            padding-left: 2px;
-            padding-top: 2px;
-            """)
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0,0,0,0)
-        vbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignBaseline)
-        vbl.addWidget(cfg.py_console)
-        self._dev_console.setLayout(vbl)
-        self._dev_console.hide()
-        # pass
+    # def initPythonConsole(self):
+    #     logger.info('')
+    #
+    #     namespace = {
+    #         'pg': pg,
+    #         'np': np,
+    #         'cfg': src.config,
+    #         'mw': src.config.main_window,
+    #         'emViewer': cfg.emViewer,
+    #         'ng': ng,
+    #     }
+    #     text = """
+    #     Caution - any code executed here is injected into the main event loop of AlignEM-SWiFT!
+    #     """
+    #     cfg.py_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
+    #     self._dev_console = QWidget()
+    #     self._dev_console.setAutoFillBackground(False)
+    #     # self._dev_console.setStyleSheet('background: #222222; color: #f3f6fb; border-radius: 5px;')
+    #     # self._dev_console.setStyleSheet('background: #ede9e8; color: #141414; border-radius: 5px;')
+    #     self._dev_console.setStyleSheet("""
+    #                                     QWidget {background-color: #ede9e8; color: #141414;}
+    #                                     QLineEdit {background-color: #ede9e8; }
+    #                                     QPlainTextEdit {background-color: #ede9e8; }
+    #                                     QPushButton""")
+    #     lab = QLabel('Python Console')
+    #     # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+    #     # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
+    #     lab.setStyleSheet("""
+    #         color: #141414;
+    #         font-size: 10px;
+    #         font-weight: 600;
+    #         padding-left: 2px;
+    #         padding-top: 2px;
+    #         """)
+    #     vbl = QVBoxLayout()
+    #     vbl.setContentsMargins(0,0,0,0)
+    #     vbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignBaseline)
+    #     vbl.addWidget(cfg.py_console)
+    #     self._dev_console.setLayout(vbl)
+    #     self._dev_console.hide()
+    #     # pass
 
 
     def _callbk_showHideCorrSpots(self):
@@ -847,28 +847,35 @@ class MainWindow(QMainWindow):
         # self.alignmentFinished.emit()
         t0 = time.time()
         try:
-            self.pbarLabel.setText('')
-            cfg.project_tab.snr_plot.initSnrPlot()
-            self.updateEnabledButtons()
-            self.updateProjectTable() #+
-            self.updateMenus()
-            self.present_snr_results(start=start, end=end)
-            prev_snr_average = cfg.data.snr_prev_average()
-            snr_average = cfg.data.snr_average()
-            self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
-            self.updateDtWidget()
-            cfg.project_tab.updateTreeWidget()
-            cfg.project_tab.updateProjectLabels()
-            self._bbToggle.setChecked(cfg.data.has_bb())
-            self.dataUpdateWidgets()
-            self._showSNRcheck()
+            if self._isProjectTab():
+                self.pbarLabel.setText('')
+                cfg.project_tab.snr_plot.initSnrPlot()
+                self.updateEnabledButtons()
+                self.updateProjectTable() #+
+                self.updateMenus()
+                self.present_snr_results(start=start, end=end)
+                prev_snr_average = cfg.data.snr_prev_average()
+                snr_average = cfg.data.snr_average()
+                self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
+                self.updateDtWidget()
+                cfg.project_tab.updateTreeWidget()
+                cfg.project_tab.updateProjectLabels()
+                self._bbToggle.setChecked(cfg.data.has_bb())
+                self.dataUpdateWidgets()
+                self._showSNRcheck()
         except:
             print_exception()
         finally:
             self._working = False
             self.hidePbar()
-            self.enableAllTabs()
-            self._autosave()
+            if self._isProjectTab():
+                self.enableAllTabs()
+                self._autosave()
+                try:
+                    if cfg.project_tab._tabs.currentIndex() == 3:
+                        cfg.project_tab.snr_plot.initSnrPlot()
+                except:
+                    print_exception()
 
             t9 = time.time()
             dt = t9 - t0
@@ -1109,6 +1116,7 @@ class MainWindow(QMainWindow):
                     self.showZeroedPbar()
                     self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
                     # makedirs_exist_ok(cfg.data.dest(), exist_ok=True)
+
                     self.hud.post("Re-scaling...")
                     try:
                         self.autoscale(make_thumbnails=False)
@@ -1456,13 +1464,17 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
                 # cfg.project_tab.set_method_label_text()
 
+            if cfg.project_tab._tabs.currentIndex() == 1:
+                cfg.project_tab.project_table.table.selectRow(cur) #0504+
+
             if cfg.project_tab._tabs.currentIndex() == 2:
                 cfg.project_tab.treeview_model.jumpToLayer()
 
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.updateLayerLinePos()
 
-            cfg.project_tab.project_table.table.selectRow(cur)
+
+            # cfg.project_tab.project_table.table.selectRow(cur)
             self._sectionSlider.setValue(cur)
             self._jumpToLineedit.setText(str(cur)) #0131+
 
@@ -1763,8 +1775,8 @@ class MainWindow(QMainWindow):
                     self._sectionSlider.setRange(0, len(cfg.data) - 1)
                     self._sectionSlider.setValue(cfg.data.zpos)
                     self.sectionRangeSlider.setMin(0)
-                    self.sectionRangeSlider.setStart(0)
                     self.sectionRangeSlider.setMax(len(cfg.data) - 1)
+                    self.sectionRangeSlider.setStart(0)
                     self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
                     self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
                     self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
@@ -3099,7 +3111,8 @@ class MainWindow(QMainWindow):
 
         def onTimer():
             logger.info('')
-            self.automaticPlayTimer.setInterval(1000 / self._fps_spinbox.value())
+            # self.automaticPlayTimer.setInterval(1000 / self._fps_spinbox.value())
+            self.automaticPlayTimer.setInterval(int(1000 / self._fps_spinbox.value()))
             if cfg.data:
                 if cfg.project_tab:
                     if self._sectionSlider.value() < len(cfg.data) - 1:
@@ -3134,7 +3147,7 @@ class MainWindow(QMainWindow):
         '''scale combobox'''
         self._changeScaleCombo = QComboBox(self)
         self._changeScaleCombo.setMinimumWidth(134)
-        self._changeScaleCombo.setFixedHeight(16)
+        self._changeScaleCombo.setFixedHeight(18)
         self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600;')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
@@ -4309,7 +4322,7 @@ class MainWindow(QMainWindow):
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
-        tip = 'Keep or Reject the Current Section'
+        tip = 'Whether to include the current section'
         self._lab_keep_reject = QLabel('Include:')
         self._lab_keep_reject.setStatusTip(tip)
         # self._skipCheckbox = QCheckBox()
@@ -4331,7 +4344,7 @@ class MainWindow(QMainWindow):
         self._ctlpanel_skip.setMaximumHeight(34)
         self._ctlpanel_skip.setLayout(vbl)
 
-        tip = 'Use All Images (Reset)'
+        tip = 'Use all the images (include all)'
         self._btn_clear_skips = QPushButton('Reset')
         self._btn_clear_skips.setEnabled(False)
         self._btn_clear_skips.setStyleSheet("font-size: 10px;")
@@ -4340,7 +4353,7 @@ class MainWindow(QMainWindow):
         self._btn_clear_skips.clicked.connect(self.clear_skips)
         self._btn_clear_skips.setFixedSize(button_size)
 
-        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
+        tip = "Whitening factor parameter used by SWIM (defaults to -0.68)"
         lab = QLabel("Whitening Factor:")
         lab.setAlignment(center)
         self._whiteningControl = QDoubleSpinBox(self)
@@ -4367,7 +4380,7 @@ class MainWindow(QMainWindow):
 
 
         tip = f"The region size SWIM uses for computing alignment, specified as pixels " \
-              f"width. (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)"
+              f"width. (defaults to {cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)"
         lab = QLabel("SWIM Window:")
         lab.setAlignment(center)
         self._swimWindowControl = QSpinBox(self)
@@ -4492,7 +4505,7 @@ class MainWindow(QMainWindow):
         # lay.addWidget(self._scaleSetWidget, alignment=left)
         # self._ctlpanel_changeScale.setLayout(lay)
 
-        tip = 'Align and Generate All Sections'
+        tip = 'Align and generate all sections.'
         self._btn_alignAll = QPushButton('Align All')
         self._btn_alignAll.setEnabled(False)
         self._btn_alignAll.setStyleSheet("font-size: 10px;")
@@ -4501,16 +4514,18 @@ class MainWindow(QMainWindow):
         self._btn_alignAll.clicked.connect(self.alignAll)
         self._btn_alignAll.setFixedSize(normal_button_size)
 
-        tip = 'Align and Generate the Current Section Only'
+        tip = 'Align and re-generate the current section only'
         self._btn_alignOne = QPushButton('Align One')
+        self._btn_alignOne.setStatusTip(tip)
         self._btn_alignOne.setEnabled(False)
         self._btn_alignOne.setStyleSheet("font-size: 10px;")
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignOne.setStatusTip(tip)
         self._btn_alignOne.clicked.connect(self.alignOne)
         self._btn_alignOne.setFixedSize(normal_button_size)
 
+        tip = 'The range of sections to align for the align range button.'
         self.sectionRangeSlider = RangeSlider()
+        self.sectionRangeSlider.setStatusTip(tip)
         self.sectionRangeSlider.setStyleSheet('border-radius: 2px;')
         self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sectionRangeSlider.setFixedWidth(100)
@@ -4526,6 +4541,7 @@ class MainWindow(QMainWindow):
         self.endRangeInput.setEnabled(False)
 
         self.rangeInputWidget = QWidget()
+        self.rangeInputWidget.setStatusTip(tip)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(2, 0, 2, 0)
         hbl.setSpacing(0)
@@ -4539,8 +4555,6 @@ class MainWindow(QMainWindow):
         self.startRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setStart(int(val)))
         self.endRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setEnd(int(val)))
 
-
-        tip = 'Align and Generate a Range of Sections'
         self._btn_alignRange = QPushButton('Align Range')
         self._btn_alignRange.setEnabled(False)
         self._btn_alignRange.setStyleSheet("font-size: 10px;")
@@ -4549,7 +4563,7 @@ class MainWindow(QMainWindow):
         self._btn_alignRange.clicked.connect(self.alignRange)
         self._btn_alignRange.setFixedSize(normal_button_size)
 
-        tip = 'Auto-generate aligned images.'
+        tip = 'Whether to auto-generate aligned images following alignment.'
         lab = QLabel("Auto-generate:")
         lab.setAlignment(center)
         lab.setStatusTip(tip)
@@ -4571,7 +4585,7 @@ class MainWindow(QMainWindow):
         self._ctlpanel_toggleAutogenerate.setMaximumHeight(34)
         self._ctlpanel_toggleAutogenerate.setLayout(vbl)
 
-        tip = 'Polynomial bias correction (default=None), alters the generated images including their width and height.'
+        tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
         lab = QLabel("Corrective Polynomial:")
         lab.setAlignment(right)
         lab.setStatusTip(tip)
@@ -5323,43 +5337,42 @@ class MainWindow(QMainWindow):
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
 
-        # self.pythonConsole = PythonConsole()
-        # self.__dev_console = QWidget()
-        # vbl = VBL()
-        # vbl.addWidget(self.pythonConsole)
-        # self.__dev_console.setLayout(vbl)
+        self.pythonConsole = PythonConsole()
+        self.__dev_console = QWidget()
+        vbl = VBL()
+        vbl.addWidget(self.pythonConsole)
+        self.__dev_console.setLayout(vbl)
 
-        # self._dev_console = QWidget()
-        # self._dev_console.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # # self._dev_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # # self._dev_console.resize(QSize(600,600))
-        #
-        # self.__dev_console.setStyleSheet("""
-        # font-size: 10px;
-        # background-color: #222222;
-        # color: #f3f6fb;
-        # font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        # border-radius: 5px;
-        # """)
-        # lab = QLabel('Python Console')
-        # lab.setStyleSheet(
-        #     """
-        #     color: #f3f6fb;
-        #     font-size: 10px;
-        #     font-weight: 600;
-        #     padding-left: 2px;
-        #     padding-top: 2px;
-        #     """)
-        # vbl = QVBoxLayout()
-        # # vbl.setSpacing(1)
-        # vbl.setSpacing(0)
-        # vbl.setContentsMargins(1, 1, 1, 1) # this provides for thin contrasting margin
-        # vbl.addWidget(lab, alignment=Qt.AlignBaseline)
-        # vbl.addWidget(self.__dev_console)
-        # self._dev_console.setLayout(vbl)
-        # self._dev_console.hide()
-        # self.notes.setContentsMargins(0, 0, 0, 0)
-        # self._dev_console.setContentsMargins(0, 0, 0, 0)
+        self._dev_console = QWidget()
+        self._dev_console.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self._dev_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self._dev_console.resize(QSize(600,600))
+
+        self.__dev_console.setStyleSheet("""
+        font-size: 10px;
+        background-color: #222222;
+        color: #f3f6fb;
+        font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        border-radius: 5px;
+        """)
+        lab = QLabel('Python Console')
+        lab.setStyleSheet(
+            """
+            color: #f3f6fb;
+            font-size: 10px;
+            font-weight: 600;
+            padding-left: 2px;
+            padding-top: 2px;
+            """)
+        vbl = VBL()
+        vbl.setSpacing(0)
+        vbl.setContentsMargins(1, 1, 1, 1) # this provides for thin contrasting margin
+        vbl.addWidget(lab, alignment=Qt.AlignBaseline)
+        vbl.addWidget(self.__dev_console)
+        self._dev_console.setLayout(vbl)
+        self._dev_console.hide()
+        self.notes.setContentsMargins(0, 0, 0, 0)
+        self._dev_console.setContentsMargins(0, 0, 0, 0)
 
         '''Main Vertical Splitter'''
         self._splitter = QSplitter(Qt.Orientation.Vertical)
@@ -5371,19 +5384,22 @@ class MainWindow(QMainWindow):
         
         QSplitter {
           spacing: 0px;
-          padding: 0px;
+          padding: 1px;
           margin: 0px;
         }
         QSplitter::handle {
           background-color: #555555;
           border: 0px solid #FAFAFA;
           spacing: 0px;
-          padding: 1px;
+          padding: 0px;
           margin: 0px;
         }
 
         QSplitter::handle:hover {
           background-color: #339933;
+          spacing: 0px;
+          padding: 1px;
+          margin: 0px;
         }
         """)
         # self._splitter.setAutoFillBackground(True)

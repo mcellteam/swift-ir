@@ -61,7 +61,7 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr', [])
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
 
-    initial_rotation = float(project['data']['initial_rotation'])
+    initial_rotation = float(project['data']['defaults']['initial-rotation'])
 
 
     if not s_tbd[zpos]['skipped']:
@@ -126,7 +126,7 @@ class align_recipe:
         self.man_pmov = np.array(self.alData['manpoints_mir'].get('base')).transpose()
         self.man_psta = np.array(self.alData['manpoints_mir'].get('ref')).transpose()
         self.ingredients = []
-        self.initial_rotation = initial_rotation
+        self.initial_rotation = float(self.defaults['initial-rotation'])
         # self.iters = 3
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
@@ -146,63 +146,49 @@ class align_recipe:
     def assemble_recipe(self):
         scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
 
-        # Set up 1x1 point and window
-        pa = np.zeros((2, 1))   # Point Array for one point
-        # wwx = int(self.grid_default_ww[0])  # Window Width in x Scaled
-        # wwy = int(self.grid_default_ww[1])  # Window Width in y Scaled
-        wwx = int(self.grid_ww_1x1[0])  # Window Width in x Scaled
-        wwy = int(self.grid_ww_1x1[1])  # Window Width in y Scaled
-        cx = int(self.siz[0] / 2.0)   # Window Center in x
-        cy = int(self.siz[1] / 2.0)   # Window Center in y
-        pa[0, 0] = cx
-        pa[1, 0] = cy
-        psta_1 = pa
+        if self.cur_method != 'grid-custom':
+            # Set up 1x1 point and window
+            pa = np.zeros((2, 1))   # Point Array for one point
+            wwx = int(self.grid_ww_1x1[0])  # Window Width in x Scaled
+            wwy = int(self.grid_ww_1x1[1])  # Window Width in y Scaled
+            cx = int(self.siz[0] / 2.0)   # Window Center in x
+            cy = int(self.siz[1] / 2.0)   # Window Center in y
+            pa[0, 0] = cx
+            pa[1, 0] = cy
+            psta_1 = pa
 
-        # Set up 2x2 points and windows
-        nx, ny = 2, 2
-        pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
-        sx = int(self.siz[0] / 2.0)  # Initial Size of each window
-        sy = int(self.siz[1] / 2.0)  # Initial Size of each window
-        for x in range(nx):
-            for y in range(ny):
-                pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
-                pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
-        # sx_2x2 = int(self.auto_ww[0] / 2)
-        # sy_2x2 = int(self.auto_ww[1] / 2)
-        sx_2x2 = int(self.grid_ww_2x2[0] / 2)
-        sy_2x2 = int(self.grid_ww_2x2[1] / 2)
-        psta_2x2 = pa
+            # Set up 2x2 points and windows
+            nx, ny = 2, 2
+            pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
+            sx = int(self.siz[0] / 2.0)  # Initial Size of each window
+            sy = int(self.siz[1] / 2.0)  # Initial Size of each window
+            for x in range(nx):
+                for y in range(ny):
+                    pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
+                    pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
+            sx_2x2 = int(self.grid_ww_2x2[0] / 2)
+            sy_2x2 = int(self.grid_ww_2x2[1] / 2)
+            psta_2x2 = pa
 
-        scratchlogger.critical(f'\nsx,sy                  = {sx},{sy}\n'
-                               f'wwx,wwy                = {wwx},{wwy}\n'
-                               f'sx_2x2,sy_2x2          = {sx_2x2},{sy_2x2}\n'
-                               f'**default** psta_2x2   = {psta_2x2}\n'
-                               f'len(psta_2x2[0])       = {len(psta_2x2[0])}\n'
-                               f'current method         = {self.cur_method}\n'
-                               f'========================')
+            scratchlogger.critical(f'\nsx,sy                  = {sx},{sy}\n'
+                                   f'wwx,wwy                = {wwx},{wwy}\n'
+                                   f'sx_2x2,sy_2x2          = {sx_2x2},{sy_2x2}\n'
+                                   f'**default** psta_2x2   = {psta_2x2}\n'
+                                   f'len(psta_2x2[0])       = {len(psta_2x2[0])}\n'
+                                   f'current method         = {self.cur_method}\n'
+                                   f'========================')
 
 
-        if self.cur_method == 'grid-custom':
+        # if self.cur_method == 'grid-custom':
+        else:
             scratchlogger.critical(f'grid-custom >>>>')
-            img_w = self.siz[0]
-            img_h = self.siz[1]
-            # ww_full = self.auto_ww # full window width
-            # ww_full = self.grid_custom_ww # full window width
-            # ww_2x2 =self.ww_2x2 # 2x2 window width
+            x1 = ((self.siz[0] - self.grid_ww_1x1[0]) / 2) + (self.grid_ww_2x2[0] / 2)
+            x2 = self.siz[0] - x1
+            y1 = ((self.siz[1] - self.grid_ww_1x1[1]) / 2) + (self.grid_ww_2x2[1] / 2)
+            y2 = self.siz[1] - y1
+            cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
 
-            ww_full = self.grid_ww_1x1  # full window width
-            ww_2x2 = self.grid_ww_2x2
-
-            offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
-            offset_x2 = img_w - offset_x1
-            offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
-            offset_y2 = img_h - offset_y1
-
-            cps = [(offset_x1, offset_y1),
-                   (offset_x2, offset_y1),
-                   (offset_x1, offset_y2),
-                   (offset_x2, offset_y2)]
-
+            nx, ny = 2, 2
             pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
             for i,p in enumerate(cps):
                 pa[0,i] = int(p[0])
@@ -228,8 +214,8 @@ class align_recipe:
         elif self.cur_method == 'grid-custom':
             self.add_ingredients([
                 align_ingredient(mode='SWIM-Grid', ww=self.grid_custom_ww[0], psta=psta_1, ID='Grid1x1'),
-                align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
-                align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-b', last=True),
+                align_ingredient(mode='SWIM-Grid', ww=self.grid_ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
+                align_ingredient(mode='SWIM-Grid', ww=self.grid_ww_2x2, psta=psta_2x2, ID='Grid2x2-b', last=True),
             ])
         elif self.cur_method == 'manual-hint':
             self.add_ingredients([
@@ -281,7 +267,6 @@ class align_recipe:
         # self.layer_dict['alignment']['method_results']['auto_ww'] = self.auto_ww
         self.layer_dict['alignment']['method_results']['grid_ww_1x1'] = self.grid_ww_1x1
         self.layer_dict['alignment']['method_results']['grid_ww_2x2'] = self.grid_ww_2x2
-        self.layer_dict['alignment']['method_results']['ww_2x2'] = self.ww_2x2
         self.layer_dict['alignment']['method_results']['pts_base'] = self.man_pmov.tolist()
         self.layer_dict['alignment']['method_results']['pts_ref'] = self.man_psta.tolist()
         self.layer_dict['alignment']['method_results']['manual_mode'] = self.hint_or_strict
@@ -414,12 +399,13 @@ class align_ingredient:
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         rota_arg = ''
 
-        if type(self.ww) == type((1, 2)):
-            # swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
-            swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
-        else:
-            swim_ww_arg = str(int(self.ww))
+        # self.alData['swim_settings']['_type_self_ww'] = type(self.ww)
 
+        # swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1]))  # <--
+        if isinstance(self.ww, float):
+            swim_ww_arg = str(int(self.ww))
+        else:
+            swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
 
         iters = self.alData['swim_settings']['iterations']
         use_targ = self.alData['swim_settings']['targ']
@@ -476,8 +462,9 @@ class align_ingredient:
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
                 args.append('%s %s' % (adjust_x, adjust_y))
-            if abs(self.recipe.initial_rotation) > 0:
-                args.append(convert_rotation(self.recipe.initial_rotation))
+            r = self.recipe.initial_rotation
+            if abs(r) > 0:
+                args.append(convert_rotation(r))
             args.append(afm_arg)
             args.append(self.alData['swim_settings']['extra_args'])
 

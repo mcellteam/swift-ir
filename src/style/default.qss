@@ -46,15 +46,26 @@ QDoubleSpinBox {
     font-size: 11px;
     font-family: Tahoma, sans-serif;
     border-radius: 4px;
-    border-width: 0px;
-    padding: 2px;
+    border: 1px solid #f3f6fb;
+    padding: 0px;
 }
 
 QSpinBox {
     font-size: 11px;
     font-family: Tahoma, sans-serif;
     border-radius: 4px;
-    border-width: 0px;
+    border: 1px solid #f3f6fb;
+    padding: 0px;
+}
+
+QComboBox {
+    font-size: 11px;
+    font-family: Tahoma, sans-serif;
+    border-radius: 4px;
+    border: 1px solid #f3f6fb;
+    padding: 0px;
+
+    text-align: center;
 }
 
 QLabel {
@@ -93,15 +104,6 @@ QToolBar {
 QPushButton {
     font-size: 11px;
     font-family: Tahoma, sans-serif;
-}
-
-QComboBox {
-    font-size: 11px;
-    font-family: Tahoma, sans-serif;
-    border-radius: 4px;
-    border-width: 0px;
-    text-align: center;
-
 }
 
 QTableWidget{
@@ -367,9 +369,7 @@ QScrollBar:horizontal {
 QLineEdit {
     color: #206020;
     background-color: #f3f6fb;
-	border-width: 1px;
-	border-style: solid;
-	border-color: #141414;
+    border: 1px solid #141414;
 	selection-background-color: #FFFF66;
 	/*background:#daebfe;*/
 	font-size: 11px;

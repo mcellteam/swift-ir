@@ -23,7 +23,7 @@ def generate_multiscale_zarr(src, out):
     tasks_ = []
     imgs = sorted(get_img_filenames(os.path.join(src, cfg.data.scale, 'img_aligned')))
     logger.info('# images: %d' % len(imgs))
-    chunkshape = cfg.data.chunkshape()
+    chunkshape = cfg.data.chunkshape
     for ID, img in enumerate(imgs):
         for scale in get_scales_with_generated_alignments(cfg.data.scales()):
             scale_val = get_scale_val(scale)

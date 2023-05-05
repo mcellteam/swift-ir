@@ -152,12 +152,14 @@ echo "You should now be in the environment 'alignTACC1024'."
 echo "To relaunch AlignEM-SWiFT on Lonestar6 @ TACC:"
 echo ""
 echo "    cd $WORK/swift-ir"
-echo "    source bootstrap_alignEM"
+echo "    source tacc_bootstrap"
 echo ""
 #echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
 echo "Launching AlignEM-SWiFT..."
 
 if [ "$DEBUG" = "1" ] ; then
+  echo "Loading valgrind module for debugging..."
+  echo "Setting PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc..."
   module load valgrind
   PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind --leak-check=full --show-leak-kinds=all -s python3 $WORK/swift-ir/alignEM.py
 else

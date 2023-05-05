@@ -373,12 +373,12 @@ class TaskQueue(QObject):
                 cfg.main_window.warn('Something Went Wrong')
                 cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
                 cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
-                cfg.main_window.warn('══════ Complete ══════')
+                cfg.main_window.warn('══════ Warning ══════')
 
                 logger.warning('Something Went Wrong')
                 logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))
                 logger.warning('Failed Tasks      : %d' % n_pending)
-                logger.warning('══════ Complete ══════')
+                logger.warning('══════ Warning ══════')
         except:
             print_exception()
         finally:
