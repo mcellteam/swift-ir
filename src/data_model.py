@@ -1063,8 +1063,7 @@ class DataModel:
         '''Returns manual correspondence points in Neuroglancer format'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l][
-            'alignment']['manpoints']
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
 
     def set_manpoints(self, role, matchpoints, l=None):
         '''Sets manual correspondence points for a single section at the current scale, and applies

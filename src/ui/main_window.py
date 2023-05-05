@@ -35,7 +35,7 @@ import qtawesome as qta
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QEventLoop, QRect, QPoint, \
     QPropertyAnimation
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-    QKeySequence, QMovie, QStandardItemModel, QColor, QCursor
+    QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
@@ -450,12 +450,15 @@ class MainWindow(QMainWindow):
 
                 logger.info(f'h = {h}')
 
+                siz = cfg.data.image_size()
+                ar = siz[0] / siz[1]  # aspect ratio
+
                 # logger.info('thumbs: %s' % str(thumbs))
                 count = 0
                 if cfg.data.current_method == 'grid-custom':
                     logger.info('Setting custom grid correlation signals...')
                     for i in range(7):
-                        self.corrSignalsList[i].setFixedSize(h, h)
+                        self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
                         self.corrSignalsList[i].hide()
                     regions = cfg.data.grid_custom_regions
                     names = cfg.data.get_grid_custom_filenames()
@@ -469,8 +472,9 @@ class MainWindow(QMainWindow):
 
 
                 else:
+
                     for i in range(7):
-                        self.corrSignalsList[i].setFixedSize(h, h)
+                        self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
                         if i < n:
                             # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
                             try:
@@ -531,13 +535,54 @@ class MainWindow(QMainWindow):
     def _callbk_showHidePython(self):
         logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self._dev_console.setVisible(self._dev_console.isHidden())
+        QApplication.processEvents()
+
         self._splitter.setHidden(self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
         logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         # self.pythonConsole.setFocus()
         self._dev_console.setFocus()
         logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
-        self.pythonButton.setText(('Python','Hide')[self._dev_console.isVisible()])
-        self.pythonButton.setStatusTip(('Show Python Console','Hide Python Console')[self._dev_console.isVisible()])
+        self.pythonButton.setText((' Hide', ' Python')[self._dev_console.isHidden()])
+        self.pythonButton.setStatusTip(('Hide Python Console', 'Show Python Console')[self._dev_console.isHidden()])
+        self.pythonButton.setToolTip(('Hide Python Console', 'Show Python Console')[self._dev_console.isHidden()])
+        logger.critical(self._splitter.sizes())
+        QApplication.processEvents()
+        if self._dev_console.isVisible():
+            sizes = self._splitter.sizes()
+            sizes[2] = 100
+            logger.critical(f'setting sizes to {sizes}...')
+            self._splitter.setSizes(sizes)
+            QApplication.processEvents()
+        logger.critical(self._splitter.sizes())
+
+
+
+    def _callbk_showHideNotes(self):
+        logger.info(f'{self.notes.isVisible()}')
+        wasHidden = self.notes.isHidden()
+        self.notes.setVisible(wasHidden)
+        QApplication.processEvents()
+
+        geo = self.notes.geometry()
+        geo.setHeight(100)
+        self.notes.setGeometry(geo)
+
+        self.notesButton.setText((' Hide', ' Notes')[self.notes.isHidden()])
+        self.notesButton.setStatusTip(('Hide Notepad', 'Show Notepad')[self.notes.isHidden()])
+        self.notesButton.setToolTip(('Hide Notepad', 'Show Notepad')[self.notes.isHidden()])
+        self.updateNotes()
+        self._splitter.setHidden(
+            self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
+        # geo = self.notes.geometry()
+        # geo.setHeight(100)
+        # self.notes.setGeometry(geo)
+        QApplication.processEvents()
+        if self.notes.isVisible():
+            sizes = self._splitter.sizes()
+            sizes[0] = 100
+            self._splitter.setSizes(sizes)
+            QApplication.processEvents()
+
 
 
     def _callbk_showHideControls(self):
@@ -548,34 +593,11 @@ class MainWindow(QMainWindow):
         else:
             self.cpanelFrame.hide()
 
-        self.controlsButton.setText(('Controls','Hide')[self.cpanelFrame.isVisible()])
+        self.controlsButton.setText(('Controls',' Hide')[self.cpanelFrame.isVisible()])
         self.controlsButton.setStatusTip(('Show Control Panel','Hide Control Panel')[self.cpanelFrame.isVisible()])
         self._splitter.setHidden(
             self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
 
-
-    def _callbk_showHideNotes(self):
-        self.notes.setVisible(self.notes.isHidden())
-        self.notesButton.setText(('Notepad', 'Hide')[self.notes.isVisible()])
-        self.notesButton.setStatusTip(('Show Notepad','Hide Notepad')[self.notes.isVisible()])
-        self.updateNotes()
-        self._splitter.setHidden(
-            self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
-
-
-    def _forceHidePython(self):
-
-        # con = (self._dev_console, self._dev_console)[cfg.DEV_MODE]
-        con = self._dev_console
-        label = ' Python'
-        icon = 'mdi.language-python'
-        # color = '#f3f6fb'
-        color = '#380282'
-        con.hide()
-        self._btn_show_hide_console.setIcon(qta.icon(icon, color=color))
-        self._btn_show_hide_console.setText(label)
-        self._splitter.setHidden(
-            self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
 
 
     def autoscale(self, make_thumbnails=True):
@@ -2068,8 +2090,8 @@ class MainWindow(QMainWindow):
         self._dontReinit = True
         caller = inspect.stack()[1].function
         # logger.critical('caller: %s' % caller)
-        self.tell('Loading project...')
-        logger.critical('\n\nLoading project...\n')
+        self.tell("Loading project '%s'..." %cfg.data.dest())
+        logger.critical("\n\nLoading project '%s'...\n" %cfg.data.dest())
 
         setData('state,manual_mode', False)
         setData('state,mode', 'comparison')
@@ -2094,7 +2116,7 @@ class MainWindow(QMainWindow):
 
         # cfg.project_tab.updateTreeWidget()  # TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
 
-        self.tell('Updating UI...')
+        # self.tell('Updating UI...')
         self.dataUpdateWidgets() # 0.5878 -> 0.5887 ~.001s
 
 
@@ -3168,39 +3190,37 @@ class MainWindow(QMainWindow):
         self.controlsButton.setIcon(qta.icon('ei.adjust-alt', color=ICON_COLOR))
         self.controlsButton.clicked.connect(self._callbk_showHideControls)
 
-
-        self.notesButton = QPushButton('Notes')
-        self.notesButton.setStatusTip('Show Notepad')
+        tip = 'Show Notepad'
+        self.notesButton = QPushButton(' Notes')
+        self.notesButton.setStatusTip(tip)
+        self.notesButton.setToolTip(tip)
         self.notesButton.setFixedHeight(18)
         self.notesButton.setFixedWidth(70)
-        self.notesButton.setIcon(qta.icon('mdi.notebook-edit', color=ICON_COLOR))
+        # self.notesButton.setIcon(qta.icon('mdi.notebook-edit', color=ICON_COLOR))
+        self.notesButton.setIcon(QIcon('src/resources/notepad-icon.png'))
+        self.notesButton.setIconSize(QSize(13,13))
         self.notesButton.clicked.connect(self._callbk_showHideNotes)
 
-
-        self.pythonButton = QPushButton('Python')
-        self.pythonButton.setStatusTip('Show Python Console')
+        tip = 'Show Python Console'
+        self.pythonButton = QPushButton(' Python')
+        self.pythonButton.setToolTip(tip)
+        self.pythonButton.setStatusTip(tip)
         self.pythonButton.setFixedHeight(18)
         self.pythonButton.setFixedWidth(70)
-        self.pythonButton.setIcon(qta.icon('mdi.language-python', color=ICON_COLOR))
+        # self.pythonButton.setIcon(qta.icon('mdi.language-python', color=ICON_COLOR))
+        self.pythonButton.setIcon(QIcon('src/resources/python-icon.png'))
+        self.pythonButton.setIconSize(QSize(13,13))
         self.pythonButton.clicked.connect(self._callbk_showHidePython)
 
         self._detachNgButton = QPushButton()
         self._detachNgButton.setFixedSize(18,18)
-        self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color=ICON_COLOR))
-        self._detachNgButton.clicked.connect(self.update_ng)
+        # self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color=ICON_COLOR))
+        self._detachNgButton.setIcon(QIcon('src/resources/popout-icon.png'))
+        self._detachNgButton.setIconSize(QSize(13, 13))
+        # self._detachNgButton.clicked.connect(self.update_ng)
+        self._detachNgButton.clicked.connect(self.detachNeuroglancer)
+
         self._detachNgButton.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
-
-
-        def fn():
-            if self._isProjectTab():
-                for v in cfg.project_tab.get_viewers():
-                    v.set_zmag()
-        self._fixAllZmag = QPushButton()
-        self._fixAllZmag.setStatusTip('Fix Z-mag')
-        self._fixAllZmag.setFixedSize(18, 18)
-        self._fixAllZmag.setIcon(qta.icon("mdi.auto-fix", color=ICON_COLOR))
-        self._fixAllZmag.clicked.connect(fn)
-
 
         # self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self._btn_refreshTab)
@@ -3222,7 +3242,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.notesButton)
         self.toolbar.addWidget(self.pythonButton)
         # self.toolbar.addWidget(self._highContrastNgAction)
-        self.toolbar.addWidget(self._fixAllZmag)
+        # self.toolbar.addWidget(self._fixAllZmag)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
 
@@ -5131,18 +5151,6 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_ctls.setStyleSheet(
                 'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
 
-        tip = 'Show/Hide Python Console'
-        self._btn_show_hide_console = QPushButton(' Python')
-        self._btn_show_hide_console.setFixedHeight(18)
-        self._btn_show_hide_console.setStyleSheet(lower_controls_style)
-        self._btn_show_hide_console.setStatusTip(tip)
-        self._btn_show_hide_console.clicked.connect(self._callbk_showHidePython)
-        # self._btn_show_hide_console.setIcon(qta.icon("mdi.language-python", color='#f3f6fb'))
-        self._btn_show_hide_console.setIcon(qta.icon("mdi.language-python", color='#380282'))
-        self._btn_show_hide_console.setIconSize(QSize(12, 12))
-        self._btn_show_hide_console.setStyleSheet(
-                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
-
         def fn():
             caller = inspect.stack()[1].function
             if caller != 'updateNotes':
@@ -5155,6 +5163,7 @@ class MainWindow(QMainWindow):
                 self.notes.update()
 
         self.notes = QWidget()
+        self.notes.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.notes.setStyleSheet("""
         color: #f3f6fb; 
         """)
@@ -5190,17 +5199,17 @@ class MainWindow(QMainWindow):
         self.notes.hide()
 
 
-        tip = 'Show/Hide Project Notes'
-        self._btn_show_hide_notes = QPushButton(' Notes')
-        self._btn_show_hide_notes.setFixedHeight(18)
-        self._btn_show_hide_notes.setStyleSheet(lower_controls_style)
-        self._btn_show_hide_notes.setStatusTip(tip)
-        self._btn_show_hide_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_show_hide_notes.clicked.connect(self._callbk_showHideNotes)
-        # self._btn_show_hide_notes.setIcon(qta.icon('mdi.notebook-edit', color='#f3f6fb'))
-        self._btn_show_hide_notes.setIcon(qta.icon('mdi.notebook-edit', color='#380282'))
-        self._btn_show_hide_notes.setStyleSheet(
-                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
+        # tip = 'Show/Hide Project Notes'
+        # self._btn_show_hide_notes = QPushButton(' Notes')
+        # self._btn_show_hide_notes.setFixedHeight(18)
+        # self._btn_show_hide_notes.setStyleSheet(lower_controls_style)
+        # self._btn_show_hide_notes.setStatusTip(tip)
+        # self._btn_show_hide_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self._btn_show_hide_notes.clicked.connect(self._callbk_showHideNotes)
+        # # self._btn_show_hide_notes.setIcon(qta.icon('mdi.notebook-edit', color='#f3f6fb'))
+        # self._btn_show_hide_notes.setIcon(qta.icon('mdi.notebook-edit', color='#380282'))
+        # self._btn_show_hide_notes.setStyleSheet(
+        #         'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
 
         tip = 'Show/Hide Shader Code'
         self._btn_show_hide_shader = QPushButton(' Shader')
@@ -5316,6 +5325,7 @@ class MainWindow(QMainWindow):
 
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
+        self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.globTabs.setStyleSheet('background-color: #222222;')
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
@@ -5402,6 +5412,9 @@ class MainWindow(QMainWindow):
           margin: 0px;
         }
         """)
+
+
+
         # self._splitter.setAutoFillBackground(True)
         self._splitter.splitterMoved.connect(self.splittersHaveMoved)
         self._splitter.addWidget(self.notes)                # (0)
@@ -5414,7 +5427,7 @@ class MainWindow(QMainWindow):
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)
         self._splitter.setStretchFactor(0, 0)
-        self._splitter.setStretchFactor(1, 1)
+        self._splitter.setStretchFactor(1, 0)
         self._splitter.setStretchFactor(2, 0)
         self._splitter.hide()
 
@@ -5536,6 +5549,7 @@ class MainWindow(QMainWindow):
 
         self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanelFrame)
         self.globTabsAndCpanel.setAutoFillBackground(True)
+        self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # self.newMainWidget = VWidget(self.globTabs, self._splitter)
         self.newMainSplitter = QSplitter(Qt.Orientation.Vertical)
@@ -5564,6 +5578,8 @@ class MainWindow(QMainWindow):
         self.newMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
         self.newMainSplitter.setCollapsible(0, False)
         self.newMainSplitter.setCollapsible(1, False)
+        self.newMainSplitter.setStretchFactor(0, 3)
+        self.newMainSplitter.setStretchFactor(1, 0)
 
         self.setCentralWidget(self.newMainSplitter)
 
