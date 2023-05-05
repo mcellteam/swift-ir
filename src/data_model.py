@@ -647,6 +647,10 @@ class DataModel:
         logger.critical(f'Setting Defaults caller: {inspect.stack()[1].function} >>>>')
         import src.config as cfg
 
+
+        initial_zpos = int(len(self)/2)
+        self._data['data']['zposition'] = initial_zpos
+
         self._data.setdefault('developer_mode', cfg.DEV_MODE)
         self._data.setdefault('data', {})
         self._data.setdefault('rendering', {})
