@@ -77,6 +77,7 @@ from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences
 import src.config as cfg
+from qtconsole import __version__ as qcv
 
 
 WHITE_LIST = {'src'}      # Look for these words in the file path.
@@ -157,11 +158,12 @@ def main():
 
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
-    logging.getLogger('init').versioncheck('sys.version           : %s' % sys.version)
-    logging.getLogger('init').versioncheck('alignEM-SWiFT Version : %s' % cfg.VERSION)
+    logging.getLogger('init').versioncheck('alignEM-SWiFT         : %s' % cfg.VERSION)
+    logging.getLogger('init').versioncheck('environment           : %s' % sys.version)
     logging.getLogger('init').versioncheck('QtCore.__version__    : %s' % QtCore.__version__)
     logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
     logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
+    logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
 
     check_for_binaries()
 
