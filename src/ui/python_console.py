@@ -10,7 +10,6 @@ from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QSize
-
 from src.helpers import is_tacc
 
 class PythonConsole(RichJupyterWidget):

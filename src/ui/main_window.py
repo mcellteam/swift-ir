@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
     updateTable = Signal()
     cancelMultiprocessing = Signal()
     sectionChanged = Signal()
+    swimWindowChanged = Signal()
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
@@ -112,7 +113,7 @@ class MainWindow(QMainWindow):
         self.initPrivateMembers()
         self.initThreadpool(timeout=250)
         self.initOpenGlContext()
-        # self.initPythonConsole()
+        self.initPythonConsole()
         self.initStatusBar()
         self.initPbar()
         self.initControlPanel()
@@ -333,41 +334,46 @@ class MainWindow(QMainWindow):
 
 
     def initPythonConsole(self):
-        # logger.info('')
-        #
-        # namespace = {
-        #     'pg': pg,
-        #     'np': np,
-        #     'cfg': src.config,
-        #     'mw': src.config.main_window,
-        #     'emViewer': cfg.emViewer,
-        #     'ng': ng,
-        # }
-        # text = """
-        # Caution - anything executed here is injected into the main event loop of AlignEM-SWiFT!
-        # """
-        #
-        # cfg.py_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
-        # self._py_console = QWidget()
-        # self._py_console.setStyleSheet('background: #222222; color: #f3f6fb; border-radius: 5px;')
-        # lab = QLabel('Python Console')
-        # # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        # # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
-        # lab.setStyleSheet(
-        #     """
-        #     color: #f3f6fb;
-        #     font-size: 10px;
-        #     font-weight: 600;
-        #     padding-left: 2px;
-        #     padding-top: 2px;
-        #     """)
-        # vbl = QVBoxLayout()
-        # vbl.setContentsMargins(0,0,0,0)
-        # vbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignBaseline)
-        # vbl.addWidget(cfg.py_console)
-        # self._py_console.setLayout(vbl)
-        # self._py_console.hide()
-        pass
+        logger.info('')
+
+        namespace = {
+            'pg': pg,
+            'np': np,
+            'cfg': src.config,
+            'mw': src.config.main_window,
+            'emViewer': cfg.emViewer,
+            'ng': ng,
+        }
+        text = """
+        Caution - any code executed here is injected into the main event loop of AlignEM-SWiFT!
+        """
+        cfg.py_console = pyqtgraph.console.ConsoleWidget(namespace=namespace, text=text)
+        self._dev_console = QWidget()
+        self._dev_console.setAutoFillBackground(False)
+        # self._dev_console.setStyleSheet('background: #222222; color: #f3f6fb; border-radius: 5px;')
+        # self._dev_console.setStyleSheet('background: #ede9e8; color: #141414; border-radius: 5px;')
+        self._dev_console.setStyleSheet("""
+                                        QWidget {background-color: #ede9e8; color: #141414;}
+                                        QLineEdit {background-color: #ede9e8; }
+                                        QPlainTextEdit {background-color: #ede9e8; }
+                                        QPushButton""")
+        lab = QLabel('Python Console')
+        # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
+        # lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
+        lab.setStyleSheet("""
+            color: #141414;
+            font-size: 10px;
+            font-weight: 600;
+            padding-left: 2px;
+            padding-top: 2px;
+            """)
+        vbl = QVBoxLayout()
+        vbl.setContentsMargins(0,0,0,0)
+        vbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignBaseline)
+        vbl.addWidget(cfg.py_console)
+        self._dev_console.setLayout(vbl)
+        self._dev_console.hide()
+        # pass
 
 
     def _callbk_showHideCorrSpots(self):
@@ -447,21 +453,36 @@ class MainWindow(QMainWindow):
                 logger.info(f'h = {h}')
 
                 # logger.info('thumbs: %s' % str(thumbs))
-                for i in range(7):
-
-                    self.corrSignalsList[i].setFixedSize(h, h)
-                    if i < n:
-                        # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
-                        try:
-                            self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
-                            self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
-                        except:
-                            print_exception()
-                            self.corrSignalsList[i].set_no_image()
-                        finally:
-                            self.corrSignalsList[i].show()
-                    else:
+                count = 0
+                if cfg.data.current_method == 'grid-custom':
+                    for i in range(7):
+                        self.corrSignalsList[i].setFixedSize(h, h)
                         self.corrSignalsList[i].hide()
+                    regions = cfg.data.grid_custom_regions
+                    names = cfg.data.get_grid_custom_filenames()
+                    for i in range(4):
+                        if regions[i]:
+                            self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
+                            self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+                            self.corrSignalsList[i].show()
+                            count += 1
+
+
+                else:
+                    for i in range(7):
+                        self.corrSignalsList[i].setFixedSize(h, h)
+                        if i < n:
+                            # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
+                            try:
+                                self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
+                                self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+                            except:
+                                print_exception()
+                                self.corrSignalsList[i].set_no_image()
+                            finally:
+                                self.corrSignalsList[i].show()
+                        else:
+                            self.corrSignalsList[i].hide()
 
         logger.info(f'<<<< updateCorrSignalsDrawer [actual sizes: {self._splitter.sizes()}]')
 
@@ -512,7 +533,8 @@ class MainWindow(QMainWindow):
         self._dev_console.setVisible(self._dev_console.isHidden())
         self._splitter.setHidden(self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
         logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
-        self.pythonConsole.setFocus()
+        # self.pythonConsole.setFocus()
+        self._dev_console.setFocus()
         logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         self.pythonButton.setText(('Python','Hide')[self._dev_console.isVisible()])
         self.pythonButton.setStatusTip(('Show Python Console','Hide Python Console')[self._dev_console.isVisible()])
@@ -543,7 +565,7 @@ class MainWindow(QMainWindow):
 
     def _forceHidePython(self):
 
-        # con = (self._py_console, self._dev_console)[cfg.DEV_MODE]
+        # con = (self._dev_console, self._dev_console)[cfg.DEV_MODE]
         con = self._dev_console
         label = ' Python'
         icon = 'mdi.language-python'
@@ -1141,26 +1163,6 @@ class MainWindow(QMainWindow):
             self.warn('No Skips To Clear.')
 
 
-    def apply_all(self) -> None:
-        '''Apply alignment settings to all images for all scales'''
-        if cfg.data:
-            swim_val = self._swimWindowControl.value() / 100.
-            whitening_val = self._whiteningControl.value()
-            self.tell('Applying Settings To All Scales + Layers...\n'
-                      '  SWIM Window : %dpx\n'
-                      '  Whitening   : %.3f' % (self._swimWindowControl.value(), whitening_val))
-            for s in cfg.data.scales():
-                cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
-                if self._polyBiasCombo.currentText() == 'None':
-                    cfg.data.set_use_poly_order(False)
-                else:
-                    cfg.data.set_use_poly_order(True)
-                    cfg.data.set_poly_order(int(self._polyBiasCombo.currentText()), s=s)
-                for layer in cfg.data.stack(s=s):
-                    layer['alignment']['method_data']['win_scale_factor'] = swim_val
-                    layer['alignment']['method_data']['whitening_factor'] = whitening_val
-
-
     def enableAllButtons(self):
         self._btn_alignAll.setEnabled(True)
         self._btn_alignOne.setEnabled(True)
@@ -1508,9 +1510,10 @@ class MainWindow(QMainWindow):
                 Reference:{br}{a}{cfg.data.reference_basename()}{b}{nl}
                 Modified{br}:{br}{a}{cfg.data.modified}{b}{nl}"""
                 method = cfg.data.method()
-                if method == 'Auto-SWIM':       txt += f"Method{br*3}:{br}{a}Automatic{br}SWIM{b}"
-                elif method == 'Manual-Hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
-                elif method == 'Manual-Strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
+                if method == 'grid-default':       txt += f"Method{br*3}:{br}{a}Default{br}Grid{b}"
+                elif method == 'grid-custom':       txt += f"Method{br*3}:{br}{a}Custom{br}Grid{b}"
+                elif method == 'manual-hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
+                elif method == 'manual-strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
                 # txt += f"""Reject{br*7}:{br}[{(' ', 'X')[cfg.data.skipped()]}]"""
                 cfg.project_tab.detailsSection.setText(txt)
 
@@ -1536,7 +1539,7 @@ class MainWindow(QMainWindow):
                     f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
 
             if cfg.project_tab.detailsSNR.isVisible():
-                if cfg.data.zpos == 0:
+                if (cfg.data.zpos == 0) or cfg.data.skipped():
                     cfg.project_tab.detailsSNR.setText(
                         f"Avg. SNR{br * 2}: N/A{nl}"
                         f"Prev.{br}SNR{br}: N/A{nl}"
@@ -1832,8 +1835,11 @@ class MainWindow(QMainWindow):
 
                 self.dataUpdateWidgets()
 
-        try:     self._jumpToLineedit.setText(str(requested))
-        except:  logger.warning('Current Section Widget Failed to Update')
+            try:
+                self._jumpToLineedit.setText(str(requested))
+            except:
+                logger.warning('Current Section Widget Failed to Update')
+                print_exception()
 
         logger.info('<<<< jump_to_slider')
 
@@ -2087,14 +2093,11 @@ class MainWindow(QMainWindow):
         # dt = 1.1032602787017822
         self.updateEnabledButtons()
         self.updateMenus()
-        # dt = 1.1051950454711914
-        self._resetSlidersAndJumpInput()
-        self.reload_scales_combobox()
-        self.enableAllTabs()
-        # dt = 1.105268955230713
+        self._resetSlidersAndJumpInput() #fast
+        self.reload_scales_combobox() #fast
+        self.enableAllTabs() #fast
 
         cfg.data.zpos = int(len(cfg.data)/2)
-
 
         self.updateNotes()
         self._autosave() #0412+
@@ -2106,9 +2109,6 @@ class MainWindow(QMainWindow):
         self._dontReinit = False
 
         # dt = 1.1060302257537842
-
-
-
 
 
     def saveUserPreferences(self):
@@ -2328,6 +2328,8 @@ class MainWindow(QMainWindow):
             # msg.setIcon(QMessageBox.Question)
             # msg.setWindowIcon(qta.icon('fa.question', color='#ede9e8'))
             reply = msg.exec_()
+            logger.info(f'reply       : {reply}')
+            logger.info(f'Type        : {type(reply)}')
             if reply == QMessageBox.Cancel:
                 logger.info('User Choice: Cancel')
                 self.tell('Canceling Exit')
@@ -2374,15 +2376,15 @@ class MainWindow(QMainWindow):
         # if cfg.DEV_MODE:
         self.tell('Shutting Down Python Console Kernel...')
         logger.info('Shutting Down Python Console Kernel...')
-        try:
-
-            self.pythonConsole.kernel_client.stop_channels()
-            self.pythonConsole.kernel_manager.shutdown_kernel()
-        except:
-            print_exception()
-            self.warn('Having trouble shutting down Python console kernel')
-        finally:
-            time.sleep(.4)
+        # try:
+        #
+        #     self.pythonConsole.kernel_client.stop_channels()
+        #     self.pythonConsole.kernel_manager.shutdown_kernel()
+        # except:
+        #     print_exception()
+        #     self.warn('Having trouble shutting down Python console kernel')
+        # finally:
+        #     time.sleep(.4)
 
         self.tell('Graceful, Goodbye!')
         logger.info('Exiting...')
@@ -3372,6 +3374,9 @@ class MainWindow(QMainWindow):
             except:
                 logger.warning('Cant deactivate signalsAction QAction')
 
+            if getData('state,manual_mode'):
+                self._changeScaleCombo.setEnabled(False)
+
         elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
@@ -4191,7 +4196,9 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # if caller != 'initControlPanel':
         if caller == 'main':
-            cfg.data.set_whitening(float(self._whiteningControl.value()))
+            val = float(self._whiteningControl.value())
+            cfg.data.default_whitening = val
+            self.tell('Corrective Polynomial Order is set to %d' % val)
 
 
     def _valueChangedPolyOrder(self):
@@ -4199,10 +4206,12 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         if caller == 'main':
             if self._polyBiasCombo.currentText() == 'None':
-                cfg.data.set_use_poly_order(False)
+                cfg.data.default_poly_order = None
+                self.tell('Corrective Polynomial Order is set to None')
             else:
-                cfg.data.set_use_poly_order(True)
-                cfg.data.set_poly_order(self._polyBiasCombo.currentText())
+                val = int(self._polyBiasCombo.currentText())
+                cfg.data.default_poly_order = val
+                self.tell('Corrective Polynomial Order is set to %d' % val)
 
 
     def _toggledAutogenerate(self) -> None:
@@ -4361,16 +4370,19 @@ class MainWindow(QMainWindow):
         self._swimWindowControl.setSuffix('px')
         self._swimWindowControl.setMaximum(9999)
         self._swimWindowControl.setFixedHeight(14)
+
         def fn():
             # logger.info('')
             caller = inspect.stack()[1].function
             if caller == 'main':
+
                 logger.info(f'caller: {caller}')
                 # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-                cfg.data.set_swim_window_px(self._swimWindowControl.value())
+                # cfg.data.set_swim_window_px(self._swimWindowControl.value())
                 # setData(f'data,scales,{cfg.data.scale},')
+                cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.value()/cfg.data.image_size()[0]))
 
-
+                self.swimWindowChanged.emit()
 
         self._swimWindowControl.valueChanged.connect(fn)
         self._swimWindowControl.valueChanged.connect(self._callbk_unsavedChanges)
@@ -5083,6 +5095,7 @@ class MainWindow(QMainWindow):
 
         # self.corrSignalsDrawer.setLayout(hbl)
         self.corrSignalsDrawer = VWidget(self.corrSignalsWidget, self.lab_corr_signals)
+        self.corrSignalsDrawer.layout.setAlignment(Qt.AlignBottom)
         # self.corrSignalsDrawer.setStyleSheet('background-color: #ffe135; color: #f3f6fb; border-radius: 5px; ')
         # self.corrSignalsDrawer.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
 
@@ -5306,43 +5319,43 @@ class MainWindow(QMainWindow):
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
 
-        self.pythonConsole = PythonConsole()
-        self.__dev_console = QWidget()
-        vbl = VBL()
-        vbl.addWidget(self.pythonConsole)
-        self.__dev_console.setLayout(vbl)
+        # self.pythonConsole = PythonConsole()
+        # self.__dev_console = QWidget()
+        # vbl = VBL()
+        # vbl.addWidget(self.pythonConsole)
+        # self.__dev_console.setLayout(vbl)
 
-        self._dev_console = QWidget()
-        self._dev_console.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # self._dev_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self._dev_console.resize(QSize(600,600))
-
-        self.__dev_console.setStyleSheet("""
-        font-size: 10px; 
-        background-color: #222222;
-        color: #f3f6fb;
-        font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        border-radius: 5px;
-        """)
-        lab = QLabel('Python Console')
-        lab.setStyleSheet(
-            """
-            color: #f3f6fb; 
-            font-size: 10px; 
-            font-weight: 600; 
-            padding-left: 2px; 
-            padding-top: 2px;
-            """)
-        vbl = QVBoxLayout()
-        # vbl.setSpacing(1)
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(1, 1, 1, 1) # this provides for thin contrasting margin
-        vbl.addWidget(lab, alignment=Qt.AlignBaseline)
-        vbl.addWidget(self.__dev_console)
-        self._dev_console.setLayout(vbl)
-        self._dev_console.hide()
-        self.notes.setContentsMargins(0, 0, 0, 0)
-        self._dev_console.setContentsMargins(0, 0, 0, 0)
+        # self._dev_console = QWidget()
+        # self._dev_console.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # # self._dev_console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # # self._dev_console.resize(QSize(600,600))
+        #
+        # self.__dev_console.setStyleSheet("""
+        # font-size: 10px;
+        # background-color: #222222;
+        # color: #f3f6fb;
+        # font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        # border-radius: 5px;
+        # """)
+        # lab = QLabel('Python Console')
+        # lab.setStyleSheet(
+        #     """
+        #     color: #f3f6fb;
+        #     font-size: 10px;
+        #     font-weight: 600;
+        #     padding-left: 2px;
+        #     padding-top: 2px;
+        #     """)
+        # vbl = QVBoxLayout()
+        # # vbl.setSpacing(1)
+        # vbl.setSpacing(0)
+        # vbl.setContentsMargins(1, 1, 1, 1) # this provides for thin contrasting margin
+        # vbl.addWidget(lab, alignment=Qt.AlignBaseline)
+        # vbl.addWidget(self.__dev_console)
+        # self._dev_console.setLayout(vbl)
+        # self._dev_console.hide()
+        # self.notes.setContentsMargins(0, 0, 0, 0)
+        # self._dev_console.setContentsMargins(0, 0, 0, 0)
 
         '''Main Vertical Splitter'''
         self._splitter = QSplitter(Qt.Orientation.Vertical)
@@ -5351,11 +5364,29 @@ class MainWindow(QMainWindow):
         # QSplitter::handle { background: #339933; margin-left:400px; margin-right:400px;}""")
         self._splitter.setStyleSheet("""
         QWidget {background: #222222;}
-        QSplitter::handle:horizontal {width: 1px;} QSplitter::handle:vertical {height: 1px;}""")
+        
+        QSplitter {
+          spacing: 0px;
+          padding: 0px;
+          margin: 0px;
+        }
+        QSplitter::handle {
+          background-color: #555555;
+          border: 0px solid #FAFAFA;
+          spacing: 0px;
+          padding: 1px;
+          margin: 0px;
+        }
+
+        QSplitter::handle:hover {
+          background-color: #339933;
+        }
+        """)
         # self._splitter.setAutoFillBackground(True)
         self._splitter.splitterMoved.connect(self.splittersHaveMoved)
         self._splitter.addWidget(self.notes)                # (0)
         self._splitter.addWidget(self.correlation_signals)  # (1)
+        # self._splitter.addWidget(self._dev_console)         # (2)
         self._splitter.addWidget(self._dev_console)         # (2)
         self._splitter.setContentsMargins(0, 0, 0, 0)
         self._splitter.setHandleWidth(1)
@@ -5488,6 +5519,24 @@ class MainWindow(QMainWindow):
 
         # self.newMainWidget = VWidget(self.globTabs, self._splitter)
         self.newMainSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.newMainSplitter .setStyleSheet("""
+        QSplitter::handle:vertical {height: 2px;}
+        QSplitter {
+          spacing: 0px;
+          padding: 0px;
+          margin: 0px;
+        }
+        QSplitter::handle:vertical {
+          background-color: #555555;
+          border: 0px solid #FAFAFA;
+          spacing: 0px;
+          padding: 1px;
+          margin: 0px;
+        }
+        QSplitter::handle:hover {
+          background-color: #339933;
+        }
+        """)
         # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: #339933; }""")
         self.newMainSplitter.setHandleWidth(1)
         self.newMainSplitter.addWidget(self.globTabsAndCpanel)
@@ -5512,7 +5561,7 @@ class MainWindow(QMainWindow):
 
     def initWidgetSpacing(self):
         logger.info('')
-        # self._py_console.setContentsMargins(0, 0, 0, 0)
+        # self._dev_console.setContentsMargins(0, 0, 0, 0)
         self.hud.setContentsMargins(0, 0, 0, 0)
         self.layer_details.setContentsMargins(0, 0, 0, 0)
         self.matchpoint_text_snr.setMaximumHeight(20)
@@ -5646,17 +5695,13 @@ class MainWindow(QMainWindow):
 
     def setControlPanelData(self):
 
-        whitening = getData('data,defaults,whitening-factor')
-        self._whiteningControl.setValue(float(whitening))
-
+        self._whiteningControl.setValue(float(getData('data,defaults,whitening-factor')))
         poly = getData('data,defaults,corrective-polynomial')
         if (poly == None) or (poly == 'None'):
             self._polyBiasCombo.setCurrentText('None')
         else:
             self._polyBiasCombo.setCurrentText(str(poly))
-
-        ww = getData(f'data,defaults,{cfg.data.scale},swim-window-px')
-        self._swimWindowControl.setValue(int(ww[0]))
+        self._swimWindowControl.setValue(int(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
 
 
 

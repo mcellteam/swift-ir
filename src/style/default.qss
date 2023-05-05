@@ -13,23 +13,7 @@ QToolTip {
    border: #141414 solid 1px
 }
 
-QSplitter {
-  spacing: 0px;
-  padding: 0px;
-  margin: 0px;
-}
 
-QSplitter::handle {
-  background-color: #555555;
-  border: 0px solid #FAFAFA;
-  spacing: 0px;
-  padding: 1px;
-  margin: 0px;
-}
-
-QSplitter::handle:hover {
-  background-color: #339933;
-}
 
 
 QWidget {

@@ -194,6 +194,9 @@ class ProjectTab(QWidget):
             cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
             cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
 
+            cfg.main_window.swimWindowChanged.connect(cfg.refViewer.drawSWIMwindow)
+            cfg.main_window.swimWindowChanged.connect(cfg.baseViewer.drawSWIMwindow)
+
             cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
             # cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
 
@@ -879,7 +882,13 @@ class ProjectTab(QWidget):
 
         def fn():
             cfg.data.set_all_methods_automatic()
-            cfg.main_window.hud.done()
+            cfg.data.set_auto_swim_windows_to_default()
+            cfg.main_window.setControlPanelData()
+            self.dataUpdateMA()
+            cfg.refViewer.drawSWIMwindow()
+            cfg.baseViewer.drawSWIMwindow()
+
+
         self.btnResetAllMA = QPushButton('Set All To Default Grid')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnResetAllMA.setFixedSize(QSize(107,18))
@@ -892,26 +901,11 @@ class ProjectTab(QWidget):
             cfg.main_window.alignOne()
             # cfg.main_window.alignGenerateOne()
             cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
-            cfg.main_window.hud.done()
         self.btnRealignMA = QPushButton('Align && Regenerate')
-        # self.btnRealignMA.setStyleSheet()
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRealignMA.setFixedSize(QSize(107,18))
         self.btnRealignMA.clicked.connect(fn)
         self.btnRealignMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
-
-        def fn():
-            cfg.main_window.hud.post('Applying Manual Points...')
-            if self.validate_MA_points():
-                # self.applyMps()
-                cfg.data.set_method(self.combo_method.currentText())
-                self.update_MA_widgets()
-                # self.set_method_label_text()
-                cfg.refViewer.drawSWIMwindow()
-                cfg.baseViewer.drawSWIMwindow()
-                cfg.main_window.hud.done()
-            else:
-                logger.warning('(!) validate points is misconfigured')
 
         self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -941,20 +935,19 @@ class ProjectTab(QWidget):
             cfg.data.set_swim_iterations_glob(val=cfg.DEFAULT_SWIM_ITERATIONS)
             setData('state,stage_viewer,show_overlay_message', True)
 
-            self.slider_AS_SWIM_window.setValue(cfg.data.swim_window_px()[0])
-            self.slider_AS_2x2_SWIM_window.setValue(cfg.data.swim_2x2_px()[0])
+            self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_window_px()[0]))
+            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
             self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
 
-            self.slider_MA_SWIM_window.setValue(cfg.data.manual_swim_window_px())
+            self.slider_MA_SWIM_window.setValue(int(cfg.data.manual_swim_window_px()))
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
 
-            self.spinbox_whitening.setValue(cfg.data.whitening())
+            self.spinbox_whitening.setValue(float(cfg.data.whitening()))
             self.toggle_showInstructionOverlay.setChecked(True)
 
-            self.spinbox_swim_iters.setValue(cfg.data.swim_iterations())
+            self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
 
             cfg.data.current_method = 'grid-default'
-            cfg.data.set_method('Auto-SWIM')
             self.method_rb0.setChecked(True)
             self.MA_stackedWidget.setCurrentIndex(0)
 
@@ -1431,11 +1424,9 @@ class ProjectTab(QWidget):
             if self.method_rb0.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(0)
                 cfg.data.current_method = 'grid-default'
-                cfg.data.set_method('Auto-SWIM')
             elif self.method_rb1.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(1)
                 cfg.data.current_method = 'grid-custom'
-                cfg.data.set_method('Auto-SWIM')
             elif self.method_rb2.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(2)
                 if cfg.data.hint_or_strict == 'strict':
@@ -2520,7 +2511,6 @@ class ProjectTab(QWidget):
 
 
     def validate_MA_points(self):
-        # if cfg.data.method() != 'Auto-SWIM':
         # if len(cfg.refViewer.pts.keys()) >= 3:
         if cfg.refViewer.pts.keys() == cfg.baseViewer.pts.keys():
             return True
@@ -2534,13 +2524,9 @@ class ProjectTab(QWidget):
         logger.critical(f'caller: {caller} ; call #{self.dataUpdateMA_calls}')
         if getData('state,manual_mode'):
 
-            # if cfg.data.method() != 'Auto-SWIM':
-            #     self.combo_method.setCurrentText(cfg.data.method())
-
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
             self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
-            # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             self._combo_method_switch = False
             self.combo_method.setCurrentText(cfg.data.method()) #Todo #Check
@@ -2881,8 +2867,6 @@ class ProjectTab(QWidget):
         self.w_ng_display.hide() # change layout before initializing viewer
         self.MA_splitter.show() # change layout before initializing viewer
         self.ngVertLab.setText('Manual Alignment Mode')
-        # self.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
-        # self.set_method_label_text()
 
         # cfg.main_window._changeScaleCombo.setEnabled(False)
 

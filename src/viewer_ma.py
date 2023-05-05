@@ -323,7 +323,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def add_matchpoint(self, s):
         if cfg.data.method() not in ('manual-strict', 'manual-hint'):
-            logger.warning('add_matchpoint: User may not select point when using the Auto-SWIM alignment method.')
+            logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
 
         logger.info('Adding Manual Points to Buffer...')
@@ -401,7 +401,7 @@ class MAViewer(neuroglancer.Viewer):
         marker_size = 1
 
         if cfg.data.current_method == 'grid-custom':
-            logger.info('Drawing SWIM Window Annotations for Auto-SWIM Alignment...')
+            logger.info('Drawing SWIM Window Annotations for Custom Grid Alignment...')
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
@@ -449,11 +449,12 @@ class MAViewer(neuroglancer.Viewer):
                 )
 
         elif cfg.data.current_method == 'grid-default':
-            logger.info('Drawing SWIM Window Annotations for Auto-SWIM Alignment...')
+            logger.info('Drawing SWIM Window Annotations for Default Grid Alignment...')
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
-            ww_full = cfg.data.stack()[cfg.data.zpos]['alignment']['swim_settings']['default_auto_swim_window_px']
+            # ww_full = cfg.data.stack()[cfg.data.zpos]['alignment']['swim_settings']['default_auto_swim_window_px']
+            ww_full = cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px']
 
             offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
             offset_x2 = (img_w / 2) + (ww_full[0] * (1 / 4))
