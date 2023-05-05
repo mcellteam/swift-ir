@@ -164,20 +164,25 @@ def update_preferences_model():
 def initialize_user_preferences():
     logger.info('Initializing user preferences model...')
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
-    if os.path.exists(userpreferencespath):
-        logger.info(f'Loading user settings "{userpreferencespath}"...')
-        with open(userpreferencespath, 'r') as f:
-            cfg.settings = json.load(f)
-    else:
-        logger.info(f'Loading user settings from defaults...')
-        cfg.settings = {}
-    update_preferences_model()
+    try:
+        if os.path.exists(userpreferencespath):
+            logger.info(f'Loading user settings "{userpreferencespath}"...')
+            with open(userpreferencespath, 'r') as f:
+                cfg.settings = json.load(f)
+        else:
+            logger.info(f'Loading user settings from defaults...')
+            cfg.settings = {}
+            '''save user preferences to file'''
+    except:
+        print_exception()
+
     '''save user preferences to file'''
     try:
         f = open(userpreferencespath, 'w')
         json.dump(cfg.settings, f, indent=2)
         f.close()
     except:
+        print_exception()
         logger.warning(f'Unable to save current user preferences')
 
 def reset_user_preferences():
