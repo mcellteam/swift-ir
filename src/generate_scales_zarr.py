@@ -60,7 +60,8 @@ def generate_zarr_scales(data):
 
         # store = zarr.open(out, synchronizer=synchronizer)
         # task_list = []
-        chunkshape = cfg.data.chunkshape()
+        chunkshape = cfg.data.chunkshape
+        logger.critical(f'chunkshape: {chunkshape}')
         for scale in data.scales():
             for ID, img in enumerate(imgs):
                 out = os.path.join(od, 's%d' % get_scale_val(scale))

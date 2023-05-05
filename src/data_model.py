@@ -154,6 +154,39 @@ class DataModel:
         else:
             logger.warning(f'\n\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n\n')
 
+    @property
+    def cname(self) -> str:
+        '''Returns the default Zarr cname/compression type as a string.'''
+        return self._data['data']['cname']
+
+    @cname.setter
+    def cname(self, x:str):
+        self._data['data']['cname'] = str(x)
+
+    @property
+    def clevel(self) -> int:
+        '''Returns the default Zarr clevel/compression level as an integer.'''
+        return int(self._data['data']['clevel'])
+
+    @clevel.setter
+    def clevel(self, x:int):
+        self._data['data']['clevel'] = int(x)
+
+    @property
+    def chunkshape(self) -> tuple:
+        '''Returns the  default chunk shape tuple.'''
+        return self._data['data']['chunkshape']
+
+    @chunkshape.setter
+    def chunkshape(self, x:tuple):
+        self._data['data']['chunkshape'] = x
+
+    # def chunkshape(self):
+    #     try:
+    #         return tuple(self._data['data']['chunkshape'])
+    #     except:
+    #         logger.warning('chunkshape not in dictionary')
+
     # #Deprecated
     # @property
     # def layer(self):
@@ -193,7 +226,13 @@ class DataModel:
     def current_method(self):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
+        # self._data['data']['scales'][self.scale]['stack'][self.zpos].setdefault('current_method', 'grid-default')
+        try:
+            return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
+        except:
+            print_exception()
+            self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method'] = 'grid-default'
+            return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
 
     @current_method.setter
     def current_method(self, str):
@@ -605,7 +644,7 @@ class DataModel:
 
 
     def set_defaults(self):
-        logger.critical(f'caller: {inspect.stack()[1].function}')
+        logger.critical(f'Setting Defaults caller: {inspect.stack()[1].function} >>>>')
         import src.config as cfg
 
         self._data.setdefault('developer_mode', cfg.DEV_MODE)
@@ -632,6 +671,8 @@ class DataModel:
         self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('scales', {})
+        self._data['data']['defaults'].setdefault('whitening-factor', cfg.DEFAULT_WHITENING)
+        self._data['data']['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
 
         self._data['rendering'].setdefault('normalize', [1,255])
         self._data['rendering'].setdefault('brightness', 0)
@@ -642,6 +683,7 @@ class DataModel:
         #uicontrol float contrast slider(min=-1, max=1, step=0.01)
         void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
         ''')
+        logger.critical('<<<< Setting Defaults')
 
         for s in self.scales():
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
@@ -828,7 +870,7 @@ class DataModel:
         except:
             print_exception()
             logger.warning(f'No SNR components for section {l}, method {method}...')
-            return []
+            return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
         # if self.method(s=s, l=l) == 'Manual-Hint':
         #     files = self.get_signals_filenames()
         #     n = len(files)
@@ -1219,23 +1261,10 @@ class DataModel:
     def set_resolution(self, s, res_x:int, res_y:int, res_z:int):
         self._data['data']['scales'][s]['resolution'] = (res_z, res_y, res_x)
 
-    def cname(self):
-        try:     return self._data['data']['cname']
-        except:  logger.warning('cname not in dictionary')
-
-    def clevel(self):
-        try:     return int(self._data['data']['clevel'])
-        except:  logger.warning('clevel not in dictionary')
-
-    def chunkshape(self):
-        try:
-            return tuple(self._data['data']['chunkshape'])
-        except:
-            logger.warning('chunkshape not in dictionary')
 
     def get_user_zarr_settings(self):
         '''Returns user settings for cname, clevel, chunkshape as tuple (in that order).'''
-        return (self.cname(), self.clevel(), self.chunkshape())
+        return (self.cname, self.clevel, self.chunkshape)
 
     def scale_pretty(self, s=None) -> str:
         if s == None: s = self.scale

@@ -56,6 +56,7 @@ class ProjectTable(QWidget):
         # self.table.cellChanged.connect(lambda: print('cellChanged was emitted!'))
         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
+        self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
 
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
 
@@ -70,6 +71,12 @@ class ProjectTable(QWidget):
     #     # userSelectionChanged
     #     # cfg.main_window.open_project_selected()
 
+    def get_selection(self):
+        selected = []
+        for index in sorted(self.table.selectionModel().selectedRows()):
+            selected.append(index.row())
+        return selected
+
     def selection_changed(self):
         caller = inspect.stack()[1].function
         logger.critical(f'caller: {caller}')
@@ -79,6 +86,12 @@ class ProjectTable(QWidget):
                 # cfg.main_window.tell('Section #%d' % row)
                 cfg.data.zpos = row
                 cfg.main_window.dataUpdateWidgets()
+        selection = self.get_selection()
+        if selection:
+            r_min = min(selection)
+            r_max = max(selection)
+            cfg.main_window.sectionRangeSlider.setStart(r_min)
+            cfg.main_window.sectionRangeSlider.setEnd(r_max)
 
 
     def set_column_headers(self):

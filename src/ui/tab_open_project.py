@@ -350,22 +350,7 @@ class OpenProject(QWidget):
                 return 1
 
             self.showMainUI()
-
-            # logger.info('Showing ScaleProjectDialog...')
-            # # result = recipe_dialog.exec()
-            # if recipe_dialog.exec():
-            #     logger.info('Continuing...')
-            # else:
-            #     logger.info('Returning...')
-            #     return 1
-            # return
-
-
-            # logger.critical(f'result = {result}')
-            # logger.critical(f'result = {type(result)}')
-            #
-            # logger.critical(f'Result: {result}; type: {type(result)}')
-            # makedirs_exist_ok(path, exist_ok=True)
+            cfg.data.set_defaults()
             initLogFiles()
             cfg.main_window._autosave(silently=True)
             cfg.main_window.autoscale()

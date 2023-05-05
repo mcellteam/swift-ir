@@ -150,7 +150,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         else:
             logger.info('Making Copy-convert Alignment To Zarr Tasks List...')
             # cfg.main_window.set_status('Copy-converting TIFFs...')
-            chunkshape = cfg.data.chunkshape()
+            chunkshape = cfg.data.chunkshape
             task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
             task_queue.taskPrefix = 'TIFFs Converted to Zarr for '
             task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]

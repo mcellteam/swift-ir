@@ -7,6 +7,9 @@ import platform
 
 __all__ = ['data']
 
+
+VERSION = '0.5.440'
+
 LOG_LEVEL = 1
 
 '''Main Objects'''

@@ -99,9 +99,9 @@ class QFileDialogPreview(QFileDialog):
         self.mpPreview.setObjectName("labelPreview")
         self.imageDimensionsLabel = QLabel('')
         self.imageDimensionsLabel.setStyleSheet("""
-            font-size: 11px; 
+            font-size: 13px; 
             font-weight: 600; 
-            color: #FF0000; 
+            color: #141414; 
             background-color: #ede9e8;
             padding: 2px;
         """)
@@ -131,7 +131,7 @@ class QFileDialogPreview(QFileDialog):
                                                    Qt.SmoothTransformation))
             logger.info(f'Selected File: {path}')
             img_siz = ImageSize(path)
-            self.imageDimensionsLabel.setText('%dx%dpx' %(img_siz[0], img_siz[1]))
+            self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
 
     def onFileSelected(self, file):
         self._fileSelected = file
@@ -540,7 +540,7 @@ class ConfigProjectDialog(QDialog):
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
-        chunkshape = cfg.data.chunkshape()
+        chunkshape = cfg.data.chunkshape
         self.chunk_x_lineedit.setText(str(chunkshape[2]))
         self.chunk_y_lineedit.setText(str(chunkshape[1]))
         self.chunk_z_lineedit.setText(str(chunkshape[0]))
@@ -731,7 +731,7 @@ class NewConfigureProjectDialog(QDialog):
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['data']['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
@@ -749,7 +749,7 @@ class NewConfigureProjectDialog(QDialog):
             self.accept()
 
     def initUI(self):
-        self.applyButton = QPushButton('Scale && Configure')
+        self.applyButton = QPushButton('Create Scales')
         self.applyButton.setFixedSize(QSize(110,20))
         self.applyButton.setDefault(True)
         self.applyButton.clicked.connect(self.on_apply)
@@ -1000,7 +1000,7 @@ class RechunkDialog(QDialog):
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
-        chunkshape = cfg.data.chunkshape()
+        chunkshape = cfg.data.chunkshape
         self.chunk_x_lineedit.setText(str(chunkshape[2]))
         self.chunk_y_lineedit.setText(str(chunkshape[1]))
         self.chunk_z_lineedit.setText(str(chunkshape[0]))

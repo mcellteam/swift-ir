@@ -52,6 +52,9 @@ pyqtwebengine, qtawesome, qtconsole, qtpy, tifffile, tqdm, zarr
 Required-by:
 
 
+NOTES
+https://github.com/nexpy/nexpy/issues/398
+
 """
 import os
 import json
@@ -151,13 +154,16 @@ def main():
     # # os.chdir(os.path.dirname(__file__))
     # logger.critical('new cwd: %s' % os.getcwd())
 
-    check_for_binaries()
+
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
-    logging.getLogger('init').versioncheck('QtCore.__version__ = %s' % QtCore.__version__)
-    logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
-    logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
+    logging.getLogger('init').versioncheck('sys.version           : %s' % sys.version)
+    logging.getLogger('init').versioncheck('alignEM-SWiFT Version : %s' % cfg.VERSION)
+    logging.getLogger('init').versioncheck('QtCore.__version__    : %s' % QtCore.__version__)
+    logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
+    logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
 
+    check_for_binaries()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')

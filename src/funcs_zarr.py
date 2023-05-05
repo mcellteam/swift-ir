@@ -92,7 +92,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
         'metadata': {
             'dtype': '<f4',
             'shape': list(cfg.data.resolution()),
-            'chunks': list(cfg.data.chunkshape()),
+            'chunks': list(cfg.data.chunkshape),
             'order': 'C',
         },
     }, create=True).result()
