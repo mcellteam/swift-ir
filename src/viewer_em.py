@@ -610,8 +610,8 @@ class EMViewerStage(AbstractEMViewer):
             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
 
         with self.config_state.txn() as s:
-            # s.show_ui_controls = False
-            s.show_ui_controls = True
+            s.show_ui_controls = False
+            # s.show_ui_controls = True
             s.show_panel_borders = False
 
         self._crossSectionScale = self.state.cross_section_scale

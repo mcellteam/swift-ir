@@ -146,16 +146,17 @@ class align_recipe:
     def assemble_recipe(self):
         scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
 
+        # Set up 1x1 point and window
+        pa = np.zeros((2, 1))  # Point Array for one point
+        wwx = int(self.grid_ww_1x1[0])  # Window Width in x Scaled
+        wwy = int(self.grid_ww_1x1[1])  # Window Width in y Scaled
+        cx = int(self.siz[0] / 2.0)  # Window Center in x
+        cy = int(self.siz[1] / 2.0)  # Window Center in y
+        pa[0, 0] = cx
+        pa[1, 0] = cy
+        psta_1 = pa
+
         if self.cur_method != 'grid-custom':
-            # Set up 1x1 point and window
-            pa = np.zeros((2, 1))   # Point Array for one point
-            wwx = int(self.grid_ww_1x1[0])  # Window Width in x Scaled
-            wwy = int(self.grid_ww_1x1[1])  # Window Width in y Scaled
-            cx = int(self.siz[0] / 2.0)   # Window Center in x
-            cy = int(self.siz[1] / 2.0)   # Window Center in y
-            pa[0, 0] = cx
-            pa[1, 0] = cy
-            psta_1 = pa
 
             # Set up 2x2 points and windows
             nx, ny = 2, 2
