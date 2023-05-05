@@ -249,6 +249,23 @@ class DataModel:
     def targ(self, use):
         self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['targ'] = use
 
+    @property
+    def default_poly_order(self):
+        return self._data['data']['defaults']['corrective-polynomial']
+
+    @default_poly_order.setter
+    def default_poly_order(self, use):
+        self._data['data']['defaults']['corrective-polynomial'] = use
+
+
+    @property
+    def default_whitening(self):
+        return self._data['data']['defaults']['whitening-factor']
+
+    @default_whitening.setter
+    def default_whitening(self, x):
+        self._data['data']['defaults']['whitening-factor'] = x
+
     # layer['alignment']['swim_settings'].setdefault('karg', False)
 
     @property
@@ -564,6 +581,20 @@ class DataModel:
         # logger.info(f'Search Path: {paths}\nReturning: {names}')
         return natural_sort(names)
 
+    def get_grid_custom_filenames(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        dir = os.path.join(self.dest(), s, 'signals')
+        basename = os.path.basename(self.base_image_name(s=s, l=l))
+        filename, extension = os.path.splitext(basename)
+        paths = []
+        paths.append(os.path.join(dir, '%s_grid-custom_0%s' % (filename, extension)))
+        paths.append(os.path.join(dir, '%s_grid-custom_1%s' % (filename, extension)))
+        paths.append(os.path.join(dir, '%s_grid-custom_2%s' % (filename, extension)))
+        paths.append(os.path.join(dir, '%s_grid-custom_3%s' % (filename, extension)))
+        # logger.info(f'Search Path: {paths}\nReturning: {names}')
+        return natural_sort(paths)
+
     def smallest_scale(self):
         return natural_sort(self._data['data']['scales'].keys())[-1]
 
@@ -791,8 +822,9 @@ class DataModel:
             method = self.current_method
         logger.info(f'method = {method}')
         try:
-            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
-            return self.method_results(s=s, l=l)['snr']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
+            # return self.method_results(s=s, l=l)['snr']
+            # return self.method_results(s=s, l=l)['snr']
         except:
             print_exception()
             logger.warning(f'No SNR components for section {l}, method {method}...')
@@ -936,7 +968,6 @@ class DataModel:
         '''Sets the alignment method of all sections and all scales to Auto-SWIM.'''
         for s in self.scales():
             for l in range(len(self)):
-                self._data['data']['scales'][s]['stack'][l]['alignment']['method'] = 'Auto-SWIM'
                 self._data['data']['scales'][s]['stack'][l]['current_method'] = 'grid-default'
 
         self.set_manual_swim_windows_to_default()
@@ -1344,7 +1375,6 @@ class DataModel:
             WW_Y = (pixels / img_w) * img_h
 
             if (WW_X <= img_w) and (WW_Y <= img_h):
-
                 for s in self.scales():
                     scale_factor = get_scale_val(s) / self.scale_val()
                     ww_x = WW_X * scale_factor
@@ -1392,12 +1422,13 @@ class DataModel:
     #         for s in self.scales():
     #             self.stack(s=s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = s1_ww / get_scale_val(s)
 
-    def set_auto_swim_windows_to_default(self, current_only=False) -> None:
+    def set_auto_swim_windows_to_default(self, factor=None, current_only=False) -> None:
         logger.critical('\n\nDetermining default SWIM windows...\n')
         import src.config as cfg
         img_size = self.image_size(self.scales()[0])  # largest scale size
         # man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
-        factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
+        if factor == None:
+            factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         man_ww_full = img_size[0] * factor, img_size[1] * factor
         for s in self.scales():
             man_ww_x = man_ww_full[0] / self.scale_val(s)

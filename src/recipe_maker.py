@@ -63,6 +63,7 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
 
     initial_rotation = float(project['data']['initial_rotation'])
 
+
     if not s_tbd[zpos]['skipped']:
         if os.path.basename(s_tbd[zpos]['reference']) != '':
             recipe = align_recipe(
