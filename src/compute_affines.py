@@ -132,7 +132,7 @@ def compute_affines(scale, start=0, end=None):
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
         updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
-        logger.critical('Reading task results and updating data model...')
+        logger.info('Reading task results and updating data model...')
 
         for tnum in range(len(task_list)):
 
@@ -210,7 +210,7 @@ def compute_affines(scale, start=0, end=None):
 
         t9 = time.time()
         dt = t9 - t0
-        logger.critical(f'onAlignmentEnd, dt = {dt}')
+        logger.info(f'onAlignmentEnd, dt = {dt}')
 
         logger.info('<<<< Compute Affines End <<<<')
 
