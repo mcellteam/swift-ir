@@ -7,7 +7,6 @@ import platform
 
 __all__ = ['data']
 
-
 VERSION = '0.5.442'
 
 LOG_LEVEL = 1
