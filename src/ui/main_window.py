@@ -620,7 +620,7 @@ class MainWindow(QMainWindow):
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         self.set_status('Autoscaling...')
-        self.stopNgServer()  # 0202-
+        # self.stopNgServer()  # 0202-
         self._disableGlobTabs()
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -864,7 +864,7 @@ class MainWindow(QMainWindow):
         dt = t6 - t0
         # time point 6: = 0.2953681945800781
 
-        self.stopNgServer()  # 0202-
+        # self.stopNgServer()  # 0202-
 
         t9 = time.time()
         dt = t9 - t0
@@ -1127,7 +1127,7 @@ class MainWindow(QMainWindow):
                 recipe_dialog = NewConfigureProjectDialog(parent=self)
                 if recipe_dialog.exec():
 
-                    self.stopNgServer()  # 0202-
+                    # self.stopNgServer()  # 0202-
                     self._disableGlobTabs()
 
                     self.tell('Clobbering the Project Directory %s...')
