@@ -37,11 +37,10 @@ try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
 __all__ = ['run_checks','is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'delete_recursive',
-           'do_scales_exist', 'make_relative', 'make_absolute', 'exist_aligned_zarr_cur_scale',
-           'are_aligned_images_generated', 'get_img_filenames', 'print_exception', 'get_scale_key',
-           'get_scale_val', 'makedirs_exist_ok', 'print_project_tree','verify_image_file', 'exist_aligned_zarr',
-           'get_scales_with_generated_alignments', 'handleError', 'count_widgets', 'find_allocated_widgets',
-           'absFilePaths', 'validate_file', 'initLogFiles',
+           'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',
+           'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
+           'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
+           'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'initLogFiles',
            ]
 
 logger = logging.getLogger(__name__)
@@ -65,14 +64,14 @@ def setOpt(lookup, val):
         lookup = lookup.split(',')
     getOpt(lookup[:-1])[lookup[-1]] = val
 
+
 def getData(lookup):
-    # if cfg.project_tab:
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     return reduce(operator.getitem, lookup, cfg.data)
 
+
 def setData(lookup, val):
-    # if cfg.project_tab:
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getData(lookup[:-1])[lookup[-1]] = val
@@ -605,54 +604,27 @@ def get_scales_with_generated_alignments(scales) -> list:
 def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg s is aligned '''
     caller = inspect.stack()[1].function
-    logger.critical('called by %s' % inspect.stack()[1].function)
+    logger.info('called by %s' % inspect.stack()[1].function)
     if cfg.data:
         zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
-            logger.critical(f"Path Not Found: {zarr_path}")
+            # logger.critical(f"Path Not Found: {zarr_path}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-            logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
+            # logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '.zarray')):
-            logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
+            # logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-            logger.critical(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+            # logger.critical(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
             result = False
         else:
             result = True
-        logger.debug('Returning Result: %r' % result)
+        logger.critical('Returning Result %r for scale %s'  % (result, scale))
         return result
     else:
         logger.warning(f'called by {caller} but there is no cfg.data!')
-
-
-def exist_aligned_zarr_cur_scale(dest=None) -> bool:
-    '''Checks if there exists an alignment stack for the current s
-
-    #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
-
-    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
-    functions even for a datamodel that does not need scales.'''
-    # logger.info('Called by %s' % inspect.stack()[1].function)
-
-    if dest == None: dest = cfg.data.dest()
-    zarr_path = os.path.join(dest, 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
-    # logger.info('zarr_path = %s' % zarr_path)
-    if not os.path.isdir(zarr_path):
-        logger.debug('Returning False due to os.path.isdir(zarr_path)')
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zattrs')")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zarray')")
-        return False
-    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '0.0.0')")
-        return False
-    return True
 
 
 def are_aligned_images_generated(dir, scale) -> bool:
@@ -665,7 +637,6 @@ def are_aligned_images_generated(dir, scale) -> bool:
     else:
         logger.debug('One or more aligned TIFs were found at this s - Returning True')
         return True
-
 
 
 def reorder_tasks(task_list, z_stride) -> list:

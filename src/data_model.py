@@ -902,15 +902,12 @@ class DataModel:
 
     def snr_components(self, s=None, l=None, method=None) -> list[float]:
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
         if s == None: s = self.scale
         if l == None: l = self.zpos
         if method == None:
             method = self.current_method
-        logger.info(f'method = {method}')
         try:
             return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
-            # return self.method_results(s=s, l=l)['snr']
             # return self.method_results(s=s, l=l)['snr']
         except:
             print_exception()

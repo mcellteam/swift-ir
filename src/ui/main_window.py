@@ -58,7 +58,7 @@ from src.thumbnailer import Thumbnailer
 from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
-    exist_aligned_zarr_cur_scale, exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
+    exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles, is_mac
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
@@ -605,7 +605,7 @@ class MainWindow(QMainWindow):
         logger.critical('>>>> autoscale >>>>')
 
         #Todo This should check for existence of original source files before doing anything
-        self.stopNgServer() #0202-
+
         self.tell('Generating TIFF Scale Image Hierarchy...')
         cfg.nTasks = 3
         cfg.nCompleted = 0
@@ -614,6 +614,7 @@ class MainWindow(QMainWindow):
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
         self.set_status('Autoscaling...')
+        self.stopNgServer()  # 0202-
         self._disableGlobTabs()
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -777,7 +778,7 @@ class MainWindow(QMainWindow):
 
     def present_snr_results(self, start=0, end=None):
         try:
-            if exist_aligned_zarr_cur_scale():
+            if cfg.data.is_aligned():
                 self.tell('The Stack is Aligned!')
                 logger.info('Alignment seems successful')
             else:
@@ -3666,7 +3667,7 @@ class MainWindow(QMainWindow):
         self.saveAction = QAction('&Save Project', self)
         self.saveAction.triggered.connect(self.save)
         self.saveAction.setShortcut('Ctrl+S')
-        self.addAction(self.saveAction)
+        # self.addAction(self.saveAction)
         fileMenu.addAction(self.saveAction)
 
         self.savePreferencesAction = QAction('Save User Preferences', self)
