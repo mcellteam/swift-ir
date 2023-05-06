@@ -892,7 +892,7 @@ class ProjectTab(QWidget):
             # cfg.main_window.alignOne()
             # cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
 
-            self.alignGenerateOne()
+            cfg.main_window.alignGenerateOne()
         self.btnRealignMA = QPushButton('Align && Regenerate')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRealignMA.setFixedSize(QSize(107,18))
