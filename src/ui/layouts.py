@@ -58,6 +58,9 @@ class VWidget(QWidget):
     def addWidget(self, w):
         self.layout.addWidget(w)
 
+    def addLayout(self, l):
+        self.layout.addLayout(l)
+
 
 class HSplitter(QSplitter):
     def __init__(self, *args):

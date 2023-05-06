@@ -48,10 +48,12 @@ class ToggleSwitch(QCheckBox):
         self._v_scale = v_scale
         self._fontSize = fontSize
         self.stateChanged.connect(self.handle_state_change)
-        self._fixed_height = 52 #horizontal
-        self._fixed_width = 32 #vertical
-        self.setFixedWidth(self._fixed_height)
-        self.setFixedHeight(self._fixed_width)
+        # self._fixed_height = 52 #horizontal
+        self._fixed_width = 52 #horizontal
+        # self._fixed_height = 26 #vertical
+        self._fixed_height = 24 #vertical
+        self.setFixedWidth(self._fixed_width)
+        self.setFixedHeight(self._fixed_height)
 
     def __str__(self):
         return str(self.__class__) + '\n' + '\n'.join(

@@ -41,26 +41,10 @@ class OpenProject(QWidget):
         def fn():
             self.selectionReadout.setText(self.filebrowser.getSelectionPath())
         self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
-        self.filebrowser.setStyleSheet('border-width: 0px;')
         self.filebrowser.controlsNavigation.show()
         self.user_projects = UserProjects(parent=self)
-        # self.embed = QFileDialogPreview()
-        # self.embed.setStyleSheet("background-color: #f3f6fb;")
         self.initUI()
         self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
-
-        self.setStyleSheet("""
-        QLineEdit {
-            background-color: #f3f6fb;
-            border-width: 1px;
-            border-style: solid;
-            border-color: #141414;
-            /*selection-background-color: #ffcccb;*/
-            /*background:#daebfe;*/
-            font-size: 11px;
-            font-family: Tahoma, sans-serif;
-        }
-        """)
 
     def initUI(self):
         # User Projects Widget
@@ -86,8 +70,12 @@ class OpenProject(QWidget):
         w = QWidget()
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-        controls = QWidget()
-        controls.setFixedHeight(18)
+        self.controls = QWidget()
+        # self.controls.setStyleSheet("""
+        #     background-color: #ffe135;
+        #
+        # """)
+        self.controls.setFixedHeight(18)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(2, 0, 2, 0)
         hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -95,7 +83,7 @@ class OpenProject(QWidget):
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(QLabel('Row Height'))
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
-        controls.setLayout(hbl)
+        self.controls.setLayout(hbl)
 
         self.new_project_header = QLabel()
         self.new_project_header.setAlignment(Qt.AlignTop)
@@ -106,7 +94,7 @@ class OpenProject(QWidget):
         self.vbl_projects = QVBoxLayout()
         self.vbl_projects.setSpacing(1)
         self.vbl_projects.setContentsMargins(2, 2, 2, 2)
-        self.vbl_projects.addWidget(controls)
+        self.vbl_projects.addWidget(self.controls)
         self.vbl_projects.addWidget(self.user_projects)
         # self.vbl_projects.addWidget(self.new_project_header)
         self.userProjectsWidget.setLayout(self.vbl_projects)
@@ -128,17 +116,16 @@ class OpenProject(QWidget):
         self.userFilesWidget.setLayout(vbl)
 
         self._buttonOpen = QPushButton('Open Project')
-        self._buttonOpen.setStyleSheet("font-size: 10px;")
+        self._buttonOpen.setEnabled(False)
         self._buttonOpen.clicked.connect(self.open_project_selected)
         self._buttonOpen.setFixedSize(80, 20)
 
         self._buttonDelete = QPushButton('Delete Project')
-        self._buttonDelete.setStyleSheet("font-size: 10px;")
+        self._buttonDelete.setEnabled(False)
         self._buttonDelete.clicked.connect(self.delete_project)
         self._buttonDelete.setFixedSize(80, 20)
 
         self._buttonNew = QPushButton('New Project')
-        self._buttonNew.setStyleSheet("font-size: 10px;")
         self._buttonNew.clicked.connect(self.new_project)
         self._buttonNew.setFixedSize(80, 20)
 
@@ -146,9 +133,21 @@ class OpenProject(QWidget):
         # self._buttonNew.setStyleSheet("font-size: 9px;")
         # self._buttonNew.clicked.connect(self.new_project)
         # self._buttonNew.setFixedSize(64, 20)
-        # # self._buttonNew.setStyleSheet(style)
+        # # self._buttonNew.setStyleSheet(w)
 
         self.selectionReadout = QLineEdit()
+        # self.selectionReadout.setStyleSheet("""
+        # QLineEdit {
+        #     background-color: #f3f6fb;
+        #     border-width: 1px;
+        #     border-style: solid;
+        #     border-color: #141414;
+        #     /*selection-background-color: #ffcccb;*/
+        #     /*background:#daebfe;*/
+        #     font-size: 11px;
+        #     font-family: Tahoma, sans-serif;
+        # }
+        # """)
 
         self.selectionReadout.textChanged.connect(self.validate_path)
         self.selectionReadout.returnPressed.connect(self.open_project_selected)
@@ -172,15 +171,37 @@ class OpenProject(QWidget):
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hbl.addSpacerItem(self.spacer_item_docs)
 
-        self._buttonOpen.setEnabled(False)
-        self._buttonDelete.setEnabled(False)
-
         self._actions_widget = QWidget()
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
+        self._actions_widget.setStyleSheet("""
+        QPushButton {
+            font-size: 12px;
+            font-family: Tahoma, sans-serif;
+            color: #f3f6fb;
+            background-color: #1b1e23;
+            border-width: 1px;
+            border-color: #339933;
+            border-style: solid;
+            padding: 1px;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        QPushButton:disabled {
+            border-width: 1px;
+            border-color: #dadada;
+            border-style: solid;
+            background-color: #dadada;
+            padding: 1px;
+            border-radius: 4px;
+            color: #ede9e8;
+        }
+        """)
+
 
         self._splitter = QSplitter()
-        self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        # self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
@@ -217,10 +238,18 @@ class OpenProject(QWidget):
     def validate_path(self):
         # logger.info(f'caller:{inspect.stack()[1].function}')
         path = self.selectionReadout.text()
-        if validate_project_selection(path) or validate_zarr_selection(path):
+        logger.critical(f'cur text: {path}')
+        if validate_project_selection(path) or validate_zarr_selection(path) or path == '':
+            if validate_zarr_selection(path):
+                self._buttonOpen.setText('Open Zarr')
+            else:
+                self._buttonOpen.setText('Open Project')
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
-            self._buttonDelete.setEnabled(True)
+            if validate_project_selection(path):
+                self._buttonDelete.setEnabled(True)
+            else:
+                self._buttonDelete.setEnabled(False)
         else:
             self.validity_label.show()
             self._buttonOpen.setEnabled(False)
@@ -250,6 +279,7 @@ class OpenProject(QWidget):
         cfg.main_window.stopPlaybackTimer()
         cfg.main_window.tell('New Project Path:')
         self.name_dialog = QFileDialog()
+        self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
         self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #141414; """)
         # self.vbl_projects.addWidget(self.name_dialog)
         self.vbl_main.addWidget(self.name_dialog)
@@ -332,21 +362,19 @@ class OpenProject(QWidget):
             # recipe_dialog = ScaleProjectDialog(parent=self)
             self.new_project_header.setText('New Project (3/3) - Global Configuration')
             cfg.main_window.set_status('New Project (3/3) - Global Configuration')
-            self.recipe_widget = NewConfigureProjectDialog(parent=self)
+            dialog = NewConfigureProjectDialog(parent=self)
+            dialog.setWindowFlags(Qt.FramelessWindowHint)
+            dialog.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
+            self.vbl_main.addWidget(dialog)
 
-            self.recipe_widget.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
-            # self.vbl_projects.addWidget(self.recipe_widget)
-            self.vbl_main.addWidget(self.recipe_widget)
-            # self.layout.addWidget(self.recipe_widget)
-
-            result = self.recipe_widget.exec()
+            result = dialog.exec()
             logger.info(f'result = {result}, type = {type(result)}')
 
             if result:
                 logger.info('Save File Path: %s' % path)
             else:
                 self.showMainUI()
-                self.recipe_widget.close()
+                dialog.close()
                 return 1
 
             self.showMainUI()
@@ -374,6 +402,7 @@ class OpenProject(QWidget):
 
         '''Dialog for importing images. Returns list of filenames.'''
         dialog = QFileDialogPreview()
+        dialog.setWindowFlags(Qt.FramelessWindowHint)
         dialog.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
 
         # self.layout.addWidget(dialog)
@@ -433,10 +462,15 @@ class OpenProject(QWidget):
 
     def setSelectionPathText(self, path):
         # logger.info(f'caller:{inspect.stack()[1].function}')
+        logger.info('setSelectionPathText >>>>')
         self.selectionReadout.setText(path)
         logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
 
         if validate_project_selection(path) or validate_zarr_selection(path):
+            # if validate_zarr_selection(path):
+            #     self._buttonOpen.setText('Open Zarr')
+            # else:
+            #     self._buttonOpen.setText('Open Project')
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
             self._buttonDelete.setEnabled(True)
@@ -444,6 +478,7 @@ class OpenProject(QWidget):
             self.validity_label.show()
             self._buttonOpen.setEnabled(False)
             self._buttonDelete.setEnabled(False)
+        logger.info('<<<< setSelectionPathText')
 
 
     def open_zarr_selected(self):
@@ -611,15 +646,15 @@ class UserProjects(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
+        # self.table.setAlternatingRowColors(True)
         # self.table = TableWidget(self)
 
-        self.table.setShowGrid(False)
+        # self.table.setShowGrid(False)
         self.table.setSortingEnabled(True)
         self.table.setWordWrap(True)
-        self.table.setStyleSheet('font-size: 10px;')
-        self.table.horizontalHeader().setStretchLastSection(True)
+        # self.table.horizontalHeader().setStretchLastSection(True)
         # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -635,7 +670,6 @@ class UserProjects(QWidget):
         # def onDoubleClick(): self.parent.open_project_selected()
         # self.table.itemDoubleClicked.connect(self.parent.open_project_selected)
         self.table.doubleClicked.connect(self.parent.open_project_selected) #Critical this always emits
-
         self.table.itemSelectionChanged.connect(self.parent.userSelectionChanged)  # Works!
         # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChanged was emitted!'))  # Works!
         # self.table.itemPressed.connect(lambda: print('itemPressed was emitted!'))
@@ -646,8 +680,7 @@ class UserProjects(QWidget):
         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
 
-        self.table.setStyleSheet("border-radius: 12px; border-width: 3px;"
-                                 "QPushButton{background-color: #ffe135;}")
+
         self.table.setColumnCount(10)
         self.set_headers()
 
@@ -688,8 +721,8 @@ class UserProjects(QWidget):
     def set_headers(self):
         self.table.setHorizontalHeaderLabels([
             "Name",
-            "First\nThumbnail",
-            "Last\nThumbnail",
+            "First\nSection",
+            "Last\nSection",
             "Created",
             "Last\nOpened",
             "#\nImgs",
@@ -700,7 +733,7 @@ class UserProjects(QWidget):
 
         header = self.table.horizontalHeader()
         header.setFrameStyle(QFrame.Box | QFrame.Plain)
-        header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
+        # header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
         self.table.setHorizontalHeader(header)
 
     def set_data(self):
@@ -816,7 +849,8 @@ def validate_project_selection(path) -> bool:
         return True
 
 def validate_zarr_selection(path) -> bool:
-    logger.info('Validating selection %s...' % cfg.selected_file)
+    # logger.info('Validating selection %s...' % cfg.selected_file)
+    logger.info('Validating selection %s...' % path)
     # called by setSelectionPathText
     if os.path.isdir(path):
         logger.info('Path IS a directory')

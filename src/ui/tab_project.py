@@ -880,7 +880,7 @@ class ProjectTab(QWidget):
 
         self.btnResetAllMA = QPushButton('Set All To Default Grid')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setFixedSize(QSize(107,18))
+        self.btnResetAllMA.setFixedSize(QSize(113,18))
         self.btnResetAllMA.clicked.connect(fn)
         self.btnResetAllMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
 
@@ -963,12 +963,14 @@ class ProjectTab(QWidget):
             self.refreshLogs()
             self.MA_stackedWidget.setCurrentIndex(4)
         self.btn_view_logs = QPushButton('Logs')
+        self.btn_view_logs.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.btn_view_logs.setFixedSize(QSize(28,18))
         self.btn_view_logs.clicked.connect(fn)
 
 
         self.btn_view_targ_karg = QPushButton('View SWIM Cutouts')
-        self.btn_view_targ_karg.setFixedSize(QSize(104, 18))
+        self.btn_view_targ_karg.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btn_view_targ_karg.setFixedSize(QSize(110, 18))
         def fn():
             if self.MA_stackedWidget.currentIndex() == 3:
                 self.updateMethodSelectWidget(soft=False)
@@ -1033,6 +1035,30 @@ class ProjectTab(QWidget):
         ), alignment=Qt.AlignCenter)
         self.MA_controls = QWidget()
         self.MA_controls.setLayout(hbl)
+        self.MA_controls.setStyleSheet("""
+        QPushButton {
+            font-size: 12px;
+            font-family: Tahoma, sans-serif;
+            color: #f3f6fb;
+            background-color: #1b1e23;
+            border-width: 1px;
+            border-color: #dadada;
+            border-style: solid;
+            padding: 1px;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        QPushButton:disabled {
+            border-width: 1px;
+            border-color: #dadada;
+            border-style: solid;
+            background-color: #dadada;
+            padding: 1px;
+            border-radius: 4px;
+            color: #ede9e8;
+        }
+        """)
 
         gb1 = QGroupBox()
         vbl = VBL()
@@ -1430,7 +1456,7 @@ class ProjectTab(QWidget):
             # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             # cfg.main_window.dataUpdateWidgets()
-            if cfg.main_window.correlation_signals.isVisible():
+            if cfg.main_window.dw_corrspots.isVisible():
                 cfg.main_window.updateCorrSignalsDrawer()
 
         self.method_bg.buttonClicked.connect(fn)
@@ -1828,6 +1854,7 @@ class ProjectTab(QWidget):
         self.comboNgLayout = QComboBox(self)
         self.comboNgLayout.setStyleSheet("""
         QComboBox {
+            padding-left: 6px;
             border: 1px solid #339933; 
             border-radius: 4px;
             color: #f3f6fb;
@@ -1983,7 +2010,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.addAction(self._highContrastNgAction)
+        # self.w_ng_extended_toolbar.addAction(self._highContrastNgAction)
 
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
         # self.w_ng_extended_toolbar.setPalette(ng_pal)
@@ -2019,6 +2046,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addActions([
             self.shaderAction,
             self.signalsAction,
+            self._highContrastNgAction
         ])
 
 
@@ -3415,7 +3443,7 @@ class ProjectTab(QWidget):
 
     def fn_brightness_control(self):
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' %caller)
+        # logger.info('caller: %s' %caller)
         if caller == 'main':
             cfg.data.brightness = self.brightnessSlider.value()
             for viewer in self.get_viewers():
@@ -3424,7 +3452,7 @@ class ProjectTab(QWidget):
 
     def fn_contrast_control(self):
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
+        # logger.info('caller: %s' % caller)
         if caller == 'main':
             cfg.data.contrast = self.contrastSlider.value()
             for viewer in self.get_viewers():
@@ -3458,7 +3486,7 @@ class ProjectTab(QWidget):
 
     def get_viewers(self):
         caller = inspect.stack()[1].function
-        logger.info(f'get_viewers [caller: {caller}] >>>>')
+        # logger.info(f'get_viewers [caller: {caller}] >>>>')
         viewers = []
         if getData('state,manual_mode'):
             viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.stageViewer])
@@ -3471,7 +3499,7 @@ class ProjectTab(QWidget):
         elif tab == 3:
             viewers.extend([cfg.snrViewer])
 
-        logger.info(f'<<<< get_viewers')
+        # logger.info(f'<<<< get_viewers')
         return viewers
 
     def paintEvent(self, pe):

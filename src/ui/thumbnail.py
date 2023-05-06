@@ -81,18 +81,25 @@ class Thumbnail(QWidget):
 class ThumbnailFast(QLabel):
     def __init__(self, parent, path=None, extra=''):
         super().__init__(parent)
+        self.setAlignment(Qt.AlignCenter)
         self.setScaledContents(True)
         if path:
             self.path = path
             self.setPixmap(QPixmap(self.path))
         self.extra = extra
-        # self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image_.png')
+        # self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         # self.repaint()
         self.border_color = '#000000'
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
-
+    # def set_no_image(self):
+    #     self.snr = None
+    #     try:
+    #         self.setPixmap(QPixmap(self.no_image_path))
+    #     except:
+    #         print_exception()
+    #         logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
 
     def showPixmap(self):
         self.setPixmap(QPixmap(self.path))
@@ -143,6 +150,8 @@ class CorrSignalThumbnail(QLabel):
     def __init__(self, parent, path='', snr='', extra=''):
         super().__init__(parent)
         self.setScaledContents(True)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path
         if self.path:
             self.setPixmap(QPixmap(self.path))
@@ -151,6 +160,8 @@ class CorrSignalThumbnail(QLabel):
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         # self.setStyleSheet("""border: 3px solid #ffe135;""")
 
+    def resizeEvent(self, e):
+        self.setMaximumWidth(self.height())
 
     def paintEvent(self, event):
         if self.pixmap():
@@ -193,7 +204,7 @@ class CorrSignalThumbnail(QLabel):
                 return
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
-                # print_exception()
+                print_exception()
                 pass
         super().paintEvent(event)
 

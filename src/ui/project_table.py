@@ -10,6 +10,7 @@ import textwrap
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy
 from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal
+from qtpy.QtGui import QPainter, QPixmap, QImage
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
 from src.helpers import print_exception
@@ -71,6 +72,11 @@ class ProjectTable(QWidget):
     #     # userSelectionChanged
     #     # cfg.main_window.open_project_selected()
 
+    def setImage(self, row, col, imagePath):
+        image = ImageWidget(imagePath, self)
+        self.table.setCellWidget(row, col, image)
+
+
     def get_selection(self):
         selected = []
         for index in sorted(self.table.selectionModel().selectedRows()):
@@ -98,7 +104,7 @@ class ProjectTable(QWidget):
         if cfg.data.is_aligned():
             labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned',
                        # 'Q0', 'Q1', 'Q2', 'Q3',
-                       'Top,\nLeft', 'Top,\nRight', 'Bottom,\nLeft', 'Bottom,\nRight', 'Last\nAligned',
+                       'Signal 1', 'Signal 2', 'Signal 3', 'Signal 4', 'Last\nAligned',
                        'Scale', 'Skip?', 'Method', 'SNR Report']
         else:
             labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
@@ -161,12 +167,16 @@ class ProjectTable(QWidget):
                             self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
                         elif j in (3, 4):
                             # tn = Thumbnail(self, path=item)
-                            tn = ThumbnailFast(self, path=item)
+                            # tn = ThumbnailFast(self, path=item)
+                            tn = ScaledPixmapLabel(self)
+                            tn.setPixmap(QPixmap(item))
                             self.table.setCellWidget(i, j, tn)
                         elif j == 5:
                             # tn = Thumbnail(self, path=item)
                             # tn = ThumbnailFast(self, path=item, extra=cfg.data.datetime(l=i))
-                            tn = ThumbnailFast(self, path=item)
+                            # tn = ThumbnailFast(self, path=item)
+                            tn = ScaledPixmapLabel(self)
+                            tn.setPixmap(QPixmap(item))
                             self.table.setCellWidget(i, j, tn)
                         elif j in (6, 7, 8, 9):
                             # logger.info(f'j={j}, item={str(item)}')
@@ -330,7 +340,7 @@ class ProjectTable(QWidget):
     def initUI(self):
         logger.info('Initializing Table UI...')
 
-        self.table.setStyleSheet('font-size: 10px;')
+        # self.table.setStyleSheet('font-size: 10px;')
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -433,29 +443,29 @@ class ProjectTable(QWidget):
 #         self.setLayout(self.layout)
 #
 #
-# class ScaledPixmapLabel(QLabel):
-#     def __init__(self, parent):
-#         super().__init__(parent)
-#         self.setScaledContents(True)
-#
-#     def paintEvent(self, event):
-#         if self.pixmap():
-#             pm = self.pixmap()
-#             try:
-#                 originalRatio = pm.width() / pm.height()
-#                 currentRatio = self.width() / self.height()
-#                 if originalRatio != currentRatio:
-#                     qp = QPainter(self)
-#                     pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-#                     rect = QRect(0, 0, pm.width(), pm.height())
-#                     rect.moveCenter(self.rect().center())
-#                     qp.drawPixmap(rect, pm)
-#                     return
-#             except ZeroDivisionError:
-#                 # logger.warning('Cannot divide by zero')
-#                 # print_exception()
-#                 pass
-#         super().paintEvent(event)
+class ScaledPixmapLabel(QLabel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setScaledContents(True)
+
+    def paintEvent(self, event):
+        if self.pixmap():
+            pm = self.pixmap()
+            try:
+                originalRatio = pm.width() / pm.height()
+                currentRatio = self.width() / self.height()
+                if originalRatio != currentRatio:
+                    qp = QPainter(self)
+                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    rect = QRect(0, 0, pm.width(), pm.height())
+                    rect.moveCenter(self.rect().center())
+                    qp.drawPixmap(rect, pm)
+                    return
+            except ZeroDivisionError:
+                # logger.warning('Cannot divide by zero')
+                # print_exception()
+                pass
+        super().paintEvent(event)
 
 
 class Slider(QSlider):
@@ -513,6 +523,7 @@ class ClickLabel(QLabel):
 #             painter.drawText(option.rect.x(), option.rect.y() - 5, '<SNR>')
 
 
+
 class TableModel(QAbstractTableModel):
     def __init__(self, data):
         super().__init__()
@@ -528,3 +539,29 @@ class TableModel(QAbstractTableModel):
     def columnCount(self, parent=None):
         return len(self._data[0])
 
+
+class ImageWidget(QWidget):
+
+    def __init__(self, imagePath, parent):
+        super(ImageWidget, self).__init__(parent)
+        #             pixmap = QPixmap(path)
+        #             thumbnail.setPixmap(pixmap)
+        #             thumbnail.setScaledContents(True)
+        self.picture = QPixmap(imagePath)
+
+    # def paintEvent(self, event):
+    #     painter = QPainter(self)
+    #     painter.drawPixmap(0, 0, self.picture)
+
+    def paint(self, painter, option, index):
+        data = index.model().data(index, Qt.DisplayRole)
+        if data is None:
+            return
+        thumbnail = QImage(data)
+        width = option.rect.width()
+        height = option.rect.height()
+        scaled = thumbnail.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
+        painter.drawImage(option.rect.x(), option.rect.y(), scaled)
+
+
+# cfg.pt.project_table.setImage(2,3,'/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/thumbnails_aligned/funky4.tif')
