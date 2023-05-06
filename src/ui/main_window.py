@@ -74,7 +74,7 @@ from src.ui.tab_zarr import ZarrTab
 from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_open_project import OpenProject
-from src.ui.thumbnail import CorrSignalThumbnail
+from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast, SnrThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
 
 # from src.ui.components import AutoResizingTextEdit
@@ -106,6 +106,7 @@ class MainWindow(QMainWindow):
         self.setObjectName('mainwindow')
         self.window_title = 'AlignEM-SWiFT'
         self.setWindowTitle(self.window_title)
+        self.setAutoFillBackground(True)
         cfg.thumb = Thumbnailer()
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
@@ -153,6 +154,7 @@ class MainWindow(QMainWindow):
 
 
     def resizeEvent(self, event):
+        logger.info('')
         if self._working:
             return
         # if self.detailsWidget.isVisible():
@@ -378,26 +380,19 @@ class MainWindow(QMainWindow):
 
     def _callbk_showHideCorrSpots(self):
         logger.info('')
-        # self.correlation_signals.setVisible(self.correlation_signals.isHidden())
-        self.correlation_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
-        self._splitter.setHidden(self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
-        # if self.correlation_signals.isVisible():
+        self.dw_corrspots.setVisible(cfg.project_tab.signalsAction.isChecked())
         if cfg.project_tab.signalsAction.isChecked():
-        #     sizes = self._splitter.sizes()
-        #     sizes[1] = self._corrSpotDrawerSize
-        #     self._splitter.setSizes(sizes)
-            QApplication.processEvents()
+            w = self.csWidget.width()
+            self.csWidget.resize(QSize(w,200))
             self.updateCorrSignalsDrawer()
 
-        # self.correlation_signals.setVisible(self.correlation_signals.isHidden())
-        # logger.critical(f'_splitter sizes: {self._splitter.sizes()}, corr spot height = {self.correlation_signals.height()}')
-        # logger.critical('is visible? %r' % self.correlation_signals.isVisible())
 
 
     def forceShowCorrSignalDrawer(self):
         logger.critical(f'forceShowCorrSignalDrawer [sizes: {self._splitter.sizes()}]>>>>')
         if self._isProjectTab():
-            self.correlation_signals.setVisible(True)
+            # self.dw_corrspots_layout.setVisible(True)
+            self.dw_corrspots.setVisible(True)
             cfg.project_tab.signalsAction.setChecked(True)
             # sizes = self._splitter.sizes()
             # sizes[1] = 160
@@ -407,88 +402,129 @@ class MainWindow(QMainWindow):
         logger.critical(f'<<<< forceShowCorrSignalDrawer [sizes: {self._splitter.sizes()}]')
 
 
+    # def updateCorrSignalsDrawer(self):
+    #     t0 = time.time()
+    #     caller = inspect.stack()[1].function
+    #     logger.info('caller: %s >>>>' % caller)
+    #     if self._isProjectTab():
+    #         if self.dw_corrspots.isVisible():
+    #             logger.info(f'updateCorrSignalsDrawer [sizes: {self._splitter.sizes()}] >>>>')
+    #             colors = cfg.glob_colors
+    #
+    #             thumbs = cfg.data.get_signals_filenames()
+    #             n = len(thumbs)
+    #             splitterSizes = self._splitter.sizes()
+    #
+    #             # logger.info(f'n             = {n}')
+    #             # logger.info(f'thumbs        = {thumbs}')
+    #             logger.info(f'splitterSizes = {splitterSizes}')
+    #             if n == 0:
+    #                 # self.dw_corrspots_layout.hide()
+    #                 self.dw_corrspots.hide()
+    #                 self.lab_corr_signals.show()
+    #                 splitterSizes[1] = 24
+    #                 self._splitter.setSizes(splitterSizes)
+    #                 # QApplication.processEvents()
+    #                 return
+    #
+    #             # self.dw_corrspots_layout.show()
+    #             self.dw_corrspots.show()
+    #             self.lab_corr_signals.hide()
+    #
+    #             snr_vals = cfg.data.snr_components()
+    #
+    #             if splitterSizes[1] == 0:
+    #                 splitterSizes[1] = self._corrSpotDrawerSize
+    #                 logger.info(f'Changing _splitter sizes to {splitterSizes}')
+    #                 self._splitter.setSizes(splitterSizes)
+    #
+    #             # QApplication.processEvents()
+    #             logger.info(f'_splitter sizes: {self._splitter.sizes()}')
+    #             logger.info(f'snr vals: {snr_vals}')
+    #
+    #             h = max(self._splitter.sizes()[1] - 30, 40)
+    #
+    #             logger.info(f'h = {h}')
+    #
+    #             siz = cfg.data.image_size()
+    #             ar = siz[0] / siz[1]  # aspect ratio
+    #
+    #             # logger.info('thumbs: %s' % str(thumbs))
+    #             count = 0
+    #             if cfg.data.current_method == 'grid-custom':
+    #                 logger.info('Setting custom grid correlation signals...')
+    #                 for i in range(7):
+    #                     self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
+    #                     self.corrSignalsList[i].hide()
+    #                 regions = cfg.data.grid_custom_regions
+    #                 names = cfg.data.get_grid_custom_filenames()
+    #                 logger.info('names: %s' % str(names))
+    #                 for i in range(4):
+    #                     if regions[i]:
+    #                         self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
+    #                         self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+    #                         self.corrSignalsList[i].show()
+    #                         count += 1
+    #
+    #
+    #             else:
+    #
+    #                 for i in range(7):
+    #                     self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
+    #                     if i < n:
+    #                         # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
+    #                         try:
+    #                             self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
+    #                             self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+    #                         except:
+    #                             print_exception()
+    #                             self.corrSignalsList[i].set_no_image()
+    #                         finally:
+    #                             self.corrSignalsList[i].show()
+    #                     else:
+    #                         self.corrSignalsList[i].hide()
+    #
+    #     logger.info(f'<<<< updateCorrSignalsDrawer, sizes: {self._splitter.sizes()}, time elapsed: {time.time() - t0}')
 
     def updateCorrSignalsDrawer(self):
-        t0 = time.time()
-        caller = inspect.stack()[1].function
-        logger.info('caller: %s >>>>' % caller)
-        if self._isProjectTab():
-            if self.correlation_signals.isVisible():
-                logger.info(f'updateCorrSignalsDrawer [sizes: {self._splitter.sizes()}] >>>>')
-                colors = cfg.glob_colors
+        logger.info("updateCorrSignalsDrawer >>>>")
 
-                thumbs = cfg.data.get_signals_filenames()
-                n = len(thumbs)
-                splitterSizes = self._splitter.sizes()
-
-                # logger.info(f'n             = {n}')
-                # logger.info(f'thumbs        = {thumbs}')
-                logger.info(f'splitterSizes = {splitterSizes}')
-                if n == 0:
-                    self.corrSignalsWidget.hide()
-                    self.lab_corr_signals.show()
-                    splitterSizes[1] = 24
-                    self._splitter.setSizes(splitterSizes)
-                    QApplication.processEvents()
-                    return
-
-                self.corrSignalsWidget.show()
-                self.lab_corr_signals.hide()
-
-                snr_vals = cfg.data.snr_components()
-
-                if splitterSizes[1] == 0:
-                    splitterSizes[1] = self._corrSpotDrawerSize
-                    logger.info(f'Changing _splitter sizes to {splitterSizes}')
-                    self._splitter.setSizes(splitterSizes)
-                
-                QApplication.processEvents()
-                logger.info(f'_splitter sizes: {self._splitter.sizes()}')
-                logger.info(f'snr vals: {snr_vals}')
-
-                h = max(self._splitter.sizes()[1] - 30, 40)
-
-                logger.info(f'h = {h}')
-
-                siz = cfg.data.image_size()
-                ar = siz[0] / siz[1]  # aspect ratio
-
-                # logger.info('thumbs: %s' % str(thumbs))
-                count = 0
-                if cfg.data.current_method == 'grid-custom':
-                    logger.info('Setting custom grid correlation signals...')
-                    for i in range(7):
-                        self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
-                        self.corrSignalsList[i].hide()
-                    regions = cfg.data.grid_custom_regions
-                    names = cfg.data.get_grid_custom_filenames()
-                    logger.info('names: %s' % str(names))
-                    for i in range(4):
-                        if regions[i]:
-                            self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
-                            self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
-                            self.corrSignalsList[i].show()
-                            count += 1
-
-
+        thumbs = cfg.data.get_signals_filenames()
+        logger.info('thumbs: %s' % str(thumbs))
+        n = len(thumbs)
+        snr_vals = cfg.data.snr_components()
+        colors = cfg.glob_colors
+        count = 0
+        if cfg.data.current_method == 'grid-custom':
+            logger.info('Setting custom grid correlation signals...')
+            for i in range(7):
+                self.corrSignalsList[i].hide()
+            regions = cfg.data.grid_custom_regions
+            names = cfg.data.get_grid_custom_filenames()
+            logger.info('names: %s' % str(names))
+            for i in range(4):
+                if regions[i]:
+                    self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
+                    self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+                    self.corrSignalsList[i].show()
+                    count += 1
+        else:
+            for i in range(7):
+                if i < n:
+                    # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
+                    try:
+                        self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
+                        self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+                    except:
+                        print_exception()
+                        self.corrSignalsList[i].set_no_image()
+                    finally:
+                        self.corrSignalsList[i].show()
                 else:
+                    self.corrSignalsList[i].hide()
 
-                    for i in range(7):
-                        self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
-                        if i < n:
-                            # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
-                            try:
-                                self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
-                                self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
-                            except:
-                                print_exception()
-                                self.corrSignalsList[i].set_no_image()
-                            finally:
-                                self.corrSignalsList[i].show()
-                        else:
-                            self.corrSignalsList[i].hide()
+        logger.info("<<<< updateCorrSignalsDrawer")
 
-        logger.info(f'<<<< updateCorrSignalsDrawer, sizes: {self._splitter.sizes()}, time elapsed: {time.time() - t0}')
 
 
     def clearCorrSpotsDrawer(self):
@@ -500,7 +536,7 @@ class MainWindow(QMainWindow):
             # logger.info('thumbs: %s' % str(thumbs))
             for i in range(7):
                 self.corrSignalsList[i].hide()
-                # h = max(self.correlation_signals.height() - 38, 64)
+                # h = max(self.dw_corrspots_layout.height() - 38, 64)
                 # self.corrSignalsList[i].setFixedSize(h, h)
                 # if i < n:
                 #     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
@@ -537,7 +573,6 @@ class MainWindow(QMainWindow):
         self._dev_console.setVisible(self._dev_console.isHidden())
         QApplication.processEvents()
 
-        self._splitter.setHidden(self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
         logger.info(f'QApplication.focusWidget = {QApplication.focusWidget()}')
         # self.pythonConsole.setFocus()
         self._dev_console.setFocus()
@@ -564,15 +599,12 @@ class MainWindow(QMainWindow):
         self.notes.setVisible(wasHidden)
         # QApplication.processEvents()
 
-
-
         self.notesButton.setText((' Hide', ' Notes')[self.notes.isHidden()])
         self.notesButton.setStatusTip(('Hide Notepad', 'Show Notepad')[self.notes.isHidden()])
         self.notesButton.setToolTip(('Hide Notepad', 'Show Notepad')[self.notes.isHidden()])
         self.updateNotes()
         # logger.info(self._splitter.sizes())
-        self._splitter.setHidden(
-            self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
+
         # geo = self.notes.geometry()
         # geo.setHeight(100)
         # self.notes.setGeometry(geo)
@@ -583,27 +615,11 @@ class MainWindow(QMainWindow):
         #     sizes[0] = 100
         #     self._splitter.setSizes(sizes)
         #     QApplication.processEvents()
-        self.notes.setFixedHeight(80)
+        # self.notes.setFixedHeight(80)
         # geo = self.notes.geometry()
         # geo.setHeight(100)
         # self.notes.setGeometry(geo)
         # logger.critical(self._splitter.sizes())
-
-
-
-    def _callbk_showHideControls(self):
-        # self.cpanelFrame.setVisible(self.cpanelFrame.isHidden())
-
-        if self.cpanelFrame.isHidden():
-            self.cpanelFrame.show()
-        else:
-            self.cpanelFrame.hide()
-
-        self.controlsButton.setText(('Controls',' Hide')[self.cpanelFrame.isVisible()])
-        self.controlsButton.setStatusTip(('Show Control Panel','Hide Control Panel')[self.cpanelFrame.isVisible()])
-        self._splitter.setHidden(
-            self.correlation_signals.isHidden() and self.notes.isHidden() and self._dev_console.isHidden())
-
 
 
     def autoscale(self, make_thumbnails=True):
@@ -1225,9 +1241,12 @@ class MainWindow(QMainWindow):
         (1) Update the visibility of next/prev s buttons depending on current s.
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
-        logger.info('')
+        logger.info('updateEnabledButtons >>>>')
         if cfg.data:
-            # self._btn_alignAll.setText('Align All\n%s' % cfg.data.scale_pretty())
+            self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
+            self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
+            self.gb_ctlActions.setTitle('%s Actions' % cfg.data.scale_pretty())
+            # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
             self._skipCheckbox.setEnabled(True)
             self._toggleAutogenerate.setEnabled(True)
             self._bbToggle.setEnabled(True)
@@ -1249,6 +1268,7 @@ class MainWindow(QMainWindow):
         if cfg.data:
             # if cfg.data.is_aligned_and_generated(): #0202-
             if cfg.data.is_aligned():
+                self._btn_alignAll.setText('Realign All Sections - %s' % cfg.data.scale_pretty())
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
@@ -1356,7 +1376,7 @@ class MainWindow(QMainWindow):
 
     def scale_up(self) -> None:
         '''Callback function for the Next Scale button.'''
-        logger.info('')
+        logger.info('scale_up >>>>')
         if not self._working:
             if self._scaleUpButton.isEnabled():
                 self._changeScaleCombo.setCurrentIndex(self._changeScaleCombo.currentIndex() - 1)  # Changes Scale
@@ -1476,7 +1496,7 @@ class MainWindow(QMainWindow):
             #     cfg.project_tab._overlayRect.hide()
             #     cfg.project_tab._overlayLab.hide()
 
-            if self.correlation_signals.isVisible():
+            if self.dw_corrspots.isVisible():
                 self.updateCorrSignalsDrawer()
 
             cur = cfg.data.zpos
@@ -1620,6 +1640,8 @@ class MainWindow(QMainWindow):
                             txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
 
                         cfg.project_tab.detailsSNR.setText(txt)
+
+            self._btn_alignOne.setText('Realign Current Section (#%d)' %cfg.data.zpos)
 
             try:     self._jumpToLineedit.setText(str(cur))
             except:  logger.warning('Current Layer Widget Failed to Update')
@@ -1807,6 +1829,7 @@ class MainWindow(QMainWindow):
                     self.sectionRangeSlider.setMax(len(cfg.data) - 1)
                     self.sectionRangeSlider.setStart(0)
                     self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
+
                     self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
                     self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
                 # if cfg.zarr_tab:
@@ -1911,8 +1934,8 @@ class MainWindow(QMainWindow):
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
-        if caller == 'main':
+        logger.info('fn_scales_combobox [caller: %s] >>>>' % caller)
+        if caller in ('main', 'scale_down', 'scale_up'):
 
             if getData('state,manual_mode'):
                 self.reload_scales_combobox()
@@ -2352,16 +2375,16 @@ class MainWindow(QMainWindow):
             # msg_width = 640
             # msg_height = 480
 
-            fg = self.frameGeometry()
-            # fg = self.geometry()
-            # x = (fg.width()/2) #- (msg.width() / 2)
-            # x = (fg.width()/3) #- (msg.width() / 2)
-            x = (fg.width() - msg.width()) / 2
-            y = (fg.height() - msg.height()) / 2
-            # # x = (fg.width()/2)
-            # # y = (fg.height()/2)
-            logger.info(f'x: {x}, y: {y}')
-            msg.move(x, y)
+            # fg = self.frameGeometry()
+            # # fg = self.geometry()
+            # # x = (fg.width()/2) #- (msg.width() / 2)
+            # # x = (fg.width()/3) #- (msg.width() / 2)
+            # x = (fg.width() - msg.width()) / 2
+            # y = (fg.height() - msg.height()) / 2
+            # # # x = (fg.width()/2)
+            # # # y = (fg.height()/2)
+            # logger.info(f'x: {x}, y: {y}')
+            # msg.move(x, y)
 
             msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
             msg.setStyleSheet(style)
@@ -2462,7 +2485,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
     def url_resource(self, url, title):
         webengine = QWebEngineView()
@@ -2475,7 +2498,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
 
 
@@ -2485,7 +2508,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.globTabs.addTab(browser, 'Neuroglancer')
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
 
     def open_url(self, text: str) -> None:
@@ -2549,17 +2572,20 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if self._isPlayingBack:
                 self.automaticPlayTimer.stop()
-                self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+                # self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+                self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
             elif cfg.project_tab or cfg.zarr_tab:
                 # self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
                 self.automaticPlayTimer.start()
-                self._btn_automaticPlayTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
+                # self._btn_automaticPlayTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
+                self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/pause-button.png'))
             self._isPlayingBack = not self._isPlayingBack
 
 
     def stopPlaybackTimer(self):
         self.automaticPlayTimer.stop()
-        self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        # self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
         self._isPlayingBack = 0
 
     def incrementZoomOut(self):
@@ -2627,7 +2653,7 @@ class MainWindow(QMainWindow):
         self.browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.globTabs.addTab(self.browser, 'WebGL Test')
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
     def google(self):
         logger.info('Opening Google Tab...')
@@ -2636,7 +2662,7 @@ class MainWindow(QMainWindow):
         self.browser.setUrl(QUrl('https://www.google.com'))
         self.globTabs.addTab(self.browser, 'Google')
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
     def gpu_config(self):
         logger.info('Opening GPU Config...')
@@ -2644,7 +2670,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('chrome://gpu'))
         self.globTabs.addTab(browser, 'GPU Configuration')
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
     def chromium_debug(self):
         logger.info('Opening Chromium Debugger...')
@@ -2652,7 +2678,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('http://127.0.0.1:9000'))
         self.globTabs.addTab(browser, 'Debug Chromium')
         self._setLastTab()
-        self.cpanelFrame.hide()
+        self.cpanel.hide()
 
     def get_ng_state(self):
         if cfg.project_tab:
@@ -2818,7 +2844,7 @@ class MainWindow(QMainWindow):
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
-                # cfg.project_tab.cpanelFrame.hide()
+                # cfg.project_tab.cpanel.hide()
 
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
@@ -2866,7 +2892,7 @@ class MainWindow(QMainWindow):
 
             self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
 
-            # cfg.project_tab.cpanelFrame.show()
+            # cfg.project_tab.cpanel.show()
 
             setData('state,manual_mode', False)
             self.alignMatchPointAction.setText('Align Manually')
@@ -3098,7 +3124,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setStatusTip('Refresh')
 
         self.combo_mode = QComboBox(self)
-        self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
+        # self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
         self.combo_mode.setFixedSize(150, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
@@ -3118,9 +3144,10 @@ class MainWindow(QMainWindow):
         self._jumpToLineedit.setStyleSheet('font-size: 11px; border-width: 0px;')
         self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
         self._jumpToLineedit.setStatusTip(tip)
-        self._jumpToLineedit.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self._jumpToLineedit.setFixedSize(QSize(36, 16))
         self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
+
+
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
         sec_label = QLabel('Section: ')
@@ -3134,7 +3161,9 @@ class MainWindow(QMainWindow):
         self._btn_automaticPlayTimer = QPushButton()
         self._btn_automaticPlayTimer.setIconSize(QSize(14,14))
         self._btn_automaticPlayTimer.setFixedSize(18,18)
-        self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        # self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
+        #0505
         self.automaticPlayTimer = QTimer(self)
         self._btn_automaticPlayTimer.clicked.connect(self.startStopTimer)
 
@@ -3150,7 +3179,8 @@ class MainWindow(QMainWindow):
                         self._sectionSlider.setValue(0)
                         self.automaticPlayTimer.stop()
                         self._isPlayingBack = 0
-                        self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+                        # self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+                        self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
 
         self.automaticPlayTimer.timeout.connect(onTimer)
         self._sectionSliderWidget = QWidget()
@@ -3175,9 +3205,58 @@ class MainWindow(QMainWindow):
 
         '''scale combobox'''
         self._changeScaleCombo = QComboBox(self)
+        # self._changeScaleCombo.setStyleSheet("""
+        # QComboBox {
+        #     padding-left: 6px;
+        #     border: 1px solid #339933;
+        #     border-radius: 10px;
+        #     color: #f3f6fb;
+        #     combobox-popup: 0;
+        #     background: #141414;
+        # }
+        # QComboBox QAbstractItemView {
+        #     border-bottom-right-radius: 10px;
+        #     border-bottom-left-radius: 10px;
+        #     border-top-right-radius: 0px;
+        #     border-top-left-radius: 0px;
+        # }
+        # QComboBox:hover {
+        #     border: 2px solid #339933;
+        # }
+        # QListView {
+        #     color: #f3f6fb;
+        #     border: 1px solid #339933;
+        #     border-top: 0px solid #339933;
+        #     border-radius: 10px;
+        #     background-color: rgba(0, 0, 0, 200)
+        # }
+        # QListView::item:selected
+        # {
+        #     color: #31cecb;
+        #     background-color: #454e5e;
+        #     border: 2px solid magenta;
+        #     border-radius: 10px;
+        # }
+        # QListView::item:!selected
+        # {
+        #     color: #f3f6fb;
+        #     background-color: transparent;
+        #     border: none;
+        #     padding-left : 10px;
+        #
+        # }
+        # QListView::item:!selected:hover
+        # {
+        #     color: #bbbcba;
+        #     background-color: #454e5e;
+        #     border: transparent;
+        #     padding-left : 10px;
+        #     border-radius: 10px;
+        # }
+        # """)
         self._changeScaleCombo.setMinimumWidth(134)
         self._changeScaleCombo.setFixedHeight(18)
-        self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
+        # self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
 
@@ -3188,17 +3267,34 @@ class MainWindow(QMainWindow):
         self._changeScaleWidget = QWidget()
         self._changeScaleWidget.setLayout(hbl)
 
-        self.controlsButton = QPushButton()
-        # self.controlsButton.setText(('Controls', 'Hide')[self.cpanelFrame.isVisible()])
-        self.controlsButton.setText('Controls')
-        self.controlsButton.setStatusTip('Show Controls')
-        self.controlsButton.setFixedHeight(18)
-        self.controlsButton.setFixedWidth(70)
-        self.controlsButton.setIcon(qta.icon('ei.adjust-alt', color=ICON_COLOR))
-        self.controlsButton.clicked.connect(self._callbk_showHideControls)
+        style = """
+        QPushButton {
+            font-size: 12px;
+            font-family: Tahoma, sans-serif;
+            color: #f3f6fb;
+            background-color: #1b1e23;
+            border-width: 1px;
+            border-color: #339933;
+            border-style: solid;
+            padding: 1px;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        QPushButton:disabled {
+            border-width: 1px;
+            border-color: #dadada;
+            border-style: solid;
+            background-color: #dadada;
+            padding: 1px;
+            border-radius: 4px;
+            color: #ede9e8;
+        }
+        """
 
         tip = 'Show Notepad'
         self.notesButton = QPushButton(' Notes')
+        self.notesButton.setStyleSheet(style)
         self.notesButton.setStatusTip(tip)
         self.notesButton.setToolTip(tip)
         self.notesButton.setFixedHeight(18)
@@ -3210,6 +3306,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show Python Console'
         self.pythonButton = QPushButton(' Python')
+        self.pythonButton.setStyleSheet(style)
         self.pythonButton.setToolTip(tip)
         self.pythonButton.setStatusTip(tip)
         self.pythonButton.setFixedHeight(18)
@@ -3245,7 +3342,6 @@ class MainWindow(QMainWindow):
 
         # if cfg.DEV_MODE:
         #     self.toolbar.addWidget(self.profilingTimerButton)
-        # self.toolbar.addWidget(self.controlsButton)
         self.toolbar.addWidget(self.notesButton)
         self.toolbar.addWidget(self.pythonButton)
         # self.toolbar.addWidget(self._highContrastNgAction)
@@ -3342,7 +3438,7 @@ class MainWindow(QMainWindow):
         tabtype = self._getTabType()
         if tabtype == 'ProjectTab':
             logger.critical('Loading Project Tab...')
-            self.cpanelFrame.show()
+            self.cpanel.show()
             self.statusBar.setStyleSheet("""
                     font-size: 10px; font-weight: 600;
                     color: #ede9e8; background-color: #222222;
@@ -3369,20 +3465,20 @@ class MainWindow(QMainWindow):
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
 
-        self._splitter.hide() #0424-
-
+        # self._splitter.hide() #0424-
 
         # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         if tabtype == 'OpenProject':
             configure_project_paths()
             self._getTabObject().user_projects.set_data()
-            self.cpanelFrame.hide()
-            self.correlation_signals.hide()
+            self.cpanel.hide()
+            # self.dw_corrspots_layout.hide()
+            self.dw_corrspots.hide()
 
 
         elif tabtype == 'ProjectTab':
-            self.cpanelFrame.show()
+            self.cpanel.show()
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
             cfg.zarr_tab = None
@@ -4341,35 +4437,26 @@ class MainWindow(QMainWindow):
 
         button_size = QSize(58, 20)
         std_input_size = QSize(64, 20)
-        normal_button_size = QSize(68, 28)
-        baseline = Qt.AlignmentFlag.AlignBaseline
-        vcenter  = Qt.AlignmentFlag.AlignVCenter
-        hcenter  = Qt.AlignmentFlag.AlignHCenter
-        center   = Qt.AlignmentFlag.AlignCenter
+        # normal_button_size = QSize(68, 28)
+        normal_button_size = QSize(76, 30)
+        long_button_size = QSize(180, 16)
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
+        ctl_lab_style = 'color: #ede9e8;'
+
         tip = 'Whether to include the current section'
         self._lab_keep_reject = QLabel('Include:')
+        self._lab_keep_reject.setStyleSheet(ctl_lab_style)
         self._lab_keep_reject.setStatusTip(tip)
         # self._skipCheckbox = QCheckBox()
         self._skipCheckbox = ToggleSwitch()
         self._skipCheckbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._skipCheckbox.setObjectName('_skipCheckbox')
         self._skipCheckbox.stateChanged.connect(self._callbk_skipChanged)
         self._skipCheckbox.stateChanged.connect(self._callbk_unsavedChanges)
         self._skipCheckbox.setStatusTip(tip)
         self._skipCheckbox.setEnabled(False)
-        self._skipCheckbox.setFixedHeight(28)
-        vbl = VBL()
-        vbl.setContentsMargins(2, 0, 2, 0)
-        vbl.setSpacing(0)
-        vbl.addWidget(self._lab_keep_reject, alignment=center)
-        vbl.addWidget(self._skipCheckbox, alignment=right)
-        # vbl.setAlignment(vcenter)
-        self._ctlpanel_skip = QWidget()
-        self._ctlpanel_skip.setMaximumHeight(34)
-        self._ctlpanel_skip.setLayout(vbl)
+
 
         tip = 'Use all the images (include all)'
         self._btn_clear_skips = QPushButton('Reset')
@@ -4381,68 +4468,47 @@ class MainWindow(QMainWindow):
         self._btn_clear_skips.setFixedSize(button_size)
 
         tip = "Whitening factor parameter used by SWIM (defaults to -0.68)"
-        lab = QLabel("Whitening Factor:")
-        lab.setAlignment(center)
+        lab = QLabel("Whitening\nFactor:")
+        lab.setStyleSheet(ctl_lab_style)
+        lab.setAlignment(left)
         self._whiteningControl = QDoubleSpinBox(self)
-        self._whiteningControl.setFixedHeight(14)
+        self._whiteningControl.setStyleSheet("font-size: 10px;")
+        self._whiteningControl.setFixedHeight(12)
         self._whiteningControl.valueChanged.connect(self._callbk_unsavedChanges)
         self._whiteningControl.valueChanged.connect(self._valueChangedWhitening)
-        self._whiteningControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # self._whiteningControl.setValue(cfg.DEFAULT_WHITENING)
         self._whiteningControl.setFixedSize(std_input_size)
         self._whiteningControl.setDecimals(2)
         self._whiteningControl.setSingleStep(.01)
         self._whiteningControl.setMinimum(-2)
         self._whiteningControl.setMaximum(2)
-        # self._whiteningControl.setEnabled(False)
-        lab.setStatusTip(tip)
-        self._whiteningControl.setStatusTip(tip)
-        lay = QHBoxLayout()
-        # lay.addWidget(lab, alignment=right)
-        lay.addWidget(self._whiteningControl, alignment=center)
-        lay.setContentsMargins(0, 0, 0, 0)
-        w = QWidget()
-        w.setLayout(lay)
-        self._ctlpanel_whitening = VWidget(lab, w)
 
 
         tip = f"The region size SWIM uses for computing alignment, specified as pixels " \
               f"width. (defaults to {cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)"
-        lab = QLabel("SWIM Window:")
-        lab.setAlignment(center)
+        lab = QLabel("SWIM\nWindow:")
+        lab.setStyleSheet(ctl_lab_style)
+        lab.setAlignment(left)
         self._swimWindowControl = QSpinBox(self)
+        self._swimWindowControl.setStyleSheet("font-size: 10px;")
         self._swimWindowControl.setSuffix('px')
         self._swimWindowControl.setMaximum(9999)
-        self._swimWindowControl.setFixedHeight(14)
+        self._swimWindowControl.setFixedHeight(12)
 
         def fn():
             # logger.info('')
             caller = inspect.stack()[1].function
             if caller == 'main':
-
                 logger.info(f'caller: {caller}')
                 # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
                 # cfg.data.set_swim_window_px(self._swimWindowControl.value())
                 # setData(f'data,scales,{cfg.data.scale},')
                 cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.value()/cfg.data.image_size()[0]))
-
                 self.swimWindowChanged.emit()
 
         self._swimWindowControl.valueChanged.connect(fn)
         self._swimWindowControl.valueChanged.connect(self._callbk_unsavedChanges)
-        self._swimWindowControl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # self._swimWindowControl.setValue(cfg.DEFAULT_SWIM_WINDOW)
         self._swimWindowControl.setFixedSize(std_input_size)
-        lab.setStatusTip(tip)
-        self._swimWindowControl.setStatusTip(tip)
-        lay = QHBoxLayout()
-        lay.setContentsMargins(0, 0, 0, 0)
-        # lay.addWidget(lab, alignment=right)
-        lay.addWidget(self._swimWindowControl, alignment=center)
-        w = QWidget()
-        w.setLayout(lay)
-        self._ctlpanel_inp_swimWindow = VWidget(lab, w)
-
 
 
         # # tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
@@ -4456,11 +4522,6 @@ class MainWindow(QMainWindow):
         # # self._ctlpanel_applyAllButton.setFixedSize(QSize(54, 20))
         # self._ctlpanel_applyAllButton.setFixedSize(normal_button_size)
 
-        # hbl = QHBoxLayout()
-        # hbl.setContentsMargins(0, 0, 0, 0)
-        # hbl.addWidget(self._ctlpanel_inp_swimWindow)
-        # hbl.addWidget(self._ctlpanel_whitening)
-        # hbl.addWidget(self._ctlpanel_applyAllButton)
 
         tip = 'Go To Previous Section.'
         self._btn_prevSection = QPushButton()
@@ -4482,15 +4543,15 @@ class MainWindow(QMainWindow):
 
         w = QWidget()
         lab = QLabel('Section:')
+        lab.setStyleSheet(ctl_lab_style)
         lab.setAlignment(left)
         hbl = HBL()
         hbl.addWidget(self._btn_prevSection, alignment=right)
         hbl.addWidget(self._btn_nextSection, alignment=left)
         w.setLayout(hbl)
         self._sectionChangeWidget = VWidget(lab,w)
-        self._sectionChangeWidget.layout.setAlignment(Qt.AlignVCenter)
         self._sectionChangeWidget.layout.setSpacing(0)
-        self._sectionChangeWidget.setFixedWidth(48)
+        self._sectionChangeWidget.setFixedSize(QSize(48, 40))
         self._sectionChangeWidget.setAutoFillBackground(True)
 
 
@@ -4514,6 +4575,7 @@ class MainWindow(QMainWindow):
 
         w = QWidget()
         lab = QLabel('Scale:')
+        lab.setStyleSheet(ctl_lab_style)
         lab.setAlignment(left)
         hbl = HBL()
         hbl.addWidget(self._scaleDownButton, alignment=right)
@@ -4521,7 +4583,7 @@ class MainWindow(QMainWindow):
         w.setLayout(hbl)
         self._scaleSetWidget = VWidget(lab, w)
         self._scaleSetWidget.layout.setSpacing(0)
-        self._scaleSetWidget.setFixedWidth(48)
+        self._scaleSetWidget.setFixedSize(QSize(48, 40))
 
         # lab = QLabel('Scale:')
         # lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
@@ -4535,35 +4597,39 @@ class MainWindow(QMainWindow):
         tip = 'Align and generate all sections.'
         self._btn_alignAll = QPushButton('Align All')
         self._btn_alignAll.setEnabled(False)
-        self._btn_alignAll.setStyleSheet("font-size: 10px;")
+        self._btn_alignAll.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignAll.setStatusTip(tip)
         self._btn_alignAll.clicked.connect(self.alignAll)
-        self._btn_alignAll.setFixedSize(normal_button_size)
+        self._btn_alignAll.setFixedSize(long_button_size)
 
-        tip = 'Align and re-generate the current section only'
+        tip = 'Align and regenerate the current section only'
         self._btn_alignOne = QPushButton('Align One')
         self._btn_alignOne.setStatusTip(tip)
         self._btn_alignOne.setEnabled(False)
-        self._btn_alignOne.setStyleSheet("font-size: 10px;")
+        self._btn_alignOne.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.clicked.connect(self.alignOne)
-        self._btn_alignOne.setFixedSize(normal_button_size)
+        self._btn_alignOne.setFixedSize(long_button_size)
 
         tip = 'The range of sections to align for the align range button.'
         self.sectionRangeSlider = RangeSlider()
         self.sectionRangeSlider.setStatusTip(tip)
         self.sectionRangeSlider.setStyleSheet('border-radius: 2px;')
         self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.sectionRangeSlider.setFixedWidth(100)
+        # self.sectionRangeSlider.setFixedWidth(100)
+        self.sectionRangeSlider.setFixedWidth(long_button_size.width())
+        self.sectionRangeSlider.setFixedHeight(26)
         self.sectionRangeSlider.setMin(0)
         self.sectionRangeSlider.setStart(0)
 
         self.startRangeInput = QLineEdit()
+        self.startRangeInput.setStyleSheet("background-color: #f3f6fb;")
         self.startRangeInput.setFixedSize(34,22)
         self.startRangeInput.setEnabled(False)
 
         self.endRangeInput = QLineEdit()
+        self.endRangeInput.setStyleSheet("background-color: #f3f6fb;")
         self.endRangeInput.setFixedSize(34,22)
         self.endRangeInput.setEnabled(False)
 
@@ -4576,46 +4642,38 @@ class MainWindow(QMainWindow):
         hbl.addWidget(QLabel(':'))
         hbl.addWidget(self.endRangeInput)
         self.rangeInputWidget.setLayout(hbl)
+        self.rangeInputWidget.setMaximumWidth(60)
+        self.rangeInputWidget.setFixedHeight(18)
+
+        def updateRangeButton():
+            a = self.sectionRangeSlider.start()
+            b = self.sectionRangeSlider.end()
+            self._btn_alignRange.setText('Realign Sections #%d -> #%d' % (a,b))
 
         self.sectionRangeSlider.startValueChanged.connect(lambda val: self.startRangeInput.setText(str(val)))
+        self.sectionRangeSlider.startValueChanged.connect(updateRangeButton)
         self.sectionRangeSlider.endValueChanged.connect(lambda val: self.endRangeInput.setText(str(val)))
+        self.sectionRangeSlider.endValueChanged.connect(updateRangeButton)
         self.startRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setStart(int(val)))
         self.endRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setEnd(int(val)))
 
-        self._btn_alignRange = QPushButton('Align Range')
+        self._btn_alignRange = QPushButton('Realign Range')
         self._btn_alignRange.setEnabled(False)
-        self._btn_alignRange.setStyleSheet("font-size: 10px;")
+        self._btn_alignRange.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignRange.setStatusTip(tip)
         self._btn_alignRange.clicked.connect(self.alignRange)
-        self._btn_alignRange.setFixedSize(normal_button_size)
+        self._btn_alignRange.setFixedSize(long_button_size)
 
         tip = 'Whether to auto-generate aligned images following alignment.'
-        lab = QLabel("Auto-generate:")
-        lab.setAlignment(center)
-        lab.setStatusTip(tip)
         self._toggleAutogenerate = ToggleSwitch()
         self._toggleAutogenerate.stateChanged.connect(self._toggledAutogenerate)
         self._toggleAutogenerate.stateChanged.connect(self._callbk_unsavedChanges)
         self._toggleAutogenerate.setStatusTip(tip)
         self._toggleAutogenerate.setChecked(True)
         self._toggleAutogenerate.setEnabled(False)
-        self._toggleAutogenerate.setFixedHeight(28)
-        vbl = VBL()
-        vbl.setSpacing(0)
-        # hbl.addWidget(lab, alignment=right | vcenter)
-        # hbl.addWidget(self._toggleAutogenerate, alignment=right | vcenter)
-        vbl.addWidget(lab, alignment=center)
-        vbl.addWidget(self._toggleAutogenerate, alignment=right)
-        vbl.setAlignment(vcenter)
-        self._ctlpanel_toggleAutogenerate = QWidget()
-        self._ctlpanel_toggleAutogenerate.setMaximumHeight(34)
-        self._ctlpanel_toggleAutogenerate.setLayout(vbl)
 
         tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
-        lab = QLabel("Corrective Polynomial:")
-        lab.setAlignment(right)
-        lab.setStatusTip(tip)
         self._polyBiasCombo = QComboBox(self)
         self._polyBiasCombo.setStyleSheet("font-size: 10px; padding-left: 6px;")
         self._polyBiasCombo.currentIndexChanged.connect(self._valueChangedPolyOrder)
@@ -4624,77 +4682,77 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.addItems(['None', '0', '1', '2', '3', '4'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(54, 18))
+        self._polyBiasCombo.setFixedSize(QSize(60, 18))
         self._polyBiasCombo.setEnabled(False)
         self._polyBiasCombo.lineEdit()
-        vbl = VBL()
-        vbl.setSpacing(0)
-        vbl.addWidget(lab, alignment=center)
-        vbl.addWidget(self._polyBiasCombo, alignment=right)
-        self._ctlpanel_polyOrder = QWidget()
-        self._ctlpanel_polyOrder.setLayout(vbl)
 
 
         tip = 'Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may ' \
               'significantly increase the size of generated images.'
-        lab = QLabel("Bounding Box:")
-        lab.setAlignment(center)
-        lab.setStatusTip(tip)
         self._bbToggle = ToggleSwitch()
-        # self._bbToggle.setChecked(True)
         self._bbToggle.setStatusTip(tip)
         self._bbToggle.toggled.connect(self._callbk_bnding_box)
         self._bbToggle.setEnabled(False)
-        self._bbToggle.setFixedHeight(28)
-        vbl = VBL()
-        vbl.setSpacing(0)
-        # hbl.addWidget(lab, alignment=baseline | Qt.AlignmentFlag.AlignRight)
-        vbl.addWidget(lab, alignment=center)
-        vbl.addWidget(self._bbToggle, alignment=right)
-        vbl.setAlignment(vcenter)
-        self._ctlpanel_bb = QWidget()
-        self._ctlpanel_bb.setMaximumHeight(34)
-        self._ctlpanel_bb.setLayout(vbl)
-        # self._ctlpanel_bb = VWidget(lab, self._bbToggle)
-        # self._ctlpanel_bb.setStyleSheet('background-color: #222222;')
-        # self._bbToggle.setAutoFillBackground(True)
-        # self._ctlpanel_bb.setAutoFillBackground(True)
-        # self._ctlpanel_bb.layout.setSpacing(0)
 
 
         tip = "Recompute cumulative affine and generate new images" \
               "based on the current Null Bias and Bounding Box presets."
         self._btn_regenerate = QPushButton('Regenerate')
-        # self._btn_regenerate.setStyleSheet('font-size: 10px;')
+        self._btn_regenerate.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414; ")
         self._btn_regenerate.setEnabled(False)
         self._btn_regenerate.setStatusTip(tip)
         self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale))
-        self._btn_regenerate.setFixedSize(normal_button_size)
+        self._btn_regenerate.setFixedSize(long_button_size)
 
-        self._wdg_alignButtons = QWidget()
-        hbl = HBL()
+        '''_wdg_alignButtons'''
+
         # hbl.addWidget(self._ctlpanel_applyAllButton)
-        hbl.addWidget(self._btn_regenerate)
-        hbl.addWidget(self._btn_alignOne)
-        hbl.addWidget(self.sectionRangeSlider)
-        hbl.addWidget(self.rangeInputWidget)
-        hbl.addWidget(self._btn_alignRange)
-        hbl.addWidget(self._btn_alignAll)
-        self._wdg_alignButtons.setLayout(hbl)
-        # lab = QLabel('Actions\n(Highly Parallel):')
 
-        # lab.setAlignment(right | vcenter)
-        lay = QHBoxLayout()
-        # vbl.setSpacing(1)
-        lay.setContentsMargins(0, 0, 0, 0)
-        # lay.addWidget(lab, alignment=right)
-        lay.addWidget(self._wdg_alignButtons, alignment=left)
-        self._ctlpanel_alignRegenButtons = QWidget()
-        self._ctlpanel_alignRegenButtons.setLayout(lay)
+        self._btn_regenerate.setAutoFillBackground(True)
+        self._btn_alignOne.setAutoFillBackground(True)
+        # self.sectionRangeSlider.setAutoFillBackground(True)
+        self.rangeInputWidget.setAutoFillBackground(True)
+        self._btn_alignRange.setAutoFillBackground(True)
+        self._btn_alignAll.setAutoFillBackground(True)
+        fl = QFormLayout()
+        # fl.setAlignment(Qt.AlignTop)
+        fl.setContentsMargins(0,0,0,0)
+        fl.setSpacing(6)
+        fl.addWidget(self._btn_regenerate)
+        fl.addWidget(self._btn_alignOne)
+        fl.addWidget(self._btn_alignAll)
+        self.cpButtonsLeft = QWidget()
+        self.cpButtonsLeft.setAutoFillBackground(True)
+        self.cpButtonsLeft.setLayout(fl)
+
+        self.cpButtonsRight = QWidget()
+        fl.setContentsMargins(0,0,0,0)
+        fl = QFormLayout()
+        fl.setSpacing(6)
+        range_widget = HWidget(QLabel('Range:'), self.rangeInputWidget, self.sectionRangeSlider)
+        range_widget.layout.setSpacing(4)
+        range_widget.layout.addStretch()
+        range_widget.setMaximumWidth(400)
+        fl.addWidget(range_widget)
+        # fl.addRow('Range:', range_widget)
+        fl.addWidget(self._btn_alignRange)
+        self.cpButtonsRight.setLayout(fl)
+
+        self.gb_ctlActions = QGroupBox("Scale Actions")
+        self.gb_ctlActions.setFixedWidth(420)
+        self.gb_ctlActions.setLayout(HBL(self.cpButtonsLeft, self.cpButtonsRight))
+        self.gb_ctlActions.layout().setSpacing(0)
 
         style = """
-            QWidget {background-color: #222222;}
-
+            QWidget{
+                background-color: #222222;
+            }
+            QLabel {
+                font-size: 11px;
+                font-family: Tahoma, sans-serif;
+                color: #ede9e8;
+                font-weight: 600;
+            }
             QDoubleSpinBox {
                 background-color: #f3f6fb;
                 color: #141414;
@@ -4724,92 +4782,144 @@ class MainWindow(QMainWindow):
                 color: #141414;
                 font-size: 11px;
             }
-            QCheckBox::indicator {
-                background: none;
+            
+            QGroupBox {
+                color: #ede9e8;
+                font-weight: bold;
+                border: 1px solid #ede9e8;
+                border-radius: 4px;
+                padding: 6px;
+                margin-top: 6px;
+                margin-bottom: 4px;
+            }
+
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 4px;
+                padding-left: 2px;
+                padding-right: 4px;
+                padding-top: -2px;
+                padding-bottom: 2px;
+            }
+            
+            QGroupBox::indicator {
+                margin-left: 2px;
+                margin-top: 2px;
+                padding: 0;
+                height: 14px;
+                width: 14px;
+            }
+
+
+        """
+
+        """
+                    QGroupBox {
+                color: #ede9e8;
+                border: 2px solid #ede9e8;
+            }
+            QGroupBox::title {
+                color: #ede9e8;
+                font-weight: 600;
             }
         """
+
+        # QCheckBox::indicator
+        # {
+        #     background: none;
+        # }
         # border: 1px solid #f3f6fb;
 
-        stretch1 = QWidget()
-        stretch1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        stretch2 = QWidget()
-        stretch2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.cpanel_hwidget1 = HWidget(
-            QLabel('  '),
-            self._sectionChangeWidget,
-            # self._scaleSetWidget,
-            self._ctlpanel_skip,
-            self._ctlpanel_bb,
-            self._ctlpanel_toggleAutogenerate,
-            self._ctlpanel_polyOrder,
-            self._ctlpanel_inp_swimWindow,
-            self._ctlpanel_whitening,
-            self._ctlpanel_alignRegenButtons,
-            QLabel('  '),
-        )
+        self.toggles = QWidget()
+        self.toggles.setFixedHeight(72)
+        fl = QFormLayout()
+        # fl.setAlignment(Qt.AlignTop)
+        fl.setContentsMargins(0,0,0,0)
+        fl.setSpacing(2)
+        fl.addRow('Include: ', self._skipCheckbox)
+        fl.addRow('Bounding Box: ', self._bbToggle)
+        fl.addRow('Auto-generate: ', self._toggleAutogenerate)
+        self.toggles.setLayout(fl)
 
-        self.cpanel_hwidget1.setStyleSheet('background-color: #222222;')
-        self.cpanel_hwidget1.setAutoFillBackground(True)
-        self.cpanel_hwidget1.layout.setSpacing(10)
-        self.cpanel_hwidget1.setStyleSheet(style)
+        self.combos = QWidget()
+        self.combos.setFixedHeight(72)
+        fl = QFormLayout()
+        fl.setFormAlignment(Qt.AlignCenter)
+        # fl.setAlignment(Qt.AlignTop)
+        fl.setContentsMargins(0,0,0,0)
+        fl.setSpacing(6)
+        fl.addRow('Corrective Polynomial: ', self._polyBiasCombo)
+        fl.addRow('Grid Width: ', self._swimWindowControl)
+        fl.addRow('Whitening Factor: ', self._whiteningControl)
+        self.combos.setLayout(fl)
 
-        # cpanel_hwidget2.setStyleSheet('background-color: #222222; color: #f3f6fb; font-size: 10px;')
-        # cpanel_hwidget2.setAutoFillBackground(True)
-        # cpanel_hwidget2.layout.setSpacing(0)
-        # cpanel_hwidget2.setStyleSheet(style)
+        '''self._wdg_alignBut
+        tons <- self.cpButtonsLeft <- self.cpanel_hwidget1'''
+        w = QWidget()
+        w.setContentsMargins(4,4,4,4)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(2,2,2,2)
+        hbl.setSpacing(8)
+        w.setLayout(hbl)
+        # hbl.addWidget(QLabel('  '))
+        hbl.addWidget(ExpandingWidget(self))
+        hbl.addWidget(VWidget(self._sectionChangeWidget, self._scaleSetWidget))
+        hbl.addWidget(self.toggles)
+        hbl.addWidget(self.combos)
+        hbl.addWidget(self.gb_ctlActions)
+        hbl.addWidget(ExpandingWidget(self))
+        # hbl.addWidget(self.cpButtonsLeft)
+        # hbl.addWidget(self.cpButtonsRight)
+        # hbl.addWidget(QLabel('  '))
+        # w.setStyleSheet(style)
 
-        lab = QLabel('Global Default Settings')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        lab.setStyleSheet(
-            """
-            color: #f3f6fb; 
-            font-size: 10px; 
-            font-weight: 600; 
-            padding-left: 2px; 
-            padding-top: 2px;
-            """)
+        lab = QLabel('Global Defaults')
+        lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb; padding-left: 1px; padding-top: 1px;')
 
-        self.cpanel = VWidget(lab, self.cpanel_hwidget1)
 
-        self.cpanel.setStyleSheet('QWidget {'
-                                  'background-color: #222222; '
-                                  'color: #f3f6fb; '
-                                  'font-size: 10px; '
-                                  'padding-left: 2px;'
-                                  'padding-right: 2px;'
-                                  '}')
-        self.cpanel.setAutoFillBackground(True)
-        # self.cpanel.setStyleSheet('color: #f3f6fb; font-size: 9px;')
-        # with open('src/style/cpanel.qss', 'r') as f:
-        #     self.cpanel.setStyleSheet(f.read())
-
-        # self.cpanel.setFixedHeight(60)
-        # self.cpanel.hide()
+        self.cpanel = VWidget(lab, w)
+        self.cpanel.layout.setAlignment(Qt.AlignHCenter)
+        # self.cpanel.setAutoFillBackground(True)
+        # self.cpanel.setStyleSheet("""background-color: #222222;""")
+        # self.cpanel.setStyleSheet('QWidget {'
+        #                           'background-color: #222222; '
+        #                           'color: #f3f6fb; '
+        #                           'font-size: 10px; '
+        #                           'padding-left: 2px;'
+        #                           'padding-right: 2px;'
+        #                           '}')
+        # self.cpanel.setStyleSheet("""
+        # QWidget {
+        #     background-color: #222222;
+        #     color: #ede9e8;
+        #     font-size: 10px;
+        # }""")
+        self.cpanel.setStyleSheet(style)
 
 
 
     def splittersHaveMoved(self, pos, index):
-        logger.info('')
-        # self.correlation_signals.setMinimumHeight(16)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
+        QApplication.processEvents()
+        logger.critical('')
+        QApplication.processEvents()
+        # self.dw_corrspots_layout.setMinimumHeight(16)  # reverse this on splitter moved (hacky)MinimumHeight(10)  # reverse this on splitter moved (hacky)
 
         # if not self._dev_console.isVisible():
         #     self._forceHidePython()
         #
-        # if not self.cpanelFrame.isVisible():
+        # if not self.cpanel.isVisible():
         #     self._forceHideControls()
         #
         # if not self.notes.isVisible():
         #     self._forceHideNotes()
 
-        if self.correlation_signals.isVisible():
+        if self.dw_corrspots.isVisible():
             cur_size = self._splitter.sizes()[1]
             if cur_size != 0:
                 self._corrSpotDrawerSize = cur_size
             self.updateCorrSignalsDrawer()
-            # h = self.correlation_signals.geometry().height()
-            # # self.corrSignalsDrawer.setFixedHeight(max(10,h-44))
-            # for w in self.corrSignalsList:
-            #     w.setFixedSize(max(10,h-44))
+
     #
     #     logger.info('pos: %s index: %s' % (str(pos),str(index)) )
     #     if self.detailsWidget.isHidden():
@@ -5096,13 +5206,7 @@ class MainWindow(QMainWindow):
         vbl = VBL()
         vbl.addWidget(gb)
 
-        # self.corrSignalsDrawer = QWidget()
-        # self.corrSignalsDrawer.setMinimumHeight(30)
-        # self.corrSignalsDrawer.setStyleSheet('background-color: #1b1e23; color: #f3f6fb; border-radius: 5px; ')
-        hbl = QHBoxLayout()
-        hbl.setSpacing(1)
-        # hbl.setContentsMargins(4,4,4,8)
-
+        self.cs_hbl = HBL()
         self.cs0 = CorrSignalThumbnail(self)
         self.cs1 = CorrSignalThumbnail(self)
         self.cs2 = CorrSignalThumbnail(self)
@@ -5119,45 +5223,22 @@ class MainWindow(QMainWindow):
             self.cs5,
             self.cs6
         ]
-        hbl.setContentsMargins(2, 2, 2, 2)
-        hbl.addWidget(self.cs0)
-        hbl.addWidget(self.cs1)
-        hbl.addWidget(self.cs2)
-        hbl.addWidget(self.cs3)
-        hbl.addWidget(self.cs4)
-        hbl.addWidget(self.cs5)
-        hbl.addWidget(self.cs6)
-        w = QWidget()
-        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        hbl.addWidget(w)
-        self.corrSignalsWidget = QWidget()
-        self.corrSignalsWidget.setLayout(hbl)
+        self.cs_hbl.setContentsMargins(2, 2, 2, 2)
+        self.cs_hbl.addWidget(self.cs0)
+        self.cs_hbl.addWidget(self.cs1)
+        self.cs_hbl.addWidget(self.cs2)
+        self.cs_hbl.addWidget(self.cs3)
+        self.cs_hbl.addWidget(self.cs4)
+        self.cs_hbl.addWidget(self.cs5)
+        self.cs_hbl.addWidget(self.cs6)
+        self.cs_hbl.addWidget(ExpandingWidget(self))
 
         self.lab_corr_signals = QLabel('No Signals Found for Current Alignment Method.')
         self.lab_corr_signals.setMaximumHeight(18)
         self.lab_corr_signals.setStyleSheet('color: #ede9e8;')
         self.lab_corr_signals.setContentsMargins(8,0,0,0)
 
-        # self.corrSignalsDrawer.setLayout(hbl)
-        self.corrSignalsDrawer = VWidget(self.corrSignalsWidget, self.lab_corr_signals)
-        self.corrSignalsDrawer.layout.setAlignment(Qt.AlignBottom)
-        # self.corrSignalsDrawer.setStyleSheet('background-color: #ffe135; color: #f3f6fb; border-radius: 5px; ')
-        # self.corrSignalsDrawer.setVisible(getOpt(lookup='ui,SHOW_CORR_SPOTS'))
-
         '''Show/Hide Primary Tools Buttons'''
-
-        tip = 'Show/Hide Alignment Controls'
-        self._btn_show_hide_ctls = QPushButton('Hide Controls')
-        self._btn_show_hide_ctls.setFixedHeight(18)
-        self._btn_show_hide_ctls.setStyleSheet(lower_controls_style)
-        self._btn_show_hide_ctls.setStatusTip(tip)
-        self._btn_show_hide_ctls.clicked.connect(self._callbk_showHideControls)
-        # self._btn_show_hide_ctls.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        self._btn_show_hide_ctls.setIcon(qta.icon('fa.caret-down', color='#380282'))
-        self._btn_show_hide_ctls.setIconSize(QSize(12, 12))
-        self._btn_show_hide_ctls.setStyleSheet(
-                'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
-
         def fn():
             caller = inspect.stack()[1].function
             if caller != 'updateNotes':
@@ -5170,7 +5251,7 @@ class MainWindow(QMainWindow):
                 self.notes.update()
 
         self.notes = QWidget()
-        self.notes.setFixedHeight(100)
+        # self.notes.setFixedHeight(100)
         self.notes.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.notes.setStyleSheet("""
         color: #f3f6fb; 
@@ -5230,10 +5311,6 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_shader.setIconSize(QSize(12, 12))
         self._btn_show_hide_shader.setStyleSheet(
                 'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
-
-
-
-        dSize = 166
 
         self.detailsTitle = QLabel('Correlation Signals')
         self.detailsTitle.setFixedHeight(13)
@@ -5309,30 +5386,9 @@ class MainWindow(QMainWindow):
         # self.detailsTensor.setLayout(vbl)
 
 
-        # self.correlation_signals = QWidget()
-        self.correlation_signals = QScrollArea()
-        # self.correlation_signals.setMinimumHeight(136) #Important
-        # self.correlation_signals.setStyleSheet('background-color: #222222; color: #f3f6fb; border-radius: 5px; QScrollBar {width:0px;}")')
-        self.correlation_signals.setWidgetResizable(True)
-        w = QWidget()
-        vbl = VBL()
-        vbl.setSpacing(0)
-        vbl.addWidget(self.detailsTitle)
-        vbl.addWidget(self.corrSignalsDrawer)
-        w.setLayout(vbl)
-        # w.setMinimumHeight(80)
-        # self.correlation_signals.setLayout(vbl)
-        # self.correlation_signals.hide()
-        self.correlation_signals.setWidget(w)
-        self.correlation_signals.hide()
-
-
-        # self.detailsWidget = QScrollArea()
-        # self.detailsWidget.setWidgetResizable(True)
-
-
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
+        self.globTabs.setContentsMargins(4,4,4,4)
         self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.globTabs.setStyleSheet('background-color: #222222;')
         self.globTabs.tabBar().setStyleSheet("""
@@ -5397,46 +5453,47 @@ class MainWindow(QMainWindow):
         # self._splitter.setStyleSheet("""
         # QWidget {background: #222222;}
         # QSplitter::handle { background: #339933; margin-left:400px; margin-right:400px;}""")
+
         self._splitter.setStyleSheet("""
-        QWidget {background: #222222;}
-        
         QSplitter {
-          spacing: 0px;
-          padding: 1px;
-          margin: 0px;
+            background-color: #ede9e8;
+            spacing: 0px;
+            padding: 1px;
+            margin: 0px;
         }
         QSplitter::handle {
-          background-color: #555555;
-          border: 0px solid #FAFAFA;
-          spacing: 0px;
-          padding: 0px;
-          margin: 0px;
+            background-color: #555555;
+            border: 0px solid #FAFAFA;
+            spacing: 0px;
+            padding: 0px;
+            margin: 0px;
         }
 
         QSplitter::handle:hover {
-          background-color: #339933;
-          spacing: 0px;
-          padding: 1px;
-          margin: 0px;
+            background-color: #339933;
+            spacing: 0px;
+            padding: 1px;
+            margin: 0px;
         }
         """)
 
-
-
-        # self._splitter.setAutoFillBackground(True)
-        self._splitter.splitterMoved.connect(self.splittersHaveMoved)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel)
+        self.globTabsAndCpanel.setAutoFillBackground(True)
+        self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.globTabsAndCpanel.show()
+        # self._splitter.splitterMoved.connect(self.splittersHaveMoved)
+        self._splitter.addWidget(self.globTabsAndCpanel)                # (0)
         self._splitter.addWidget(self.notes)                # (0)
-        self._splitter.addWidget(self.correlation_signals)  # (1)
         self._splitter.addWidget(self._dev_console)         # (2)
         self._splitter.setContentsMargins(0, 0, 0, 0)
         self._splitter.setHandleWidth(1)
         self._splitter.setCollapsible(0, False)
         self._splitter.setCollapsible(1, False)
         self._splitter.setCollapsible(2, False)
-        # self._splitter.setStretchFactor(0, 0)
-        # self._splitter.setStretchFactor(1, 0)
-        # self._splitter.setStretchFactor(2, 0)
-        self._splitter.hide()
+        self._splitter.setStretchFactor(0, 1)
+        self._splitter.setStretchFactor(1, 1)
+        self._splitter.setStretchFactor(2, 1)
+        # self._splitter.hide()
 
         '''Documentation Panel'''
         self.browser_web = QWebEngineView()
@@ -5488,13 +5545,6 @@ class MainWindow(QMainWindow):
         buttonBrowserRefresh.setFixedSize(QSize(22,22))
         buttonBrowserRefresh.clicked.connect(browser_reload)
 
-        # buttonBrowserViewSource = QPushButton()
-        # buttonBrowserViewSource.setStatusTip('View Source')
-        # buttonBrowserViewSource.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # buttonBrowserViewSource.clicked.connect(browser_view_source)
-        # buttonBrowserViewSource.setFixedSize(QSize(20, 20))
-        # buttonBrowserViewSource.setIcon(qta.icon('ri.code-view', color=ICON_COLOR))
-
         buttonBrowserCopy = QPushButton('Copy')
         buttonBrowserCopy.setStatusTip('Copy Text')
         buttonBrowserCopy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5523,8 +5573,6 @@ class MainWindow(QMainWindow):
         hbl.addWidget(buttonBrowserForward, alignment=left)
         hbl.addWidget(QLabel(' '))
         hbl.addWidget(buttonBrowserRefresh, alignment=left)
-        # hbl.addWidget(QLabel(' '))
-        # hbl.addWidget(buttonBrowserViewSource, alignment=left)
         hbl.addWidget(QLabel(' '))
         hbl.addWidget(buttonBrowserCopy, alignment=left)
         hbl.addWidget(QLabel(' '))
@@ -5538,7 +5586,6 @@ class MainWindow(QMainWindow):
         vbl.addWidget(self.browser_web)
         hbl = HBL()
         hbl.addWidget(self._buttonExitBrowserWeb, alignment=Qt.AlignmentFlag.AlignLeft)
-        # hbl.addWidget(self._readmeButton, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(w)
         browser_bottom_controls = QWidget()
         browser_bottom_controls.setFixedHeight(20)
@@ -5546,49 +5593,22 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-        self.cpanelFrame = QFrame()
-        self.cpanelFrame.setContentsMargins(4,4,4,4)
-        self.cpanelFrame.setStyleSheet('background-color: #222222;')
-        self.setAutoFillBackground(True)
-        vbl = VBL()
-        vbl.addWidget(self.cpanel)
-        self.cpanelFrame.setLayout(vbl)
+        self.dw_corrspots = QDockWidget('Correlation Signals', self._splitter)
+        self.dw_corrspots.dockLocationChanged.connect(lambda area: print(f'dockLocationChanged: {area}'))
+        self.dw_corrspots.featuresChanged.connect(lambda area: print(f'featuresChanged: {area}'))
+        self.dw_corrspots.topLevelChanged.connect(lambda area: print(f'topLevelChanged: {area}'))
+        self.dw_corrspots.visibilityChanged.connect(lambda area: print(f'visibilityChanged: {area}'))
+        self.csWidget = QWidget()
+        self.csWidget.setMinimumHeight(64)
+        self.csWidget.setStyleSheet("background-color: #141414;")
+        self.csWidget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.csWidget.setLayout(self.cs_hbl)
+        self.dw_corrspots.setWidget(self.csWidget)
+        # self.dw_corrspots.setFloating(False)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_corrspots)
+        self.dw_corrspots.hide()
 
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanelFrame)
-        self.globTabsAndCpanel.setAutoFillBackground(True)
-        self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        # self.newMainWidget = VWidget(self.globTabs, self._splitter)
-        self.newMainSplitter = QSplitter(Qt.Orientation.Vertical)
-        self.newMainSplitter .setStyleSheet("""
-        QSplitter::handle:vertical {height: 2px;}
-        QSplitter {
-          spacing: 0px;
-          padding: 0px;
-          margin: 0px;
-        }
-        QSplitter::handle:vertical {
-          background-color: #555555;
-          border: 0px solid #FAFAFA;
-          spacing: 0px;
-          padding: 1px;
-          margin: 0px;
-        }
-        QSplitter::handle:vertical:hover {
-          background-color: #339933;
-        }
-        """)
-        # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: #339933; }""")
-        self.newMainSplitter.setHandleWidth(1)
-        self.newMainSplitter.addWidget(self.globTabsAndCpanel)
-        self.newMainSplitter.addWidget(self._splitter)
-        self.newMainSplitter.splitterMoved.connect(self.splittersHaveMoved)
-        self.newMainSplitter.setCollapsible(0, False)
-        self.newMainSplitter.setCollapsible(1, False)
-        # self.newMainSplitter.setStretchFactor(0, 3)
-        # self.newMainSplitter.setStretchFactor(1, 0)
-
-        self.setCentralWidget(self.newMainSplitter)
+        self.setCentralWidget(self._splitter)
 
 
 
@@ -5750,6 +5770,10 @@ class MainWindow(QMainWindow):
 
 
 
-
+class ExpandingWidget(QWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
