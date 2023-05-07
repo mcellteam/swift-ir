@@ -51,6 +51,8 @@ QDoubleSpinBox {
     border-radius: 4px;
     border: 1px solid #f3f6fb;
     padding: 0px;
+    margin-left: 6px;
+    text-align: center;
 }
 
 QSpinBox {
@@ -59,16 +61,17 @@ QSpinBox {
     border-radius: 4px;
     border: 1px solid #f3f6fb;
     padding: 0px;
+    text-align: center;
 }
 
 /*-----------------------------*/
 QComboBox {
-    color: #f3f6fb;
+    color: #141414;
     border: 1px solid #339933;
     border-radius: 10px;
     padding-left: 6px;
     combobox-popup: 0;
-    background: #141414;
+    background: #f3f6fb;
 }
 QComboBox QAbstractItemView {
     border-bottom-right-radius: 10px;
@@ -203,7 +206,7 @@ QTableWidget::item:selected:!active {
 
 QDialog {
     background-color: #141414;
-	color: #ede9e8;
+	color: #141414;
 	font-size: 11px;
 	font-weight: 600;
     font-family: Tahoma, sans-serif;
@@ -286,9 +289,9 @@ QLabel#red_toolbar_label{
 
 QLabel#validity_label{
     font-size: 11px;
-    color: #ff0000;
+    color: #a30000;
     font-weight: 700;
-    background: #ede9e8;
+    background: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #ff0000;
     font-family: Tahoma, sans-serif;

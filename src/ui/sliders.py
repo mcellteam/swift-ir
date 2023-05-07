@@ -64,14 +64,14 @@ class DoubleSlider(QSlider):
 https://stackoverflow.com/questions/47342158/porting-range-slider-widget-to-pyqt5'''
 
 DEFAULT_CSS = """
-RangeSlider * { border: 0px; padding: 0px; font-size: 7px; }
-RangeSlider #Head { background: #ffffff; }
-RangeSlider #Tail { background: #f3f6fb; }
-RangeSlider #Span { background: #daebfe; }
-RangeSlider #Span:active { background: #daebfe; }
-RangeSlider > QSplitter::handle { background: #1b1e23; }
+RangeSlider * { border: 0px; padding: 0px; font-size: 7px;}
+RangeSlider #Head { background: #206020; }
+RangeSlider #Tail { background: #206020; } 
+RangeSlider #Span { background: #8bb8e8; }
+RangeSlider #Span:active { background: #00FF00; }
+RangeSlider > QSplitter::handle { background: #ede9e8; }
 RangeSlider > QSplitter::handle:vertical { height: 4px; }
-RangeSlider > QSplitter::handle:pressed { background: #969696; }
+RangeSlider > QSplitter::handle:pressed { background: #555555; }
 """
 
 def scale(val, src, dst):
@@ -218,7 +218,7 @@ class RangeSlider(QtWidgets.QWidget, Ui_Form):
         self._handle.setLayout(self._handle_layout)
         self.handle = Handle(self._handle, main=self)
         # self.handle.setTextColor(QtGui.QColor('#1b1e23'))
-        self.handle.setTextColor(QtGui.QColor('#f3f6fb'))
+        self.handle.setTextColor(QtGui.QColor(QtCore.Qt.white))
         self._handle_layout.addWidget(self.handle)
         self._tail_layout = QtWidgets.QHBoxLayout()
         self._tail_layout.setSpacing(0)

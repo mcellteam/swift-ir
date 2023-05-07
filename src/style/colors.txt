@@ -4,10 +4,11 @@
 #004060 - drafting blue
 #808080 - #128 grey
 
-
 #222222 - Neuroglancer grey
 #339933 - Neuroglancer green
 #206020 - Neuroglancer green, darkened
+#66cc66 - Neuroglancer green, lightened, rgba(102, 204, 102, 1)
+#88d788 - Neuroglancer green, even more lightened
 #FFFF66 = Neuroglancer light yellow (text)
 
 #FFFF00 - standard yellow
