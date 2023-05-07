@@ -53,6 +53,7 @@ class OpenProject(QWidget):
         lab = QLabel('Project Management')
         lab.setStyleSheet('font-size: 13px; font-weight: 600;')
 
+
         self.row_height_slider = Slider(self)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         # self.row_height_slider.setValue(self.initial_row_height)
@@ -118,16 +119,18 @@ class OpenProject(QWidget):
         self._buttonOpen = QPushButton('Open Project')
         self._buttonOpen.setEnabled(False)
         self._buttonOpen.clicked.connect(self.open_project_selected)
-        self._buttonOpen.setFixedSize(80, 20)
+        self._buttonOpen.setFixedSize(90, 20)
+        self._buttonOpen.hide()
 
         self._buttonDelete = QPushButton('Delete Project')
         self._buttonDelete.setEnabled(False)
         self._buttonDelete.clicked.connect(self.delete_project)
-        self._buttonDelete.setFixedSize(80, 20)
+        self._buttonDelete.setFixedSize(90, 20)
+        self._buttonDelete.hide()
 
         self._buttonNew = QPushButton('New Project')
         self._buttonNew.clicked.connect(self.new_project)
-        self._buttonNew.setFixedSize(80, 20)
+        self._buttonNew.setFixedSize(90, 20)
 
         # self._buttonNew = QPushButton('Remember')
         # self._buttonNew.setStyleSheet("font-size: 9px;")
@@ -136,6 +139,7 @@ class OpenProject(QWidget):
         # # self._buttonNew.setStyleSheet(w)
 
         self.selectionReadout = QLineEdit()
+
         # self.selectionReadout.setStyleSheet("""
         # QLineEdit {
         #     background-color: #f3f6fb;
@@ -172,36 +176,134 @@ class OpenProject(QWidget):
         hbl.addSpacerItem(self.spacer_item_docs)
 
         self._actions_widget = QWidget()
+        self._actions_widget.setAutoFillBackground(True)
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
+        # self._actions_widget.setStyleSheet("")
+
+
+        # self._actions_widget.setStyleSheet("""
+        # QPushButton {
+        #     font-size: 12px;
+        #     font-weight: 600;
+        #     font-family: Tahoma, sans-serif;
+        #     color: #339933;
+        #     background-color: #ede9e8;
+        #     border-width: 1px;
+        #     border-color: #339933;
+        #     border-style: solid;
+        #     padding: 1px;
+        #     border-radius: 4px;
+        #     outline: none;
+        # }
+        #
+        # QPushButton:disabled {
+        #     border-width: 1px;
+        #     border-color: #dadada;
+        #     border-style: solid;
+        #     background-color: #ede9e8;
+        #     padding: 1px;
+        #     border-radius: 4px;
+        #     color: #dadada;
+        # }
+        # """)
         self._actions_widget.setStyleSheet("""
-        QPushButton {
-            font-size: 12px;
-            font-family: Tahoma, sans-serif;
-            color: #f3f6fb;
-            background-color: #1b1e23;
-            border-width: 1px;
-            border-color: #339933;
-            border-style: solid;
-            padding: 1px;
-            border-radius: 4px;
-            outline: none;
-        }
-        
-        QPushButton:disabled {
-            border-width: 1px;
-            border-color: #dadada;
-            border-style: solid;
-            background-color: #dadada;
-            padding: 1px;
-            border-radius: 4px;
-            color: #ede9e8;
-        }
+/* white pussh buttons */
+
+/*-----QPushButton-----*/
+QPushButton{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: rgb(255,255,255);
+}
+QPushButton::default{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: rgb(255,255,255);
+}
+QPushButton:hover{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(197, 197, 197), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(197, 197, 197));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: rgb(255,255,255);
+}
+QPushButton:pressed{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: rgb(142,142,142);
+}
+QPushButton:disabled{
+    background-color: #dadada;
+
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 5px;
+	color: #ede9e8;
+	padding: 2px;
+	background-color: rgb(142,142,142);
+}
+
+
         """)
+        # self._actions_widget.setStyleSheet("""
+        # QPushButton {
+        #     font-size: 12px;
+        #     font-family: Tahoma, sans-serif;
+        #     color: #f3f6fb;
+        #     background-color: #004060;
+        #     border-width: 1px;
+        #     border-color: #339933;
+        #     border-style: solid;
+        #     padding: 1px;
+        #     border-radius: 4px;
+        #     outline: none;
+        # }
+        #
+        # QPushButton:disabled {
+        #     border-width: 1px;
+        #     border-color: #dadada;
+        #     border-style: solid;
+        #     background-color: #dadada;
+        #     padding: 1px;
+        #     border-radius: 4px;
+        #     color: #ede9e8;
+        # }
+        # """)
 
 
         self._splitter = QSplitter()
-        # self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
@@ -238,22 +340,29 @@ class OpenProject(QWidget):
     def validate_path(self):
         # logger.info(f'caller:{inspect.stack()[1].function}')
         path = self.selectionReadout.text()
-        logger.critical(f'cur text: {path}')
+        logger.info(f'Validating Path : {path}')
         if validate_project_selection(path) or validate_zarr_selection(path) or path == '':
             if validate_zarr_selection(path):
                 self._buttonOpen.setText('Open Zarr')
+                logger.info(f'The requested Zarr IS valid')
             else:
                 self._buttonOpen.setText('Open Project')
+                logger.info(f'The requested project IS valid')
             self.validity_label.hide()
-            self._buttonOpen.setEnabled(True)
+            # self._buttonOpen.setEnabled(True)
+            self._buttonOpen.show()
             if validate_project_selection(path):
-                self._buttonDelete.setEnabled(True)
+                # self._buttonDelete.setEnabled(True)
+                self._buttonDelete.show()
             else:
-                self._buttonDelete.setEnabled(False)
+                # self._buttonDelete.setEnabled(False)
+                self._buttonDelete.hide()
         else:
             self.validity_label.show()
-            self._buttonOpen.setEnabled(False)
-            self._buttonDelete.setEnabled(False)
+            # self._buttonOpen.setEnabled(False)
+            # self._buttonDelete.setEnabled(False)
+            self._buttonOpen.hide()
+            self._buttonDelete.hide()
 
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function

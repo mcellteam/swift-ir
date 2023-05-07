@@ -28,8 +28,6 @@ import multiprocessing
 import numpy as np
 # from guppy import hpy; h=hpy()
 import neuroglancer as ng
-import pyqtgraph.console
-import pyqtgraph as pg
 import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QEventLoop, QRect, QPoint, \
@@ -67,10 +65,7 @@ from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.sliders import DoubleSlider, RangeSlider
 from src.ui.widget_area import WidgetArea
-from src.ui.control_panel import ControlPanel
-from src.ui.file_browser import FileBrowser
-from src.ui.tab_project import ProjectTab
-from src.ui.tab_zarr import ZarrTab
+from src.funcs_image import ImageSize
 from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_open_project import OpenProject
@@ -124,8 +119,6 @@ class MainWindow(QMainWindow):
         self.initStyle()
         self.initShortcuts()
         self.initToolbar()
-        # self.initData()
-        # self.initView()
         self.initLaunchTab()
 
         cfg.event = multiprocessing.Event()
@@ -1243,8 +1236,8 @@ class MainWindow(QMainWindow):
         (3) Sets the input validator on the jump-to lineedit widget'''
         logger.info('updateEnabledButtons >>>>')
         if cfg.data:
-            self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
-            self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
+            # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
+            # self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
             self.gb_ctlActions.setTitle('%s Actions' % cfg.data.scale_pretty())
             # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
             self._skipCheckbox.setEnabled(True)
@@ -1268,7 +1261,7 @@ class MainWindow(QMainWindow):
         if cfg.data:
             # if cfg.data.is_aligned_and_generated(): #0202-
             if cfg.data.is_aligned():
-                self._btn_alignAll.setText('Realign All Sections - %s' % cfg.data.scale_pretty())
+                # self._btn_alignAll.setText('Realign All Sections - %s' % cfg.data.scale_pretty())
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
@@ -1641,7 +1634,7 @@ class MainWindow(QMainWindow):
 
                         cfg.project_tab.detailsSNR.setText(txt)
 
-            self._btn_alignOne.setText('Realign Current Section (#%d)' %cfg.data.zpos)
+            self._btn_alignOne.setText('Realign Section #%d' %cfg.data.zpos)
 
             try:     self._jumpToLineedit.setText(str(cur))
             except:  logger.warning('Current Layer Widget Failed to Update')
@@ -3259,7 +3252,6 @@ class MainWindow(QMainWindow):
         # self._changeScaleCombo.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._changeScaleCombo.setFixedSize(QSize(160, 20))
-
         self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(4, 0, 4, 0)
@@ -3269,26 +3261,16 @@ class MainWindow(QMainWindow):
 
         style = """
         QPushButton {
-            font-size: 12px;
+            font-size: 11px;
             font-family: Tahoma, sans-serif;
-            color: #f3f6fb;
-            background-color: #1b1e23;
+            color: #141414;
+            background-color: #ede9e8;
             border-width: 1px;
             border-color: #339933;
             border-style: solid;
             padding: 1px;
             border-radius: 4px;
             outline: none;
-        }
-        
-        QPushButton:disabled {
-            border-width: 1px;
-            border-color: #dadada;
-            border-style: solid;
-            background-color: #dadada;
-            padding: 1px;
-            border-radius: 4px;
-            color: #ede9e8;
         }
         """
 
@@ -4116,12 +4098,7 @@ class MainWindow(QMainWindow):
 
         debugMenu = self.menu.addMenu('Debug')
 
-        # self.initViewAction = QAction('Fix View', self)
-        # self.initViewAction.triggered.connect(self.initView)
-        # debugMenu.addAction(self.initViewAction)
-
         tracemallocMenu = debugMenu.addMenu('tracemalloc')
-
 
         self.tracemallocStartAction = QAction('Start', self)
         self.tracemallocStartAction.triggered.connect(tracemalloc_start)
@@ -4439,7 +4416,7 @@ class MainWindow(QMainWindow):
         std_input_size = QSize(64, 20)
         # normal_button_size = QSize(68, 28)
         normal_button_size = QSize(76, 30)
-        long_button_size = QSize(180, 16)
+        long_button_size = QSize(120, 18)
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
@@ -4597,7 +4574,7 @@ class MainWindow(QMainWindow):
         tip = 'Align and generate all sections.'
         self._btn_alignAll = QPushButton('Align All')
         self._btn_alignAll.setEnabled(False)
-        self._btn_alignAll.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
+        # self._btn_alignAll.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignAll.setStatusTip(tip)
         self._btn_alignAll.clicked.connect(self.alignAll)
@@ -4607,48 +4584,45 @@ class MainWindow(QMainWindow):
         self._btn_alignOne = QPushButton('Align One')
         self._btn_alignOne.setStatusTip(tip)
         self._btn_alignOne.setEnabled(False)
-        self._btn_alignOne.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
+        # self._btn_alignOne.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.clicked.connect(self.alignOne)
         self._btn_alignOne.setFixedSize(long_button_size)
 
         tip = 'The range of sections to align for the align range button.'
         self.sectionRangeSlider = RangeSlider()
+        self.sectionRangeSlider.setMinimumWidth(120)
         self.sectionRangeSlider.setStatusTip(tip)
         self.sectionRangeSlider.setStyleSheet('border-radius: 2px;')
         self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.sectionRangeSlider.setFixedWidth(100)
-        self.sectionRangeSlider.setFixedWidth(long_button_size.width())
-        self.sectionRangeSlider.setFixedHeight(26)
+        self.sectionRangeSlider.setMinimumWidth(40)
+        self.sectionRangeSlider.setMaximumWidth(140)
+        # self.sectionRangeSlider.setMaximumWidth(long_button_size.width() * 2)
+        self.sectionRangeSlider.setMaximumHeight(30)
         self.sectionRangeSlider.setMin(0)
         self.sectionRangeSlider.setStart(0)
 
         self.startRangeInput = QLineEdit()
         self.startRangeInput.setStyleSheet("background-color: #f3f6fb;")
-        self.startRangeInput.setFixedSize(34,22)
+        self.startRangeInput.setAlignment(Qt.AlignCenter)
+        self.startRangeInput.setFixedSize(30,18)
         self.startRangeInput.setEnabled(False)
 
         self.endRangeInput = QLineEdit()
         self.endRangeInput.setStyleSheet("background-color: #f3f6fb;")
-        self.endRangeInput.setFixedSize(34,22)
+        self.endRangeInput.setAlignment(Qt.AlignCenter)
+        self.endRangeInput.setFixedSize(30,18)
         self.endRangeInput.setEnabled(False)
 
-        self.rangeInputWidget = QWidget()
+        self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(':'), self.endRangeInput)
+        self.rangeInputWidget.setMaximumWidth(140)
         self.rangeInputWidget.setStatusTip(tip)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(2, 0, 2, 0)
-        hbl.setSpacing(0)
-        hbl.addWidget(self.startRangeInput)
-        hbl.addWidget(QLabel(':'))
-        hbl.addWidget(self.endRangeInput)
-        self.rangeInputWidget.setLayout(hbl)
-        self.rangeInputWidget.setMaximumWidth(60)
-        self.rangeInputWidget.setFixedHeight(18)
 
         def updateRangeButton():
             a = self.sectionRangeSlider.start()
             b = self.sectionRangeSlider.end()
-            self._btn_alignRange.setText('Realign Sections #%d -> #%d' % (a,b))
+            self._btn_alignRange.setText('Realign #%d to #%d' % (a,b))
 
         self.sectionRangeSlider.startValueChanged.connect(lambda val: self.startRangeInput.setText(str(val)))
         self.sectionRangeSlider.startValueChanged.connect(updateRangeButton)
@@ -4659,7 +4633,7 @@ class MainWindow(QMainWindow):
 
         self._btn_alignRange = QPushButton('Realign Range')
         self._btn_alignRange.setEnabled(False)
-        self._btn_alignRange.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
+        # self._btn_alignRange.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignRange.setStatusTip(tip)
         self._btn_alignRange.clicked.connect(self.alignRange)
@@ -4697,8 +4671,8 @@ class MainWindow(QMainWindow):
 
         tip = "Recompute cumulative affine and generate new images" \
               "based on the current Null Bias and Bounding Box presets."
-        self._btn_regenerate = QPushButton('Regenerate')
-        self._btn_regenerate.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414; ")
+        self._btn_regenerate = QPushButton('Regenerate All')
+        # self._btn_regenerate.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414; ")
         self._btn_regenerate.setEnabled(False)
         self._btn_regenerate.setStatusTip(tip)
         self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale))
@@ -4716,7 +4690,7 @@ class MainWindow(QMainWindow):
         self._btn_alignAll.setAutoFillBackground(True)
         fl = QFormLayout()
         # fl.setAlignment(Qt.AlignTop)
-        fl.setContentsMargins(0,0,0,0)
+        fl.setContentsMargins(4,4,4,4)
         fl.setSpacing(6)
         fl.addWidget(self._btn_regenerate)
         fl.addWidget(self._btn_alignOne)
@@ -4726,25 +4700,33 @@ class MainWindow(QMainWindow):
         self.cpButtonsLeft.setLayout(fl)
 
         self.cpButtonsRight = QWidget()
-        fl.setContentsMargins(0,0,0,0)
+        fl.setContentsMargins(4,4,4,4)
         fl = QFormLayout()
         fl.setSpacing(6)
-        range_widget = HWidget(QLabel('Range:'), self.rangeInputWidget, self.sectionRangeSlider)
-        range_widget.layout.setSpacing(4)
-        range_widget.layout.addStretch()
+        range_widget = HWidget(QLabel('Range:'), self.rangeInputWidget, ExpandingWidget(self))
+        # range_widget.layout.setSpacing(4)
+        # range_widget.layout.addStretch()
         range_widget.setMaximumWidth(400)
         fl.addWidget(range_widget)
+        fl.addWidget(self.sectionRangeSlider)
         # fl.addRow('Range:', range_widget)
-        fl.addWidget(self._btn_alignRange)
+        fl.addWidget(HWidget(self._btn_alignRange, ExpandingWidget(self)))
         self.cpButtonsRight.setLayout(fl)
 
         self.gb_ctlActions = QGroupBox("Scale Actions")
-        self.gb_ctlActions.setFixedWidth(420)
+        self.gb_ctlActions.setFixedWidth(500)
         self.gb_ctlActions.setLayout(HBL(self.cpButtonsLeft, self.cpButtonsRight))
         self.gb_ctlActions.layout().setSpacing(0)
 
         style = """
             QWidget{
+                background-color: #222222;
+            }
+            QPushButton {
+                background-color: #444444;
+                font-size: 11px;
+            }
+            QPushButton:disabled {
                 background-color: #222222;
             }
             QLabel {
@@ -4788,40 +4770,20 @@ class MainWindow(QMainWindow):
                 font-weight: bold;
                 border: 1px solid #ede9e8;
                 border-radius: 4px;
-                padding: 6px;
+                padding: 4px;
                 margin-top: 6px;
                 margin-bottom: 4px;
             }
 
             QGroupBox::title {
+                font-size: 14px;
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 left: 4px;
                 padding-left: 2px;
                 padding-right: 4px;
                 padding-top: -2px;
-                padding-bottom: 2px;
-            }
-            
-            QGroupBox::indicator {
-                margin-left: 2px;
-                margin-top: 2px;
-                padding: 0;
-                height: 14px;
-                width: 14px;
-            }
-
-
-        """
-
-        """
-                    QGroupBox {
-                color: #ede9e8;
-                border: 2px solid #ede9e8;
-            }
-            QGroupBox::title {
-                color: #ede9e8;
-                font-weight: 600;
+                padding-bottom: 6px;
             }
         """
 
@@ -5454,6 +5416,7 @@ class MainWindow(QMainWindow):
         # QWidget {background: #222222;}
         # QSplitter::handle { background: #339933; margin-left:400px; margin-right:400px;}""")
 
+        #ForNow #0506
         self._splitter.setStyleSheet("""
         QSplitter {
             background-color: #ede9e8;
@@ -5777,3 +5740,13 @@ class ExpandingWidget(QWidget):
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
+
+
+'''
+#indicators css
+
+QGroupBox::indicator:unchecked {
+    image: url(:/images/checkbox_unchecked.png);
+}
+
+'''
