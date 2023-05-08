@@ -1,8 +1,10 @@
-#161c20 - dark charcoal
-#141414 - Chinese Black (darker than Duron)
-#f3f6fb - New Snow White (https://www.color-name.com/snow-white.color)
-#004060 - drafting blue
 #808080 - #128 grey
+#004060 - drafting blue
+#a30000 - dark candy apple red
+#161c20 - dark charcoal
+#f3f6fb - New Snow White (https://www.color-name.com/snow-white.color)
+#ede9e8 - my dirty white
+#141414 - Chinese Black (darker than Duron)
 #222222 - Neuroglancer grey
 #339933 - Neuroglancer green
 #206020 - Neuroglancer green, darkened
@@ -20,15 +22,12 @@
 #380282 - indigo
 #ebecf0 - "bright" grey
 #ffcccb - very light red
-#ede9e8 - my dirty white
 #708090 - (light) slate grey
 #39ff14 - neon green
 #00BF00 - pure green
-#969696 - medium grey
 #0096ff - bright blue
 #003333 - dark green
 #dadada - light grey
-#a30000 - dark candy apple red
 
 https://xkcd.com/color/rgb/
 

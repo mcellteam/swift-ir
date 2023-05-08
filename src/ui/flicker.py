@@ -21,15 +21,17 @@ class Flicker(QLabel):
         self.border_color = '#000000'
         self.showBorder = False
         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.timer = QTimer(self)
-        self.timer.setInterval(1000)
+        self.timer.setInterval(500)
         self.timer.timeout.connect(self.onTimer)
         self.a = None
         self.b = None
         self.series = None
         self.cur = 0
         self._isPlaying = False
+        self.setMinimumSize(QSize(32,32))
 
     def set(self):
         self.setPixmap(QPixmap(self.series[self.cur]))

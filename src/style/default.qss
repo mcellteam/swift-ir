@@ -16,6 +16,9 @@ QMainWindow::separator {
 
 QMainWindow::separator:hover {
     background: #339933;
+    width: 2px; /* when vertical */
+    height: 2px; /* when horizontal */
+    padding: 2px;
 }
 
 
@@ -246,24 +249,7 @@ QPushButton:disabled {
 	color: #454545;
 }
 
-QTableWidget{
-    font-size: 11px;
-    font-weight: 600;
 
-    border-radius: 0px;
-
-}
-
-QTableWidget::item:selected {
-    background-color: #dadada;
-    border-radius: 0px;
-}
-
-QTableWidget::item {
-        color: #141414;
-        background-color: #ede9e8;
-        border-radius: 0px;
-}
 
 
 
@@ -272,8 +258,6 @@ QDialog {
 	color: #141414;
 	font-size: 11px;
 	font-weight: 600;
-
-
     border-color: #ede9e8;
     border-width: 1px;
     border-radius: 0px;
@@ -293,12 +277,7 @@ QTabBar::tab {
 
 }
 
-QTabWidget::pane {
-    border: 1px solid #ff9933;
-    margin-left: 1px;
-    margin-right: 1px;
-    border-bottom-right-radius: 4px;
-}
+
 
 QTabWidget#project_tabs{
     height: 10px;
@@ -380,15 +359,19 @@ QHeaderView::section {
 
 QProgressBar {
 
-    font-size: 10px;
-
-    border: 1px solid #ede9e8;
-    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 0px solid #222222;
+    border-radius: 0px;
     text-align: center;
 
 }
 
-/* QProgressBar::chunk { background-color: #339933; }*/
+QProgressBar::chunk {
+    /*border: 1px solid #161c20;*/
+    background-color: #339933;
+    margin: 1px;
+}
 
 /*
 QProgressBar::chunk {

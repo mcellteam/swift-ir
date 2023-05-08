@@ -32,7 +32,6 @@ from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
-from src.ui.toggle_animated import AnimatedToggle
 from src.ui.joystick import Joystick
 from src import DataModel
 
@@ -749,7 +748,6 @@ class ProjectTab(QWidget):
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
 
             self.spinbox_whitening.setValue(float(cfg.data.whitening()))
-            self.toggle_showInstructionOverlay.setChecked(True)
 
             self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
 
@@ -1143,14 +1141,7 @@ class ProjectTab(QWidget):
         self.AS_swim_window_widget = HWidget(self.slider_AS_SWIM_window, self.AS_SWIM_window_le)
         self.AS_2x2_swim_window_widget = HWidget(self.slider_AS_2x2_SWIM_window, self.AS_2x2_SWIM_window_le)
 
-        self.toggle_showInstructionOverlay = AnimatedToggle()
-        self.toggle_showInstructionOverlay.setFixedSize(42,22)
-        def fn():
-            if cfg.data.method() in ('manual-hint', 'manual-strict'):
-                isChecked = self.toggle_showInstructionOverlay.isChecked()
-                setData('state,stage_viewer,show_overlay_message', isChecked)
-                self.msg_MAinstruct.setVisible(isChecked)
-        self.toggle_showInstructionOverlay.toggled.connect(fn)
+
 
         # colors = ['#75bbfd', '#e50000', '#137e6d', '#efb435']
         clr = {'ul': '#e50000', 'ur': '#efb435', 'll': '#137e6d', 'lr': '#acc2d9'}
@@ -1207,7 +1198,6 @@ class ProjectTab(QWidget):
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
         self.fl_MA_settings.addRow("SWIM Regions", HWidget(self.Q_widget,ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
-        # self.fl_MA_settings.addRow("Show Instruction Overlay", self.toggle_showInstructionOverlay)
         # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
 
@@ -1611,11 +1601,8 @@ class ProjectTab(QWidget):
 
         # TOOLBARS
 
-        # self._highContrastNgAction = QPushButton()
         self._highContrastNgAction = QAction()
         self._highContrastNgAction.setStatusTip('Toggle High Contrast Mode')
-        # self._highContrastNgAction.setFixedSize(16, 16)
-        # self._highContrastNgAction.setIconSize(QSize(14,14))
         self._highContrastNgAction.setIcon(qta.icon("mdi.theme-light-dark", color='#ede9e8'))
         self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
         self._highContrastNgAction.setCheckable(True)
@@ -1648,56 +1635,56 @@ class ProjectTab(QWidget):
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
 
         self.comboNgLayout = QComboBox(self)
-        self.comboNgLayout.setStyleSheet("""
-        QComboBox {
-            padding-left: 6px;
-            border: 1px solid #339933; 
-            border-radius: 4px;
-            color: #f3f6fb;
-            combobox-popup: 0;
-            background: transparent;
-        }
-        QComboBox QAbstractItemView {
-            border-bottom-right-radius: 10px;
-            border-bottom-left-radius: 10px;
-            border-top-right-radius: 0px;
-            border-top-left-radius: 0px;
-        }
-        QComboBox:hover {
-            border: 2px solid #339933;
-        }
-        QListView {
-            color: #f3f6fb;
-            border: 1px solid #339933;
-            border-top: 0px solid #339933;
-            border-radius: 10px;
-            background-color: rgba(0, 0, 0, 200)
-        }
-        QListView::item:selected
-        {
-            color: #31cecb;
-            background-color: #454e5e;
-            border: 2px solid magenta;
-            border-radius: 10px;
-        }
-        QListView::item:!selected
-        {
-            color:white;
-            background-color: transparent;
-            border: none;
-            padding-left : 10px;
-        
-        }
-        QListView::item:!selected:hover
-        {
-            color: #bbbcba;
-            background-color: #454e5e;
-            border: transparent;
-            padding-left : 10px;
-            border-radius: 10px;
-        }
-        """)
-        self.comboNgLayout.setFixedSize(60, 16)
+        # self.comboNgLayout.setStyleSheet("""
+        # QComboBox {
+        #     padding-left: 6px;
+        #     border: 1px solid #339933;
+        #     border-radius: 4px;
+        #     color: #f3f6fb;
+        #     combobox-popup: 0;
+        #     background: transparent;
+        # }
+        # QComboBox QAbstractItemView {
+        #     border-bottom-right-radius: 10px;
+        #     border-bottom-left-radius: 10px;
+        #     border-top-right-radius: 0px;
+        #     border-top-left-radius: 0px;
+        # }
+        # QComboBox:hover {
+        #     border: 2px solid #339933;
+        # }
+        # QListView {
+        #     color: #f3f6fb;
+        #     border: 1px solid #339933;
+        #     border-top: 0px solid #339933;
+        #     border-radius: 10px;
+        #     background-color: rgba(0, 0, 0, 200)
+        # }
+        # QListView::item:selected
+        # {
+        #     color: #31cecb;
+        #     background-color: #454e5e;
+        #     border: 2px solid magenta;
+        #     border-radius: 10px;
+        # }
+        # QListView::item:!selected
+        # {
+        #     color:white;
+        #     background-color: transparent;
+        #     border: none;
+        #     padding-left : 10px;
+        #
+        # }
+        # QListView::item:!selected:hover
+        # {
+        #     color: #bbbcba;
+        #     background-color: #454e5e;
+        #     border: transparent;
+        #     padding-left : 10px;
+        #     border-radius: 10px;
+        # }
+        # """)
+        self.comboNgLayout.setFixedSize(64, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
@@ -1757,11 +1744,12 @@ class ProjectTab(QWidget):
             
         }
         """)
-        self.labShowHide = QLabel('Show/Hide: ')
+        self.labShowHide = QLabel('Display: ')
         self.labShowHide.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
         self.labNgLayout = QLabel('Layout: ')
         self.labNgLayout.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
-        self.labScaleStatus = QLabel('Scale Status: ')
+        # self.labScaleStatus = QLabel('Scale Status: ')
+        self.labScaleStatus = QLabel('Status: ')
         self.labScaleStatus.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
 
         # self.showHudOverlayAction = QAction('HUD', self)
@@ -1793,6 +1781,9 @@ class ProjectTab(QWidget):
 
         # test = QPushButton()
 
+        self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
+        self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
+        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
@@ -1803,9 +1794,6 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSectionDetailsAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowRuntimesAction)
-        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
-        self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
@@ -1835,20 +1823,10 @@ class ProjectTab(QWidget):
                 self.shaderAction.setStatusTip('Hide Brightness & Contrast Shaders')
         self.shaderAction.triggered.connect(fn)
 
-
-        self.signalsAction = QAction()
-        self.signalsAction.setCheckable(True)
-        self.signalsAction.setText('Signals')
-        self.signalsAction.setIcon(qta.icon('mdi.camera-metering-spot', color='#ede9e8'))
-        self.signalsAction.triggered.connect(cfg.main_window._callbk_showHideCorrSpots)
-
-
         self.w_ng_extended_toolbar.addActions([
             self.shaderAction,
-            self.signalsAction,
             self._highContrastNgAction
         ])
-
 
         # self.w_ng_display_ext = VWidget()
         # # self.w_ng_display_ext.setStyleSheet('background-color: #222222; color: #f3f6fb;')
@@ -2373,8 +2351,6 @@ class ProjectTab(QWidget):
             self.slider_MA_SWIM_window.setValue(int(cfg.data.manual_swim_window_px()))
 
             self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
-
-            self.toggle_showInstructionOverlay.setChecked(getData('state,stage_viewer,show_overlay_message'))
 
             if cfg.data.current_method == 'grid-custom':
                 grid = cfg.data.grid_custom_regions
