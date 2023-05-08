@@ -112,7 +112,7 @@ class OpenProject(QWidget):
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
-        button_size = QSize(80,18)
+        button_size = QSize(76,20)
 
         self._buttonOpen = QPushButton('Open Project')
         self._buttonOpen.setEnabled(False)
@@ -206,30 +206,7 @@ class OpenProject(QWidget):
         # }
         # """)
         self._actions_widget.setStyleSheet(style)
-        self._actions_widget.setStyleSheet("""
-        QPushButton {
-            font-size: 12px;
-            font-family: Tahoma, sans-serif;
-            color: #f3f6fb;
-            background-color: #004060;
-            border-width: 1px;
-            border-color: #339933;
-            border-style: solid;
-            padding: 1px;
-            border-radius: 4px;
-            outline: none;
-        }
-
-        QPushButton:disabled {
-            border-width: 1px;
-            border-color: #dadada;
-            border-style: solid;
-            background-color: #dadada;
-            padding: 1px;
-            border-radius: 4px;
-            color: #ede9e8;
-        }
-        """)
+        self._actions_widget.setStyleSheet(button_gradient_style)
 
 
         self._splitter = QSplitter()
@@ -810,7 +787,7 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(8, 80)
         self.table.setColumnWidth(9, 120)
         # self.row_height_slider.setValue(self.initial_row_height)
-        self.updateRowHeight(self.ROW_HEIGHT)
+        self.updateRowHeight(self.ROW_HEIGHT) #0508-
 
 
     def get_data(self):
@@ -1015,6 +992,59 @@ QPushButton:disabled{
 	color: #ede9e8;
 	padding: 2px;
 	background-color: rgb(142,142,142);
+}
+
+"""
+
+button_gradient_style = """
+QPushButton{
+    font-size: 11px;
+	border-style: solid;
+	border-color: #c7c7c7;
+	border-width: 1px;
+	border-radius: 2px;
+	background-color: #ede9e8;
+}
+QPushButton:pressed{
+	border-style: inset;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+}
+QPushButton:hover{
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 2px;
+	color: #161c20;
+	padding: 2px;
+	background-color: #ede9e8;
+	border-color: #778899;
+
+}
+QPushButton:disabled{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	color: #808086;
+	padding: 2px;
+	background-color: #ebecf0;
+}
+QPushButton::default{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	color: #161c20;
+	padding: 2px;
+	background-color: #daebfe;
 }
 
 """

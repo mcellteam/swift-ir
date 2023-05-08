@@ -68,9 +68,9 @@ QWidget {
 QDockWidget {
     font-weight: 600;
     color: #ede9e8;
-    border: 1px solid #ede9e8;
-    titlebar-close-icon: url(close.png);
-    titlebar-normal-icon: url(undock.png);
+    border: 0px solid #ede9e8;
+    /*titlebar-close-icon: url(close.png);
+    titlebar-normal-icon: url(undock.png);*/
 }
 QDockWidget::title {
     text-align: left; /* align the text to the left */
@@ -81,14 +81,19 @@ QDockWidget::title {
     margin: 0px;
     font-weight: 600;
 }
+  QDockWidget::close-button, QDockWidget::float-button {
+      border: 1px solid transparent;
+      background: #ede9e8;
+      padding: 0px;
+  }
 
-QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-    background: #ede9e8;
-}
+  QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+      background: gray;
+  }
 
-QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
-    padding: 1px -1px -1px 1px;
-}
+  QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+      padding: 1px -1px -1px 1px;
+  }
 
 
 
@@ -97,7 +102,7 @@ QDoubleSpinBox {
     background-color: #f3f6fb;
     font-size: 11px;
     border-radius: 3px;
-    border: 1px solid #141414;
+    border: 1px solid #c7c7c7;
     padding: 0px;
     text-align: center;
 }
@@ -110,7 +115,7 @@ QSpinBox {
     background-color: #f3f6fb;
     font-size: 11px;
     border-radius: 3px;
-    border: 1px solid #141414;
+    border: 1px solid #c7c7c7;
     padding: 0px;
     text-align: center;
 }
@@ -122,7 +127,7 @@ QSpinBox:focus {
 QComboBox {
     color: #141414;
     background-color: #f3f6fb;
-    border: 1px solid #141414;
+    border: 1px solid #c7c7c7;
     border-radius: 10px;
     padding-left: 6px;
     combobox-popup: 0;
@@ -135,7 +140,7 @@ QComboBox:focus {
 QLineEdit {
     color: #141414;
     background-color: #f3f6fb;
-    border: 1px solid #141414;
+    border: 1px solid #c7c7c7;
 	selection-background-color: #daebfe;
 	/*background:#daebfe;*/
 	font-size: 11px;
@@ -186,25 +191,15 @@ QListView::item:!selected:hover
     border-radius: 10px;
 }
 */
-/*-----------------------------*/
 
 
 QLabel {
     font-size: 11px;
-
     border-radius: 1px;
     border-width: 0px;
 }
 
-QCheckBox::indicator {
-    border: 1px solid #ede9e8;
-    /*background: #ffffff;*/
 
-}
-QCheckBox {
-    font-size: 11px;
-
-}
 
 QToolButton::menu-button:pressed {
         padding: 4px;

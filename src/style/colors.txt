@@ -28,6 +28,7 @@
 #0096ff - bright blue
 #003333 - dark green
 #dadada - light grey
+#FFE873 - Shandy (Python yellow)
 
 https://xkcd.com/color/rgb/
 
