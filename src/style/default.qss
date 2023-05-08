@@ -9,42 +9,45 @@ QMainWindow {
 }
 
 QMainWindow::separator {
-    background: #dadada;
-    width: 1px; /* when vertical */
-    height: 1px; /* when horizontal */
-}
-
-QMainWindow::separator:hover {
-    background: #339933;
-    width: 2px; /* when vertical */
-    height: 2px; /* when horizontal */
-    padding: 2px;
-}
-
-
-
-/*
-QSplitter {
-    background-color: #ede9e8;
-    spacing: 0px;
-    padding: 1px;
-    margin: 0px;
-}
-QSplitter::handle {
-    background-color: #ede9e8;
-    border: 0px solid #FAFAFA;
+    background-color: #161c20;
+    border-width: 0px;
     spacing: 0px;
     padding: 0px;
     margin: 0px;
 }
 
-QSplitter::handle:hover {
+QMainWindow::separator:hover {
     background-color: #339933;
     spacing: 0px;
-    padding: 5px;
+    padding: 1px;
+    margin: 0px;
+}
+
+
+
+QSplitter {
+    /*background-color: #161c20;*/
+    spacing: 0px;
+    padding: 1px;
+    margin: 0px;
+}
+/*
+QSplitter::handle {
+    background-color: #161c20;
+    border-width: 0px;
+    spacing: 0px;
+    padding: 0px;
     margin: 0px;
 }
 */
+
+QSplitter::handle:hover {
+    background-color: #339933;
+    spacing: 0px;
+    padding: 2px;
+    margin: 0px;
+}
+
 QMessageBox {
     background-color: #222222;
 }
@@ -83,12 +86,12 @@ QDockWidget::title {
 }
   QDockWidget::close-button, QDockWidget::float-button {
       border: 1px solid transparent;
-      background: #ede9e8;
+      background: none;
       padding: 0px;
   }
 
   QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-      background: gray;
+      background: #ede9e8;
   }
 
   QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
@@ -223,6 +226,7 @@ QPushButton {
 */
 
 /*-----QPushButton-----*/
+/*
 QPushButton {
     font-size: 12px;
 
@@ -243,6 +247,7 @@ QPushButton:disabled {
 	border-radius: 4px;
 	color: #454545;
 }
+*/
 
 
 

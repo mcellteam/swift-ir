@@ -12,7 +12,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel,
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog
 from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize
-from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence
+from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
 
 from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
@@ -45,13 +45,15 @@ class OpenProject(QWidget):
         self.user_projects = UserProjects(parent=self)
         self.initUI()
         self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
+        # p = self.palette()
+        # p.setColor(self.backgroundRole(), QColor('#ede9e8'))
 
     def initUI(self):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
         # lab = QLabel('Saved AlignEM-SWiFT Projects:')
         lab = QLabel('Project Management')
-        lab.setStyleSheet('font-size: 13px; font-weight: 600;')
+        lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
 
 
         self.row_height_slider = Slider(self)
@@ -85,7 +87,7 @@ class OpenProject(QWidget):
         self.new_project_header = QLabel()
         self.new_project_header.setAlignment(Qt.AlignTop)
         self.new_project_header.setMinimumHeight(28)
-        self.new_project_header.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px;')
+        self.new_project_header.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #161c20;')
         self.new_project_header.hide()
 
         self.vbl_projects = QVBoxLayout()
@@ -210,11 +212,11 @@ class OpenProject(QWidget):
 
 
         self._splitter = QSplitter()
-        self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        # self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
-        self._splitter.setSizes([650, 350])
+        self._splitter.setSizes([700, 300])
 
         self.vbl_main = VBL()
         self.vbl_main.addWidget(self._splitter)
@@ -298,7 +300,7 @@ class OpenProject(QWidget):
         cfg.main_window.tell('New Project Path:')
         self.name_dialog = QFileDialog()
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #141414; """)
+        self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20; """)
         # self.vbl_projects.addWidget(self.name_dialog)
         self.vbl_main.addWidget(self.name_dialog)
         # self.layout.addWidget(self.name_dialog)
@@ -382,7 +384,7 @@ class OpenProject(QWidget):
             cfg.main_window.set_status('New Project (3/3) - Global Configuration')
             dialog = NewConfigureProjectDialog(parent=self)
             dialog.setWindowFlags(Qt.FramelessWindowHint)
-            dialog.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
+            dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
             self.vbl_main.addWidget(dialog)
 
             result = dialog.exec()
@@ -421,7 +423,7 @@ class OpenProject(QWidget):
         '''Dialog for importing images. Returns list of filenames.'''
         dialog = QFileDialogPreview()
         dialog.setWindowFlags(Qt.FramelessWindowHint)
-        dialog.setStyleSheet("""background-color: #ede9e8; color: #141414;""")
+        dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
 
         # self.layout.addWidget(dialog)
         # self.vbl_projects.addWidget(dialog)
@@ -669,7 +671,7 @@ class UserProjects(QWidget):
         # self.table.setShowGrid(False)
         self.table.setSortingEnabled(True)
         self.table.setWordWrap(True)
-        # self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setStretchLastSection(True)
         # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -749,7 +751,7 @@ class UserProjects(QWidget):
             "Location"])
 
         header = self.table.horizontalHeader()
-        header.setFrameStyle(QFrame.Box | QFrame.Plain)
+        # header.setFrameStyle(QFrame.Box | QFrame.Plain)
         # header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
         self.table.setHorizontalHeader(header)
 
