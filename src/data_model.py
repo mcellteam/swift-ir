@@ -907,6 +907,8 @@ class DataModel:
         if l == None: l = self.zpos
         if method == None:
             method = self.current_method
+        if self.zpos == 0:
+            return []
         try:
             return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
             # return self.method_results(s=s, l=l)['snr']

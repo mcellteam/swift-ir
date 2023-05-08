@@ -389,7 +389,7 @@ class MainWindow(QMainWindow):
         #             self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
 
         caller = inspect.stack()[1].function
-        logger.info("updateCorrSignalsDrawer [caller: %s] >>>>" % caller)
+        logger.critical("updateCorrSignalsDrawer [caller: %s] >>>>" % caller)
 
         thumbs = cfg.data.get_signals_filenames()
         logger.info('thumbs: %s' % str(thumbs))
@@ -415,6 +415,7 @@ class MainWindow(QMainWindow):
                 if i < n:
                     # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
                     try:
+
                         self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
                         self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
                     except:
@@ -426,48 +427,6 @@ class MainWindow(QMainWindow):
                     self.corrSignalsList[i].hide()
 
         logger.info("<<<< updateCorrSignalsDrawer")
-
-
-
-    def clearCorrSpotsDrawer(self):
-        logger.info('')
-        if self._isProjectTab():
-            snr_vals = cfg.data.snr_components()
-            thumbs = cfg.data.get_signals_filenames()
-            n = len(thumbs)
-            # logger.info('thumbs: %s' % str(thumbs))
-            for i in range(7):
-                self.corrSignalsList[i].hide()
-                # h = max(self.dw_corrspots_layout.height() - 38, 64)
-                # self.corrSignalsList[i].setFixedSize(h, h)
-                # if i < n:
-                #     # logger.info('i = %d, name = %s' %(i, str(thumbs[i])))
-                #     try:
-                #         if snr_vals:
-                #             self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
-                #         else:
-                #             self.corrSignalsList[i].set_data(path=thumbs[i], snr=0.0)
-                #     except:
-                #         # print_exception()
-                #         self.corrSignalsList[i].set_no_image()
-                #     self.corrSignalsList[i].show()
-                # else:
-                #     self.corrSignalsList[i].hide()
-
-
-    # def get_viewers(self):
-    #     logger.info('')
-    #     viewers = []
-    #     if self._isProjectTab():
-    #         if getData('state,manual_mode'):
-    #             viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.project_tab.MA_viewer_stage])
-    #             # return [cfg.baseViewer, cfg.refViewer]
-    #         tab = cfg.project_tab._tabs.currentIndex()
-    #         if tab == 0:
-    #             viewers.extend([cfg.emViewer])
-    #         elif tab == 3:
-    #             viewers.extend([cfg.project_tab.snrViewer])
-    #     return viewers
 
 
     def _callbk_showHidePython(self):
@@ -492,12 +451,22 @@ class MainWindow(QMainWindow):
         self.hudButton.setToolTip(('Hide Head-up Display Tool Window', 'Show Head-up Display Tool Window')[self.dw_monitor.isHidden()])
 
     def _callbk_showHideSignals(self):
+        logger.info('')
+        if not self._isProjectTab():
+            self.dw_corrspots.hide()
+            return
         self.dw_corrspots.setHidden(not self.dw_corrspots.isHidden())
         self.csButton.setText((' Hide', ' Signals')[self.dw_corrspots.isHidden()])
         self.csButton.setStatusTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()])
         self.csButton.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()])
+        if self.dw_corrspots.isVisible():
+            self.updateCorrSignalsDrawer()
 
     def _callbk_showHideFlicker(self):
+        logger.info('')
+        if not self._isProjectTab():
+            self.dw_flicker.hide()
+            return
         self.dw_flicker.setHidden(not self.dw_flicker.isHidden())
         self.flickerButton.setText((' Hide', ' Flicker')[self.dw_flicker.isHidden()])
         self.flickerButton.setStatusTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()])
@@ -1388,7 +1357,7 @@ class MainWindow(QMainWindow):
             cur = cfg.data.zpos
             if self.notes.isVisible():
                 self.updateNotes()
-                
+
             if self.dw_flicker.isVisible():
                 self.flicker.set_position(cfg.data.zpos)
 
@@ -3063,28 +3032,28 @@ class MainWindow(QMainWindow):
 
         style = """
         QPushButton {
-            color: #ede9e8;
-            background-color: #161c20;
+            color: #161c20;
+            background-color: #dadada;
             border-width: 1px;
-            border-color: #161c20;
+            border-color: #c7c7c7;
             border-style: solid;
-            padding: 1px;
+            margin: 1px;
             border-radius: 4px;
-            outline: none;
             font-size: 10px;
         }
-        QPushButton:pressed { background-color: red; }
+        QPushButton:pressed { border-color: #339933; }
         """
         self._btn_refreshTab = QPushButton()
         # self._btn_refreshTab.setStyleSheet("background-color: #161c20;")
         self._btn_refreshTab.setStyleSheet(style)
         self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
         self._btn_refreshTab.setFixedSize(18,18)
-        self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#ede9e8'))
+        self._btn_refreshTab.setIconSize(QSize(14,14))
+        self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#161c20'))
         self._btn_refreshTab.clicked.connect(self.refreshTab)
         self._btn_refreshTab.setStatusTip('Refresh')
 
-        tb_button_size = QSize(50,14)
+        tb_button_size = QSize(58,18)
 
         tip = 'Show/Hide Notepad Tool Window'
         self.notesButton = QPushButton(' Notes')
@@ -3092,6 +3061,7 @@ class MainWindow(QMainWindow):
         self.notesButton.setStatusTip(tip)
         self.notesButton.setToolTip(tip)
         self.notesButton.setFixedSize(tb_button_size)
+        self.notesButton.setIconSize(QSize(14,14))
         self.notesButton.setIcon(QIcon('src/resources/notepad-icon.png'))
         self.notesButton.clicked.connect(self._callbk_showHideNotes)
 
@@ -3101,6 +3071,7 @@ class MainWindow(QMainWindow):
         self.pythonButton.setToolTip(tip)
         self.pythonButton.setStatusTip(tip)
         self.pythonButton.setFixedSize(tb_button_size)
+        self.pythonButton.setIconSize(QSize(14,14))
         self.pythonButton.setIcon(QIcon('src/resources/python-icon.png'))
         self.pythonButton.clicked.connect(self._callbk_showHidePython)
 
@@ -3110,7 +3081,9 @@ class MainWindow(QMainWindow):
         self.hudButton.setToolTip(tip)
         self.hudButton.setStatusTip(tip)
         self.hudButton.setFixedSize(tb_button_size)
+        self.hudButton.setIconSize(QSize(14,14))
         # self.hudButton.setIcon(QIcon('src/resources/python-icon.png'))
+        self.hudButton.setIcon(qta.icon("mdi.monitor", color='#161c20'))
         self.hudButton.clicked.connect(self._callbk_showHideHud)
 
         tip = 'Show/Hide Flicker Tool Window'
@@ -3119,7 +3092,9 @@ class MainWindow(QMainWindow):
         self.flickerButton.setToolTip(tip)
         self.flickerButton.setStatusTip(tip)
         self.flickerButton.setFixedSize(tb_button_size)
+        self.flickerButton.setIconSize(QSize(14,14))
         # self.flickerButton.setIcon(QIcon('src/resources/python-icon.png'))
+        self.flickerButton.setIcon(qta.icon("mdi.reiterate", color='#161c20'))
         self.flickerButton.clicked.connect(self._callbk_showHideFlicker)
 
         tip = 'Show/Hide Correlation Signals Tool Window'
@@ -3128,15 +3103,18 @@ class MainWindow(QMainWindow):
         self.csButton.setToolTip(tip)
         self.csButton.setStatusTip(tip)
         self.csButton.setFixedSize(tb_button_size)
+        self.csButton.setIconSize(QSize(14,14))
+        self.csButton.setIcon(qta.icon("fa.signal", color='#161c20'))
         self.csButton.clicked.connect(self._callbk_showHideSignals)
 
         self._detachNgButton = QPushButton()
         # self._detachNgButton.setStyleSheet("background-color: #161c20;")
         self._detachNgButton.setStyleSheet(style)
         self._detachNgButton.setFixedSize(18,18)
-        self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color='#ede9e8'))
+        self._detachNgButton.setIconSize(QSize(14,14))
+        self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color='#161c20'))
         # self._detachNgButton.setIcon(QIcon('src/resources/popout-icon.png'))
-        self._detachNgButton.setIconSize(QSize(13, 13))
+        # self._detachNgButton.setIconSize(QSize(13, 13))
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
         self._detachNgButton.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
 
@@ -4681,11 +4659,11 @@ class MainWindow(QMainWindow):
         # fl.setAlignment(Qt.AlignTop)
         fl.setContentsMargins(2,2,8,2)
         fl.setSpacing(8)
-        fl.addRow('Grid Width: ', self._swimWindowControl)
+        fl.addRow('Grid Width (px): ', self._swimWindowControl)
         fl.addRow('Whitening Factor: ', self._whiteningControl)
         # self.combos.setLayout(fl)
 
-        self.swimSettings = QGroupBox("SWIM Settings")
+        self.swimSettings = QGroupBox("SWIM Alignment Settings")
         self.swimSettings.setObjectName('gb_cpanel')
         self.swimSettings.setLayout(fl)
 
@@ -4755,7 +4733,8 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_default()
         self.dw_monitor = QDockWidget('Head-up Display', self)
         self.dw_monitor.setObjectName('Dock Widget HUD')
-        self.dw_monitor.setStyleSheet("""QDockWidget::title {
+        self.dw_monitor.setStyleSheet("""
+        QDockWidget::title {
                     background-color: #161c20;
                     color: #161c20;
                     font-weight: 600;
@@ -5054,7 +5033,7 @@ class MainWindow(QMainWindow):
         self.notes.setMidLineWidth(110)
         self.notes.setObjectName('Notes')
         self.notes.setStyleSheet("""
-            background-color: #ffd43b;
+            background-color: #ede9e8;
             color: #161c20;
             font-size: 11px;
             border-width: 0px;
@@ -5064,13 +5043,15 @@ class MainWindow(QMainWindow):
         self.notes.textChanged.connect(fn)
 
         self.dw_notes = QDockWidget('Notes', self)
-        # self.dw_notes.setStyleSheet("""QDockWidget::title {
-        #     background-color: #ffd43b;
-        #     color: #161c20;
-        #     font-weight: 600;
-        #     padding-left: 5px;
-        #     text-align: left;
-        # }""")
+        self.dw_notes.setStyleSheet("""
+        QDockWidget {color: #161c20;}
+        
+        QDockWidget::title {
+            background-color: #FFE873;
+            font-weight: 600;
+            padding-left: 5px;
+            text-align: left;
+        }""")
         self.dw_notes.setWidget(self.notes)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_notes)
         self.dw_notes.hide()
@@ -5454,13 +5435,13 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""
-        QPushButton {
-            color: #161c20;
-            background-color: #f3f6fb;
-            font-size: 9px;
-            font-weight: 600;
-            border: 1px solid #161c20;
-            border-radius: 3px;
+        QPushButton{
+            font-size: 11px;
+            border-style: solid;
+            border-color: #c7c7c7;
+            border-width: 1px;
+            border-radius: 2px;
+            background-color: #ede9e8;
         }""")
         self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
 
@@ -5640,4 +5621,9 @@ for i,dock in enumerate(cfg.mw.findChildren(QDockWidget)):
 
 
 "Z-stack position"
+
+
+
 '''
+
+

@@ -134,7 +134,9 @@ class CorrSignalThumbnail(QLabel):
     def __init__(self, parent, path='', snr='', extra=''):
         super().__init__(parent)
         self.setScaledContents(True)
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setMinimumSize(QSize(QSize(32,32)))
+        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path
         if self.path:
