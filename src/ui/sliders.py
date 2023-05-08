@@ -69,9 +69,9 @@ RangeSlider #Head { background: #206020; }
 RangeSlider #Tail { background: #206020; } 
 RangeSlider #Span { background: #8bb8e8; }
 RangeSlider #Span:active { background: #00FF00; }
-RangeSlider > QSplitter::handle { background: #ede9e8; }
+RangeSlider > QSplitter::handle { background: #f3f6fb; }
 RangeSlider > QSplitter::handle:vertical { height: 4px; }
-RangeSlider > QSplitter::handle:pressed { background: #555555; }
+RangeSlider > QSplitter::handle:pressed { background: #339933; }
 """
 
 def scale(val, src, dst):

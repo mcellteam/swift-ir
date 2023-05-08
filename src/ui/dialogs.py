@@ -24,33 +24,23 @@ class ExitAppDialog(QDialog):
         super().__init__()
         self.setFixedSize(240, 100)
         self.setModal(True)
-
         self.setWindowFlags(Qt.FramelessWindowHint)
         # self.setAutoFillBackground(False)
 
         self.setWindowTitle("Confirm Exit")
         self.setStyleSheet("""
-            background-color: #141414;
+            background-color: #222222;
             color: #ede9e8;
             font-size: 11px;
             font-weight: 600;
-            font-family: Tahoma, sans-serif;
-        
-            border-color: #339933;
-            border-width: 2px;
-        
         """)
 
-        btns = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-
-        self.buttonBox = QDialogButtonBox(btns)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
-        self.layout = QVBoxLayout()
-        message = QLabel('Exit Align-EM-SWiFT?')
-        self.layout.addWidget(message, alignment=Qt.AlignCenter)
-        self.layout.addWidget(self.buttonBox, alignment=Qt.AlignCenter)
+        self.message = QLabel('Exit Align-EM-SWiFT?')
+        self.layout = HBL(ExpandingWidget(self), self.message, self.buttonBox)
         self.setLayout(self.layout)
 
 
@@ -70,7 +60,6 @@ class SaveExitAppDialog(QDialog):
             font-weight: 600;
             font-family: Tahoma, sans-serif;
             border-color: #339933;
-            border-width: 2px;
         """)
 
         btns = QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel

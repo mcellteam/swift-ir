@@ -87,19 +87,9 @@ class ThumbnailFast(QLabel):
             self.path = path
             self.setPixmap(QPixmap(self.path))
         self.extra = extra
-        # self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
-        # self.repaint()
         self.border_color = '#000000'
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-
-    # def set_no_image(self):
-    #     self.snr = None
-    #     try:
-    #         self.setPixmap(QPixmap(self.no_image_path))
-    #     except:
-    #         print_exception()
-    #         logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
 
     def showPixmap(self):
         self.setPixmap(QPixmap(self.path))
@@ -110,13 +100,8 @@ class ThumbnailFast(QLabel):
         else:
             self.setStyleSheet("")
 
-
     def paintEvent(self, event):
         if self.pixmap():
-            # if self.showBorder:
-            #     self.setStyleSheet(f"border: 3px solid {self.border_color};")
-            # else:
-            #     self.setStyleSheet("")
             try:
                 pm = self.pixmap()
                 originalRatio = pm.width() / pm.height()
@@ -127,7 +112,6 @@ class ThumbnailFast(QLabel):
                     self.r = rect = QRect(0, 0, pm.width(), pm.height())
                     rect.moveBottomLeft(self.rect().bottomLeft())
                     qp.drawPixmap(rect, pm)
-
                     if self.extra:
                         qp.setPen(QColor('#ede9e8'))
                         loc = QPoint(0, self.rect().height() - 4)
@@ -185,7 +169,6 @@ class CorrSignalThumbnail(QLabel):
                 # pen.setBrush(brush)
                 # pen.setColor(QColor('#ffe135'))
                 # qp.setPen(pen)
-
 
                 font = QFont()
                 font.setBold(True)

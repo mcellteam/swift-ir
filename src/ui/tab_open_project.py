@@ -207,75 +207,7 @@ class OpenProject(QWidget):
         #     color: #dadada;
         # }
         # """)
-        self._actions_widget.setStyleSheet("""
-/* white pussh buttons */
-
-/*-----QPushButton-----*/
-QPushButton{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(255,255,255);
-}
-QPushButton::default{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(255,255,255);
-}
-QPushButton:hover{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(197, 197, 197), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(197, 197, 197));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(255,255,255);
-}
-QPushButton:pressed{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(142,142,142);
-}
-QPushButton:disabled{
-    background-color: #dadada;
-
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 5px;
-	color: #ede9e8;
-	padding: 2px;
-	background-color: rgb(142,142,142);
-}
-
-
-        """)
+        self._actions_widget.setStyleSheet(style)
         # self._actions_widget.setStyleSheet("""
         # QPushButton {
         #     font-size: 12px;
@@ -303,7 +235,7 @@ QPushButton:disabled{
 
 
         self._splitter = QSplitter()
-        self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        # self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
@@ -324,6 +256,8 @@ QPushButton:disabled{
         # self.setLayout(self.layout)
 
         self.setLayout(self.vbl_main)
+
+        self.setStyleSheet(style)
 
     def hideMainUI(self):
         self._splitter.hide()
@@ -571,7 +505,6 @@ QPushButton:disabled{
 
     def setSelectionPathText(self, path):
         # logger.info(f'caller:{inspect.stack()[1].function}')
-        logger.info('setSelectionPathText >>>>')
         self.selectionReadout.setText(path)
         logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
 
@@ -587,7 +520,6 @@ QPushButton:disabled{
             self.validity_label.show()
             self._buttonOpen.setEnabled(False)
             self._buttonDelete.setEnabled(False)
-        logger.info('<<<< setSelectionPathText')
 
 
     def open_zarr_selected(self):
@@ -766,7 +698,7 @@ class UserProjects(QWidget):
         # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
@@ -966,7 +898,6 @@ def validate_zarr_selection(path) -> bool:
         if '.zarray' in os.listdir(path):
             logger.info('Directory DOES contain .zarray -> Returning True...')
             return True
-    logger.info('Returning False...')
     return False
 
 class Slider(QSlider):
@@ -1040,3 +971,51 @@ class ExpandingWidget(QWidget):
 #         point.setY((size.height() - scaledPix.height())/2)
 #         print(point.x(), ' ', point.y())
 #         painter.drawPixmap(point, scaledPix)
+
+
+style = """
+/* white pussh buttons */
+
+/*-----QPushButton-----*/
+QPushButton{
+	border-style: solid;
+    border-color: #161c20;
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: #f3f6fb;
+}
+QPushButton::default{
+	border-style: solid;
+    border-color: #161c20;
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: #f3f6fb;
+}
+QPushButton:hover{
+	border-style: solid;
+	border-color: #161c20;
+	border-width: 1px;
+	border-radius: 5px;
+	color: rgb(0,0,0);
+	padding: 2px;
+	background-color: #f3f6fb;
+}
+QPushButton:pressed{
+}
+QPushButton:disabled{
+    background-color: #dadada;
+
+	border-style: solid;
+	border-color: #161c20;
+	border-width: 1px;
+	border-radius: 5px;
+	color: #ede9e8;
+	padding: 2px;
+	background-color: rgb(142,142,142);
+}
+
+"""

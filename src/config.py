@@ -43,7 +43,8 @@ is_mendenhall = False
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1180, 680
 # WIDTH, HEIGHT = 1380, 900
-WIDTH, HEIGHT = 1180, 720
+# WIDTH, HEIGHT = 1180, 720
+WIDTH, HEIGHT = 1024, 600
 
 '''Default Alignment Params'''
 

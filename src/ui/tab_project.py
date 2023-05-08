@@ -81,7 +81,6 @@ class ProjectTab(QWidget):
         self.MA_base_cscale = None
         self.MA_base_zoom = None
         self._allow_zoom_change = True
-        self._combo_method_switch = True
 
         self.update_MA_widgets_calls = 0
         self.dataUpdateMA_calls = 0
@@ -301,11 +300,10 @@ class ProjectTab(QWidget):
         self._overlayLab.hide()
 
         self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
-        # self.hud_overlay.setFixedWidth(240)
-        # self.hud_overlay.setFixedHeight(70)
         self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        # self.hud_overlay.set_theme_default()
         self.hud_overlay.set_theme_overlay()
+
+
         # self.hud_overlay.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
         # self.hud_overlay.setStyleSheet("""
         #     background-color: #f3f6fb;
@@ -324,53 +322,23 @@ class ProjectTab(QWidget):
         #             border-radius: 2px;
         #             """)
 
-        self._ProcessMonitorWidget = QWidget()
+        # self._ProcessMonitorWidget = QWidget()
         # self._ProcessMonitorWidget.setStyleSheet('background: none;')
-        # self._ProcessMonitorWidget.setStyleSheet("""
-        #     background-color: rgba(255,255,255,0.5);
-        #     color: #141414;
-        #     font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        #     font-size: 7px;
-        #     border-radius: 4px;
-        #     """
-        # )
-        # palette = QPalette()
-        # palette.setColor(QPalette.Highlight, QColor('aqua'))
-        # palette.setColor(QPalette.Text, QColor('#000000'))
-        # self._ProcessMonitorWidget.setPalette(palette)
-
-        self._ProcessMonitorWidget.setStyleSheet('background: none;')
-        self._ProcessMonitorWidget.setFixedWidth(260)
-        self._ProcessMonitorWidget.setFixedHeight(84)
-        lab = QLabel('Head-up Display')
-        # lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb;')
-        lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; '
-                          'font-size: 9px; font-weight: 500;'
-                          'border-top-left-radius: 4px;'
-                          'border-top-right-radius: 4px;'
-                          'padding-left: 2px;')
-        vbl = QVBoxLayout()
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.addWidget(lab, alignment=Qt.AlignBaseline)
-        vbl.addWidget(self.hud_overlay)
-        self._ProcessMonitorWidget.setLayout(vbl)
-        # self.setStyleSheet('background-color: #f3f6fb;')
-
-        # with open('src/style/cpanel.qss', 'r') as f:
-        #     self._ProcessMonitorWidget.setStyleSheet(f.read())
-
-
-        w = QWidget()
-        w.setWindowFlags(Qt.FramelessWindowHint)
-        # w.setAttribute(Qt.WA_TransparentForMouseEvents)
-        vbl = QVBoxLayout()
+        # self._ProcessMonitorWidget.setFixedWidth(260)
+        # self._ProcessMonitorWidget.setFixedHeight(84)
+        # lab = QLabel('Head-up Display')
+        # lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; '
+        #                   'font-size: 9px; font-weight: 500;'
+        #                   'border-top-left-radius: 4px;'
+        #                   'border-top-right-radius: 4px;'
+        #                   'padding-left: 2px;')
+        # vbl = QVBoxLayout()
+        # vbl.setSpacing(0)
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # vbl.addWidget(lab, alignment=Qt.AlignBaseline)
         # vbl.addWidget(self.hud_overlay)
-        vbl.addWidget(self._ProcessMonitorWidget)
-        w.setLayout(vbl)
-
-        # self.ng_gl.addWidget(self.hud_overlay, 4, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
-        self.ng_gl.addWidget(w, 4, 2, 1, 3, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
+        # self._ProcessMonitorWidget.setLayout(vbl)
+        # self.ng_gl.addWidget(self._ProcessMonitorWidget, 4, 2, 1, 3, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
 
         # self.joystick = Joystick()
 
@@ -379,43 +347,6 @@ class ProjectTab(QWidget):
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.ngVertLab.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
 
-        self.DetailsContainer = QWidget()
-        # self.DetailsContainer.setAutoFillBackground(False)
-        self.DetailsContainer.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.DetailsContainer.setStyleSheet("""background-color: rgba(255, 255, 255, 0);""")
-
-        self.corrSignalsWidget = QWidget()
-        self.corrSignalsClabel = ClickLabel("<b>Signal</b>")
-        self.corrSignalsClabel.setStyleSheet('Show/Hide Correlation Signals')
-        self.corrSignalsClabel.setStyleSheet("background-color: rgba(255, 255, 255, 0);color: #f3f6fb;")
-        # self.corrSignalsClabel.setAutoFillBackground(False)
-        self.corrSignalsClabel.setAttribute(Qt.WA_TranslucentBackground, True)
-        def fn():
-            self.corrSignalsWidget.setVisible(self.corrSignalsWidget.isHidden())
-            self.corrSignalsClabel.setText(
-                ("<b><span style='color: #FFFF66;'>Signal</span></b>",
-                 "<b>Signal</b>")[self.corrSignalsWidget.isHidden()])
-        self.corrSignalsClabel.clicked.connect(fn)
-        self.corrSignalsClabel.clicked.connect(cfg.main_window.dataUpdateWidgets)
-
-        self.cs0 = CorrSignalThumbnail(parent=self)
-        self.cs1 = CorrSignalThumbnail(parent=self)
-        self.cs2 = CorrSignalThumbnail(parent=self)
-        self.cs3 = CorrSignalThumbnail(parent=self)
-        self.cs0.setFixedSize(90,90)
-        self.cs1.setFixedSize(90,90)
-        self.cs2.setFixedSize(90,90)
-        self.cs3.setFixedSize(90,90)
-
-        gl = QGridLayout()
-        gl.setSpacing(0)
-        gl.setContentsMargins(0, 0, 0, 0)
-        gl.addWidget(self.cs0, 0, 0)
-        gl.addWidget(self.cs1, 0, 1)
-        gl.addWidget(self.cs2, 1, 0)
-        gl.addWidget(self.cs3, 1, 1)
-        self.csALL = QWidget()
-        self.csALL.setLayout(gl)
 
         style = """
         font-family: 'Andale Mono', 'Ubuntu Mono', monospace; 
@@ -424,22 +355,8 @@ class ProjectTab(QWidget):
         color: #f3f6fb; 
         margin: 5px;
         padding: 5px;
-        border-radius: 2px;"""
-
-        # self.cspotSlider = QSlider(Qt.Orientation.Vertical)
-        # self.cspotSlider.setRange(36,256)
-        # start_size = 120
-        # self.cspotSlider.setValue(start_size)
-        # self.cspotSlider.setFixedSize(QSize(16,56))
-        # self.csALL.setFixedSize(start_size, start_size)
-        #
-        # self.cspotSlider.sliderReleased.connect(lambda: self.csALL.setFixedSize(
-        #     QSize(self.cspotSlider.value(), self.cspotSlider.value())))
-        hbl = HBL()
-        hbl.addWidget(self.csALL, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # hbl.addWidget(self.cspotSlider, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        self.corrSignalsWidget.setLayout(hbl)
-        self.corrSignalsWidget.hide()
+        border-radius: 2px;
+        """
 
 
         overlay_style = "background-color: rgba(255, 255, 255, 0); color: #f3f6fb; border-radius: 4px;"
@@ -447,42 +364,14 @@ class ProjectTab(QWidget):
         self.detailsSection = QLabel()
         self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.detailsSection.setMaximumHeight(100)
-        # self.detailsSection.setMinimumWidth(230)
-        self.detailsClabel = ClickLabel("<b><span style='color: #FFFF66;'>Section</span></b>")
-        self.detailsClabel.setStyleSheet("color: #f3f6fb;")
-        # self.detailsClabel.setAutoFillBackground(False)
-        self.detailsClabel.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.detailsClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        def fn():
-            self.detailsSection.setVisible(self.detailsSection.isHidden())
-            self.detailsClabel.setText(
-                ("<b><span style='color: #FFFF66;'>Section</span></b>",
-                 "<b>Section</b>")[self.detailsSection.isHidden()])
-            cfg.main_window.dataUpdateWidgets()
-        self.detailsClabel.clicked.connect(fn)
         self.detailsSection.setWordWrap(True)
         self.detailsSection.setStyleSheet(style)
-        # self.detailsSection.hide()
-
+        self.detailsSection.hide()
 
         self.detailsAFM = QLabel()
         self.detailsAFM.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.detailsAFM.setMaximumHeight(100)
-        # self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.afmClabel = ClickLabel('<b>Affine</b>')
-        self.afmClabel.setStyleSheet(overlay_style)
-        # self.afmClabel.setAutoFillBackground(False)
-        self.afmClabel.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.afmClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        def fn():
-            self.detailsAFM.setVisible(self.detailsAFM.isHidden())
-            self.afmClabel.setText(
-                ("<b><span style='color: #FFFF66;'>Affine</span></b>",
-                 "<b>Affine</b>")[self.detailsAFM.isHidden()])
-            cfg.main_window.dataUpdateWidgets()
-        self.afmClabel.clicked.connect(fn)
         self.detailsAFM.setWordWrap(True)
         self.detailsAFM.setStyleSheet(style)
         self.detailsAFM.hide()
@@ -491,21 +380,6 @@ class ProjectTab(QWidget):
         self.detailsSNR.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsSNR.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.detailsSNR.setMaximumHeight(100)
-        self.snrClabel = ClickLabel('<b>SNR</b>')
-        self.snrClabel.setStyleSheet(overlay_style)
-        # self.snrClabel.setAutoFillBackground(False)
-        self.snrClabel.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.snrClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        def fn():
-            if cfg.data.is_aligned():
-                self.detailsSNR.setVisible(not self.detailsSNR.isVisible())
-                self.snrClabel.setText(
-                    ("<b><span style='color: #FFFF66;'>SNR</span></b>",
-                     "<b>SNR</b>")[self.detailsSNR.isHidden()])
-                cfg.main_window.dataUpdateWidgets()
-            # else:
-            #     cfg.main_window.warn('Series is not aligned. No SNR data to show.')
-        self.snrClabel.clicked.connect(fn)
         self.detailsSNR.setWordWrap(True)
         self.detailsSNR.setStyleSheet(style)
         self.detailsSNR.hide()
@@ -513,29 +387,9 @@ class ProjectTab(QWidget):
         self.detailsRuntime = QLabel()
         self.detailsRuntime.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsRuntime.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.runtimeClabel = ClickLabel('<b>Benchmarks</b>')
-        self.runtimeClabel.setStyleSheet(overlay_style)
-        # self.runtimeClabel.setAutoFillBackground(False)
-        self.runtimeClabel.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.runtimeClabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        def fn():
-            self.detailsRuntime.setVisible(not self.detailsRuntime.isVisible())
-            self.runtimeClabel.setText(
-                ("<b><span style='color: #FFFF66;'>Benchmarks</span></b>",
-                 "<b>dt</b>")[self.detailsRuntime.isHidden()])
-        self.runtimeClabel.clicked.connect(fn)
         self.detailsRuntime.setWordWrap(True)
         self.detailsRuntime.setStyleSheet(style)
         self.detailsRuntime.hide()
-
-        # sep = "<span style='font-size: 15px; color: #f3f6fb; " \
-        #             "font-family: sans-serif;'>&nbsp;&#183;&nbsp;</span>"
-        sep = "<span style='color: #f3f6fb;'>&nbsp;&#183;&nbsp;</span>"
-        sep0, sep1, sep2, sep3 = QLabel(sep), QLabel(sep), QLabel(sep), QLabel(sep)
-        self.labelsWidget = HWidget(self.detailsClabel, sep0, self.afmClabel, sep1,
-                                    self.snrClabel, sep2, self.runtimeClabel)
-        self.labelsWidget.setContentsMargins(8, 0, 8, 0)
-        self.labelsWidget.setFixedHeight(16)
 
         self.detailsDetailsWidget = QWidget()
         self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -546,14 +400,7 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.detailsRuntime, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(self.corrSignalsWidget, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.detailsDetailsWidget.setLayout(hbl)
-
-        vbl = VBL()
-        vbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        vbl.setSpacing(0)
-        vbl.addWidget(self.labelsWidget, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        self.DetailsContainer.setLayout(vbl)
 
         self.spreadW = QWidget()
         self.spreadW.setWindowFlags(Qt.FramelessWindowHint)
@@ -573,7 +420,7 @@ class ProjectTab(QWidget):
 
         # self.ng_gl.addWidget(self.joystick, 0, 0, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        self.ng_gl.addWidget(self.labelsWidget, 0, 2, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        # self.ng_gl.addWidget(self.labelsWidget, 0, 2, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW3, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW2, 1, 3, 2, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW, 1, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
@@ -691,10 +538,6 @@ class ProjectTab(QWidget):
 
         self.MA_ptsListWidget_ref = QListWidget()
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
-        def fn():
-            self.MA_ptsListWidget_base.selectionModel().clear()
-
-        self.MA_ptsListWidget_ref.itemSelectionChanged.connect(fn)
         # self.MA_ptsListWidget_ref.setMaximumHeight(64)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
@@ -711,9 +554,6 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base = QListWidget()
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
-        def fn():
-            self.MA_ptsListWidget_ref.selectionModel().clear()
-        self.MA_ptsListWidget_base.itemSelectionChanged.connect(fn)
         # self.MA_ptsListWidget_base.setMaximumHeight(64)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
@@ -724,6 +564,10 @@ class ProjectTab(QWidget):
         self.MA_baseNextColorLab = QLabel()
         # self.MA_baseNextColorLab.setMaximumHeight(12)
         self.MA_baseNextColorLab.setFixedSize(20, 20)
+
+        self.MA_ptsListWidget_ref.itemSelectionChanged.connect(self.MA_ptsListWidget_base.selectionModel().clear)
+        self.MA_ptsListWidget_base.itemSelectionChanged.connect(self.MA_ptsListWidget_ref.selectionModel().clear)
+
 
         self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab)
         self.baseNextColorWidget.setMaximumHeight(14)
@@ -742,10 +586,8 @@ class ProjectTab(QWidget):
         #     logger.info('caller: %s' % caller)
         #     if caller == 'main':
         #         if self.tgl_alignMethod.isChecked():
-        #             self.combo_method.setEnabled(True)
         #             self.update_MA_widgets()
         #         else:
-        #             self.combo_method.setEnabled(False)
         #             cfg.data.set_method('Auto-SWIM') #Critical always set project dict back to Auto-align
         #             self.set_method_label_text()
         #         # cfg.project_tab.MA_viewer_ref.undrawSWIMwindow()
@@ -761,30 +603,6 @@ class ProjectTab(QWidget):
         # self.tgl_alignMethod.toggled.connect(fn)
         # self.tgl_alignMethod.toggled.connect(cfg.main_window._callbk_unsavedChanges)
         # self.tgl_alignMethod.setFixedSize(44,26)
-
-        def fn():
-            if self._combo_method_switch:
-                # request = self.combo_method.currentText()
-                # cfg.data.set_method(request)
-                logger.info(f'Setting method to {self.combo_method.currentText()}...')
-                cfg.data.set_method(self.combo_method.currentText())
-                # self.set_method_label_text()
-                cfg.refViewer.drawSWIMwindow()
-                cfg.baseViewer.drawSWIMwindow()
-                self.msg_MAinstruct.setVisible(cfg.data.method() in ('manual-hint','manual-strict'))
-
-        self.combo_method = QComboBox(self)
-        self.combo_method.setFixedHeight(18)
-        self.combo_method.setFixedWidth(96)
-        self.combo_method.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # items = ['Manual-Hint', 'Manual-Strict']
-        items = ['Auto-SWIM', 'Manual-Hint', 'Manual-Strict']
-        self.combo_method.addItems(items)
-        self.combo_method.currentTextChanged.connect(fn)
-        self.combo_method.currentTextChanged.connect(cfg.main_window._callbk_unsavedChanges)
-        # self.combo_method.setEnabled(False)
-        self.combo_method.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-
 
         # mainToggle = AnimatedToggle()
         # secondaryToggle = AnimatedToggle(
@@ -809,10 +627,6 @@ class ProjectTab(QWidget):
         # lab2.setStyleSheet('font-size: 8px; font-family: Tahoma, sans-serif;')
         # vw2 = VWidget(lab2, self.tgl_alignMethod)
         # vw2.layout.setSpacing(0)
-
-        # self.fl_actionsMA.addWidget(HWidget(vw, self.tgl_alignMethod, self.combo_method))
-        # self.fl_actionsMA.addWidget(HWidget(vw, self.combo_method))
-
 
         def fn():
             logger.info('')
@@ -1449,8 +1263,6 @@ class ProjectTab(QWidget):
             elif cur_index == 4:
                 self.MA_stackedWidget.setCurrentIndex(4)
 
-            # cfg.data.set_method(self.combo_method.currentText())
-            # self.set_method_label_text()
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
             # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
@@ -1835,22 +1647,6 @@ class ProjectTab(QWidget):
         pal = QPalette()
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
 
-        # ng_pal = QPalette()
-        # ng_pal.setColor(QPalette.window, QColor("#222222"))
-
-        # self.cb_show_ng_ui_controls = QCheckBox('Show NG UI Controls')
-        # self.cb_show_ng_ui_controls = QCheckBox('Show NG UI Controls')
-        # self.cb_show_ng_ui_controls.setStyleSheet("""
-        #     QCheckBox {
-        #         background-color: none;
-        #         color: #FFFF66;
-        #         font-size: 11px;
-        #     }
-        #     """) #Critical
-
-        # self.cb_show_ng_ui_controls.setFont(ngFont)
-        # self.cb_show_ng_ui_controls.setPalette(ng_pal)
-
         self.comboNgLayout = QComboBox(self)
         self.comboNgLayout.setStyleSheet("""
         QComboBox {
@@ -1968,16 +1764,16 @@ class ProjectTab(QWidget):
         self.labScaleStatus = QLabel('Scale Status: ')
         self.labScaleStatus.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
 
+        # self.showHudOverlayAction = QAction('HUD', self)
+        # def fn():
+        #     opt = self.showHudOverlayAction.isChecked()
+        #     setOpt('neuroglancer,SHOW_HUD_OVERLAY', opt)
+        #     self._ProcessMonitorWidget.setVisible(opt)
+        # self.showHudOverlayAction.triggered.connect(fn)
+        # self.showHudOverlayAction.setCheckable(True)
+        # self.showHudOverlayAction.setChecked(getOpt('neuroglancer,SHOW_HUD_OVERLAY'))
+        # self.showHudOverlayAction.setText('HUD')
 
-        self.showHudOverlayAction = QAction('HUD', self)
-        def fn():
-            opt = self.showHudOverlayAction.isChecked()
-            setOpt('neuroglancer,SHOW_HUD_OVERLAY', opt)
-            self._ProcessMonitorWidget.setVisible(opt)
-        self.showHudOverlayAction.triggered.connect(fn)
-        self.showHudOverlayAction.setCheckable(True)
-        self.showHudOverlayAction.setChecked(getOpt('neuroglancer,SHOW_HUD_OVERLAY'))
-        self.showHudOverlayAction.setText('HUD')
 
         # self.w_ng_extended_toolbar.addWidget(self._highContrastNgAction)
 
@@ -2002,7 +1798,11 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
-        self.w_ng_extended_toolbar.addAction(self.showHudOverlayAction)
+        # self.w_ng_extended_toolbar.addAction(self.showHudOverlayAction)
+        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSnrAction)
+        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
+        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSectionDetailsAction)
+        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowRuntimesAction)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
@@ -2547,9 +2347,6 @@ class ProjectTab(QWidget):
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
             self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
-            self._combo_method_switch = False
-            self.combo_method.setCurrentText(cfg.data.method()) #Todo #Check
-            self._combo_method_switch = True
             self.spinbox_whitening.setValue(int(cfg.data.manual_whitening()))
             self.updateProjectLabels() #0424+
 
