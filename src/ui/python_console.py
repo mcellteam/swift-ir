@@ -11,6 +11,7 @@ from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QSize
 from src.helpers import is_tacc
+import src.config as cfg
 
 class PythonConsole(RichJupyterWidget):
 
@@ -81,7 +82,11 @@ class PythonConsole(RichJupyterWidget):
         self.set_default_style(colors='linux')
 
     def sizeHint(self):
-        return QSize(200, 100)
+        if cfg.main_window:
+            width = int(cfg.main_window.width() / 2)
+        else:
+            width = int(cfg.WIDTH / 2)
+        return QSize(width, 80)
 
 
 if __name__ == '__main__':

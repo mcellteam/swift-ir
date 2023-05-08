@@ -17,7 +17,7 @@ from glob import glob
 from copy import deepcopy
 from datetime import datetime
 from dataclasses import dataclass
-from functools import cached_property
+from functools import cache, cached_property
 import numpy as np
 
 from src.data_structs import data_template, layer_template
@@ -316,9 +316,10 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]
 
+    # @cache
     def is_aligned(self, s=None):
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.critical(f' is_aligned caller: {caller} >>>> ')
         if s == None: s = self.scale
         snr_list = self.snr_list(s=s)
         if sum(snr_list) < 1:
@@ -911,7 +912,7 @@ class DataModel:
             # return self.method_results(s=s, l=l)['snr']
         except:
             print_exception()
-            logger.warning(f'No SNR components for section {l}, method {method}...')
+            logger.warning(f'No SNR components for section {l}, method {method} [caller: {caller}]...')
             return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
         # if self.method(s=s, l=l) == 'Manual-Hint':
         #     files = self.get_signals_filenames()

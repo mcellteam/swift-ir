@@ -12,7 +12,7 @@ Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 
 
 
- QTabBar::close-button {
+QTabBar::close-button {
      image: url(src/resources/close-tab.png);
      subcontrol-position: left;
      height: 13px;
