@@ -320,6 +320,7 @@ class MainWindow(QMainWindow):
         self.detachedNg = WebPage()
         self._lastRefresh = 0
         self.count_calls = {}
+        self._exiting = 0
 
         self._dontReinit = False
 
@@ -490,6 +491,12 @@ class MainWindow(QMainWindow):
         self.hudButton.setStatusTip(('Hide Head-up Display Tool Window', 'Show Head-up Display Tool Window')[self.dw_monitor.isHidden()])
         self.hudButton.setToolTip(('Hide Head-up Display Tool Window', 'Show Head-up Display Tool Window')[self.dw_monitor.isHidden()])
 
+    def _callbk_showHideSignals(self):
+        self.dw_corrspots.setHidden(not self.dw_corrspots.isHidden())
+        self.csButton.setText((' Hide', ' Signals')[self.dw_corrspots.isHidden()])
+        self.csButton.setStatusTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()])
+        self.csButton.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()])
+
     def _callbk_showHideFlicker(self):
         self.dw_flicker.setHidden(not self.dw_flicker.isHidden())
         self.flickerButton.setText((' Hide', ' Flicker')[self.dw_flicker.isHidden()])
@@ -596,9 +603,10 @@ class MainWindow(QMainWindow):
     #     end = cfg.data.zpos + 1
     #     self.regenerate(scale=cfg.data.scale, start=start, end=end)
 
-
     def regenerate(self, scale, start=0, end=None) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
+        if not self._isProjectTab():
+            return
         if self._working == True:
             self.warn('Another Process is Already Running'); return
         if not cfg.data.is_aligned(s=scale):
@@ -642,8 +650,6 @@ class MainWindow(QMainWindow):
             cfg.project_tab.initNeuroglancer()
             logger.info('Generate Aligned Thumbnails Finished')
             self.tell('**** Processes Complete ****')
-
-
 
 
     def verify_alignment_readiness(self) -> bool:
@@ -807,6 +813,9 @@ class MainWindow(QMainWindow):
 
 
     def alignAll(self):
+        if not self._isProjectTab():
+            return
+
         cfg.ignore_pbar = False
         '''MUST handle bounding box for partial-stack alignments.'''
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
@@ -866,6 +875,7 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
         self.tell('**** Processes Complete ****')
+
 
 
     # def alignOne(self, stageit=False):
@@ -1124,7 +1134,7 @@ class MainWindow(QMainWindow):
         if cfg.data:
             # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
             # self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
-            self.gb_ctlActions.setTitle('%s Actions' % cfg.data.scale_pretty())
+            self.gb_ctlActions.setTitle('%s Multiprocessing Commands' % cfg.data.scale_pretty())
             # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
             self._skipCheckbox.setEnabled(True)
             self._toggleAutogenerate.setEnabled(True)
@@ -1147,7 +1157,8 @@ class MainWindow(QMainWindow):
         if cfg.data:
             # if cfg.data.is_aligned_and_generated(): #0202-
             if cfg.data.is_aligned():
-                self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
+                # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
+                self._btn_alignAll.setText('Re-Align All Sections')
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
@@ -1205,10 +1216,6 @@ class MainWindow(QMainWindow):
             self._btn_regenerate.setEnabled(False)
             self.startRangeInput.setEnabled(False)
             self.endRangeInput.setEnabled(False)
-
-        # self._highContrastNgAction.setEnabled(self._isProjectTab())
-        # self._detachNgButton.setEnabled(self._isProjectTab())
-        # self._highContrastNgAction.setChecked(getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
 
 
     def layer_left(self):
@@ -2214,101 +2221,63 @@ class MainWindow(QMainWindow):
         logger.info("MainWindow.closeEvent (called by %s):" % inspect.stack()[1].function)
         self.shutdownInstructions()
 
+    def cancelExitProcedure(self):
+        logger.info('')
+        self._exiting = 0
+        self.exit_dlg.hide()
 
+    def saveExitProcedure(self):
+        logger.info('')
+        self.save()
+        self.shutdownInstructions()
 
+    def exitProcedure(self):
+        logger.info('')
+        self.shutdownInstructions()
 
+    def exitResponse(self, response):
+        logger.critical(f'User Response: {response}')
 
     def exit_app(self):
+        if self._exiting:
+            self._exiting = 0
+            if self.exit_dlg.isVisible():
+                self.globTabsAndCpanel.children()[-1].hide()
+            return
+
         logger.info("Asking user to confirm exit application...")
+
         style = """
-                background-color: #141414;
+        QPushButton {
+            color: #161c20;
+            background-color: #f3f6fb;
+            font-size: 9px;
+            border-radius: 3px;
+        }
+        QDialog{
+                /*background-color: #161c20;*/
                 color: #ede9e8;
                 font-size: 11px;
                 font-weight: 600;
                 font-family: Tahoma, sans-serif;
                 border-color: #339933;
                 border-width: 2px;
+        }
             """
-
-        self.exit_dlg = ExitAppDialog()
-        self.exit_dlg.setFixedHeight(30)
-        hbl = HBL()
-        hbl.addWidget(ExpandingWidget(self))
-        hbl.addWidget(self.exit_dlg, alignment=Qt.AlignRight)
-        self.exitWidget = QWidget()
-        self.exitWidget.setFixedHeight(30)
-        self.exitWidget.setLayout(hbl)
-        self.exitWidget.setStyleSheet("""background-color: #222222""")
-        self.globTabsAndCpanel.layout.addWidget(self.exitWidget)
-        # dlg.show()
-
-        # fg = self.frameGeometry()
-        # logger.critical(f'dlg.width() = {dlg.width()}')
-        # logger.critical(f'dlg.height() = {dlg.height()}')
-        # # x = (fg.width() / 2) - (dlg.width() / 2)
-        # # y = (fg.height() / 2) + (dlg.height() / 2)
-        # x = (fg.width()/2)
-        # y = (fg.height()/2)
-        # dlg.move(x, y)
-
-        if self.exit_dlg.exec():
-            logger.info('User Choice: Exit')
-        else:
-            logger.info('User Choice: Cancel')
-            return
-
-        self.hud('Exiting...')
-        if self._unsaved_changes:
-            self.tell('Exit AlignEM-SWiFT?')
-            message = "There are unsaved changes.\n\nSave before exiting?"
-            msg = QMessageBox(QMessageBox.Warning, "Save Changes", message)
-            msg.setParent(self)
-            msg.show() #Critical - reveals window size
-
-            logger.critical(f'msg.width() = {msg.width()}')
-            logger.critical(f'msg.height() = {msg.height()}')
-            # msg_width = 640
-            # msg_height = 480
-
-            # fg = self.frameGeometry()
-            # # fg = self.geometry()
-            # # x = (fg.width()/2) #- (msg.width() / 2)
-            # # x = (fg.width()/3) #- (msg.width() / 2)
-            # x = (fg.width() - msg.width()) / 2
-            # y = (fg.height() - msg.height()) / 2
-            # # # x = (fg.width()/2)
-            # # # y = (fg.height()/2)
-            # logger.info(f'x: {x}, y: {y}')
-            # msg.move(x, y)
-
-            msg.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowCloseButtonHint)
-            msg.setStyleSheet(style)
-            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-            buttonSave = msg.button(QMessageBox.Save)
-            buttonSave.setText('Save && Exit')
-            buttonDiscard = msg.button(QMessageBox.Discard)
-            buttonDiscard.setText('Exit Without Saving')
-            msg.setDefaultButton(QMessageBox.Save)
-            # msg.setIcon(QMessageBox.Question)
-            # msg.setWindowIcon(qta.icon('fa.question', color='#ede9e8'))
-            reply = msg.exec_()
-            logger.info(f'reply       : {reply}')
-            logger.info(f'Type        : {type(reply)}')
-            if reply == QMessageBox.Cancel:
-                logger.info('User Choice: Cancel')
-                self.tell('Canceling Exit')
-                return
-            if reply == QMessageBox.Save:
-                logger.info('User Choice: Save and Exit')
-                self.save()
-                self.set_status('Wrapping up...')
-                logger.info('Project saved. Exiting')
-            if reply == QMessageBox.Discard:
-                logger.info('User Choice: Discard Saved Changes')
-        else:
-            logger.info('No Unsaved Changes - Exiting')
-
-        self.shutdownInstructions()
+        self._exiting = 1
+        self.exit_dlg = ExitAppDialog(unsaved_changes=self._unsaved_changes)
+        self.exit_dlg.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.exit_dlg.signals.cancelExit.connect(self.cancelExitProcedure)
+        self.exit_dlg.signals.saveExit.connect(self.saveExitProcedure)
+        self.exit_dlg.signals.exit.connect(self.exitProcedure)
+        # self.exit_dlg.signals.response.connect(self.exitResponse)
+        self.exit_dlg.signals.response.connect(lambda val: self.exitResponse(val))
+        self.exit_dlg.setFixedHeight(22)
+        p = self.exit_dlg.palette()
+        # p.setColor(self.exit_dlg.backgroundRole(), QColor('#222222'))
+        p.setColor(self.exit_dlg.backgroundRole(), QColor('#222222'))
+        self.exit_dlg.setPalette(p)
+        self.globTabsAndCpanel.layout.addWidget(self.exit_dlg)
 
 
     def shutdownInstructions(self):
@@ -3007,20 +2976,9 @@ class MainWindow(QMainWindow):
         self.toolbar.setObjectName('toolbar')
         self.addToolBar(self.toolbar)
 
-        # self._btn_refreshTab = QPushButton(' Refresh')
-        self._btn_refreshTab = QPushButton()
-        self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
-        self._btn_refreshTab.setStyleSheet('font-size: 12px;')
-        # self._btn_refreshTab.setFixedSize(68,18)
-        self._btn_refreshTab.setFixedSize(18,18)
-        self._btn_refreshTab.setIcon(qta.icon('ei.refresh', color=cfg.ICON_COLOR))
-        self._btn_refreshTab.setIconSize(QSize(14, 14))
-        self._btn_refreshTab.clicked.connect(self.refreshTab)
-        self._btn_refreshTab.setStatusTip('Refresh')
-
         self.combo_mode = QComboBox(self)
         # self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
-        self.combo_mode.setFixedSize(150, 18)
+        self.combo_mode.setFixedSize(130, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
         self.combo_mode.addItems(items)
@@ -3105,25 +3063,36 @@ class MainWindow(QMainWindow):
 
         style = """
         QPushButton {
-            color: #161c20;
-            background-color: #f3f6fb;
+            color: #ede9e8;
+            background-color: #161c20;
             border-width: 1px;
             border-color: #161c20;
             border-style: solid;
             padding: 1px;
             border-radius: 4px;
             outline: none;
+            font-size: 10px;
         }
+        QPushButton:pressed { background-color: red; }
         """
+        self._btn_refreshTab = QPushButton()
+        # self._btn_refreshTab.setStyleSheet("background-color: #161c20;")
+        self._btn_refreshTab.setStyleSheet(style)
+        self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
+        self._btn_refreshTab.setFixedSize(18,18)
+        self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#ede9e8'))
+        self._btn_refreshTab.clicked.connect(self.refreshTab)
+        self._btn_refreshTab.setStatusTip('Refresh')
+
+        tb_button_size = QSize(50,14)
 
         tip = 'Show/Hide Notepad Tool Window'
         self.notesButton = QPushButton(' Notes')
         self.notesButton.setStyleSheet(style)
         self.notesButton.setStatusTip(tip)
         self.notesButton.setToolTip(tip)
-        self.notesButton.setFixedSize(QSize(70,18))
+        self.notesButton.setFixedSize(tb_button_size)
         self.notesButton.setIcon(QIcon('src/resources/notepad-icon.png'))
-        self.notesButton.setIconSize(QSize(13,13))
         self.notesButton.clicked.connect(self._callbk_showHideNotes)
 
         tip = 'Show/Hide Python Console Tool Window'
@@ -3131,9 +3100,8 @@ class MainWindow(QMainWindow):
         self.pythonButton.setStyleSheet(style)
         self.pythonButton.setToolTip(tip)
         self.pythonButton.setStatusTip(tip)
-        self.pythonButton.setFixedSize(QSize(70,18))
+        self.pythonButton.setFixedSize(tb_button_size)
         self.pythonButton.setIcon(QIcon('src/resources/python-icon.png'))
-        self.pythonButton.setIconSize(QSize(13,13))
         self.pythonButton.clicked.connect(self._callbk_showHidePython)
 
         tip = 'Show/Hide Head-up Display Tool Window'
@@ -3141,9 +3109,8 @@ class MainWindow(QMainWindow):
         self.hudButton.setStyleSheet(style)
         self.hudButton.setToolTip(tip)
         self.hudButton.setStatusTip(tip)
-        self.hudButton.setFixedSize(QSize(70,18))
+        self.hudButton.setFixedSize(tb_button_size)
         # self.hudButton.setIcon(QIcon('src/resources/python-icon.png'))
-        self.hudButton.setIconSize(QSize(13,13))
         self.hudButton.clicked.connect(self._callbk_showHideHud)
 
         tip = 'Show/Hide Flicker Tool Window'
@@ -3151,57 +3118,46 @@ class MainWindow(QMainWindow):
         self.flickerButton.setStyleSheet(style)
         self.flickerButton.setToolTip(tip)
         self.flickerButton.setStatusTip(tip)
-        self.flickerButton.setFixedSize(QSize(70,18))
+        self.flickerButton.setFixedSize(tb_button_size)
         # self.flickerButton.setIcon(QIcon('src/resources/python-icon.png'))
-        self.flickerButton.setIconSize(QSize(13,13))
         self.flickerButton.clicked.connect(self._callbk_showHideFlicker)
 
-        # tip = 'Show/Hide Correlation Signals'
-        # self.signalsButton = QPushButton(' Signals')
-        # self.signalsButton.setStyleSheet(style)
-        # self.signalsButton.setToolTip(tip)
-        # self.signalsButton.setStatusTip(tip)
-        # self.signalsButton.setFixedSize(QSize(70,18))
-        # self.signalsButton.setIcon(QIcon('src/resources/python-icon.png'))
-        # self.signalsButton.setIconSize(QSize(13,13))
-        # def fn():
-        #     pass
-        # self.signalsButton.clicked.connect(fn)
+        tip = 'Show/Hide Correlation Signals Tool Window'
+        self.csButton = QPushButton(' Signals')
+        self.csButton.setStyleSheet(style)
+        self.csButton.setToolTip(tip)
+        self.csButton.setStatusTip(tip)
+        self.csButton.setFixedSize(tb_button_size)
+        self.csButton.clicked.connect(self._callbk_showHideSignals)
 
         self._detachNgButton = QPushButton()
+        # self._detachNgButton.setStyleSheet("background-color: #161c20;")
+        self._detachNgButton.setStyleSheet(style)
         self._detachNgButton.setFixedSize(18,18)
-        # self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color=ICON_COLOR))
-        self._detachNgButton.setIcon(QIcon('src/resources/popout-icon.png'))
+        self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color='#ede9e8'))
+        # self._detachNgButton.setIcon(QIcon('src/resources/popout-icon.png'))
         self._detachNgButton.setIconSize(QSize(13, 13))
-        # self._detachNgButton.clicked.connect(self.update_ng)
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
-
         self._detachNgButton.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
 
         # self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self._btn_refreshTab)
         self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self.combo_mode)
-        # self.toolbar.addWidget(self._al_unal_label_widget)
-        w = QWidget()
-        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.toolbar.addWidget(w)
-        # self.toolbar.addWidget(self._btn_refreshTab)
+        self.toolbar.addWidget(self._changeScaleCombo)
+        self.toolbar.addWidget(ExpandingWidget(self))
         self.toolbar.addWidget(self._jumpToLineedit)
         self.toolbar.addWidget(self._sectionSliderWidget)
         self.toolbar.addWidget(self._fps_spinbox)
-        self.toolbar.addWidget(self._changeScaleCombo)
-
-        # if cfg.DEV_MODE:
-        #     self.toolbar.addWidget(self.profilingTimerButton)
+        self.toolbar.addWidget(ExpandingWidget(self))
         self.toolbar.addWidget(self.notesButton)
         self.toolbar.addWidget(self.pythonButton)
         self.toolbar.addWidget(self.hudButton)
         self.toolbar.addWidget(self.flickerButton)
-        # self.toolbar.addWidget(self._highContrastNgAction)
-        # self.toolbar.addWidget(self._fixAllZmag)
+        self.toolbar.addWidget(self.csButton)
         self.toolbar.addWidget(self._detachNgButton)
         self.toolbar.addWidget(self.info_button_buffer_label)
+        self.toolbar.layout().setSpacing(4)
 
 
     def _disableGlobTabs(self):
@@ -3318,10 +3274,6 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.setEnabled(True) #needed for disable on MA
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
-
-        # self._splitter.hide() #0424-
-
-        # self.newMainSplitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         if tabtype == 'OpenProject':
             configure_project_paths()
@@ -3557,17 +3509,6 @@ class MainWindow(QMainWindow):
         menu.addAction(action)
 
 
-    # def fn_ngShowHideUiControls(self):
-    #     logger.info('')
-    #     if self._isProjectTab():
-    #         setOpt('neuroglancer,SHOW_UI_CONTROLS', self.ngShowUiControlsAction.isChecked())
-    #         cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-    #         cfg.project_tab.updateUISpacing()
-    #         self.ngShowUiControlsAction.setText(
-    #             ('Show NG UI Controls', 'Hide NG UI Controls')[self.ngShowUiControlsAction.isChecked()])
-    #         self.initAllViewers()
-
-
     def initAllViewers(self):
         if self._isProjectTab():
             for v in cfg.project_tab.get_viewers():
@@ -3678,7 +3619,7 @@ class MainWindow(QMainWindow):
         self.ngShowAxisLinesAction.setCheckable(True)
         self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
         # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[getOpt('neuroglancer,SHOW_AXIS_LINES')])
-        self.ngShowAxisLinesAction.setText('Axis Lines')
+        self.ngShowAxisLinesAction.setText('Axes')
         viewMenu.addAction(self.ngShowAxisLinesAction)
 
         self.ngShowScaleBarAction = QAction(self)
@@ -3727,7 +3668,7 @@ class MainWindow(QMainWindow):
         self.ngShowYellowFrameAction.setCheckable(True)
         self.ngShowYellowFrameAction.setChecked(getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
         # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
-        self.ngShowYellowFrameAction.setText('Boundary')
+        self.ngShowYellowFrameAction.setText('Bounds')
         self.ngShowYellowFrameAction.triggered.connect(fn)
         viewMenu.addAction(self.ngShowYellowFrameAction)
 
@@ -3757,6 +3698,7 @@ class MainWindow(QMainWindow):
         def fn():
             if self._isProjectTab():
                 cfg.project_tab.detailsSection.setVisible(self.ngShowSectionDetailsAction.isChecked())
+                self.dataUpdateWidgets()
         self.ngShowSectionDetailsAction.triggered.connect(fn)
         self.ngShowSectionDetailsAction.setCheckable(True)
         self.ngShowSectionDetailsAction.setText('Section')
@@ -4321,11 +4263,12 @@ class MainWindow(QMainWindow):
 
     def initControlPanel(self):
 
-        button_size = QSize(58, 20)
-        std_input_size = QSize(64, 20)
+        button_size = QSize(58, 16)
+        std_input_size = QSize(64, 16)
         # normal_button_size = QSize(68, 28)
         normal_button_size = QSize(76, 30)
-        long_button_size = QSize(140, 14)
+        # long_button_size = QSize(132, 14)
+        long_button_size = QSize(120, 14)
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
@@ -4411,7 +4354,7 @@ class MainWindow(QMainWindow):
         self._btn_prevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_prevSection.setStatusTip(tip)
         self._btn_prevSection.clicked.connect(self.layer_left)
-        self._btn_prevSection.setFixedSize(QSize(20, 20))
+        self._btn_prevSection.setFixedSize(QSize(16, 16))
         self._btn_prevSection.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
         self._btn_prevSection.setEnabled(False)
 
@@ -4420,7 +4363,7 @@ class MainWindow(QMainWindow):
         self._btn_nextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_nextSection.setStatusTip(tip)
         self._btn_nextSection.clicked.connect(self.layer_right)
-        self._btn_nextSection.setFixedSize(QSize(20, 20))
+        self._btn_nextSection.setFixedSize(QSize(16, 16))
         self._btn_nextSection.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
         self._btn_nextSection.setEnabled(False)
 
@@ -4434,7 +4377,7 @@ class MainWindow(QMainWindow):
         self._scaleDownButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._scaleDownButton.setStatusTip(tip)
         self._scaleDownButton.clicked.connect(self.scale_down)
-        self._scaleDownButton.setFixedSize(QSize(20, 20))
+        self._scaleDownButton.setFixedSize(QSize(16, 16))
         self._scaleDownButton.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
 
         tip = 'Go To Next Scale.'
@@ -4443,20 +4386,25 @@ class MainWindow(QMainWindow):
         self._scaleUpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._scaleUpButton.setStatusTip(tip)
         self._scaleUpButton.clicked.connect(self.scale_up)
-        self._scaleUpButton.setFixedSize(QSize(20, 20))
+        self._scaleUpButton.setFixedSize(QSize(16, 16))
         self._scaleUpButton.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
 
         self._scaleSetWidget = QWidget()
         self._scaleSetWidget.setLayout(HBL(self._scaleDownButton, self._scaleUpButton))
 
-        self.navControls = QWidget()
+        # self.navControls = QWidget()
+
         fl = QFormLayout()
         fl.setContentsMargins(2,2,2,2)
         fl.setSpacing(4)
         fl.addRow('Include: ', self._skipCheckbox)
         fl.addRow('Section:', self._sectionChangeWidget)
         fl.addRow('Scale:', self._scaleSetWidget)
-        self.navControls.setAutoFillBackground(True)
+        # self.navControls.setAutoFillBackground(True)
+        # self.navControls.setLayout(fl)
+        self.navControls = QGroupBox()
+        self.navControls.setContentsMargins(0, 0, 0, 0)
+        self.navControls.setObjectName('gb_cpanel')
         self.navControls.setLayout(fl)
 
         # lab = QLabel('Scale:')
@@ -4496,7 +4444,7 @@ class MainWindow(QMainWindow):
         # self.sectionRangeSlider.setFixedWidth(100)
         self.sectionRangeSlider.setMinimumWidth(40)
         self.sectionRangeSlider.setMaximumWidth(150)
-        self.sectionRangeSlider.setFixedHeight(18)
+        self.sectionRangeSlider.setFixedHeight(16)
         # self.sectionRangeSlider.setMaximumWidth(long_button_size.width() * 2)
         # self.sectionRangeSlider.setMaximumHeight(30)
         self.sectionRangeSlider.setMin(0)
@@ -4505,13 +4453,13 @@ class MainWindow(QMainWindow):
         self.startRangeInput = QLineEdit()
         # self.startRangeInput.setStyleSheet("background-color: #f3f6fb;")
         self.startRangeInput.setAlignment(Qt.AlignCenter)
-        self.startRangeInput.setFixedSize(30,18)
+        self.startRangeInput.setFixedSize(30,16)
         self.startRangeInput.setEnabled(False)
 
         self.endRangeInput = QLineEdit()
         # self.endRangeInput.setStyleSheet("background-color: #f3f6fb;")
         self.endRangeInput.setAlignment(Qt.AlignCenter)
-        self.endRangeInput.setFixedSize(30,18)
+        self.endRangeInput.setFixedSize(30,16)
         self.endRangeInput.setEnabled(False)
 
         self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(':'), self.endRangeInput)
@@ -4552,10 +4500,10 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.currentIndexChanged.connect(self._valueChangedPolyOrder)
         self._polyBiasCombo.currentIndexChanged.connect(self._callbk_unsavedChanges)
         self._polyBiasCombo.setStatusTip(tip)
-        self._polyBiasCombo.addItems(['None', 'polynomial 0°', 'polynomial 1°', 'polynomial 2°', 'polynomial 3°', 'polynomial 4°'])
+        self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(60, 18))
+        self._polyBiasCombo.setFixedSize(QSize(60, 16))
         self._polyBiasCombo.setEnabled(False)
         self._polyBiasCombo.lineEdit()
 
@@ -4589,23 +4537,25 @@ class MainWindow(QMainWindow):
         # self._btn_alignAll.setAutoFillBackground(True)
         fl = QFormLayout()
         # fl.setAlignment(Qt.AlignTop)
-        fl.setContentsMargins(2,2,2,2)
-        fl.setSpacing(4)
+        fl.setContentsMargins(2,0,2,0)
+        fl.setSpacing(2)
         fl.addWidget(self._btn_regenerate)
         fl.addWidget(self._btn_alignOne)
         fl.addWidget(self._btn_alignAll)
         self.cpButtonsLeft = QWidget()
+        self.cpButtonsLeft.setContentsMargins(0,0,0,0)
         self.cpButtonsLeft.setAutoFillBackground(True)
         self.cpButtonsLeft.setLayout(fl)
 
         self.cpButtonsRight = QWidget()
+        self.cpButtonsRight.setContentsMargins(0,0,0,0)
         fl.setContentsMargins(2,0,2,0)
         fl = QFormLayout()
-        fl.setSpacing(2)
-        range_widget = HWidget(QLabel('Range:'), self.rangeInputWidget, ExpandingWidget(self))
+        fl.setSpacing(4)
+        range_widget = HWidget(QLabel('Range:'), ExpandingWidget(self), self.rangeInputWidget, ExpandingWidget(self))
         range_widget.setMaximumWidth(400)
         fl.addWidget(range_widget)
-        fl.addWidget(self.sectionRangeSlider)
+        # fl.addWidget(self.sectionRangeSlider)
         fl.addWidget(HWidget(self._btn_alignRange))
         self.cpButtonsRight.setLayout(fl)
 
@@ -4617,7 +4567,7 @@ class MainWindow(QMainWindow):
         # self.gb_ctlActions_layout = HBL(vw_l, vw_r)
 
         self.gb_ctlActions_layout = HBL()
-        self.gb_ctlActions_layout.setContentsMargins(0,10,0,0)
+        self.gb_ctlActions_layout.setContentsMargins(0,0,0,0)
         self.gb_ctlActions_layout.addWidget(self.cpButtonsLeft, alignment=Qt.AlignBaseline)
         self.gb_ctlActions_layout.addWidget(self.cpButtonsRight, alignment=Qt.AlignVCenter)
         self.gb_ctlActions.setLayout(self.gb_ctlActions_layout)
@@ -4635,11 +4585,9 @@ class MainWindow(QMainWindow):
             QPushButton:enabled {
                 font-weight: 400;
                 border-color: #f3f6fb;
-                
             }
             QPushButton:enabled:hover {
                 border-color: #339933;
-                
             }
             QPushButton:disabled {
                 color: #555555;
@@ -4673,10 +4621,15 @@ class MainWindow(QMainWindow):
             }
             QComboBox {
                 background-color: #f3f6fb;
-                color: #141414;
-                font-size: 11px;
-                border-radius: 3px;
+                color: #161c20;
+                font-size: 8px;
             }
+            
+            QComboBox QAbstractItemView 
+            {
+                min-width: 50px;
+            }
+            
             QAbstractItemView {
                 background-color: #f3f6fb;
                 color: #141414;
@@ -4686,8 +4639,10 @@ class MainWindow(QMainWindow):
                 border: 1px solid #ede9e8;
                 border-radius: 4px;
                 padding: 2px;
+                padding-bottom: 0px;
                 margin-top: 0px;
-                margin-bottom: 4px;
+                margin-bottom: 0px;
+                font-size: 9px;
             }
             QGroupBox:disabled#gb_cpanel {
                 background-color: #ffe135;
@@ -4703,18 +4658,17 @@ class MainWindow(QMainWindow):
                 padding: 1px;
                 border-width: 0px;
             }
-
-
-
         """
 
         fl = QFormLayout()
-        fl.setContentsMargins(2,14,2,2)
+        fl.setContentsMargins(2,10,2,2)
         fl.setSpacing(1)
         # fl.addRow('Include: ', self._skipCheckbox)
         fl.addRow('Generate TIFFs: ', self._toggleAutogenerate)
         fl.addRow('Bounding Box: ', self._bbToggle)
-        fl.addRow('Corrective Polynomial: ', self._polyBiasCombo)
+        fl.addRow('Corrective Bias: ', self._polyBiasCombo)
+        # fl.setAlignment(Qt.AlignBaseline)
+        fl.setAlignment(Qt.AlignBottom)
 
         self.outputSettings = QGroupBox("Output Settings")
         self.outputSettings.setObjectName('gb_cpanel')
@@ -4738,25 +4692,33 @@ class MainWindow(QMainWindow):
         '''self._wdg_alignBut
         tons <- self.cpButtonsLeft <- self.cpanel_hwidget1'''
         w = QWidget()
+        w.setContentsMargins(0,0,0,0)
         hbl = HBL()
-        hbl.setSpacing(8)
+        # hbl.setSpacing(8)
         w.setLayout(hbl)
         # hbl.addWidget(QLabel('  '))
-        hbl.addWidget(ExpandingWidget(self))
-        # hbl.addWidget(VWidget(self._sectionChangeWidget, self._scaleSetWidget))
+        # hbl.addWidget(ExpandingWidget(self))
+        hbl.addStretch(3)
         hbl.addWidget(self.navControls)
+        hbl.addStretch(1)
         hbl.addWidget(self.swimSettings)
+        hbl.addStretch(1)
         hbl.addWidget(self.gb_ctlActions)
+        hbl.addStretch(1)
         hbl.addWidget(self.outputSettings)
-        hbl.addWidget(ExpandingWidget(self))
+        hbl.addStretch(3)
 
         lab = QLabel('Control Panel')
         lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb; padding-left: 1px; padding-top: 1px;')
 
+        self.cpanelVertLabel = VerticalLabel('Control Panel', font_color='#ede9e8', font_size=14)
 
-        self.cpanel = VWidget(lab, w)
-        self.cpanel.setFixedHeight(110)
-        self.cpanel.layout.setAlignment(Qt.AlignHCenter)
+        # self.cpanel = VWidget(lab, w)
+        # self.cpanel = HWidget(self.cpanelVertLabel,ExpandingWidget(self), w)
+        self.cpanel = w
+        self.cpanel.setContentsMargins(8,6,8,4)
+        self.cpanel.setFixedHeight(86)
+        # self.cpanel.layout.setAlignment(Qt.AlignHCenter)
         self.cpanel.setAutoFillBackground(True)
         # p = self.cpanel.palette()
         # p.setColor(self.cpanel.backgroundRole(), QColor('#222222'))
@@ -5089,25 +5051,26 @@ class MainWindow(QMainWindow):
 
 
         self.notes = QTextEdit()
+        self.notes.setMidLineWidth(110)
         self.notes.setObjectName('Notes')
-        # self.notes.setStyleSheet("""
-        #     background-color: #f3f6fb;
-        #     color: #141414;
-        #     font-size: 11px;
-        #     border-width: 0px;
-        #     border-radius: 5px;
-        # """)
+        self.notes.setStyleSheet("""
+            background-color: #ffd43b;
+            color: #161c20;
+            font-size: 11px;
+            border-width: 0px;
+            border-radius: 5px;
+        """)
         self.notes.setPlaceholderText('Type any notes here...')
         self.notes.textChanged.connect(fn)
 
         self.dw_notes = QDockWidget('Notes', self)
-        self.dw_notes.setStyleSheet("""QDockWidget::title {
-            background-color: #ffd43b;
-            color: #161c20;
-            font-weight: 600;
-            padding-left: 5px;
-            text-align: left;
-        }""")
+        # self.dw_notes.setStyleSheet("""QDockWidget::title {
+        #     background-color: #ffd43b;
+        #     color: #161c20;
+        #     font-weight: 600;
+        #     padding-left: 5px;
+        #     text-align: left;
+        # }""")
         self.dw_notes.setWidget(self.notes)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_notes)
         self.dw_notes.hide()
@@ -5201,7 +5164,8 @@ class MainWindow(QMainWindow):
 
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
-        self.globTabs.setContentsMargins(4,4,4,4)
+        # self.globTabs.setContentsMargins(4,4,4,4)
+        self.globTabs.setContentsMargins(0,0,0,0)
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
@@ -5254,45 +5218,13 @@ class MainWindow(QMainWindow):
         self.dw_flicker = QDockWidget('Flicker', self)
         self.dw_flicker.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
-            background: #4b8bbe;
+            background: #380282;
             padding-left: 5px;
             font-weight: 600;
         }""")
         self.dw_flicker.setWidget(self.flicker)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
         self.dw_flicker.hide()
-
-
-
-        '''Main Vertical Splitter'''
-        self._splitter = QSplitter(Qt.Orientation.Vertical)
-        # self._splitter.setStyleSheet("""
-        # QWidget {background: #222222;}
-        # QSplitter::handle { background: #339933; margin-left:400px; margin-right:400px;}""")
-
-        #ForNow #0506
-        # self._splitter.setStyleSheet("""
-        # QSplitter {
-        #     background-color: #ede9e8;
-        #     spacing: 0px;
-        #     padding: 1px;
-        #     margin: 0px;
-        # }
-        # QSplitter::handle {
-        #     background-color: #555555;
-        #     border: 0px solid #FAFAFA;
-        #     spacing: 0px;
-        #     padding: 0px;
-        #     margin: 0px;
-        # }
-        #
-        # QSplitter::handle:hover {
-        #     background-color: #339933;
-        #     spacing: 0px;
-        #     padding: 1px;
-        #     margin: 0px;
-        # }
-        # """)
 
         '''Documentation Panel'''
         self.browser_web = QWebEngineView()
@@ -5340,7 +5272,7 @@ class MainWindow(QMainWindow):
 
         buttonBrowserRefresh = QPushButton()
         buttonBrowserRefresh.setStatusTip('Refresh')
-        buttonBrowserRefresh.setIcon(qta.icon("ei.refresh", color=cfg.ICON_COLOR))
+        buttonBrowserRefresh.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
         buttonBrowserRefresh.setFixedSize(QSize(22,22))
         buttonBrowserRefresh.clicked.connect(browser_reload)
 
@@ -5392,10 +5324,7 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-        # self.dw_corrspots = QDockWidget('Correlation Signals', self._splitter)
         self.dw_corrspots = QDockWidget('Correlation Signals', self)
-        # self.dw_corrspots.setMaximumWidth(360)
-        # self.dw_corrspots.setMaximumHeight(100)
         self.dw_corrspots.dockLocationChanged.connect(lambda area: print(f'dockLocationChanged: {area}'))
         def fn():
             caller = inspect.stack()[1].function
@@ -5454,12 +5383,14 @@ class MainWindow(QMainWindow):
         self.dw_corrspots.hide()
 
 
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.pbar_widget)
         # self.globTabsAndCpanel.setAutoFillBackground(True)
         # self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.globTabsAndCpanel.show()
 
         self.setCentralWidget(self.globTabsAndCpanel)
+
+
 
 
 
@@ -5488,7 +5419,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         # self.statusBar = self.statusBar()
         self.statusBar = QStatusBar()
-        self.statusBar.setFixedHeight(21)
+        self.statusBar.setFixedHeight(16)
         # self.statusBar.setStyleSheet("""
         # font-size: 10px;
         # font-weight: 600;
@@ -5502,7 +5433,8 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
-        self.pbar.setStyleSheet("font-size: 10px;")
+        self.pbar.setFixedHeight(16)
+        # self.pbar.setStyleSheet("font-size: 10px;")
         self.pbar.setTextVisible(True)
         # font = QFont('Arial', 12)
         # font.setBold(True)
@@ -5510,15 +5442,26 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedHeight(16)
         # self.pbar.setFixedWidth(400)
         self.pbar_widget = QWidget(self)
+        self.pbar_widget.setAutoFillBackground(True)
+        # self.pbar_widget.setStyleSheet("background-color: #222222;")
         self.status_bar_layout = QHBoxLayout()
-        self.status_bar_layout.setContentsMargins(0, 0, 0, 0)
+        self.status_bar_layout.setContentsMargins(4, 0, 4, 0)
+        self.status_bar_layout.setSpacing(4)
 
         # self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button = QPushButton('Stop')
-        self.pbar_cancel_button.setFixedSize(48,16)
+        self.pbar_cancel_button.setFixedSize(42,14)
         self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
-        self.pbar_cancel_button.setStyleSheet("font-size: 10px;")
+        self.pbar_cancel_button.setStyleSheet("""
+        QPushButton {
+            color: #161c20;
+            background-color: #f3f6fb;
+            font-size: 9px;
+            font-weight: 600;
+            border: 1px solid #161c20;
+            border-radius: 3px;
+        }""")
         self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
 
         self.pbar_widget.setLayout(self.status_bar_layout)
@@ -5526,7 +5469,7 @@ class MainWindow(QMainWindow):
         self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)
         self.status_bar_layout.addWidget(self.pbar_cancel_button)
-        self.statusBar.addPermanentWidget(self.pbar_widget)
+        # self.statusBar.addPermanentWidget(self.pbar_widget)
         self.hidePbar()
 
     def forceStopMultiprocessing(self):
@@ -5645,6 +5588,25 @@ class ExpandingWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
+class VerticalLabel(QLabel):
+
+    def __init__(self, text, bg_color=None, font_color=None, font_size=None, *args):
+        QLabel.__init__(self, text, *args)
+
+        self.text = text
+        self.setStyleSheet("font-size: 12px;")
+        font = QFont()
+        font.setBold(True)
+        self.setFont(font)
+        style = ''
+        if bg_color:
+            style += f'background-color: {bg_color};'
+        if font_color:
+            style += f'color: {font_color};'
+        if font_size:
+            style += f'font-size: {str(font_size)};'
+        if style != '':
+            self.setStyleSheet(style)
 
 
 '''
@@ -5676,4 +5638,6 @@ for i,dock in enumerate(cfg.mw.findChildren(QDockWidget)):
             print(True)
 
 
+
+"Z-stack position"
 '''

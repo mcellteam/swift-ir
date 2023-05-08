@@ -11,7 +11,7 @@ import textwrap
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog
-from qtpy.QtCore import Qt, QRect, QUrl, QDir
+from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize
 from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence
 
 from src.ui.file_browser import FileBrowser
@@ -72,10 +72,6 @@ class OpenProject(QWidget):
         w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.controls = QWidget()
-        # self.controls.setStyleSheet("""
-        #     background-color: #ffe135;
-        #
-        # """)
         self.controls.setFixedHeight(18)
         hbl = QHBoxLayout()
         hbl.setContentsMargins(2, 0, 2, 0)
@@ -116,21 +112,23 @@ class OpenProject(QWidget):
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
+        button_size = QSize(80,18)
+
         self._buttonOpen = QPushButton('Open Project')
         self._buttonOpen.setEnabled(False)
         self._buttonOpen.clicked.connect(self.open_project_selected)
-        self._buttonOpen.setFixedSize(90, 20)
+        self._buttonOpen.setFixedSize(button_size)
         self._buttonOpen.hide()
 
         self._buttonDelete = QPushButton('Delete Project')
         self._buttonDelete.setEnabled(False)
         self._buttonDelete.clicked.connect(self.delete_project)
-        self._buttonDelete.setFixedSize(90, 20)
+        self._buttonDelete.setFixedSize(button_size)
         self._buttonDelete.hide()
 
         self._buttonNew = QPushButton('New Project')
         self._buttonNew.clicked.connect(self.new_project)
-        self._buttonNew.setFixedSize(90, 20)
+        self._buttonNew.setFixedSize(button_size)
 
         # self._buttonNew = QPushButton('Remember')
         # self._buttonNew.setStyleSheet("font-size: 9px;")
@@ -208,34 +206,34 @@ class OpenProject(QWidget):
         # }
         # """)
         self._actions_widget.setStyleSheet(style)
-        # self._actions_widget.setStyleSheet("""
-        # QPushButton {
-        #     font-size: 12px;
-        #     font-family: Tahoma, sans-serif;
-        #     color: #f3f6fb;
-        #     background-color: #004060;
-        #     border-width: 1px;
-        #     border-color: #339933;
-        #     border-style: solid;
-        #     padding: 1px;
-        #     border-radius: 4px;
-        #     outline: none;
-        # }
-        #
-        # QPushButton:disabled {
-        #     border-width: 1px;
-        #     border-color: #dadada;
-        #     border-style: solid;
-        #     background-color: #dadada;
-        #     padding: 1px;
-        #     border-radius: 4px;
-        #     color: #ede9e8;
-        # }
-        # """)
+        self._actions_widget.setStyleSheet("""
+        QPushButton {
+            font-size: 12px;
+            font-family: Tahoma, sans-serif;
+            color: #f3f6fb;
+            background-color: #004060;
+            border-width: 1px;
+            border-color: #339933;
+            border-style: solid;
+            padding: 1px;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        QPushButton:disabled {
+            border-width: 1px;
+            border-color: #dadada;
+            border-style: solid;
+            background-color: #dadada;
+            padding: 1px;
+            border-radius: 4px;
+            color: #ede9e8;
+        }
+        """)
 
 
         self._splitter = QSplitter()
-        # self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
@@ -679,7 +677,8 @@ class UserProjects(QWidget):
         self.parent = parent
 
         # self.initial_row_height = 64
-        self.ROW_HEIGHT = 64
+        # self.ROW_HEIGHT = 64
+        self.ROW_HEIGHT = 42
 
         self.counter1 = 0
         self.counter2 = 0
@@ -998,7 +997,7 @@ QPushButton::default{
 QPushButton:hover{
 	border-style: solid;
 	border-color: #161c20;
-	border-width: 1px;
+	border-width: 2px;
 	border-radius: 5px;
 	color: rgb(0,0,0);
 	padding: 2px;

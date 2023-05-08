@@ -77,24 +77,26 @@ class FileBrowser(QWidget):
         self.controls.setLayout(hbl)
         self.controls.hide()
 
+        button_size = QSize(50, 18)
+
         self.buttonSetRootRoot = QPushButton('Root')
-        self.buttonSetRootRoot.setFixedSize(64, 20)
+        self.buttonSetRootRoot.setFixedSize(button_size)
         self.buttonSetRootRoot.clicked.connect(self.setRootRoot)
 
         self.buttonSetRootHome = QPushButton('Home')
-        self.buttonSetRootHome.setFixedSize(64, 20)
+        self.buttonSetRootHome.setFixedSize(button_size)
         self.buttonSetRootHome.clicked.connect(self.setRootHome)
 
         self.buttonSetRootWork = QPushButton('Work')
-        self.buttonSetRootWork.setFixedSize(64, 20)
+        self.buttonSetRootWork.setFixedSize(button_size)
         self.buttonSetRootWork.clicked.connect(self.setRootWork)
 
         self.buttonSetRootScratch = QPushButton('Scratch')
-        self.buttonSetRootScratch.setFixedSize(64, 20)
+        self.buttonSetRootScratch.setFixedSize(button_size)
         self.buttonSetRootScratch.clicked.connect(self.setRootScratch)
 
         self.buttonSetRootSpecial = QPushButton('SanDisk')
-        self.buttonSetRootSpecial.setFixedSize(64, 20)
+        self.buttonSetRootSpecial.setFixedSize(button_size)
         self.buttonSetRootSpecial.clicked.connect(self.setRootSpecial)
 
         hbl = QHBoxLayout()

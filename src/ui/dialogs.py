@@ -5,11 +5,13 @@ from os.path import expanduser
 from pathlib import Path
 import faulthandler
 import neuroglancer as ng
+import qtawesome as qta
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
-    QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy, QDial, QFormLayout, QGroupBox
-from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize
+    QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy, QDial, QFormLayout, QGroupBox, QButtonGroup, \
+    QStyle
+from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize, QObject
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc
@@ -19,30 +21,90 @@ from src.ui.layouts import VBL, HBL, VWidget, HWidget
 logger = logging.getLogger(__name__)
 
 
+class ExitSignals(QObject):
+    cancelExit = Signal()
+    saveExit = Signal()
+    exit = Signal()
+    response = Signal(int)
+
 class ExitAppDialog(QDialog):
-    def __init__(self):
+
+    def __init__(self, unsaved_changes=False):
         super().__init__()
-        self.setFixedSize(240, 100)
+        self.signals = ExitSignals()
         self.setModal(True)
         self.setWindowFlags(Qt.FramelessWindowHint)
-        # self.setAutoFillBackground(False)
-
         self.setWindowTitle("Confirm Exit")
         self.setStyleSheet("""
-            background-color: #222222;
-            color: #ede9e8;
-            font-size: 11px;
+        QLabel{
+            color: #f3f6fb;
             font-weight: 600;
-        """)
+        }
+        QPushButton {
+            color: #161c20;
+            background-color: #f3f6fb;
+            font-size: 9px;
+            border-radius: 3px;
+        }
+        QDialog {
+                background-color: #339933;
+                color: #ede9e8;
+                font-size: 11px;
+                font-weight: 600;
+                font-family: Tahoma, sans-serif;
+        }""")
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.buttonGroup = QButtonGroup()
+        self.cancelButton = QPushButton('Cancel')
+        # self.cancelButton.setFixedSize(QSize(16,16))
+        self.cancelButton.setFixedSize(QSize(60,16))
+        # self.cancelButton.setIcon(QIcon('src/resources/white-x.png'))
+        # self.cancelButton.setIcon(qta.icon('mdi.cancel', color='#161c20'))
+        self.saveExitButton = QPushButton('Save && Quit')
+        self.saveExitButton.setFixedSize(QSize(60,16))
+        # self.saveExitButton.setIcon(qta.icon('fa.save', color='#161c20'))
+        self.exitExitButton = QPushButton()
+        # self.exitExitButton.setIcon(qta.icon('mdi.exit-run', color='#161c20'))
+        self.buttonGroup.addButton(self.cancelButton)
+        self.buttonGroup.addButton(self.saveExitButton)
+        self.buttonGroup.addButton(self.exitExitButton)
+        self.saveExitButton.setVisible(unsaved_changes)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
+        self.cancelButton.clicked.connect(self.cancelPressed)
+        self.saveExitButton.clicked.connect(self.savePressed)
+        self.exitExitButton.clicked.connect(self.exitPressed)
 
-        self.message = QLabel('Exit Align-EM-SWiFT?')
-        self.layout = HBL(ExpandingWidget(self), self.message, self.buttonBox)
+        if unsaved_changes:
+            self.message = 'There are unsaved changes. Save before exiting?'
+            self.exitExitButton.setText('Quit Without Saving')
+            self.exitExitButton.setFixedSize(QSize(90,16))
+        else:
+            self.message = 'Exit Align-EM-SWiFT?'
+            self.exitExitButton.setText('Quit')
+            self.exitExitButton.setFixedSize(QSize(50,16))
+
+        self.layout = HBL(ExpandingWidget(self), QLabel(self.message), self.cancelButton, self.saveExitButton, self.exitExitButton)
+        self.layout.setSpacing(8)
+        self.setContentsMargins(8,0,8,0)
         self.setLayout(self.layout)
 
+    def cancelPressed(self):
+        logger.info('')
+        self.signals.response.emit(2)
+        self.signals.cancelExit.emit()
+        self.close()
+
+    def savePressed(self):
+        logger.info('')
+        self.signals.response.emit(4)
+        self.signals.saveExit.emit()
+        self.close()
+
+    def exitPressed(self):
+        logger.info('')
+        self.signals.response.emit(6)
+        self.signals.exit.emit()
+        self.close()
 
 class SaveExitAppDialog(QDialog):
     def __init__(self):
