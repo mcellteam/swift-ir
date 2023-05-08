@@ -682,14 +682,18 @@ class MainWindow(QMainWindow):
         if cfg.data:
             s = cfg.data.scale
             try:
+                a = """<span style='color: #ffe135;'>"""
+                b = """</span>"""
+                nl = '<br>'
+                br = '&nbsp;'
                 cfg.project_tab.detailsRuntime.setText(
-                    'Gen. Scales      :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['t_scaling']).rjust(9) +
-                    'Convert Zarr     :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(9) +
-                    'Source Thumbs    :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['t_thumbs']).rjust(9) +
-                    'Compute Affines  :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(9) +
-                    'Gen. Alignment   :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(9) +
-                    'Aligned Thumbs   :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-                    'Corr Spot Thumbs :' + ('%.2fs\n' % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
+                    f"Gen. Scales{br}{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling']).rjust(9) +
+                    f"Convert Zarr{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(9) +
+                    f"Source Thumbs{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(9) +
+                    f"Compute Affines{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(9) +
+                    f"Gen. Alignment{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(9) +
+                    f"Aligned Thumbs{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(9) +
+                    f"Corr Spot Thumbs{br}:{a}" + (f"%.2fs{b}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
                 )
             except:
                 logger.warning('detailsTiming cant update')
@@ -3045,7 +3049,7 @@ class MainWindow(QMainWindow):
         """
         self._btn_refreshTab = QPushButton()
         # self._btn_refreshTab.setStyleSheet("background-color: #161c20;")
-        self._btn_refreshTab.setStyleSheet(style)
+        self._btn_refreshTab.setStyleSheet(button_gradient_style)
         self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
         self._btn_refreshTab.setFixedSize(18,18)
         self._btn_refreshTab.setIconSize(QSize(14,14))
@@ -3057,7 +3061,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Notepad Tool Window'
         self.notesButton = QPushButton(' Notes')
-        self.notesButton.setStyleSheet(style)
+        self.notesButton.setStyleSheet(button_gradient_style)
         self.notesButton.setStatusTip(tip)
         self.notesButton.setToolTip(tip)
         self.notesButton.setFixedSize(tb_button_size)
@@ -3067,7 +3071,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Python Console Tool Window'
         self.pythonButton = QPushButton(' Python')
-        self.pythonButton.setStyleSheet(style)
+        self.pythonButton.setStyleSheet(button_gradient_style)
         self.pythonButton.setToolTip(tip)
         self.pythonButton.setStatusTip(tip)
         self.pythonButton.setFixedSize(tb_button_size)
@@ -3077,7 +3081,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Head-up Display Tool Window'
         self.hudButton = QPushButton(' HUD')
-        self.hudButton.setStyleSheet(style)
+        self.hudButton.setStyleSheet(button_gradient_style)
         self.hudButton.setToolTip(tip)
         self.hudButton.setStatusTip(tip)
         self.hudButton.setFixedSize(tb_button_size)
@@ -3088,7 +3092,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Flicker Tool Window'
         self.flickerButton = QPushButton(' Flicker')
-        self.flickerButton.setStyleSheet(style)
+        self.flickerButton.setStyleSheet(button_gradient_style)
         self.flickerButton.setToolTip(tip)
         self.flickerButton.setStatusTip(tip)
         self.flickerButton.setFixedSize(tb_button_size)
@@ -3099,7 +3103,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Show/Hide Correlation Signals Tool Window'
         self.csButton = QPushButton(' Signals')
-        self.csButton.setStyleSheet(style)
+        self.csButton.setStyleSheet(button_gradient_style)
         self.csButton.setToolTip(tip)
         self.csButton.setStatusTip(tip)
         self.csButton.setFixedSize(tb_button_size)
@@ -3109,7 +3113,7 @@ class MainWindow(QMainWindow):
 
         self._detachNgButton = QPushButton()
         # self._detachNgButton.setStyleSheet("background-color: #161c20;")
-        self._detachNgButton.setStyleSheet(style)
+        self._detachNgButton.setStyleSheet(button_gradient_style)
         self._detachNgButton.setFixedSize(18,18)
         self._detachNgButton.setIconSize(QSize(14,14))
         self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color='#161c20'))
@@ -4600,7 +4604,7 @@ class MainWindow(QMainWindow):
             QComboBox {
                 background-color: #f3f6fb;
                 color: #161c20;
-                font-size: 8px;
+                font-size: 10px;
             }
             
             QComboBox QAbstractItemView 
@@ -4611,7 +4615,7 @@ class MainWindow(QMainWindow):
             QAbstractItemView {
                 background-color: #f3f6fb;
                 color: #141414;
-                font-size: 11px;
+                font-size: 10px;
             }
             QGroupBox#gb_cpanel {
                 border: 1px solid #ede9e8;
@@ -5030,7 +5034,7 @@ class MainWindow(QMainWindow):
 
 
         self.notes = QTextEdit()
-        self.notes.setMidLineWidth(110)
+        self.notes.setMinimumWidth(100)
         self.notes.setObjectName('Notes')
         self.notes.setStyleSheet("""
             background-color: #ede9e8;
@@ -5589,6 +5593,55 @@ class VerticalLabel(QLabel):
         if style != '':
             self.setStyleSheet(style)
 
+button_gradient_style = """
+QPushButton{
+    font-size: 11px;
+	border-style: solid;
+	border-color: #c7c7c7;
+	border-width: 1px;
+	border-radius: 2px;
+	background-color: #ede9e8;
+}
+QPushButton:pressed{
+	border-style: inset;
+	border-color: #339933;
+}
+QPushButton:hover{
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 2px;
+	color: #161c20;
+	padding: 2px;
+	background-color: #ede9e8;
+	border-color: #778899;
+
+}
+QPushButton:disabled{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	color: #808086;
+	padding: 2px;
+	background-color: #ebecf0;
+}
+QPushButton::default{
+	border-style: solid;
+	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
+	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
+	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
+	border-width: 1px;
+	border-radius: 2px;
+	color: #161c20;
+	padding: 2px;
+	background-color: #daebfe;
+}
+
+"""
 
 '''
 #indicators css
