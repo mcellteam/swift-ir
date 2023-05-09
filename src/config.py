@@ -7,7 +7,7 @@ import platform
 
 __all__ = ['data']
 
-VERSION = '0.5.45'
+VERSION = '0.5.46'
 
 LOG_LEVEL = 1
 
@@ -44,7 +44,7 @@ is_mendenhall = False
 # WIDTH, HEIGHT = 1180, 680
 # WIDTH, HEIGHT = 1380, 900
 # WIDTH, HEIGHT = 1180, 720
-WIDTH, HEIGHT = 1100, 600
+WIDTH, HEIGHT = 1280, 640
 
 '''Default Alignment Params'''
 
