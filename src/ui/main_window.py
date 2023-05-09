@@ -5381,12 +5381,9 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedWidth(400)
         self.pbar_widget = QWidget(self)
         self.pbar_widget.setAutoFillBackground(True)
-        # self.pbar_widget.setStyleSheet("background-color: #222222;")
         self.status_bar_layout = QHBoxLayout()
         self.status_bar_layout.setContentsMargins(4, 0, 4, 0)
         self.status_bar_layout.setSpacing(4)
-
-        # self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42,14)
         self.pbar_cancel_button.setIconSize(QSize(14,14))
@@ -5421,10 +5418,9 @@ class MainWindow(QMainWindow):
 
     def updatePbar(self, x=None):
         if x == None: x = cfg.nCompleted
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
         # logger.info(f'[caller: {caller}] Updating pbar, x={x}')
         self.pbar.setValue(x)
-        # self.repaint()
         QApplication.processEvents()
 
 
@@ -5438,7 +5434,7 @@ class MainWindow(QMainWindow):
 
 
     def showZeroedPbar(self):
-        logger.info('')
+        # logger.info('')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Tasks...')
         self.pbar_widget.show()
@@ -5446,7 +5442,7 @@ class MainWindow(QMainWindow):
 
 
     def hidePbar(self):
-        logger.info('')
+        # logger.info('')
         self.pbar_widget.hide()
         self.statusBar.clearMessage() #Shoehorn
         QApplication.processEvents()
