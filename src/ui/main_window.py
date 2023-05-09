@@ -387,17 +387,15 @@ class MainWindow(QMainWindow):
         #             ar = siz[0] / siz[1]  # aspect ratio
         #             self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
 
-        caller = inspect.stack()[1].function
-        logger.critical("updateCorrSignalsDrawer [caller: %s] >>>>" % caller)
+        # caller = inspect.stack()[1].function
 
         thumbs = cfg.data.get_signals_filenames()
-        logger.info('thumbs: %s' % str(thumbs))
+        # logger.info('thumbs: %s' % str(thumbs))
         n = len(thumbs)
         snr_vals = cfg.data.snr_components()
         colors = cfg.glob_colors
         count = 0
         if cfg.data.current_method == 'grid-custom':
-            logger.info('Setting custom grid correlation signals...')
             for i in range(7):
                 self.corrSignalsList[i].hide()
             regions = cfg.data.grid_custom_regions
@@ -425,7 +423,7 @@ class MainWindow(QMainWindow):
                 else:
                     self.corrSignalsList[i].hide()
 
-        logger.info("<<<< updateCorrSignalsDrawer")
+        # logger.info("<<<< updateCorrSignalsDrawer")
 
 
     def _callbk_showHidePython(self):
@@ -1351,70 +1349,29 @@ class MainWindow(QMainWindow):
             if self.dw_flicker.isVisible():
                 self.flicker.set_position(cfg.data.zpos)
 
-
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
 
+            try:     self._sectionSlider.setValue(cur)
+            except:  logger.warning('Section Slider Widget Failed to Update')
+            try:     self._jumpToLineedit.setText(str(cur))
+            except:  logger.warning('Current Layer Widget Failed to Update')
+            try:     self._skipCheckbox.setChecked(not cfg.data.skipped())
+            except:  logger.warning('Skip Toggle Widget Failed to Update')
+            try:     self._bbToggle.setChecked(cfg.data.use_bb())
+            except:  logger.warning('Bounding Box Toggle Failed to Update')
+
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
-                # if prev_loc != cfg.data.zpos:
-                # cfg.project_tab.tgl_alignMethod.setChecked(cfg.data.method() != 'Auto-SWIM')
-                # cfg.project_tab.set_method_label_text()
 
             if cfg.project_tab._tabs.currentIndex() == 1:
-                cfg.project_tab.project_table.table.selectRow(cur) #0504+
+                cfg.project_tab.project_table.table.selectRow(cur)
 
             if cfg.project_tab._tabs.currentIndex() == 2:
                 cfg.project_tab.treeview_model.jumpToLayer()
 
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.updateLayerLinePos()
-
-
-            # cfg.project_tab.project_table.table.selectRow(cur)
-            self._sectionSlider.setValue(cur)
-            self._jumpToLineedit.setText(str(cur)) #0131+
-
-            # if cfg.project_tab.corrSignalsWidget.isVisible():
-            #     if cfg.data.is_aligned():
-            #     # if 1:
-            #         if cfg.data.method() in ('grid-default','grid-custom'):
-            #             snr_vals = cfg.data.snr_components()
-            #             n = len(snr_vals)
-            #             if (n >= 1) and (snr_vals[0] > .001):
-            #                 cfg.project_tab.cs0.set_data(path=cfg.data.signal_q0_path(), snr=snr_vals[0])
-            #             else:
-            #                 cfg.project_tab.cs0.set_no_image()
-            #             if (n >= 2):
-            #                 cfg.project_tab.cs1.set_data(path=cfg.data.signal_q1_path(), snr=snr_vals[1])
-            #             else:
-            #                 cfg.project_tab.cs1.set_no_image()
-            #             if (n >= 3):
-            #                 cfg.project_tab.cs2.set_data(path=cfg.data.signal_q2_path(), snr=snr_vals[2])
-            #             else:
-            #                 cfg.project_tab.cs2.set_no_image()
-            #             if (n >= 4):
-            #                 cfg.project_tab.cs3.set_data(path=cfg.data.signal_q3_path(), snr=snr_vals[3])
-            #             else:
-            #                 cfg.project_tab.cs3.set_no_image()
-            #         elif cfg.data.method() == 'manual-hint':
-            #             files = cfg.data.get_signals_filenames()
-            #             snr_vals = cfg.data.snr_components()
-            #             n = len(files)
-            #             if n >= 1:
-            #                 cfg.project_tab.cs0.show()
-            #                 cfg.project_tab.cs0.set_data(path=files[0], snr=snr_vals[0])
-            #             else:       cfg.project_tab.cs0.set_no_image()
-            #             if n >= 2:  cfg.project_tab.cs1.set_data(path=files[1], snr=snr_vals[1])
-            #             else:       cfg.project_tab.cs1.set_no_image()
-            #             if n >= 3:  cfg.project_tab.cs2.set_data(path=files[2], snr=snr_vals[2])
-            #             else:       cfg.project_tab.cs2.set_no_image()
-            #             if n >= 4:
-            #                 cfg.project_tab.cs3.set_data(path=files[3], snr=snr_vals[3])
-            #             else:
-            #                 cfg.project_tab.cs3.set_no_image()
-
-
 
             br = '&nbsp;'
             a = """<span style='color: #ffe135;'>"""
@@ -1431,7 +1388,6 @@ class MainWindow(QMainWindow):
                 elif method == 'grid-custom':       txt += f"Method{br*3}:{br}{a}Custom{br}Grid{b}"
                 elif method == 'manual-hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
                 elif method == 'manual-strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
-                # txt += f"""Reject{br*7}:{br}[{(' ', 'X')[cfg.data.skipped()]}]"""
                 cfg.project_tab.detailsSection.setText(txt)
 
             if cfg.project_tab.detailsAFM.isVisible():
@@ -1494,30 +1450,6 @@ class MainWindow(QMainWindow):
                         cfg.project_tab.detailsSNR.setText(txt)
 
             self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
-
-            try:     self._jumpToLineedit.setText(str(cur))
-            except:  logger.warning('Current Layer Widget Failed to Update')
-            try:     self._skipCheckbox.setChecked(not cfg.data.skipped())
-            except:  logger.warning('Skip Toggle Widget Failed to Update')
-
-            # try:     self._whiteningControl.setValue(cfg.data.whitening())
-            # except:  logger.warning('Whitening Input Widget Failed to Update')
-            # try:
-            #     self._swimWindowControl.setMaximum(min(cfg.data.image_size()))
-            #     self._swimWindowControl.setValue(cfg.data.swim_window_px()[0])
-            # except:
-            #     logger.warning('Swim Input Widget Failed to Update')
-            #
-            # try:
-            #     if cfg.data.null_cafm():
-            #         self._polyBiasCombo.setCurrentText(str(cfg.data.poly_order()))
-            #     else:
-            #         self._polyBiasCombo.setCurrentText('None')
-            # except:  logger.warning('Polynomial Order Combobox Widget Failed to Update')
-            try:     self._bbToggle.setChecked(cfg.data.use_bb())
-            except:  logger.warning('Bounding Box Toggle Failed to Update')
-
-            # cfg.project_tab.slotUpdateZoomSlider()
 
         logger.info(f'<<<< dataUpdateWidgets [zpos={cfg.data.zpos}]')
 
@@ -3062,7 +2994,7 @@ class MainWindow(QMainWindow):
         self.notesButton.clicked.connect(self._callbk_showHideNotes)
 
         tip = "Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)"
-        self.pythonButton = QPushButton(' Python')
+        self.pythonButton = QPushButton('Python')
         self.pythonButton.setStyleSheet(button_gradient_style)
         self.pythonButton.setToolTip(tip)
         self.pythonButton.setStatusTip(tip)
@@ -3095,7 +3027,7 @@ class MainWindow(QMainWindow):
         self.flickerButton.clicked.connect(self._callbk_showHideFlicker)
 
         tip = 'Show Correlation Signals Tool Window'
-        self.csButton = QPushButton(' Signals')
+        self.csButton = QPushButton('Signals')
         self.csButton.setStyleSheet(button_gradient_style)
         self.csButton.setToolTip(tip)
         self.csButton.setStatusTip(tip)
@@ -5191,7 +5123,7 @@ class MainWindow(QMainWindow):
 
         self.dw_console = QDockWidget('Python Console', self)
         self.dw_console.visibilityChanged.connect(
-            lambda: self.pythonButton.setText((' Hide', ' Python')[self.dw_console.isHidden()]))
+            lambda: self.pythonButton.setText((' Hide', 'Python')[self.dw_console.isHidden()]))
         self.dw_console.visibilityChanged.connect(lambda: self.pythonButton.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_console.isHidden()]))
         self.dw_console.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
@@ -5329,7 +5261,7 @@ class MainWindow(QMainWindow):
                     padding-left: 5px;
                     text-align: left;
                 }""")
-        self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setText((' Hide', ' Signals')[self.dw_corrspots.isHidden()]))
+        self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setText((' Hide', 'Signals')[self.dw_corrspots.isHidden()]))
         self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()]))
 
         def fn():

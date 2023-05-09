@@ -302,7 +302,7 @@ class SnrPlot(QWidget):
 
 
     def plotSingleScale(self, s=None):
-        logger.info(f'plotSingleScale (scale: {s}):')
+        # logger.info(f'plotSingleScale (scale: {s}):')
         if s == None: scale = cfg.data.scale
         x_axis, y_axis = self.get_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
@@ -368,25 +368,13 @@ class SnrPlot(QWidget):
 
 
     def wipePlot(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
-            # try:
-            #     del self._snr_checkboxes
-            # except:
-            #     pass
-            #0123 !!!!!!!
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
             for eb in self._error_bars:
                 self.plot.removeItem(eb)
-            # self.updateSpecialLayerLines()
-            # try:
-            #     del self._snr_checkboxes
-            # except:
-            #     print_exception()
         except:
             print_exception()
             logger.warning('Unable To Wipe SNR Plot')
@@ -396,18 +384,17 @@ class SnrPlot(QWidget):
         if cfg.data:
             try:
                 # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
-                print('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
+                # logger.info('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
                 pos_click = int(mouseClickEvent.pos()[0])
-                print('Position Clicked: %d' % pos_click)
+                # logger.info('Position Clicked: %d' % pos_click)
                 cfg.data.zpos = pos_click
                 self.updateLayerLinePos()
                 cfg.main_window.dataUpdateWidgets()
             except:
                 print_exception()
-                # pass
 
     def onSnrClick2(self, scale):
-        logger.info(f'onSnrClick2 ({scale}):')
+        # logger.info(f'onSnrClick2 ({scale}):')
         self.selected_scale = scale
         cfg.main_window._changeScaleCombo.setCurrentText(scale)
 
@@ -422,22 +409,13 @@ class SnrPlot(QWidget):
             pt = points[0] # just allow one point clicked
             cfg.main_window.hud.post('Jump to Section #%d (SNR: %.3f)' % (index, snr))
             clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
-            # for p in self.last_snr_click:
-            #     p.resetPen()
-            #     p.resetBrush()
-            # for p in points:
-            #     p.setBrush(pg.mkBrush('#ffffff'))
-            #     p.setPen(clickedPen)
             if self.last_snr_click:
                 self.last_snr_click.resetPen()
                 self.last_snr_click.resetBrush()
             pt.setBrush(pg.mkBrush('#ffffff'))
             pt.setPen(clickedPen)
-            # self.last_snr_click = points
             self.last_snr_click = pt
-            # cfg.main_window.jump_to(index)
             cfg.data.zpos = index
-            # cfg.set_layer(cfg.data.zpos)
             cfg.main_window.dataUpdateWidgets()
             self.updateLayerLinePos()
 
