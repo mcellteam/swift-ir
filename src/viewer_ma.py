@@ -396,6 +396,7 @@ class MAViewer(neuroglancer.Viewer):
     # @functools.cache
     def drawSWIMwindow(self):
         caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
 
         self.undrawSWIMwindows()
         marker_size = 1
@@ -470,7 +471,7 @@ class MAViewer(neuroglancer.Viewer):
             cps = []
             colors = []
             regions = cfg.data.grid_default_regions
-            logger.info(f'regions: {regions}')
+            # logger.info(f'regions: {regions}')
             if regions[0]:
                 # quadrant 1
                 cps.append((offset_x2, offset_y1))

@@ -1040,6 +1040,8 @@ class DataModel:
         Returns:
             None
         '''
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         if l == None: l = self.zpos
         assert method in ('Auto-SWIM, Manual-Hint, Manual-Strict')
 
@@ -1158,14 +1160,8 @@ class DataModel:
         # logger.critical('')
         if s == None: s = self.scale
         if l == None: l = self.zpos
-
         try:
             mps = self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
-            logger.info('mps = %s' %str(mps))
-            # ref = [(0, x[0], x[1]) for x in mps['ref']]
-            # base = [(0, x[0], x[1]) for x in mps['base']]
-            # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
-            # base = [(0.5, x[0], x[1]) for x in mps['base']]
             ref = [(0.5, x[0], x[1]) for x in mps['ref']]
             base = [(0.5, x[0], x[1]) for x in mps['base']]
             return {'ref': ref, 'base': base}
