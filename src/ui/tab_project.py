@@ -92,6 +92,9 @@ class ProjectTab(QWidget):
         self.Q3.setAutoFillBackground(True)
         self.Q4.setAutoFillBackground(True)
 
+        # with open('src/style/buttonstyle.qss', 'r') as f:
+        #     self.buttonstyle = f.read()
+
 
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
@@ -847,30 +850,30 @@ class ProjectTab(QWidget):
         ), alignment=Qt.AlignCenter)
         self.MA_controls = QWidget()
         self.MA_controls.setLayout(hbl)
-        self.MA_controls.setStyleSheet("""
-        QPushButton {
-            font-size: 12px;
-            font-family: Tahoma, sans-serif;
-            color: #f3f6fb;
-            background-color: #1b1e23;
-            border-width: 1px;
-            border-color: #dadada;
-            border-style: solid;
-            padding: 1px;
-            border-radius: 4px;
-            outline: none;
-        }
-        
-        QPushButton:disabled {
-            border-width: 1px;
-            border-color: #dadada;
-            border-style: solid;
-            background-color: #dadada;
-            padding: 1px;
-            border-radius: 4px;
-            color: #ede9e8;
-        }
-        """)
+        # self.MA_controls.setStyleSheet("""
+        # QPushButton {
+        #     font-size: 12px;
+        #     font-family: Tahoma, sans-serif;
+        #     color: #f3f6fb;
+        #     background-color: #1b1e23;
+        #     border-width: 1px;
+        #     border-color: #dadada;
+        #     border-style: solid;
+        #     padding: 1px;
+        #     border-radius: 4px;
+        #     outline: none;
+        # }
+        #
+        # QPushButton:disabled {
+        #     border-width: 1px;
+        #     border-color: #dadada;
+        #     border-style: solid;
+        #     background-color: #dadada;
+        #     padding: 1px;
+        #     border-radius: 4px;
+        #     color: #ede9e8;
+        # }
+        # """)
 
         gb1 = QGroupBox()
         vbl = VBL()

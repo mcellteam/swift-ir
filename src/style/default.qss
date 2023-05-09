@@ -9,18 +9,20 @@ QMainWindow {
 }
 
 QMainWindow::separator {
-    background-color: #161c20;
+    background-color: #222222;
     border-width: 0px;
     spacing: 0px;
     padding: 0px;
     margin: 0px;
+    width: 2px;
+    height: 2px;
 }
 
 QMainWindow::separator:hover {
     background-color: #339933;
-    spacing: 0px;
-    padding: 1px;
-    margin: 0px;
+
+    width: 4px;
+    height: 4px;
 }
 
 
