@@ -137,7 +137,6 @@ class MainWindow(QMainWindow):
         self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
 
         font = QFont("Tahoma")
-        font.setStyleHint(QFont.Monospace)
         QApplication.setFont(font)
 
 
