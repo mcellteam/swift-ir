@@ -377,13 +377,21 @@ class MainWindow(QMainWindow):
         #             self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
 
         # caller = inspect.stack()[1].function
+        logger.info('')
 
         thumbs = cfg.data.get_signals_filenames()
-        # logger.info('thumbs: %s' % str(thumbs))
+
         n = len(thumbs)
         snr_vals = cfg.data.snr_components()
         colors = cfg.glob_colors
         count = 0
+        for i in range(7):
+            self.corrSignalsList[i].set_no_image()
+
+        logger.info('thumbs: %s' % str(thumbs))
+        logger.info('snr_vals: %s' % str(snr_vals))
+
+
         if cfg.data.current_method == 'grid-custom':
             for i in range(7):
                 self.corrSignalsList[i].hide()
@@ -407,6 +415,7 @@ class MainWindow(QMainWindow):
                     except:
                         print_exception()
                         self.corrSignalsList[i].set_no_image()
+                        logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
                     finally:
                         self.corrSignalsList[i].show()
                 else:
@@ -725,6 +734,8 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
+                if self.dw_corrspots.isVisible():
+                    self.updateCorrSignalsDrawer()
                 self.pbarLabel.setText('')
                 cfg.project_tab.snr_plot.initSnrPlot()
                 self.updateEnabledButtons()

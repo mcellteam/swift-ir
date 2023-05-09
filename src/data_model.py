@@ -1033,25 +1033,6 @@ class DataModel:
         # return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
         return self._data['data']['scales'][s]['stack'][l]['current_method']
 
-    def set_method(self, method, l=None):
-        '''Sets the alignment method of a single section for current scale and all coarser scales.
-        Args:
-            method (str): The alignment method
-        Returns:
-            None
-        '''
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        if l == None: l = self.zpos
-        assert method in ('Auto-SWIM, Manual-Hint, Manual-Strict')
-
-        # scale_vals = [x for x in self.scale_vals() if x <= self.scale_val()]
-        # scales = [get_scale_key(x) for x in scale_vals]
-        for s in self.scales():
-            self._data['data']['scales'][s]['stack'][l]['alignment']['method'] = method
-            logger.info(f'New method set for section #{l}, {s} : {method}...')
-
-        logger.info(f'self.method()                        : {self.method()}...')
 
     def set_all_methods_automatic(self):
         '''Sets the alignment method of all sections and all scales to Auto-SWIM.'''
@@ -1399,6 +1380,12 @@ class DataModel:
         return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations']
 
 
+    def swim_settings(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']
+
+
     def set_swim_iterations_glob(self, val:int):
         for s in self.scales():
             for i in range(len(self)):
@@ -1500,23 +1487,20 @@ class DataModel:
             factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         man_ww_full = img_size[0] * factor, img_size[1] * factor
         for s in self.scales():
-            man_ww_x = man_ww_full[0] / self.scale_val(s)
-            man_ww_y = man_ww_full[1] / self.scale_val(s)
+            man_ww_x = int(man_ww_full[0] / self.scale_val(s))
+            man_ww_y = int(man_ww_full[1] / self.scale_val(s))
 
-            self._data['data']['defaults'].setdefault(s, {})
-            self._data['data']['defaults'][s]['swim-window-px'] = [man_ww_x, man_ww_y]
+            # self._data['data']['defaults'].setdefault(s, {})
+            # self._data['data']['defaults'][s]['swim-window-px'] = [man_ww_x, man_ww_y]
             if current_only:
                 self.stack(s)[self.zpos]['alignment']['swim_settings']['grid-custom-px'] = [man_ww_x, man_ww_y]
-                self.stack(s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = [man_ww_x / 2, man_ww_y / 2]
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = [int(man_ww_x / 2), int(man_ww_y / 2)]
             else:
-
+                self._data['data']['defaults'].setdefault(s, {})
                 self._data['data']['defaults'][s]['swim-window-px'] = [man_ww_x, man_ww_y]
                 for i in range(len(self)):
                     self.stack(s)[i]['alignment']['swim_settings']['grid-custom-px'] = [man_ww_x, man_ww_y]
-                    self.stack(s)[i]['alignment']['swim_settings']['grid-custom-2x2-px'] = [man_ww_x / 2, man_ww_y / 2]
-                    self.stack(s)[i]['alignment']['swim_settings']['default_auto_swim_window_px'] = [man_ww_x, man_ww_y]
-                    self.stack(s)[i]['alignment']['swim_settings']['default_auto_swim_2x2_px'] = [man_ww_x / 2, man_ww_y / 2]
-                    self.stack(s)[i]['alignment']['swim_settings']['grid-custom-px'] = [man_ww_x, man_ww_y]
+                    self.stack(s)[i]['alignment']['swim_settings']['grid-custom-2x2-px'] = [int(man_ww_x / 2), int(man_ww_y / 2)]
 
     def manual_swim_window_px(self) -> int:
         '''Returns the SWIM Window for the Current Layer.'''
