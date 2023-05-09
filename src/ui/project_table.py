@@ -122,8 +122,6 @@ class ProjectTable(QWidget):
         cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
         # self.setUpdatesEnabled(False)
-
-
         cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nTasks)
         cfg.nCompleted = 0
         cfg.nTasks = len(cfg.data)
@@ -261,7 +259,7 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\ncaller: {caller}\n')
+        # logger.critical(f'\n\ncaller: {caller}\n')
         # if caller == 'main':
         # logger.info(f'Updating table dimensions...')
         # logger.info('')
@@ -323,21 +321,10 @@ class ProjectTable(QWidget):
         except:
             print_exception()
 
-
-    # def updateSliderMaxVal(self):
-    #     if cfg.data.is_aligned():
-    #         thumb_path = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
-    #     else:
-    #         thumb_path = os.path.join(cfg.data.dest(), 'thumbnails')
-    #     max_val = max(ImageSize(next(absFilePaths(thumb_path))))
-    #     # self.row_height_slider.setMaximum(max_val)
-
     def onTableFinishedLoading(self):
         logger.critical('')
         self.loadScreenLabel.hide()
         self.table.show()
-
-
 
 
     def initUI(self):
