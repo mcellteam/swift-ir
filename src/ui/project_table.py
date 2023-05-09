@@ -261,24 +261,25 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         caller = inspect.stack()[1].function
-        if caller == 'main':
-            # logger.info(f'Updating table dimensions...')
-            # logger.info('')
-            parentVerticalHeader = self.table.verticalHeader()
-            for section in range(parentVerticalHeader.count()):
-                parentVerticalHeader.resizeSection(section, h)
+        logger.critical(f'\n\ncaller: {caller}\n')
+        # if caller == 'main':
+        # logger.info(f'Updating table dimensions...')
+        # logger.info('')
+        parentVerticalHeader = self.table.verticalHeader()
+        for section in range(parentVerticalHeader.count()):
+            parentVerticalHeader.resizeSection(section, h)
 
-            if cfg.data.is_aligned_and_generated():
-                self.table.setColumnWidth(3, h)
-                self.table.setColumnWidth(4, h)
-                self.table.setColumnWidth(5, h)
-                self.table.setColumnWidth(6, h)
-                self.table.setColumnWidth(7, h)
-                self.table.setColumnWidth(8, h)
-                self.table.setColumnWidth(9, h)
-            else:
-                self.table.setColumnWidth(2, h)
-                self.table.setColumnWidth(3, h)
+        if cfg.data.is_aligned_and_generated():
+            self.table.setColumnWidth(3, h)
+            self.table.setColumnWidth(4, h)
+            self.table.setColumnWidth(5, h)
+            self.table.setColumnWidth(6, h)
+            self.table.setColumnWidth(7, h)
+            self.table.setColumnWidth(8, h)
+            self.table.setColumnWidth(9, h)
+        else:
+            self.table.setColumnWidth(2, h)
+            self.table.setColumnWidth(3, h)
 
 
     def get_data(self):

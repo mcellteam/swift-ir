@@ -319,7 +319,7 @@ class DataModel:
     # @cache
     def is_aligned(self, s=None):
         caller = inspect.stack()[1].function
-        logger.critical(f' is_aligned caller: {caller} >>>> ')
+        # logger.critical(f' is_aligned caller: {caller} >>>> ')
         if s == None: s = self.scale
         snr_list = self.snr_list(s=s)
         if sum(snr_list) < 1:

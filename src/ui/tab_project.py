@@ -2861,8 +2861,7 @@ class ProjectTab(QWidget):
 
     def updateTreeWidget(self):
         # time consuming - refactor?
-
-        logger.critical('Updating Project Tree...')
+        logger.info('Updating project raw data tree...')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.setModel(self.treeview_model)
         self.treeview.header().resizeSection(0, 380)
