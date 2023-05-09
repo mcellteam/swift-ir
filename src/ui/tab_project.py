@@ -3078,7 +3078,7 @@ class ProjectTab(QWidget):
         self._tabs.setObjectName('project_tabs')
         self._tabs.addTab(self.ng_browser_container_outer, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
-        self._tabs.addTab(self._wdg_treeview, ' Data ')
+        self._tabs.addTab(self._wdg_treeview, ' Raw Data ')
         self._tabs.addTab(self.snrPlotSplitter, ' SNR Plot ')
         self._tabs.setTabToolTip(0,'3D Data Visualization')
         self._tabs.setTabToolTip(1,'Project Data Table View')

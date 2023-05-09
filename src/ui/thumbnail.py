@@ -165,27 +165,20 @@ class CorrSignalThumbnail(QLabel):
                 # rect.moveBottomLeft(self.rect().bottomLeft())
                 rect.moveCenter(self.rect().center())
                 qp.drawPixmap(rect, pm)
-                # pen = QPen()
-                # brush = QBrush()
-                # brush.setColor(QColor("#141414"))
-                # pen.setBrush(brush)
-                # pen.setColor(QColor('#ffe135'))
-                # qp.setPen(pen)
-
                 font = QFont()
+                # font.setFamily('Courier')
                 font.setBold(True)
-                font.setPointSize(13)
+                font.setPointSize(11)
                 qp.setFont(font)
-                # qp.setPen(QColor('#ff0000'))
                 qp.setPen(QColor('#a30000'))
 
                 if self.snr:
                     # loc = QPoint(0, self.rect().height() - 4)
-                    loc = QPoint(4, self.rect().height() - 8)
+                    loc = QPoint(2, self.rect().height() - 4)
                     if self.extra:
-                        qp.drawText(loc, '%.3f' %self.snr + '\n' + self.extra)
+                        qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
                     else:
-                        qp.drawText(loc, '%.3f' %self.snr)
+                        qp.drawText(loc, '%.1f' %self.snr)
                 return
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')

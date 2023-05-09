@@ -79,6 +79,9 @@ class FileBrowser(QWidget):
 
         button_size = QSize(48, 18)
 
+        with open('src/style/buttonstyle.qss', 'r') as f:
+            button_gradient_style = f.read()
+
         self.buttonSetRootRoot = QPushButton('Root')
         self.buttonSetRootRoot.setStyleSheet(button_gradient_style)
         self.buttonSetRootRoot.setFixedSize(button_size)
@@ -172,57 +175,6 @@ class FileBrowser(QWidget):
     #     return QSize(400,200)
 
 
-button_gradient_style = """
-QPushButton{
-    font-size: 11px;
-	border-style: solid;
-	border-color: #c7c7c7;
-	border-width: 1px;
-	border-radius: 2px;
-	background-color: #ede9e8;
-}
-QPushButton:pressed{
-	border-style: inset;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-}
-QPushButton:hover{
-	border-style: solid;
-	border-width: 1px;
-	border-radius: 2px;
-	color: #161c20;
-	padding: 2px;
-	background-color: #ede9e8;
-	border-color: #778899;
-
-}
-QPushButton:disabled{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: #808086;
-	padding: 2px;
-	background-color: #ebecf0;
-}
-QPushButton::default{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: #161c20;
-	padding: 2px;
-	background-color: #daebfe;
-}
-"""
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

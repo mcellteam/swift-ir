@@ -32,7 +32,7 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         # self.INITIAL_ROW_HEIGHT = 128
-        self.INITIAL_ROW_HEIGHT = 100
+        self.INITIAL_ROW_HEIGHT = 80
         self.data = None
 
         self.table = QTableWidget()
@@ -473,7 +473,7 @@ class Slider(QSlider):
         super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(16)
-        self.setMaximum(512)
+        self.setMaximum(180)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)
