@@ -52,14 +52,17 @@ QSplitter::handle:hover {
 }
 
 QMessageBox {
+    font-family: Tahoma, sans-serif;
     background-color: #222222;
 }
 
 QMessageBox QLabel {
+    font-family: Tahoma, sans-serif;
     color: #ede9e8;
 }
 
 QToolTip {
+   font-family: Tahoma, sans-serif;
    background-color: #339933;
    color: #ede9e8;
    border: 1px solid #ede9e8;
@@ -67,11 +70,14 @@ QToolTip {
 
 
 QWidget {
+    font-family: Tahoma, sans-serif;
+
     font-size: 11px;
 
 }
 
 QDockWidget {
+    font-family: Tahoma, sans-serif;
     font-weight: 600;
     color: #ede9e8;
     border: 0px solid #ede9e8;
@@ -104,6 +110,7 @@ QDockWidget::title {
 
 
 QDoubleSpinBox {
+    font-family: Tahoma, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     font-size: 11px;
@@ -117,6 +124,7 @@ QDoubleSpinBox:focus {
 }
 
 QSpinBox {
+    font-family: Tahoma, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     font-size: 11px;
@@ -131,6 +139,7 @@ QSpinBox:focus {
 
 
 QComboBox {
+    font-family: Tahoma, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     border: 1px solid #c7c7c7;
@@ -144,6 +153,7 @@ QComboBox:focus {
 }
 
 QLineEdit {
+    font-family: Tahoma, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     border: 1px solid #c7c7c7;
@@ -167,6 +177,7 @@ QComboBox:hover {
 
 /*
 QListView {
+    font-family: Tahoma, sans-serif;
     color: #f3f6fb;
     border: 1px solid #339933;
     border-top: 0px solid #339933;
@@ -200,6 +211,7 @@ QListView::item:!selected:hover
 
 
 QLabel {
+    font-family: Tahoma, sans-serif;
     font-size: 11px;
     border-radius: 1px;
     border-width: 0px;
@@ -214,6 +226,7 @@ QToolButton::menu-button:pressed {
     }
 
 QToolBar {
+    font-family: Tahoma, sans-serif;
     font-size: 11px;
     border-radius: 1px;
     border-width: 0px;
@@ -231,8 +244,8 @@ QPushButton {
 /*-----QPushButton-----*/
 /*
 QPushButton {
+    font-family: Tahoma, sans-serif;
     font-size: 12px;
-
 	color: #f3f6fb;
 	border-width: 1px;
 	border-color: #ede9e8;
@@ -257,6 +270,7 @@ QPushButton:disabled {
 
 
 QDialog {
+    font-family: Tahoma, sans-serif;
     background-color: #161c20;
 	color: #141414;
 	font-size: 11px;
@@ -361,7 +375,7 @@ QHeaderView::section {
 */
 
 QProgressBar {
-
+    font-family: Tahoma, sans-serif;
     font-size: 11px;
     font-weight: 600;
     border: 0px solid #222222;
@@ -387,6 +401,7 @@ QProgressBar::chunk {
  /* ---- QMenu/QMenuBar  ---- */
 
 QMenu {
+    font-family: Tahoma, sans-serif;
 	border-width: 1px;
 	border-color: #1b1e23;
 	border-style: outset;
@@ -424,6 +439,7 @@ QMenu::item {
 
 
 QTreeView {
+    font-family: Tahoma, sans-serif;
     show-decoration-selected: 1;
     font-size: 11px;
 
@@ -471,6 +487,7 @@ QLCDNumber {
 }
 
 QStatusBar {
+    font-family: Tahoma, sans-serif;
     font-size: 10px;
     font-weight: 600;
     color: #141414;
