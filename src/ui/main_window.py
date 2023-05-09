@@ -3046,7 +3046,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setStyleSheet(button_gradient_style)
         self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
         self._btn_refreshTab.setFixedSize(18,18)
-        self._btn_refreshTab.setIconSize(QSize(14,14))
+        self._btn_refreshTab.setIconSize(QSize(16,16))
         self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#161c20'))
         self._btn_refreshTab.clicked.connect(self.refreshTab)
 
@@ -3109,7 +3109,7 @@ class MainWindow(QMainWindow):
         # self._detachNgButton.setStyleSheet("background-color: #161c20;")
         self._detachNgButton.setStyleSheet(button_gradient_style)
         self._detachNgButton.setFixedSize(18,18)
-        self._detachNgButton.setIconSize(QSize(14,14))
+        self._detachNgButton.setIconSize(QSize(16,16))
         self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color='#161c20'))
         # self._detachNgButton.setIcon(QIcon('src/resources/popout-icon.png'))
         # self._detachNgButton.setIconSize(QSize(13, 13))
@@ -3257,6 +3257,7 @@ class MainWindow(QMainWindow):
             self.cpanel.hide()
             # self.dw_corrspots_layout.hide()
             self.dw_corrspots.hide()
+            self.dw_flicker.hide()
 
 
         elif tabtype == 'ProjectTab':
@@ -4244,7 +4245,7 @@ class MainWindow(QMainWindow):
         # normal_button_size = QSize(68, 28)
         normal_button_size = QSize(76, 30)
         # long_button_size = QSize(132, 14)
-        long_button_size = QSize(120, 14)
+        long_button_size = QSize(128, 14)
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
@@ -5320,6 +5321,15 @@ class MainWindow(QMainWindow):
         self.browser_widget.setLayout(vbl)
 
         self.dw_corrspots = QDockWidget('Correlation Signals', self)
+        self.dw_corrspots.setStyleSheet("""
+        QDockWidget {color: #ede9e8;}
+        QDockWidget::title {
+                    background-color: #306998;
+                    color: #161c20;
+                    font-weight: 600;
+                    padding-left: 5px;
+                    text-align: left;
+                }""")
         self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setText((' Hide', ' Signals')[self.dw_corrspots.isHidden()]))
         self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()]))
 

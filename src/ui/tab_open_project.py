@@ -57,6 +57,8 @@ class OpenProject(QWidget):
 
 
         self.row_height_slider = Slider(self)
+        self.row_height_slider.setMinimum(16)
+        self.row_height_slider.setMaximum(180)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         # self.row_height_slider.setValue(self.initial_row_height)
         # self.updateRowHeight(self.initial_row_height)
@@ -216,7 +218,8 @@ class OpenProject(QWidget):
 
 
         self._splitter = QSplitter()
-        # self._splitter.setStyleSheet("""QSplitter::handle { background: none; }""")
+        # self._splitter.setStyleSheet("""QSplitter::handle { background: #339933; }""")
+        # self._splitter.setStyleSheet("""QSplitter { background: #222222; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
