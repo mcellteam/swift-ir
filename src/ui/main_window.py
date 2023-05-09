@@ -1244,38 +1244,6 @@ class MainWindow(QMainWindow):
         logger.info('reset_groupbox_styles:')
 
 
-    # def updateToolbar(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.info(f'caller: {caller}')
-    #     if self._isProjectTab():
-    #
-    #         if cfg.data['state']['mode'] == 'stack':
-    #             setData('state,ng_layout', '4panel')
-    #             self.combo_mode.setCurrentIndex(0)
-    #         elif cfg.data['state']['mode'] == 'comparison':
-    #             setData('state,ng_layout', 'xy')
-    #             self.combo_mode.setCurrentIndex(1)
-    #
-    #         # self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
-    #         if cfg.data.is_aligned_and_generated():
-    #             cfg.project_tab.aligned_label.show()
-    #             cfg.project_tab.generated_label.show()
-    #             cfg.project_tab.unaligned_label.hide()
-    #         elif cfg.data.is_aligned():
-    #             cfg.project_tab.aligned_label.show()
-    #             cfg.project_tab.generated_label.hide()
-    #             cfg.project_tab.unaligned_label.hide()
-    #         else:
-    #             cfg.project_tab.aligned_label.hide()
-    #             cfg.project_tab.generated_label.hide()
-    #             cfg.project_tab.unaligned_label.show()
-    #
-    #     else:
-    #         cfg.project_tab.aligned_label.hide()
-    #         cfg.project_tab.unaligned_label.hide()
-    #         cfg.project_tab.generated_label.hide()
-    #         cfg.project_tab.generated_label.hide()
-
     # @Slot()
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
@@ -2858,7 +2826,7 @@ class MainWindow(QMainWindow):
 
         self.combo_mode = QComboBox(self)
         # self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
-        self.combo_mode.setFixedSize(130, 18)
+        self.combo_mode.setFixedSize(148, 18)
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
         self.combo_mode.addItems(items)
@@ -4140,7 +4108,7 @@ class MainWindow(QMainWindow):
         # normal_button_size = QSize(68, 28)
         normal_button_size = QSize(76, 30)
         # long_button_size = QSize(132, 14)
-        long_button_size = QSize(128, 14)
+        long_button_size = QSize(138, 14)
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
