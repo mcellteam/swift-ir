@@ -9,6 +9,7 @@ QMainWindow {
 /*    */
 }
 
+
 QMainWindow::separator {
     background-color: #222222;
     border-width: 0px;
@@ -18,6 +19,7 @@ QMainWindow::separator {
     width: 2px;
     height: 2px;
 }
+
 
 QMainWindow::separator:hover {
     background-color: #339933;

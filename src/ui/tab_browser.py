@@ -74,7 +74,7 @@ class WebBrowser(QWidget):
 
         buttonBrowserRefresh = QPushButton()
         buttonBrowserRefresh.setStatusTip('Refresh')
-        buttonBrowserRefresh.setIcon(qta.icon("ei.refresh", color=cfg.ICON_COLOR))
+        buttonBrowserRefresh.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
         buttonBrowserRefresh.setFixedSize(QSize(20, 20))
         buttonBrowserRefresh.clicked.connect(browser_reload)
 
