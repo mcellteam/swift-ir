@@ -119,20 +119,23 @@ class OpenProject(QWidget):
         button_size = QSize(86,20)
 
         self._buttonOpen = QPushButton('Open Project')
+        self._buttonOpen.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self._buttonOpen.setEnabled(False)
         self._buttonOpen.clicked.connect(self.open_project_selected)
         self._buttonOpen.setFixedSize(button_size)
-        self._buttonOpen.hide()
+        # self._buttonOpen.hide()
 
         self._buttonDelete = QPushButton('Delete Project')
+        self._buttonDelete.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self._buttonDelete.setEnabled(False)
         self._buttonDelete.clicked.connect(self.delete_project)
         self._buttonDelete.setFixedSize(button_size)
-        self._buttonDelete.hide()
+        # self._buttonDelete.hide()
 
         self._buttonNew = QPushButton('New Project')
         self._buttonNew.clicked.connect(self.new_project)
         self._buttonNew.setFixedSize(button_size)
+        self._buttonNew.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
 
         # self._buttonNew = QPushButton('Remember')
         # self._buttonNew.setStyleSheet("font-size: 9px;")
@@ -155,6 +158,17 @@ class OpenProject(QWidget):
         # }
         # """)
 
+        self.validity_label = QLabel('Invalid')
+        self.validity_label.setObjectName('validity_label')
+        self.validity_label.setFixedHeight(16)
+        self.validity_label.hide()
+        tip = '<span>Several different file types can be opened in alignEM-SWiFT: <br>' \
+              '&nbsp;&nbsp;- AlignEM-SWiFT project files (.swiftir)<br><br>' \
+              '&nbsp;&nbsp;- Zarr files (any directory containing .zarray)' \
+              '<br><br><i>Zarr is a format for the storage of chunked, compressed, ' \
+              'N-dimensional arrays</i></span>'
+        self.validity_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+
         self.selectionReadout.textChanged.connect(self.validate_path)
         self.selectionReadout.returnPressed.connect(self.open_project_selected)
         # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
@@ -162,16 +176,20 @@ class OpenProject(QWidget):
         self.selectionReadout.setFixedHeight(22)
         self.selectionReadout.setMinimumWidth(700)
 
-        self.validity_label = QLabel('Invalid')
-        self.validity_label.setObjectName('validity_label')
-        self.validity_label.setFixedHeight(20)
-        self.validity_label.hide()
+        self.selectionReadout_w_overlay = QWidget()
+        gl = QGridLayout()
+        gl.setContentsMargins(0,0,0,0)
+        gl.addWidget(self.selectionReadout,0,0)
+        gl.addWidget(HWidget(ExpandingWidget(self), self.validity_label, QLabel(' ')),0,0)
+        self.selectionReadout_w_overlay.setLayout(gl)
+
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(6, 2, 6, 2)
         hbl.addWidget(self._buttonNew)
-        hbl.addWidget(self.selectionReadout)
-        hbl.addWidget(self.validity_label)
+        # hbl.addWidget(self.selectionReadout)
+        hbl.addWidget(self.selectionReadout_w_overlay)
+        # hbl.addWidget(self.validity_label)
         hbl.addWidget(self._buttonOpen)
         hbl.addWidget(self._buttonDelete)
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
@@ -212,9 +230,9 @@ class OpenProject(QWidget):
 
         # self._actions_widget.setStyleSheet(style)
 
-        with open('src/style/buttonstyle.qss', 'r') as f:
-            button_gradient_style = f.read()
-        self._actions_widget.setStyleSheet(button_gradient_style)
+        # with open('src/style/buttonstyle.qss', 'r') as f:
+        #     button_gradient_style = f.read()
+        # self._actions_widget.setStyleSheet(button_gradient_style)
 
 
         self._splitter = QSplitter()
@@ -241,7 +259,7 @@ class OpenProject(QWidget):
 
         self.setLayout(self.vbl_main)
 
-        self.setStyleSheet(style)
+        # self.setStyleSheet(style)
 
     def hideMainUI(self):
         self._splitter.hide()
@@ -269,18 +287,18 @@ class OpenProject(QWidget):
             self.validity_label.hide()
             # self._buttonOpen.setEnabled(True)
             self._buttonOpen.show()
-            if validate_project_selection(path):
-                # self._buttonDelete.setEnabled(True)
-                self._buttonDelete.show()
-            else:
-                # self._buttonDelete.setEnabled(False)
-                self._buttonDelete.hide()
+            # if validate_project_selection(path):
+            #     # self._buttonDelete.setEnabled(True)
+            #     self._buttonDelete.show()
+            # else:
+            #     # self._buttonDelete.setEnabled(False)
+            #     self._buttonDelete.hide()
         else:
             self.validity_label.show()
             # self._buttonOpen.setEnabled(False)
             # self._buttonDelete.setEnabled(False)
-            self._buttonOpen.hide()
-            self._buttonDelete.hide()
+            # self._buttonOpen.hide()
+            # self._buttonDelete.hide()
 
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function
@@ -431,7 +449,13 @@ class OpenProject(QWidget):
         '''Dialog for importing images. Returns list of filenames.'''
         dialog = QFileDialogPreview()
         dialog.setWindowFlags(Qt.FramelessWindowHint)
-        dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+        # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+        dialog.setStyleSheet("""
+        QPushButton {
+            font-size: 10px; 
+            font-family: Tahoma, sans-serif;
+        }
+        """)
 
         # self.layout.addWidget(dialog)
         # self.vbl_projects.addWidget(dialog)

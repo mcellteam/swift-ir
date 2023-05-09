@@ -1089,10 +1089,13 @@ class MainWindow(QMainWindow):
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
         # logger.info('updateEnabledButtons >>>>')
+        self.updateResultsWidget()
+
         if cfg.data:
             # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
             # self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
             self.gb_ctlActions.setTitle('%s Multiprocessing Commands' % cfg.data.scale_pretty())
+            self.alignmentResults.setTitle('%s Data && Results' % cfg.data.scale_pretty())
             # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
             self._skipCheckbox.setEnabled(True)
             self._toggleAutogenerate.setEnabled(True)
@@ -1253,6 +1256,21 @@ class MainWindow(QMainWindow):
 
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
+
+
+    def updateResultsWidget(self):
+        # self.results0 = QLabel('...Image Dimensions')
+        # self.results1 = QLabel('...# Images')
+        # self.results2 = QLabel('...SNR (average)')
+        # self.results3 = QLabel('...Worst 5 SNR')
+        siz = cfg.data.image_size()
+        try:    self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
+        except: self.results0.setText("N/A")
+        try:    self.results1.setText("%d" % len(cfg.data))
+        except: self.results1.setText("N/A")
+        try:    self.results2.setText("%.2f" % cfg.data.snr_average())
+        except: self.results2.setText("N/A")
+        self.results3 = QLabel('...Worst 5 SNR')
 
 
     # @Slot()
@@ -2568,15 +2586,11 @@ class MainWindow(QMainWindow):
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
                 # cfg.project_tab.cpanel.hide()
-
+                self._btn_manualAlign.setText('← Exit Manual Align Mode')
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                 self.alignMatchPointAction.setText('Exit Manual Align Mode')
-                self.matchpoint_text_snr.setText(cfg.data.snr_report())
-                self.mp_marker_lineweight_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'))
-                self.mp_marker_size_spinbox.setValue(getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-
                 self._changeScaleCombo.setEnabled(False)
 
                 cfg.project_tab.onEnterManualMode()
@@ -2618,6 +2632,7 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.cpanel.show()
 
             setData('state,manual_mode', False)
+            self._btn_manualAlign.setText('Enter Manual Align Mode →')
             self.alignMatchPointAction.setText('Align Manually')
             self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
@@ -2941,7 +2956,8 @@ class MainWindow(QMainWindow):
 
         self._btn_refreshTab = QPushButton()
         # self._btn_refreshTab.setStyleSheet("background-color: #161c20;")
-        self._btn_refreshTab.setStyleSheet(button_gradient_style)
+        # self._btn_refreshTab.setStyleSheet(button_gradient_style)
+        self._btn_refreshTab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
         self._btn_refreshTab.setFixedSize(18,18)
         self._btn_refreshTab.setIconSize(QSize(16,16))
@@ -2952,7 +2968,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Show Notepad Tool Window'
         self.notesButton = QPushButton(' Notes')
-        self.notesButton.setStyleSheet(button_gradient_style)
+        # self.notesButton.setStyleSheet(button_gradient_style)
+        self.notesButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.notesButton.setStatusTip(tip)
         self.notesButton.setToolTip(tip)
         self.notesButton.setFixedSize(tb_button_size)
@@ -2962,7 +2979,8 @@ class MainWindow(QMainWindow):
 
         tip = "Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)"
         self.pythonButton = QPushButton('Python')
-        self.pythonButton.setStyleSheet(button_gradient_style)
+        # self.pythonButton.setStyleSheet(button_gradient_style)
+        self.pythonButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.pythonButton.setToolTip(tip)
         self.pythonButton.setStatusTip(tip)
         self.pythonButton.setFixedSize(tb_button_size)
@@ -2972,7 +2990,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Show Head-up Display Tool Window'
         self.hudButton = QPushButton(' HUD')
-        self.hudButton.setStyleSheet(button_gradient_style)
+        # self.hudButton.setStyleSheet(button_gradient_style)
+        self.hudButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.hudButton.setToolTip(tip)
         self.hudButton.setStatusTip(tip)
         self.hudButton.setFixedSize(tb_button_size)
@@ -2984,7 +3003,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Show Flicker Tool Window'
         self.flickerButton = QPushButton(' Flicker')
-        self.flickerButton.setStyleSheet(button_gradient_style)
+        # self.flickerButton.setStyleSheet(button_gradient_style)
+        self.flickerButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.flickerButton.setToolTip(tip)
         self.flickerButton.setStatusTip(tip)
         self.flickerButton.setFixedSize(tb_button_size)
@@ -2995,7 +3015,8 @@ class MainWindow(QMainWindow):
 
         tip = 'Show Correlation Signals Tool Window'
         self.csButton = QPushButton('Signals')
-        self.csButton.setStyleSheet(button_gradient_style)
+        # self.csButton.setStyleSheet(button_gradient_style)
+        self.csButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.csButton.setToolTip(tip)
         self.csButton.setStatusTip(tip)
         self.csButton.setFixedSize(tb_button_size)
@@ -3005,7 +3026,8 @@ class MainWindow(QMainWindow):
 
         self._detachNgButton = QPushButton()
         # self._detachNgButton.setStyleSheet("background-color: #161c20;")
-        self._detachNgButton.setStyleSheet(button_gradient_style)
+        # self._detachNgButton.setStyleSheet(button_gradient_style)
+        self._detachNgButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self._detachNgButton.setFixedSize(18,18)
         self._detachNgButton.setIconSize(QSize(16,16))
         self._detachNgButton.setIcon(qta.icon("fa.external-link-square", color='#161c20'))
@@ -4328,13 +4350,24 @@ class MainWindow(QMainWindow):
         self.startRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setStart(int(val)))
         self.endRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setEnd(int(val)))
 
+        tip = 'Align the selected range of sections'
         self._btn_alignRange = QPushButton('Realign Range')
         self._btn_alignRange.setEnabled(False)
         # self._btn_alignRange.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #141414;")
         self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignRange.setStatusTip(tip)
+        self._btn_alignRange.setToolTip(tip)
         self._btn_alignRange.clicked.connect(self.alignRange)
         self._btn_alignRange.setFixedSize(long_button_size)
+
+        # tip = ''
+        self._btn_manualAlign = QPushButton('Enter Manual Align Mode →')
+        # self._btn_manualAlign.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self._btn_manualAlign.setEnabled(False)
+        self._btn_manualAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self._btn_manualAlign.setStatusTip(tip)
+        self._btn_manualAlign.clicked.connect(self.enterExitManAlignMode)
+        self._btn_manualAlign.setFixedSize(long_button_size)
+
 
         tip = 'Whether to auto-generate aligned images following alignment.'
         self._toggleAutogenerate = ToggleSwitch()
@@ -4407,6 +4440,7 @@ class MainWindow(QMainWindow):
         fl.addWidget(range_widget)
         # fl.addWidget(self.sectionRangeSlider)
         fl.addWidget(HWidget(self._btn_alignRange))
+        fl.addWidget(HWidget(self._btn_manualAlign))
         self.cpButtonsRight.setLayout(fl)
 
         self.gb_ctlActions = QGroupBox("Scale Actions")
@@ -4539,6 +4573,52 @@ class MainWindow(QMainWindow):
         self.swimSettings.setObjectName('gb_cpanel')
         self.swimSettings.setLayout(fl)
 
+
+        fl = QFormLayout()
+        fl.setContentsMargins(2,10,2,2)
+        fl.setSpacing(1)
+
+        self.results0 = QLabel('...Image Dimensions')
+        self.results1 = QLabel('...# Images')
+        self.results2 = QLabel('...SNR (average)')
+        self.results3 = QLabel('...Worst 5 SNR')
+        # self.results4 = QLabel('also here')
+        # self.results5 = QLabel('also here')
+        # self.results6 = QLabel('also here')
+        # self.results7 = QLabel('also here')
+
+        fl.addRow('Image Dimensions', self.results0)
+        fl.addRow('# Images', self.results1)
+        fl.addRow('SNR (average)', self.results2)
+        fl.addRow('Worst 5 SNR', self.results3)
+        # fl.addRow('Another item', self.results4)
+        # fl.addRow('Another item', self.results5)
+        # fl.addRow('Another item', self.results6)
+        # fl.addRow('Another item', self.results7)
+        # fl.setAlignment(Qt.AlignBaseline)
+        # fl.setAlignment(Qt.AlignBottom)
+
+        results_style = """
+        QFormLayout{
+                font-family: 'Andale Mono', 'Ubuntu Mono', monospace; 
+                font-size: 9px; 
+                color: #f3f6fb; 
+                margin: 5px;
+                padding: 5px;
+                border-radius: 2px;
+        }
+        """
+
+
+        self.alignmentResults = QGroupBox("Data && Results")
+        self.alignmentResults.setStyleSheet(results_style)
+        self.alignmentResults.setMinimumWidth(340)
+        self.alignmentResults.setObjectName('gb_cpanel')
+        self.alignmentResults.setLayout(fl)
+        self.sa_alignmentResults = QScrollArea()
+        self.sa_alignmentResults.setWidget(self.alignmentResults)
+
+
         '''self._wdg_alignBut
         tons <- self.cpButtonsLeft <- self.cpanel_hwidget1'''
         w = QWidget()
@@ -4556,12 +4636,14 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self.gb_ctlActions)
         hbl.addStretch(1)
         hbl.addWidget(self.outputSettings)
+        hbl.addStretch(1)
+        hbl.addWidget(self.sa_alignmentResults)
         hbl.addStretch(3)
 
         lab = QLabel('Control Panel')
         lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #f3f6fb; padding-left: 1px; padding-top: 1px;')
 
-        self.cpanelVertLabel = VerticalLabel('Control Panel', font_color='#ede9e8', font_size=14)
+        # self.cpanelVertLabel = VerticalLabel('Control Panel', font_color='#ede9e8', font_size=14)
 
         # self.cpanel = VWidget(lab, w)
         # self.cpanel = HWidget(self.cpanelVertLabel,ExpandingWidget(self), w)
@@ -4783,89 +4865,6 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.addWidget(self.splash_widget)
         # self.viewer_stack_widget.addWidget(self.permFileBrowser)
 
-        # self.matchpointControls = QWidget()
-        # with open('src/style/cpanel.qss', 'r') as f:
-        #     self.matchpointControls.setStyleSheet(f.read())
-        #
-        # self.matchpointControls.setFixedSize(QSize(560,120))
-        # self.matchpointControls.hide()
-
-        mp_marker_lineweight_label = QLabel('Lineweight')
-        self.mp_marker_lineweight_spinbox = QSpinBox()
-        self.mp_marker_lineweight_spinbox.setMinimum(1)
-        self.mp_marker_lineweight_spinbox.setMaximum(32)
-        self.mp_marker_lineweight_spinbox.setSuffix('pt')
-        # self.mp_marker_lineweight_spinbox.valueChanged.connect(self.set_mp_marker_lineweight)
-        self.mp_marker_lineweight_spinbox.valueChanged.connect(
-            lambda val: setOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT', val))
-
-        mp_marker_size_label = QLabel('Size')
-        self.mp_marker_size_spinbox = QSpinBox()
-        self.mp_marker_size_spinbox.setMinimum(1)
-        self.mp_marker_size_spinbox.setMaximum(32)
-        self.mp_marker_size_spinbox.setSuffix('pt')
-        self.mp_marker_size_spinbox.valueChanged.connect(
-            lambda val: setOpt('neuroglancer,MATCHPOINT_MARKER_SIZE', val))
-
-        self.exit_matchpoint_button = QPushButton('Exit')
-        self.exit_matchpoint_button.setStatusTip('Exit Manual Alignment Mode')
-        self.exit_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.exit_matchpoint_button.clicked.connect(self.enterExitManAlignMode)
-        self.exit_matchpoint_button.setFixedSize(normal_button_size)
-
-        # self.realign_matchpoint_button = QPushButton('Realign\nSection')
-        # self.realign_matchpoint_button.setStatusTip('Realign The Current Layer')
-        # self.realign_matchpoint_button.setStyleSheet("font-size: 9px;")
-        # self.realign_matchpoint_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.realign_matchpoint_button.clicked.connect(self.alignGenerateOne)
-        # self.realign_matchpoint_button.setFixedSize(normal_button_size)
-
-        self.matchpoint_text_snr = QLabel()
-        self.matchpoint_text_snr.setFixedHeight(26)
-        self.matchpoint_text_snr.setWordWrap(True)
-        self.matchpoint_text_snr.setStyleSheet('border-width: 0px;font-size: 12px;')
-        self.matchpoint_text_snr.setMaximumWidth(300)
-        # self.matchpoint_text_snr.setFixedHeight(24)
-        self.matchpoint_text_snr.setObjectName('matchpoint_text_snr')
-
-        hbl = HBL()
-        hbl.addWidget(self.exit_matchpoint_button)
-        # hbl.addWidget(self.realign_matchpoint_button)
-        hbl.addWidget(mp_marker_lineweight_label)
-        hbl.addWidget(self.mp_marker_lineweight_spinbox)
-        hbl.addWidget(mp_marker_size_label)
-        hbl.addWidget(self.mp_marker_size_spinbox)
-        hbl.addWidget(self.matchpoint_text_snr)
-        hbl.addStretch()
-
-        # self.matchpoint_text_prompt = QTextEdit()
-        # # self.matchpoint_text_prompt.setMaximumWidth(600)
-        # self.matchpoint_text_prompt.setFixedHeight(74)
-        # self.matchpoint_text_prompt.setReadOnly(True)
-        # self.matchpoint_text_prompt.setObjectName('matchpoint_text_prompt')
-        # self.matchpoint_text_prompt.setStyleSheet('border: 0px;')
-        # self.matchpoint_text_prompt.setHtml("Select 3-5 corresponding match points on the reference and base images. Key Bindings:<br>"
-        #                                     "<b>Enter/return</b> - Add match points (Left, Right, Left, Right...)<br>"
-        #                                     "<b>s</b>            - Save match points<br>"
-        #                                     "<b>c</b>            - Clear match points for this layer")
-
-        lab = QLabel('Control Panel - Manual Point Selection')
-        lab.setStyleSheet('color: #f3f6fb; font-size: 10px; font-weight: 500; margin-left: 4px; margin-top: 4px;')
-
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(4, 0, 4, 0)
-        vbl.addWidget(lab)
-        vbl.addLayout(hbl)
-        # vbl.addWidget(self.matchpoint_text_prompt)
-        # vbl.addStretch()
-
-        gb = QGroupBox()
-        gb.setLayout(vbl)
-
-        vbl = VBL()
-        vbl.addWidget(gb)
-
-
         self.cs0 = CorrSignalThumbnail(self)
         self.cs1 = CorrSignalThumbnail(self)
         self.cs2 = CorrSignalThumbnail(self)
@@ -5085,7 +5084,9 @@ class MainWindow(QMainWindow):
         self.dw_flicker.visibilityChanged.connect(lambda: self.flickerButton.setText((' Hide', ' Flicker')[self.dw_flicker.isHidden()]))
         self.dw_flicker.visibilityChanged.connect(lambda: self.flickerButton.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
 
-        self.dw_flicker.setStyleSheet("""QDockWidget::title {
+        self.dw_flicker.setStyleSheet("""
+        QDockWidget {color: #ede9e8;}
+        QDockWidget::title {
             text-align: left; /* align the text to the left */
             background: #380282;
             padding-left: 5px;
@@ -5289,7 +5290,6 @@ class MainWindow(QMainWindow):
         logger.info('')
         self.hud.setContentsMargins(0, 0, 0, 0)
         self.layer_details.setContentsMargins(0, 0, 0, 0)
-        self.matchpoint_text_snr.setMaximumHeight(20)
         self._tool_hstry.setMinimumWidth(248)
         # cfg.project_tab._transformationWidget.setFixedWidth(248)
         # cfg.project_tab._transformationWidget.setFixedSize(248,100)
@@ -5389,8 +5389,6 @@ class MainWindow(QMainWindow):
         self.pbar_widget.hide()
         self.statusBar.clearMessage() #Shoehorn
         QApplication.processEvents()
-
-
 
     def back_callback(self):
         logger.info("Returning Home...")
@@ -5523,4 +5521,70 @@ for i,dock in enumerate(cfg.mw.findChildren(QDockWidget)):
 
 '''
 
+
+"""
+FAQs:
+
+Q: What is AlignEM-SWiFT?
+A: AlignEM-SWiFt is a software tool specialized for registering electron micrographs. It is
+   able to generate scale image hierarchies, compute affine transforms, and generate aligned
+   images using multi-image rendering.
+
+Q: Can AlignEM-SWiFT be used to register or "align" non-EM images?
+A: Yes, but its forte is aligning EM images which tend to be large, and greyscale. AlignEM-SWIFT
+   provides functionality for downscaling and the ability to pass alignment results (affines)
+   from lower scale levels to higher ones.
+
+Q: What are scales?
+A: In AlignEM-SWiFT a "scale" means a downsampled (or decreased resolution) series of images.
+
+Q: Why should data be scaled? Is it okay to align the full resolution series with brute force?
+A: You could, but EM images tend to run large. A more efficient workflow is to:
+   1) generate a hierarchy of downsampled images from the full resolution images
+   2) align the lowest resolution images first
+   3) pass the computed affines to the scale of next-highest resolution, and repeat
+      until the full resolution images are in alignment. In these FAQs this is referred to
+      as "climbing the scale hierarchy""
+      
+Q: Why do SNR values not necessarily increase as we "climb the scale hierarchy"?
+A: SNR values returned by SWIM are a relative metric which depend on image resolution. It is
+   therefore most useful when comparing the relative alignment quality of aligned image
+   pairs at the same scale.
+
+Q: Why are the selected manual correlation regions not mutually independent? In other words,
+   why does moving or removing an argument to SWIM affect the signal-to-noise ratio and
+   correlation signals of the other selected SWIM regions?
+A:
+ 
+Q: What is Neuroglancer?
+A: Neuroglancer is an open-source WebGL and typescript-based web application for displaying
+   volumetric data. AlignEM-SWiFT uses a Chromium-based API called QtWebEngine together
+   with the Neuroglancer Python API to render large volumetric data efficiently and conveniently
+   within the application window.
+ 
+Q: What is Zarr?
+A: Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays
+   with an interface similar to NumPy. It has a Nature Methods paper:
+   https://www.nature.com/articles/s41592-021-01326-w
+   
+Q: Why is AlignEM-SWiFT so swift?
+A: For several reasons:
+   1) Time-intensive processes are executed in parallel.
+   2) Data scaling, SWIM alignment, and affine processing functions are all implemented
+      in highly efficient C code written by computer scientist Arthur Wetzel.
+   3) Fast Fourier Transform is a fast algorithm.
+
+Q: How many CPUs or "cores" does AlignEM-SWiFT use?
+A: By default, as many cores as the system has available.
+
+Q: What file types are supported?
+A: Currently, only images formatted as TIFF.
+
+Q: Where can I learn more about the principles of Signal Whitening Fourier Transform Image Matching?
+A: https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf
+
+
+
+
+"""
 
