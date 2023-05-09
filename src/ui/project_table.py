@@ -260,23 +260,25 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(6, 80)
 
     def updateTableDimensions(self, h):
-        # logger.info(f'Updating table dimensions...')
-        # logger.info('')
-        parentVerticalHeader = self.table.verticalHeader()
-        for section in range(parentVerticalHeader.count()):
-            parentVerticalHeader.resizeSection(section, h)
+        caller = inspect.stack()[1].function
+        if caller == 'main':
+            # logger.info(f'Updating table dimensions...')
+            # logger.info('')
+            parentVerticalHeader = self.table.verticalHeader()
+            for section in range(parentVerticalHeader.count()):
+                parentVerticalHeader.resizeSection(section, h)
 
-        if cfg.data.is_aligned_and_generated():
-            self.table.setColumnWidth(3, h)
-            self.table.setColumnWidth(4, h)
-            self.table.setColumnWidth(5, h)
-            self.table.setColumnWidth(6, h)
-            self.table.setColumnWidth(7, h)
-            self.table.setColumnWidth(8, h)
-            self.table.setColumnWidth(9, h)
-        else:
-            self.table.setColumnWidth(2, h)
-            self.table.setColumnWidth(3, h)
+            if cfg.data.is_aligned_and_generated():
+                self.table.setColumnWidth(3, h)
+                self.table.setColumnWidth(4, h)
+                self.table.setColumnWidth(5, h)
+                self.table.setColumnWidth(6, h)
+                self.table.setColumnWidth(7, h)
+                self.table.setColumnWidth(8, h)
+                self.table.setColumnWidth(9, h)
+            else:
+                self.table.setColumnWidth(2, h)
+                self.table.setColumnWidth(3, h)
 
 
     def get_data(self):
@@ -473,7 +475,7 @@ class Slider(QSlider):
         super().__init__(parent)
         self.setOrientation(Qt.Horizontal)
         self.setMinimum(16)
-        self.setMaximum(180)
+        self.setMaximum(150)
         self.setSingleStep(1)
         self.setPageStep(2)
         self.setTickInterval(1)

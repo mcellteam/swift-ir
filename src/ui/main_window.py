@@ -4736,7 +4736,7 @@ class MainWindow(QMainWindow):
         self.dw_monitor.setStyleSheet("""
         QDockWidget {color: #161c20;}
         QDockWidget::title {
-                    background-color: #FFD43B;
+                    background-color: #daebfe;
                     color: #161c20;
                     font-weight: 600;
                     padding-left: 5px;
@@ -5031,7 +5031,7 @@ class MainWindow(QMainWindow):
 
 
         self.notes = QTextEdit()
-        self.notes.setMinimumWidth(110)
+        self.notes.setMinimumWidth(120)
         self.notes.setObjectName('Notes')
         self.notes.setStyleSheet("""
             background-color: #ede9e8;
