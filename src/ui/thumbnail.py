@@ -174,7 +174,7 @@ class CorrSignalThumbnail(QLabel):
 
                 if self.snr:
                     # loc = QPoint(0, self.rect().height() - 4)
-                    loc = QPoint(2, self.rect().height() - 4)
+                    loc = QPoint(4, self.rect().height() - 6)
                     if self.extra:
                         qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
                     else:
