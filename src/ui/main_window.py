@@ -3622,8 +3622,6 @@ class MainWindow(QMainWindow):
         self.ngShowRuntimesAction.setText('Runtimes')
         viewMenu.addAction(self.ngShowRuntimesAction)
 
-        maViewMenu = viewMenu.addMenu('Manual Align Mode')
-
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
         # self.ngColorMenu= QColorDialog(self)
@@ -3631,7 +3629,6 @@ class MainWindow(QMainWindow):
         # action.setDefaultWidget(self.ngColorMenu)
         # # self.ngStateMenu.hovered.connect(self.updateNgMenuStateWidgets)
         # self.colorMenu.addAction(action)
-
 
         alignMenu = self.menu.addMenu('Align')
 
