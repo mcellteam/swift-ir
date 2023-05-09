@@ -1941,13 +1941,13 @@ class MainWindow(QMainWindow):
         # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
         self._autosave() #0412+
-        self._sectionSlider.setValue(int(len(cfg.data) / 2))
+        # self._sectionSlider.setValue(int(len(cfg.data) / 2))
         self.update()
         self._dontReinit = False
 
         self.cpanel.show()
-        QApplication.processEvents()
-        self.refreshTab()
+        # QApplication.processEvents()
+        # self.refreshTab()
 
         # dt = 1.1060302257537842
 
@@ -5114,7 +5114,8 @@ class MainWindow(QMainWindow):
             font-weight: 600;
         }""")
         self.dw_flicker.setWidget(self.flicker)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
+        # self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
         self.dw_flicker.hide()
 
         '''Documentation Panel'''

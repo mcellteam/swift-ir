@@ -22,7 +22,7 @@ class Flicker(QLabel):
         self.showBorder = False
         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.timer = QTimer(self)
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.onTimer)
@@ -80,11 +80,12 @@ class Flicker(QLabel):
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
                 # print_exception()
+                logger.warning('ZeroDivisionError')
                 pass
         super().paintEvent(event)
 
-    def resizeEvent(self, e):
-        self.setMaximumWidth(self.height())
+    # def resizeEvent(self, e):
+    #     self.setMaximumWidth(self.height())
 
     def sizeHint(self):
-        return QSize(128, 128)
+        return QSize(180, 180)
