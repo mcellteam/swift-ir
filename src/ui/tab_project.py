@@ -4,6 +4,7 @@
 import glob
 import os, sys, logging, inspect, copy, time, warnings
 from datetime import datetime
+import textwrap
 # from math import log10
 from math import log2, sqrt
 import neuroglancer as ng
@@ -783,7 +784,7 @@ class ProjectTab(QWidget):
         self.btn_view_targ_karg = QPushButton('View SWIM Cutouts')
         self.btn_view_targ_karg.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.btn_view_targ_karg.setFixedSize(QSize(110, 18))
-        def fn():
+        def btn_view_targ_karg_fn():
             if self.MA_stackedWidget.currentIndex() == 3:
                 self.updateMethodSelectWidget(soft=False)
                 self.btn_view_targ_karg.setText('View SWIM Cutouts')
@@ -792,7 +793,7 @@ class ProjectTab(QWidget):
                 self.MA_stackedWidget.setCurrentIndex(3)
                 self.btn_view_targ_karg.setText('Hide SWIM Cutouts')
 
-        self.btn_view_targ_karg.clicked.connect(fn)
+        self.btn_view_targ_karg.clicked.connect(btn_view_targ_karg_fn)
 
         # sec_label = QLabel('Section:')
         # sec_label.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
@@ -1098,11 +1099,11 @@ class ProjectTab(QWidget):
             caller = inspect.stack()[1].function
             if caller == 'main':
                 if self.rb_MA_hint.isChecked():
-                    cfg.data.hint_or_strict = 'hint'
+                    cfg.data.current_method = 'manual-hint'
                 elif self.rb_MA_strict.isChecked():
-                    cfg.data.hint_or_strict = 'strict'
+                    cfg.data.current_method = 'manual-strict'
 
-            cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.hint_or_strict}')
+            cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
 
         self.rb_MA_hint = QRadioButton('Hint')
@@ -1229,7 +1230,8 @@ class ProjectTab(QWidget):
         self.method_bg.addButton(self.method_rb1)
         self.method_bg.addButton(self.method_rb2)
 
-        def fn():
+        def method_bg_fn():
+            logger.info('')
             cur_index = self.MA_stackedWidget.currentIndex()
             if self.method_rb0.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(0)
@@ -1239,12 +1241,9 @@ class ProjectTab(QWidget):
                 cfg.data.current_method = 'grid-custom'
             elif self.method_rb2.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(2)
-                if cfg.data.hint_or_strict == 'strict':
-                    cfg.data.set_method('Manual-Strict')  # Deprecated
-                    cfg.data.current_method = 'manual-strict'
+                if cfg.data.current_method == 'manual-strict':
                     self.rb_MA_strict.setChecked(True)
                 else:
-                    cfg.data.set_method('Manual-Hint') #Deprecated
                     cfg.data.current_method = 'manual-hint'
                     self.rb_MA_hint.setChecked(True)
             if cur_index == 3:
@@ -1255,13 +1254,12 @@ class ProjectTab(QWidget):
 
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
-            # self.msg_MAinstruct.setHidden(cfg.data.method() == 'Auto-SWIM')
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             # cfg.main_window.dataUpdateWidgets()
             if cfg.main_window.dw_corrspots.isVisible():
                 cfg.main_window.updateCorrSignalsDrawer()
 
-        self.method_bg.buttonClicked.connect(fn)
+        self.method_bg.buttonClicked.connect(method_bg_fn)
 
 
 
@@ -1292,11 +1290,11 @@ class ProjectTab(QWidget):
         self.rb_bg_MA_targ_karg.setExclusive(True)
         self.rb_bg_MA_targ_karg.addButton(self.rb_targ)
         self.rb_bg_MA_targ_karg.addButton(self.rb_karg)
-        def fn():
+        def setTargKargPixmaps_fn():
             caller = inspect.stack()[1].function
             if caller == 'main':
                 self.setTargKargPixmaps()
-        self.rb_bg_MA_targ_karg.buttonClicked.connect(fn)
+        self.rb_bg_MA_targ_karg.buttonClicked.connect(setTargKargPixmaps_fn)
         self.radioboxes_targ_karg = HWidget(self.rb_targ, self.rb_karg)
 
         self.targ_karg_back_btn = QPushButton('Back')
@@ -1975,7 +1973,7 @@ class ProjectTab(QWidget):
         elif cfg.data.current_method in ('manual-hint', 'manual-strict'):
             self.method_rb2.setChecked(True)
             self.MA_stackedWidget.setCurrentIndex(2)
-            if cfg.data.hint_or_strict == 'strict':
+            if cfg.data.current_method == 'manual-strict':
                 self.rb_MA_strict.setChecked(True)
             else:
                 self.rb_MA_hint.setChecked(True)
@@ -2322,19 +2320,41 @@ class ProjectTab(QWidget):
 
             self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
 
-            if cfg.data.current_method == 'grid-custom':
+            method = cfg.data.current_method
+            sec = cfg.data.zpos
+            realign_tip = 'SWIM align section #%d and generate an image' % sec
+            if method == 'grid-custom':
+                self.btnRealignMA.setEnabled(True)
                 grid = cfg.data.grid_custom_regions
                 self.Q1.setActivated(grid[0])
                 self.Q2.setActivated(grid[1])
                 self.Q3.setActivated(grid[2])
                 self.Q4.setActivated(grid[3])
-            elif cfg.data.current_method == 'grid-default':
+                if sum(grid) >= 3:
+                    self.btnRealignMA.setEnabled(True)
+                    realign_tip = 'SWIM align section #%d using custom grid method' % sec
+                else:
+                    self.btnRealignMA.setEnabled(False)
+                    realign_tip = 'SWIM alignment requires at least three regions to form an affine'
+            elif method == 'grid-default':
+                self.btnRealignMA.setEnabled(True)
                 grid = cfg.data.grid_default_regions
                 self.Q1.setActivated(grid[0])
                 self.Q2.setActivated(grid[1])
                 self.Q3.setActivated(grid[2])
                 self.Q4.setActivated(grid[3])
+                realign_tip = 'SWIM align section #%d using default grid regions'
+            elif method in ('manual-hint','manual-strict'):
+                if (len(cfg.data.manpoints()['ref']) >= 3) and (len(cfg.data.manpoints()['base']) >= 3):
+                    self.btnRealignMA.setEnabled(True)
+                    realign_tip = 'SWIM align section #%d using manual correspondence regions method ' \
+                                  'and generate an image' % sec
+                else:
+                    self.btnRealignMA.setEnabled(False)
+                    realign_tip = 'SWIM alignment requires at least three regions to form an affine'
 
+
+            self.btnRealignMA.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
             self.cb_clobber.setChecked(cfg.data.clobber())
             self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
 
