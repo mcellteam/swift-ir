@@ -2143,7 +2143,7 @@ class ProjectTab(QWidget):
 
     def updateProjectLabels(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         self.aligned_label.hide()
         self.unaligned_label.hide()
         self.generated_label.hide()

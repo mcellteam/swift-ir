@@ -371,6 +371,7 @@ class EMViewer(AbstractEMViewer):
         caller = inspect.stack()[1].function
         logger.info(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
 
+
         caller = inspect.stack()[1].function
         if getData('state,mode') in ('stack-4panel', 'stack-xy'):
             # cfg.data['ui']['ng_layout'] = '4panel'
@@ -480,6 +481,8 @@ class EMViewer(AbstractEMViewer):
         #Critical must use main_window width
         w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
         h = cfg.project_tab.w_ng_display.height()
+
+        QApplication.processEvents()
         self.initZoom(w=w, h=h, adjust=1.10)
 
         # self.set_zmag()
