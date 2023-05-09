@@ -1118,7 +1118,7 @@ class MainWindow(QMainWindow):
             # if cfg.data.is_aligned_and_generated(): #0202-
             if cfg.data.is_aligned():
                 # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
-                self._btn_alignAll.setText('Re-Align All Sections')
+                self._btn_alignAll.setText('Align All Sections')
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
