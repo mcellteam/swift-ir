@@ -2879,12 +2879,12 @@ class MainWindow(QMainWindow):
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
 
-        tip = 'Show Neuroglancer key bindings'
+
         self.info_button_buffer_label = QLabel(' ')
 
         '''section # / jump-to lineedit'''
+        tip = 'Jumpt to section #'
         self._jumpToLineedit = QLineEdit(self)
-        # self._jumpToLineedit.setStyleSheet('font-size: 11px; border-width: 0px;')
         self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
         self._jumpToLineedit.setStatusTip(tip)
         self._jumpToLineedit.setFixedSize(QSize(36, 16))
@@ -3177,6 +3177,10 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()  #Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
         self._changeScaleCombo.clear()
+        self.combo_mode.clear()
+        self._jumpToLineedit.clear()
+        self._sectionSlider.setValue(0)
+        self._sectionSlider.setRange(0,0)
         self._changeScaleCombo.setEnabled(True) #needed for disable on MA
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
@@ -3191,6 +3195,9 @@ class MainWindow(QMainWindow):
 
 
         elif tabtype == 'ProjectTab':
+            items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
+            self.combo_mode.addItems(items)
+
             self.cpanel.show()
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
