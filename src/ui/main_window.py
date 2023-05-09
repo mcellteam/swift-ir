@@ -3032,8 +3032,15 @@ class MainWindow(QMainWindow):
             border-radius: 4px;
             font-size: 10px;
         }
-        QPushButton:pressed { border-color: #339933; }
+        QPushButton:pressed { 
+            border-color: #ede9e8;
+            border-width: 2px;
+            border-style: inset;
+        }
         """
+        with open('src/style/buttonstyle.qss', 'r') as f:
+            button_gradient_style = f.read()
+
         self._btn_refreshTab = QPushButton()
         # self._btn_refreshTab.setStyleSheet("background-color: #161c20;")
         self._btn_refreshTab.setStyleSheet(button_gradient_style)
@@ -3043,7 +3050,7 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#161c20'))
         self._btn_refreshTab.clicked.connect(self.refreshTab)
 
-        tb_button_size = QSize(58,18)
+        tb_button_size = QSize(64,18)
 
         tip = 'Show Notepad Tool Window'
         self.notesButton = QPushButton(' Notes')
@@ -4722,13 +4729,14 @@ class MainWindow(QMainWindow):
         self.hud.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.hud.setObjectName('HUD')
         self.hud.set_theme_default()
-        self.dw_monitor = QDockWidget('Head-up Display', self)
+        self.dw_monitor = QDockWidget('Head-up Display (Process Monitor)', self)
         self.dw_monitor.visibilityChanged.connect(lambda: self.hudButton.setText((' Hide', ' HUD')[self.dw_monitor.isHidden()]))
 
         self.dw_monitor.setObjectName('Dock Widget HUD')
         self.dw_monitor.setStyleSheet("""
+        QDockWidget {color: #161c20;}
         QDockWidget::title {
-                    background-color: #161c20;
+                    background-color: #FFD43B;
                     color: #161c20;
                     font-weight: 600;
                     padding-left: 5px;
@@ -5023,7 +5031,7 @@ class MainWindow(QMainWindow):
 
 
         self.notes = QTextEdit()
-        self.notes.setMinimumWidth(100)
+        self.notes.setMinimumWidth(110)
         self.notes.setObjectName('Notes')
         self.notes.setStyleSheet("""
             background-color: #ede9e8;
@@ -5187,7 +5195,7 @@ class MainWindow(QMainWindow):
         self.dw_console.visibilityChanged.connect(lambda: self.pythonButton.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_console.isHidden()]))
         self.dw_console.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
-            background: #4b8bbe;
+            background: #4B8BBE;
             padding-left: 5px;
             font-weight: 600;
         }""")
@@ -5440,11 +5448,12 @@ class MainWindow(QMainWindow):
         # self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42,14)
+        self.pbar_cancel_button.setIconSize(QSize(14,14))
         self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""
         QPushButton{
-            font-size: 11px;
+            font-size: 9px;
             border-style: solid;
             border-color: #c7c7c7;
             border-width: 1px;
@@ -5597,55 +5606,6 @@ class VerticalLabel(QLabel):
         if style != '':
             self.setStyleSheet(style)
 
-button_gradient_style = """
-QPushButton{
-    font-size: 11px;
-	border-style: solid;
-	border-color: #c7c7c7;
-	border-width: 1px;
-	border-radius: 2px;
-	background-color: #ede9e8;
-}
-QPushButton:pressed{
-	border-style: inset;
-	border-color: #339933;
-}
-QPushButton:hover{
-	border-style: solid;
-	border-width: 1px;
-	border-radius: 2px;
-	color: #161c20;
-	padding: 2px;
-	background-color: #ede9e8;
-	border-color: #778899;
-
-}
-QPushButton:disabled{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: #808086;
-	padding: 2px;
-	background-color: #ebecf0;
-}
-QPushButton::default{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: #161c20;
-	padding: 2px;
-	background-color: #daebfe;
-}
-
-"""
 
 '''
 #indicators css

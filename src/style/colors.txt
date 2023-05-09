@@ -29,6 +29,7 @@
 #003333 - dark green
 #dadada - light grey
 #FFE873 - Shandy (Python yellow)
+#FFD43B - Sunglow (Python darker yellow)
 
 https://xkcd.com/color/rgb/
 
