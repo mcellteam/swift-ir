@@ -353,8 +353,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def applyMps(self):
-        logger.info(f'Setting Manual Correspondence Points for {self.role} viewer...')
-        cfg.main_window.statusBar.showMessage('Manual Points Saved!', 3000)
+        logger.info(f'Storing Manual Points for {self.role}...')
+        cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
         pts = []
         for key in self.pts.keys():
             p = self.pts[key]
@@ -362,7 +362,7 @@ class MAViewer(neuroglancer.Viewer):
             pts.append((x, y))
         cfg.data.set_manpoints(self.role, pts)
         # cfg.data.set_manual_points_color(self.role, pts)
-        cfg.data.print_all_manpoints()
+        # cfg.data.print_all_manpoints()
 
 
     def draw_point_annotations(self):
