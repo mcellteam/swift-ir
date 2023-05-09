@@ -781,9 +781,9 @@ class UserProjects(QWidget):
                     self.table.setCellWidget(i, j, thumbnail)
                 else:
                     table_item = QTableWidgetItem(str(item))
-                    font = QFont()
-                    font.setPointSize(10)
-                    table_item.setFont(font)
+                    # font = QFont()
+                    # font.setPointSize(10)
+                    # table_item.setFont(font)
                     self.table.setItem(i, j, table_item)
         self.table.setColumnWidth(0, 128)
         self.table.setColumnWidth(1, 80)
