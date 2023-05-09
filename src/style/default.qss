@@ -437,6 +437,10 @@ QMenu::item {
 
  /* ---- QTableWidget/QTableView/QTreeView  ---- */
 
+QTreeView {
+    font-family: Tahoma, sans-serif;
+    font-size: 11px;
+}
 
 QTreeView {
     font-family: Tahoma, sans-serif;
