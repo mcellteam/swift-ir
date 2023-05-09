@@ -431,23 +431,16 @@ class MainWindow(QMainWindow):
 
     def _callbk_showHidePython(self):
         self.dw_console.setHidden(not self.dw_console.isHidden())
-        self.pythonButton.setText((' Hide', ' Python')[self.dw_console.isHidden()])
-        self.pythonButton.setStatusTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_console.isHidden()])
-        self.pythonButton.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_console.isHidden()])
+        self.pythonButton.setToolTip(("Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)", "Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)")[self.dw_console.isHidden()])
 
 
     def _callbk_showHideNotes(self):
         self.dw_notes.setHidden(not self.dw_notes.isHidden())
-        self.notesButton.setText((' Hide', ' Notes')[self.dw_notes.isHidden()])
-        self.notesButton.setStatusTip(('Hide Notepad Tool Window', 'Show Notepad Tool Window')[self.dw_notes.isHidden()])
-        self.notesButton.setToolTip(('Hide Notepad Tool Window', 'Show Notepad Tool Window')[self.dw_notes.isHidden()])
         self.updateNotes()
 
 
     def _callbk_showHideHud(self):
         self.dw_monitor.setHidden(not self.dw_monitor.isHidden())
-        self.hudButton.setText((' Hide', ' HUD')[self.dw_monitor.isHidden()])
-        self.hudButton.setStatusTip(('Hide Head-up Display Tool Window', 'Show Head-up Display Tool Window')[self.dw_monitor.isHidden()])
         self.hudButton.setToolTip(('Hide Head-up Display Tool Window', 'Show Head-up Display Tool Window')[self.dw_monitor.isHidden()])
 
     def _callbk_showHideSignals(self):
@@ -456,9 +449,6 @@ class MainWindow(QMainWindow):
             self.dw_corrspots.hide()
             return
         self.dw_corrspots.setHidden(not self.dw_corrspots.isHidden())
-        self.csButton.setText((' Hide', ' Signals')[self.dw_corrspots.isHidden()])
-        self.csButton.setStatusTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()])
-        self.csButton.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()])
         if self.dw_corrspots.isVisible():
             self.updateCorrSignalsDrawer()
 
@@ -468,9 +458,6 @@ class MainWindow(QMainWindow):
             self.dw_flicker.hide()
             return
         self.dw_flicker.setHidden(not self.dw_flicker.isHidden())
-        self.flickerButton.setText((' Hide', ' Flicker')[self.dw_flicker.isHidden()])
-        self.flickerButton.setStatusTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()])
-        self.flickerButton.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()])
         if self.dw_flicker.isHidden():
             self.flicker.stop()
         else:
@@ -2463,8 +2450,8 @@ class MainWindow(QMainWindow):
             (QKeySequence.MoveToNextLine, self.incrementZoomOut),
             # (QKeySequence.MoveToPreviousChar, self.scale_down),
             # (QKeySequence.MoveToNextChar, self.scale_up),
-            (Qt.Key_K, self._callbk_skipChanged),
-            (Qt.Key_P, self.startStopTimer)
+            # (Qt.Key_K, self._callbk_skipChanged),
+            # (Qt.Key_N, self._callbk_showHideNotes)
         )
         for event, action in events:
             QShortcut(event, self, action)
@@ -3055,11 +3042,10 @@ class MainWindow(QMainWindow):
         self._btn_refreshTab.setIconSize(QSize(14,14))
         self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#161c20'))
         self._btn_refreshTab.clicked.connect(self.refreshTab)
-        self._btn_refreshTab.setStatusTip('Refresh')
 
         tb_button_size = QSize(58,18)
 
-        tip = 'Show/Hide Notepad Tool Window'
+        tip = 'Show Notepad Tool Window'
         self.notesButton = QPushButton(' Notes')
         self.notesButton.setStyleSheet(button_gradient_style)
         self.notesButton.setStatusTip(tip)
@@ -3069,7 +3055,7 @@ class MainWindow(QMainWindow):
         self.notesButton.setIcon(QIcon('src/resources/notepad-icon.png'))
         self.notesButton.clicked.connect(self._callbk_showHideNotes)
 
-        tip = 'Show/Hide Python Console Tool Window'
+        tip = "Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)"
         self.pythonButton = QPushButton(' Python')
         self.pythonButton.setStyleSheet(button_gradient_style)
         self.pythonButton.setToolTip(tip)
@@ -3079,7 +3065,7 @@ class MainWindow(QMainWindow):
         self.pythonButton.setIcon(QIcon('src/resources/python-icon.png'))
         self.pythonButton.clicked.connect(self._callbk_showHidePython)
 
-        tip = 'Show/Hide Head-up Display Tool Window'
+        tip = 'Show Head-up Display Tool Window'
         self.hudButton = QPushButton(' HUD')
         self.hudButton.setStyleSheet(button_gradient_style)
         self.hudButton.setToolTip(tip)
@@ -3090,7 +3076,8 @@ class MainWindow(QMainWindow):
         self.hudButton.setIcon(qta.icon("mdi.monitor", color='#161c20'))
         self.hudButton.clicked.connect(self._callbk_showHideHud)
 
-        tip = 'Show/Hide Flicker Tool Window'
+
+        tip = 'Show Flicker Tool Window'
         self.flickerButton = QPushButton(' Flicker')
         self.flickerButton.setStyleSheet(button_gradient_style)
         self.flickerButton.setToolTip(tip)
@@ -3101,7 +3088,7 @@ class MainWindow(QMainWindow):
         self.flickerButton.setIcon(qta.icon("mdi.reiterate", color='#161c20'))
         self.flickerButton.clicked.connect(self._callbk_showHideFlicker)
 
-        tip = 'Show/Hide Correlation Signals Tool Window'
+        tip = 'Show Correlation Signals Tool Window'
         self.csButton = QPushButton(' Signals')
         self.csButton.setStyleSheet(button_gradient_style)
         self.csButton.setToolTip(tip)
@@ -3120,7 +3107,7 @@ class MainWindow(QMainWindow):
         # self._detachNgButton.setIcon(QIcon('src/resources/popout-icon.png'))
         # self._detachNgButton.setIconSize(QSize(13, 13))
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
-        self._detachNgButton.setStatusTip('Detach Neuroglancer (pop-out into a separate window)')
+        self._detachNgButton.setToolTip('Detach Neuroglancer (open in a separate window)')
 
         # self.toolbar.addWidget(QLabel(' '))
         self.toolbar.addWidget(self._btn_refreshTab)
@@ -4736,6 +4723,8 @@ class MainWindow(QMainWindow):
         # self.hud.setObjectName('HUD')
         self.hud.set_theme_default()
         self.dw_monitor = QDockWidget('Head-up Display', self)
+        self.dw_monitor.visibilityChanged.connect(lambda: self.hudButton.setText((' Hide', ' HUD')[self.dw_monitor.isHidden()]))
+
         self.dw_monitor.setObjectName('Dock Widget HUD')
         self.dw_monitor.setStyleSheet("""
         QDockWidget::title {
@@ -5047,6 +5036,12 @@ class MainWindow(QMainWindow):
         self.notes.textChanged.connect(fn)
 
         self.dw_notes = QDockWidget('Notes', self)
+        self.dw_notes.visibilityChanged.connect(
+            lambda: self.notesButton.setText((' Hide', ' Notes')[self.dw_notes.isHidden()]))
+        # self.dw_notes.visibilityChanged.connect(lambda: )
+        self.dw_notes.visibilityChanged.connect(lambda: self.notesButton.setToolTip(('Hide Notepad Tool Window', 'Show Notepad Tool Window')[self.dw_notes.isHidden()]))
+
+
         self.dw_notes.setStyleSheet("""
         QDockWidget {color: #161c20;}
         
@@ -5061,7 +5056,7 @@ class MainWindow(QMainWindow):
         self.dw_notes.hide()
 
 
-        tip = 'Show/Hide Shader Code'
+        tip = 'Show/Hide Contrast and Brightness Shaders'
         self._btn_show_hide_shader = QPushButton(' Shader')
         self._btn_show_hide_shader.setFixedHeight(18)
         self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
@@ -5187,6 +5182,9 @@ class MainWindow(QMainWindow):
         """)
 
         self.dw_console = QDockWidget('Python Console', self)
+        self.dw_console.visibilityChanged.connect(
+            lambda: self.pythonButton.setText((' Hide', ' Python')[self.dw_console.isHidden()]))
+        self.dw_console.visibilityChanged.connect(lambda: self.pythonButton.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_console.isHidden()]))
         self.dw_console.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
             background: #4b8bbe;
@@ -5201,6 +5199,10 @@ class MainWindow(QMainWindow):
         self.flicker.setMaximumSize(QSize(256,256))
 
         self.dw_flicker = QDockWidget('Flicker', self)
+
+        self.dw_flicker.visibilityChanged.connect(lambda: self.flickerButton.setText((' Hide', ' Flicker')[self.dw_flicker.isHidden()]))
+        self.dw_flicker.visibilityChanged.connect(lambda: self.flickerButton.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
+
         self.dw_flicker.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
             background: #380282;
@@ -5310,7 +5312,9 @@ class MainWindow(QMainWindow):
         self.browser_widget.setLayout(vbl)
 
         self.dw_corrspots = QDockWidget('Correlation Signals', self)
-        self.dw_corrspots.dockLocationChanged.connect(lambda area: print(f'dockLocationChanged: {area}'))
+        self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setText((' Hide', ' Signals')[self.dw_corrspots.isHidden()]))
+        self.dw_corrspots.visibilityChanged.connect(lambda: self.csButton.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_corrspots.isHidden()]))
+
         def fn():
             caller = inspect.stack()[1].function
             logger.info(f'caller: {caller}')
