@@ -801,10 +801,9 @@ class UserProjects(QWidget):
 
     def get_data(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
+        logger.info('Loading project data into the table view...')
         self.project_paths = get_project_list()
-        logger.info('Getting project data...')
-
         projects, thumbnail_first, thumbnail_last, created, modified, \
         n_sections, img_dimensions, bytes, gigabytes, location = \
             [], [], [], [], [], [], [], [], [], []
@@ -845,7 +844,7 @@ class UserProjects(QWidget):
             # logger.info('Getting project location...')
             try:    location.append(p)
             except: location.append('Unknown')
-        logger.info('<<<< get_data <<<<')
+        # logger.info('<<<< get_data <<<<')
         return zip(projects, thumbnail_first, thumbnail_last, created, modified,
                    n_sections, img_dimensions, bytes, gigabytes, location)
 

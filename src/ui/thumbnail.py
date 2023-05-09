@@ -136,6 +136,7 @@ class CorrSignalThumbnail(QLabel):
         self.setScaledContents(True)
         self.setMinimumSize(QSize(QSize(32,32)))
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path
@@ -204,4 +205,8 @@ class CorrSignalThumbnail(QLabel):
         except:
             print_exception()
             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+
+
+    def sizeHint(self):
+        return QSize(100,100)
 

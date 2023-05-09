@@ -374,7 +374,7 @@ class ProjectTable(QWidget):
         # self.loadScreenWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.loadScreenWidget.setStyleSheet('background-color: #222222; color: #ede9e8;')
 
-        self.loadScreenLabel = ClickLabel('<center><u>Load Table</u></center>')
+        self.loadScreenLabel = ClickLabel('<center><u>→ Load Table ←</u></center>')
         self.loadScreenLabel.setCursor(Qt.PointingHandCursor)
         self.loadScreenLabel.clicked.connect(initTable)
         self.loadScreenLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

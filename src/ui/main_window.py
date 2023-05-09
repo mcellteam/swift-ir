@@ -380,8 +380,6 @@ class MainWindow(QMainWindow):
             self.updateCorrSignalsDrawer()
 
 
-
-
     def updateCorrSignalsDrawer(self):
         #             siz = cfg.data.image_size()
         #             ar = siz[0] / siz[1]  # aspect ratio
@@ -448,6 +446,7 @@ class MainWindow(QMainWindow):
         self.dw_corrspots.setHidden(not self.dw_corrspots.isHidden())
         if self.dw_corrspots.isVisible():
             self.updateCorrSignalsDrawer()
+
 
     def _callbk_showHideFlicker(self):
         logger.info('')
@@ -1087,7 +1086,7 @@ class MainWindow(QMainWindow):
         (1) Update the visibility of next/prev s buttons depending on current s.
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
-        logger.info('updateEnabledButtons >>>>')
+        # logger.info('updateEnabledButtons >>>>')
         if cfg.data:
             # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
             # self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
@@ -3622,37 +3621,8 @@ class MainWindow(QMainWindow):
         self.ngShowRuntimesAction.setCheckable(True)
         self.ngShowRuntimesAction.setText('Runtimes')
         viewMenu.addAction(self.ngShowRuntimesAction)
-        
-        self.toggleCorrSigsAction = QAction(self)
-        def fn():
-            if self._isProjectTab():
-                cfg.project_tab.signalsAction.toggle()
-                self._callbk_showHideCorrSpots()
-        # self.toggleCorrSpotsAction.setCheckable(True)
-        # self.toggleCorrSpotsAction.setChecked(getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
-        # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
-        self.toggleCorrSigsAction.setText('Toggle Correlation Signals')
-        self.toggleCorrSigsAction.triggered.connect(fn)
-        viewMenu.addAction(self.toggleCorrSigsAction)
 
         maViewMenu = viewMenu.addMenu('Manual Align Mode')
-
-        self.maShowSwimWindowAction = QAction('Show SWIM Window', self)
-        self.maShowSwimWindowAction.setCheckable(True)
-        self.maShowSwimWindowAction.setChecked(getOpt('neuroglancer,SHOW_SWIM_WINDOW'))
-        # self.maShowSwimWindowAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_SWIM_WINDOW')])
-        self.maShowSwimWindowAction.triggered.connect(lambda val: setOpt('neuroglancer,SHOW_SWIM_WINDOW', val))
-        def fn():
-            if self._isProjectTab():
-                if getData('state,manual_mode'):
-                    if not getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
-                        cfg.refViewer.undrawSWIMwindows()
-                        cfg.baseViewer.undrawSWIMwindows()
-                    else:
-                        cfg.refViewer.drawSWIMwindow()
-                        cfg.baseViewer.drawSWIMwindow()
-        self.maShowSwimWindowAction.triggered.connect(fn)
-        maViewMenu.addAction(self.maShowSwimWindowAction)
 
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
@@ -4646,7 +4616,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         '''Initialize Main UI'''
-        logger.info(f'Current Directory: {os.getcwd()}')
+        logger.info(f'Working Directory: {os.getcwd()}')
 
         std_button_size = QSize(96, 20)
         normal_button_size = QSize(64, 24)

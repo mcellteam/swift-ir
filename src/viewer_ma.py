@@ -385,7 +385,7 @@ class MAViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 if s.layers['SWIM']:
                     if 'annotations' in s.layers['SWIM'].to_json().keys():
-                        logger.info(f'Undrawing SWIM windows...')
+                        # logger.info(f'Undrawing SWIM windows...')
                         s.layers['SWIM'].annotations = None
         except:
             logger.warning('Something went wrong while undrawing SWIM windows')
