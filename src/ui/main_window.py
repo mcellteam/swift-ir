@@ -229,16 +229,7 @@ class MainWindow(QMainWindow):
         if not self._working:
             logger.critical('Refreshing...')
             if self._isProjectTab():
-                # if cfg.project_tab._tabs.currentIndex() == 0:
-                    # delay = time.time() - self._lastRefresh
-                    # logger.info('delay: %s' % str(delay))
-                    # if self._lastRefresh and (delay < 2):
-                    #     self.hardRestartNg()
-                    # else:
-                    #     cfg.project_tab.refreshTab()
-                    # self._lastRefresh = time.time()
                 cfg.project_tab.refreshTab()
-
                 for v in cfg.project_tab.get_viewers():
                     v.set_zmag()
                 self.hud.done()
@@ -1655,7 +1646,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def jump_to_layer(self) -> None:
         '''Connected to _jumpToLineedit. Calls jump_to_slider directly.'''
-        logger.info('')
+        # logger.info('')
         if self._isProjectTab():
             requested = int(self._jumpToLineedit.text())
             if requested in range(len(cfg.data)):
@@ -1669,7 +1660,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        logger.info(f'jump_to_slider [caller: {caller}] >>>>')
+        # logger.info(f'jump_to_slider [caller: {caller}] >>>>')
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
         if caller in ('dataUpdateWidgets'):
             return
@@ -1692,7 +1683,7 @@ class MainWindow(QMainWindow):
                 logger.warning('Current Section Widget Failed to Update')
                 print_exception()
 
-        logger.info('<<<< jump_to_slider')
+        # logger.info('<<<< jump_to_slider')
 
 
     @Slot()
@@ -1947,17 +1938,16 @@ class MainWindow(QMainWindow):
         self._resetSlidersAndJumpInput() #fast
         self.reload_scales_combobox() #fast
         self.enableAllTabs() #fast
-
-        cfg.data.zpos = int(len(cfg.data)/2)
-
+        # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
         self._autosave() #0412+
-        self.hud.done()
-        # cfg.project_tab.project_table.setScaleData()
         self._sectionSlider.setValue(int(len(cfg.data) / 2))
-        # self._forceShowControls() #Todo make a decision on this
         self.update()
         self._dontReinit = False
+
+        self.cpanel.show()
+        QApplication.processEvents()
+        self.refreshTab()
 
         # dt = 1.1060302257537842
 

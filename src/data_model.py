@@ -337,16 +337,16 @@ class DataModel:
             cur_scale_key = self.scale
             coarsest_scale = scales_list[-1]
             if cur_scale_key == coarsest_scale:
-                logger.info("is cur scale alignable? returning True")
+                # logger.info("is cur scale alignable? returning True")
                 return True
 
             cur_scale_index = scales_list.index(cur_scale_key)
             next_coarsest_scale_key = scales_list[cur_scale_index + 1]
             if not self.is_aligned(s=next_coarsest_scale_key):
-                logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
+                # logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
                 return False
             else:
-                logger.critical(f'is {self.scale} alignable? Returning True')
+                # logger.critical(f'is {self.scale} alignable? Returning True')
                 return True
         except:
             print_exception()

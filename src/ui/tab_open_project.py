@@ -411,6 +411,7 @@ class OpenProject(QWidget):
             cfg.main_window._autosave(silently=True)
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
             cfg.main_window._setLastTab()
+            cfg.data.zpos = int(len(cfg.data) / 2)
             cfg.main_window.onStartProject()
 
             # self.onStartProject(mendenhall=True)
