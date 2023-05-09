@@ -1630,8 +1630,6 @@ class ProjectTab(QWidget):
         self._highContrastNgAction.triggered.connect(fn)
         self._highContrastNgAction.setStatusTip('Neuroglancer background setting')
 
-
-
         ngFont = QFont('Tahoma')
         ngFont.setBold(True)
         pal = QPalette()
@@ -1782,8 +1780,6 @@ class ProjectTab(QWidget):
         #     self.comboNgLayout,
         # )
 
-        # test = QPushButton()
-
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
@@ -1792,7 +1788,6 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
-        # self.w_ng_extended_toolbar.addAction(self.showHudOverlayAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSnrAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSectionDetailsAction)
@@ -1801,12 +1796,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        # self.w_ng_extended_toolbar.addAction(self._highContrastNgAction)
-
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
-        # self.w_ng_extended_toolbar.setPalette(ng_pal)
-        # self.w_ng_extended_toolbar.addWidget(self.cb_show_ng_ui_controls)
-        # self.w_ng_extended_toolbar.setLayout(hbl)
 
         self.shaderAction = QAction()
         self.shaderAction.setCheckable(True)
@@ -1845,7 +1835,6 @@ class ProjectTab(QWidget):
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.layout.setSpacing(0)
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
-
 
         self.ng_browser_container_outer = HWidget(
             self.ngVertLab,
@@ -2003,33 +1992,14 @@ class ProjectTab(QWidget):
             self.btn_view_targ_karg.setText('View SWIM Cutouts')
 
 
-
-
-
     def hideSecondaryNgTools(self):
-        for i in range(0,12):
+        for i in range(0,15):
             self.w_ng_extended_toolbar.actions()[i].setVisible(False)
-        # self.labShowHide.setVisible(False)
-        # cfg.main_window.ngShowUiControlsAction.setVisible(False)
-        # cfg.main_window.ngShowScaleBarAction.setVisible(False)
-        # cfg.main_window.ngShowYellowFrameAction.setVisible(False)
-        # cfg.main_window.ngShowAxisLinesAction.setVisible(False)
-        # self.showHudOverlayAction.setVisible(False)
-        # self.labNgLayout.setVisible(False)
-        # self.comboNgLayout.setVisible(False)
 
 
     def showSecondaryNgTools(self):
-        for i in range(0,12):
+        for i in range(0,15):
             self.w_ng_extended_toolbar.actions()[i].setVisible(True)
-        # self.labShowHide.setVisible(True)
-        # cfg.main_window.ngShowUiControlsAction.setVisible(True)
-        # cfg.main_window.ngShowScaleBarAction.setVisible(True)
-        # cfg.main_window.ngShowYellowFrameAction.setVisible(True)
-        # cfg.main_window.ngShowAxisLinesAction.setVisible(True)
-        # self.showHudOverlayAction.setVisible(True)
-        # self.labNgLayout.setVisible(True)
-        # self.comboNgLayout.setVisible(True)
 
 
     def onTranslate(self):
@@ -3059,7 +3029,7 @@ class ProjectTab(QWidget):
         self._thumbnail_aligned = QLabel()
         self.snrWebengine = WebEngine(ID='snr')
         setWebengineProperties(self.snrWebengine)
-        self.snrWebengine.setMinimumWidth(256)
+        self.snrWebengine.setMinimumWidth(140)
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #222222;')
         self.snrPlotSplitter.addWidget(self.snr_plt_wid)

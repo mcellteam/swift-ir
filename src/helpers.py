@@ -165,7 +165,7 @@ def initialize_user_preferences():
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
     try:
         if os.path.exists(userpreferencespath):
-            logger.info(f'Loading user settings "{userpreferencespath}"...')
+            logger.info(f"Loading user settings from '{userpreferencespath}'...")
             with open(userpreferencespath, 'r') as f:
                 cfg.settings = json.load(f)
         else:
@@ -277,7 +277,8 @@ def append_project_path(path):
 
 
 def configure_project_paths():
-    logger.info('')
+    caller = inspect.stack()[1].function
+    logger.info(f'caller: {caller}')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
     if not os.path.exists(userprojectspath):
         open(userprojectspath, 'a').close()
@@ -293,13 +294,13 @@ def configure_project_paths():
                 f.write(f"{p}\n")
         if projectpaths:
             logger.info('AlignEM-SWiFT Knows About The Following Projects:\n'
-                        '%s' % '  \n'.join(projectpaths))
+                        '  %s' % '\n  '.join(projectpaths))
     except:
         print_exception()
 
 
 def check_for_binaries():
-    # print("Checking platform-specific path to SWiFT-IR executables...")
+    print("Checking for platform-specific SWiFT-IR executables...")
     path = os.path.split(os.path.realpath(__file__))[0]
     if platform.system() == 'Darwin':
         bindir = os.path.join(path, 'lib', 'bin_darwin')
