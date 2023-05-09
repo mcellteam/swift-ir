@@ -183,10 +183,7 @@ class ProjectTab(QWidget):
         logger.info(f'\n\n----------------------------------------------------\n'
                     f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...\n'
                     f'----------------------------------------------------\n')
-
         caller = inspect.stack()[1].function
-
-        logger.info(f"Manual Mode? {getData('state,manual_mode')}")
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             # self.shutdownNeuroglancer()

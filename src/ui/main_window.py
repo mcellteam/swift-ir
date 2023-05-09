@@ -2837,7 +2837,6 @@ class MainWindow(QMainWindow):
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
 
-
         self.info_button_buffer_label = QLabel(' ')
 
         '''section # / jump-to lineedit'''
