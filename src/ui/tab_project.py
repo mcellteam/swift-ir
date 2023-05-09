@@ -199,9 +199,9 @@ class ProjectTab(QWidget):
             cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
             # cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
 
-            cfg.refViewer.signals.ptsChanged.connect(self.update_MA_widgets)
+            cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
-            cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_widgets)
+            cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
             # cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
             # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
@@ -219,7 +219,7 @@ class ProjectTab(QWidget):
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
 
-            self.update_MA_widgets()
+            self.update_MA_list_widgets()
             self.dataUpdateMA()
         else:
             # if caller != '_onGlobTabChange':
@@ -244,7 +244,7 @@ class ProjectTab(QWidget):
         #     cfg.baseViewer.initViewer()
         #     cfg.refViewer.initViewer()
         #     cfg.stageViewer.initViewer()
-        #     self.update_MA_widgets() # <-- !!!
+        #     self.update_MA_list_widgets() # <-- !!!
         # else:
         #     self.viewer.initViewer()
 
@@ -586,7 +586,7 @@ class ProjectTab(QWidget):
         #     logger.info('caller: %s' % caller)
         #     if caller == 'main':
         #         if self.tgl_alignMethod.isChecked():
-        #             self.update_MA_widgets()
+        #             self.update_MA_list_widgets()
         #         else:
         #             cfg.data.set_method('Auto-SWIM') #Critical always set project dict back to Auto-align
         #             self.set_method_label_text()
@@ -642,7 +642,7 @@ class ProjectTab(QWidget):
             try:
                 self.deleteAllMp()
                 # cfg.data.set_method('Auto-SWIM')
-                self.update_MA_widgets()
+                self.update_MA_list_widgets()
                 # self.set_method_label_text()
                 # self.tgl_alignMethod.setChecked(False)
                 cfg.refViewer.undrawSWIMwindows()
@@ -782,8 +782,6 @@ class ProjectTab(QWidget):
 
 
         self.btn_view_targ_karg = QPushButton('View SWIM Cutouts')
-        self.btn_view_targ_karg.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
-        self.btn_view_targ_karg.setFixedSize(QSize(110, 18))
         def btn_view_targ_karg_fn():
             if self.MA_stackedWidget.currentIndex() == 3:
                 self.updateMethodSelectWidget(soft=False)
@@ -792,8 +790,9 @@ class ProjectTab(QWidget):
                 self.setTargKargPixmaps()
                 self.MA_stackedWidget.setCurrentIndex(3)
                 self.btn_view_targ_karg.setText('Hide SWIM Cutouts')
-
         self.btn_view_targ_karg.clicked.connect(btn_view_targ_karg_fn)
+        self.btn_view_targ_karg.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btn_view_targ_karg.setFixedSize(QSize(110, 18))
 
         # sec_label = QLabel('Section:')
         # sec_label.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
@@ -1871,13 +1870,12 @@ class ProjectTab(QWidget):
         # else:
         #     files = natural_sort(glob.glob(os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp',  f_karg)))
         method = cfg.data.current_method
-        logger.info(f'method: {method}')
-        if method == 'grid-default':
-            n_cutouts = sum(cfg.data.grid_default_regions)
-        elif method == 'grid-custom':
-            n_cutouts = sum(cfg.data.grid_custom_regions)
-        elif method in ('manual-hint', 'manual-strict'):
-            n_cutouts = len(cfg.data.manpoints()['base'])
+        # if method == 'grid-default':
+        #     n_cutouts = sum(cfg.data.grid_default_regions)
+        # elif method == 'grid-custom':
+        #     n_cutouts = sum(cfg.data.grid_custom_regions)
+        # elif method in ('manual-hint', 'manual-strict'):
+        #     n_cutouts = len(cfg.data.manpoints()['base'])
 
         self.cutout_thumbnails[0].showBorder = False
         self.cutout_thumbnails[1].showBorder = False
@@ -1892,26 +1890,42 @@ class ProjectTab(QWidget):
         arg = 't' if self.rb_targ.isChecked() else 'k'
         logger.info(f'Files:\n{files}')
 
-        # for i in range(n_cutouts):
-        for i in range(0,4):
-            use = True
-            if method == 'grid-custom':
-                use = cfg.data.grid_custom_regions[i]
-            elif method == 'grid-default':
-                use = cfg.data.grid_default_regions[i]
+        if cfg.data.current_method in ('grid-custom', 'grid-default'):
+            # for i in range(n_cutouts):
+            for i in range(0,4):
+                use = True
+                if method == 'grid-custom':
+                    use = cfg.data.grid_custom_regions[i]
+                elif method == 'grid-default':
+                    use = cfg.data.grid_default_regions[i]
 
-            logger.info(f'\nfile  : {files[i]}\n'
-                        f'exists? : {os.path.exists(files[i])}\n'
-                        f'use?    : {use}\n')
+                logger.info(f'\nfile  : {files[i]}\n'
+                            f'exists? : {os.path.exists(files[i])}\n'
+                            f'use?    : {use}\n')
 
-            if use:
+                if use:
+                    if use and os.path.exists(files[i]):
+                        tn = self.cutout_thumbnails[i]
+                        tn.showBorder = True
+                        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp',  files[i])
+                        tn.path = path
+                        tn.showPixmap()
 
-                if use and os.path.exists(files[i]):
-                    tn = self.cutout_thumbnails[i]
-                    tn.showBorder = True
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp',  files[i])
-                    tn.path = path
-                    tn.showPixmap()
+        if cfg.data.current_method == 'manual-hint':
+            n_cutouts = len(cfg.data.manpoints()['base'])
+            for i in range(0,4):
+                # 0, 1, 2, 3
+                if i < n_cutouts:
+                    if os.path.exists(files[i]):
+                        tn = self.cutout_thumbnails[i]
+                        tn.showBorder = True
+                        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp',  files[i])
+                        tn.path = path
+                        tn.showPixmap()
+
+
+
+
 
         self.cutout_thumbnails[0].updateStylesheet()
         self.cutout_thumbnails[1].updateStylesheet()
@@ -2176,7 +2190,7 @@ class ProjectTab(QWidget):
             # cfg.baseViewer.set_zoom(zoom)
 
             # cfg.stageViewer.initViewer()
-            # self.update_MA_widgets()
+            # self.update_MA_list_widgets()
 
         else:
             cfg.main_window.warn('The current section is the first section')
@@ -2198,7 +2212,7 @@ class ProjectTab(QWidget):
             # cfg.baseViewer.set_zoom(zoom)
 
             # cfg.stageViewer.initViewer()
-            # self.update_MA_widgets()
+            # self.update_MA_list_widgets()
 
         else:
             cfg.main_window.warn('The current section is the last section')
@@ -2321,8 +2335,6 @@ class ProjectTab(QWidget):
             self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
 
             method = cfg.data.current_method
-            sec = cfg.data.zpos
-            realign_tip = 'SWIM align section #%d and generate an image' % sec
             if method == 'grid-custom':
                 self.btnRealignMA.setEnabled(True)
                 grid = cfg.data.grid_custom_regions
@@ -2330,31 +2342,14 @@ class ProjectTab(QWidget):
                 self.Q2.setActivated(grid[1])
                 self.Q3.setActivated(grid[2])
                 self.Q4.setActivated(grid[3])
-                if sum(grid) >= 3:
-                    self.btnRealignMA.setEnabled(True)
-                    realign_tip = 'SWIM align section #%d using custom grid method' % sec
-                else:
-                    self.btnRealignMA.setEnabled(False)
-                    realign_tip = 'SWIM alignment requires at least three regions to form an affine'
             elif method == 'grid-default':
-                self.btnRealignMA.setEnabled(True)
                 grid = cfg.data.grid_default_regions
                 self.Q1.setActivated(grid[0])
                 self.Q2.setActivated(grid[1])
                 self.Q3.setActivated(grid[2])
                 self.Q4.setActivated(grid[3])
-                realign_tip = 'SWIM align section #%d using default grid regions'
-            elif method in ('manual-hint','manual-strict'):
-                if (len(cfg.data.manpoints()['ref']) >= 3) and (len(cfg.data.manpoints()['base']) >= 3):
-                    self.btnRealignMA.setEnabled(True)
-                    realign_tip = 'SWIM align section #%d using manual correspondence regions method ' \
-                                  'and generate an image' % sec
-                else:
-                    self.btnRealignMA.setEnabled(False)
-                    realign_tip = 'SWIM alignment requires at least three regions to form an affine'
 
-
-            self.btnRealignMA.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
+            self.updateEnabledButtonsMA()
             self.cb_clobber.setChecked(cfg.data.clobber())
             self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
 
@@ -2366,8 +2361,35 @@ class ProjectTab(QWidget):
             if self.MA_stackedWidget.currentIndex() == 4:
                 self.refreshLogs()
 
+    def updateEnabledButtonsMA(self):
+        method = cfg.data.current_method
+        sec = cfg.data.zpos
+        realign_tip = 'SWIM align section #%d and generate an image' % sec
+        if method == 'grid-custom':
+            self.btnRealignMA.setEnabled(True)
+            if sum(cfg.data.grid_custom_regions) >= 3:
+                self.btnRealignMA.setEnabled(True)
+                realign_tip = 'SWIM align section #%d using custom grid method' % sec
+            else:
+                self.btnRealignMA.setEnabled(False)
+                realign_tip = 'SWIM alignment requires at least three regions to form an affine'
+        elif method == 'grid-default':
+            self.btnRealignMA.setEnabled(True)
+            realign_tip = 'SWIM align section #%d using default grid regions'
+        elif method in ('manual-hint', 'manual-strict'):
+            if (len(cfg.data.manpoints()['ref']) >= 3) and (len(cfg.data.manpoints()['base']) >= 3):
+                self.btnRealignMA.setEnabled(True)
+                realign_tip = 'SWIM align section #%d using manual correspondence regions method ' \
+                              'and generate an image' % sec
+            else:
+                self.btnRealignMA.setEnabled(False)
+                realign_tip = 'SWIM alignment requires at least three regions to form an affine'
 
-    def update_MA_widgets(self):
+        self.btnRealignMA.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
+
+
+
+    def update_MA_list_widgets(self):
         self.update_MA_widgets_calls += 1
         logger.critical(f'Call #{self.update_MA_widgets_calls}')
         self.setUpdatesEnabled(False)
@@ -2501,7 +2523,8 @@ class ProjectTab(QWidget):
         cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
-        self.update_MA_widgets()
+        self.update_MA_list_widgets()
+        self.updateEnabledButtonsMA()
         # self.updateNeuroglancer()
 
 
@@ -2523,7 +2546,8 @@ class ProjectTab(QWidget):
         cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
-        self.update_MA_widgets()
+        self.update_MA_list_widgets()
+        self.updateEnabledButtonsMA()
         # self.initNeuroglancer()
 
 
@@ -2532,12 +2556,13 @@ class ProjectTab(QWidget):
         cfg.main_window.hud.post('Deleting All Reference Image Manual Correspondence Points from Buffer...')
         cfg.refViewer.pts.clear()
         self.MA_ptsListWidget_ref.clear()
-        self.update_MA_widgets()
+        self.update_MA_list_widgets()
         # cfg.refViewer.draw_point_annotations()
         cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
+        self.updateEnabledButtonsMA()
 
 
     def deleteAllMpBase(self):
@@ -2545,12 +2570,12 @@ class ProjectTab(QWidget):
         cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
         cfg.baseViewer.pts.clear()
         self.MA_ptsListWidget_base.clear()
-        self.update_MA_widgets()
-        # cfg.baseViewer.draw_point_annotations()
+        self.update_MA_list_widgets()
         cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
         cfg.refViewer.drawSWIMwindow()
         cfg.baseViewer.drawSWIMwindow()
+        self.updateEnabledButtonsMA()
 
 
     def deleteAllMp(self):
@@ -2562,14 +2587,11 @@ class ProjectTab(QWidget):
         cfg.baseViewer.pts.clear()
         self.MA_ptsListWidget_ref.clear()
         self.MA_ptsListWidget_base.clear()
-        # cfg.refViewer.draw_point_annotations()
-        # cfg.baseViewer.draw_point_annotations()
-        # self.update_MA_widgets()
         cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
         cfg.refViewer.undrawSWIMwindows()
         cfg.baseViewer.undrawSWIMwindows()
-        # self.initNeuroglancer()
+        self.updateEnabledButtonsMA()
 
         logger.info('<<<< deleteAllMp')
 
