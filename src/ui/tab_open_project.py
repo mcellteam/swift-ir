@@ -116,7 +116,7 @@ class OpenProject(QWidget):
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
-        button_size = QSize(76,20)
+        button_size = QSize(86,20)
 
         self._buttonOpen = QPushButton('Open Project')
         self._buttonOpen.setEnabled(False)
