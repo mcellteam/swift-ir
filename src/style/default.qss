@@ -3,6 +3,7 @@
 
 
 QMainWindow {
+    font-family: Tahoma, sans-serif;
     background-color: #ede9e8;
     font-size: 11px;
 /*    */
