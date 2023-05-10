@@ -1259,18 +1259,19 @@ class MainWindow(QMainWindow):
 
 
     def updateResultsWidget(self):
-        # self.results0 = QLabel('...Image Dimensions')
-        # self.results1 = QLabel('...# Images')
-        # self.results2 = QLabel('...SNR (average)')
-        # self.results3 = QLabel('...Worst 5 SNR')
-        siz = cfg.data.image_size()
-        try:    self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
-        except: self.results0.setText("N/A")
-        try:    self.results1.setText("%d" % len(cfg.data))
-        except: self.results1.setText("N/A")
-        try:    self.results2.setText("%.2f" % cfg.data.snr_average())
-        except: self.results2.setText("N/A")
-        self.results3 = QLabel('...Worst 5 SNR')
+        if cfg.data:
+            # self.results0 = QLabel('...Image Dimensions')
+            # self.results1 = QLabel('...# Images')
+            # self.results2 = QLabel('...SNR (average)')
+            # self.results3 = QLabel('...Worst 5 SNR')
+            siz = cfg.data.image_size()
+            try:    self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
+            except: self.results0.setText("N/A")
+            try:    self.results1.setText("%d" % len(cfg.data))
+            except: self.results1.setText("N/A")
+            try:    self.results2.setText("%.2f" % cfg.data.snr_average())
+            except: self.results2.setText("N/A")
+            # self.results3 = QLabel('...Worst 5 SNR')
 
 
     # @Slot()
@@ -4573,50 +4574,59 @@ class MainWindow(QMainWindow):
         self.swimSettings.setObjectName('gb_cpanel')
         self.swimSettings.setLayout(fl)
 
+        self.fl_results = QFormLayout()
+        self.fl_results.setVerticalSpacing(2)
+        self.fl_results.setHorizontalSpacing(5)
+        self.fl_results.setContentsMargins(2,10,2,2)
 
-        fl = QFormLayout()
-        fl.setContentsMargins(2,10,2,2)
-        fl.setSpacing(1)
-
-        self.results0 = QLabel('...Image Dimensions')
-        self.results1 = QLabel('...# Images')
-        self.results2 = QLabel('...SNR (average)')
+        self.results0 = QLabel() # Image dimensions
+        self.results1 = QLabel() # # of images
+        self.results2 = QLabel() # SNR average
         self.results3 = QLabel('...Worst 5 SNR')
         # self.results4 = QLabel('also here')
         # self.results5 = QLabel('also here')
         # self.results6 = QLabel('also here')
         # self.results7 = QLabel('also here')
 
-        fl.addRow('Image Dimensions', self.results0)
-        fl.addRow('# Images', self.results1)
-        fl.addRow('SNR (average)', self.results2)
-        fl.addRow('Worst 5 SNR', self.results3)
-        # fl.addRow('Another item', self.results4)
-        # fl.addRow('Another item', self.results5)
-        # fl.addRow('Another item', self.results6)
-        # fl.addRow('Another item', self.results7)
-        # fl.setAlignment(Qt.AlignBaseline)
+        self.fl_results.addRow('Image Dimensions', self.results0)
+        self.fl_results.addRow('# Images', self.results1)
+        self.fl_results.addRow('SNR (average)', self.results2)
+        self.fl_results.addRow('Worst 5 SNR', self.results3)
+        # self.fl_results.addRow('Another item', self.results4)
+        # self.fl_results.addRow('Another item', self.results5)
+        # self.fl_results.addRow('Another item', self.results6)
+        # self.fl_results.addRow('Another item', self.results7)
+        self.fl_results.setAlignment(Qt.AlignBaseline)
         # fl.setAlignment(Qt.AlignBottom)
 
-        results_style = """
-        QFormLayout{
-                font-family: 'Andale Mono', 'Ubuntu Mono', monospace; 
-                font-size: 9px; 
-                color: #f3f6fb; 
-                margin: 5px;
-                padding: 5px;
-                border-radius: 2px;
-        }
-        """
+        # results_style = """
+        # QFormLayout{
+        #         font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        #         font-size: 9px;
+        #         color: #f3f6fb;
+        #         margin: 5px;
+        #         padding: 5px;
+        #         border-radius: 2px;
+        # }
+        # """
+
+        self.sa_alignmentResults = QScrollArea()
+        # self.sa_alignmentResults.setContentsMargins(0, 10, 0, 0)
+        self.sa_alignmentResults.setFixedSize(QSize(278,50))
+        w = QWidget()
+
+        # w.setStyleSheet(results_style)
+        w.setLayout(self.fl_results)
+        self.sa_alignmentResults.setWidget(w)
 
 
         self.alignmentResults = QGroupBox("Data && Results")
-        self.alignmentResults.setStyleSheet(results_style)
-        self.alignmentResults.setMinimumWidth(340)
+        self.alignmentResults.setContentsMargins(2,0,0,0)
+        self.alignmentResults.setFixedWidth(284)
         self.alignmentResults.setObjectName('gb_cpanel')
-        self.alignmentResults.setLayout(fl)
-        self.sa_alignmentResults = QScrollArea()
-        self.sa_alignmentResults.setWidget(self.alignmentResults)
+        self.alignmentResults.setLayout(VBL(self.sa_alignmentResults))
+        # self.alignmentResults.setStyleSheet(style)
+
 
 
         '''self._wdg_alignBut
@@ -4637,7 +4647,7 @@ class MainWindow(QMainWindow):
         hbl.addStretch(1)
         hbl.addWidget(self.outputSettings)
         hbl.addStretch(1)
-        hbl.addWidget(self.sa_alignmentResults)
+        hbl.addWidget(self.alignmentResults)
         hbl.addStretch(3)
 
         lab = QLabel('Control Panel')
@@ -5553,7 +5563,7 @@ A: SNR values returned by SWIM are a relative metric which depend on image resol
 
 Q: Why are the selected manual correlation regions not mutually independent? In other words,
    why does moving or removing an argument to SWIM affect the signal-to-noise ratio and
-   correlation signals of the other selected SWIM regions?
+   resulting correlation signals of the other selected SWIM regions?
 A:
  
 Q: What is Neuroglancer?

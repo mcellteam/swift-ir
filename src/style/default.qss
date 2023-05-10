@@ -78,7 +78,7 @@ QWidget {
 
 }
 
-/*
+
 QDockWidget {
     font-family: Tahoma, sans-serif;
     font-weight: 600;
@@ -107,7 +107,7 @@ QDockWidget::title {
   QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
       padding: 1px -1px -1px 1px;
   }
-  */
+
 
 
 
