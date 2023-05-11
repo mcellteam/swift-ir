@@ -15,6 +15,8 @@ import platform
 import statistics
 from glob import glob
 from copy import deepcopy
+from heapq import nsmallest
+from operator import itemgetter
 from datetime import datetime
 from dataclasses import dataclass
 from functools import cache, cached_property
@@ -691,6 +693,7 @@ class DataModel:
         self._data.setdefault('rendering', {})
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
+        self._data.setdefault('hud', '')
         self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
         self._data['state']['stage_viewer'].setdefault('show_overlay_message', True)
         self._data['state'].setdefault('manual_mode', False)
@@ -1000,6 +1003,12 @@ class DataModel:
             logger.warning('Unable to append maximum SNR, none found (%s) - Returning Empty List' % caller)
             return 0.0
 
+
+    def snr_lowest(self, n, s=None) -> zip:
+        '''Returns the lowest n snr indices '''
+        if s == None: s = self.scale
+        idx, val = zip(*nsmallest(n, enumerate(self.snr_list()[1:]), key=itemgetter(1)))
+        return zip(idx, val)
 
 
     def snr_average(self, scale=None) -> float:

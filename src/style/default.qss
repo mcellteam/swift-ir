@@ -6,12 +6,12 @@ QMainWindow {
     font-family: Tahoma, sans-serif;
     background-color: #ede9e8;
     font-size: 11px;
-/*    */
 }
 
 
+
 QMainWindow::separator {
-    background-color: #222222;
+    background-color: #f3f6fb;
     border-width: 0px;
     spacing: 0px;
     padding: 0px;
@@ -23,7 +23,6 @@ QMainWindow::separator {
 
 QMainWindow::separator:hover {
     background-color: #339933;
-
     width: 4px;
     height: 4px;
 }
@@ -496,7 +495,7 @@ QStatusBar {
     font-family: Tahoma, sans-serif;
     font-size: 10px;
     font-weight: 600;
-    color: #141414;
+    color: #161c20;
     background-color: #ede9e8;
     margin: 0px;
     padding: 0px;
