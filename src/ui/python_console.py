@@ -86,7 +86,7 @@ class PythonConsole(RichJupyterWidget):
             width = int(cfg.main_window.width() / 2)
         else:
             width = int(cfg.WIDTH / 2)
-        return QSize(width, 124)
+        return QSize(width, 90)
 
 
 if __name__ == '__main__':

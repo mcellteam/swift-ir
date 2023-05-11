@@ -20,7 +20,7 @@ class Flicker(QLabel):
         self.extra = extra
         self.border_color = '#000000'
         self.showBorder = False
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.timer = QTimer(self)
