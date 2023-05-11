@@ -12,7 +12,7 @@ import logging
 import inspect
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtCore import QObject, QThread, Qt, Signal, Slot, QSize
-from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
+from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 import src.config as cfg
 
 logger = logging.getLogger("hud")
@@ -65,6 +65,15 @@ class HeadupDisplay(QWidget):
         logging.CRITICAL: '#decfbe',
     }
 
+    COLORS_DARK = {
+        logging.DEBUG: '#F3F6FB',
+        logging.INFO: '#F3F6FB',
+        # logging.INFO: '#141414',
+        logging.WARNING: '#ffa756',
+        logging.ERROR: '#FD001B',
+        logging.CRITICAL: '#decfbe',
+    }
+
     def __init__(self, app, overlay=False):
         super(HeadupDisplay, self).__init__()
         self.app = app
@@ -78,15 +87,20 @@ class HeadupDisplay(QWidget):
         if overlay:
             self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.textedit.setReadOnly(True)
+        # self.textedit.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.handler = h = QtHandler(self.update_status)
         fs = '%(asctime)s [%(levelname)s] %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
         h.setFormatter(formatter)
         logger.addHandler(h)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(2,2,2,2)
         layout.addWidget(te)
         self.start_thread()
+        self.theme = None
+        self.layout().setAlignment(Qt.AlignBottom)
+
+        self.messages = []
 
     def __call__(self, message, level=logging.INFO):
         logger.log(level, message)
@@ -114,8 +128,10 @@ class HeadupDisplay(QWidget):
 
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
-        if self._overlay:
+        if self.theme == 'overlay':
             color = self.COLORS_OVERLAY.get(record.levelno, 'black')
+        elif self.theme == 'dark':
+            color = self.COLORS_DARK.get(record.levelno, 'black')
         else:
             color = self.COLORS.get(record.levelno, 'black')
         s = '<pre><font color="%s">%s</font></pre>' % (color, status)
@@ -151,24 +167,24 @@ class HeadupDisplay(QWidget):
 
 
     def done(self):
-        # # caller = inspect.stack()[1].function
-        # txt = self.textedit.toPlainText()
-        # last_line = txt.split('[INFO]')[-1].lstrip()
-        # if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
-        #     return
-        #
-        # # if cfg.project_tab:
-        # #     cfg.project_tab.hud_overlay.textedit.undo()
-        # #     cfg.project_tab.hud_overlay.post(last_line + 'done.')
-        # #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
-        #
-        # self.textedit.undo()
-        # self.post(last_line + 'done.')
-        # # self.post(last_line + 'done(%s).' % caller)
-        # self.textedit.moveCursor(QTextCursor.End)
-        #
-        # self.update()
-        pass
+        # caller = inspect.stack()[1].function
+        txt = self.textedit.toPlainText()
+        last_line = txt.split('[INFO]')[-1].lstrip()
+        if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
+            return
+
+        # if cfg.project_tab:
+        #     cfg.project_tab.hud_overlay.textedit.undo()
+        #     cfg.project_tab.hud_overlay.post(last_line + 'done.')
+        #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
+
+        self.textedit.undo()
+        self.post(last_line + 'done.')
+        # self.post(last_line + 'done(%s).' % caller)
+        self.textedit.moveCursor(QTextCursor.End)
+
+        self.update()
+        # pass
 
 
     # def cycle_text(self):
@@ -188,6 +204,7 @@ class HeadupDisplay(QWidget):
         self.textedit.undo()
 
     def set_theme_default(self):
+        self.theme = 'default'
 
         self.textedit.setStyleSheet("""
             background-color:  #141414;
@@ -200,8 +217,24 @@ class HeadupDisplay(QWidget):
             margin: 0px 0px 0px 0px;
         """)
 
+    def set_theme_dark(self):
+        self.theme = 'dark'
+
+        self.textedit.setStyleSheet("""
+            background-color:  #222222;
+            color: #f3f6fb;
+            border-style: inset;
+            border-color: #d3dae3; /* light off-white */
+            border-width: 0px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+            margin: 0px 0px 0px 0px;
+        """)
+
 
     def set_theme_overlay(self):
+        self.theme = 'overlay'
 
         self.textedit.setStyleSheet("""
             color: #ffa213;
@@ -222,7 +255,7 @@ class HeadupDisplay(QWidget):
             width = int(cfg.main_window.width() / 2)
         else:
             width = int(cfg.WIDTH / 2)
-        return QSize(width, 80)
+        return QSize(width, 124)
 
 
 

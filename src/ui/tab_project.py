@@ -96,6 +96,22 @@ class ProjectTab(QWidget):
         # with open('src/style/buttonstyle.qss', 'r') as f:
         #     self.buttonstyle = f.read()
 
+        self.oldPos = None
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.oldPos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        if self.oldPos is not None:
+            delta = event.globalPos() - self.oldPos
+            self.move(self.pos() + delta)
+            self.oldPos = event.globalPos()
+
+    def mouseReleaseEvent(self, event):
+        self.oldPos = None
+
+
 
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
@@ -303,43 +319,6 @@ class ProjectTab(QWidget):
         self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.hud_overlay.set_theme_overlay()
 
-
-        # self.hud_overlay.setStyleSheet('background-color: #1b2328; color: #f3f6fb; border-radius: 5px;')
-        # self.hud_overlay.setStyleSheet("""
-        #     background-color: #f3f6fb;
-        #     color: #141414;
-        #     font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        #     font-size: 7px;
-        #     border-radius: 4px;
-        #     """
-        # )
-        # self.hud_overlay.setStyleSheet("""
-        #             font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        #             font-size: 7px;
-        #             background-color: rgba(255,255,255,0.5);
-        #             color: #141414;
-        #             padding: 1px;
-        #             border-radius: 2px;
-        #             """)
-
-        # self._ProcessMonitorWidget = QWidget()
-        # self._ProcessMonitorWidget.setStyleSheet('background: none;')
-        # self._ProcessMonitorWidget.setFixedWidth(260)
-        # self._ProcessMonitorWidget.setFixedHeight(84)
-        # lab = QLabel('Head-up Display')
-        # lab.setStyleSheet('background-color: #1b2328; color: #f3f6fb; '
-        #                   'font-size: 9px; font-weight: 500;'
-        #                   'border-top-left-radius: 4px;'
-        #                   'border-top-right-radius: 4px;'
-        #                   'padding-left: 2px;')
-        # vbl = QVBoxLayout()
-        # vbl.setSpacing(0)
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.addWidget(lab, alignment=Qt.AlignBaseline)
-        # vbl.addWidget(self.hud_overlay)
-        # self._ProcessMonitorWidget.setLayout(vbl)
-        # self.ng_gl.addWidget(self._ProcessMonitorWidget, 4, 2, 1, 3, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-
         # self.joystick = Joystick()
 
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
@@ -357,9 +336,6 @@ class ProjectTab(QWidget):
         padding: 5px;
         border-radius: 2px;
         """
-
-
-        overlay_style = "background-color: rgba(255, 255, 255, 0); color: #f3f6fb; border-radius: 4px;"
 
         self.detailsSection = QLabel()
         self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
@@ -498,8 +474,8 @@ class ProjectTab(QWidget):
         setWebengineProperties(self.MA_webengine_stage)
         # self.MA_webengine_ref.inFocus.triggered.connect(self.focusedViewerChanged)
         # self.MA_webengine_base.inFocus.triggered.connect(self.focusedViewerChanged)
-        self.MA_webengine_ref.setMinimumWidth(200)
-        self.MA_webengine_base.setMinimumWidth(200)
+        self.MA_webengine_ref.setMinimumWidth(100)
+        self.MA_webengine_base.setMinimumWidth(100)
         # self.MA_webengine_ref.setMouseTracking(True)
         # self.MA_webengine_base.setMouseTracking(True)
         # self.MA_webengine_stage.setMouseTracking(True)
@@ -507,8 +483,10 @@ class ProjectTab(QWidget):
         unless mouse tracking has been enabled with setMouseTracking() .'''
 
 
-        self.MA_webengine_stage.setMinimumWidth(240)
-        self.MA_webengine_stage.setMinimumHeight(128)
+        # self.MA_webengine_stage.setMinimumWidth(240)
+        # self.MA_webengine_stage.setMinimumHeight(128)
+        self.MA_webengine_stage.setMinimumWidth(100)
+        self.MA_webengine_stage.setMinimumHeight(100)
 
         # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
         # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
@@ -3068,6 +3046,7 @@ class ProjectTab(QWidget):
         self._thumbnail_aligned = QLabel()
         self.snrWebengine = WebEngine(ID='snr')
         setWebengineProperties(self.snrWebengine)
+        # self.snrWebengine.setMinimumWidth(140)
         self.snrWebengine.setMinimumWidth(140)
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #222222;')

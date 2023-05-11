@@ -32,6 +32,7 @@ class ToggleSwitch(QCheckBox):
                  bar_color=QColor(_red_color),
                  checked_color=_green_color,
                  handle_color=_snow_color, # handle; off
+                 # h_scale=.7,
                  h_scale=.7,
                  v_scale=1,
                  fontSize=13):
@@ -42,16 +43,16 @@ class ToggleSwitch(QCheckBox):
         self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
         self._handle_brush = QBrush(handle_color)
         self._handle_checked_brush = QBrush(QColor("white")) # handle, off
-        self.setContentsMargins(0, 0, 4, 0)
+        # self.setContentsMargins(0, 0, 4, 0)
         self._handle_position = 0
         self._h_scale = h_scale
         self._v_scale = v_scale
         self._fontSize = fontSize
         self.stateChanged.connect(self.handle_state_change)
-        # self._fixed_height = 52 #horizontal
-        self._fixed_width = 52 #horizontal
+        # self._fixed_width = 52 #horizontal
         # self._fixed_height = 26 #vertical
-        self._fixed_height = 26 #vertical
+        self._fixed_width = 40 #horizontal
+        self._fixed_height = 24 #vertical
         self.setFixedWidth(self._fixed_width)
         self.setFixedHeight(self._fixed_height)
 

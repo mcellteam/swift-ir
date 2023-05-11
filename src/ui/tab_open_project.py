@@ -11,7 +11,7 @@ import textwrap
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog
-from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize
+from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint
 from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
 
 from src.ui.file_browser import FileBrowser
@@ -36,7 +36,7 @@ class OpenProject(QWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.setMinimumHeight(200)
+        self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
         def fn():
             self.selectionReadout.setText(self.filebrowser.getSelectionPath())
@@ -174,7 +174,7 @@ class OpenProject(QWidget):
         # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
 
         self.selectionReadout.setFixedHeight(22)
-        self.selectionReadout.setMinimumWidth(700)
+        # self.selectionReadout.setMinimumWidth(700)
 
         self.selectionReadout_w_overlay = QWidget()
         gl = QGridLayout()
@@ -196,7 +196,7 @@ class OpenProject(QWidget):
         hbl.addSpacerItem(self.spacer_item_docs)
 
         self._actions_widget = QWidget()
-        self._actions_widget.setAutoFillBackground(True)
+        # self._actions_widget.setAutoFillBackground(True)
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
         # self._actions_widget.setStyleSheet("")
@@ -569,7 +569,7 @@ class OpenProject(QWidget):
             # filename = self.selected_file
             filename = self.selectionReadout.text()
             logger.info(f'Opening Project {filename}...')
-            cfg.main_window.tell('Loading Project "%s"' % filename)
+            cfg.main_window.tell("Loading Project '%s'..." % filename)
             try:
                 with open(filename, 'r') as f:
                     cfg.data = DataModel(data=json.load(f))
@@ -588,6 +588,7 @@ class OpenProject(QWidget):
             cfg.main_window.onStartProject()
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             cfg.main_window._setLastTab()
+            cfg.main_window.hud.done()
         else:
             cfg.main_window.warn("Invalid Path")
 

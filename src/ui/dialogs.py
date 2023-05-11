@@ -145,7 +145,7 @@ class QFileDialogPreview(QFileDialog):
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
         # self.mpPreview.setFixedSize(360, 360)
-        self.mpPreview.setMinimumSize(360, 360)
+        self.mpPreview.setMinimumSize(256, 256)
         self.mpPreview.setAlignment(Qt.AlignCenter)
         self.mpPreview.setObjectName("labelPreview")
         self.imageDimensionsLabel = QLabel('')
