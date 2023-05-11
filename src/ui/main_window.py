@@ -4523,12 +4523,19 @@ class MainWindow(QMainWindow):
             QGroupBox#gb_cpanel {
                 border: 1px solid #ede9e8;
                 border-radius: 4px;
+                font-size: 9px;
+            }
+            /*
+            QGroupBox#gb_cpanel {
+                border: 1px solid #ede9e8;
+                border-radius: 4px;
                 padding: 2px;
                 padding-bottom: 0px;
                 margin-top: 0px;
                 margin-bottom: 0px;
                 font-size: 9px;
             }
+            */
             QGroupBox:disabled#gb_cpanel {
                 background-color: #ffe135;
             }
@@ -4576,8 +4583,8 @@ class MainWindow(QMainWindow):
 
         self.fl_results = QFormLayout()
         self.fl_results.setVerticalSpacing(2)
-        self.fl_results.setHorizontalSpacing(5)
-        self.fl_results.setContentsMargins(2,10,2,2)
+        self.fl_results.setHorizontalSpacing(8)
+        self.fl_results.setContentsMargins(2,0,2,2)
 
         self.results0 = QLabel() # Image dimensions
         self.results1 = QLabel() # # of images
@@ -4596,8 +4603,8 @@ class MainWindow(QMainWindow):
         # self.fl_results.addRow('Another item', self.results5)
         # self.fl_results.addRow('Another item', self.results6)
         # self.fl_results.addRow('Another item', self.results7)
-        self.fl_results.setAlignment(Qt.AlignBaseline)
-        # fl.setAlignment(Qt.AlignBottom)
+        # self.fl_results.setAlignment(Qt.AlignBaseline)
+        fl.setAlignment(Qt.AlignBottom)
 
         # results_style = """
         # QFormLayout{
