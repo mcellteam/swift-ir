@@ -147,14 +147,14 @@ class MainWindow(QMainWindow):
 
         self.oldPos = None
 
-        self.gripSize = 12 # originally 12
-        self.grips = []
-        for i in range(4):
-            grip = QSizeGrip(self)
-            grip.resize(self.gripSize, self.gripSize)
-            self.grips.append(grip)
+        # self.gripSize = 12 # originally 12
+        # self.grips = []
+        # for i in range(4):
+        #     grip = QSizeGrip(self)
+        #     grip.resize(self.gripSize, self.gripSize)
+        #     self.grips.append(grip)
 
-        self.setDockNestingEnabled(True)
+        # self.setDockNestingEnabled(True)
 
 
     def mousePressEvent(self, event):
@@ -179,15 +179,11 @@ class MainWindow(QMainWindow):
         #     if getData('state,mode') == 'comparison':
         #         cfg.project_tab.initNeuroglancer()
 
-        rect = self.rect()
-        # top left grip doesn't need to be moved...
-        # top right
-        self.grips[1].move(rect.right() - self.gripSize, 0)
-        # bottom right
-        self.grips[2].move(
-            rect.right() - self.gripSize, rect.bottom() - self.gripSize)
-        # bottom left
-        self.grips[3].move(0, rect.bottom() - self.gripSize)
+        # rect = self.rect()
+        # # top left grip doesn't need to be moved...
+        # self.grips[1].move(rect.right() - self.gripSize, 0) # top right
+        # self.grips[2].move(rect.right() - self.gripSize, rect.bottom() - self.gripSize) # bottom right
+        # self.grips[3].move(0, rect.bottom() - self.gripSize) # bottom left
 
 
     def initSizeAndPos(self, width, height):
@@ -1311,7 +1307,7 @@ class MainWindow(QMainWindow):
             self.fl_main_results.addRow('Source Dimensions', self.results0)
             self.fl_main_results.addRow('# Images', self.results1)
             self.fl_main_results.addRow('SNR (average)', self.results2)
-            # self.fl_main_results.addRow('Lowest 5 SNR', self.results3)
+            # self.fl_main_results.addRow('Lowest 10 SNR', self.results3)
 
             siz = cfg.data.image_size()
             try:    self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
@@ -1333,7 +1329,7 @@ class MainWindow(QMainWindow):
 
             if cfg.data.is_aligned():
                 lowest_5_i = [x[0] for x in list(cfg.data.snr_lowest(5))]
-                lowest_5 = list(cfg.data.snr_lowest(5))
+                lowest_5 = list(cfg.data.snr_lowest(10))
 
                 self.lowest5_btns = []
 
@@ -1348,18 +1344,19 @@ class MainWindow(QMainWindow):
 
                     try:
                         logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
-                        s1 = ('z-index %d' % lowest_5[i][0]).rjust(10)
-                        s2 = ('%.2f' % lowest_5[i][1]).rjust(10)
+                        s1 = ('z-index %d' % lowest_5[i][0]).ljust(10)
+                        s2 = ('%.2f' % lowest_5[i][1]).ljust(10)
                         combined = s1 + ' ' + s2
                         # btn = QPushButton('Jump')
-                        self.lowest5_btns.append(QPushButton('Align Manually →'))
-                        # btn.setLayoutDirection(Qt.RightToLeft)
+                        # self.lowest5_btns.append(QPushButton('Align Manually →'))
+                        self.lowest5_btns.append(QPushButton('Align Manually'))
+                        self.lowest5_btns[i].setLayoutDirection(Qt.RightToLeft)
                         # btn = QPushButton()
                         # btn.setFixedSize(QSize(48,12))
                         self.lowest5_btns[i].setFixedHeight(13)
                         # btn.setFixedWidth(80)
                         self.lowest5_btns[i].setIconSize(QSize(10,10))
-                        # btn.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                        self.lowest5_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
                         # def fn():
                         # 
                         #     logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
@@ -1507,11 +1504,11 @@ class MainWindow(QMainWindow):
                             afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
                             cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
                         elif y == 1:
-                            afm_txt.append(('%.2f' % afm[x][y]).rjust(8))
-                            cafm_txt.append(('%.2f' % afm[x][y]).rjust(8))
+                            afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
+                            cafm_txt.append(('%.2f' % afm[x][y]).ljust(8))
                         else:
-                            afm_txt.append(('%.2f' % afm[x][y]).rjust(11))
-                            cafm_txt.append(('%.2f' % cafm[x][y]).rjust(11))
+                            afm_txt.append(('%.2f' % afm[x][y]).ljust(11))
+                            cafm_txt.append(('%.2f' % cafm[x][y]).ljust(11))
                         if (x == 0) and (y == 2):
                             afm_txt.append(f'{nl}')
                             cafm_txt.append(f'{nl}')
@@ -2264,6 +2261,10 @@ class MainWindow(QMainWindow):
             if self.exit_dlg.isVisible():
                 self.globTabsAndCpanel.children()[-1].hide()
             return
+            # if self.exit_dlg.isVisible():
+            #     pass
+            # else:
+            #     self.exit_dlg.show()
 
         logger.info("Asking user to confirm exit application...")
 
@@ -2736,7 +2737,10 @@ class MainWindow(QMainWindow):
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
                 # cfg.project_tab.cpanel.hide()
-                self._btn_manualAlign.setText('← Exit Manual Mode')
+                # self._btn_manualAlign.setText('← Exit Manual Mode')
+                self._btn_manualAlign.setText(' Exit Manual Mode')
+                self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
+                self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#161c20'))
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
@@ -2784,7 +2788,9 @@ class MainWindow(QMainWindow):
 
             setData('state,manual_mode', False)
             self.updateEnabledButtons()
-            self._btn_manualAlign.setText('Manual Align Mode →')
+            self._btn_manualAlign.setText('Manual Align Mode ')
+            self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
+            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
             self.alignMatchPointAction.setText('Align Manually')
             self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
@@ -4637,7 +4643,11 @@ class MainWindow(QMainWindow):
         self._btn_alignRange.setFixedSize(long_button_size)
 
         # tip = ''
-        self._btn_manualAlign = QPushButton('Manual Align Mode →')
+        # self._btn_manualAlign = QPushButton('Manual Align Mode →')
+        self._btn_manualAlign = QPushButton('Manual Align Mode ')
+        self._btn_manualAlign.setIconSize(QSize(12,12))
+        self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
+        self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
         # self._btn_manualAlign.setStyleSheet("font-size: 10px; color: #161c20;")
         # self._btn_manualAlign.setEnabled(False)
         self._btn_manualAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4940,7 +4950,7 @@ class MainWindow(QMainWindow):
 
         self.sa_alignmentResults = QScrollArea()
         self.sa_alignmentResults.setMinimumHeight(60)
-        self.sa_alignmentResults.setMinimumWidth(220)
+        self.sa_alignmentResults.setFixedWidth(250)
         self.sa_alignmentResults.setWidgetResizable(True)
         # self.sa_alignmentResults.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.sa_alignmentResults.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -4992,12 +5002,19 @@ class MainWindow(QMainWindow):
             height: 14;
             max-width: 100px;
             font-size: 8px;
+            background-color: #f3f6fb;
+            border: 1px solid #339933;
+        }
+        
+        QTabBar::tab:selected
+        {
+            color: #339933;
         }
         """)
         self.resultsTabWidget.setContentsMargins(0,0,0,0)
         self.resultsTabWidget.addTab(self.sa_alignmentResults, 'Details')
         # self.resultsTabWidget.addTab(self.lowest5widget, 'Lowest 5 SNR')
-        self.resultsTabWidget.addTab(self.sa_tab2, 'Lowest 5 SNR')
+        self.resultsTabWidget.addTab(self.sa_tab2, 'Lowest 10 SNR')
 
 
         # self.alignmentResults = QGroupBox("Data && Results")
@@ -5015,33 +5032,29 @@ class MainWindow(QMainWindow):
         '''self._wdg_alignBut
         tons <- self.cpButtonsLeft <- self.cpanel_hwidget1'''
         self.cpanel = QWidget()
-        self.cpanel.setContentsMargins(2,2,2,2)
         hbl = HBL()
-        hbl.setSpacing(1)
+        # hbl.setSpacing(1)
         # hbl.setSpacing(8)
-        self.cpanel.setLayout(hbl)
+
         # hbl.addWidget(QLabel('  '))
         # hbl.addWidget(ExpandingWidget(self))
-        # hbl.addStretch(3)
+        hbl.addWidget(ExpandingWidget(self))
         hbl.addWidget(self.navControls)
-        # hbl.addStretch(1)
+        hbl.addStretch(1)
         hbl.addWidget(self.swimSettings)
-        # hbl.addStretch(1)
+        hbl.addStretch(1)
         hbl.addWidget(self.gb_ctlActions)
-        # hbl.addStretch(1)
+        hbl.addStretch(1)
         hbl.addWidget(self.outputSettings)
-        # hbl.addStretch(1)
+        hbl.addStretch(1)
         # hbl.addWidget(self.alignmentResults)
         # hbl.addWidget(self.sa_alignmentResults)
         hbl.addWidget(self.resultsTabWidget)
-        # hbl.addStretch(3)
+        # hbl.addStretch(1)
+        hbl.addWidget(ExpandingWidget(self))
 
-        # self.cpanelVertLabel = VerticalLabel('Control Panel', font_color='#ede9e8', font_size=14)
-
-        # self.cpanel = VWidget(lab, w)
-        # self.cpanel = HWidget(self.cpanelVertLabel,ExpandingWidget(self), w)
-        # self.cpanel = w
-        self.cpanel.setContentsMargins(1,1,1,1)
+        self.cpanel.setLayout(hbl)
+        self.cpanel.setContentsMargins(2,2,2,2)
         self.cpanel.setFixedHeight(76)
         # self.cpanel.layout.setAlignment(Qt.AlignHCenter)s
         self.cpanel.setAutoFillBackground(True)
@@ -5740,13 +5753,13 @@ class MainWindow(QMainWindow):
             height: 6px;
         }
         """)
-        self.sa_cpanel.setFixedHeight(90)
+        self.sa_cpanel.setFixedHeight(86)
         self.sa_cpanel.setWidget(HWidget(self.cpanel))
 
         # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.cpanel, self.pbar_widget, self.statusBar)
         # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget, self.statusBar)
         self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
-        self.globTabsAndCpanel.layout.setSpacing(0)
+        # self.globTabsAndCpanel.layout.setSpacing(0)
         # self.globTabsAndCpanel.setAutoFillBackground(True)
         # self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.globTabsAndCpanel.show()
