@@ -3087,7 +3087,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.flickerButton)
         self.toolbar.addWidget(self.csButton)
         self.toolbar.addWidget(self._detachNgButton)
-        self.toolbar.addWidget(QLabel(' '))
+        self.toolbar.addWidget(QLabel('  '))
         self.toolbar.layout().setSpacing(4)
 
 
@@ -4814,7 +4814,7 @@ class MainWindow(QMainWindow):
         # self.cpanel = VWidget(lab, w)
         # self.cpanel = HWidget(self.cpanelVertLabel,ExpandingWidget(self), w)
         self.cpanel = w
-        self.cpanel.setContentsMargins(8,4,8,4)
+        self.cpanel.setContentsMargins(0,0,0,0)
         self.cpanel.setFixedHeight(72)
         # self.cpanel.layout.setAlignment(Qt.AlignHCenter)s
         self.cpanel.setAutoFillBackground(True)
