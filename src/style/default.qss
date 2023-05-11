@@ -280,7 +280,7 @@ QTabBar::tab {
 
 
 QTabWidget#project_tabs{
-    background-color: #f3f6fb;
+    /*background-color: #f3f6fb;*/
     height: 10px;
     font-size: 12px;
 

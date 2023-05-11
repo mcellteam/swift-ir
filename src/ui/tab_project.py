@@ -3059,7 +3059,16 @@ class ProjectTab(QWidget):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
-        self._tabs.setStyleSheet('QTabBar::tab { height: 20px; width: 84px; font-size: 11px; font-weight: 600;}')
+        self._tabs.setStyleSheet("""
+        QTabBar::tab { 
+            height: 20px; 
+            width: 84px; 
+            font-size: 11px; 
+            font-weight: 600;
+            background-color: #f3f6fb;
+            bord
+        }
+        """)
         self._tabs.setDocumentMode(True)
         self._tabs.setTabsClosable(True)
         self._tabs.setObjectName('project_tabs')
