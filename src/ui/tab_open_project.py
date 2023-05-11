@@ -323,6 +323,8 @@ class OpenProject(QWidget):
         self.hideMainUI()
         cfg.main_window.stopPlaybackTimer()
         cfg.main_window.tell('New Project Path:')
+
+        '''Step 1/3'''
         self.name_dialog = QFileDialog()
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
         self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20; """)
@@ -330,9 +332,9 @@ class OpenProject(QWidget):
         self.vbl_main.addWidget(self.name_dialog)
         # self.layout.addWidget(self.name_dialog)
         self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
-        self.new_project_header.setText('New Project (1/3) - Name & Location')
-        self.name_dialog.setWindowTitle('New Project (1/3) - Name & Location')
-        cfg.main_window.set_status('New Project (1/3) - Name & Location')
+        self.new_project_header.setText('New Project (Step: 1/3) - Name & Location')
+        # self.name_dialog.setWindowTitle('New Project (Step: 1/3) - Name & Location')
+        cfg.main_window.set_status('New Project (Step: 1/3) - Name & Location')
         self.name_dialog.setNameFilter("Text Files (*.swiftir)")
         self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
         self.name_dialog.setViewMode(QFileDialog.Detail)
@@ -405,8 +407,10 @@ class OpenProject(QWidget):
 
             # cfg.data.set_defaults()
             # recipe_dialog = ScaleProjectDialog(parent=self)
-            self.new_project_header.setText('New Project (3/3) - Global Configuration')
-            cfg.main_window.set_status('New Project (3/3) - Global Configuration')
+
+            '''Step 3/3'''
+            self.new_project_header.setText('New Project (Step: 3/3) - Global Configuration')
+            cfg.main_window.set_status('New Project (Step: 3/3) - Global Configuration')
             dialog = NewConfigureProjectDialog(parent=self)
             dialog.setWindowFlags(Qt.FramelessWindowHint)
             dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
@@ -446,24 +450,25 @@ class OpenProject(QWidget):
         ''' Import images into data '''
         cfg.main_window.tell('Import Images:')
 
+        '''Step 2/3'''
         '''Dialog for importing images. Returns list of filenames.'''
         dialog = QFileDialogPreview()
         dialog.setWindowFlags(Qt.FramelessWindowHint)
-        # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
-        dialog.setStyleSheet("""
-        QPushButton {
-            font-size: 10px; 
-            font-family: Tahoma, sans-serif;
-        }
-        """)
+        dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+        # dialog.setStyleSheet("""
+        # QPushButton {
+        #     font-size: 10px;
+        #     font-family: Tahoma, sans-serif;
+        # }
+        # """)
 
         # self.layout.addWidget(dialog)
         # self.vbl_projects.addWidget(dialog)
         self.vbl_main.addWidget(dialog)
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
-        self.new_project_header.setText('New Project (2/3) - Import TIFF Images')
-        cfg.main_window.set_status('New Project (2/3) - Import TIFF Images')
-        dialog.setWindowTitle('New Project (2/3) - Import TIFF Images')
+        self.new_project_header.setText('New Project (Step: 2/3) - Import TIFF Images')
+        cfg.main_window.set_status('New Project (Step: 2/3) - Import TIFF Images')
+        # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
         dialog.setNameFilter('Images (*.tif *.tiff)')
         dialog.setFileMode(QFileDialog.ExistingFiles)
         dialog.setModal(True)
