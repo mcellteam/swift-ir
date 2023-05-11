@@ -1356,7 +1356,7 @@ class MainWindow(QMainWindow):
                         # btn.setLayoutDirection(Qt.RightToLeft)
                         # btn = QPushButton()
                         # btn.setFixedSize(QSize(48,12))
-                        self.lowest5_btns[i].setFixedHeight(12)
+                        self.lowest5_btns[i].setFixedHeight(13)
                         # btn.setFixedWidth(80)
                         self.lowest5_btns[i].setIconSize(QSize(10,10))
                         # btn.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
