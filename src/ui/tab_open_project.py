@@ -159,6 +159,7 @@ class OpenProject(QWidget):
         # """)
 
         self.validity_label = QLabel('Invalid')
+        self.validity_label.setAlignment(Qt.AlignRight)
         self.validity_label.setObjectName('validity_label')
         self.validity_label.setFixedHeight(16)
         self.validity_label.hide()
@@ -703,6 +704,7 @@ class UserProjects(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # self.table.setAlternatingRowColors(True)
         # self.table = TableWidget(self)
 
