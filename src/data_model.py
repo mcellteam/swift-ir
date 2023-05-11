@@ -1007,8 +1007,8 @@ class DataModel:
     def snr_lowest(self, n, s=None) -> zip:
         '''Returns the lowest n snr indices '''
         if s == None: s = self.scale
-        idx, val = zip(*nsmallest(n, enumerate(self.snr_list()[1:]), key=itemgetter(1)))
-        return zip(idx, val)
+        idx, val = zip(*nsmallest(n + 1, enumerate(self.snr_list()), key=itemgetter(1)))
+        return zip(idx[1:], val[1:])
 
 
     def snr_average(self, scale=None) -> float:
