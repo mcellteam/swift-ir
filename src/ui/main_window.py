@@ -3279,7 +3279,6 @@ class MainWindow(QMainWindow):
         # self.toolbar.addWidget(self._btn_refreshTab)
         # self.toolbar.addWidget(QLabel('  '))
         self.toolbar.addWidget(ExpandingWidget(self))
-        self.toolbar.addWidget(ExpandingWidget(self))
         # self.labToolWindows = QLabel("Tool Windows  ")
         # self.labToolWindows.setStyleSheet('font-weight: 600; font-size: 9px;')
         # self.toolbar.addWidget(ExpandingWidget(self))
