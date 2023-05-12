@@ -89,4 +89,4 @@ class Flicker(QLabel):
     #     self.setMaximumWidth(self.height())
 
     def sizeHint(self):
-        return QSize(180, 180)
+        return QSize(100, 100)

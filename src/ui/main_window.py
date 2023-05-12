@@ -1220,7 +1220,7 @@ class MainWindow(QMainWindow):
             # if cfg.data.is_aligned_and_generated(): #0202-
             if cfg.data.is_aligned():
                 # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
-                self._btn_alignAll.setText('Align All')
+                # self._btn_alignAll.setText('Align All')
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
@@ -1429,7 +1429,7 @@ class MainWindow(QMainWindow):
                         combined = s1 + ' ' + s2
                         # btn = QPushButton('Jump')
                         # self.lowest5_btns.append(QPushButton('Align Manually →'))
-                        self.lowest5_btns.append(QPushButton('Align Manually'))
+                        self.lowest5_btns.append(QPushButton('Manual Align'))
                         f = QFont()
                         f.setPointSizeF(7)
                         self.lowest5_btns[i].setFont(f)
@@ -4652,7 +4652,7 @@ class MainWindow(QMainWindow):
 
 
         tip = 'Align and generate all sections.'
-        self._btn_alignAll = QPushButton('Align All')
+        self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         # self._btn_alignAll.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_alignAll.setEnabled(False)
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5613,7 +5613,8 @@ class MainWindow(QMainWindow):
         # self.flicker.setMaximumSize(QSize(256,256))
 
         self.dw_flicker = DockWidget('Flicker', self)
-        self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
+        self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable)
+        # self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
         # self.dw_flicker.visibilityChanged.connect(lambda: self.cbFlicker.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
 
         self.dw_flicker.setStyleSheet("""
@@ -5626,7 +5627,6 @@ class MainWindow(QMainWindow):
         }""")
         self.dw_flicker.setWidget(self.flicker)
         # self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
-        # self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
         self.dw_flicker.hide()
 
