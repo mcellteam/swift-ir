@@ -84,9 +84,9 @@ PROFILING_TIMER_AUTOSTART = False
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 256
 if 'Joels-' in platform.node():
-    DEV_MODE = True
+    DEV_MODE = 1
 else:
-    DEV_MODE = False
+    DEV_MODE = 0
 PROFILING_MODE = False
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True

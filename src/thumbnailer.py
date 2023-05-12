@@ -29,7 +29,7 @@ class Thumbnailer:
         logger.info('')
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
-    def reduce_main(self):
+    def reduce_main(self, dest, use_gui=True):
         pbar_text = 'Generating Source Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
@@ -38,23 +38,26 @@ class Thumbnailer:
             src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
             od = os.path.join(cfg.data.dest(), 'thumbnails')
             dt = self.reduce(
-                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text)
+                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, dest=dest, use_gui=use_gui)
             cfg.data.t_thumbs = dt
 
 
-    def reduce_aligned(self, start, end):
+    def reduce_aligned(self, start, end, dest, scale, use_gui=True):
         pbar_text = 'Generating Aligned Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(cfg.data.dest(), cfg.data.scale, 'img_aligned')
-            od = os.path.join(cfg.data.dest(), cfg.data.scale, 'thumbnails_aligned')
+            src = os.path.join(dest, scale, 'img_aligned')
+            od = os.path.join(dest, scale, 'thumbnails_aligned')
             dt = self.reduce(
-                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text)
-            cfg.data.t_thumbs_aligned = dt
+                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, dest=dest, use_gui=use_gui)
+            try:
+                cfg.data.t_thumbs_aligned = dt
+            except:
+                pass
 
 
-    def reduce_signals(self, start, end):
+    def reduce_signals(self, start, end, use_gui=True):
 
         logger.info('Reducing Correlation Signal Images...')
 
@@ -104,7 +107,8 @@ class Thumbnailer:
                              rmdir=rmdir, prefix='',
                              start=start, end=end,
                              pbar_text=pbar_text,
-                             filenames=filenames
+                             filenames=filenames,
+                             use_gui=use_gui
                              )
             cfg.data.t_thumbs_spot = dt
             cfg.main_window.tell('Discarding Raw (Full Size) Correlation Signals...')
@@ -126,11 +130,18 @@ class Thumbnailer:
                end=None,
                pbar_text='',
                filenames=None,
-               target_size=cfg.TARGET_THUMBNAIL_SIZE
+               target_size=cfg.TARGET_THUMBNAIL_SIZE,
+               dest='',
+               use_gui=True,
                ):
         caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
 
-        fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log'))
+
+        logpath = os.path.join(dest, 'logs', 'thumbnails.log')
+        file = open(logpath, 'w+')
+        file.close()
+        fh = logging.FileHandler(logpath)
         fh.setLevel(logging.DEBUG)
         tnLogger.handlers.clear()
         tnLogger.addHandler(fh)
@@ -140,6 +151,12 @@ class Thumbnailer:
 
         logger.info('Thumbnail Source Directory: %s' % src)
 
+        if os.listdir(src) == []:
+            logger.error(f"The directory '{src}' is empty, nothing to thumbnail...")
+            if use_gui:
+                logger.error(f"Something went wrong. The directory '{src}' is empty, nothing to thumbnail...")
+            return
+
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
@@ -148,7 +165,8 @@ class Thumbnailer:
         except Exception as e:
             # print_exception()
             logger.warning('Do file(s) exist? - Returning')
-            cfg.main_window.err('Unable to generate thumbnail(s)')
+            if use_gui:
+                cfg.main_window.err('Unable to generate thumbnail(s)')
             raise e
 
         if rmdir:
@@ -180,7 +198,12 @@ class Thumbnailer:
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
         logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
-        task_queue = TaskQueue(n_tasks=len(filenames), parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
+        if use_gui:
+            task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
+        else:
+            task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, use_gui=False)
+
+
         task_queue.taskPrefix = 'Thumbnail Generated for '
         basefilenames = [os.path.basename(x) for x in filenames]
         task_queue.taskNameList = basefilenames

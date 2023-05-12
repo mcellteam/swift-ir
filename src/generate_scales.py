@@ -24,7 +24,8 @@ def generate_scales(dm):
     else:
 
         n_tasks = len(cfg.data) * (dm.n_scales() - 1)  #0901 #Refactor
-        task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
+        dest = dest = dm['data']['destination_path']
+        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.taskPrefix = 'Scale Generated for '
         task_name_list = []
         for s in dm.downscales():  # value string '1 2 4'

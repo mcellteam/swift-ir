@@ -7,17 +7,21 @@ Job script to apply affine transformations to a source image, producing an align
 import os
 import sys
 import logging
+import platform
+import traceback
+from datetime import datetime
 import subprocess as sp
 import numpy as np
 
 try:
-    from helpers import get_bindir
-except ImportError:
-    from src.helpers import get_bindir
-try:
     from swiftir import applyAffine, reptoshape
-except ImportError:
-    import src.swiftir
+except Exception as e:
+    print(e)
+    try:
+        import src.swiftir
+    except Exception as e:
+        print(e)
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,41 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
+
+
+
+def get_bindir() -> str:
+    '''Checks operating system. Returns the operating system-dependent
+    path to where SWiFT-IR binaries should exist'''
+    bindir = ''
+    error = 'Operating System Could Not Be Resolved'
+    if is_tacc():     bindir = 'bin_tacc'
+    elif is_mac():    bindir = 'bin_darwin'
+    elif is_linux():  bindir = 'bin_linux'
+    else:
+        logger.warning(error)
+    assert len(bindir) > 0
+    return bindir
+
+def is_tacc() -> bool:
+    '''Checks if the program is running on a computer at TACC. Returns a boolean.'''
+    node = platform.node()
+    if '.tacc.utexas.edu' in node:  return True
+    else:                           return False
+
+
+def is_linux() -> bool:
+    '''Checks if the program is running on a Linux OS. Returns a boolean.'''
+    system = platform.system()
+    if system == 'Linux':  return True
+    else:                  return False
+
+
+def is_mac() -> bool:
+    '''Checks if the program is running on macOS. Returns a boolean.'''
+    system = platform.system()
+    if system == 'Darwin':  return True
+    else:                   return False
 
 
 if (__name__ == '__main__'):

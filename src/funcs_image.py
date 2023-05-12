@@ -421,7 +421,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
     return c_afm
 
 
-def SetStackCafm(scale, null_biases=False, poly_order=None):
+def SetStackCafm(iterator, scale, null_biases=False, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
     if null_biases == True:
         # To perform bias correction, first initialize Cafms without bias correction
@@ -436,7 +436,7 @@ def SetStackCafm(scale, null_biases=False, poly_order=None):
     bias_iters = 2 if null_biases else 1
     for bi in range(bias_iters):
         c_afm = c_afm_init
-        for i, layer in enumerate(cfg.data.get_iter(scale)):
+        for i, layer in enumerate(iterator):
             if null_biases:
                 bias_mat = BiasMat(i, bias_funcs)
             c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
