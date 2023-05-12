@@ -34,8 +34,8 @@ class ToggleSwitch(QCheckBox):
                  handle_color=_snow_color, # handle; off
                  # h_scale=.7,
                  # v_scale=1,
-                 h_scale=.8,
-                 v_scale=1.4,
+                 h_scale=.75,
+                 v_scale=1.35,
                  fontSize=11):
 
         super().__init__(parent)
@@ -54,7 +54,7 @@ class ToggleSwitch(QCheckBox):
         self.stateChanged.connect(self.handle_state_change)
         # self._fixed_width = 52 #horizontal
         # self._fixed_height = 26 #vertical
-        self._fixed_width = 40 #horizontal
+        self._fixed_width = 42 #horizontal
         self._fixed_height = 20 #vertical
         self.setFixedWidth(self._fixed_width)
         self.setFixedHeight(self._fixed_height)
@@ -75,15 +75,16 @@ class ToggleSwitch(QCheckBox):
         # contRect = QPointF(self.contentsRect()) #0613
         self.width = contRect.width() * self._h_scale
         self.height = contRect.height() * self._v_scale
-        self.handle_radius = round(0.16 * self.height)
+        # self.handle_radius = round(0.16 * self.height)
+        self.handle_radius = round(0.13 * self.height)
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing) #0610 #0628 re-uncommenting
         p.setPen(self._snow_pen) # Border around background area
         barRect = QRectF(0, 0, self.width - self.handle_radius, 0.42 * self.height)
         barRect.moveCenter(QPointF(contRect.center())) #pyqt6 fix
         rounding = barRect.height() / 2
-        # the handle will move along this line
-        adjust_trail = -8
+        # the handle will move along this line !
+        adjust_trail = -4
         self.trailLength = contRect.width() * self._h_scale - 2 * self.handle_radius + adjust_trail
         self.xLeft = int(contRect.center().x() - (self.trailLength + self.handle_radius) / 2)
         self.xPos = self.xLeft + self.handle_radius + self.trailLength * self._handle_position
@@ -97,8 +98,8 @@ class ToggleSwitch(QCheckBox):
             font = QFont("PT Sans", self._fontSize)
             p.setFont(font)
             p.setFont(QFont('Helvetica', self._fontSize, 95))
-            # position for the check
-            adjust_x = -4
+            # position for the check # lower number is more left
+            adjust_x = -1
             adjust_y = 4 # higher adjust is lower text
             p.drawText(int(self.xLeft + self.handle_radius / 2 + adjust_x), int(contRect.center().y() + adjust_y), "✓")
 
@@ -112,7 +113,7 @@ class ToggleSwitch(QCheckBox):
             p.setFont(QFont('Helvetica', self._fontSize, 95))
             # position for the 'x'
             adjust_x = 0
-            adjust_y = 4
+            adjust_y = 3
             p.drawText(int(contRect.center().x() + adjust_x), int(contRect.center().y() + adjust_y), " ×")
 
         p.setPen(self._transparent_pen)

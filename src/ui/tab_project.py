@@ -98,18 +98,18 @@ class ProjectTab(QWidget):
 
         self.oldPos = None
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.oldPos = event.globalPos()
-
-    def mouseMoveEvent(self, event):
-        if self.oldPos is not None:
-            delta = event.globalPos() - self.oldPos
-            self.move(self.pos() + delta)
-            self.oldPos = event.globalPos()
-
-    def mouseReleaseEvent(self, event):
-        self.oldPos = None
+    # def mousePressEvent(self, event):
+    #     if event.button() == Qt.MouseButton.LeftButton:
+    #         self.oldPos = event.globalPos()
+    #
+    # def mouseMoveEvent(self, event):
+    #     if self.oldPos is not None:
+    #         delta = event.globalPos() - self.oldPos
+    #         self.move(self.pos() + delta)
+    #         self.oldPos = event.globalPos()
+    #
+    # def mouseReleaseEvent(self, event):
+    #     self.oldPos = None
 
 
 
@@ -1233,7 +1233,7 @@ class ProjectTab(QWidget):
             cfg.baseViewer.drawSWIMwindow()
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             # cfg.main_window.dataUpdateWidgets()
-            if cfg.main_window.dw_corrspots.isVisible():
+            if cfg.main_window.dw_signals.isVisible():
                 cfg.main_window.updateCorrSignalsDrawer()
 
         self.method_bg.buttonClicked.connect(method_bg_fn)
