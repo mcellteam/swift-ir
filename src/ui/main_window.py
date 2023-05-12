@@ -1350,7 +1350,7 @@ class MainWindow(QMainWindow):
                          lambda: self.jump_to_manual(lowest_5_i[9]),
                          ]
                 
-                for i in range(0,10):
+                for i in range(len(funcs)):
 
                     try:
                         logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
