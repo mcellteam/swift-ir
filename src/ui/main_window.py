@@ -455,6 +455,13 @@ class MainWindow(QMainWindow):
 
         logger.critical('<<<< updateCorrSignalsDrawer')
 
+    def callbackDwVisibilityChanged(self):
+        self.cbPython.setChecked(self.dw_python.isVisible())
+        self.cbMonitor.setChecked(self.dw_monitor.isVisible())
+        self.cbNotes.setChecked(self.dw_notes.isVisible())
+        self.cbSignals.setChecked(self.dw_signals.isVisible())
+        self.cbFlicker.setChecked(self.dw_flicker.isVisible())
+
 
     def callbackToolwindows(self):
         self.dw_python.setVisible(self.cbPython.isChecked())
@@ -480,8 +487,8 @@ class MainWindow(QMainWindow):
         self.dw_monitor.setVisible(state)
         self.showMonitorAction.setText(('Show Process Monitor', 'Hide Process Monitor')[state])
         self.dw_monitor.setVisible(self.cbMonitor.isChecked())
-        tip1 = '\n'.join(textwrap.wrap("Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)", width=35))
-        tip2 = '\n'.join(textwrap.wrap("Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)", width=35))
+        tip1 = '\n'.join("Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)")
+        tip2 = '\n'.join("Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)")
         self.cbMonitor.setToolTip((tip1, tip2)[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['hud'] = state
@@ -5450,6 +5457,8 @@ class MainWindow(QMainWindow):
         #     lambda: self.cbNotes.setText((' Hide', ' Notes')[self.dw_notes.isHidden()]))
         # self.dw_notes.visibilityChanged.connect(lambda: )
         self.dw_notes.visibilityChanged.connect(lambda: self.cbNotes.setToolTip(('Hide Notepad Tool Window', 'Show Notepad Tool Window')[self.dw_notes.isHidden()]))
+        # self.dw_notes.visibilityChanged.connect(self.dataUpdateResults()) #???
+        self.dw_notes.visibilityChanged.connect(self.callbackDwVisibilityChanged)
 
 
         self.dw_notes.setStyleSheet("""
@@ -5597,6 +5606,7 @@ class MainWindow(QMainWindow):
         """)
 
         self.dw_python = DockWidget('Python', self)
+        self.dw_python.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         self.dw_python.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
         # self.dw_python.visibilityChanged.connect(lambda: self.cbPython.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_python.isHidden()]))
         self.dw_python.setStyleSheet("""QDockWidget::title {
@@ -5613,6 +5623,7 @@ class MainWindow(QMainWindow):
         # self.flicker.setMaximumSize(QSize(256,256))
 
         self.dw_flicker = DockWidget('Flicker', self)
+        self.dw_flicker.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable)
         # self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
         # self.dw_flicker.visibilityChanged.connect(lambda: self.cbFlicker.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
@@ -5625,7 +5636,19 @@ class MainWindow(QMainWindow):
             padding-left: 5px;
             font-weight: 600;
         }""")
-        self.dw_flicker.setWidget(self.flicker)
+
+
+        self.flickerContainer = VWidget(self.flicker, ExpandingWidget(self))
+        self.flickerContainer.layout.setStretch(0,0)
+        self.flickerContainer.layout.setStretch(1,9)
+        self.flickerContainer.layout.setAlignment(Qt.AlignTop)
+        self.flicker.setAlignment(Qt.AlignTop)
+
+        # self.flickerContainer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.flickerContainer.resize(QSize(100, 100))
+        # self.flickerContainer.layout.setStretch(0,0)
+        # self.flickerContainer.layout.setStretch(1,9)
+        self.dw_flicker.setWidget(self.flickerContainer)
         # self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
         self.dw_flicker.hide()
@@ -5728,7 +5751,8 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-        self.dw_signals = DockWidget('Correlation Signals', self)
+        self.dw_signals = DockWidget('Signals', self)
+        self.dw_signals.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         self.dw_signals.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
         self.dw_signals.setStyleSheet("""
         QDockWidget {color: #ede9e8;}

@@ -24,7 +24,7 @@ from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
-
+from src.ui.tab_project import VerticalLabel
 import src.config as cfg
 
 __all__ = ['OpenProject']
@@ -327,9 +327,15 @@ class OpenProject(QWidget):
 
         '''Step 1/3'''
         self.name_dialog = QFileDialog()
+        # vlabel = VerticalLabel('Test')
+        # vlabel.setFixedWidth(20)
+        # self.name_dialog_container = HWidget(vlabel, self.name_dialog)
+        self.name_dialog = QFileDialog()
+        self.name_dialog.setContentsMargins(0,0,0,0)
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
         self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20; """)
         # self.vbl_projects.addWidget(self.name_dialog)
+        # self.vbl_main.addWidget(self.name_dialog)
         self.vbl_main.addWidget(self.name_dialog)
         # self.layout.addWidget(self.name_dialog)
         self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
