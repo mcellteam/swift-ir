@@ -281,20 +281,20 @@ QTabBar::tab {
 
 QTabWidget#project_tabs{
     /*background-color: #f3f6fb;*/
-    height: 10px;
-    font-size: 12px;
+    height: 14px;
+    font-size: 11px;
 
     padding-left: 0px;
     padding-right: 0px;
 }
 
 /* QTabBar::tab:hover{color: #206020;} */
-/*
+
 QTabBar::tab:selected
 {
     color: #339933;
 }
-*/
+
 
  QTabBar::close-button {
      image: url(src/resources/close-tab.png);

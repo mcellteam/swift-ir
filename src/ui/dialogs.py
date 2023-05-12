@@ -40,12 +40,14 @@ class ExitAppDialog(QDialog):
             color: #f3f6fb;
             font-weight: 600;
         }
+        /*
         QPushButton {
             color: #161c20;
             background-color: #f3f6fb;
             font-size: 9px;
             border-radius: 3px;
         }
+        */
         QDialog {
                 background-color: #339933;
                 color: #ede9e8;
