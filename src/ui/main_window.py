@@ -1354,8 +1354,8 @@ class MainWindow(QMainWindow):
 
                     try:
                         logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
-                        s1 = ('z-index %d' % lowest_5[i][0]).ljust(10)
-                        s2 = ('%.2f' % lowest_5[i][1]).ljust(10)
+                        s1 = ('z-index %d' % lowest_5[i][0]).ljust(13)
+                        s2 = ('%.2f' % lowest_5[i][1]).ljust(13)
                         combined = s1 + ' ' + s2
                         # btn = QPushButton('Jump')
                         # self.lowest5_btns.append(QPushButton('Align Manually →'))
