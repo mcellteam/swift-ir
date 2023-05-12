@@ -103,6 +103,8 @@ class MainWindow(QMainWindow):
         self.window_title = 'AlignEM-SWiFT'
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
+        self.menu = self.menuBar()
+        # self.menu = QMenu()
         cfg.thumb = Thumbnailer()
         # self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
@@ -115,8 +117,10 @@ class MainWindow(QMainWindow):
         self.initPbar()
         self.initControlPanel()
         self.initToolbar()
+
         self.initUI()
         self.initMenu()
+        # self.initMenu()
         self.initWidgetSpacing()
         self.initStyle()
         self.initShortcuts()
@@ -130,7 +134,8 @@ class MainWindow(QMainWindow):
 
         self.activateWindow()
 
-        self.setWindowFlag(Qt.FramelessWindowHint)
+
+        # self.setWindowFlag(Qt.FramelessWindowHint)
         # self.setAttribute(Qt.WA_TranslucentBackground)
         # self.showFullScreen()
 
@@ -1338,9 +1343,14 @@ class MainWindow(QMainWindow):
                          lambda: self.jump_to_manual(lowest_5_i[2]),
                          lambda: self.jump_to_manual(lowest_5_i[3]),
                          lambda: self.jump_to_manual(lowest_5_i[4]),
+                         lambda: self.jump_to_manual(lowest_5_i[5]),
+                         lambda: self.jump_to_manual(lowest_5_i[6]),
+                         lambda: self.jump_to_manual(lowest_5_i[7]),
+                         lambda: self.jump_to_manual(lowest_5_i[8]),
+                         lambda: self.jump_to_manual(lowest_5_i[9]),
                          ]
                 
-                for i in range(0,5):
+                for i in range(0,10):
 
                     try:
                         logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
@@ -2788,7 +2798,7 @@ class MainWindow(QMainWindow):
 
             setData('state,manual_mode', False)
             self.updateEnabledButtons()
-            self._btn_manualAlign.setText('Manual Align Mode ')
+            self._btn_manualAlign.setText('Manual Align ')
             self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
             self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
             self.alignMatchPointAction.setText('Align Manually')
@@ -3597,8 +3607,8 @@ class MainWindow(QMainWindow):
         # self.scManualAlign.activated.connect(self.enterExitManAlignMode)
 
         self.action_groups = {}
-        self.menu = self.menuBar()
-        self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
+        # self.menu = self.menuBar()
+        # self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
 
         fileMenu = self.menu.addMenu('File')
 
@@ -4644,7 +4654,7 @@ class MainWindow(QMainWindow):
 
         # tip = ''
         # self._btn_manualAlign = QPushButton('Manual Align Mode →')
-        self._btn_manualAlign = QPushButton('Manual Align Mode ')
+        self._btn_manualAlign = QPushButton('Manual Align ')
         self._btn_manualAlign.setIconSize(QSize(12,12))
         self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
         self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
@@ -4992,14 +5002,15 @@ class MainWindow(QMainWindow):
             border-width: 1px;
         }
         QTabWidget{
-            background-color: #f3f6fb;
             font-size: 8px;
             padding: 0px;
             border-width: 1px;
             
         }
+        
         QTabBar::tab {
-            height: 14;
+            margin 0px;
+            height: 12px;
             max-width: 100px;
             font-size: 8px;
             background-color: #f3f6fb;
@@ -5108,7 +5119,9 @@ class MainWindow(QMainWindow):
             }
             
             QGroupBox:title#gb_cpanel {
-                color: #161c20;
+                color: #339933;
+                font-weight:600;
+                font-size: 8px;
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 margin-left: 2px;
@@ -5116,8 +5129,35 @@ class MainWindow(QMainWindow):
             }
         """
 
+        cpanel_style2 = """
+
+        QGroupBox#gb_cpanel {
+                color: #161c20;
+                border: 1px solid #ede9e8;
+                font-size: 9px;
+                font-weight:600;
+                border-radius: 2px;
+                /*padding-top: 0px;
+                margin-top: 0px;*/
+                margin: 0px;
+                padding-top: 14px;
+            }
+        
+            QGroupBox:title#gb_cpanel {
+                color: #161c20;
+                font-weight:600;
+                font-size: 8px;
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                margin-left: 2px;
+                margin-right: 2px;
+                margin-bottom: 2px;
+                padding: 0px;
+            }
+        """
+
         # self.cpanel.setStyleSheet(style)
-        # self.cpanel.setStyleSheet(cpanel_style)
+        # self.cpanel.setStyleSheet(cpanel_style2)
 
 
 
@@ -5493,11 +5533,12 @@ class MainWindow(QMainWindow):
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
-          width: 128px;
-          height: 18px;
-          
-          padding: 0px;
-          margin: 0px;
+            /*background-color: #ede9e8;*/
+            width: 128px;
+            height: 18px;
+            
+            padding: 0px;
+            margin: 0px;
         }
         """)
 
@@ -5754,16 +5795,19 @@ class MainWindow(QMainWindow):
         }
         """)
         self.sa_cpanel.setFixedHeight(86)
+        # self.sa_cpanel.setFixedHeight(90)
         self.sa_cpanel.setWidget(HWidget(self.cpanel))
 
         # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.cpanel, self.pbar_widget, self.statusBar)
         # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget, self.statusBar)
+        # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
         self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
         # self.globTabsAndCpanel.layout.setSpacing(0)
         # self.globTabsAndCpanel.setAutoFillBackground(True)
         # self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.globTabsAndCpanel.show()
 
+        # self.setMenuWidget(self.menu)
         self.setCentralWidget(self.globTabsAndCpanel)
 
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
