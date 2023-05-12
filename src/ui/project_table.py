@@ -45,6 +45,7 @@ class ProjectTable(QWidget):
         self.table.setSortingEnabled(True)
         self.table.setShowGrid(False)
         self.row_height_slider = Slider(self)
+        self.row_height_slider.setMinimum(28)
         self.initUI()
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.itemClicked.connect(self.userSelectionChanged)
@@ -325,6 +326,7 @@ class ProjectTable(QWidget):
         logger.critical('')
         self.loadScreenLabel.hide()
         self.table.show()
+        self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
 
 
     def initUI(self):
