@@ -1333,7 +1333,7 @@ class MainWindow(QMainWindow):
             self.lowest5_fl.setVerticalSpacing(1)
 
             if cfg.data.is_aligned():
-                lowest_5_i = [x[0] for x in list(cfg.data.snr_lowest(5))]
+                lowest_5_i = [x[0] for x in list(cfg.data.snr_lowest(10))]
                 lowest_5 = list(cfg.data.snr_lowest(10))
 
                 self.lowest5_btns = []
