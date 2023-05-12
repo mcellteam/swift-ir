@@ -35,17 +35,22 @@ class Flicker(QLabel):
         self.resize(QSize(180,180))
 
     def set(self):
+        # logger.critical('Setting pixmap...')
         self.setPixmap(QPixmap(self.series[self.cur]))
 
     def set_position(self, p:int):
+        # logger.critical('Setting flicker position')
         self.position = p
-        self.a = cfg.data.filename(l=p)
-        self.b = cfg.data.filename(l=max(0,p-1))
+        self.a = cfg.data.thumbnail_aligned(l=p)
+        self.b = cfg.data.thumbnail_aligned(l=max(0, p - 1))
+        # self.a = cfg.data.filename(l=p)
+        # self.b = cfg.data.filename(l=max(0,p-1))
         self.series = [self.a, self.b]
 
     def onTimer(self):
         self.set()
         self.cur = 1 - self.cur
+        # logger.info(f'Timer is timing cur = {self.cur}, {self.series[self.cur]} ...')
 
 
     def start(self):

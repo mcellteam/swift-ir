@@ -551,9 +551,11 @@ class DataModel:
             paths.append(os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.base_image_name(l=layer)))
         return paths
 
-    def thumbnail_aligned(self):
+    def thumbnail_aligned(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
         '''Returns absolute path of thumbnail for current layer '''
-        path = os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.base_image_name())
+        path = os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.filename_basename(s=s,l=l))
         # return self._data['data']['thumbnails'][self.zpos]
         return path
 
