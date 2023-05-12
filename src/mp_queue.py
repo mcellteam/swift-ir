@@ -81,9 +81,11 @@ def watchdog(wd_queue):
 class TaskQueue(QObject):
 
 
-    def __init__(self, n_tasks, parent=None, start_method='forkserver', pbar_text=None):
+    def __init__(self, n_tasks, dest, parent=None, start_method='forkserver', pbar_text=None, use_gui=True):
         QObject.__init__(self)
+        self.dest = dest
         self.parent = parent
+        self.use_gui = use_gui
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
         # self.task_dict = {}
@@ -101,10 +103,13 @@ class TaskQueue(QObject):
         if (self.MPQLogger.hasHandlers()):
             logger.info('Clearing MPQLogger file handlers...')
             self.MPQLogger.handlers.clear()
-        self.MPQLogger.propagate = False # dont print to console
-        fh = logging.FileHandler(os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log'))
+        # self.MPQLogger.propagate = False # dont print to console
+        self.MPQLogger.propagate = True # dont print to console
+        fh = logging.FileHandler(os.path.join(self.dest, 'logs', 'multiprocessing.log'))
         fh.setLevel(logging.DEBUG)
         self.MPQLogger.addHandler(fh)
+        caller = inspect.stack()[1].function
+        print(f"caller: {caller}")
 
 
 
@@ -131,8 +136,8 @@ class TaskQueue(QObject):
         self.retries = retries
 
         # cfg.main_window.shutdownNeuroglancer()
-
-        if not cfg.ignore_pbar:
+        logger.critical(f'use_gui = {self.use_gui} ({self.taskPrefix})')
+        if (not cfg.ignore_pbar) and (self.use_gui):
             cfg.main_window.showZeroedPbar() #0208+
             cfg.nCompleted += 1
             try:
@@ -146,7 +151,8 @@ class TaskQueue(QObject):
                 logger.error('An exception was raised while setting up progress bar')
 
         logger.info('Starting Task Queue: %s...' % self.pbar_text)
-        cfg.main_window.tell('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
+        if self.use_gui:
+            cfg.main_window.tell('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
         logger.critical('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
@@ -273,7 +279,6 @@ class TaskQueue(QObject):
         try:
             while (retries_tot < self.retries + 1) and n_pending:
 
-
                 self.end_tasks() # Add end sentinels (one/worker)
 
                 logger.info('# Tasks Pending   : %d' % n_pending)
@@ -284,21 +289,22 @@ class TaskQueue(QObject):
                 for img_index,j in enumerate(range(n_pending)):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
                     # logger.info(task_str)
-                    if cfg.event.is_set():
-                        logger.critical('Terminating Running Processes...')
-                        cfg.main_window.tell('Terminating Running Processes...')
-                        cfg.CancelProcesses = True
-                        for w in self.workers:
-                            logger.info('Terminating Process %s...' % w.name)
-                            w.terminate()
-                        cfg.main_window.hud.done()
-                        cfg.main_window.warn('Canceling Future Tasks...')
-                        self.parent.update()
-                        cfg.main_window.cancelMultiprocessing.emit()
-                        # QApplication.processEvents()
-                        sys.exit(1)
+                    if self.use_gui:
+                        if cfg.event.is_set():
+                            logger.critical('Terminating Running Processes...')
+                            cfg.main_window.tell('Terminating Running Processes...')
+                            cfg.CancelProcesses = True
+                            for w in self.workers:
+                                logger.info('Terminating Process %s...' % w.name)
+                                w.terminate()
+                            cfg.main_window.hud.done()
+                            cfg.main_window.warn('Canceling Future Tasks...')
+                            self.parent.update()
+                            cfg.main_window.cancelMultiprocessing.emit()
+                            # QApplication.processEvents()
+                            sys.exit(1)
 
-                    if not cfg.ignore_pbar:
+                    if (not cfg.ignore_pbar) and self.use_gui:
                         try:
 
                             self.parent.updatePbar(n_tasks - realtime)
@@ -366,14 +372,16 @@ class TaskQueue(QObject):
                                         f'Tasks Failed      : {n_pending}\n'
                                         f'══════ Complete [{self.pbar_text}] ══════')
 
-                cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
-                cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
-                cfg.main_window.tell('══════ Complete ══════')
+                if self.use_gui:
+                    cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
+                    cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
+                    cfg.main_window.tell('══════ Complete ══════')
             else:
-                cfg.main_window.warn('Something Went Wrong')
-                cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
-                cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
-                cfg.main_window.warn('══════ Warning ══════')
+                if self.use_gui:
+                    cfg.main_window.warn('Something Went Wrong')
+                    cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
+                    cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
+                    cfg.main_window.warn('══════ Warning ══════')
 
                 logger.warning('Something Went Wrong')
                 logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))

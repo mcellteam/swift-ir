@@ -1,45 +1,78 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import sys
 import copy
 import json
 import glob
+from glob import glob
 import time
 import shutil
+import argparse
+import traceback
 import psutil
 import logging
 from datetime import datetime
 from pathlib import Path
-import src.config as cfg
+
+
+sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
+sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
+# sys.path.append('../')
+# from src import *
+from src.data_model import DataModel
+
+from src.generate_aligned import generate_aligned
+from src.thumbnailer import Thumbnailer
 from src.mp_queue import TaskQueue
-from src.helpers import print_exception, rename_layers, get_scale_val
+from src.data_model import DataModel
+from src.background_worker import BackgroundWorker
+import src.config as cfg
 
 
 __all__ = ['compute_affines']
 
 logger = logging.getLogger(__name__)
 
-def compute_affines(scale, start=0, end=None):
+def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     scale_val = get_scale_val(scale)
+    logger.info(f'use_gui = {use_gui}')
 
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Compute Affine Tasks')
+        cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
         logger.info(f'\n\n----------------------------------------------------\n'
                     f'Computing Affines...\n'
                     f'----------------------------------------------------\n')
 
-        if end == None:
-            end = cfg.data.count
+        if path:
+            with open(path, 'r') as f:
+                try:
+                    data = json.load(f)
+                except Exception as e:
+                    logger.warning(e)
+                    return
+            USE_FILE_IO = 0
+            DEV_MODE = False
+            TACC_MAX_CPUS = 122
+            dm = DataModel(data)
+            dm.set_defaults()
+        else:
+            USE_FILE_IO = cfg.USE_FILE_IO
+            DEV_MODE = cfg.DEV_MODE
+            TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
+            dm = cfg.data
 
-        scratchpath = os.path.join(cfg.data.dest(), 'logs', 'scratch.log')
+        if end == None:
+            end = dm.count
+
+        scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
 
-        dm = cfg.data
-
+        logger.critical(f'dm acquired: {dm.dest()}')
         # if ng.is_server_running():
         #     logger.info('Stopping Neuroglancer...')
         #     ng.server.stop()
@@ -77,14 +110,21 @@ def compute_affines(scale, start=0, end=None):
         with open(temp_file, 'w') as f:
             f.write(dm.to_json())
 
-        delete_correlation_signals(scale=scale, start=start, end=end)
+        delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
 
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks)
+        dest = dm['data']['destination_path']
+
+        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
-
-        task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
+        if use_gui:
+            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
+        else:
+            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
         task_queue.taskPrefix = 'Alignment Computed for '
-        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+        # if end == None:
+        #     end = len(dm)
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
 
         # START TASK QUEUE
         task_queue.start(cpus)
@@ -100,22 +140,24 @@ def compute_affines(scale, start=0, end=None):
                              temp_file,             # Temp project file name
                              str(scale_val),        # Scale to use or 0
                              str(zpos),             # Section index to run recipe alignment
-                             str(cfg.USE_FILE_IO),  # Use File IO instead of Pipe
-                             str(cfg.DEV_MODE),     # Use development mode
+                             str(USE_FILE_IO),  # Use File IO instead of Pipe
+                             str(DEV_MODE),     # Use development mode
                              ]
                 task_queue.add_task(task_args)
-                if cfg.PRINT_EXAMPLE_ARGS:
-                    if zpos in range(start, start + 3):
-                        logger.info("Section #%d (example):\n%s" % (zpos, "\n  ".join(task_args)))
+                if use_gui:
+                    if cfg.PRINT_EXAMPLE_ARGS:
+                        if zpos in range(start, start + 3):
+                            logger.info("Section #%d (example):\n%s" % (zpos, "\n  ".join(task_args)))
 
         # task_queue.work_q.join()
-        # cfg.main_window.hud.post('Computing Alignment Using SWIM...')
+        # cfg.mw.hud.post('Computing Alignment Using SWIM...')
         dt = task_queue.collect_results()
         dm.t_align = dt
 
         t0 = time.time()
-        if cfg.CancelProcesses:
-            return
+        if use_gui:
+            if cfg.CancelProcesses:
+                return
 
         # Sort the tasks by layers rather than by process IDs
         task_dict = {}
@@ -136,7 +178,7 @@ def compute_affines(scale, start=0, end=None):
 
         for tnum in range(len(task_list)):
 
-            if cfg.USE_FILE_IO:
+            if USE_FILE_IO:
                 # Get the updated datamodel previewmodel from the file written by single_alignment_job
                 output_dir = os.path.join(os.path.split(temp_file)[0], scale)
                 output_file = "single_alignment_out_" + str(tnum) + ".json"
@@ -166,15 +208,26 @@ def compute_affines(scale, start=0, end=None):
                 if task_list[tnum]['statusBar'] == 'task_error':
                     ref_fn = al_stack_old[layer_index]['reference']
                     base_fn = al_stack_old[layer_index]['filename']
-                    cfg.main_window.hud.post('Alignment Task Error at: ' +
-                                             str(task_list[tnum]['cmd']) + " " +
-                                             str(task_list[tnum]['args']))
-                    cfg.main_window.hud.post('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
-                    cfg.main_window.hud.post(f'  ref img: %s\nbase img: %s' % (ref_fn,base_fn))
+                    if use_gui:
+                        cfg.mw.hud.post('Alignment Task Error at: ' +
+                                                 str(task_list[tnum]['cmd']) + " " +
+                                                 str(task_list[tnum]['args']))
+                        cfg.mw.hud.post('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
+                        cfg.mw.hud.post(f'  ref img: %s\nbase img: %s' % (ref_fn,base_fn))
+                    else:
+                        logger.warning(('Alignment Task Error at: ' +
+                                                 str(task_list[tnum]['cmd']) + " " +
+                                                 str(task_list[tnum]['args'])))
+                        logger.warning('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
+                        logger.warning(f'  ref img: %s\nbase img: %s' % (ref_fn, base_fn))
                     al_stack_old[layer_index]['skipped'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-        cfg.data = updated_model #0809-
+        if use_gui:
+            cfg.data = updated_model #0809-
+
+        dm = updated_model
+        save2file(dm=dm,name=dm.dest())
         write_run_to_file(dm)
 
         t1 = time.time()
@@ -182,7 +235,7 @@ def compute_affines(scale, start=0, end=None):
         # logger.info('Collating Correlation Signal Images...')
         # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')
         # task_queue = TaskQueue(n_tasks=len(substack),
-        #                        parent=cfg.main_window,
+        #                        parent=cfg.mw,
         #                        pbar_text='Collating Scale %s Correlation Signal Images...' % (scale_val))
         # task_queue.start(cpus)
         #
@@ -214,16 +267,102 @@ def compute_affines(scale, start=0, end=None):
 
         logger.info('<<<< Compute Affines End <<<<')
 
+        logger.critical(f'use_gui = {use_gui}')
 
-def delete_correlation_signals(scale, start, end):
+
+        if not swim_only:
+            if use_gui:
+                if not cfg.mw._toggleAutogenerate.isChecked():
+                    logger.info('Toggle auto-generate is OFF. Returning...')
+                    return
+                if cfg.ignore_pbar:
+                    cfg.nCompleted += 1
+                    cfg.mw.updatePbar()
+                    cfg.mw.setPbarText('Generating Alignment...')
+
+            try:
+                if cfg.USE_EXTRA_THREADING and use_gui:
+                    cfg.mw.worker = BackgroundWorker(fn=generate_aligned(
+                        dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
+                    cfg.mw.threadpool.start(cfg.mw.worker)
+                else:
+                    generate_aligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
+
+            except:
+                print_exception()
+            finally:
+                logger.info('Generate Alignment Finished')
+
+            if cfg.ignore_pbar and use_gui:
+                cfg.nCompleted += 1
+                cfg.mw.updatePbar()
+                cfg.mw.setPbarText('Generating Aligned Thumbnail...')
+
+            thumbnailer = Thumbnailer()
+            try:
+                if cfg.USE_EXTRA_THREADING and use_gui:
+                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
+                    cfg.mw.threadpool.start(cfg.mw.worker)
+                else: thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
+            except:
+                print_exception()
+            finally:
+                logger.info('Generate Aligned Thumbnails Finished')
+
+            if cfg.ignore_pbar:
+                cfg.nCompleted += 1
+                cfg.mw.updatePbar()
+                cfg.mw.setPbarText('Aligning')
+
+        return dm
+
+
+
+
+
+def delete_correlation_signals(dm, scale, start, end):
     logger.info('')
     for i in range(start, end):
-        sigs = cfg.data.get_signals_filenames(s=scale, l=i)
+        sigs = dm.get_signals_filenames(s=scale, l=i)
         logger.info(f'Deleting:\n{sigs}')
         for f in sigs:
             if os.path.isfile(f):  # this makes the code more robust
                 os.remove(f)
 
+# def delete_correlation_signals(dm, scale, start, end, dest):
+#     logger.info('')
+#     for i in range(start, end):
+#         # sigs = cfg.data.get_signals_filenames(s=scale, l=i)
+#         sigs = get_signals_filenames(pdscale=scale)
+#         dir = os.path.join(sest, scale, 'signals')
+#         basename = os.path.basename(dm.base_image_name(s=s, l=l))
+#         filename, extension = os.path.splitext(basename)
+#         paths = os.path.join(dir, '%s_%s_*%s' % (filename, self.current_method, extension))
+#         names = glob(paths)
+#         # logger.info(f'Search Path: {paths}\nReturning: {names}')
+#         return natural_sort(names)
+#         logger.info(f'Deleting:\n{sigs}')
+#         for f in sigs:
+#             if os.path.isfile(f):  # this makes the code more robust
+#                 logger.info(f"Removing file '%s'" % f)
+#                 os.remove(f)
+
+
+
+# def get_signals_filenames(pd, scale):
+#     dir = os.path.join(self.dest(), s, 'signals')
+#     basename = os.path.basename(dm.base_image_name(s=s, l=l))
+#     filename, extension = os.path.splitext(basename)
+#     paths = os.path.join(dir, '%s_%s_*%s' % (filename, self.current_method, extension))
+#     names = glob(paths)
+#     # logger.info(f'Search Path: {paths}\nReturning: {names}')
+#     return natural_sort(names)
+
+def natural_sort(l):
+    '''Natural sort a list of strings regardless of zero padding'''
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
 
 def checkForTiffs(path) -> bool:
     '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
@@ -236,6 +375,7 @@ def checkForTiffs(path) -> bool:
         return True
 
 def write_run_to_file(dm, scale=None):
+    logger.critical('Writing run to file...')
     if scale == None: scale = dm.scale
     # snr_avg = 'SNR=%.3f' % dm.snr_average(scale=scale)
     timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
@@ -252,8 +392,94 @@ def write_run_to_file(dm, scale=None):
         json.dump(dm['data']['scales'][scale], f, indent=4)
 
 
+def rename_layers(use_scale, al_dict):
+    logger.info('rename_layers:')
+    source_dir = os.path.join(cfg.data.dest(), use_scale, "img_src")
+    for layer in al_dict:
+        image_name = None
+        if 'base' in layer['images'].keys():
+            image = layer['images']['base']
+            try:
+                image_name = os.path.basename(image['filename'])
+                destination_image_name = os.path.join(source_dir, image_name)
+                shutil.copyfile(image.image_file_name, destination_image_name)
+            except:
+                logger.warning('Something went wrong with renaming the alignment layers')
+                pass
+
+
+def get_scale_val(scale_of_any_type) -> int:
+    scale = scale_of_any_type
+    try:
+        if type(scale) == type(1):
+            return scale
+        else:
+            while scale.startswith('scale_'):
+                scale = scale[len('scale_'):]
+            return int(scale)
+    except:
+        logger.warning('Unable to return s value')
+
+
+def print_exception():
+    tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
+    exi = sys.exc_info()
+    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
+    logger.warning(txt)
+
+    if cfg.data:
+        lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
+        with open(lf, 'w+') as f:
+            f.write('\n' + txt)
+
 '''
 SWIM argument string: ww_416 -i 2 -w -0.68 -x -256 -y 256  /Users/joelyancey/glanceEM_SWiFT/test_projects/test98/scale_4/img_src/R34CA1-BS12.101.tif 512 512 /Users/joelyancey/glanceEM_SWiFT/test_projects/test98/scale_4/img_src/R34CA1-BS12.102.tif 512.000000 512.000000  1.000000 0.000000 -0.000000 1.000000
 
 
 '''
+
+def save2file(dm, name):
+    data_cp = copy.deepcopy(dm)
+    # data_cp.make_paths_relative(start=cfg.data.dest())
+    data_cp_json = data_cp.to_dict()
+    logger.info('---- SAVING DATA TO PROJECT FILE ----')
+    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+    proj_json = jde.encode(data_cp_json)
+    name = dm.dest()
+    if not name.endswith('.swiftir'):
+        name += ".swiftir"
+    logger.info('Save Name: %s' % name)
+    with open(name, 'w') as f:
+        f.write(proj_json)
+
+
+if __name__ == '__main__':
+    logger.info('Running ' + __file__ + '.__main__()')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path', help='Path to project file')
+    parser.add_argument('--scale', help='Scale to use')
+    parser.add_argument('--start', default=0, help='Section index to start at')
+    parser.add_argument('--end', default=None, help='Section index to end at')
+    parser.add_argument('--bounding_box', default=False, help='Bounding Box On/Off')
+    args = parser.parse_args()
+    logger.info(f'args : {args}')
+    # os.environ['QT_API'] = args.api
+    if args.path:
+        path = args.path
+    else:
+        path = '/Users/joelyancey/glanceem_swift/test_projects/test4.swiftir'
+
+    with open(path, 'r') as f:
+        data = json.load(f)
+
+    if args.scale:
+        scale = args.scale
+    else:
+        # scale = data['data']['current_scale']
+        scale = 'scale_4'
+    start = args.start
+    end = args.end
+    dm = compute_affines(scale=scale, start=start, end=end, path=path, use_gui=False, bounding_box=args.bounding_box)
+    save2file(dm=dm, name=dm.dest())
+
+

@@ -15,6 +15,7 @@ from src.helpers import get_scale_val, print_exception, reorder_tasks,renew_dire
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
+from src.background_worker import BackgroundWorker
 
 
 __all__ = ['generate_aligned']
@@ -22,7 +23,9 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False):
+def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
+
+    logger.info('\n\ngenerate_aligned >>>>\n')
 
     scale_val = get_scale_val(scale)
 
@@ -32,9 +35,6 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         logger.info(f'\n\n----------------------------------------------------\n'
                     f'Generating Aligned Images...\n'
                     f'----------------------------------------------------\n')
-
-        dm = cfg.data
-
         if ng.is_server_running():
             logger.info('Stopping Neuroglancer...')
             ng.server.stop()
@@ -52,7 +52,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
 
         print_example_cafms(dm)
         logger.info('Setting Stack CAFM...')
-        SetStackCafm(scale=scale, null_biases=dm.null_cafm(s=scale), poly_order=dm.poly_order(s=scale))
+        SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.null_cafm(s=scale), poly_order=dm.poly_order(s=scale))
         od = os.path.join(dm.dest(), scale, 'img_aligned')
         if renew_od:
             logger.info('Renewing Directory %s...' % od)
@@ -83,11 +83,16 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         if end:
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end)))
         else:
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(cfg.data))))
+            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm))))
         pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
-        task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
+        dest = dm['data']['destination_path']
+        logger.info('\n\n\nGenerating Alignment...\n\n')
+        if use_gui:
+            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
+        else:
+            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=False)
         task_queue.taskPrefix = 'Alignment Generated for '
-        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm()[start:end]]
 
         task_queue.start(cpus)
         for ID, layer in enumerate(iter(dm()[start:end])):
@@ -111,7 +116,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         #     task_queue.add_task(task)
         try:
             dt = task_queue.collect_results()
-            cfg.data.t_generate = dt
+            dm.t_generate = dt
         except:
             print_exception()
             logger.warning('Task Queue encountered a problem')
@@ -132,15 +137,15 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
                              group='s%d' % scale_val,
                              dimx=rect[2],
                              dimy=rect[3],
-                             dimz=len(cfg.data),
+                             dimz=len(dm),
                              dtype='|u1',
                              overwrite=True)
 
-        dir = os.path.join(cfg.data.dest(), scale)
+        dir = os.path.join(dm.dest(), scale)
         stage_path = os.path.join(dir, 'zarr_staged')
         store = zarr.DirectoryStore(stage_path)  # Does not create directory
         root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
-        for i in range(len(cfg.data)):
+        for i in range(len(dm)):
             if not os.path.exists(os.path.join(stage_path, str(i))):
                 logger.info('creating group: %s' %str(i))
                 root.create_group(str(i))
@@ -150,18 +155,25 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
         else:
             logger.info('Making Copy-convert Alignment To Zarr Tasks List...')
             # cfg.main_window.set_status('Copy-converting TIFFs...')
-            chunkshape = cfg.data.chunkshape
-            task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text=pbar_text)
+            chunkshape = dm.chunkshape
+            dest = dm['data']['destination_path']
+
+            if cfg.USE_EXTRA_THREADING and use_gui:
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
+            else:
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
+
+
             task_queue.taskPrefix = 'TIFFs Converted to Zarr for '
-            task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+            task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm()[start:end]]
             task_queue.start(cpus)
             job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
             # for ID, layer in enumerate(iter(stack[start:snd])):
             for i in range(start,end):
-                _ , fn = os.path.split(cfg.data()[i]['filename'])
+                _ , fn = os.path.split(dm()[i]['filename'])
                 al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
                 zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-                dest = cfg.data.dest()
+                dest = dm.dest()
                 args = [sys.executable, job_script, str(i), al_name, zarr_group, str(chunkshape), str(int(stageit)), dest]
                 task_queue.add_task(args)
                 # logger.critical('stageit = %s' % str(int(stageit)))
@@ -171,7 +183,7 @@ def generate_aligned(scale, start=0, end=None, renew_od=False, reallocate_zarr=F
             logger.info('Adding Tasks To Multiprocessing Queue...')
             try:
                 dt = task_queue.collect_results()
-                cfg.data.t_convert_zarr = dt
+                dm.t_convert_zarr = dt
             except:
                 print_exception()
                 logger.warning('Task Queue encountered a problem')

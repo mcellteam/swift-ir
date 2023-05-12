@@ -10,12 +10,17 @@ import os
 import sys
 import json
 import logging
-from recipe_maker import run_recipe
+#
+try:
+    from recipe_maker import run_recipe
+except ImportError:
+    from src.recipe_maker import run_recipe
 
 
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
+    logger.critical('>>>>')
 
     f_self = sys.argv[0]
     f_temp = sys.argv[1]

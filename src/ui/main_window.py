@@ -613,10 +613,10 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar()
             try:
                 if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.reduce_main())
+                    self.worker = BackgroundWorker(fn=cfg.thumb.reduce_main(dest=cfg.data.dest()))
                     self.threadpool.start(self.worker)
                 else:
-                    cfg.thumb.reduce_main()
+                    cfg.thumb.reduce_main(dest=cfg.data.dest())
 
             except:
                 print_exception()
@@ -676,10 +676,10 @@ class MainWindow(QMainWindow):
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=generate_aligned(
-                    scale, start, end, stageit=True, reallocate_zarr=True))
+                    cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True))
                 self.threadpool.start(self.worker)
             else:
-                generate_aligned(scale, start, end, stageit=True, reallocate_zarr=True)
+                generate_aligned(cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True)
         except:
             print_exception()
         finally:
@@ -690,7 +690,7 @@ class MainWindow(QMainWindow):
                 self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
                 self.threadpool.start(self.worker)
             else:
-                cfg.thumb.reduce_aligned(start=start, end=end)
+                cfg.thumb.reduce_aligned(start=start, end=end, dest=cfg.data.dest(), scale=scale)
         except:
             print_exception()
         finally:
@@ -1015,66 +1015,66 @@ class MainWindow(QMainWindow):
             self.setPbarText('Computing Affine...')
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=compute_affines(scale, start, end))
+                self.worker = BackgroundWorker(fn=compute_affines(scale, start, end, swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, swim_only=False))
                 self.threadpool.start(self.worker)
-            else: compute_affines(scale, start, end)
+            else: compute_affines(scale, start, end, swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, swim_only=False)
         except:   print_exception(); self.err('An Exception Was Raised During Alignment.')
         # else:     logger.info('Affine Computation Finished')
 
-        if cfg.ignore_pbar:
-            cfg.nCompleted +=1
-            self.updatePbar()
-            self.setPbarText('Scaling Correlation Signal Thumbnails...')
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
-                self.threadpool.start(self.worker)
-            else: cfg.thumb.reduce_signals(start=start, end=end)
-        except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
-        # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
+        # if cfg.ignore_pbar:
+        #     cfg.nCompleted +=1
+        #     self.updatePbar()
+        #     self.setPbarText('Scaling Correlation Signal Thumbnails...')
+        # try:
+        #     if cfg.USE_EXTRA_THREADING:
+        #         self.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
+        #         self.threadpool.start(self.worker)
+        #     else: cfg.thumb.reduce_signals(start=start, end=end)
+        # except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
+        # # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
 
 
         # if cfg.project_tab._tabs.currentIndex() == 1:
         #     cfg.project_tab.project_table.setScaleData()
-
-        if not swim_only:
-            if self._toggleAutogenerate.isChecked():
-
-                if cfg.ignore_pbar:
-                    cfg.nCompleted += 1
-                    self.updatePbar()
-                    self.setPbarText('Generating Alignment...')
-
-                try:
-                    if cfg.USE_EXTRA_THREADING:
-                        self.worker = BackgroundWorker(fn=generate_aligned(
-                            scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
-                        self.threadpool.start(self.worker)
-                    else: generate_aligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
-                except:
-                    print_exception()
-                finally:
-                    logger.info('Generate Alignment Finished')
-
-                if cfg.ignore_pbar:
-                    cfg.nCompleted += 1
-                    self.updatePbar()
-                    self.setPbarText('Generating Aligned Thumbnail...')
-
-                try:
-                    if cfg.USE_EXTRA_THREADING:
-                        self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
-                        self.threadpool.start(self.worker)
-                    else: cfg.thumb.reduce_aligned(start=start, end=end)
-                except:
-                    print_exception()
-                finally:
-                    logger.info('Generate Aligned Thumbnails Finished')
-
-                if cfg.ignore_pbar:
-                    cfg.nCompleted += 1
-                    self.updatePbar()
-                    self.setPbarText('Aligning')
+        #
+        # if not swim_only:
+        #     if self._toggleAutogenerate.isChecked():
+        #
+        #         if cfg.ignore_pbar:
+        #             cfg.nCompleted += 1
+        #             self.updatePbar()
+        #             self.setPbarText('Generating Alignment...')
+        #
+        #         try:
+        #             if cfg.USE_EXTRA_THREADING:
+        #                 self.worker = BackgroundWorker(fn=generate_aligned(
+        #                     scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
+        #                 self.threadpool.start(self.worker)
+        #             else: generate_aligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
+        #         except:
+        #             print_exception()
+        #         finally:
+        #             logger.info('Generate Alignment Finished')
+        #
+        #         if cfg.ignore_pbar:
+        #             cfg.nCompleted += 1
+        #             self.updatePbar()
+        #             self.setPbarText('Generating Aligned Thumbnail...')
+        #
+        #         try:
+        #             if cfg.USE_EXTRA_THREADING:
+        #                 self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
+        #                 self.threadpool.start(self.worker)
+        #             else: cfg.thumb.reduce_aligned(start=start, end=end)
+        #         except:
+        #             print_exception()
+        #         finally:
+        #             logger.info('Generate Aligned Thumbnails Finished')
+        #
+        #         if cfg.ignore_pbar:
+        #             cfg.nCompleted += 1
+        #             self.updatePbar()
+        #             self.setPbarText('Aligning')
 
         self.pbarLabel.setText('')
         self.hidePbar()
@@ -2245,7 +2245,7 @@ class MainWindow(QMainWindow):
                 try:
                     hud_text = self.hud.textedit.toPlainText()
                     cfg.data['hud'] = hud_text
-                    cfg.data.basefilenames()
+                    # cfg.data.basefilenames()
                     if saveas is not None:
                         cfg.data.set_destination(saveas)
                     data_cp = copy.deepcopy(cfg.data)
