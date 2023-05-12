@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridL
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize, QObject
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
-from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc
+from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
 from src.funcs_image import ImageSize
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
 
@@ -58,14 +58,17 @@ class ExitAppDialog(QDialog):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.buttonGroup = QButtonGroup()
         self.cancelButton = QPushButton('Cancel')
+        self.cancelButton.setStyleSheet("QPushButton{font-size: 10pt; }")
         # self.cancelButton.setFixedSize(QSize(16,16))
-        self.cancelButton.setFixedSize(QSize(60,16))
+        self.cancelButton.setFixedSize(QSize(70,18))
         # self.cancelButton.setIcon(QIcon('src/resources/white-x.png'))
         # self.cancelButton.setIcon(qta.icon('mdi.cancel', color='#161c20'))
         self.saveExitButton = QPushButton('Save && Quit')
-        self.saveExitButton.setFixedSize(QSize(60,16))
+        self.saveExitButton.setStyleSheet("QPushButton{font-size: 10pt;}")
+        self.saveExitButton.setFixedSize(QSize(70,18))
         # self.saveExitButton.setIcon(qta.icon('fa.save', color='#161c20'))
         self.exitExitButton = QPushButton()
+        self.exitExitButton.setStyleSheet("QPushButton{font-size: 10pt; }")
         # self.exitExitButton.setIcon(qta.icon('mdi.exit-run', color='#161c20'))
         self.buttonGroup.addButton(self.cancelButton)
         self.buttonGroup.addButton(self.saveExitButton)
@@ -79,14 +82,15 @@ class ExitAppDialog(QDialog):
         if unsaved_changes:
             self.message = 'There are unsaved changes. Save before exiting?'
             self.exitExitButton.setText('Quit Without Saving')
-            self.exitExitButton.setFixedSize(QSize(90,16))
+            self.exitExitButton.setFixedSize(QSize(110,18))
         else:
             self.message = 'Exit Align-EM-SWiFT?'
-            self.exitExitButton.setText('Quit')
-            self.exitExitButton.setFixedSize(QSize(50,16))
+            self.exitExitButton.setText(f"Quit {hotkey('Q')}")
+            self.exitExitButton.setText(f"Quit {hotkey('Q')}")
+            self.exitExitButton.setFixedSize(QSize(68,18))
 
         self.layout = HBL(ExpandingWidget(self), QLabel(self.message), self.cancelButton, self.saveExitButton, self.exitExitButton)
-        self.layout.setSpacing(8)
+        self.layout.setSpacing(6)
         self.setContentsMargins(8,0,8,0)
         self.setLayout(self.layout)
 

@@ -212,7 +212,7 @@ QToolButton::menu-button:pressed {
 
 QToolBar {
     font-family: Tahoma, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     border-radius: 1px;
     border-width: 0px;
     padding: 0px;
@@ -249,9 +249,6 @@ QPushButton:disabled {
 	color: #454545;
 }
 */
-
-
-
 
 
 QDialog {

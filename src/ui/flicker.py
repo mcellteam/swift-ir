@@ -32,6 +32,7 @@ class Flicker(QLabel):
         self.cur = 0
         self._isPlaying = False
         self.setMinimumSize(QSize(32,32))
+        self.resize(QSize(180,180))
 
     def set(self):
         self.setPixmap(QPixmap(self.series[self.cur]))
