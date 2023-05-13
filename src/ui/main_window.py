@@ -1664,7 +1664,7 @@ class MainWindow(QMainWindow):
                 self.notes.setPlainText(cfg.data.notes(s=cfg.data.scale, l=cfg.data.zpos))
         else:
             self.notes.clear()
-            self.notes.setPlaceholderText('Notes are saved automatically...')
+            self.notes.setPlaceholderText('Notes are stored automatically...')
         self.notes.update()
 
     # def updateShaderText(self):
@@ -3208,7 +3208,8 @@ class MainWindow(QMainWindow):
         # self.cbPython.setStyleSheet(button_gradient_style)
         # self.cbPython.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbPython.setToolTip(tip)
-        self.cbPython.setFixedSize(QSize(110,16))
+        # self.cbPython.setFixedSize(QSize(110,16)) #macOS
+        self.cbPython.setFixedSize(QSize(122,16)) #tacc
         self.cbPython.setIconSize(QSize(14, 14))
         # self.cbPython.setIcon(QIcon('src/resources/python-icon.png'))
         # self.cbPython.stateChanged.connect(self._callbk_showHidePython)
@@ -3220,7 +3221,8 @@ class MainWindow(QMainWindow):
         # self.cbMonitor.setStyleSheet(button_gradient_style)
         # self.cbMonitor.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbMonitor.setToolTip(tip)
-        self.cbMonitor.setFixedSize(116,16)
+        # self.cbMonitor.setFixedSize(116,16) #macos
+        self.cbMonitor.setFixedSize(124,16) #tacc
         self.cbMonitor.setIconSize(QSize(14, 14))
         # self.cbMonitor.setIcon(QIcon('src/resources/python-icon.png'))
         # self.cbMonitor.setIcon(qta.icon("mdi.monitor", color='#161c20'))
@@ -3233,7 +3235,7 @@ class MainWindow(QMainWindow):
         # self.cbFlicker.setStyleSheet(button_gradient_style)
         # self.cbFlicker.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbFlicker.setToolTip(tip)
-        self.cbFlicker.setFixedSize(74,16)
+        self.cbFlicker.setFixedSize(78,16)
         self.cbFlicker.setIconSize(QSize(14, 14))
         self.cbFlicker.stateChanged.connect(lambda: self.setdw_flicker(self.cbFlicker.isChecked()))
 
@@ -3243,7 +3245,8 @@ class MainWindow(QMainWindow):
         # self.cbSignals.setStyleSheet(button_gradient_style)
         # self.cbSignals.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbSignals.setToolTip(tip)
-        self.cbSignals.setFixedSize(QSize(120, 16))
+        # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
+        self.cbSignals.setFixedSize(QSize(136, 16)) #tacc
         self.cbSignals.setIconSize(QSize(14, 14))
         self.cbSignals.stateChanged.connect(lambda: self.setdw_signals(self.cbSignals.isChecked()))
 
