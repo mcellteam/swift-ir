@@ -65,7 +65,7 @@ QDockWidget {
 }
 QDockWidget::title {
     text-align: left;
-    background: #222222;
+    /*background: #222222;*/
     padding-left: 5px;
     padding-bottom: 0px;
     padding-top: 0px;
