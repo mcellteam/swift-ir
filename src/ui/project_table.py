@@ -268,7 +268,7 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}] h = {h}')
+        # logger.critical(f'[{caller}] h = {h}')
 
         self.image_col_width = h
         # logger.critical(f'\n\ncaller: {caller}\n')
@@ -278,9 +278,6 @@ class ProjectTable(QWidget):
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
-
-
-
 
         if cfg.data.is_aligned_and_generated():
             self.table.setColumnWidth(3, h)
