@@ -791,6 +791,7 @@ class MainWindow(QMainWindow):
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
         self._autosave()
+        self._changeScaleCombo.setEnabled(False)
 
 
     def onAlignmentEnd(self, start, end):
@@ -820,6 +821,7 @@ class MainWindow(QMainWindow):
             print_exception()
         finally:
             self._working = False
+            self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
             if self._isProjectTab():
                 self.enableAllTabs()
@@ -1169,6 +1171,7 @@ class MainWindow(QMainWindow):
             self.cbFlicker.setEnabled(True)
             # self._ctlpanel_applyAllButton.setEnabled(True)
             self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
+            self._changeScaleCombo.setEnabled(True)
 
         else:
             self._skipCheckbox.setEnabled(False)

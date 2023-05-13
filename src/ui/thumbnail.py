@@ -169,7 +169,7 @@ class CorrSignalThumbnail(QLabel):
                 font = QFont()
                 # font.setFamily('Courier')
                 font.setBold(True)
-                size = min(int(11 * (max(pm.height(),1) / 50)), 18)
+                size = max(min(int(11 * (max(pm.height(),1) / 60)), 16), 8)
                 font.setPointSize(size)
                 # logger.critical(f'font size: {size}')
                 qp.setFont(font)
