@@ -24,20 +24,16 @@ logger = logging.getLogger(__name__)
 
 
 def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
-
-    logger.info('\n\ngenerate_aligned >>>>\n')
+    logger.info('>>>> generate_aligned >>>>')
 
     scale_val = get_scale_val(scale)
 
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Generate Alignment')
     else:
-        logger.info(f'\n\n----------------------------------------------------\n'
-                    f'Generating Aligned Images...\n'
-                    f'----------------------------------------------------\n')
-        if ng.is_server_running():
-            logger.info('Stopping Neuroglancer...')
-            ng.server.stop()
+        # if ng.is_server_running():
+        #     logger.info('Stopping Neuroglancer...')
+        #     ng.server.stop()
 
         tryRemoveDatFiles(dm, scale,dm.dest())
         Z_STRIDE = 0
@@ -59,9 +55,7 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
             renew_directory(directory=od)
         # print_example_cafms(scale_dict)
         bias_path = os.path.join(dm.dest(), scale, 'bias_data')
-        t_sb = time.time()
         # save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
-        logger.info('save bias time: %.3f' %(time.time() - t_sb))
         if end == None:
             end = len(dm)
         n_tasks = len(list(range(start,end)))
@@ -71,14 +65,15 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
         if dm.has_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
-            logger.info(f'Bounding Box              : ON\nNew Bounding Box          : {str(rect)}')
-            logger.info(f'Null Bias                 : {dm.null_cafm()} (Polynomial Order: {dm.poly_order()})')
+
+            logger.info(f'Bounding Box      : ON\nNew Bounding Box  : {str(rect)}')
+            logger.info(f'Null Bias         : {dm.null_cafm()} (Polynomial Order: {dm.poly_order()})')
         else:
-            logger.info(f'Bounding Box              : OFF')
+            logger.info(f'Bounding Box      : OFF')
             w, h = dm.image_size(s=scale)
             rect = [0, 0, w, h] # might need to swap w/h for Zarr
-        logger.info(f'Aligned Size              : {rect[2:]}')
-        logger.info(f'Offsets                   : {rect[0]}, {rect[1]}')
+        logger.info(f'Aligned Size      : {rect[2:]}')
+        logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
         # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale, rect) #0129-
         if end:
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end)))
@@ -86,7 +81,9 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm))))
         pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
         dest = dm['data']['destination_path']
-        logger.info('\n\n\nGenerating Alignment...\n\n')
+
+        logger.info(f'\n\n################ Generating Aligned Images ################\n')
+
         if use_gui:
             task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
         else:
@@ -153,7 +150,9 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
         if cfg.CancelProcesses:
             cfg.main_window.tell('Canceling Copy-convert Alignment to Zarr Tasks...')
         else:
-            logger.info('Making Copy-convert Alignment To Zarr Tasks List...')
+
+            logger.info(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
+
             # cfg.main_window.set_status('Copy-converting TIFFs...')
             chunkshape = dm.chunkshape
             dest = dm['data']['destination_path']
@@ -188,7 +187,7 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
                 print_exception()
                 logger.warning('Task Queue encountered a problem')
 
-            logger.info('<<<< Generate Aligned End <<<<')
+    logger.info('<<<< Generate Aligned <<<<')
 
 
 def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):

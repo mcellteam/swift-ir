@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
         font = QFont("Tahoma")
         QApplication.setFont(font)
 
-        self.oldPos = None
+        # self.oldPos = None
 
         # self.gripSize = 12 # originally 12
         # self.grips = []
@@ -162,18 +162,18 @@ class MainWindow(QMainWindow):
         # self.setDockNestingEnabled(True)
 
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.oldPos = event.globalPos()
-
-    def mouseMoveEvent(self, event):
-        if self.oldPos is not None:
-            delta = event.globalPos() - self.oldPos
-            self.move(self.pos() + delta)
-            self.oldPos = event.globalPos()
-
-    def mouseReleaseEvent(self, event):
-        self.oldPos = None
+    # def mousePressEvent(self, event):
+    #     if event.button() == Qt.MouseButton.LeftButton:
+    #         self.oldPos = event.globalPos()
+    #
+    # def mouseMoveEvent(self, event):
+    #     if self.oldPos is not None:
+    #         delta = event.globalPos() - self.oldPos
+    #         self.move(self.pos() + delta)
+    #         self.oldPos = event.globalPos()
+    #
+    # def mouseReleaseEvent(self, event):
+    #     self.oldPos = None
 
     # def resizeEvent(self, event):
         # logger.info('')
@@ -198,25 +198,6 @@ class MainWindow(QMainWindow):
         # cp.setX(cp.x() - 200)
         qr.moveCenter(cp)
         self.move(qr.topLeft())
-
-
-    # def neuroglancer_configuration_0(self):
-    #
-    #     # logger.info('')
-    #
-    # def neuroglancer_configuration_1(self):
-    #     logger.critical(f'caller:{inspect.stack()[1].function}')
-    #     # logger.info('')
-    #
-    # def neuroglancer_configuration_2(self):
-    #     logger.info('')
-    #     if cfg.data:
-    #         if cfg.project_tab:
-    #             self.comboboxNgLayout.setCurrentText('xy')
-    #             cfg.project_tab._widgetArea_details.show()
-    #             # cfg.project_tab._tabs.setCurrentIndex(0) #0124-
-    #             # cfg.project_tab.updateNeuroglancer()
-    #             cfg.project_tab.initNeuroglancer()
 
 
     def cleanupAfterCancel(self):
@@ -382,13 +363,13 @@ class MainWindow(QMainWindow):
     #     # pass
 
 
-    def _callbk_showHideCorrSpots(self):
-        logger.info('')
-        self.dw_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
-        if cfg.project_tab.signalsAction.isChecked():
-            # w = self.csWidget.width()
-            # self.csWidget.resize(QSize(w,200))
-            self.updateCorrSignalsDrawer()
+    # def _callbk_showHideCorrSpots(self):
+    #     logger.info('')
+    #     self.dw_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
+    #     if cfg.project_tab.signalsAction.isChecked():
+    #         # w = self.csWidget.width()
+    #         # self.csWidget.resize(QSize(w,200))
+    #         self.updateCorrSignalsDrawer()
 
 
     def updateCorrSignalsDrawer(self):
@@ -397,10 +378,9 @@ class MainWindow(QMainWindow):
         #             self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
 
         # caller = inspect.stack()[1].function
-        logger.critical('updateCorrSignalsDrawer >>>>')
+        logger.info('>>>> updateCorrSignalsDrawer >>>>')
 
         thumbs = cfg.data.get_signals_filenames()
-
         n = len(thumbs)
         snr_vals = cfg.data.snr_components()
         colors = cfg.glob_colors
@@ -408,16 +388,15 @@ class MainWindow(QMainWindow):
         for i in range(7):
             self.corrSignalsList[i].set_no_image()
 
-        logger.critical('thumbs: %s' % str(thumbs))
-        logger.critical('snr_vals: %s' % str(snr_vals))
-
+        # logger.critical('thumbs: %s' % str(thumbs))
+        # logger.critical('snr_vals: %s' % str(snr_vals))
 
         if cfg.data.current_method == 'grid-custom':
             for i in range(7):
                 self.corrSignalsList[i].hide()
             regions = cfg.data.grid_custom_regions
             names = cfg.data.get_grid_custom_filenames()
-            logger.info('names: %s' % str(names))
+            # logger.info('names: %s' % str(names))
             for i in range(4):
                 if regions[i]:
                     try:
@@ -453,7 +432,7 @@ class MainWindow(QMainWindow):
         # logger.info("<<<< updateCorrSignalsDrawer")
         # self.csWidget.setMinimumWidth(self.cs0.width() * 4)
 
-        logger.critical('<<<< updateCorrSignalsDrawer')
+        logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
     def callbackDwVisibilityChanged(self):
         self.cbPython.setChecked(self.dw_python.isVisible())
@@ -592,7 +571,6 @@ class MainWindow(QMainWindow):
         cfg.data.link_reference_sections() #Todo: check if this is necessary
         cfg.data.scale = cfg.data.scales()[-1]
 
-        logger.info('Autoscaler is setting image sizes per scale...')
         for s in cfg.data.scales():
             cfg.data.set_image_size(s=s)
 
@@ -625,7 +603,6 @@ class MainWindow(QMainWindow):
             finally:
                 cfg.data.scale = cfg.data.scales()[-1]
                 self.hidePbar()
-                logger.info('Thumbnail Generation Complete')
 
         self.enableAllTabs()
         # cfg.project_tab.initNeuroglancer()
@@ -636,19 +613,20 @@ class MainWindow(QMainWindow):
 
 
     def _showSNRcheck(self, s=None):
+        logger.info('')
         caller = inspect.stack()[1].function
         if s == None: s = cfg.data.scale
         if cfg.data.is_aligned():
-            logger.info(f'Checking SNR data for {s}...')
+            logger.info('Checking SNR data for %s...' % cfg.data.scale_pretty(s=s))
             failed = cfg.data.check_snr_status()
             if len(failed) == len(cfg.data):
-                self.warn(f'No SNR Data Available for %s' % cfg.data.scale_pretty(s=s))
+                self.warn('No SNR Data Available for %s' % cfg.data.scale_pretty(s=s))
             elif failed:
                 indexes, names = zip(*failed)
                 lst_names = ''
                 for name in names:
                     lst_names += f'\n  Section: {name}'
-                self.warn(f'No SNR Data For Layer(s): {", ".join(map(str, indexes))}')
+                self.warn(f'No SNR Data For Sections: {", ".join(map(str, indexes))}')
 
 
     # def regenerateOne(self):
@@ -658,6 +636,7 @@ class MainWindow(QMainWindow):
 
     def regenerate(self, scale, start=0, end=None) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
+        logger.info('regenerate >>>>')
         if not self._isProjectTab():
             return
         if self._working == True:
@@ -667,10 +646,8 @@ class MainWindow(QMainWindow):
         cfg.nTasks = 3
         cfg.nCompleted = 0
         cfg.CancelProcesses = False
-        # cfg.event = multiprocessing.Event()
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         self.showZeroedPbar()
-        logger.info('Regenerate Aligned Images...')
         cfg.data.set_has_bb(cfg.data.use_bb())  #Critical, also see regenerate
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
@@ -682,8 +659,6 @@ class MainWindow(QMainWindow):
                 generate_aligned(cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True)
         except:
             print_exception()
-        finally:
-            logger.info('Generate Alignment Finished')
 
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -701,12 +676,14 @@ class MainWindow(QMainWindow):
             cfg.nCompleted = 0
             cfg.nTasks = 0
             cfg.project_tab.initNeuroglancer()
-            logger.info('Generate Aligned Thumbnails Finished')
+            logger.info('<<<< regenerate')
             self.tell('**** Processes Complete ****')
+
+        logger.info('<<<< regenerate')
 
 
     def verify_alignment_readiness(self) -> bool:
-        logger.info('')
+        logger.critical('')
         ans = False
         if not cfg.data:
             self.warn('No project yet!')
@@ -717,7 +694,7 @@ class MainWindow(QMainWindow):
             self.warn(warning_msg)
         else:
             ans = True
-        logger.info(f'Returning: {ans}')
+        logger.critical(f'Returning: {ans}')
         return ans
 
 
@@ -786,16 +763,16 @@ class MainWindow(QMainWindow):
     def onAlignmentStart(self, scale):
         logger.info('')
         t0 = time.time()
-
         dt = datetime.datetime.now()
-
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
         manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
         swim_log = os.path.join(cfg.data.dest(), 'logs', 'swim.log')
-        open(logger_log, 'a+').close()
-        open(manual_log, 'a+').close()
-        open(mp_log, 'a+').close()
+        thumbs_log = os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log')
+        # open(logger_log, 'a+').close()
+        # open(mp_log, 'a+').close()
+        # open(manual_log, 'a+').close()
+        # open(thumbs_log, 'a+').close()
         with open(logger_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
         with open(manual_log, 'a+') as f:
@@ -804,9 +781,7 @@ class MainWindow(QMainWindow):
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
         with open(swim_log, 'a+') as f:
             f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-
         # time point 5: = 0.0032761096954345703
-
         self.stopPlaybackTimer()
         self._disableGlobTabs()
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
@@ -815,18 +790,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_use_bounding_rect(self._bbToggle.isChecked(), s=cfg.data.scale)
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
-
         self._autosave()
-
-        t6 = time.time()
-        dt = t6 - t0
-        # time point 6: = 0.2953681945800781
-
-        # self.stopNgServer()  # 0202-
-
-        t9 = time.time()
-        dt = t9 - t0
-        logger.critical(f'onAlignmentStart, time: = {dt}')
 
 
     def onAlignmentEnd(self, start, end):
@@ -868,21 +832,19 @@ class MainWindow(QMainWindow):
 
             t9 = time.time()
             dt = t9 - t0
-            logger.critical(f'onAlignmentEnd, time: {dt}')
+            logger.critical(f'Time Elapsed: {dt}s')
+            self.tell(f'Time Elapsed: {dt}s')
 
 
     def alignAll(self):
         if not self._isProjectTab():
             return
-
-        cfg.ignore_pbar = False
-        '''MUST handle bounding box for partial-stack alignments.'''
-        self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
         scale = cfg.data.scale
-        # is_realign = cfg.data.is_aligned(s=scale)
-        # This SHOULD always work. Only set bounding box here. Then, during a single or partial alignment,
-        # reduce_aligned will use the correct value that is consistent with the other images
-        # at the same scale
+        if not self.verify_alignment_readiness():
+            self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
+            return
+        self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
+        cfg.ignore_pbar = False
         if self._toggleAutogenerate.isChecked():
             cfg.nTasks = 5
         else:
@@ -1003,8 +965,6 @@ class MainWindow(QMainWindow):
         # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
         logger.info(f'Aligning start:{start}, end: {end}, scale: {scale}...')
-        if not self.verify_alignment_readiness(): return
-
 
         self.onAlignmentStart(scale=scale)
         m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
@@ -1308,7 +1268,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.initNeuroglancer()
                 else:
                     cfg.emViewer.set_layer(requested)
-                self.dataUpdateWidgets()
+                # self.dataUpdateWidgets()
             else:
                 self.warn(f'Invalid Index Request: {requested}')
 
@@ -1325,7 +1285,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.initNeuroglancer()
                 else:
                     cfg.emViewer.set_layer(requested)
-                self.dataUpdateWidgets()
+                # self.dataUpdateWidgets()
             else:
                 self.warn(f'Invalid Index Request: {requested}')
 
@@ -1360,9 +1320,8 @@ class MainWindow(QMainWindow):
 
 
     def apply_default_style(self):
-        cfg.THEME = 0
-        # self.tell('Setting Default Theme')
-        self.main_stylesheet = os.path.abspath('src/style/default.qss')
+        # self.main_stylesheet = os.path.abspath('src/style/default.qss')
+        self.main_stylesheet = os.path.abspath('src/style/newstyle.qss')
         with open(self.main_stylesheet, 'r') as f:
             style = f.read()
         self.setStyleSheet(style)
@@ -1430,7 +1389,7 @@ class MainWindow(QMainWindow):
                 for i in range(len(funcs)):
 
                     try:
-                        logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
+                        # logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
                         s1 = ('z-index <u><b>%d</b></u>' % lowest_5[i][0]).ljust(15)
                         s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_5[i][1]).ljust(15)
                         combined = s1 + ' ' + s2
@@ -1441,24 +1400,10 @@ class MainWindow(QMainWindow):
                         f.setPointSizeF(7)
                         self.lowest5_btns[i].setFont(f)
                         self.lowest5_btns[i].setLayoutDirection(Qt.RightToLeft)
-                        # btn = QPushButton()
-                        # btn.setFixedSize(QSize(48,12))
                         self.lowest5_btns[i].setFixedSize(QSize(80,14))
                         self.lowest5_btns[i].setStyleSheet("font-size: 9px;")
-                        # btn.setFixedWidth(80)
                         self.lowest5_btns[i].setIconSize(QSize(10,10))
                         self.lowest5_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-                        # def fn():
-                        # 
-                        #     logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
-                        #     # cfg.data.zpos = lowest_5_i[i]
-                        #     # self.jump_to_layer()
-                        #     # self.jump_to(lowest_5_i[i])
-                        #     # self.enter_man_mode()
-                        #     self.dataUpdateWidgets(lowest_5_i[i])
-                        # self.lowest5_btns[i].clicked.connect(fn)
-                        
-                        
                         self.lowest5_btns[i].clicked.connect(funcs[i])
                         # btn.clicked.connect(lambda: self.jump_to_layer(lowest_5_i))
                         # self.lowest5_fl.addRow(lowest_5[i].rjust(14), btn)
@@ -1483,11 +1428,10 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
+        logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} >>>>")
         self.count_calls.setdefault('dataUpdateWidgets', {})
         self.count_calls['dataUpdateWidgets'].setdefault(caller, 0)
         self.count_calls['dataUpdateWidgets'][caller] += 1
-
-        logger.info(f'Updating widgets (caller: {caller}, zpos={cfg.data.zpos})...')
         if ng_layer:
             logger.info(f'ng_layer (requested): {ng_layer}')
 
@@ -1648,7 +1592,7 @@ class MainWindow(QMainWindow):
             # self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
             self._btn_alignOne.setText('Re-Align #%d' %cfg.data.zpos)
 
-        logger.info(f'<<<< dataUpdateWidgets [zpos={cfg.data.zpos}]')
+        logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
 
 
 
@@ -1666,30 +1610,6 @@ class MainWindow(QMainWindow):
             self.notes.clear()
             self.notes.setPlaceholderText('Notes are stored automatically...')
         self.notes.update()
-
-    # def updateShaderText(self):
-    #     # caller = inspect.stack()[1].function
-    #     logger.info('')
-    #     self.shaderText.clear()
-    #     if self._isProjectTab():
-    #         self.shaderText.setPlainText(cfg.data['rendering']['shader'])
-
-    # def onShaderApply(self):
-    #     # caller = inspect.stack()[1].function
-    #     logger.info('')
-    #     if self._isProjectTab():
-    #         # cfg.data.set_brightness(float(self.brightnessLE.text()))
-    #         cfg.data.brightness = float(self.brightnessLE.text())
-    #         # cfg.data.set_contrast(float(self.contrastLE.text()))
-    #         cfg.data.contrast = float(self.contrastLE.text())
-    #         # cfg.data['rendering']['shader'] = self.shaderText.toPlainText()
-    #         cfg.project_tab.initNeuroglancer()
-    #         self._callbk_unsavedChanges()
-
-
-    # def clearAffineWidget(self):
-    #     afm = cafm = [[0] * 3, [0] * 3]
-    #     cfg.project_tab.afm_widget_.setText(make_affine_widget_HTML(afm, cafm))
 
 
     def setPlaybackSpeed(self):
@@ -1797,11 +1717,11 @@ class MainWindow(QMainWindow):
 
     def _resetSlidersAndJumpInput(self):
         '''Requires Neuroglancer '''
+        logger.info('')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
             if self._isProjectTab() or self._isZarrTab():
-                logger.info('Setting section slider and jump input validators...')
                 if cfg.project_tab:
                     self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
                     self._sectionSlider.setRange(0, len(cfg.data) - 1)
@@ -1883,7 +1803,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        logger.info(f'jump_to_slider [caller: {caller}] >>>>')
+        # logger.info(f'jump_to_slider [caller: {caller}] >>>>')
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
         if caller in ('dataUpdateWidgets'):
             return
@@ -1898,7 +1818,7 @@ class MainWindow(QMainWindow):
             for viewer in cfg.project_tab.get_viewers():
                 viewer.set_layer(cfg.data.zpos)
 
-            self.dataUpdateWidgets()
+            # self.dataUpdateWidgets()
 
         try:
             self._jumpToLineedit.setText(str(requested))
@@ -1911,8 +1831,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
+        caller = inspect.stack()[1].function
+        logger.info(f'reload_scales_combobox [{caller}] >>>>')
         if self._isProjectTab():
-            logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
+            logger.info('Reloading Scale Combobox (caller: %s)' % caller)
             self._changeScaleCombo.show()
             self._scales_combobox_switch = 0
             self._changeScaleCombo.clear()
@@ -1927,11 +1849,12 @@ class MainWindow(QMainWindow):
             self._scales_combobox_switch = 1
         else:
             self._changeScaleCombo.hide()
+        logger.info(f'<<<< reload_scales_combobox [{caller}]')
 
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info('fn_scales_combobox [caller: %s] >>>>' % caller)
+        logger.info('>>>> fn_scales_combobox [caller: %s] >>>>' % caller)
         if caller in ('main', 'scale_down', 'scale_up'):
 
             if getData('state,manual_mode'):
@@ -1959,6 +1882,7 @@ class MainWindow(QMainWindow):
                             self.dataUpdateWidgets()
                             self._showSNRcheck()
                             cfg.project_tab.refreshTab()
+        logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
 
 
 
@@ -1967,7 +1891,7 @@ class MainWindow(QMainWindow):
             if cfg.data.is_aligned_and_generated():
                 file = export_affines_dialog()
                 if file == None:
-                    logger.warning('No Filename - Canceling Export')
+                    self.warn('No Filename - Canceling Export')
                     return
                 afm_lst = cfg.data.afm_list()
                 with open(file, 'w') as f:
@@ -1976,11 +1900,11 @@ class MainWindow(QMainWindow):
                             f.write(str(item) + ',')
                         f.write('\n')
                 self.tell('Exported: %s' % file)
-                self.tell('AFMs exported successfully.')
+                self.tell(f"AFMs exported successfully to '{file}'")
             else:
-                self.warn('The current scale is not aligned. Nothing to export.')
+                self.warn('Current scale is not aligned. Nothing to export.')
         else:
-            self.warn('There is no project open. Nothing to export.')
+            self.warn('No open projects. Nothing to export.')
 
 
     def export_cafms(self):
@@ -2079,11 +2003,11 @@ class MainWindow(QMainWindow):
 
 
     def detachNeuroglancer(self):
+        logger.info('')
         if self._isProjectTab():
             if getData('state,manual_mode') == True:
                 return
             if self._isProjectTab() or self._isZarrTab():
-                logger.info('Creating QWebEngineView...')
                 if cfg.emViewer:
                     self.detachedNg = WebPage(url=cfg.emViewer.url())
 
@@ -2108,17 +2032,11 @@ class MainWindow(QMainWindow):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
 
-        t0 = time.time()
-
         initLogFiles()
-
-        # dt = 0.000392913818359375
-
         self._dontReinit = True
         caller = inspect.stack()[1].function
-        # logger.critical('caller: %s' % caller)
         # self.tell("Loading project '%s'..." %cfg.data.dest())
-        logger.critical("\n\nLoading project '%s'...\n" %cfg.data.dest())
+        logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
 
         setData('state,manual_mode', False)
         setData('state,mode', 'comparison')
@@ -2127,7 +2045,6 @@ class MainWindow(QMainWindow):
         # dt = 0.0009050369262695312
 
         # self.combo_mode.setCurrentIndex(1)
-        logger.info(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
         self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
 
         # dt = 0.001238107681274414
@@ -2151,7 +2068,7 @@ class MainWindow(QMainWindow):
 
         self.setControlPanelData() #Added 2023-04-23
 
-        logger.critical('Setting FPS spinbox value...')
+        logger.info('Setting FPS spinbox value...')
         # self.spinbox_fps.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
         self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
@@ -2178,7 +2095,7 @@ class MainWindow(QMainWindow):
 
 
     def saveUserPreferences(self):
-        logger.info('')
+        logger.info('Saving User Preferences...')
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         try:
             f = open(userpreferencespath, 'w')
@@ -2216,8 +2133,9 @@ class MainWindow(QMainWindow):
 
 
     def save(self):
-        if cfg.data:
-            self.set_status('Saving...')
+        caller = inspect.stack()[1].function
+        logger.info(f'/*======== Saving Automatically [{caller}] ========*/')
+        if self._isProjectTab():
             self.tell('Saving Project...')
             try:
                 self._saveProjectToFile()
@@ -2229,9 +2147,10 @@ class MainWindow(QMainWindow):
 
 
     def _autosave(self, silently=False):
+        caller = inspect.stack()[1].function
         if cfg.data:
             if cfg.AUTOSAVE:
-                logger.info('Autosaving...')
+                logger.info(f'/*---- Autosaving [{caller}] ----*/')
                 try:
                     self._saveProjectToFile(silently=silently)
                 except:
@@ -2285,42 +2204,6 @@ class MainWindow(QMainWindow):
             cfg.project_tab.initNeuroglancer()
         if cfg.zarr_tab:
             cfg.zarr_tab.load()
-
-    # def import_multiple_images(self):
-    #     ''' Import images into data '''
-    #     logger.info('>>>> import_multiple_images >>>>')
-    #     self.tell('Import Images:')
-    #     filenames = natural_sort(import_images_dialog())
-    #
-    #     if not filenames:
-    #         logger.warning('No Images Were Selected')
-    #         self.warn('No Images Were Selected')
-    #         return 1
-    #
-    #     cfg.data.set_source_path(os.path.dirname(filenames[0])) #Critical!
-    #     self.tell(f'Importing {len(filenames)} Images...')
-    #     logger.info(f'Selected Images: \n{filenames}')
-    #
-    #     try:
-    #         for f in filenames:
-    #             if f:
-    #                 cfg.data.append_image(f)
-    #             else:
-    #                 cfg.data.append_empty()
-    #     except:
-    #         print_exception()
-    #         self.err('There Was A Problem Importing Selected Files')
-    #     else:
-    #         self.hud.done()
-    #
-    #     if len(cfg.data) > 0:
-    #         img_size = cfg.data.image_size(s='scale_1')
-    #         self.tell(f'Dimensions: {img_size[0]}✕{img_size[1]}')
-    #         cfg.data.link_reference_sections()
-    #     else:
-    #         self.warn('No Images Were Imported')
-    #
-    #     logger.info('<<<< import_multiple_images <<<<')
 
 
     @Slot()
@@ -2515,7 +2398,6 @@ class MainWindow(QMainWindow):
             'https://3dem.org/workbench/data/tapis/community/data-3dem-community/'))
 
 
-
     def invalidate_all(self, s=None):
         if ng.is_server_running():
             if s == None: s = cfg.data.scale
@@ -2527,16 +2409,16 @@ class MainWindow(QMainWindow):
                 if exist_aligned_zarr(s):
                     cfg.alLV.invalidate()
 
-
-    def stopNgServer(self):
-        # caller = inspect.stack()[1].function
-        # logger.critical(caller)
-        if ng.is_server_running():
-            logger.info('Stopping Neuroglancer...')
-            try:    ng.stop()
-            except: print_exception()
-        else:
-            logger.info('Neuroglancer Is Not Running')
+    #
+    # def stopNgServer(self):
+    #     # caller = inspect.stack()[1].function
+    #     # logger.critical(caller)
+    #     if ng.is_server_running():
+    #         logger.info('Stopping Neuroglancer...')
+    #         try:    ng.stop()
+    #         except: print_exception()
+    #     else:
+    #         logger.info('Neuroglancer Is Not Running')
 
     # def startStopProfiler(self):
     #     logger.info('')
@@ -3196,7 +3078,6 @@ class MainWindow(QMainWindow):
         # self.cbNotes.setStyleSheet(button_gradient_style)
         # self.cbNotes.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbNotes.setToolTip(tip)
-        self.cbNotes.setFixedSize(QSize(74,16))
         self.cbNotes.setIconSize(QSize(14, 14))
         # self.cbNotes.setIcon(QIcon('src/resources/notepad-icon.png'))
         self.cbNotes.stateChanged.connect(lambda: self.setdw_notes(self.cbNotes.isChecked()))
@@ -3208,21 +3089,17 @@ class MainWindow(QMainWindow):
         # self.cbPython.setStyleSheet(button_gradient_style)
         # self.cbPython.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbPython.setToolTip(tip)
-        # self.cbPython.setFixedSize(QSize(110,16)) #macOS
-        self.cbPython.setFixedSize(QSize(122,16)) #tacc
         self.cbPython.setIconSize(QSize(14, 14))
         # self.cbPython.setIcon(QIcon('src/resources/python-icon.png'))
         # self.cbPython.stateChanged.connect(self._callbk_showHidePython)
         self.cbPython.stateChanged.connect(lambda: self.setdw_python(self.cbPython.isChecked()))
 
-        tip = f"Show Process Monitor Tool Window {hotkey('M')}"
+        tip = f"Show Process Monitor Tool Window {hotkey('H')}"
         # self.cbMonitor = QPushButton(' HUD')
-        self.cbMonitor = QCheckBox(f"Process Monitor {hotkey('M')}")
+        self.cbMonitor = QCheckBox(f"Process Monitor {hotkey('H')}")
         # self.cbMonitor.setStyleSheet(button_gradient_style)
         # self.cbMonitor.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbMonitor.setToolTip(tip)
-        # self.cbMonitor.setFixedSize(116,16) #macos
-        self.cbMonitor.setFixedSize(124,16) #tacc
         self.cbMonitor.setIconSize(QSize(14, 14))
         # self.cbMonitor.setIcon(QIcon('src/resources/python-icon.png'))
         # self.cbMonitor.setIcon(qta.icon("mdi.monitor", color='#161c20'))
@@ -3235,7 +3112,6 @@ class MainWindow(QMainWindow):
         # self.cbFlicker.setStyleSheet(button_gradient_style)
         # self.cbFlicker.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbFlicker.setToolTip(tip)
-        self.cbFlicker.setFixedSize(78,16)
         self.cbFlicker.setIconSize(QSize(14, 14))
         self.cbFlicker.stateChanged.connect(lambda: self.setdw_flicker(self.cbFlicker.isChecked()))
 
@@ -3245,8 +3121,6 @@ class MainWindow(QMainWindow):
         # self.cbSignals.setStyleSheet(button_gradient_style)
         # self.cbSignals.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbSignals.setToolTip(tip)
-        # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
-        self.cbSignals.setFixedSize(QSize(136, 16)) #tacc
         self.cbSignals.setIconSize(QSize(14, 14))
         self.cbSignals.stateChanged.connect(lambda: self.setdw_signals(self.cbSignals.isChecked()))
 
@@ -3298,10 +3172,20 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.cbFlicker)
         self.toolbar.addWidget(self.cbSignals)
         self.toolbar.addWidget(self.cbNotes)
+
+        self.cbNotes.setFixedSize(QSize(92, 16))
+        # self.cbPython.setFixedSize(QSize(110,16)) #macOS
+        self.cbPython.setFixedSize(QSize(140,16)) #tacc
+        # self.cbMonitor.setFixedSize(116,16) #macos
+        self.cbMonitor.setFixedSize(142,16) #tacc
+        self.cbFlicker.setFixedSize(96,16)
+        # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
+        self.cbSignals.setFixedSize(QSize(154, 16)) #tacc
+
         # self.toolbar.addWidget(QLabel('    '))
         self.toolbar.layout().setSpacing(4)
         self.toolbar.layout().setAlignment(Qt.AlignRight)
-        self.toolbar.setStyleSheet('font-size: 9px;')
+        self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
 
 
     def _disableGlobTabs(self):
@@ -3386,6 +3270,7 @@ class MainWindow(QMainWindow):
 
         caller = inspect.stack()[1].function
         logger.info('caller: %s' %caller)
+        # if caller not in ('onStartProject', '_setLastTab'):
         if caller not in ('onStartProject', '_setLastTab'):
             self.shutdownNeuroglancer() #0329+
 
@@ -3450,7 +3335,6 @@ class MainWindow(QMainWindow):
             #         margin: 0px;
             #         padding: 0px;
             #         """)
-            logger.info(f"Setting mode combobox to {self.modeKeyToPretty(getData('state,mode'))}")
             self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
@@ -3468,10 +3352,11 @@ class MainWindow(QMainWindow):
             cfg.emViewer = cfg.project_tab.viewer
             # cfg.project_tab.initNeuroglancer()
 
-            try:
-                cfg.project_tab.signalsAction.setChecked(False)
-            except:
-                logger.warning('Cant deactivate signalsAction QAction')
+            # try:
+            #     cfg.project_tab.signalsAction.setChecked(False)
+            # except:
+            #     print_exception()
+            #     logger.warning('Cant deactivate signalsAction QAction')
 
             if getData('state,manual_mode'):
                 self._changeScaleCombo.setEnabled(False)
@@ -3555,7 +3440,7 @@ class MainWindow(QMainWindow):
         #     )
         cfg.data.link_reference_sections()
         logger.info(f'source path: {cfg.data.source_path()}')
-        self._saveProjectToFile()
+        self.save()
 
     def showActiveThreads(self, action):
         logger.info('')
@@ -3741,7 +3626,7 @@ class MainWindow(QMainWindow):
 
         self.showMonitorAction = QAction('Show Process &Monitor', self)
         self.showMonitorAction.triggered.connect(lambda: self.cbMonitor.setChecked(not self.cbMonitor.isChecked()))
-        self.showMonitorAction.setShortcut('Ctrl+M')
+        self.showMonitorAction.setShortcut('Ctrl+H')
         fileMenu.addAction(self.showMonitorAction)
 
         self.showNotesAction = QAction('Show &Notes', self)
@@ -3918,7 +3803,7 @@ class MainWindow(QMainWindow):
 
         self.alignMatchPointAction = QAction('Align Manually', self)
         self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
-        self.alignMatchPointAction.setShortcut('Ctrl+M')
+        # self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
         # self.addAction(self.alignMatchPointAction)
 
@@ -5202,15 +5087,12 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         '''Initialize Main UI'''
-        logger.info(f'Working Directory: {os.getcwd()}')
-
         std_button_size = QSize(96, 20)
         normal_button_size = QSize(64, 24)
 
         with open('src/style/controls.qss', 'r') as f:
             lower_controls_style = f.read()
 
-        logger.info('Creating HUD...')
         '''Headup Display'''
         # self.hud = HeadupDisplay(self.app)
         self.hud = HeadupDisplay(self.app)
@@ -5250,11 +5132,7 @@ class MainWindow(QMainWindow):
         #     contents = f.read()
         # self.hud.textedit.appendHtml(contents)
         self.user = getpass.getuser()
-
-        logger.info('HUD created.')
-
         self.tell(f'Hello User, please report any issues or bugs to joel@salk.edu.')
-
 
         '''
         keyboard_commands = [
@@ -5934,6 +5812,9 @@ class MainWindow(QMainWindow):
 
         self.pbar_widget.setLayout(self.status_bar_layout)
         self.pbarLabel = QLabel('Task... ')
+        self.pbarLabel.setStyleSheet("""
+        font-size: 10px;
+        font-weight: 600;""")
         self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)
         self.status_bar_layout.addWidget(self.pbar_cancel_button)

@@ -119,7 +119,7 @@ class ProjectTable(QWidget):
     def setScaleData(self):
         t = time.time()
         caller = inspect.stack()[1].function
-        logger.info('Setting Table Data (caller: %s)...' % caller)
+        logger.info(f'setScaleData [{caller}] >>>>')
         cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
         # self.setUpdatesEnabled(False)
@@ -231,6 +231,8 @@ class ProjectTable(QWidget):
             dt = time.time() - t
             logger.info('Table Load Time %s' %str(dt))
 
+        logger.info(f'<<<< setScaleData [{caller}]')
+
 
     def setColumnWidths(self):
         if cfg.data.is_aligned_and_generated():
@@ -330,7 +332,7 @@ class ProjectTable(QWidget):
 
 
     def initUI(self):
-        logger.info('Initializing Table UI...')
+        logger.info('')
 
         # self.table.setStyleSheet('font-size: 10px;')
         self.table.horizontalHeader().setStretchLastSection(True)

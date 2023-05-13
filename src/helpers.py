@@ -144,7 +144,8 @@ def delete_recursive(dir, keep_core_dirs=False):
 
 
 def update_preferences_model():
-    logger.info('Updating user preferences model...')
+    caller = inspect.stack()[1].function
+    logger.info(f'>>>> update_preferences_model [{caller}] >>>>')
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', True)
@@ -157,15 +158,18 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', True)
     cfg.settings.setdefault('state', {})
     cfg.settings['state'].setdefault('manual_mode', False)
+    cfg.settings['state'].setdefault('open_project_tab', {})
+    cfg.settings['state']['open_project_tab'].setdefault('row_height', 42)
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
+    logger.info('<<<< update_preferences_model <<<<')
 
 
 def initialize_user_preferences():
-    logger.info('Initializing user preferences model...')
+    logger.info('>>>> initialize_user_preferences >>>>')
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
     try:
         if os.path.exists(userpreferencespath):
@@ -173,9 +177,8 @@ def initialize_user_preferences():
             with open(userpreferencespath, 'r') as f:
                 cfg.settings = json.load(f)
         else:
-            logger.info(f'Loading user settings from defaults...')
+            # logger.info(f'Loading user settings from defaults...')
             cfg.settings = {}
-            '''save user preferences to file'''
     except:
         print_exception()
 
@@ -188,6 +191,8 @@ def initialize_user_preferences():
     except:
         print_exception()
         logger.warning(f'Unable to save current user preferences')
+    logger.info('<<<< initialize_user_preferences <<<<')
+
 
 def reset_user_preferences():
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
@@ -297,8 +302,8 @@ def configure_project_paths():
             for p in projectpaths:
                 f.write(f"{p}\n")
         if projectpaths:
-            logger.info('AlignEM-SWiFT Knows About The Following Projects:\n'
-                        '  %s' % '\n  '.join(projectpaths))
+            logger.info('AlignEM-SWiFT Knows About The Following Projects:\n\n'
+                        '  %s\n' % '\n  '.join(projectpaths))
     except:
         print_exception()
 

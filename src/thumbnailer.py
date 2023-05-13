@@ -30,6 +30,8 @@ class Thumbnailer:
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
     def reduce_main(self, dest, use_gui=True):
+        logger.info(f'\n\n################ Reducing: Source Images ################\n')
+
         pbar_text = 'Generating Source Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
@@ -43,6 +45,8 @@ class Thumbnailer:
 
 
     def reduce_aligned(self, start, end, dest, scale, use_gui=True):
+        logger.info(f'\n\n################ Reducing: Aligned Images ################\n')
+
         pbar_text = 'Generating Aligned Image Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
@@ -57,18 +61,17 @@ class Thumbnailer:
                 pass
 
 
-    def reduce_signals(self, start, end, use_gui=True):
+    def reduce_signals(self, start, end, dest, scale, use_gui=True):
 
-        logger.info('Reducing Correlation Signal Images...')
+        logger.info(f'\n\n################ Reducing: Correlation Signals ################\n')
 
 
         pbar_text = 'Generating Signal Spot Thumbnails'
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw')
-            od = os.path.join(cfg.data.dest(), cfg.data.scale, 'signals')
-            # rmdir = True if (start == 0) and (end == None) else False
+            src = os.path.join(dest, scale, 'signals_raw')
+            od = os.path.join(dest, scale, 'signals')
 
             rmdir = False
             if end == None:
@@ -108,6 +111,7 @@ class Thumbnailer:
                              start=start, end=end,
                              pbar_text=pbar_text,
                              filenames=filenames,
+                             dest=dest,
                              use_gui=use_gui
                              )
             cfg.data.t_thumbs_spot = dt
@@ -135,7 +139,7 @@ class Thumbnailer:
                use_gui=True,
                ):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
 
 
         logpath = os.path.join(dest, 'logs', 'thumbnails.log')

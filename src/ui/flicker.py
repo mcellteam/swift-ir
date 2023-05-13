@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QLabe
 from qtpy.QtCore import Qt, QRect, QSize, QPoint, QTimer
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
 import src.config as cfg
+from src.helpers import print_exception
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +61,9 @@ class Flicker(QLabel):
         self._isPlaying = 1
 
     def stop(self):
-        logger.info('stop >>>>')
         self.timer.stop()
         self._isPlaying = 0
+        logger.info('<<<< stop')
 
     def paintEvent(self, event):
         if self.pixmap():
@@ -87,7 +88,7 @@ class Flicker(QLabel):
                 # logger.warning('Cannot divide by zero')
                 # print_exception()
                 logger.warning('ZeroDivisionError')
-                pass
+                print_exception()
         super().paintEvent(event)
 
     # def resizeEvent(self, e):

@@ -95,7 +95,7 @@ class DataModel:
 
     def __deepcopy__(self, memo):
         caller = inspect.stack()[1].function
-        logger.critical(f'Creating __deepcopy__ of DataModel [{caller}]...')
+        logger.info(f'Creating __deepcopy__ of DataModel [{caller}]...')
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -1497,7 +1497,7 @@ class DataModel:
     #             self.stack(s=s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = s1_ww / get_scale_val(s)
 
     def set_auto_swim_windows_to_default(self, factor=None, current_only=False) -> None:
-        logger.critical('\n\nDetermining default SWIM windows...\n')
+        logger.info('')
         import src.config as cfg
         img_size = self.image_size(self.scales()[0])  # largest scale size
         # man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC

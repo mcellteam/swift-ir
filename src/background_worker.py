@@ -66,10 +66,11 @@ class BackgroundWorker(QRunnable):
 
     '''
 
-    def __init__(self, fn, *args, **kwargs):
+    def __init__(self, fn, label='', *args, **kwargs):
         super(BackgroundWorker, self).__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
+        self.label = label
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
@@ -81,7 +82,7 @@ class BackgroundWorker(QRunnable):
 
     @Slot()
     def run(self):
-        logger.info("Running A Background Worker...")
+        logger.info("Running background worker [%s]..." % self.label)
         # if self.status != None:
         #     self.parent.set_status(self.status)
         #     # QApplication.processEvents()
