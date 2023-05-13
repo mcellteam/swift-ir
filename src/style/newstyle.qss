@@ -28,10 +28,6 @@ QToolTip {
    border: 1px solid #ede9e8;
 }
 
-    background: rgb(36,38,41);
-    titlebar-close-icon: url(:icons/blank.png);
-    titlebar-normal-icon: url(:icons/blank.png);
-}
 
 
 
@@ -148,3 +144,33 @@ QProgressBar {
     background-color: #f3f6fb;
 
 }
+
+
+
+QDockWidget {
+    font-family: Tahoma, sans-serif;
+    font-weight: 600;
+    color: #ede9e8;
+    border: 0px solid #ede9e8;
+}
+QDockWidget::title {
+    text-align: left;
+    padding-left: 5px;
+    padding-bottom: 0px;
+    padding-top: 0px;
+    margin: 0px;
+    font-weight: 600;
+}
+  QDockWidget::close-button, QDockWidget::float-button {
+      border: 1px solid transparent;
+      background: none;
+      padding: 0px;
+  }
+
+  QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+      background: #ede9e8;
+  }
+
+  QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+      padding: 1px -1px -1px 1px;
+  }

@@ -378,7 +378,7 @@ class MainWindow(QMainWindow):
         #             self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
 
         # caller = inspect.stack()[1].function
-        logger.info('>>>> updateCorrSignalsDrawer >>>>')
+        # logger.info('>>>> updateCorrSignalsDrawer >>>>')
 
         thumbs = cfg.data.get_signals_filenames()
         n = len(thumbs)
@@ -410,7 +410,7 @@ class MainWindow(QMainWindow):
         else:
             for i in range(7):
                 if i < n:
-                    logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
+                    # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
                     try:
 
                         self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
@@ -1445,11 +1445,13 @@ class MainWindow(QMainWindow):
                 if type(ng_layer) != bool:
                     try:
                         if 0 <= ng_layer < len(cfg.data):
-                            logger.critical(f'Setting Layer: {ng_layer}')
+                            logger.critical(f'Setting Z-index: {ng_layer}')
                             cfg.data.zpos = ng_layer
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
+
+            logger.critical('Updating the UI...')
 
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.snrViewer.set_layer(cfg.data.zpos)
@@ -1592,7 +1594,7 @@ class MainWindow(QMainWindow):
             # self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
             self._btn_alignOne.setText('Re-Align #%d' %cfg.data.zpos)
 
-        logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
+        # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
 
 
 
@@ -1817,6 +1819,9 @@ class MainWindow(QMainWindow):
 
             for viewer in cfg.project_tab.get_viewers():
                 viewer.set_layer(cfg.data.zpos)
+
+            if getData('state,manual_mode'):
+                cfg.project_tab.initNeuroglancer()
 
             # self.dataUpdateWidgets()
 
@@ -2227,11 +2232,11 @@ class MainWindow(QMainWindow):
         self.shutdownInstructions()
 
     def exitResponse(self, response):
-        logger.critical(f'User Response: {response}')
+        logger.info(f'User Response: {response}')
 
     def exit_app(self):
 
-        logger.critical('sender : ' + str(self.sender()))
+        logger.info('sender : ' + str(self.sender()))
         if self._exiting:
             self._exiting = 0
             if self.exit_dlg.isVisible():
@@ -2712,13 +2717,13 @@ class MainWindow(QMainWindow):
                 setData('state,manual_mode', True)
                 # cfg.project_tab.cpanel.hide()
                 # self._btn_manualAlign.setText('← Exit Manual Mode')
-                self._btn_manualAlign.setText(' Exit Manual Mode')
+                self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
+                self.alignMatchPointAction.setText(f"Exit Manual Mode {hotkey('M')} ")
                 self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
                 self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#161c20'))
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
-                self.alignMatchPointAction.setText('Exit Manual Mode')
                 self._changeScaleCombo.setEnabled(False)
 
                 cfg.project_tab.onEnterManualMode()
@@ -2762,10 +2767,10 @@ class MainWindow(QMainWindow):
 
             setData('state,manual_mode', False)
             self.updateEnabledButtons()
-            self._btn_manualAlign.setText('Manual Align ')
+            self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
             self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
             self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-            self.alignMatchPointAction.setText('Align Manually')
+            self.alignMatchPointAction.setText(f"Manual Align {hotkey('M')} ")
             self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
             self.updateCorrSignalsDrawer() #Caution - Likely Redundant!
@@ -3316,6 +3321,7 @@ class MainWindow(QMainWindow):
             # self.dw_corrspots_layout.hide()
             self.cbSignals.setChecked(False)
             self.cbFlicker.setChecked(False)
+            self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
             items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
@@ -3556,7 +3562,7 @@ class MainWindow(QMainWindow):
     def initMenu(self):
         '''Initialize Menu'''
         logger.info('')
-        #
+
         # self.scManualAlign = QShortcut(QKeySequence('Ctrl+M'), self)
         # self.scManualAlign.activated.connect(self.enterExitManAlignMode)
 
@@ -3800,10 +3806,9 @@ class MainWindow(QMainWindow):
         self.alignOneAction = QAction('Align + Generate One', self)
         self.alignOneAction.triggered.connect(self.alignGenerateOne)
         alignMenu.addAction(self.alignOneAction)
-
-        self.alignMatchPointAction = QAction('Align Manually', self)
+        self.alignMatchPointAction = QAction(f"Manual Align {hotkey('M')}", self)
         self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
-        # self.alignMatchPointAction.setShortcut('Ctrl+M')
+        self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
         # self.addAction(self.alignMatchPointAction)
 
@@ -4300,7 +4305,7 @@ class MainWindow(QMainWindow):
         # normal_button_size = QSize(68, 28)
         normal_button_size = QSize(76, 30)
         # long_button_size = QSize(138, 13)
-        long_button_size = QSize(120, 16)
+        long_button_size = QSize(140, 16)
         left     = Qt.AlignmentFlag.AlignLeft
         right    = Qt.AlignmentFlag.AlignRight
 
@@ -4616,7 +4621,7 @@ class MainWindow(QMainWindow):
 
         # tip = ''
         # self._btn_manualAlign = QPushButton('Manual Align Mode →')
-        self._btn_manualAlign = QPushButton('Manual Align ')
+        self._btn_manualAlign = QPushButton(f"Manual Align {hotkey('M')} ")
         # self._btn_manualAlign.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_manualAlign.setIconSize(QSize(12,12))
         self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)

@@ -136,7 +136,7 @@ class CorrSignalThumbnail(QLabel):
         self.setScaledContents(True)
         self.setMinimumSize(QSize(QSize(32,32)))
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path
@@ -169,7 +169,7 @@ class CorrSignalThumbnail(QLabel):
                 font = QFont()
                 # font.setFamily('Courier')
                 font.setBold(True)
-                size = int(11 * (max(pm.height(),1) / 60))
+                size = min(int(11 * (max(pm.height(),1) / 50)), 18)
                 font.setPointSize(size)
                 # logger.critical(f'font size: {size}')
                 qp.setFont(font)
@@ -211,5 +211,7 @@ class CorrSignalThumbnail(QLabel):
 
 
     def sizeHint(self):
+        # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        # return QSize(pm.width(), pm.height())
         return QSize(100,100)
 

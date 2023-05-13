@@ -122,14 +122,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def on_state_changed(self):
         if self._blockZoom:
             return
-
         caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        if calname == '<lambda>':
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 2)
+        # calname = str(calframe[1][3])
+        if caller == '<lambda>':
             return
-        # logger.info('caller: %s, calname: %s' % (caller, calname))
 
         if not self.cs_scale:
             if self.state.cross_section_scale:
@@ -142,6 +140,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             # get_loc = floor(self.state.position[0])
             if isinstance(self.state.position, np.ndarray):
                 request_layer = int(self.state.position[0])
+
+                logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
                 if request_layer == self._layer:
                     logger.debug('[%s] State Changed, But Layer Is The Same - '
                                  'Suppressing The stateChanged Callback Signal' %self.type)
@@ -638,9 +638,10 @@ class EMViewerSnr(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        # self.shared_state.add_changed_callback(self.on_state_changed)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.shared_state.add_changed_callback(self.on_state_changed)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'EMViewerSnr'
         self.initViewer()
 

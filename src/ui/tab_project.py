@@ -180,7 +180,7 @@ class ProjectTab(QWidget):
         # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
         cfg.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
         # cfg.snrViewer.initViewerSbs(orientation='vertical')
-        self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
+        # self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
         # cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
         cfg.snrViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
         cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)

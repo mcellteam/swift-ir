@@ -33,6 +33,7 @@ class ProjectTable(QWidget):
         logger.info(f'caller: {caller}')
         # self.INITIAL_ROW_HEIGHT = 128
         self.INITIAL_ROW_HEIGHT = 80
+        self.image_col_width = self.INITIAL_ROW_HEIGHT
         self.data = None
 
         self.table = QTableWidget()
@@ -117,6 +118,8 @@ class ProjectTable(QWidget):
 
 
     def setScaleData(self):
+        self.table.hide()
+
         t = time.time()
         caller = inspect.stack()[1].function
         logger.info(f'setScaleData [{caller}] >>>>')
@@ -220,7 +223,8 @@ class ProjectTable(QWidget):
             self.tableFinishedLoading.emit()
             cfg.main_window.hidePbar()
             self.setColumnWidths()
-            self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
+            # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
+            self.updateTableDimensions(self.row_height_slider.value())
             self.set_column_headers()
             if cur_selection != -1:
                 self.table.selectRow(cur_selection)
@@ -230,6 +234,8 @@ class ProjectTable(QWidget):
             self.table.update()
             dt = time.time() - t
             logger.info('Table Load Time %s' %str(dt))
+
+            self.table.show()
 
         logger.info(f'<<<< setScaleData [{caller}]')
 
@@ -262,6 +268,9 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         caller = inspect.stack()[1].function
+        logger.critical(f'[{caller}] h = {h}')
+
+        self.image_col_width = h
         # logger.critical(f'\n\ncaller: {caller}\n')
         # if caller == 'main':
         # logger.info(f'Updating table dimensions...')
@@ -269,6 +278,9 @@ class ProjectTable(QWidget):
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
+
+
+
 
         if cfg.data.is_aligned_and_generated():
             self.table.setColumnWidth(3, h)
@@ -281,6 +293,9 @@ class ProjectTable(QWidget):
         else:
             self.table.setColumnWidth(2, h)
             self.table.setColumnWidth(3, h)
+
+        size = max(min(int(11 * (max(h, 1) / 50)), 14), 8)
+        self.table.setStyleSheet(f'font-size: {size}px;')
 
 
     def get_data(self):
@@ -328,7 +343,7 @@ class ProjectTable(QWidget):
         logger.critical('')
         self.loadScreenLabel.hide()
         self.table.show()
-        self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
+        # self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
 
 
     def initUI(self):
