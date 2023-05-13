@@ -56,6 +56,7 @@ class ProjectTab(QWidget):
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
+        self.webengine.loadFinished.connect(lambda: logger.info('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         self.webengine.setStyleSheet('background-color: #222222;')
 
