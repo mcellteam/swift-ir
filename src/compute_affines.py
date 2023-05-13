@@ -38,14 +38,12 @@ logger = logging.getLogger(__name__)
 def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     scale_val = get_scale_val(scale)
-    logger.info(f'use_gui = {use_gui}')
+    # logger.info(f'use_gui = {use_gui}')
 
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
-        logger.info(f'\n\n----------------------------------------------------\n'
-                    f'Computing Affines...\n'
-                    f'----------------------------------------------------\n')
+        logger.info(f'\n\n################ Computing Affines ################\n')
 
         if path:
             with open(path, 'r') as f:
@@ -116,6 +114,8 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
 
         cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
+        logger.info(f'\n\n################ Computing Alignment ################\n')
+
         if use_gui:
             task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
         else:
@@ -147,7 +147,7 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
                 if use_gui:
                     if cfg.PRINT_EXAMPLE_ARGS:
                         if zpos in range(start, start + 3):
-                            logger.info("Section #%d (example):\n%s" % (zpos, "\n  ".join(task_args)))
+                            logger.info("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
 
         # task_queue.work_q.join()
         # cfg.mw.hud.post('Computing Alignment Using SWIM...')
@@ -230,7 +230,20 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
         save2file(dm=dm,name=dm.dest())
         write_run_to_file(dm)
 
-        t1 = time.time()
+        if cfg.ignore_pbar:
+            cfg.nCompleted +=1
+            cfg.mw.updatePbar()
+            cfg.mw.setPbarText('Scaling Correlation Signal Thumbnails...')
+        try:
+            # if cfg.USE_EXTRA_THREADING and use_gui:
+            #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
+            #     cfg.mw.threadpool.start(cfg.mw.worker)
+            # else:
+            cfg.thumb.reduce_signals(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
+        except:
+            print_exception()
+            cfg.mw.warn('There Was a Problem Generating Corr Spot Thumbnails')
+        # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
 
         # logger.info('Collating Correlation Signal Images...')
         # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')
@@ -261,15 +274,6 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
         #     print_exception()
         #     logger.warning('Task Queue encountered a problem')
 
-        t9 = time.time()
-        dt = t9 - t0
-        logger.info(f'onAlignmentEnd, dt = {dt}')
-
-        logger.info('<<<< Compute Affines End <<<<')
-
-        logger.critical(f'use_gui = {use_gui}')
-
-
         if not swim_only:
             if use_gui:
                 if not cfg.mw._toggleAutogenerate.isChecked():
@@ -281,12 +285,12 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
                     cfg.mw.setPbarText('Generating Alignment...')
 
             try:
-                if cfg.USE_EXTRA_THREADING and use_gui:
-                    cfg.mw.worker = BackgroundWorker(fn=generate_aligned(
-                        dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
-                    cfg.mw.threadpool.start(cfg.mw.worker)
-                else:
-                    generate_aligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
+                # if cfg.USE_EXTRA_THREADING and use_gui:
+                #     cfg.mw.worker = BackgroundWorker(fn=generate_aligned(
+                #         dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
+                #     cfg.mw.threadpool.start(cfg.mw.worker)
+                # else:
+                generate_aligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
 
             except:
                 print_exception()
@@ -300,10 +304,11 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
 
             thumbnailer = Thumbnailer()
             try:
-                if cfg.USE_EXTRA_THREADING and use_gui:
-                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
-                    cfg.mw.threadpool.start(cfg.mw.worker)
-                else: thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
+                # if cfg.USE_EXTRA_THREADING and use_gui:
+                #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui))
+                #     cfg.mw.threadpool.start(cfg.mw.worker)
+                # else:
+                thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
             except:
                 print_exception()
             finally:

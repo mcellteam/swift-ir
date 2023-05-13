@@ -103,8 +103,8 @@ class TaskQueue(QObject):
         if (self.MPQLogger.hasHandlers()):
             logger.info('Clearing MPQLogger file handlers...')
             self.MPQLogger.handlers.clear()
-        # self.MPQLogger.propagate = False # dont print to console
-        self.MPQLogger.propagate = True # dont print to console
+        self.MPQLogger.propagate = False # dont print to console
+        # self.MPQLogger.propagate = True # dont print to console
         fh = logging.FileHandler(os.path.join(self.dest, 'logs', 'multiprocessing.log'))
         fh.setLevel(logging.DEBUG)
         self.MPQLogger.addHandler(fh)
@@ -136,7 +136,7 @@ class TaskQueue(QObject):
         self.retries = retries
 
         # cfg.main_window.shutdownNeuroglancer()
-        logger.critical(f'use_gui = {self.use_gui} ({self.taskPrefix})')
+        # logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
         if (not cfg.ignore_pbar) and (self.use_gui):
             cfg.main_window.showZeroedPbar() #0208+
             cfg.nCompleted += 1

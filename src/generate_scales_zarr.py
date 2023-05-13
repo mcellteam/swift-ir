@@ -48,6 +48,7 @@ def generate_zarr_scales(data):
         cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
 
         dest = cfg.data['data']['destination_path']
+        logger.info(f'\n\n################ Converting Downscales to Zarr ################\n')
         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
         task_queue.taskPrefix = 'Downscales Converted to Zarr for '
 

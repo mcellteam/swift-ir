@@ -45,6 +45,7 @@ class OpenProject(QWidget):
         self.user_projects = UserProjects(parent=self)
         self.initUI()
         self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
+        # self.row_height_slider.setValue(getOpt('state,open_project_tab,row_height'))
         # p = self.palette()
         # p.setColor(self.backgroundRole(), QColor('#ede9e8'))
 
@@ -60,6 +61,8 @@ class OpenProject(QWidget):
         self.row_height_slider.setMinimum(16)
         self.row_height_slider.setMaximum(180)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
+        self.row_height_slider.valueChanged.connect(
+            lambda: setOpt('state,open_project_tab,row_height', self.row_height_slider.value()))
         # self.row_height_slider.setValue(self.initial_row_height)
         # self.updateRowHeight(self.initial_row_height)
 
@@ -277,14 +280,14 @@ class OpenProject(QWidget):
     def validate_path(self):
         # logger.info(f'caller:{inspect.stack()[1].function}')
         path = self.selectionReadout.text()
-        logger.info(f'Validating Path : {path}')
+        logger.info(f'Validating ath : {path}')
         if validate_project_selection(path) or validate_zarr_selection(path) or path == '':
             if validate_zarr_selection(path):
                 self._buttonOpen.setText('Open Zarr')
-                logger.info(f'The requested Zarr IS valid')
+                logger.info(f'The requested Zarr is valid')
             else:
                 self._buttonOpen.setText('Open Project')
-                logger.info(f'The requested project IS valid')
+                logger.info(f'The requested project is valid')
             self.validity_label.hide()
             # self._buttonOpen.setEnabled(True)
             self._buttonOpen.show()
@@ -653,7 +656,7 @@ class OpenProject(QWidget):
             cfg.main_window.hud.done()
 
         cfg.main_window.tell('Wrapping up...')
-        configure_project_paths()
+        # configure_project_paths()
         if cfg.main_window.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
             try:
                 cfg.main_window.globTabs.currentWidget().user_projects.set_data()
@@ -756,6 +759,7 @@ class UserProjects(QWidget):
         self.setLayout(self.layout)
         self.set_data()
         self.updateRowHeight(self.ROW_HEIGHT)
+        # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
 
 
     def updateRowHeight(self, h):
@@ -910,16 +914,15 @@ def validate_project_selection(path) -> bool:
     if extension != '.swiftir':
         return False
     else:
+        logger.info('Directory contains .zarray -> selection is a valid project')
         return True
 
 def validate_zarr_selection(path) -> bool:
     # logger.info('Validating selection %s...' % cfg.selected_file)
-    logger.info('Validating selection %s...' % path)
     # called by setSelectionPathText
     if os.path.isdir(path):
-        logger.info('Path IS a directory')
         if '.zarray' in os.listdir(path):
-            logger.info('Directory DOES contain .zarray -> Returning True...')
+            logger.info('Directory contains .zarray -> selection is a valid Zarr')
             return True
     return False
 

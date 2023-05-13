@@ -310,11 +310,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # self._blockZoom = True
 
         if self.cs_scale:
-            logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
+            # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
-            logger.info(f'w={w}, h={h}')
+            # logger.info(f'w={w}, h={h}')
             cs_scale = self.get_zoom(w=w, h=h)
             # self.cs_scale = cs_scale
             with self.txn() as s:
@@ -369,9 +369,7 @@ class EMViewer(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.info(f'\nInitializing [{self.type}] [caller: {caller}]...\n')
-
-
+        logger.info(f'>>>> Initializing [{self.type}] [{caller}] >>>>')
         caller = inspect.stack()[1].function
         if getData('state,mode') in ('stack-4panel', 'stack-xy'):
             # cfg.data['ui']['ng_layout'] = '4panel'
@@ -379,6 +377,7 @@ class EMViewer(AbstractEMViewer):
         elif cfg.data['state']['mode'] == 'comparison':
             # cfg.data['ui']['ng_layout'] = 'xy'
             self.initViewerSbs()
+        logger.info(f'<<<< Initializing [{self.type}] [{caller}] <<<<')
 
     def initViewerSbs(self):
         # caller = inspect.stack()[1].function
@@ -566,7 +565,7 @@ class EMViewerStage(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.info(f'\n\nInitializing [{self.type}] [caller: {caller}]...\n')
+        logger.info(f'\n\nInitializing {self.type} [{caller}]...\n')
 
         self.coordinate_space = self.getCoordinateSpace()
 
@@ -648,7 +647,7 @@ class EMViewerSnr(AbstractEMViewer):
 
     def initViewer(self):
         caller = inspect.stack()[1].function
-        logger.info(f'Initializing [{self.type}] [caller: {caller}]...')
+        logger.info(f'Initializing {self.type} [{caller}]...')
 
         self.coordinate_space = self.getCoordinateSpace()
         self.get_tensors()

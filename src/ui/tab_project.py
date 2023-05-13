@@ -119,7 +119,7 @@ class ProjectTab(QWidget):
         cfg.data = self.datamodel
 
     def _onTabChange(self):
-        logger.info('')
+        logger.info('>>>> _onTabChange >>>>')
         index = self._tabs.currentIndex()
         QApplication.restoreOverrideCursor()
         index = self._tabs.currentIndex()
@@ -144,6 +144,7 @@ class ProjectTab(QWidget):
             self.snr_plot.data = cfg.data
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
+        logger.info('<<<< _onTabChange <<<<')
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
@@ -198,9 +199,7 @@ class ProjectTab(QWidget):
 
 
     def initNeuroglancer(self):
-        logger.info(f'\n\n----------------------------------------------------\n'
-                    f'Initializing Neuroglancer (caller: {inspect.stack()[1].function})...\n'
-                    f'----------------------------------------------------\n')
+        logger.info(f'\n\n  Initializing Neuroglancer [{inspect.stack()[1].function}]...\n')
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
@@ -2370,7 +2369,6 @@ class ProjectTab(QWidget):
 
     def update_MA_list_widgets(self):
         self.update_MA_widgets_calls += 1
-        logger.critical(f'Call #{self.update_MA_widgets_calls}')
         self.setUpdatesEnabled(False)
         self.update_MA_list_base()
         self.update_MA_list_ref()
