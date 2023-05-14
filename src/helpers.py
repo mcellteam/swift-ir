@@ -487,7 +487,7 @@ def make_affine_widget_HTML(afm, cafm, fs1=7, fs2=8):
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
     text = f"<table table-layout='fixed' style='border-bottom: 1pt solid black;' cellspacing='2' cellpadding='2'>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='font-size: {fs1}px;'>AFM</td>"\
+           f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Affine'.rjust(9)}</td>"\
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
@@ -498,7 +498,7 @@ def make_affine_widget_HTML(afm, cafm, fs1=7, fs2=8):
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
            f"  </tr>"\
            f"  <tr>"\
-           f"    <td rowspan=2 style='font-size: {fs1}px;'>CAFM</td>"\
+           f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Cumulative Affine'.rjust(9)}</td>"\
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
            f"    <td style='width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\

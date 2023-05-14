@@ -492,7 +492,6 @@ class DataModel:
         # logger.info(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
         return os.path.basename(self._data['data']['scales'][s]['stack'][l]['filename'])
 
-
     '''NEW METHODS USING NEW DATA SCHEMA 2023'''
 
     def filename(self, s=None, l=None):
