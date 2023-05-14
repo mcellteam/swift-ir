@@ -1325,7 +1325,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.initNeuroglancer()
                 else:
                     cfg.emViewer.set_layer(requested)
-                # self.dataUpdateWidgets()
+                self.dataUpdateWidgets() #Refactor... this leads to being called twice in some circumstances
             else:
                 self.warn(f'Invalid Index Request: {requested}')
 
@@ -1342,7 +1342,7 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.initNeuroglancer()
                 else:
                     cfg.emViewer.set_layer(requested)
-                # self.dataUpdateWidgets()
+                self.dataUpdateWidgets() #Refactor... this leads to being called twice in some circumstances
             else:
                 self.warn(f'Invalid Index Request: {requested}')
 
