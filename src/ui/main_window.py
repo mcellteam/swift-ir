@@ -25,6 +25,7 @@ import psutil
 import resource
 import datetime
 import multiprocessing
+from collections import OrderedDict
 import numpy as np
 # from guppy import hpy; h=hpy()
 import neuroglancer as ng
@@ -57,7 +58,7 @@ from src.generate_scales_zarr import generate_zarr_scales
 from src.helpers import run_checks, setOpt, getOpt, getData, setData,  print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
-    update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey
+    update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -743,19 +744,72 @@ class MainWindow(QMainWindow):
         if cfg.data:
             s = cfg.data.scale
             try:
-                a = """<span style='color: #ffe135;'>"""
-                b = """</span>"""
-                nl = '<br>'
-                br = '&nbsp;'
-                cfg.project_tab.detailsRuntime.setText(
-                    f"Gen. Scales{br}{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling']).rjust(9) +
-                    f"Convert Zarr{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(9) +
-                    f"Source Thumbs{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(9) +
-                    f"Compute Affines{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(9) +
-                    f"Gen. Alignment{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(9) +
-                    f"Aligned Thumbs{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-                    f"Corr Spot Thumbs{br}:{a}" + (f"%.2fs{b}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
-                )
+                # a = """<span style='color: #ffe135;'>"""
+                # b = """</span>"""
+                # nl = '<br>'
+                # br = '&nbsp;'
+                # cfg.project_tab.detailsRuntime.setText(
+                #     f"Gen. Scales{br}{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling']).rjust(9) +
+                #     f"Convert Zarr{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(9) +
+                #     f"Source Thumbs{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(9) +
+                #     f"Compute Affines{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(9) +
+                #     f"Gen. Alignment{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(9) +
+                #     f"Aligned Thumbs{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(9) +
+                #     f"Corr Spot Thumbs{br}:{a}" + (f"%.2fs{b}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
+                # )
+
+                t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
+                t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
+                t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
+                t3 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
+                t4 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
+                t5 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
+                t6 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
+                t7 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
+
+                t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr']/60))
+                t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs']/60))
+                t3m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align']/60))
+                t4m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']/60))
+                t5m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate']/60))
+                t6m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']/60))
+                t7m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']/60))
+
+
+                fl_l = QFormLayout()
+                fl_l.setContentsMargins(0, 0, 0, 0)
+                fl_l.setVerticalSpacing(2)
+                fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t1m))
+                fl_l.addRow('Convert All Scales to Zarr', QLabel(t1 + ' / ' + t1m))
+                fl_l.addRow('Generate Source Image Thumbnails', QLabel(t2 + ' / ' + t2m))
+                fl_l.addRow('Compute Affines', QLabel(t3 + ' / ' + t3m))
+                fl_l.addRow('Generate Aligned TIFFs', QLabel(t4 + ' / ' + t4m))
+                fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel(t5 + ' / ' + t5m))
+                fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel(t6 + ' / ' + t6m))
+                fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel(t7 + ' / ' + t7m))
+
+                # self.runtimeWidget.setText(
+                #     f"Gen. Scales{br}{br}{br}{br}{br}{br}:{br}{a}{t0}{br}{br}"
+                #     f"Convert Zarr{br}{br}{br}{br}{br}:{br}{a}{t1}{nl}"
+                #     f"Source Thumbs{br}{br}{br}{br}:{br}{a}{t2}{br}{br}"
+                #     f"Compute Affines{br}{br}:{br}{a}{t3}{nl}"
+                #     f"Gen. Alignment{br}{br}{br}:{br}{a}{t4}{br}{br}"
+                #     f"Aligned Thumbs{br}{br}{br}:{br}{a}{t5}{nl}"
+                #     f"Corr Spot Thumbs{br}:{br}{a}{t6}"
+                # )
+                w = QWidget()
+                w.setContentsMargins(0, 0, 0, 0)
+                w.setStyleSheet("""
+                QLabel{
+                    color: #161c20;
+                    font-size: 9px;
+                }
+                """)
+                w.setLayout(fl_l)
+
+                self.sa_tab3.setWidget(w)
+
+
             except:
                 logger.warning('detailsTiming cant update')
 
@@ -1345,13 +1399,13 @@ class MainWindow(QMainWindow):
             self.results1 = QLabel()  # # of images
             self.results2 = QLabel()  # SNR average
 
-            self.fl_main_results = QFormLayout()
-            self.fl_main_results.setContentsMargins(2,2,2,2)
-            self.fl_main_results.setVerticalSpacing(2)
-            self.fl_main_results.addRow('Source Dimensions', self.results0)
-            self.fl_main_results.addRow('# Images', self.results1)
-            self.fl_main_results.addRow('SNR (average)', self.results2)
-            # self.fl_main_results.addRow('Lowest 10 SNR', self.results3)
+            # self.fl_main_results = QFormLayout()
+            # self.fl_main_results.setContentsMargins(2,2,2,2)
+            # self.fl_main_results.setVerticalSpacing(2)
+            # self.fl_main_results.addRow('Source Dimensions', self.results0)
+            # self.fl_main_results.addRow('# Images', self.results1)
+            # self.fl_main_results.addRow('SNR (average)', self.results2)
+            # # self.fl_main_results.addRow('Lowest 10 SNR', self.results3)
 
             siz = cfg.data.image_size()
             try:    self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
@@ -1361,21 +1415,13 @@ class MainWindow(QMainWindow):
             try:    self.results2.setText("%.2f" % cfg.data.snr_average())
             except: self.results2.setText("N/A")
 
-            w = QWidget()
-            w.setLayout(self.fl_main_results)
-
-            self.sa_alignmentResults.setWidget(w)
-
-
-            self.lowest5_fl = QFormLayout()
-            self.lowest5_fl.setContentsMargins(0, 0, 0, 0)
-            self.lowest5_fl.setVerticalSpacing(1)
+            # w = QWidget()
+            # w.setLayout(self.fl_main_results)
+            # self.sa_tab1.setWidget(w)
 
             if cfg.data.is_aligned():
                 lowest_5_i = [x[0] for x in list(cfg.data.snr_lowest(10))]
                 lowest_5 = list(cfg.data.snr_lowest(10))
-
-                self.lowest5_btns = []
 
                 funcs = [lambda: self.jump_to_manual(lowest_5_i[0]),
                          lambda: self.jump_to_manual(lowest_5_i[1]),
@@ -1385,9 +1431,10 @@ class MainWindow(QMainWindow):
                          lambda: self.jump_to_manual(lowest_5_i[5]),
                          lambda: self.jump_to_manual(lowest_5_i[6]),
                          lambda: self.jump_to_manual(lowest_5_i[7]),
-                         lambda: self.jump_to_manual(lowest_5_i[8]),
-                         lambda: self.jump_to_manual(lowest_5_i[9]),
                          ]
+
+                self.lowestX_btns = []
+                self.lowestX_txt = []
                 
                 for i in range(len(funcs)):
 
@@ -1397,34 +1444,63 @@ class MainWindow(QMainWindow):
                         s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_5[i][1]).ljust(15)
                         combined = s1 + ' ' + s2
                         # btn = QPushButton('Jump')
-                        # self.lowest5_btns.append(QPushButton('Align Manually →'))
-                        self.lowest5_btns.append(QPushButton('Manual Align'))
+                        # self.lowestX_btns.append(QPushButton('Align Manually →'))
+                        self.lowestX_btns.append(QPushButton('Manual Align'))
                         f = QFont()
                         f.setPointSizeF(7)
-                        self.lowest5_btns[i].setFont(f)
-                        self.lowest5_btns[i].setLayoutDirection(Qt.RightToLeft)
-                        self.lowest5_btns[i].setFixedSize(QSize(80,14))
-                        self.lowest5_btns[i].setStyleSheet("font-size: 9px;")
-                        self.lowest5_btns[i].setIconSize(QSize(10,10))
-                        self.lowest5_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-                        self.lowest5_btns[i].clicked.connect(funcs[i])
-                        # btn.clicked.connect(lambda: self.jump_to_layer(lowest_5_i))
-                        # self.lowest5_fl.addRow(lowest_5[i].rjust(14), btn)
-                        self.lowest5_fl.addRow(combined, self.lowest5_btns[i])
+                        self.lowestX_btns[i].setFont(f)
+                        self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
+                        self.lowestX_btns[i].setFixedSize(QSize(80, 14))
+                        self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
+                        self.lowestX_btns[i].setIconSize(QSize(10, 10))
+                        self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                        self.lowestX_btns[i].clicked.connect(funcs[i])
+                        self.lowestX_txt.append(combined)
 
                     # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
                     except:
-                        self.lowest5_fl.addWidget(QLabel('N/A'))
                         print_exception()
                     # self.results3 = QLabel('...Worst 5 SNR')
             else:
-                self.lowest5_fl.addWidget(QLabel('N/A'))
+                label = QLabel('Not Aligned.')
+                label.setAlignment(Qt.AlignTop)
+                self.sa_tab2.setWidget(label)
+                return
 
-            self.lowest5widget = QWidget()
-            self.lowest5widget.setLayout(self.lowest5_fl)
-            self.sa_tab2.setWidget(self.lowest5widget)
+            self.lowX_left_fl = QFormLayout()
+            self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
+            self.lowX_left_fl.setVerticalSpacing(1)
+            self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
+            self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
+            self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
+            self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
+            # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+            self.lowX_left = QWidget()
+            self.lowX_left.setContentsMargins(0, 0, 0, 0)
+            self.lowX_left.setLayout(self.lowX_left_fl)
 
+            self.lowX_right_fl = QFormLayout()
+            self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
+            self.lowX_right_fl.setVerticalSpacing(1)
+            self.lowX_right_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+            self.lowX_right_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+            self.lowX_right_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+            self.lowX_right_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
+            # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
+            self.lowX_right = QWidget()
+            self.lowX_right.setContentsMargins(0, 0, 0, 0)
+            self.lowX_right.setLayout(self.lowX_right_fl)
 
+            hbl = QHBoxLayout()
+            hbl.setContentsMargins(2,2,2,2)
+            hbl.addWidget(self.lowX_left)
+            hbl.addWidget(self.lowX_right)
+            w = QWidget()
+            w.setLayout(hbl)
+
+            logger.critical('Setting sa_tab2 Layout...')
+            # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
+            self.sa_tab2.setWidget(w)
 
 
                 # @Slot()
@@ -1522,39 +1598,36 @@ class MainWindow(QMainWindow):
             a = """<span style='color: #ffe135;'>"""
             b = """</span>"""
             nl = '<br>'
+            
 
-            if cfg.project_tab.detailsSection.isVisible():
-                txt = f"""
-                Filename{br}:{br}{a}{cfg.data.filename_basename()}{b}{nl}
-                Reference:{br}{a}{cfg.data.reference_basename()}{b}{nl}
-                Modified{br}:{br}{a}{cfg.data.modified}{b}{nl}"""
-                method = cfg.data.method()
-                if method == 'grid-default':       txt += f"Method{br*3}:{br}{a}Default{br}Grid{b}"
-                elif method == 'grid-custom':       txt += f"Method{br*3}:{br}{a}Custom{br}Grid{b}"
-                elif method == 'manual-hint':   txt += f"Method{br*3}:{br}{a}Manual,{br}Hint{b}"
-                elif method == 'manual-strict': txt += f"Method{br*3}:{br}{a}Manual,{br}Strict{b}"
-                cfg.project_tab.detailsSection.setText(txt)
+            if self.cpanelTabWidget.currentIndex() == 0:
+                self.updateCpanelDetails_i1()
 
-            if cfg.project_tab.detailsAFM.isVisible():
-                afm, cafm = cfg.data.afm(), cfg.data.cafm()
-                afm_txt, cafm_txt = [], []
-                for x in range(2):
-                    for y in range(3):
-                        if y == 0:
-                            afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-                            cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
-                        elif y == 1:
-                            afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-                            cafm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-                        else:
-                            afm_txt.append(('%.2f' % afm[x][y]).ljust(11))
-                            cafm_txt.append(('%.2f' % cafm[x][y]).ljust(11))
-                        if (x == 0) and (y == 2):
-                            afm_txt.append(f'{nl}')
-                            cafm_txt.append(f'{nl}')
-                cfg.project_tab.detailsAFM.setText(
-                    f"{a}Affine:{b}{nl}" + "".join(afm_txt) +
-                    f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
+
+            if self.cpanelTabWidget.currentIndex() == 3:
+                self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+                    
+
+            # if cfg.project_tab.detailsAFM.isVisible():
+            #     afm, cafm = cfg.data.afm(), cfg.data.cafm()
+            #     afm_txt, cafm_txt = [], []
+            #     for x in range(2):
+            #         for y in range(3):
+            #             if y == 0:
+            #                 afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
+            #                 cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
+            #             elif y == 1:
+            #                 afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
+            #                 cafm_txt.append(('%.2f' % afm[x][y]).ljust(8))
+            #             else:
+            #                 afm_txt.append(('%.2f' % afm[x][y]).ljust(11))
+            #                 cafm_txt.append(('%.2f' % cafm[x][y]).ljust(11))
+            #             if (x == 0) and (y == 2):
+            #                 afm_txt.append(f'{nl}')
+            #                 cafm_txt.append(f'{nl}')
+            #     cfg.project_tab.detailsAFM.setText(
+            #         f"{a}Affine:{b}{nl}" + "".join(afm_txt) +
+            #         f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
 
             if cfg.project_tab.detailsSNR.isVisible():
                 if (cfg.data.zpos == 0) or cfg.data.skipped():
@@ -2723,12 +2796,13 @@ class MainWindow(QMainWindow):
                 self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
                 self.alignMatchPointAction.setText(f"Exit Manual Mode {hotkey('M')} ")
                 self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
-                self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#161c20'))
+                self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
+                self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+                cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                 self._changeScaleCombo.setEnabled(False)
-
                 cfg.project_tab.onEnterManualMode()
                 self.hud.done()
 
@@ -2748,6 +2822,9 @@ class MainWindow(QMainWindow):
             # except:
             #     print_exception()
 
+            self._btn_manualAlign.setStyleSheet("""""")
+            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+            cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
 
@@ -2772,7 +2849,6 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
             self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
-            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
             self.alignMatchPointAction.setText(f"Manual Align {hotkey('M')} ")
             self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
@@ -3007,9 +3083,11 @@ class MainWindow(QMainWindow):
         # self.minimizeButton.setStyleSheet(button_gradient_style)
 
         self.fullScreenButton = QPushButton('Full Screen')
-        self.fullScreenButton = QPushButton('Full Screen')
+        f = QFont()
+        f.setBold(True)
+        self.fullScreenButton.setFont(f)
         self.fullScreenButton.setFixedHeight(16)
-        self.fullScreenButton.setIconSize(QSize(14,14))
+        self.fullScreenButton.setIconSize(QSize(16,16))
         # self.fullScreenButton.setIcon(qta.icon('mdi.fullscreen', color='#161c20'))
         self.fullScreenButton.setIcon(qta.icon('mdi.fullscreen', color='#161c20'))
         def fn():
@@ -3023,10 +3101,12 @@ class MainWindow(QMainWindow):
         # self.fullScreenButton.setStyleSheet(button_gradient_style)
 
         self.refreshButton = QPushButton(' Refresh')
+        self.refreshButton.setFont(f)
         self.refreshButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.refreshButton.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
-        self.refreshButton.setFixedSize(QSize(66,16))
-        self.refreshButton.setIconSize(QSize(14,14))
+        # self.refreshButton.setFixedSize(QSize(78,16))
+        self.refreshButton.setFixedHeight(16)
+        self.refreshButton.setIconSize(QSize(16,16))
         # self.refreshButton.setIcon(qta.icon('fa.refresh', color='#161c20'))
         self.refreshButton.setIcon(qta.icon('mdi.refresh', color='#161c20'))
         self.refreshButton.clicked.connect(self.refreshTab)
@@ -3315,6 +3395,25 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.setEnabled(True) #needed for disable on MA
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
+
+
+        self.secName.setText('N/A')
+        self.secReference.setText('N/A')
+        self.secExcluded.setText('N/A')
+        self.secHasBB.setText('N/A')
+        self.secUseBB.setText('N/A')
+
+        # label = QLabel('N/A')
+        # label.setAlignment(Qt.AlignTop)
+        # self.sa_tab2.setWidget(label)
+        #
+        # label = QLabel('N/A')
+        # label.setAlignment(Qt.AlignTop)
+        # self.sa_tab3.setWidget(label)
+
+        self.secAffine.setText('N/A')
+
+
 
         if tabtype == 'OpenProject':
             configure_project_paths()
@@ -3754,37 +3853,26 @@ class MainWindow(QMainWindow):
         self.ngShowSnrAction.setText('SNR')
         viewMenu.addAction(self.ngShowSnrAction)
 
-        self.ngShowAffineAction = QAction(self)
-        def fn():
-            if self._isProjectTab():
-                cfg.project_tab.detailsAFM.setVisible(self.ngShowAffineAction.isChecked())
-                self.dataUpdateWidgets()
+        # self.ngShowAffineAction = QAction(self)
+        # def fn():
+        #     if self._isProjectTab():
+        #         cfg.project_tab.detailsAFM.setVisible(self.ngShowAffineAction.isChecked())
+        #         self.dataUpdateWidgets()
+        #
+        # self.ngShowAffineAction.triggered.connect(fn)
+        # self.ngShowAffineAction.setCheckable(True)
+        # self.ngShowAffineAction.setText('Affine')
+        # viewMenu.addAction(self.ngShowAffineAction)
 
-        self.ngShowAffineAction.triggered.connect(fn)
-        self.ngShowAffineAction.setCheckable(True)
-        self.ngShowAffineAction.setText('Affine')
-        viewMenu.addAction(self.ngShowAffineAction)
-
-        self.ngShowSectionDetailsAction = QAction(self)
-        def fn():
-            if self._isProjectTab():
-                cfg.project_tab.detailsSection.setVisible(self.ngShowSectionDetailsAction.isChecked())
-                self.dataUpdateWidgets()
-        self.ngShowSectionDetailsAction.triggered.connect(fn)
-        self.ngShowSectionDetailsAction.setCheckable(True)
-        self.ngShowSectionDetailsAction.setText('Section')
-        viewMenu.addAction(self.ngShowSectionDetailsAction)
-
-
-        self.ngShowRuntimesAction = QAction(self)
-        def fn():
-            if self._isProjectTab():
-                cfg.project_tab.detailsRuntime.setVisible(self.ngShowRuntimesAction.isChecked())
-                self.dataUpdateWidgets()
-        self.ngShowRuntimesAction.triggered.connect(fn)
-        self.ngShowRuntimesAction.setCheckable(True)
-        self.ngShowRuntimesAction.setText('Runtimes')
-        viewMenu.addAction(self.ngShowRuntimesAction)
+        # self.ngShowRuntimesAction = QAction(self)
+        # def fn():
+        #     if self._isProjectTab():
+        #         cfg.project_tab.detailsRuntime.setVisible(self.ngShowRuntimesAction.isChecked())
+        #         self.dataUpdateWidgets()
+        # self.ngShowRuntimesAction.triggered.connect(fn)
+        # self.ngShowRuntimesAction.setCheckable(True)
+        # self.ngShowRuntimesAction.setText('Runtimes')
+        # viewMenu.addAction(self.ngShowRuntimesAction)
 
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
@@ -4925,76 +5013,200 @@ class MainWindow(QMainWindow):
                 border-radius: 2px;
         }
         """
+        tab_width = 360
+        self.sa_tab1 = QScrollArea()
+        # self.sa_tab1.setStyleSheet('background-color: #f3f6fb;')
+        self.sa_tab1.setMinimumHeight(60)
+        self.sa_tab1.setFixedWidth(tab_width)
+        self.sa_tab1.setWidgetResizable(True)
+        self.sa_tab1.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        # self.resultsWidget = QWidget()
+        # self.resultsWidget.setStyleSheet("font-size: 10px;")
+        # self.resultsWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.resultsWidget.setLayout(self.fl_results)
+        # self.sa_tab1.setWidget(self.resultsWidget)
+        self.sa_tab1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.sa_alignmentResults = QScrollArea()
-        self.sa_alignmentResults.setMinimumHeight(60)
-        self.sa_alignmentResults.setFixedWidth(250)
-        self.sa_alignmentResults.setWidgetResizable(True)
-        self.sa_alignmentResults.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.sa_alignmentResults.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.resultsWidget = QWidget()
-        self.resultsWidget.setStyleSheet("font-size: 10px;")
-        self.resultsWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.resultsWidget.setLayout(self.fl_results)
-        self.sa_alignmentResults.setWidget(self.resultsWidget)
-        self.sa_alignmentResults.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.secDetails_w = QWidget()
+        self.secDetails_w.setFixedWidth(tab_width-10)
+        self.secDetails_w.setStyleSheet("""
+            color: #161c20;
+            font-size: 9px;
+            font-weight: 600;
+        """)
+        self.secDetails_w.setContentsMargins(0,0,0,0)
+        self.secDetails_fl = QFormLayout()
+        self.secDetails_fl.setVerticalSpacing(2)
+        self.secDetails_fl.setHorizontalSpacing(4)
+        self.secDetails_fl.setContentsMargins(2,2,2,2)
 
+        # self.secDetails = [
+        #     ('Name', QLabel()),
+        #     ('Reference', QLabel()),
+        #     ('Excluded Sections', QLabel()),
+        #     ('Has Bounding Box', QLabel()),
+        #     ('Use Bounding Box', QLabel())
+        # ]
 
+        secStyle = """ font-weight: 300; background-color: #dedede; """
+        self.secName = QLabel()
+        self.secReference = QLabel()
+        self.secExcluded = QLabel()
+        self.secHasBB = QLabel()
+        self.secUseBB = QLabel()
 
-        self.lowest5widget = QWidget()
-        # self.lowest5widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.secName.setStyleSheet(secStyle)
+        self.secReference.setStyleSheet(secStyle)
+        self.secExcluded.setStyleSheet(secStyle)
+        self.secHasBB.setStyleSheet(secStyle)
+        self.secUseBB.setStyleSheet(secStyle)
+
+        # make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm())
+
+        self.secDetails = OrderedDict({
+            'Name': self.secName,
+            'Reference': self.secReference,
+            'Excluded Sections': self.secExcluded,
+            'Has Bounding Box': self.secHasBB,
+            'Use Bounding Box': self.secUseBB,
+        })
+        self.secDetails['Excluded Sections'].setWordWrap(True)
+
+        for i in range(len(self.secDetails)):
+            self.secDetails_fl.addRow(list(self.secDetails.items())[i][0], list(self.secDetails.items())[i][1])
+
+        self.secDetails_w.setLayout(self.secDetails_fl)
+        self.sa_tab1.setWidget(self.secDetails_w)
+
+        self._bbToggle.stateChanged.connect(self.updateCpanelDetails_i1)
+
+        # See: updateCpanelDetails
+        # See: updateCpanelDetails_i1
+
+        self.sa_tab1.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab1.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
         self.sa_tab2 = QScrollArea()
-        self.sa_tab2.setMinimumHeight(60)
-        self.sa_tab2.setMinimumWidth(220)
+        # self.sa_tab2.setStyleSheet("""
+        #     border: none;
+        # """)
+        # self.sa_tab2.setMinimumHeight(60)
+        # self.sa_tab2.setMinimumWidth(220)
         self.sa_tab2.setWidgetResizable(True)
         self.sa_tab2.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.sa_tab2.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.tab2_fl = QFormLayout()
-        self.tab2_fl.setContentsMargins(0,0,0,0)
-        self.tab2_fl.setVerticalSpacing(2)
-        self.lowest5widget.setLayout(self.tab2_fl)
+        self.sa_tab2.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        self.resultsTabWidget = QTabWidget()
-        self.resultsTabWidget.setStyleSheet("""
-        /*
-        QScrollArea{
-            background-color: #f3f6fb;
-            font-size: 8px;
-            padding: 0px;
-            border-width: 1px;
-        }
-        */
-        QLabel {
-            font-size: 10px;
+        self.runtimeWidget = QWidget()
+        # self.runtimeWidget.setStyleSheet("""
+        #         font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+        #         font-size: 9px;
+        #         color: #161c20;
+        # """)
+        # self.runtimeWidget.setReadOnly(True)
+        self.sa_tab3 = QScrollArea()
+        self.sa_tab3.setWidgetResizable(True)
+        self.sa_tab3.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab3.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab3.setWidget(self.runtimeWidget)
+
+        self.secAffine = QLabel()
+        self.secAffine.setStyleSheet("""
+            color: #161c20;
+            font-weight: 600;
+        
+        """)
+
+        self.sa_tab4 = QScrollArea()
+        self.sa_tab4.setWidgetResizable(True)
+        self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab4.setWidget(self.secAffine)
+
+        self.cpanelTabWidget = QTabWidget()
+        self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
+
+        self.cpanelTabWidget.setStyleSheet("""
+        QTextWidget {
+            background-color: #ede9e8;
+            color: #161c20;
+            border: none;
+            font-size: 9px;
         }
         QTabWidget{
             padding: 0px;
-            border-width: 1px;
+            border-width: 0px;
             border-radius: 2px;
-            font-size: 10px;
-            
+            font-size: 9px;
+
         }
-        
+
         QTabBar::tab {
             margin 0px;
             height: 14px;
             max-width: 100px;
-            font-size: 8px;   
+            font-size: 8px;
         }
-        
+
         QTabBar::tab:selected
         {
-            background-color: #f3f6fb;
             color: #339933;
+            font-weight: 600;
         }
+
+
         """)
-        self.resultsTabWidget.setContentsMargins(0,0,0,0)
-        self.resultsTabWidget.setFixedHeight(80)
-        self.resultsTabWidget.addTab(self.sa_alignmentResults, 'Details')
-        self.resultsTabWidget.addTab(self.sa_tab2, 'Lowest 10 SNR')
-        # self.resultsTabWidget.addTab(self.lowest5widget, 'Lowest 5 SNR')
 
-
+        # self.cpanelTabWidget.setStyleSheet("""
+        #
+        # QWidget{
+        #     font-size: 10px;
+        #     color: #161c20;
+        #     background-color: #f3f6fb;
+        #     border-width: 0px;
+        #     border-color: #161c20;
+        # }
+        #
+        # QScrollArea{
+        #     color: #161c20;
+        #     font-size: 8px;
+        #     padding: 2px;
+        #     border-width: 0px;
+        #     border-style: solid;
+        #     border-color: #161c20;
+        # }
+        #
+        # QLabel {
+        #     font-size: 10px;
+        # }
+        # QTabWidget{
+        #     padding: 0px;
+        #     border-width: 0px;
+        #     border-radius: 2px;
+        #     font-size: 9px;
+        #
+        # }
+        #
+        # QTabBar::tab {
+        #     margin 0px;
+        #     height: 14px;
+        #     max-width: 100px;
+        #     font-size: 8px;
+        # }
+        #
+        # QTabBar::tab:selected
+        # {
+        #     color: #339933;
+        #     font-weight: 600;
+        # }
+        # """)
+        self.cpanelTabWidget.setContentsMargins(0, 0, 0, 0)
+        self.cpanelTabWidget.setFixedHeight(80)
+        self.cpanelTabWidget.addTab(self.sa_tab1, 'Details')
+        self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
+        self.cpanelTabWidget.addTab(self.sa_tab3, 'Runtimes')
+        self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
+        # self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
 
         # self.alignmentResults = QGroupBox("Data && Results")
         # # self.alignmentResults.setContentsMargins(2,12,0,0)
@@ -5002,7 +5214,7 @@ class MainWindow(QMainWindow):
         # # self.alignmentResults.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # # self.alignmentResults.setFixedWidth(284)
         # self.alignmentResults.setObjectName('gb_cpanel')
-        # self.alignmentResults.setLayout(HBL(self.sa_alignmentResults))
+        # self.alignmentResults.setLayout(HBL(self.sa_tab1))
         # # self.alignmentResults.setStyleSheet(style)
         # # self.alignmentResults.setStyleSheet(results_style)
 
@@ -5025,8 +5237,8 @@ class MainWindow(QMainWindow):
         hbl.addWidget(self.outputSettings)
         hbl.addStretch(1)
         # hbl.addWidget(self.alignmentResults)
-        # hbl.addWidget(self.sa_alignmentResults)
-        hbl.addWidget(self.resultsTabWidget)
+        # hbl.addWidget(self.sa_tab1)
+        hbl.addWidget(self.cpanelTabWidget)
         # hbl.addStretch(1)
         hbl.addWidget(ExpandingWidget(self))
 
@@ -5115,16 +5327,15 @@ class MainWindow(QMainWindow):
         self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
         self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetVerticalTitleBar)
         self.dw_monitor.setObjectName('Dock Widget HUD')
-
-        # self.dw_monitor.setStyleSheet("""
-        # QDockWidget {color: #161c20;}
-        # QDockWidget::title {
-        #             background-color: #daebfe;
-        #             color: #161c20;
-        #             font-weight: 600;
-        #             padding-left: 5px;
-        #             text-align: left;
-        #         }""")
+        self.dw_monitor.setStyleSheet("""
+        QDockWidget {color: #161c20;}
+        QDockWidget::title {
+                    background-color: #daebfe;
+                    color: #161c20;
+                    font-weight: 600;
+                    padding-left: 5px;
+                    text-align: left;
+                }""")
         self.dw_monitor.setWidget(self.hud)
         self.dw_monitor.hide()
         # self.dw_monitor.setLayout(HBL(self.hud))
@@ -5457,10 +5668,8 @@ class MainWindow(QMainWindow):
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
-            /*background-color: #ede9e8;*/
-            width: 128px;
+            min-width: 128px;
             height: 18px;
-            
             padding: 0px;
             margin: 0px;
         }
@@ -5722,7 +5931,7 @@ class MainWindow(QMainWindow):
         /* ---- QScrollBar  ---- */
         QScrollBar:vertical {
             border: none;
-            width: 0px;
+            width: 6px;
         }
         QScrollBar:horizontal {
             border: none;
@@ -5731,7 +5940,8 @@ class MainWindow(QMainWindow):
         """)
         self.sa_cpanel.setFixedHeight(104)
         # self.sa_cpanel.setFixedHeight(90)
-        self.sa_cpanel.setWidget(HWidget(self.cpanel))
+        # self.sa_cpanel.setWidget(HWidget(self.cpanel))
+        self.sa_cpanel.setWidget(self.cpanel)
 
         # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.cpanel, self.pbar_widget, self.statusBar)
         # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget, self.statusBar)
@@ -5748,6 +5958,28 @@ class MainWindow(QMainWindow):
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
 
 
+    def updateCpanelDetails(self):
+        if self.cpanelTabWidget.currentIndex() == 0:
+            self.updateCpanelDetails_i1()
+        if self.cpanelTabWidget.currentIndex() == 3:
+            self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+
+
+
+    def updateCpanelDetails_i1(self):
+        if self._isProjectTab():
+            caller = inspect.stack()[1].function
+            logger.critical(f'caller: {caller}')
+            if self.cpanelTabWidget.currentIndex() == 0:
+                self.secName.setText(cfg.data.filename_basename())
+                ref = cfg.data.reference_basename()
+                if ref == '':
+                    ref = 'None'
+                self.secReference.setText(ref)
+                # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+                self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a,b in cfg.data.skips_list()]))
+                self.secHasBB.setText(str(cfg.data.has_bb()))
+                self.secUseBB.setText(str(cfg.data.use_bb()))
 
 
 

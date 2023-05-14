@@ -291,7 +291,7 @@ class ProjectTable(QWidget):
             self.table.setColumnWidth(2, h)
             self.table.setColumnWidth(3, h)
 
-        size = max(min(int(11 * (max(h, 1) / 50)), 14), 8)
+        size = max(min(int(11 * (max(h, 1) / 80)), 14), 8)
         self.table.setStyleSheet(f'font-size: {size}px;')
 
 

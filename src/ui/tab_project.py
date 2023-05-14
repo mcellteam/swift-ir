@@ -295,8 +295,6 @@ class ProjectTab(QWidget):
         logger.info('')
 
         self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
-        # this fixes detailsSection not displaying immediately on start project
-        self.webengine.loadFinished.connect(cfg.main_window.dataUpdateWidgets)
         # self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
 
         self.w_ng_display = QWidget()
@@ -308,7 +306,7 @@ class ProjectTab(QWidget):
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
         self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
-        # self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('Test Label')
@@ -324,7 +322,7 @@ class ProjectTab(QWidget):
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
-        self.ngVertLab.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
+        # self.ngVertLab.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
 
 
         style = """
@@ -337,20 +335,20 @@ class ProjectTab(QWidget):
         border-radius: 2px;
         """
 
-        self.detailsSection = QLabel()
-        self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
-        self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.detailsSection.setWordWrap(True)
-        self.detailsSection.setStyleSheet(style)
-        self.detailsSection.hide()
+        # self.detailsSection = QLabel()
+        # self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
+        # self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.detailsSection.setWordWrap(True)
+        # self.detailsSection.setStyleSheet(style)
+        # self.detailsSection.hide()
 
-        self.detailsAFM = QLabel()
-        self.detailsAFM.setWindowFlags(Qt.FramelessWindowHint)
-        self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.detailsAFM.setMaximumHeight(100)
-        self.detailsAFM.setWordWrap(True)
-        self.detailsAFM.setStyleSheet(style)
-        self.detailsAFM.hide()
+        # self.detailsAFM = QLabel()
+        # self.detailsAFM.setWindowFlags(Qt.FramelessWindowHint)
+        # self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.detailsAFM.setMaximumHeight(100)
+        # self.detailsAFM.setWordWrap(True)
+        # self.detailsAFM.setStyleSheet(style)
+        # self.detailsAFM.hide()
 
         self.detailsSNR = QLabel()
         self.detailsSNR.setWindowFlags(Qt.FramelessWindowHint)
@@ -360,22 +358,13 @@ class ProjectTab(QWidget):
         self.detailsSNR.setStyleSheet(style)
         self.detailsSNR.hide()
 
-        self.detailsRuntime = QLabel()
-        self.detailsRuntime.setWindowFlags(Qt.FramelessWindowHint)
-        self.detailsRuntime.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.detailsRuntime.setWordWrap(True)
-        self.detailsRuntime.setStyleSheet(style)
-        self.detailsRuntime.hide()
-
         self.detailsDetailsWidget = QWidget()
         self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.detailsDetailsWidget.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsDetailsWidget.show()
         hbl = HBL()
-        hbl.addWidget(self.detailsSection, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        # hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(self.detailsRuntime, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.detailsDetailsWidget.setLayout(hbl)
 
         self.spreadW = QWidget()
@@ -1185,10 +1174,10 @@ class ProjectTab(QWidget):
         self.MA_tabs = QTabWidget()
         self.MA_tabs.setStyleSheet("""
         QTabBar::tab {
-        height: 16px;
-        font-size: 9px;
-        margin: 0px;
-        padding: 0px;
+            height: 16px;
+            font-size: 9px;
+            margin: 0px;
+            padding: 0px;
         }
         """)
 
@@ -1761,9 +1750,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSnrAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSectionDetailsAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowRuntimesAction)
+        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
@@ -2636,23 +2623,15 @@ class ProjectTab(QWidget):
 
 
     def onEnterManualMode(self):
-        logger.info('onEnterManualMode >>>>')
-        logger.info('Deleting viewers...')
-
+        self.ngVertLab.setText('Manual Alignment Mode')
+        # self.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ffe135;""")
         self.bookmark_tab = self._tabs.currentIndex()
         self._tabs.setCurrentIndex(0)
-        # self.w_ng_display_ext.hide() # change layout before initializing viewer
         self.hideSecondaryNgTools()
         self.w_ng_display.hide() # change layout before initializing viewer
         self.MA_splitter.show() # change layout before initializing viewer
-        self.ngVertLab.setText('Manual Alignment Mode')
-
-        # cfg.main_window._changeScaleCombo.setEnabled(False)
-
         self.update()
         self.initNeuroglancer()
-
-        logger.info('<<<< onEnterManualMode')
 
     # def onExitManualMode(self):
     #     self.MA_ptsListWidget_ref.clear()
@@ -3063,7 +3042,7 @@ class ProjectTab(QWidget):
             height: 18px;
             min-width: 110px; 
             font-size: 10px; 
-            font-weight: 600;
+            font-weight: 600px;
         }
 
         """)

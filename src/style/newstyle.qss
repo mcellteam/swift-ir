@@ -23,13 +23,10 @@ QMainWindow::separator:hover {
 
 QToolTip {
    font-family: Tahoma, sans-serif;
-   background-color: #339933;
+   /*background-color: #339933;*/
    color: #ede9e8;
    border: 1px solid #ede9e8;
 }
-
-
-
 
 QDoubleSpinBox {
     font-family: Tahoma, sans-serif;
@@ -153,6 +150,7 @@ QDockWidget {
     color: #ede9e8;
     border: 0px solid #ede9e8;
 }
+/*
 QDockWidget::title {
     text-align: left;
     padding-left: 5px;
@@ -161,16 +159,62 @@ QDockWidget::title {
     margin: 0px;
     font-weight: 600;
 }
-  QDockWidget::close-button, QDockWidget::float-button {
-      border: 1px solid transparent;
-      background: none;
-      padding: 0px;
-  }
+*/
 
-  QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-      background: #ede9e8;
-  }
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+  background: #ede9e8;
+}
 
-  QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
-      padding: 1px -1px -1px 1px;
-  }
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+  padding: 1px -1px -1px 1px;
+}
+
+
+QTabBar::tab {
+    height: 18px;
+    max-width: 200px;
+    font-size: 12px;
+}
+
+
+QTabBar::tab:selected
+{
+    color: #339933;
+}
+
+
+
+
+QMenu {
+    font-family: Tahoma, sans-serif;
+	border-width: 1px;
+	border-color: #1b1e23;
+	border-style: outset;
+	font-size: 11px;
+
+}
+
+/* affects main menu top-of-window*/
+QMenuBar::item {
+  	spacing: 4px;
+	padding: 2px 2px;
+  	background: transparent;
+  	font-size: 11px;
+
+}
+
+QMenuBar::item:selected {
+  	background: #969696;
+}
+
+QMenuBar {
+	background: #1b2328;
+	color: #f3f6fb;
+	font-size: 11px;
+
+}
+
+QMenu::item {
+  	height: 8px;
+}
+
