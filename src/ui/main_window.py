@@ -1601,7 +1601,12 @@ class MainWindow(QMainWindow):
             
 
             if self.cpanelTabWidget.currentIndex() == 0:
-                self.updateCpanelDetails_i1()
+                self.secName.setText(cfg.data.filename_basename())
+                ref = cfg.data.reference_basename()
+                if ref == '':
+                    ref = 'None'
+                self.secReference.setText(ref)
+                self.secAlignmentMethod.setText(cfg.data.current_method)
 
 
             if self.cpanelTabWidget.currentIndex() == 3:
@@ -1641,31 +1646,34 @@ class MainWindow(QMainWindow):
                         f"Btm,Right{br}: N/A"
                     )
                 else:
-                    components = cfg.data.snr_components()
-                    str0 = ('%.3f' % cfg.data.snr()).rjust(9)
-                    str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
-                    if cfg.data.method() in ('grid-default','grid-custom'):
-                        q0 = ('%.3f' % components[0]).rjust(9)
-                        q1 = ('%.3f' % components[1]).rjust(9)
-                        q2 = ('%.3f' % components[2]).rjust(9)
-                        q3 = ('%.3f' % components[3]).rjust(9)
-                        cfg.project_tab.detailsSNR.setText(
-                            f"Avg. SNR{br*2}:{a}{str0}{b}{nl}"
-                            f"Prev.{br}SNR{br}:{str1}{nl}"
-                            f"Components{nl}"
-                            f"Top,Left{br*2}:{q0}{nl}"
-                            f"Top,Right{br}:{q1}{nl}"
-                            f"Btm,Left{br*2}:{q2}{nl}"
-                            f"Btm,Right{br}:{q3}"
-                        )
-                    elif cfg.data.method() in ('manual-hint', 'manual-strict'):
-                        txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
-                              f"Prev. SNR{br}:{str1}{nl}" \
-                              f"Components"
-                        for i in range(len(components)):
-                            txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
+                    try:
+                        components = cfg.data.snr_components()
+                        str0 = ('%.3f' % cfg.data.snr()).rjust(9)
+                        str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
+                        if cfg.data.method() in ('grid-default','grid-custom'):
+                            q0 = ('%.3f' % components[0]).rjust(9)
+                            q1 = ('%.3f' % components[1]).rjust(9)
+                            q2 = ('%.3f' % components[2]).rjust(9)
+                            q3 = ('%.3f' % components[3]).rjust(9)
+                            cfg.project_tab.detailsSNR.setText(
+                                f"Avg. SNR{br*2}:{a}{str0}{b}{nl}"
+                                f"Prev.{br}SNR{br}:{str1}{nl}"
+                                f"Components{nl}"
+                                f"Top,Left{br*2}:{q0}{nl}"
+                                f"Top,Right{br}:{q1}{nl}"
+                                f"Btm,Left{br*2}:{q2}{nl}"
+                                f"Btm,Right{br}:{q3}"
+                            )
+                        elif cfg.data.method() in ('manual-hint', 'manual-strict'):
+                            txt = f"Avg. SNR{br*2}:{a}{str0}{b}{nl}" \
+                                  f"Prev. SNR{br}:{str1}{nl}" \
+                                  f"Components"
+                            for i in range(len(components)):
+                                txt += f'{nl}%d:{br*10}%.3f' % (i, components[i])
 
-                        cfg.project_tab.detailsSNR.setText(txt)
+                            cfg.project_tab.detailsSNR.setText(txt)
+                    except:
+                        print_exception()
 
             # self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
             self._btn_alignOne.setText('Re-Align #%d' %cfg.data.zpos)
@@ -4405,12 +4413,13 @@ class MainWindow(QMainWindow):
         tip = 'Whether to include the current section'
         self._lab_keep_reject = QLabel('Include:')
         self._lab_keep_reject.setStyleSheet(ctl_lab_style)
-        self._lab_keep_reject.setStatusTip(tip)
+        self._lab_keep_reject.setToolTip(tip)
         self._skipCheckbox = ToggleSwitch()
         self._skipCheckbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._skipCheckbox.stateChanged.connect(self._callbk_skipChanged)
         self._skipCheckbox.stateChanged.connect(self._callbk_unsavedChanges)
-        self._skipCheckbox.setStatusTip(tip)
+        self._skipCheckbox.stateChanged.connect(self.updateCpanelDetails_i1)
+        self._skipCheckbox.setToolTip(tip)
         self._skipCheckbox.setEnabled(False)
 
 
@@ -4418,7 +4427,7 @@ class MainWindow(QMainWindow):
         self._btn_clear_skips = QPushButton('Reset')
         self._btn_clear_skips.setEnabled(False)
         self._btn_clear_skips.setStyleSheet("font-size: 10px;")
-        self._btn_clear_skips.setStatusTip(tip)
+        self._btn_clear_skips.setToolTip(tip)
         self._btn_clear_skips.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_clear_skips.clicked.connect(self.clear_skips)
         self._btn_clear_skips.setFixedSize(button_size)
@@ -4485,7 +4494,7 @@ class MainWindow(QMainWindow):
         self._btn_prevSection = QPushButton()
         self._btn_prevSection = QPushButton()
         self._btn_prevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_prevSection.setStatusTip(tip)
+        self._btn_prevSection.setToolTip(tip)
         self._btn_prevSection.clicked.connect(self.layer_left)
         self._btn_prevSection.setFixedSize(QSize(16, 16))
         self._btn_prevSection.setIconSize(QSize(14, 14))
@@ -4495,7 +4504,7 @@ class MainWindow(QMainWindow):
         tip = 'Go To Next Section.'
         self._btn_nextSection = QPushButton()
         self._btn_nextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_nextSection.setStatusTip(tip)
+        self._btn_nextSection.setToolTip(tip)
         self._btn_nextSection.clicked.connect(self.layer_right)
         self._btn_nextSection.setFixedSize(QSize(16, 16))
         self._btn_nextSection.setIconSize(QSize(14, 14))
@@ -4510,7 +4519,7 @@ class MainWindow(QMainWindow):
         self._scaleDownButton = QPushButton()
         self._scaleDownButton.setEnabled(False)
         self._scaleDownButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._scaleDownButton.setStatusTip(tip)
+        self._scaleDownButton.setToolTip(tip)
         self._scaleDownButton.clicked.connect(self.scale_down)
         # self._scaleDownButton.setFixedSize(QSize(12, 12))
         self._scaleDownButton.setFixedSize(QSize(16, 16))
@@ -4521,7 +4530,7 @@ class MainWindow(QMainWindow):
         self._scaleUpButton = QPushButton()
         self._scaleUpButton.setEnabled(False)
         self._scaleUpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._scaleUpButton.setStatusTip(tip)
+        self._scaleUpButton.setToolTip(tip)
         self._scaleUpButton.clicked.connect(self.scale_up)
         # self._scaleUpButton.setFixedSize(QSize(12, 12))
         self._scaleUpButton.setFixedSize(QSize(16, 16))
@@ -4545,7 +4554,7 @@ class MainWindow(QMainWindow):
         tip = 'Jumpt to section #'
         self._jumpToLineedit = QLineEdit(self)
         self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
-        self._jumpToLineedit.setStatusTip(tip)
+        self._jumpToLineedit.setToolTip(tip)
         self._jumpToLineedit.setFixedSize(QSize(32,16))
         self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
         # self._jumpToLineedit.returnPressed.connect(lambda: self.jump_to(int(self._jumpToLineedit.text())))
@@ -4647,14 +4656,14 @@ class MainWindow(QMainWindow):
         # self._btn_alignAll.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_alignAll.setEnabled(False)
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignAll.setStatusTip(tip)
+        self._btn_alignAll.setToolTip(tip)
         self._btn_alignAll.clicked.connect(self.alignAll)
         self._btn_alignAll.setFixedSize(long_button_size)
 
         tip = 'Align and regenerate the current section only'
         self._btn_alignOne = QPushButton('Align One')
         # self._btn_alignOne.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
-        self._btn_alignOne.setStatusTip(tip)
+        self._btn_alignOne.setToolTip(tip)
         self._btn_alignOne.setEnabled(False)
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.clicked.connect(self.alignOne)
@@ -4663,7 +4672,7 @@ class MainWindow(QMainWindow):
         tip = 'The range of sections to align for the align range button.'
         self.sectionRangeSlider = RangeSlider()
         self.sectionRangeSlider.setMinimumWidth(100)
-        self.sectionRangeSlider.setStatusTip(tip)
+        self.sectionRangeSlider.setToolTip(tip)
         self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sectionRangeSlider.setMinimumWidth(40)
         self.sectionRangeSlider.setMaximumWidth(150)
@@ -4729,7 +4738,7 @@ class MainWindow(QMainWindow):
         self._toggleAutogenerate = ToggleSwitch()
         self._toggleAutogenerate.stateChanged.connect(self._toggledAutogenerate)
         self._toggleAutogenerate.stateChanged.connect(self._callbk_unsavedChanges)
-        self._toggleAutogenerate.setStatusTip(tip)
+        self._toggleAutogenerate.setToolTip(tip)
         self._toggleAutogenerate.setChecked(True)
         self._toggleAutogenerate.setEnabled(False)
 
@@ -4738,7 +4747,7 @@ class MainWindow(QMainWindow):
         # self._polyBiasCombo.setStyleSheet("font-size: 10px; padding-left: 6px;")
         self._polyBiasCombo.currentIndexChanged.connect(self._valueChangedPolyOrder)
         self._polyBiasCombo.currentIndexChanged.connect(self._callbk_unsavedChanges)
-        self._polyBiasCombo.setStatusTip(tip)
+        self._polyBiasCombo.setToolTip(tip)
         self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4750,7 +4759,7 @@ class MainWindow(QMainWindow):
         tip = 'Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may ' \
               'significantly increase the size of generated images.'
         self._bbToggle = ToggleSwitch()
-        self._bbToggle.setStatusTip(tip)
+        self._bbToggle.setToolTip(tip)
         self._bbToggle.toggled.connect(self._callbk_bnding_box)
         self._bbToggle.setEnabled(False)
 
@@ -4760,7 +4769,7 @@ class MainWindow(QMainWindow):
         self._btn_regenerate = QPushButton('Regenerate Images')
         # self._btn_regenerate.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_regenerate.setEnabled(False)
-        self._btn_regenerate.setStatusTip(tip)
+        self._btn_regenerate.setToolTip(tip)
         self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale))
         self._btn_regenerate.setFixedSize(long_button_size)
         self._btn_regenerate.setEnabled(False)
@@ -5016,8 +5025,8 @@ class MainWindow(QMainWindow):
         tab_width = 360
         self.sa_tab1 = QScrollArea()
         # self.sa_tab1.setStyleSheet('background-color: #f3f6fb;')
-        self.sa_tab1.setMinimumHeight(60)
-        self.sa_tab1.setFixedWidth(tab_width)
+        # self.sa_tab1.setMinimumHeight(60)
+        # self.sa_tab1.setFixedWidth(tab_width)
         self.sa_tab1.setWidgetResizable(True)
         self.sa_tab1.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -5026,10 +5035,10 @@ class MainWindow(QMainWindow):
         # self.resultsWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.resultsWidget.setLayout(self.fl_results)
         # self.sa_tab1.setWidget(self.resultsWidget)
-        self.sa_tab1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.sa_tab1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.secDetails_w = QWidget()
-        self.secDetails_w.setFixedWidth(tab_width-10)
+        # self.secDetails_w.setFixedWidth(tab_width-10)
         self.secDetails_w.setStyleSheet("""
             color: #161c20;
             font-size: 9px;
@@ -5039,7 +5048,7 @@ class MainWindow(QMainWindow):
         self.secDetails_fl = QFormLayout()
         self.secDetails_fl.setVerticalSpacing(2)
         self.secDetails_fl.setHorizontalSpacing(4)
-        self.secDetails_fl.setContentsMargins(2,2,2,2)
+        self.secDetails_fl.setContentsMargins(0,0,0,0)
 
         # self.secDetails = [
         #     ('Name', QLabel()),
@@ -5055,21 +5064,24 @@ class MainWindow(QMainWindow):
         self.secExcluded = QLabel()
         self.secHasBB = QLabel()
         self.secUseBB = QLabel()
+        self.secAlignmentMethod = QLabel()
 
         self.secName.setStyleSheet(secStyle)
         self.secReference.setStyleSheet(secStyle)
         self.secExcluded.setStyleSheet(secStyle)
         self.secHasBB.setStyleSheet(secStyle)
         self.secUseBB.setStyleSheet(secStyle)
+        self.secAlignmentMethod.setStyleSheet(secStyle)
 
         # make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm())
 
         self.secDetails = OrderedDict({
             'Name': self.secName,
             'Reference': self.secReference,
+            'Alignment Method': self.secAlignmentMethod,
             'Excluded Sections': self.secExcluded,
-            'Has Bounding Box': self.secHasBB,
             'Use Bounding Box': self.secUseBB,
+            'Has Bounding Box': self.secHasBB,
         })
         self.secDetails['Excluded Sections'].setWordWrap(True)
 
@@ -5124,6 +5136,7 @@ class MainWindow(QMainWindow):
         self.sa_tab4.setWidget(self.secAffine)
 
         self.cpanelTabWidget = QTabWidget()
+        self.cpanelTabWidget.setFixedWidth(tab_width)
         self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
 
         self.cpanelTabWidget.setStyleSheet("""
@@ -5579,7 +5592,7 @@ class MainWindow(QMainWindow):
         self._btn_show_hide_shader = QPushButton(' Shader')
         self._btn_show_hide_shader.setFixedHeight(18)
         self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
-        self._btn_show_hide_shader.setStatusTip(tip)
+        self._btn_show_hide_shader.setToolTip(tip)
         # self._btn_show_hide_shader.clicked.connect(self._callbk_showHideShader)
         # self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#f3f6fb'))
         self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#380282'))
@@ -5782,40 +5795,40 @@ class MainWindow(QMainWindow):
             self.browser_web.page().triggerAction(QWebEnginePage.Paste)
 
         buttonBrowserBack = QPushButton()
-        buttonBrowserBack.setStatusTip('Go Back')
+        buttonBrowserBack.setToolTip('Go Back')
         buttonBrowserBack.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserBack.clicked.connect(browser_backward)
         buttonBrowserBack.setFixedSize(QSize(20, 20))
         buttonBrowserBack.setIcon(qta.icon('fa.arrow-left', color=ICON_COLOR))
 
         buttonBrowserForward = QPushButton()
-        buttonBrowserForward.setStatusTip('Go Forward')
+        buttonBrowserForward.setToolTip('Go Forward')
         buttonBrowserForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserForward.clicked.connect(browser_forward)
         buttonBrowserForward.setFixedSize(QSize(20, 20))
         buttonBrowserForward.setIcon(qta.icon('fa.arrow-right', color=ICON_COLOR))
 
         buttonBrowserRefresh = QPushButton()
-        buttonBrowserRefresh.setStatusTip('Refresh')
+        buttonBrowserRefresh.setToolTip('Refresh')
         buttonBrowserRefresh.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
         buttonBrowserRefresh.setFixedSize(QSize(22,22))
         buttonBrowserRefresh.clicked.connect(browser_reload)
 
         buttonBrowserCopy = QPushButton('Copy')
-        buttonBrowserCopy.setStatusTip('Copy Text')
+        buttonBrowserCopy.setToolTip('Copy Text')
         buttonBrowserCopy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserCopy.clicked.connect(browser_copy)
         buttonBrowserCopy.setFixedSize(QSize(50, 20))
 
         buttonBrowserPaste = QPushButton('Paste')
-        buttonBrowserPaste.setStatusTip('Paste Text')
+        buttonBrowserPaste.setToolTip('Paste Text')
         buttonBrowserPaste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserPaste.clicked.connect(browser_paste)
         buttonBrowserPaste.setFixedSize(QSize(50, 20))
 
         button3demCommunity = QPushButton('3DEM Community Data')
         button3demCommunity.setStyleSheet('font-size: 10px;')
-        button3demCommunity.setStatusTip('Vist the 3DEM Community Workbench')
+        button3demCommunity.setToolTip('Vist the 3DEM Community Workbench')
         button3demCommunity.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button3demCommunity.clicked.connect(self.browser_3dem_community)
         button3demCommunity.setFixedSize(QSize(120, 20))
@@ -5959,6 +5972,7 @@ class MainWindow(QMainWindow):
 
 
     def updateCpanelDetails(self):
+        logger.info('')
         if self.cpanelTabWidget.currentIndex() == 0:
             self.updateCpanelDetails_i1()
         if self.cpanelTabWidget.currentIndex() == 3:
@@ -5967,19 +5981,21 @@ class MainWindow(QMainWindow):
 
 
     def updateCpanelDetails_i1(self):
+        logger.info('')
         if self._isProjectTab():
             caller = inspect.stack()[1].function
             logger.critical(f'caller: {caller}')
-            if self.cpanelTabWidget.currentIndex() == 0:
-                self.secName.setText(cfg.data.filename_basename())
-                ref = cfg.data.reference_basename()
-                if ref == '':
-                    ref = 'None'
-                self.secReference.setText(ref)
-                # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
-                self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a,b in cfg.data.skips_list()]))
-                self.secHasBB.setText(str(cfg.data.has_bb()))
-                self.secUseBB.setText(str(cfg.data.use_bb()))
+            # if self.cpanelTabWidget.currentIndex() == 0:
+            self.secName.setText(cfg.data.filename_basename())
+            ref = cfg.data.reference_basename()
+            if ref == '':
+                ref = 'None'
+            self.secReference.setText(ref)
+            self.secAlignmentMethod.setText(cfg.data.current_method)
+            # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+            self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a,b in cfg.data.skips_list()]))
+            self.secHasBB.setText(str(cfg.data.has_bb()))
+            self.secUseBB.setText(str(cfg.data.use_bb()))
 
 
 
@@ -6037,7 +6053,7 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42,14)
         self.pbar_cancel_button.setIconSize(QSize(14,14))
-        self.pbar_cancel_button.setStatusTip('Terminate Pending Multiprocessing Tasks')
+        self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""
         QPushButton{
@@ -6109,17 +6125,17 @@ class MainWindow(QMainWindow):
         if event.type() == QEvent.ContextMenu and source is self._hstry_listWidget:
             menu = QMenu()
             self.history_view_action = QAction('View')
-            self.history_view_action.setStatusTip('View this alignment as a tree view')
+            self.history_view_action.setToolTip('View this alignment as a tree view')
             self.history_view_action.triggered.connect(self.view_historical_alignment)
             self.history_swap_action = QAction('Swap')
-            self.history_swap_action.setStatusTip('Swap the settings of this historical alignment '
+            self.history_swap_action.setToolTip('Swap the settings of this historical alignment '
                                                   'with your current s settings')
             self.history_swap_action.triggered.connect(self.swap_historical_alignment)
             self.history_rename_action = QAction('Rename')
-            self.history_rename_action.setStatusTip('Rename this file')
+            self.history_rename_action.setToolTip('Rename this file')
             self.history_rename_action.triggered.connect(self.rename_historical_alignment)
             self.history_delete_action = QAction('Delete')
-            self.history_delete_action.setStatusTip('Delete this file')
+            self.history_delete_action.setToolTip('Delete this file')
             self.history_delete_action.triggered.connect(self.remove_historical_alignment)
             menu.addAction(self.history_view_action)
             menu.addAction(self.history_rename_action)

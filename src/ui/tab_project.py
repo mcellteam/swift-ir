@@ -631,7 +631,7 @@ class ProjectTab(QWidget):
         tip = 'Go To Previous Section.'
         self.btnPrevSection = QPushButton()
         self.btnPrevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnPrevSection.setStatusTip(tip)
+        self.btnPrevSection.setToolTip(tip)
         self.btnPrevSection.clicked.connect(self.MA_layer_left)
         self.btnPrevSection.setFixedSize(QSize(18, 18))
         self.btnPrevSection.setIcon(qta.icon("fa.arrow-left", color=cfg.ICON_COLOR))
@@ -642,7 +642,7 @@ class ProjectTab(QWidget):
         self.btnNextSection = QPushButton()
         self.btnNextSection.clicked.connect(self.MA_layer_right)
         self.btnNextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnNextSection.setStatusTip(tip)
+        self.btnNextSection.setToolTip(tip)
         self.btnNextSection.setFixedSize(QSize(18, 18))
         self.btnNextSection.setIcon(qta.icon("fa.arrow-right", color=cfg.ICON_COLOR))
         self.btnNextSection.setEnabled(False)
@@ -945,7 +945,7 @@ class ProjectTab(QWidget):
                 cfg.main_window._callbk_unsavedChanges()
         # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
         self.slider_MA_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
-        self.slider_MA_SWIM_window.setStatusTip(tip)
+        self.slider_MA_SWIM_window.setToolTip(tip)
         self.slider_MA_SWIM_window.valueChanged.connect(fn)
         self.slider_MA_SWIM_window.setFixedWidth(80)
         self.MA_SWIM_window_le = QLineEdit()
@@ -989,7 +989,7 @@ class ProjectTab(QWidget):
                 cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
-        self.slider_AS_SWIM_window.setStatusTip(tip)
+        self.slider_AS_SWIM_window.setToolTip(tip)
         self.slider_AS_SWIM_window.valueChanged.connect(fn)
         self.slider_AS_SWIM_window.setMaximumWidth(100)
         def fn():
@@ -1011,7 +1011,7 @@ class ProjectTab(QWidget):
                 cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
-        self.slider_AS_2x2_SWIM_window.setStatusTip(tip)
+        self.slider_AS_2x2_SWIM_window.setToolTip(tip)
         self.slider_AS_2x2_SWIM_window.valueChanged.connect(fn)
         self.slider_AS_2x2_SWIM_window.setMaximumWidth(100)
         def fn():
@@ -1033,7 +1033,7 @@ class ProjectTab(QWidget):
 
         self.spinbox_whitening = QDoubleSpinBox(self)
         self.spinbox_whitening.setFixedWidth(80)
-        self.spinbox_whitening.setStatusTip(tip)
+        self.spinbox_whitening.setToolTip(tip)
         # self.spinbox_whitening.setFixedHeight(26)
         # self._whiteningControl.setValue(cfg.DEFAULT_WHITENING)
         self.spinbox_whitening.valueChanged.connect(fn)
@@ -1053,7 +1053,7 @@ class ProjectTab(QWidget):
                 logger.info(f'New global # SWIM iterations: {val}')
 
         self.spinbox_swim_iters = QSpinBox(self)
-        self.spinbox_swim_iters.setStatusTip('# of SWIM iterations/refinements (default: 3)')
+        self.spinbox_swim_iters.setToolTip('# of SWIM iterations/refinements (default: 3)')
         self.spinbox_swim_iters.setFixedWidth(80)
         self.spinbox_swim_iters.valueChanged.connect(fn)
         self.spinbox_swim_iters.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
@@ -1566,7 +1566,7 @@ class ProjectTab(QWidget):
         # TOOLBARS
 
         self._highContrastNgAction = QAction()
-        self._highContrastNgAction.setStatusTip('Toggle High Contrast Mode')
+        self._highContrastNgAction.setToolTip('Toggle High Contrast Mode')
         self._highContrastNgAction.setIcon(qta.icon("mdi.theme-light-dark", color='#ede9e8'))
         self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
         self._highContrastNgAction.setCheckable(True)
@@ -1589,7 +1589,7 @@ class ProjectTab(QWidget):
                     logger.warning('Cant update contrast mode setting for %s' %str(v))
                     print_exception()
         self._highContrastNgAction.triggered.connect(fn)
-        self._highContrastNgAction.setStatusTip('Neuroglancer background setting')
+        self._highContrastNgAction.setToolTip('Neuroglancer background setting')
 
         ngFont = QFont('Tahoma')
         ngFont.setBold(True)
@@ -1760,19 +1760,19 @@ class ProjectTab(QWidget):
         self.shaderAction = QAction()
         self.shaderAction.setCheckable(True)
         self.shaderAction.setText('Shader')
-        self.shaderAction.setStatusTip('Show Brightness & Contrast Shaders')
+        self.shaderAction.setToolTip('Show Brightness & Contrast Shaders')
         self.shaderAction.setIcon(qta.icon('mdi.format-paint', color='#ede9e8'))
         def fn():
             if not self.shaderAction.isChecked():
                 self.shaderToolbar.hide()
-                self.shaderAction.setStatusTip('Show Brightness & Contrast Shaders')
+                self.shaderAction.setToolTip('Show Brightness & Contrast Shaders')
             else:
                 self.contrastSlider.setValue(int(cfg.data.contrast))
                 self.contrastLE.setText('%.2f' % cfg.data.contrast)
                 self.brightnessSlider.setValue(int(cfg.data.brightness))
                 self.brightnessLE.setText('%.2f' % cfg.data.brightness)
                 self.shaderToolbar.show()
-                self.shaderAction.setStatusTip('Hide Brightness & Contrast Shaders')
+                self.shaderAction.setToolTip('Hide Brightness & Contrast Shaders')
         self.shaderAction.triggered.connect(fn)
 
         self.w_ng_extended_toolbar.addActions([
@@ -2852,12 +2852,12 @@ class ProjectTab(QWidget):
         self._wdg_treeview = QWidget()
         self._wdg_treeview.setObjectName('_wdg_treeview')
         self.btnCollapseAll = QPushButton('Collapse All')
-        self.btnCollapseAll.setStatusTip('Collapse all tree nodes')
+        self.btnCollapseAll.setToolTip('Collapse all tree nodes')
         self.btnCollapseAll.setStyleSheet('font-size: 10px;')
         self.btnCollapseAll.setFixedSize(80,18)
         self.btnCollapseAll.clicked.connect(self.treeview.collapseAll)
         self.btnExpandAll = QPushButton('Expand All')
-        self.btnExpandAll.setStatusTip('Expand all tree nodes')
+        self.btnExpandAll.setToolTip('Expand all tree nodes')
         self.btnExpandAll.setStyleSheet('font-size: 10px;')
         self.btnExpandAll.setFixedSize(80,18)
         self.btnExpandAll.clicked.connect(self.treeview.expandAll)
@@ -2865,7 +2865,7 @@ class ProjectTab(QWidget):
         def fn():
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
-        self.btnCurSection.setStatusTip('Jump to the data for current section and scale')
+        self.btnCurSection.setToolTip('Jump to the data for current section and scale')
         self.btnCurSection.setStyleSheet('font-size: 10px;')
         self.btnCurSection.setFixedSize(80,18)
         self.btnCurSection.clicked.connect(fn)
@@ -2874,7 +2874,7 @@ class ProjectTab(QWidget):
             self.updateTreeWidget()
             self.treeview.collapseAll()
         self.btnReloadDataTree = QPushButton('Reload')
-        self.btnReloadDataTree.setStatusTip('Jump to the data for current section and scale')
+        self.btnReloadDataTree.setToolTip('Jump to the data for current section and scale')
         self.btnReloadDataTree.setStyleSheet('font-size: 10px;')
         self.btnReloadDataTree.setFixedSize(80,18)
         self.btnReloadDataTree.clicked.connect(fn)

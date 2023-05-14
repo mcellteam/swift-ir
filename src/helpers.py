@@ -302,7 +302,7 @@ def configure_project_paths():
             for p in projectpaths:
                 f.write(f"{p}\n")
         if projectpaths:
-            logger.info('AlignEM-SWiFT Knows About The Following Projects:\n\n'
+            logger.info('AlignEM-SWiFT knows about the following projects:\n\n'
                         '  %s\n' % '\n  '.join(projectpaths))
     except:
         print_exception()
