@@ -1035,10 +1035,13 @@ class MainWindow(QMainWindow):
             self.setPbarText('Computing Affine...')
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=compute_affines(scale, start, end, swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, swim_only=False))
+                self.worker = BackgroundWorker(fn=compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
                 self.threadpool.start(self.worker)
-            else: compute_affines(scale, start, end, swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, swim_only=False)
-        except:   print_exception(); self.err('An Exception Was Raised During Alignment.')
+            else:
+                compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
+        except:
+            print_exception();
+            self.err('An Exception Was Raised During Alignment.')
         # else:     logger.info('Affine Computation Finished')
 
         # if cfg.ignore_pbar:
