@@ -871,6 +871,8 @@ class MainWindow(QMainWindow):
                 self._bbToggle.setChecked(cfg.data.has_bb())
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
+
+                self.updateAllCpanelDetails()
         except:
             print_exception()
         finally:
@@ -2180,6 +2182,8 @@ class MainWindow(QMainWindow):
 
         self.cpanel.show()
         self.sa_cpanel.show()
+
+        self.updateAllCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
 
@@ -3464,6 +3468,7 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
 
             self.setControlPanelData()
+            self.updateAllCpanelDetails()
 
             try:
                 if not getData('state,manual_mode'):
@@ -5352,8 +5357,8 @@ class MainWindow(QMainWindow):
         self.dw_monitor.setStyleSheet("""
         QDockWidget {color: #161c20;}
         QDockWidget::title {
-                    background-color: #daebfe;
-                    color: #161c20;
+                    background-color: #161c20;
+                    color: #ede9e8;
                     font-weight: 600;
                     padding-left: 5px;
                     text-align: left;
@@ -5978,6 +5983,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.globTabsAndCpanel)
 
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
+
+    def updateAllCpanelDetails(self):
+        self.updateCpanelDetails_i1()
+        self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
 
 
     def updateCpanelDetails(self):
