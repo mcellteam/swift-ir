@@ -118,6 +118,8 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
             print_exception()
             logger.warning('Task Queue encountered a problem')
 
+    dm.set_image_aligned_size()
+
     if cfg.ignore_pbar:
         cfg.nCompleted += 1
         cfg.main_window.updatePbar()
@@ -146,6 +148,7 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
             if not os.path.exists(os.path.join(stage_path, str(i))):
                 logger.info('creating group: %s' %str(i))
                 root.create_group(str(i))
+
 
         if cfg.CancelProcesses:
             cfg.main_window.tell('Canceling Copy-convert Alignment to Zarr Tasks...')

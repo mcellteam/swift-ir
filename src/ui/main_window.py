@@ -672,6 +672,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
         finally:
+            self.updateAllCpanelDetails()
             self.pbarLabel.setText('')
             self.hidePbar()
             self.updateDtWidget()
@@ -760,22 +761,32 @@ class MainWindow(QMainWindow):
                 #     f"Corr Spot Thumbs{br}:{a}" + (f"%.2fs{b}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
                 # )
 
+
+
+
                 t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
                 t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
                 t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
-                t3 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
-                t4 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
-                t5 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
-                t6 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
-                t7 = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
 
-                t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr']/60))
-                t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs']/60))
-                t3m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align']/60))
-                t4m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']/60))
-                t5m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate']/60))
-                t6m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']/60))
-                t7m = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']/60))
+
+                t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
+                for s in cfg.data.scales():
+                    t3[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
+                    t4[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
+                    t5[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
+                    t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
+                    t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
+
+                    t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr']/60))
+                    t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs']/60))
+
+                t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
+                for s in cfg.data.scales():
+                    t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align']/60))
+                    t4m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']/60))
+                    t5m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate']/60))
+                    t6m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']/60))
+                    t7m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']/60))
 
 
                 fl_l = QFormLayout()
@@ -784,11 +795,36 @@ class MainWindow(QMainWindow):
                 fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t1m))
                 fl_l.addRow('Convert All Scales to Zarr', QLabel(t1 + ' / ' + t1m))
                 fl_l.addRow('Generate Source Image Thumbnails', QLabel(t2 + ' / ' + t2m))
-                fl_l.addRow('Compute Affines', QLabel(t3 + ' / ' + t3m))
-                fl_l.addRow('Generate Aligned TIFFs', QLabel(t4 + ' / ' + t4m))
-                fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel(t5 + ' / ' + t5m))
-                fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel(t6 + ' / ' + t6m))
-                fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel(t7 + ' / ' + t7m))
+                str3 = ''
+                str4 = ''
+                str5 = ''
+                str6 = ''
+                str7 = ''
+
+
+
+                # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s],t3m[s]) for s in cfg.data.scales()])))
+                fl_l.addRow('Compute Affines', QLabel(''))
+                for s in cfg.data.scales():
+                    fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t3[s],t3m[s])))
+                fl_l.addRow('Generate Aligned TIFFs', QLabel(''))
+                for s in cfg.data.scales():
+                    fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t4[s],t4m[s])))
+                fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel(''))
+                for s in cfg.data.scales():
+                    fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t5[s],t5m[s])))
+                fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel(''))
+                for s in cfg.data.scales():
+                    fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t6[s],t6m[s])))
+                fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel(''))
+                for s in cfg.data.scales():
+                    fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t7[s],t7m[s])))
+
+                # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s], t3m[s]) for s in cfg.data.scales()])))
+                # fl_l.addRow('Generate Aligned TIFFs', QLabel('\n'.join(['  %s: %s / %s' % (s, t4[s],t4m[s]) for s in cfg.data.scales()])))
+                # fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel('\n'.join(['  %s: %s / %s' % (s, t5[s],t5m[s]) for s in cfg.data.scales()])))
+                # fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel('\n'.join(['  %s: %s / %s' % (s, t6[s],t6m[s]) for s in cfg.data.scales()])))
+                # fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel('\n'.join(['  %s: %s / %s' % (s, t7[s],t7m[s]) for s in cfg.data.scales()])))
 
                 # self.runtimeWidget.setText(
                 #     f"Gen. Scales{br}{br}{br}{br}{br}{br}:{br}{a}{t0}{br}{br}"
@@ -5101,11 +5137,12 @@ class MainWindow(QMainWindow):
         self.secDetails = OrderedDict({
         'Name': self.secName,
         'Reference': self.secReference,
-        'Has Bounding Box': self.secHasBB,
+
         'Source Image Size': self.secSrcImageSize,
-        # 'Aligned Image Size': self.secAlignedImageSize,
+        'Aligned Image Size': self.secAlignedImageSize,
         'Alignment Method': self.secAlignmentMethod,
         'Excluded Sections': self.secExcluded,
+        'Has Bounding Box': self.secHasBB,
         'Use Bounding Box': self.secUseBB,
         })
         # self.secDetails['Excluded Sections'].setWordWrap(True)
@@ -6023,10 +6060,15 @@ class MainWindow(QMainWindow):
             self.secReference.setText(ref)
             self.secAlignmentMethod.setText(cfg.data.current_method)
             # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
-            self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a,b in cfg.data.skips_list()]))
+            skips =  cfg.data.skips_list()
+            if skips == []:
+                self.secExcluded.setText('None')
+            else:
+                self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a,b in skips]))
             self.secHasBB.setText(str(cfg.data.has_bb()))
             self.secUseBB.setText(str(cfg.data.use_bb()))
             self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
+            self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
 
 
 

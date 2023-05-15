@@ -1588,6 +1588,36 @@ class DataModel:
                 print_exception()
                 logger.warning('Unable to return the image size (s=%s)' % s)
 
+    def set_image_size(self, s=None) -> None:
+        if s == None: s = self.scale
+        self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+        val = self._data['data']['scales'][s]['image_src_size']
+        # logger.info(f'Just Set {s} image size to {val}')
+        logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
+
+    def image_size_aligned(self, s=None) -> tuple:
+        if s == None: s = self.scale
+        logger.debug('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        try:
+            return tuple(self._data['data']['scales'][s]['image_aligned_size'])
+        except:
+            logger.info(f"No key 'image_aligned_size' found (scale:{s}). Adding it now...")
+            try:
+                self.set_image_aligned_size(s=s)
+                answer = tuple(self._data['data']['scales'][s]['image_aligned_size'])
+                logger.info(f'Returning {answer}')
+                return answer
+            except:
+                print_exception()
+                logger.warning('Unable to return the image size (s=%s)' % s)
+
+    def set_image_aligned_size(self, s=None) -> None:
+        if s == None: s = self.scale
+        self._data['data']['scales'][s]['image_aligned_size'] = ImageSize(self.path_aligned(s=s))
+        val = self._data['data']['scales'][s]['image_src_size']
+        # logger.info(f'Just Set {s} image size to {val}')
+        logger.info(f'Aligned Image Size is {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
+
     def full_scale_size(self):
         return ImageSize(self.path_base(s='scale_1'))
 
@@ -1721,11 +1751,7 @@ class DataModel:
         self.set_bounding_rect(ComputeBoundingRect(self.stack(s=s)))
         return self.bounding_rect()
 
-    def set_image_size(self, s) -> None:
-        self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
-        val = self._data['data']['scales'][s]['image_src_size']
-        # logger.info(f'Just Set {s} image size to {val}')
-        logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
+
 
     def set_image_size_directly(self, size, s=None):
         if s == None: s = self.scale
