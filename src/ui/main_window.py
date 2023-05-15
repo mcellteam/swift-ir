@@ -1527,13 +1527,13 @@ class MainWindow(QMainWindow):
                 if type(ng_layer) != bool:
                     try:
                         if 0 <= ng_layer < len(cfg.data):
-                            logger.critical(f'Setting Z-index: {ng_layer}')
+                            logger.info(f'Setting Z-index: {ng_layer}')
                             cfg.data.zpos = ng_layer
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
 
-            logger.critical('Updating the UI...')
+            logger.info('Updating the UI...')
 
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.snrViewer.set_layer(cfg.data.zpos)
