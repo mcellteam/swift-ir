@@ -2231,6 +2231,7 @@ class MainWindow(QMainWindow):
 
         self.cpanel.show()
         self.sa_cpanel.show()
+        cfg.project_tab.showSecondaryNgTools()
 
         self.updateAllCpanelDetails()
         # QApplication.processEvents()
