@@ -143,7 +143,6 @@ QProgressBar {
 }
 
 
-
 QDockWidget {
     font-family: Tahoma, sans-serif;
     font-weight: 600;
