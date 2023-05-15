@@ -5404,7 +5404,7 @@ class MainWindow(QMainWindow):
         self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetVerticalTitleBar)
         self.dw_monitor.setObjectName('Dock Widget HUD')
         self.dw_monitor.setStyleSheet("""
-        QDockWidget {color: #161c20;}
+        QDockWidget {color: #ede9e8;}
         QDockWidget::title {
                     background-color: #161c20;
                     color: #ede9e8;
