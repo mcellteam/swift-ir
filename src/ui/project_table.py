@@ -149,7 +149,8 @@ class ProjectTable(QWidget):
                     # logger.info('Inserting row %d' % i)
                     self.table.insertRow(i)
                     # snr_4x = cfg.data.snr_components(l=i)
-                    snr_4x = cfg.data.snr_components(l=i, method='grid-default')
+                    # snr_4x = cfg.data.snr_components(l=i, method='grid-default')
+                    snr_4x = cfg.data.snr_components(l=i)
                     for j, item in enumerate(row):
                         if j == 0:
                             # item = '<h4>' + item + '</h4>'
@@ -310,8 +311,18 @@ class ProjectTable(QWidget):
                 try:     skips.append(l['skipped'])
                 except:  skips.append('?'); print_exception()
                 try:
-                    m = l['alignment']['method']
-                    if m == 'Auto-SWIM': m = 'Automatic SWIM Alignment'
+                    # m = l['alignment']['method']
+                    m = l['current_method']
+
+                    convert = {'grid-default': 'Grid Default',
+                               'grid-custom': 'Grid Custom',
+                               'manual-strict': 'Manual Strict',
+                               'manual-hint': 'Manual Hint'
+                               }
+                    try:
+                        m = convert[m]
+                    except:
+                        print_exception()
                     method.append(m)
                 except:
                     method.append('Unknown')

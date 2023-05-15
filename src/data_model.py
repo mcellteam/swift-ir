@@ -917,7 +917,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         if method == None:
-            method = self.current_method
+            method = self.method(l=l)
         if l == 0:
             return []
         try:
@@ -925,7 +925,7 @@ class DataModel:
             # return self.method_results(s=s, l=l)['snr']
         except:
             print_exception()
-            logger.warning(f'No SNR components for section {l}, method {method} [caller: {caller}]...')
+            logger.warning(f'No SNR components for section {l}, method {method} [caller: {caller}]...\n')
             return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
         # if self.method(s=s, l=l) == 'Manual-Hint':
         #     files = self.get_signals_filenames()
