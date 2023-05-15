@@ -5084,6 +5084,7 @@ class MainWindow(QMainWindow):
         self.secHasBB = QLabel()
         self.secUseBB = QLabel()
         self.secAlignmentMethod = QLabel()
+        self.secSrcImageSize = QLabel()
 
         self.secName.setStyleSheet(secStyle)
         self.secReference.setStyleSheet(secStyle)
@@ -5091,6 +5092,7 @@ class MainWindow(QMainWindow):
         self.secHasBB.setStyleSheet(secStyle)
         self.secUseBB.setStyleSheet(secStyle)
         self.secAlignmentMethod.setStyleSheet(secStyle)
+        self.secSrcImageSize.setStyleSheet(secStyle)
 
         # make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm())
 
@@ -5101,6 +5103,7 @@ class MainWindow(QMainWindow):
             'Excluded Sections': self.secExcluded,
             'Use Bounding Box': self.secUseBB,
             'Has Bounding Box': self.secHasBB,
+            'Source Image Size': self.secSrcImageSize
         })
         self.secDetails['Excluded Sections'].setWordWrap(True)
 
@@ -6019,6 +6022,7 @@ class MainWindow(QMainWindow):
             self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a,b in cfg.data.skips_list()]))
             self.secHasBB.setText(str(cfg.data.has_bb()))
             self.secUseBB.setText(str(cfg.data.use_bb()))
+            self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
 
 
 
