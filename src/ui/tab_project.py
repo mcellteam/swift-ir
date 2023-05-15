@@ -1746,7 +1746,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
+        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
         self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSnrAction)

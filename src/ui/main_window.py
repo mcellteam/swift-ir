@@ -1510,7 +1510,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} >>>>")
+        logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} ng_layer={ng_layer} >>>>")
         self.count_calls.setdefault('dataUpdateWidgets', {})
         self.count_calls['dataUpdateWidgets'].setdefault(caller, 0)
         self.count_calls['dataUpdateWidgets'][caller] += 1
@@ -1527,7 +1527,7 @@ class MainWindow(QMainWindow):
                 if type(ng_layer) != bool:
                     try:
                         if 0 <= ng_layer < len(cfg.data):
-                            logger.info(f'Setting Z-index: {ng_layer}')
+                            logger.info(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
                             cfg.data.zpos = ng_layer
                             # self._sectionSlider.setValue(ng_layer)
                     except:
@@ -3806,22 +3806,22 @@ class MainWindow(QMainWindow):
         self.ngShowAxisLinesAction.setText('Axes')
         viewMenu.addAction(self.ngShowAxisLinesAction)
 
-        self.ngShowScaleBarAction = QAction(self)
-        def fn():
-            if self._isProjectTab():
-                opt = self.ngShowScaleBarAction.isChecked()
-                setOpt('neuroglancer,SHOW_SCALE_BAR', opt)
-                # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[opt])
-                # for v in self.get_viewers():
-                #     v.updateScaleBar()
-                if cfg.emViewer:
-                    cfg.emViewer.updateScaleBar()
-        self.ngShowScaleBarAction.setCheckable(True)
-        self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[getOpt('neuroglancer,SHOW_SCALE_BAR')])
-        self.ngShowScaleBarAction.setText('Scale Bar')
-        self.ngShowScaleBarAction.triggered.connect(fn)
-        viewMenu.addAction(self.ngShowScaleBarAction)
+        # self.ngShowScaleBarAction = QAction(self)
+        # def fn():
+        #     if self._isProjectTab():
+        #         opt = self.ngShowScaleBarAction.isChecked()
+        #         setOpt('neuroglancer,SHOW_SCALE_BAR', opt)
+        #         # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[opt])
+        #         # for v in self.get_viewers():
+        #         #     v.updateScaleBar()
+        #         if cfg.emViewer:
+        #             cfg.emViewer.updateScaleBar()
+        # self.ngShowScaleBarAction.setCheckable(True)
+        # self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
+        # # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[getOpt('neuroglancer,SHOW_SCALE_BAR')])
+        # self.ngShowScaleBarAction.setText('Scale Bar')
+        # self.ngShowScaleBarAction.triggered.connect(fn)
+        # viewMenu.addAction(self.ngShowScaleBarAction)
 
         self.ngShowUiControlsAction = QAction(self)
         def fn():
