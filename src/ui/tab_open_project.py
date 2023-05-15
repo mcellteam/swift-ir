@@ -845,7 +845,7 @@ class UserProjects(QWidget):
     def get_data(self):
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        logger.info('Loading project data into the table view...')
+        logger.info('Loading known projects into table view...')
         self.project_paths = get_project_list()
         projects, thumbnail_first, thumbnail_last, created, modified, \
         n_sections, img_dimensions, bytes, gigabytes, location = \
