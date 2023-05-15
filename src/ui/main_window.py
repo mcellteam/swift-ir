@@ -6068,7 +6068,10 @@ class MainWindow(QMainWindow):
             self.secHasBB.setText(str(cfg.data.has_bb()))
             self.secUseBB.setText(str(cfg.data.use_bb()))
             self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
-            self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+            if cfg.data.is_aligned():
+                self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+            else:
+                self.secAlignedImageSize.setText('Not Aligned')
 
 
 
