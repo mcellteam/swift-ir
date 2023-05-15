@@ -11,6 +11,7 @@ import time
 import shutil
 import argparse
 import traceback
+import inspect
 import psutil
 import logging
 from datetime import datetime
@@ -35,15 +36,19 @@ __all__ = ['compute_affines']
 
 logger = logging.getLogger(__name__)
 
-def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False):
+def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
+    caller = inspect.stack()[1].function
     scale_val = get_scale_val(scale)
     # logger.info(f'use_gui = {use_gui}')
+
+    logger.info(f'>>>> compute_affines [{caller}] >>>>')
 
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
         logger.info(f'\n\n################ Computing Affines ################\n')
+        logger.info(f'path: {path}')
 
         if path:
             with open(path, 'r') as f:
@@ -56,6 +61,7 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
             DEV_MODE = False
             TACC_MAX_CPUS = 122
             dm = DataModel(data)
+            logger.info(f'dm.dest(): {dm.dest()}')
             dm.set_defaults()
         else:
             USE_FILE_IO = cfg.USE_FILE_IO
@@ -492,7 +498,7 @@ if __name__ == '__main__':
         scale = 'scale_4'
     start = args.start
     end = args.end
-    dm = compute_affines(scale=scale, start=start, end=end, path=path, use_gui=False, bounding_box=args.bounding_box)
+    dm = compute_affines(scale=scale, path=path, start=start, end=end, use_gui=False, bounding_box=args.bounding_box)
     save2file(dm=dm, name=dm.dest())
 
 
