@@ -53,7 +53,7 @@ class WebBrowser(QWidget):
 
         def browser_documentation():
             self.browser.setUrl(
-                QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md'))
+                QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/docs/README.md'))
 
         def browser_wolframalpha():
             self.browser.setUrl(QUrl('https://www.wolframalpha.com/'))
