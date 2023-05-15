@@ -348,7 +348,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
             cfg.tensor = (cfg.unal_tensor, cfg.al_tensor)[cfg.data.is_aligned_and_generated()]
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
-            raise e
+            print_exception()
+            ### Add funcitonality to recreate Zarr
+            # raise e # raising will ensure crash
 
     def post_message(self, msg):
         with self.config_state.txn() as cs:
