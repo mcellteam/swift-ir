@@ -48,6 +48,7 @@ class ProjectTable(QWidget):
         self.row_height_slider = Slider(self)
         self.row_height_slider.setMinimum(28)
         self.initUI()
+        self.table.horizontalHeader().setHighlightSections(False)
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.itemSelectionChanged.connect(self.selection_changed)
