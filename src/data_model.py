@@ -1587,7 +1587,6 @@ class DataModel:
             except:
                 print_exception()
                 logger.warning('Unable to return the image size (s=%s)' % s)
-                return None
 
     def full_scale_size(self):
         return ImageSize(self.path_base(s='scale_1'))

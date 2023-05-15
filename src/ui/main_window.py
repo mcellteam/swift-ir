@@ -3380,7 +3380,7 @@ class MainWindow(QMainWindow):
         #     return
 
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' %caller)
+        logger.info('>>>> _onGlobTabChange [{caller}] >>>>')
         # if caller not in ('onStartProject', '_setLastTab'):
         if caller not in ('onStartProject', '_setLastTab'):
             self.shutdownNeuroglancer() #0329+
@@ -5085,6 +5085,7 @@ class MainWindow(QMainWindow):
         self.secUseBB = QLabel()
         self.secAlignmentMethod = QLabel()
         self.secSrcImageSize = QLabel()
+        self.secAlignedImageSize = QLabel()
 
         self.secName.setStyleSheet(secStyle)
         self.secReference.setStyleSheet(secStyle)
@@ -5093,19 +5094,21 @@ class MainWindow(QMainWindow):
         self.secUseBB.setStyleSheet(secStyle)
         self.secAlignmentMethod.setStyleSheet(secStyle)
         self.secSrcImageSize.setStyleSheet(secStyle)
+        self.secAlignedImageSize.setStyleSheet(secStyle)
 
         # make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm())
 
         self.secDetails = OrderedDict({
-            'Name': self.secName,
-            'Reference': self.secReference,
-            'Alignment Method': self.secAlignmentMethod,
-            'Excluded Sections': self.secExcluded,
-            'Use Bounding Box': self.secUseBB,
-            'Has Bounding Box': self.secHasBB,
-            'Source Image Size': self.secSrcImageSize
+        'Name': self.secName,
+        'Reference': self.secReference,
+        'Has Bounding Box': self.secHasBB,
+        'Source Image Size': self.secSrcImageSize,
+        # 'Aligned Image Size': self.secAlignedImageSize,
+        'Alignment Method': self.secAlignmentMethod,
+        'Excluded Sections': self.secExcluded,
+        'Use Bounding Box': self.secUseBB,
         })
-        self.secDetails['Excluded Sections'].setWordWrap(True)
+        # self.secDetails['Excluded Sections'].setWordWrap(True)
 
         for i in range(len(self.secDetails)):
             self.secDetails_fl.addRow(list(self.secDetails.items())[i][0], list(self.secDetails.items())[i][1])
@@ -5130,6 +5133,7 @@ class MainWindow(QMainWindow):
         self.sa_tab2.setWidgetResizable(True)
         self.sa_tab2.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab2.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
 
         self.runtimeWidget = QWidget()
         # self.runtimeWidget.setStyleSheet("""
