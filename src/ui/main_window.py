@@ -1314,6 +1314,8 @@ class MainWindow(QMainWindow):
 
 
     def layer_left(self):
+        caller = inspect.stack()[1].function
+        logger.info(f'>>>> layer_left [{caller}] >>>>')
         if self._isProjectTab():
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
@@ -1331,7 +1333,8 @@ class MainWindow(QMainWindow):
 
 
     def layer_right(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f'>>>> layer_right [{caller}] >>>>')
         if self._isProjectTab():
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
@@ -2251,8 +2254,11 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if self._isProjectTab():
                 try:
-                    hud_text = self.hud.textedit.toPlainText()
-                    cfg.data['hud'] = hud_text
+                    #0514-
+                    # hud_text = self.hud.textedit.toPlainText()
+                    # cfg.data['hud'] = hud_text
+
+
                     # cfg.data.basefilenames()
                     if saveas is not None:
                         cfg.data.set_destination(saveas)
