@@ -336,7 +336,8 @@ class OpenProject(QWidget):
         self.name_dialog = QFileDialog()
         self.name_dialog.setContentsMargins(0,0,0,0)
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20; """)
+        # self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20; """)
+        # self.name_dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
         # self.vbl_projects.addWidget(self.name_dialog)
         # self.vbl_main.addWidget(self.name_dialog)
         self.vbl_main.addWidget(self.name_dialog)
@@ -423,7 +424,8 @@ class OpenProject(QWidget):
             cfg.main_window.set_status('New Project (Step: 3/3) - Global Configuration')
             dialog = NewConfigureProjectDialog(parent=self)
             dialog.setWindowFlags(Qt.FramelessWindowHint)
-            dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+            # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+            # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20;""")
             self.vbl_main.addWidget(dialog)
 
             result = dialog.exec()
@@ -464,7 +466,8 @@ class OpenProject(QWidget):
         '''Dialog for importing images. Returns list of filenames.'''
         dialog = QFileDialogPreview()
         dialog.setWindowFlags(Qt.FramelessWindowHint)
-        dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+        # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+        # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
         # dialog.setStyleSheet("""
         # QPushButton {
         #     font-size: 10px;
@@ -720,6 +723,7 @@ class UserProjects(QWidget):
         # self.table.setShowGrid(False)
         self.table.setSortingEnabled(True)
         self.table.setWordWrap(True)
+        self.table.horizontalHeader().setHighlightSections(False)
         self.table.horizontalHeader().setStretchLastSection(True)
         # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
