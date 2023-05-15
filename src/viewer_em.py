@@ -276,7 +276,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def updateScaleBar(self):
         with self.txn() as s:
-            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            s.show_scale_bar = False
 
     def updateAxisLines(self):
         with self.txn() as s:
@@ -450,7 +451,8 @@ class EMViewer(AbstractEMViewer):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
-            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            s.show_scale_bar = False
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
@@ -527,7 +529,8 @@ class EMViewer(AbstractEMViewer):
             s.layout.type = nglayout
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+            s.show_scale_bar = False
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[cfg.data.zpos, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['rendering']['shader'], )
