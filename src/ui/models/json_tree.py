@@ -242,7 +242,7 @@ class JsonModel(QAbstractItemModel):
         if not cfg.DEV_MODE:
             role = Qt.DisplayRole #0718+
         if role == Qt.EditRole:
-            print('\n\nRole was EDIT role\n')
+            # print('Role was EDIT role')
             if index.column() == 1:
                 item = index.internalPointer()
                 item.value = str(value)
