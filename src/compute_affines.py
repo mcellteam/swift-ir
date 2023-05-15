@@ -63,12 +63,16 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
             TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
             dm = cfg.data
 
+        logger.info('continuing 1...')
+
         if end == None:
             end = dm.count
 
         scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
+
+        logger.info('continuing 2...')
 
         logger.critical(f'dm acquired: {dm.dest()}')
         # if ng.is_server_running():
@@ -91,6 +95,8 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
         if not os.path.exists(signals_raw_dir):
             os.mkdir(signals_raw_dir)
 
+        logger.info('continuing 3...')
+
         dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
         if rename_switch:
             rename_layers(use_scale=scale, al_dict=alignment_dict)
@@ -107,6 +113,8 @@ def compute_affines(scale, start=0, end=None, path=None, use_gui=True, renew_od=
         temp_file = os.path.join(dm.dest(), "temp_project_file.json")
         with open(temp_file, 'w') as f:
             f.write(dm.to_json())
+
+        logger.info('continuing 4...')
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
 
