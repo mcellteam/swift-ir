@@ -3465,10 +3465,13 @@ class MainWindow(QMainWindow):
 
             self.setControlPanelData()
 
-            if not getData('state,manual_mode'):
-                cfg.project_tab.showSecondaryNgTools()
-            elif getData('state,manual_mode'):
-                cfg.project_tab.hideSecondaryNgTools()
+            try:
+                if not getData('state,manual_mode'):
+                    cfg.project_tab.showSecondaryNgTools()
+                elif getData('state,manual_mode'):
+                    cfg.project_tab.hideSecondaryNgTools()
+            except:
+                print_exception()
 
             logger.info('Setting global viewer reference...')
             cfg.emViewer = cfg.project_tab.viewer
