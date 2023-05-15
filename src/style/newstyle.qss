@@ -125,13 +125,13 @@ QLabel#validity_label{
 QScrollBar:vertical {
     border: none;
     /*background-color: #1b1e23;*/
-    width: 10px;
+    width: 6px;
  }
 
 QScrollBar:horizontal {
     border: none;
     /*background-color: #1b1e23;*/
-    height: 10px;
+    height: 6px;
 }
 
 QProgressBar {
