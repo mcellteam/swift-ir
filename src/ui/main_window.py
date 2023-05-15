@@ -665,7 +665,7 @@ class MainWindow(QMainWindow):
 
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
+                self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=cfg.data.dest(), scale=scale))
                 self.threadpool.start(self.worker)
             else:
                 cfg.thumb.reduce_aligned(start=start, end=end, dest=cfg.data.dest(), scale=scale)

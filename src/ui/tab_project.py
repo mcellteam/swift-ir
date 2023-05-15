@@ -1373,7 +1373,7 @@ class ProjectTab(QWidget):
 
             self.te_logs.setText('No Log To Show.')
         self.logs_delete_all_btn = QPushButton('Delete Logs')
-        self.logs_delete_all_btn.setFixedSize(QSize(60,18))
+        self.logs_delete_all_btn.setFixedSize(QSize(80,18))
         self.logs_delete_all_btn.clicked.connect(fn)
 
         self.te_logs = QTextEdit()
@@ -1864,10 +1864,7 @@ class ProjectTab(QWidget):
                 elif method == 'grid-default':
                     use = cfg.data.grid_default_regions[i]
 
-                logger.info(f'\nfile  : {files[i]}\n'
-                            f'exists? : {os.path.exists(files[i])}\n'
-                            f'use?    : {use}\n')
-
+                logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
                 if use:
                     if use and os.path.exists(files[i]):
                         tn = self.cutout_thumbnails[i]
