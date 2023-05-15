@@ -236,6 +236,7 @@ class MainWindow(QMainWindow):
                     v.set_zmag()
                 self.hud.done()
                 self.updateEnabledButtons()    #0301+
+                self.updateAllCpanelDetails()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
@@ -243,6 +244,7 @@ class MainWindow(QMainWindow):
             elif self._getTabType() == 'OpenProject':
                 configure_project_paths()
                 self._getTabObject().user_projects.set_data()
+
         else:
             self.warn('The application is busy')
             logger.warning('The application is busy')
@@ -3121,7 +3123,7 @@ class MainWindow(QMainWindow):
         self.refreshButton = QPushButton(' Refresh')
         self.refreshButton.setFont(f)
         self.refreshButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        self.refreshButton.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
+        self.refreshButton.setToolTip(f"Refresh View {hotkey('R')}")
         # self.refreshButton.setFixedSize(QSize(78,16))
         self.refreshButton.setFixedHeight(16)
         self.refreshButton.setIconSize(QSize(16,16))
