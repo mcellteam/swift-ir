@@ -1257,7 +1257,7 @@ class MainWindow(QMainWindow):
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
         # logger.info('updateEnabledButtons >>>>')
-        self.dataUpdateResults()
+        # self.dataUpdateResults()
 
         if self._isProjectTab():
             # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
@@ -1443,6 +1443,11 @@ class MainWindow(QMainWindow):
 
 
     def dataUpdateResults(self):
+        caller = inspect.stack()[1].function
+        logger.critical(f'>>>> dataUpdateResults [{caller}] >>>>')
+
+
+
         if cfg.data:
             # self.results0 = QLabel('...Image Dimensions')
             # self.results1 = QLabel('...# Images')
@@ -1473,88 +1478,99 @@ class MainWindow(QMainWindow):
             # w.setLayout(self.fl_main_results)
             # self.sa_tab1.setWidget(w)
 
-            if cfg.data.is_aligned():
-                lowest_5_i = [x[0] for x in list(cfg.data.snr_lowest(10))]
-                lowest_5 = list(cfg.data.snr_lowest(10))
 
-                funcs = [lambda: self.jump_to_manual(lowest_5_i[0]),
-                         lambda: self.jump_to_manual(lowest_5_i[1]),
-                         lambda: self.jump_to_manual(lowest_5_i[2]),
-                         lambda: self.jump_to_manual(lowest_5_i[3]),
-                         lambda: self.jump_to_manual(lowest_5_i[4]),
-                         lambda: self.jump_to_manual(lowest_5_i[5]),
-                         lambda: self.jump_to_manual(lowest_5_i[6]),
-                         lambda: self.jump_to_manual(lowest_5_i[7]),
-                         ]
+    def updateLowest8widget(self):
 
-                self.lowestX_btns = []
-                self.lowestX_txt = []
-                
-                for i in range(len(funcs)):
+        if cfg.data.is_aligned():
+            n_lowest = min(8,len(cfg.data) - 1)
+            lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
+            lowest_X = list(cfg.data.snr_lowest(n_lowest))
+            logger.info(f'lowest_X_i : {lowest_X_i}')
+            logger.info(f'lowest_X : {lowest_X}')
+            logger.info(f'n_lowest : {n_lowest}')
 
-                    try:
-                        # logger.info(f'i = {i}, lowest_5_i[i] = {lowest_5_i[i]}')
-                        s1 = ('z-index <u><b>%d</b></u>' % lowest_5[i][0]).ljust(15)
-                        s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_5[i][1]).ljust(15)
-                        combined = s1 + ' ' + s2
-                        # btn = QPushButton('Jump')
-                        # self.lowestX_btns.append(QPushButton('Align Manually →'))
-                        self.lowestX_btns.append(QPushButton('Manual Align'))
-                        f = QFont()
-                        f.setPointSizeF(7)
-                        self.lowestX_btns[i].setFont(f)
-                        self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
-                        self.lowestX_btns[i].setFixedSize(QSize(80, 14))
-                        self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
-                        self.lowestX_btns[i].setIconSize(QSize(10, 10))
-                        self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-                        self.lowestX_btns[i].clicked.connect(funcs[i])
-                        self.lowestX_txt.append(combined)
+            funcs = []
+            for i in range(n_lowest):
+                funcs.append(lambda: self.jump_to_manual(lowest_X_i[i]))
 
-                    # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
-                    except:
-                        print_exception()
-                    # self.results3 = QLabel('...Worst 5 SNR')
-            else:
-                label = QLabel('Not Aligned.')
-                label.setAlignment(Qt.AlignTop)
-                self.sa_tab2.setWidget(label)
-                return
+            self.lowestX_btns = []
+            self.lowestX_txt = []
 
-            self.lowX_left_fl = QFormLayout()
-            self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
-            self.lowX_left_fl.setVerticalSpacing(1)
+            for i in range(n_lowest):
+                logger.info(f'i = {i}')
+
+                try:
+                    # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
+                    s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
+                    s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
+                    combined = s1 + ' ' + s2
+                    # btn = QPushButton('Jump')
+                    # self.lowestX_btns.append(QPushButton('Align Manually →'))
+                    self.lowestX_btns.append(QPushButton('Manual Align'))
+                    f = QFont()
+                    f.setPointSizeF(7)
+                    self.lowestX_btns[i].setFont(f)
+                    self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
+                    self.lowestX_btns[i].setFixedSize(QSize(80, 14))
+                    self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
+                    self.lowestX_btns[i].setIconSize(QSize(10, 10))
+                    self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                    self.lowestX_btns[i].clicked.connect(funcs[i])
+                    self.lowestX_txt.append(combined)
+
+                # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
+                except:
+                    print_exception()
+                # self.results3 = QLabel('...Worst 5 SNR')
+        else:
+            label = QLabel('Not Aligned.')
+            label.setAlignment(Qt.AlignTop)
+            self.sa_tab2.setWidget(label)
+            return
+
+        self.lowX_left_fl = QFormLayout()
+        self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
+        self.lowX_left_fl.setVerticalSpacing(1)
+        if n_lowest >= 1:
             self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
+        if n_lowest >= 2:
             self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
+        if n_lowest >= 3:
             self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
+        if n_lowest >= 4:
             self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
-            # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
-            self.lowX_left = QWidget()
-            self.lowX_left.setContentsMargins(0, 0, 0, 0)
-            self.lowX_left.setLayout(self.lowX_left_fl)
+        # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        self.lowX_left = QWidget()
+        self.lowX_left.setContentsMargins(0, 0, 0, 0)
+        self.lowX_left.setLayout(self.lowX_left_fl)
 
-            self.lowX_right_fl = QFormLayout()
-            self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
-            self.lowX_right_fl.setVerticalSpacing(1)
+        self.lowX_right_fl = QFormLayout()
+        self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
+        self.lowX_right_fl.setVerticalSpacing(1)
+        if n_lowest >= 5:
             self.lowX_right_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        if n_lowest >= 6:
             self.lowX_right_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+        if n_lowest >= 7:
             self.lowX_right_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+        if n_lowest >= 8:
             self.lowX_right_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
-            # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
-            self.lowX_right = QWidget()
-            self.lowX_right.setContentsMargins(0, 0, 0, 0)
-            self.lowX_right.setLayout(self.lowX_right_fl)
+        # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
+        self.lowX_right = QWidget()
+        self.lowX_right.setContentsMargins(0, 0, 0, 0)
+        self.lowX_right.setLayout(self.lowX_right_fl)
 
-            hbl = QHBoxLayout()
-            hbl.setContentsMargins(2,2,2,2)
-            hbl.addWidget(self.lowX_left)
-            hbl.addWidget(self.lowX_right)
-            w = QWidget()
-            w.setLayout(hbl)
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(2, 2, 2, 2)
+        hbl.addWidget(self.lowX_left)
+        hbl.addWidget(self.lowX_right)
+        w = QWidget()
+        w.setLayout(hbl)
 
-            logger.critical('Setting sa_tab2 Layout...')
-            # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
-            self.sa_tab2.setWidget(w)
+        logger.critical('Setting sa_tab2 Layout...')
+        # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
+        self.sa_tab2.setWidget(w)
+
 
 
                 # @Slot()
@@ -3519,6 +3535,7 @@ class MainWindow(QMainWindow):
 
             self.setControlPanelData()
             self.updateAllCpanelDetails()
+            self.dataUpdateResults()
 
             try:
                 if not getData('state,manual_mode'):
@@ -4310,7 +4327,7 @@ class MainWindow(QMainWindow):
         helpMenu.addAction(action)
 
         self.documentationAction = QAction('GitHub', self)
-        action.triggered.connect(lambda: self.url_resource(url='https://github.com/mcellteam/swift-ir/blob/development_ng/README_SWIFTIR.md', title='Source Code (GitHub)'))
+        action.triggered.connect(lambda: self.url_resource(url='https://github.com/mcellteam/swift-ir/blob/development_ng/docs/README.md', title='Source Code (GitHub)'))
         helpMenu.addAction(self.documentationAction)
 
 
@@ -4342,7 +4359,7 @@ class MainWindow(QMainWindow):
         # helpMenu.addAction(self.googleAction)
 
         action = QAction('Google', self)
-        action.triggered.connect(lambda: self.url_resource(url='https://www.google.com', title='Google'))
+        action.triggered.connect(self.google)
         helpMenu.addAction(action)
 
 
@@ -6071,6 +6088,8 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self.cpanelTabWidget.currentIndex() == 0:
             self.updateCpanelDetails_i1()
+        if self.cpanelTabWidget.currentIndex() == 1:
+            self.updateLowest8widget()
         if self.cpanelTabWidget.currentIndex() == 3:
             self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
 
@@ -6265,6 +6284,7 @@ class MainWindow(QMainWindow):
         else:
             self._polyBiasCombo.setCurrentText(str(poly))
         self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
+        self._bbToggle.setChecked(cfg.data.use_bb())
 
 
     def get_dw_monitor(self):
