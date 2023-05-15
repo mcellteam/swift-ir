@@ -41,6 +41,7 @@ class SnrThumbnail(QWidget):
             self.set_data(path=self.path, snr=self.snr)
 
     def set_data(self, path, snr):
+        logger.critical()
         self.path = path
         self.snr = snr
         self.thumbnail.snr = snr

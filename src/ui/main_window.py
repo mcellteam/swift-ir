@@ -228,6 +228,7 @@ class MainWindow(QMainWindow):
 
 
     def refreshTab(self):
+
         if not self._working:
             logger.critical('Refreshing...')
             if self._isProjectTab():
@@ -965,6 +966,13 @@ class MainWindow(QMainWindow):
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
         self.tell('**** Processes Complete ****')
+
+    def alignAllScales(self):
+        scales = cfg.data.scales()
+        scales.reverse()
+        for s in scales:
+            cfg.data.scale = s
+            self.alignAll()
 
 
     def alignRange(self):
@@ -2853,7 +2861,7 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.cpanel.hide()
                 # self._btn_manualAlign.setText('← Exit Manual Mode')
                 self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
-                self.alignMatchPointAction.setText(f"Exit Manual Mode {hotkey('M')} ")
+                self.alignMatchPointAction.setText(f"Exit Manual Align Mode {hotkey('M')} ")
                 self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
                 self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
                 self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
@@ -2908,7 +2916,7 @@ class MainWindow(QMainWindow):
             self.updateEnabledButtons()
             self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
             self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
-            self.alignMatchPointAction.setText(f"Manual Align {hotkey('M')} ")
+            self.alignMatchPointAction.setText(f"Align Manually {hotkey('M')} ")
             self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
             self.updateCorrSignalsDrawer() #Caution - Likely Redundant!
@@ -3952,21 +3960,26 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(self._tool_hstry)
         menu.addAction(action)
 
-        self.alignAllAction = QAction('Align All', self)
+        self.alignAllAction = QAction('Align All Current Scale', self)
         self.alignAllAction.triggered.connect(self.alignAll)
         self.alignAllAction.setShortcut('Ctrl+A')
         alignMenu.addAction(self.alignAllAction)
 
-        self.alignOneAction = QAction('Align + Generate One', self)
+        self.alignAllScalesAction = QAction('Align All Scales', self)
+        self.alignAllScalesAction.triggered.connect(self.alignAllScales)
+        alignMenu.addAction(self.alignAllScalesAction)
+
+        self.alignOneAction = QAction('Align Current Section', self)
         self.alignOneAction.triggered.connect(self.alignGenerateOne)
         alignMenu.addAction(self.alignOneAction)
-        self.alignMatchPointAction = QAction(f"Manual Align {hotkey('M')}", self)
+
+        self.alignMatchPointAction = QAction(f"Align Manually {hotkey('M')}", self)
         self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
         self.alignMatchPointAction.setShortcut('Ctrl+M')
         alignMenu.addAction(self.alignMatchPointAction)
         # self.addAction(self.alignMatchPointAction)
 
-        self.skipChangeAction = QAction('Toggle Skip', self)
+        self.skipChangeAction = QAction('Toggle Include', self)
         self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
         self.skipChangeAction.setShortcut('Ctrl+K')
         self.addAction(self.skipChangeAction)
@@ -5187,20 +5200,28 @@ class MainWindow(QMainWindow):
 
         self.secAffine = QLabel()
         self.secAffine.setStyleSheet("""
+        QWidget{
             color: #161c20;
             font-weight: 600;
+            border: none;
+            }
         
         """)
 
         self.sa_tab4 = QScrollArea()
+        self.sa_tab4.setStyleSheet("""
+        QLabel {font-weight: 300;}
+        """)
         self.sa_tab4.setWidgetResizable(True)
         self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab4.setWidget(self.secAffine)
 
         self.cpanelTabWidget = QTabWidget()
+        self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.cpanelTabWidget.setFixedWidth(tab_width)
         self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
+
 
         self.cpanelTabWidget.setStyleSheet("""
         QTextWidget {
@@ -5209,18 +5230,17 @@ class MainWindow(QMainWindow):
             border: none;
             font-size: 9px;
         }
+        QScrollArea {border: none; font-size: 8px;}
         QTabWidget{
+            border: none;
             padding: 0px;
-            border-width: 0px;
-            border-radius: 2px;
             font-size: 9px;
-
         }
 
         QTabBar::tab {
             margin 0px;
-            height: 14px;
-            max-width: 100px;
+            padding: 1px;
+            height: 10px;
             font-size: 8px;
         }
 
@@ -5739,17 +5759,25 @@ class MainWindow(QMainWindow):
 
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
+        self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.globTabs.setStyleSheet("""background-color: #ede9e8""")
+        self.globTabs.tabBar().setElideMode(Qt.ElideMiddle)
         # self.globTabs.setContentsMargins(4,4,4,4)
         self.globTabs.setContentsMargins(0,0,0,0)
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.globTabs.tabBar().setStyleSheet("""
-        QTabBar::tab {
-            min-width: 128px;
-            height: 18px;
-            padding: 0px;
-            margin: 0px;
-        }
-        """)
+        # self.globTabs.tabBar().setStyleSheet("""
+        # QTabBar::tab {
+        #     min-width: 128px;
+        #     height: 18px;
+        #     padding: 2px;
+        #     margin: 2px;
+        # }
+        # QTabBar::tab:selected
+        # {
+        #     font-weight: 600;
+        # }
+        # """)
+
 
         # self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
 

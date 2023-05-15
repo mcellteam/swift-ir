@@ -32,7 +32,7 @@ class Thumbnailer:
     def reduce_main(self, dest, use_gui=True):
         logger.info(f'\n\n################ Reducing: Source Images ################\n')
 
-        pbar_text = 'Generating Source Image Thumbnails'
+        pbar_text = 'Generating %s Source Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -47,7 +47,7 @@ class Thumbnailer:
     def reduce_aligned(self, start, end, dest, scale, use_gui=True):
         logger.info(f'\n\n################ Reducing: Aligned Images ################\n')
 
-        pbar_text = 'Generating Aligned Image Thumbnails'
+        pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -66,7 +66,7 @@ class Thumbnailer:
         logger.info(f'\n\n################ Reducing: Correlation Signals ################\n')
 
 
-        pbar_text = 'Generating Signal Spot Thumbnails'
+        pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:

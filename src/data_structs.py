@@ -51,7 +51,6 @@ layer_template = \
             "manual_settings": {},
             "method_data": {},
             "method_options": {},
-            "method": "Auto-SWIM",
             "manpoints": {
                 "ref": [],
                 'base': []

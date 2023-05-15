@@ -287,7 +287,7 @@ def append_project_path(path):
 
 def configure_project_paths():
     caller = inspect.stack()[1].function
-    logger.info(f'caller: {caller}')
+    logger.critical(f'caller: {caller}')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
     if not os.path.exists(userprojectspath):
         open(userprojectspath, 'a').close()

@@ -322,7 +322,7 @@ class ProjectTab(QWidget):
         self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5,alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
-        # self.ngVertLab.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
+        self.ngVertLab.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
 
         style = """
@@ -3034,12 +3034,17 @@ class ProjectTab(QWidget):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
+        self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.setStyleSheet("""
-        QTabBar::tab { 
-            height: 18px;
-            min-width: 110px; 
-            font-size: 10px; 
-            font-weight: 600px;
+        QTabBar::tab {
+            height: 12px;
+            min-width: 110px;
+            font-size: 10px;
+            font-weight: 300;
+        }
+        QTabBar::tab:selected
+        {
+            font-weight: 600;
         }
 
         """)

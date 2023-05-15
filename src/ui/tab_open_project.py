@@ -659,7 +659,7 @@ class OpenProject(QWidget):
             cfg.main_window.hud.done()
 
         cfg.main_window.tell('Wrapping up...')
-        # configure_project_paths()
+        configure_project_paths()
         if cfg.main_window.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
             try:
                 cfg.main_window.globTabs.currentWidget().user_projects.set_data()
