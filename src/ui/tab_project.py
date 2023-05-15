@@ -1967,12 +1967,12 @@ class ProjectTab(QWidget):
 
 
     def hideSecondaryNgTools(self):
-        for i in range(0,15):
+        for i in range(0,14):
             self.w_ng_extended_toolbar.actions()[i].setVisible(False)
 
 
     def showSecondaryNgTools(self):
-        for i in range(0,15):
+        for i in range(0,14):
             self.w_ng_extended_toolbar.actions()[i].setVisible(True)
 
 
