@@ -3571,7 +3571,8 @@ class MainWindow(QMainWindow):
 
         self.action_groups = {}
         self.menu = self.menuBar()
-        # self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
+        self.menu.setStyleSheet("font-size: 10px;")
+        self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
 
         fileMenu = self.menu.addMenu('File')
 
