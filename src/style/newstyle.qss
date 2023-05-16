@@ -69,6 +69,7 @@ QComboBox {
     combobox-popup: 0;
     background: #f3f6fb;
     height:16px;
+    font-size: 10px;
 }
 QComboBox:focus {
   border: 1px solid #339933;

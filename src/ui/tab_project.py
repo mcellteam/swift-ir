@@ -1640,7 +1640,7 @@ class ProjectTab(QWidget):
         #     border-radius: 10px;
         # }
         # """)
-        self.comboNgLayout.setFixedSize(90, 16)
+        self.comboNgLayout.setFixedSize(100, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
