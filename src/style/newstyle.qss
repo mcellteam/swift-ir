@@ -96,7 +96,7 @@ QLabel#green_toolbar_label{
     font-size: 11px;
     color: #00BF00;
     font-weight: 550;
-    background: #ede9e8;
+    background: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #00BF00;
 
@@ -106,7 +106,7 @@ QLabel#red_toolbar_label{
     font-size: 11px;
     color: #ff0000;
     font-weight: 550;
-    background: #ede9e8;
+    background: #f3f6fb;
     border-radius: 5px;
     border: 1px solid #ff0000;
 
