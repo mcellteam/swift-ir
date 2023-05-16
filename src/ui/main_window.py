@@ -3194,12 +3194,12 @@ class MainWindow(QMainWindow):
 
         self.cbNotes.setFixedSize(QSize(92, 16))
         # self.cbPython.setFixedSize(QSize(110,16)) #macOS
-        self.cbPython.setFixedSize(QSize(140, 16))  # tacc
+        self.cbPython.setFixedSize(QSize(144, 16))  # tacc
         # self.cbMonitor.setFixedSize(116,16) #macos
-        self.cbMonitor.setFixedSize(142, 16)  # tacc
+        self.cbMonitor.setFixedSize(148, 16)  # tacc
         self.cbFlicker.setFixedSize(96, 16)
         # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
-        self.cbSignals.setFixedSize(QSize(158, 16))  # tacc
+        self.cbSignals.setFixedSize(QSize(160, 16))  # tacc
 
         # self.toolbar.addWidget(QLabel('    '))
         self.toolbar.layout().setSpacing(4)

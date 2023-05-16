@@ -623,6 +623,7 @@ class ConfigProjectDialog(QDialog):
               "stored and retrieved from disk storage."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
+        self.storage_info_label.setStyleSheet("""font-size: 10px; color: #161c20;""")
 
         self.export_settings_layout = QGridLayout()
         self.export_settings_layout.addLayout(self.cname_layout, 0, 0)
@@ -802,12 +803,12 @@ class NewConfigureProjectDialog(QDialog):
 
     def initUI(self):
         self.applyButton = QPushButton('Create Scales')
-        self.applyButton.setFixedSize(QSize(110,20))
+        self.applyButton.setFixedSize(QSize(128,20))
         self.applyButton.setDefault(True)
         self.applyButton.clicked.connect(self.on_apply)
 
         self.cancelButton = QPushButton('Cancel')
-        self.cancelButton.setFixedSize(QSize(110,20))
+        self.cancelButton.setFixedSize(QSize(128,20))
         self.cancelButton.clicked.connect(self.on_cancel)
 
         self.w_buttons = QWidget()
@@ -968,7 +969,9 @@ class NewConfigureProjectDialog(QDialog):
               "rapid viewing of volumetric datamodel in Neuroglancer. These settings determine the way " \
               "volumetric datamodel is stored on disk."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
-        self.fl_storage_options.addWidget(QLabel(txt))
+        lab = QLabel(txt)
+        lab.setStyleSheet("""font-size: 10px; color: #161c20;""")
+        self.fl_storage_options.addWidget(lab)
         self.gb_storage_options.setLayout(self.fl_storage_options)
 
 
@@ -1094,6 +1097,7 @@ class RechunkDialog(QDialog):
               "volumetric datamodel is stored on disk."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
+        self.storage_info_label.setStyleSheet("""font-size: 10px; color: #161c20;""")
 
         txt = "Rechunk '%s'..." %self.target
         txt = '\n'.join(textwrap.wrap(txt, width=55))

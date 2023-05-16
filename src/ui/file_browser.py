@@ -77,7 +77,7 @@ class FileBrowser(QWidget):
         self.controls.setLayout(hbl)
         self.controls.hide()
 
-        button_size = QSize(52, 18)
+        button_size = QSize(62, 18)
 
         # with open('src/style/buttonstyle.qss', 'r') as f:
         #     button_gradient_style = f.read()
