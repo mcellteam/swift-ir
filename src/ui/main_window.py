@@ -3049,7 +3049,7 @@ class MainWindow(QMainWindow):
         self.faqButton = QPushButton(' FAQ')
         def fn_view_faq():
             logger.info('Showing FAQ...')
-            self.html_resource(resource='faq.html', title='AlignEM-SWiFT FAQ')
+            self.html_resource(resource='faq.html', title='FAQ')
         self.faqButton.setFont(f)
         self.faqButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
@@ -3060,8 +3060,8 @@ class MainWindow(QMainWindow):
 
         self.gettingStartedButton = QPushButton('Getting Started')
         def fn_view_getting_started():
-            logger.info('Showing Tips...')
-            self.html_resource(resource='faq.html', title='AlignEM-SWiFT FAQ')
+            logger.info('Showing Getting Started Tips...')
+            self.html_resource(resource='getting-started.html', title='Getting Started')
         self.gettingStartedButton.setFont(f)
         self.gettingStartedButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.gettingStartedButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
@@ -3074,7 +3074,7 @@ class MainWindow(QMainWindow):
 
 
         self.navWidget = HWidget(QLabel(' '), self.exitButton, self.minimizeButton, self.fullScreenButton,
-                                 self.refreshButton, self.faqButton, ExpandingWidget(self))
+                                 self.refreshButton, self.faqButton, self.gettingStartedButton, ExpandingWidget(self))
         self.navWidget.setFixedHeight(18)
         # self.navWidget.setC
 
@@ -5614,18 +5614,17 @@ class MainWindow(QMainWindow):
         self.globTabs = QTabWidget(self)
         self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.globTabs.setStyleSheet("""background-color: #ede9e8""")
-        self.globTabs.tabBar().setElideMode(Qt.ElideRight)
         # self.globTabs.setContentsMargins(4,4,4,4)
         self.globTabs.setContentsMargins(0, 0, 0, 0)
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
             min-width: 80px;
-            max-width: 180px;
+            max-width: 220px;
             height: 16px;
             padding: 2px;
             margin: 2px;
-            font-size: 10px;
+            font-size: 11px;
         }
         QTabBar::tab:selected
         {
@@ -5636,6 +5635,7 @@ class MainWindow(QMainWindow):
         # self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
 
         # self.globTabs.setTabBarAutoHide(True)
+        self.globTabs.tabBar().setElideMode(Qt.ElideMiddle)
         self.globTabs.setElideMode(Qt.ElideMiddle)
         self.globTabs.setMovable(True)
         self.globTabs.hide()

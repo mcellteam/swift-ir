@@ -195,7 +195,7 @@ QTabBar::tab {
     font-size: 11px;
     height: 13px;
     min-width: 80px;
-    max-width: 180;
+    max-width: 200;
     margin-bottom: 0px;
     padding-bottom: 0px;
 
