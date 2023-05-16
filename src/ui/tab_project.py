@@ -1749,7 +1749,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
-        self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
+        # self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
 
         self.shaderAction = QAction()
         self.shaderAction.setCheckable(True)

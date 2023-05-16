@@ -2239,7 +2239,8 @@ class MainWindow(QMainWindow):
                     with open(name, 'w') as f:
                         f.write(proj_json)
                     self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
-                    self.statusBar.showMessage('Project Saved!', 3000)
+                    # self.statusBar.showMessage('Project Saved!', 3000)
+                    self.statusBar.showMessage('Project Saved!')
                 except:
                     print_exception()
                 else:
