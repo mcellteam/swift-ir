@@ -373,9 +373,9 @@ class OpenProject(QWidget):
         #     QUrl.fromLocalFile(os.getenv('SCRATCH')): "SCRATCH",
         # }
         places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + os.getenv('HOME') + ')',
-            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + os.getenv('WORK') + ')',
-            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + os.getenv('SCRATCH') + ')',
+            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
+            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
+            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
         }
 
 
@@ -466,12 +466,17 @@ class OpenProject(QWidget):
 
             autoscale(dm=cfg.data, make_thumbnails=True)
             # cfg.mw.autoscale_()
-
             cfg.main_window._autosave(silently=True)
+
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
             cfg.main_window._setLastTab()
             cfg.data.zpos = int(len(cfg.data) / 2)
             cfg.main_window.onStartProject()
+
+            if cfg.data['data']['autoalign_flag']:
+                cfg.mw.tell('Aligning ALL scales...')
+                cfg.mw.alignAllScales()
+                cfg.main_window._autosave(silently=True)
 
             # self.onStartProject(mendenhall=True)
             # turn OFF onStartProject for Mendenhall

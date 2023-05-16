@@ -726,6 +726,7 @@ class DataModel:
         self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
+        self._data['data'].setdefault('autoalign_flag', False)
         self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
         self._data['data'].setdefault('benchmarks', {})
         self._data['data']['benchmarks'].setdefault('t_scaling', 0.0)

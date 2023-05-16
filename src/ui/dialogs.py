@@ -781,6 +781,9 @@ class NewConfigureProjectDialog(QDialog):
     def on_apply(self):
         try:
             cfg.main_window.hud('Applying Project Settings...')
+
+
+
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
@@ -802,6 +805,12 @@ class NewConfigureProjectDialog(QDialog):
             self.accept()
 
     def initUI(self):
+        # self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale')
+        # self.cb_alignLowestScale.setFixedSize(QSize(128,20))
+        # def fn_align_coarsest(self):
+        #    cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
+        # self.cb_alignLowestScale.clicked.connect(fn_align_coarsest)
+
         self.applyButton = QPushButton('Create Scales')
         self.applyButton.setFixedSize(QSize(128,20))
         self.applyButton.setDefault(True)
@@ -812,7 +821,7 @@ class NewConfigureProjectDialog(QDialog):
         self.cancelButton.clicked.connect(self.on_cancel)
 
         self.w_buttons = QWidget()
-        self.w_buttons.setLayout(HBL(ExpandingWidget(self),self.cancelButton, QLabel('  '),self.applyButton, ExpandingWidget(self)))
+        self.w_buttons.setLayout(HBL(ExpandingWidget(self), self.cancelButton, QLabel('  '),self.applyButton, ExpandingWidget(self)))
 
         '''Scales Input Field'''
         if do_scales_exist():
@@ -1103,6 +1112,15 @@ class RechunkDialog(QDialog):
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.main_text = QLabel(txt)
 
+
+        self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale')
+        self.cb_alignLowestScale_lab = QLabel('Immediately Align the Coarsest Scale')
+        self.cb_alignLowestScale.setFixedSize(QSize(128,20))
+        def fn_align_coarsest(self):
+           cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
+        self.cb_alignLowestScale.clicked.connect(fn_align_coarsest)
+
+
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setDefault(False)
         self.cancelButton.setAutoDefault(False)
@@ -1110,7 +1128,11 @@ class RechunkDialog(QDialog):
         self.applyButton = QPushButton('Apply')
         self.applyButton.setDefault(True)
         self.applyButton.clicked.connect(self.on_apply)
+
+
         hbl = QHBoxLayout()
+        hbl.addWidget(self.cb_alignLowestScale)
+        hbl.addWidget(self.cb_alignLowestScale_lab)
         hbl.addWidget(self.cancelButton)
         hbl.addWidget(self.applyButton)
         self.buttonWidget = QWidget()
