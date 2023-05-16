@@ -18,6 +18,7 @@ import src.config as cfg
 from src.helpers import print_exception
 
 import numcodecs
+
 numcodecs.blosc.use_threads = False
 
 '''SWIM/MIR:
@@ -28,12 +29,12 @@ __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
 
-
-
 # mpl = mp.log_to_stderr()
 # mpl.setLevel(logging.INFO)
 
 SENTINEL = 1
+
+
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     '''Function run by worker processes'''
     for task_id, task in iter(task_q.get, 'END_TASKS'):
@@ -45,7 +46,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
         try:
             task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
             # task_proc = sp.Popen(task, shell=False, stdout=sys.stdout, stderr=sys.stderr, bufsize=1)
-            outs, errs = task_proc.communicate() # assemble_recipe the task and capture output
+            outs, errs = task_proc.communicate()  # assemble_recipe the task and capture output
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
             rc = task_proc.returncode
@@ -57,11 +58,11 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
             rc = 1
 
         dt = time.time() - t0
-        result_q.put((task_id, outs, errs, rc, dt)) # put method uses block=True by default
-        task_q.task_done() # Pop finished task
+        result_q.put((task_id, outs, errs, rc, dt))  # put method uses block=True by default
+        task_q.task_done()  # Pop finished task
     result_q.close()
     # result_q.join_thread()
-    task_q.task_done()# Pop the Sentinel
+    task_q.task_done()  # Pop the Sentinel
     logger.debug('<<<< Worker %d Finished' % (worker_id))
 
 
@@ -79,7 +80,6 @@ def watchdog(wd_queue):
 
 
 class TaskQueue(QObject):
-
 
     def __init__(self, n_tasks, dest, parent=None, start_method='forkserver', pbar_text=None, use_gui=True):
         QObject.__init__(self)
@@ -103,15 +103,13 @@ class TaskQueue(QObject):
         if (self.MPQLogger.hasHandlers()):
             logger.info('Clearing MPQLogger file handlers...')
             self.MPQLogger.handlers.clear()
-        self.MPQLogger.propagate = False # dont print to console
+        self.MPQLogger.propagate = False  # dont print to console
         # self.MPQLogger.propagate = True # dont print to console
         fh = logging.FileHandler(os.path.join(self.dest, 'logs', 'multiprocessing.log'))
         fh.setLevel(logging.DEBUG)
         self.MPQLogger.addHandler(fh)
         caller = inspect.stack()[1].function
         print(f"caller: {caller}")
-
-
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=0) -> None:
@@ -136,9 +134,10 @@ class TaskQueue(QObject):
         self.retries = retries
 
         # cfg.main_window.shutdownNeuroglancer()
-        # logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
+        logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
+        print(f'use_gui = {self.use_gui} ({self.taskPrefix})')
         if (not cfg.ignore_pbar) and (self.use_gui):
-            cfg.main_window.showZeroedPbar() #0208+
+            cfg.main_window.showZeroedPbar()  # 0208+
             cfg.nCompleted += 1
             try:
                 self.parent.setPbarMax(self.n_tasks)
@@ -161,9 +160,11 @@ class TaskQueue(QObject):
             logger.info('Starting Worker %d...' % i)
             try:
                 if cfg.DAEMON_THREADS:
-                    p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                    p = self.ctx.Process(target=worker, daemon=True,
+                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
                 else:
-                    p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                    p = self.ctx.Process(target=worker,
+                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -205,6 +206,7 @@ class TaskQueue(QObject):
         logger.info('Closing the Queue...')
         self.work_queue.close()
         time.sleep(0.1)  # Needed to Avoid Race Condition
+
     #    for i in range(len(self.workers)):
     #      if self.close_worker: self.workers[i].close()
     #      else: self.workers[i].terminate()
@@ -218,9 +220,9 @@ class TaskQueue(QObject):
         self.task_dict[self.task_id]['rc'] = None
         self.task_dict[self.task_id]['statusBar'] = 'queued'
         self.task_dict[self.task_id]['retries'] = 0
-        self.work_queue.put((self.task_id, task)) # <-- one-by-one calls to 'TaskQueue.add_task' adds each task to the queue
+        self.work_queue.put(
+            (self.task_id, task))  # <-- one-by-one calls to 'TaskQueue.add_task' adds each task to the queue
         self.task_id += 1
-
 
     def requeue_task(self, task_id) -> None:
         logger.warning("Requeing Task (ID: %d)..." % task_id)
@@ -235,11 +237,9 @@ class TaskQueue(QObject):
         self.work_queue.put((task_id, task))
         logger.debug("<<<<  TaskQueue.requeue <<<<")
 
-
     def clear_tasks(self) -> None:
         self.task_dict = {}
         self.task_id = 0
-
 
     def get_status_of_tasks(self) -> tuple:
         n_success, n_queued, n_failed = 0, 0, 0
@@ -251,7 +251,6 @@ class TaskQueue(QObject):
             elif self.task_dict[k]['statusBar'] == 'task_error':
                 n_failed += 1
         return n_success, n_queued, n_failed
-
 
     def collect_results(self):
         t0 = time.time()
@@ -267,10 +266,9 @@ class TaskQueue(QObject):
         except:
             print_exception()
 
-
         '''Run All Tasks and Collect Results'''
         logger.info(f'Running Multiprocessing Tasks ({self.retries} retries allowed)...')
-        n_pending = len(self.task_dict) # <-- # images in the stack
+        n_pending = len(self.task_dict)  # <-- # images in the stack
         n_tasks = len(self.task_dict)
         realtime = n_pending
         retries_tot = 0
@@ -279,14 +277,14 @@ class TaskQueue(QObject):
         try:
             while (retries_tot < self.retries + 1) and n_pending:
 
-                self.end_tasks() # Add end sentinels (one/worker)
+                self.end_tasks()  # Add end sentinels (one/worker)
 
                 logger.info('# Tasks Pending   : %d' % n_pending)
                 retry_list = []
 
                 # Loop over pending tasks...
                 # Update progress bar and result queue as tasks finish (mp.Queue.get() is blocking).
-                for img_index,j in enumerate(range(n_pending)):
+                for img_index, j in enumerate(range(n_pending)):
                     # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
                     # logger.info(task_str)
                     if self.use_gui:
@@ -317,7 +315,7 @@ class TaskQueue(QObject):
                                     # print_exception()
                                     logger.warning('Improperly sized taskNameList! [size=%d] '
                                                    '[prefix=%s] '
-                                                   '[n_tasks=%d]' %(len(self.taskNameList), self.taskPrefix, n_tasks))
+                                                   '[n_tasks=%d]' % (len(self.taskNameList), self.taskPrefix, n_tasks))
                                 QApplication.processEvents()
                         except:
                             # print_exception()
@@ -346,7 +344,7 @@ class TaskQueue(QObject):
                     realtime -= 1
 
                 self.work_queue.join()
-                self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
+                self.stop()  # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
 
                 '''Restart Queue and Requeue failed tasks'''
                 n_pending = len(retry_list)
@@ -421,7 +419,6 @@ class TaskQueue(QObject):
         # logger.info('Exiting Task Queue scope')
 
 
-
 if __name__ == '__main__':
     print("Running " + __file__ + ".__main__()")
 
@@ -454,7 +451,6 @@ if __name__ == '__main__':
 
         print('\n%s\n' % (tq.task_dict[task_id]['stdout']))
 
-
 '''
 
 task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3', 
@@ -469,8 +465,8 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3'
        '-49.218610253016884', 
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_src/R34CA1-BS12.105.tif', 
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
-    
-    
+
+
 generate_scales task (example)
 task = ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src//lib/bin_darwin/iscale2', 
         '+4', 

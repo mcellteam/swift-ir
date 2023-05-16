@@ -68,7 +68,7 @@ class DataModel:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
 
-        self.zpos = self._data['data']['z_position']
+        # self.zpos = self._data['data']['z_position']
 
 
     def __call__(self):
@@ -148,13 +148,13 @@ class DataModel:
 
     @zpos.setter
     def zpos(self, index):
-        caller = inspect.stack()[1].function
-        # logger.critical(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
         if int(index) in range(0, len(self)):
             self['data']['z_position'] = int(index)
         else:
-            logger.warning(f'\n\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n\n')
+            logger.warning(f'\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n')
 
     @property
     def cname(self) -> str:
@@ -306,6 +306,23 @@ class DataModel:
     @default_whitening.setter
     def default_whitening(self, x):
         self._data['data']['defaults']['whitening-factor'] = x
+
+    @property
+    def defaults(self):
+        return self._data['data']['defaults']
+
+    @property
+    def defaults_pretty(self):
+        d = self._data['data']['defaults']
+        defaults_str = ''
+        nl = '\n'
+        defaults_str += f"Bounding Box: {d['bounding-box']}\n" \
+                        f"Corrective Polynomial: {d['corrective-polynomial']}\n" \
+                        f"Initial Rotation: {d['initial-rotation']}\n" \
+                        f"SWIM Window Dimensions:\n{nl.join(['  %s: %s' % (s.ljust(9), '%sx%s' % tuple(d[s]['swim-window-px'])) for s in self.scales()])}\n" \
+                        f"SWIM iterations: {d['swim-iterations']}\n" \
+                        f"SWIM Whitening Factor: {d['whitening-factor']}"
+        return defaults_str
 
     # layer['alignment']['swim_settings'].setdefault('karg', False)
 
@@ -694,7 +711,6 @@ class DataModel:
         self._data.setdefault('rendering', {})
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
-        self._data.setdefault('hud', '')
         self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
         self._data['state']['stage_viewer'].setdefault('show_overlay_message', True)
         self._data['state'].setdefault('manual_mode', False)
@@ -723,10 +739,11 @@ class DataModel:
         # self._data['data']['defaults'].setdefault('swim-width-px', None)
         self._data['data']['defaults'].setdefault('whitening-factor', cfg.DEFAULT_WHITENING)
         self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
-        self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
+        self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_BOUNDING_BOX)
         self._data['data']['defaults'].setdefault('scales', {})
         self._data['data']['defaults'].setdefault('whitening-factor', cfg.DEFAULT_WHITENING)
         self._data['data']['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
+        self._data['data']['defaults'].setdefault('swim-iterations', cfg.DEFAULT_SWIM_ITERATIONS)
 
         self._data['rendering'].setdefault('normalize', [1,255])
         self._data['rendering'].setdefault('brightness', 0)
@@ -1049,6 +1066,13 @@ class DataModel:
         if l == None: l = self.zpos
         # return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
         return self._data['data']['scales'][s]['stack'][l]['current_method']
+
+    def method_pretty(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        convert = {'grid-default': 'Grid Default', 'grid-custom': 'Grid Custom',
+                   'manual-strict': 'Manual Strict', 'manual-hint': 'Manual Hint'}
+        return convert[self._data['data']['scales'][s]['stack'][l]['current_method']]
 
 
     def set_all_methods_automatic(self):
@@ -1396,6 +1420,11 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations']
 
+    def set_swim_iterations(self, val, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations'] = val
+
 
     def swim_settings(self, s=None, l=None):
         if s == None: s = self.scale
@@ -1403,7 +1432,7 @@ class DataModel:
         return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']
 
 
-    def set_swim_iterations_glob(self, val:int):
+    def set_swim_iterations_glob(self, val:int, ):
         for s in self.scales():
             for i in range(len(self)):
                 self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['iterations'] = val
@@ -1723,24 +1752,20 @@ class DataModel:
     def use_bb(self, s=None) -> bool:
         '''Returns the Use Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None: s = self.scale
-        return bool(self._data['data']['scales'][s]['use_bounding_rect'])
+        # return bool(self._data['data']['scales'][s]['use_bounding_rect'])
+        return bool(self._data['data']['defaults']['bounding-box'])
 
-    def set_use_bb(self, b:bool, s=None):
-        '''Returns the Use Bounding Rectangle On/Off State for the Current Scale.'''
-        logger.info(f'Setting USE bb to {b}')
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['use_bounding_rect'] = b
-
-    def set_use_bounding_rect(self, b: bool, s=None) -> None:
+    def set_use_bounding_rect(self, b: bool) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
 
-        if s == None:
-            for s in self.scales():
-                logger.info(f'Setting USE bb to {b}, for {s}')
-                self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
-        else:
-            logger.info(f'Setting USE bb to {b}, for {s}')
-            self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
+        # if s == None:
+        #     for s in self.scales():
+        #         logger.info(f'Setting USE bb to {b}, for {s}')
+        #         self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
+        # else:
+        #     logger.info(f'Setting USE bb to {b}, for {s}')
+        #     self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
+        self._data['data']['defaults']['bounding-box'] = bool(b)
 
     def set_bounding_rect(self, bounding_rect: list, s=None) -> None:
         if s == None: s = self.scale
@@ -1887,6 +1912,14 @@ class DataModel:
         self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
         self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
         self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
+
+    def append_images(self, files):
+        scale = self.scale
+        for file in files:
+            # logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
+            self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
+            self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
+            self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
 
     # def append_empty(self):
     #     logger.critical('MainWindow.append_empty:')

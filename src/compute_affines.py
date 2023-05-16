@@ -237,10 +237,12 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                     al_stack_old[layer_index]['skipped'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
+        logger.critical(f'use_gui: {use_gui}')
         if use_gui:
             cfg.data = updated_model #0809-
 
         dm = updated_model
+
         save2file(dm=dm,name=dm.dest())
         write_run_to_file(dm)
 
@@ -401,7 +403,7 @@ def write_run_to_file(dm, scale=None):
     results = 'results'
     # swim_input = 'swim=%.3f' % dm.swim_window()
     # whitening_input = 'whitening=%.3f' % dm.whitening()
-    # details = [date, time, s, _swimWindowControl, _whiteningControl, snr_avg]
+    # details = [date, time, s, _swimWindowControl, sb_whiteningControl, snr_avg]
     scale_str = 's' + str(get_scale_val(scale))
     details = [scale_str, results, timestamp]
     fn = '_'.join(details) + '.json'
@@ -500,5 +502,4 @@ if __name__ == '__main__':
     end = args.end
     dm = compute_affines(scale=scale, path=path, start=start, end=end, use_gui=False, bounding_box=args.bounding_box)
     save2file(dm=dm, name=dm.dest())
-
 

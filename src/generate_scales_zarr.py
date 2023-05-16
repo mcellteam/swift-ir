@@ -12,14 +12,14 @@ from src.helpers import get_scale_val, get_img_filenames, print_exception, renew
     reorder_tasks
 from src.funcs_zarr import preallocate_zarr
 
-__all__ = ['generate_zarr_scales']
+__all__ = ['generate_scales_zarr']
 
 logger = logging.getLogger(__name__)
 
 Z_STRIDE = 1
 
-def generate_zarr_scales(data):
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(cfg.data) * len(cfg.data.scales()))
+def generate_scales_zarr(dm, gui=True):
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.scales()))
 
     pbar_text = 'Generating Zarr Scale Arrays (%d Cores)...' % cpus
     if cfg.CancelProcesses:
@@ -29,31 +29,33 @@ def generate_zarr_scales(data):
         logger.info('Generating Scaled Zarr Arrays...')
         # Todo conditional handling of skips
 
-        dest = data.dest()
+        dest = dm.dest()
         imgs = sorted(get_img_filenames(os.path.join(dest, 'scale_1', 'img_src')))
         od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
-        renew_directory(directory=od)
-        for scale in data.scales():
-            x, y = data.image_size(s=scale)
+        renew_directory(directory=od, gui=gui)
+        for scale in dm.scales():
+            x, y = dm.image_size(s=scale)
             group = 's%d' % get_scale_val(scale)
-            preallocate_zarr(name='img_src.zarr',
+            preallocate_zarr(dm=dm,
+                             name='img_src.zarr',
                              group=group,
                              dimx=x,
                              dimy=y,
-                             dimz=len(cfg.data),
+                             dimz=len(dm),
                              dtype='uint8',
-                             overwrite=True)
-        n_tasks = len(data) * data.n_scales()
+                             overwrite=True,
+                             gui=gui)
+        n_tasks = len(dm) * dm.n_scales()
 
-        cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
+        if gui: cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
 
-        dest = cfg.data['data']['destination_path']
+        # dest = cfg.data['data']['destination_path']
         logger.info(f'\n\n################ Converting Downscales to Zarr ################\n')
-        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
+        task_queue = TaskQueue(n_tasks=n_tasks, dest=dm.dest(), parent=cfg.main_window, pbar_text=pbar_text, use_gui=gui)
         task_queue.taskPrefix = 'Downscales Converted to Zarr for '
 
         tasknamelist = []
-        for scale in data.scales():
+        for scale in dm.scales():
             for ID, img in enumerate(imgs):
                 tasknamelist.append('%s, %s' % (os.path.basename(img), scale))
         task_queue.taskNameList = tasknamelist
@@ -62,14 +64,14 @@ def generate_zarr_scales(data):
 
         # store = zarr.open(out, synchronizer=synchronizer)
         # task_list = []
-        chunkshape = cfg.data.chunkshape
+        chunkshape = dm.chunkshape
         logger.info(f'chunk shape: {chunkshape}')
-        for scale in data.scales():
+        for scale in dm.scales():
             for ID, img in enumerate(imgs):
                 out = os.path.join(od, 's%d' % get_scale_val(scale))
                 fn = os.path.join(dest, scale, 'img_src', img)
                 # task_list.append([sys.executable, script, str(ID), fn, out ])
-                dest = cfg.data.dest()
+                dest = dm.dest()
                 task = [sys.executable, script, str(ID), fn, out, str(chunkshape), str(0), dest]
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if ID in [0, 1, 2]:
@@ -90,7 +92,7 @@ def generate_zarr_scales(data):
 
 
         dt = task_queue.collect_results()
-        cfg.data.t_scaling_convert_zarr = dt
+        dm.t_scaling_convert_zarr = dt
         logger.info('<<<< Generate Zarr Scales End <<<<')
 
 
@@ -99,4 +101,4 @@ if __name__ == '__main__':
     ap.add_argument('-s', '--src', type=str, help='Path containing scaled tiff subdirectories')
     ap.add_argument('-o', '--out', type=str, help='Path for Zarr output')
     args = ap.parse_args()
-    generate_zarr_scales(src=args.src, out=args.out)
+    generate_scales_zarr(src=args.src, out=args.out)
