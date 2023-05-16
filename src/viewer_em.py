@@ -306,7 +306,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             state.layers.clear()
             self.set_state(state)
 
-    def initZoom(self, w, h, adjust=1.10):
+    def initZoom(self, w, h, adjust=1.20):
         # logger.info(f'w={w}, h={h}')
         # self._blockZoom = True
 

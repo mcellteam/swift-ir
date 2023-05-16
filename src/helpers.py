@@ -536,16 +536,18 @@ def track(func):
     return wrapper
 
 
-def renew_directory(directory:str) -> None:
+def renew_directory(directory:str, gui=True) -> None:
     '''Remove and re-create a directory, if it exists.'''
     if os.path.exists(directory):
         d = os.path.basename(directory)
-        cfg.main_window.hud.post("Overwriting Directory '%s'..." % directory)
+        if gui:
+            cfg.main_window.hud.post("Overwriting Directory '%s'..." % directory)
         try:     shutil.rmtree(directory, ignore_errors=True)
         except:  print_exception()
         try:     os.makedirs(directory, exist_ok=True)
         except:  print_exception()
-        cfg.main_window.hud.done()
+        if gui:
+            cfg.main_window.hud.done()
 
 # def kill_task_queue(task_queue):
 #     '''End task queue multiprocessing tasks and delete a task queue object'''
@@ -686,6 +688,8 @@ def print_exception():
 
     if cfg.data:
         lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
+        file = Path(lf)
+        file.touch(exist_ok=True)
         with open(lf, 'w+') as f:
             f.write('\n' + txt)
 
@@ -747,8 +751,8 @@ def make_absolute(file_path, proj_path):
     return abs_path
 
 
-def initLogFiles():
-    logpath = os.path.join(cfg.data.dest(), 'logs')
+def initLogFiles(dm):
+    logpath = os.path.join(dm.dest(), 'logs')
     os.makedirs(logpath, exist_ok=True)
     open(os.path.join(logpath, 'exceptions.log'), 'a').close()
     open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
@@ -757,10 +761,13 @@ def initLogFiles():
     open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
 
 
-def create_project_structure_directories(destination, scales) -> None:
+def create_project_structure_directories(destination, scales, gui=True) -> None:
+    caller = inspect.stack()[1].function
+    print(f'  create_project_structure_directories caller: {caller}')
 
     for scale in scales:
-        cfg.main_window.hud('Creating directories for %s...' % scale)
+        if gui:
+            cfg.mw.hud('Creating directories for %s...' % scale)
         subdir_path    = os.path.join(destination, scale)
         src_path       = os.path.join(subdir_path, 'img_src')
         aligned_path   = os.path.join(subdir_path, 'img_aligned')

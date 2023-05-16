@@ -132,7 +132,8 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
         logger.info('Generating Zarr...')
         if reallocate_zarr:
             logger.info('Preallocating...')
-            preallocate_zarr(name='img_aligned.zarr',
+            preallocate_zarr(dm=dm,
+                             name='img_aligned.zarr',
                              group='s%d' % scale_val,
                              dimx=rect[2],
                              dimy=rect[3],
