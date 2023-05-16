@@ -373,9 +373,9 @@ class OpenProject(QWidget):
         #     QUrl.fromLocalFile(os.getenv('SCRATCH')): "SCRATCH",
         # }
         places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): os.getenv('HOME'),
-            QUrl.fromLocalFile(os.getenv('WORK')): os.getenv('WORK'),
-            QUrl.fromLocalFile(os.getenv('SCRATCH')): os.getenv('SCRATCH'),
+            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + os.getenv('HOME') + ')',
+            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + os.getenv('WORK') + ')',
+            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + os.getenv('SCRATCH') + ')',
         }
 
 
