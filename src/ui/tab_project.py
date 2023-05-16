@@ -2896,7 +2896,7 @@ class ProjectTab(QWidget):
         self.btn_tree_go.setFixedSize(28, 18)
 
         self.treeHbl = QHBoxLayout()
-        self.treeHbl.setContentsMargins(2, 0, 2, 0)
+        self.treeHbl.setContentsMargins(0, 0, 0, 0)
         lab = VerticalLabel('Project Dictionary/JSON Tree View')
         lab.setStyleSheet("""
         background-color: #161c20;
@@ -2936,7 +2936,6 @@ class ProjectTab(QWidget):
         vbl = VBL()
         vbl.addWidget(self.treeview)
         vbl.addWidget(btns)
-
         w.setLayout(vbl)
         self.treeHbl.addWidget(w)
         self._wdg_treeview.setLayout(self.treeHbl)

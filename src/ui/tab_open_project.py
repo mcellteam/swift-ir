@@ -10,7 +10,8 @@ import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
-    QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog
+    QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
+    QListView
 from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint
 from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
 
@@ -335,6 +336,8 @@ class OpenProject(QWidget):
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
         self.vbl_main.addWidget(self.name_dialog)
         self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
+        caption = "search",
+
         self.new_project_header.setText('New Project (Step: 1/3) - Name & Location')
         cfg.main_window.set_status('New Project (Step: 1/3) - Name & Location')
         self.name_dialog.setNameFilter("Text Files (*.swiftir)")
@@ -342,9 +345,14 @@ class OpenProject(QWidget):
         self.name_dialog.setViewMode(QFileDialog.Detail)
         self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
         self.name_dialog.setModal(True)
+
+
         # dialog.setOptions(dialog.DontUseNativeDialog)
         self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
+
+
         urls = self.name_dialog.sidebarUrls()
+
         if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
@@ -357,6 +365,28 @@ class OpenProject(QWidget):
                 if os.path.exists('/Volumes/3dem_data'):
                     urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
         self.name_dialog.setSidebarUrls(urls)
+
+
+        # places = {
+        #     QUrl.fromLocalFile(os.getenv('HOME')): "HOME",
+        #     QUrl.fromLocalFile(os.getenv('WORK')): "WORK",
+        #     QUrl.fromLocalFile(os.getenv('SCRATCH')): "SCRATCH",
+        # }
+        places = {
+            QUrl.fromLocalFile(os.getenv('HOME')): os.getenv('HOME'),
+            QUrl.fromLocalFile(os.getenv('WORK')): os.getenv('WORK'),
+            QUrl.fromLocalFile(os.getenv('SCRATCH')): os.getenv('SCRATCH'),
+        }
+
+
+        sidebar = self.name_dialog.findChild(QListView, "sidebar")
+        delegate = StyledItemDelegate(sidebar)
+        delegate.mapping = places
+        sidebar.setItemDelegate(delegate)
+
+        urls = self.name_dialog.sidebarUrls()
+        logger.info(f'urls: {urls}')
+
         cfg.main_window.set_status('Awaiting User Input...')
         if self.name_dialog.exec() == QFileDialog.Accepted:
             logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
@@ -889,6 +919,27 @@ class UserProjects(QWidget):
         # logger.info('<<<< get_data <<<<')
         return zip(projects, thumbnail_first, thumbnail_last, created, modified,
                    n_sections, img_dimensions, bytes, gigabytes, location)
+
+
+
+
+
+UrlRole = Qt.UserRole + 1
+EnabledRole = Qt.UserRole + 2
+
+
+class StyledItemDelegate(QStyledItemDelegate):
+    mapping = dict()
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        url = index.data(UrlRole)
+        text = self.mapping.get(url)
+        if isinstance(text, str):
+            option.text = text
+        is_enabled = index.data(EnabledRole)
+        if is_enabled is not None and not is_enabled:
+            option.state &= ~QStyle.State_Enabled
 
 
 
