@@ -9,24 +9,24 @@ import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
     get_bindir
-from .mp_queue import TaskQueue
+from src.mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
 
 logger = logging.getLogger(__name__)
 
 
-def generate_scales(dm):
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(cfg.data) * len(dm.downscales()))
+def generate_scales(dm, gui=True):
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     pbar_text = 'Generating Scale Image Hierarchy (%d Cores)...' % cpus
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
 
-        n_tasks = len(cfg.data) * (dm.n_scales() - 1)  #0901 #Refactor
-        dest = dest = dm['data']['destination_path']
+        n_tasks = len(dm) * (dm.n_scales() - 1)  #0901 #Refactor
+        dest = dm['data']['destination_path']
         logger.info(f'\n\n################ Generating Scales ################\n')
-        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
+        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text, use_gui=gui)
         task_queue.taskPrefix = 'Scale Generated for '
         task_name_list = []
         for s in dm.downscales():  # value string '1 2 4'
@@ -36,12 +36,13 @@ def generate_scales(dm):
         task_queue.taskNameList = task_name_list # <- assumes generate scales for all layers
 
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-        create_project_structure_directories(dm.dest(), dm.scales())
+        create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
         iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
 
         # Create Scale 1 Symlinks
         logger.info('Creating Scale 1 symlinks')
-        cfg.main_window.tell('Sym-linking full scale images...')
+        if gui:
+            cfg.main_window.tell('Sym-linking full scale images...')
         src_path = dm.source_path()
         for img in dm.basefilenames():
             fn = os.path.join(src_path, img)
@@ -81,7 +82,7 @@ def generate_scales(dm):
         dt = task_queue.collect_results()
         results = task_queue.get_status_of_tasks()
         # show_mp_queue_results(task_queue=task_queue, dt=dt)
-        cfg.data.t_scaling = dt
+        dm.t_scaling = dt
         logger.info(f'results : {results}')
         logger.info(f'dt      : {dt}')
         # cfg.results = results

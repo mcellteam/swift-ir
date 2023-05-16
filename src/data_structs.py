@@ -23,6 +23,7 @@ data_template = \
             "contrast": 0,
         },
         "data": {
+            "defaults": {},
             "shader": None,
             "source_path": "",
             "destination_path": "",

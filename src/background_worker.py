@@ -88,7 +88,10 @@ class BackgroundWorker(QRunnable):
         #     # QApplication.processEvents()
         # else:
         #     logger.critical('self.status equals None')
-        cfg.main_window._working = True
+        try:
+            cfg.main_window._working = True
+        except:
+            pass
         # cfg.main_window.pbar.show()
 
         try:
@@ -103,7 +106,11 @@ class BackgroundWorker(QRunnable):
         else:
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
-            cfg.main_window._working = False
+            try:
+                cfg.main_window._working = False
+            except:
+                pass
+
             self.signals.finished.emit()
 
             # cfg.main_window.pbar.hide()

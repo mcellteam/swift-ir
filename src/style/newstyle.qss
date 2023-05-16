@@ -171,85 +171,33 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
   padding: 1px -1px -1px 1px;
 }
 
+QTabWidget {
+    border: none;
 
-QTabWidget::pane {
-    border: 1px solid #161c20;
-    background: #ede9e8 ;
+
 }
 
-QTabWidget::tab-bar:top {
-    top: 1px;
-}
-
-QTabWidget::tab-bar:bottom {
-    bottom: 0px;
-}
-
-QTabWidget::tab-bar:left {
-    right: 1px;
-}
-
-QTabWidget::tab-bar:right {
-    left: 1px;
-}
 
 QTabBar::tab {
-    border: 1px solid #666666;
-    height: 16px;
-    min-width: 70px;
-    margin 2spx;
-    padding: 2px;
     font-size: 10px;
-    border-top-right-radius: 5px;
-    border-top-left-radius: 2px;
+    height: 13px;
+    min-width: 80px;
+    max-width: 180;
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+
 }
 
-
-QTabBar::tab:selected {
-    background: #ede9e8;
+QTabBar::tab:selected
+{
     font-weight: 600;
 }
 
-QTabBar::tab:!selected {
-    background: #dadada;
+
+QTabWidget::pane {
+    border: 1px solid #161c20;
+    background: #ede9e8;
 }
-/*
-QTabBar::tab:!selected:hover {
-    background: #999;
-}
-*/
-
-QTabBar::tab:top:!selected {
-    margin-top: 1px;
-}
-
-QTabBar::tab:bottom:!selected {
-    margin-bottom: 1px;
-}
-
-
-
-QTabBar::tab:top:selected {
-    border-bottom-color: none;
-}
-
-QTabBar::tab:bottom:selected {
-    border-top-color: none;
-}
-
-QTabBar::tab:top:last, QTabBar::tab:bottom:last,
-QTabBar::tab:top:only-one, QTabBar::tab:bottom:only-one {
-    margin-right: 0;
-}
-
-QTabBar::tab:left:!selected {
-    margin-right: 3px;
-}
-
-QTabBar::tab:right:!selected {
-    margin-left: 3px;
-}
-
 
 
 
