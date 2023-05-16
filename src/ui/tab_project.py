@@ -1640,7 +1640,7 @@ class ProjectTab(QWidget):
         #     border-radius: 10px;
         # }
         # """)
-        self.comboNgLayout.setFixedSize(64, 16)
+        self.comboNgLayout.setFixedSize(90, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
@@ -1676,6 +1676,7 @@ class ProjectTab(QWidget):
         QToolBar {
             background-color: #222222; 
             color: #f3f6fb;
+            font-size: 10px;
         }
         QToolButton {
             background-color: #1b1e23;
@@ -1700,12 +1701,12 @@ class ProjectTab(QWidget):
         }
         """)
         self.labShowHide = QLabel('Display: ')
-        self.labShowHide.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
+        self.labShowHide.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
         self.labNgLayout = QLabel('Layout: ')
-        self.labNgLayout.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
+        self.labNgLayout.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
         # self.labScaleStatus = QLabel('Scale Status: ')
         self.labScaleStatus = QLabel('Status: ')
-        self.labScaleStatus.setStyleSheet("""color: #f3f6fb; font-weight: 600;""")
+        self.labScaleStatus.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
         # self.showHudOverlayAction = QAction('HUD', self)
         # def fn():
@@ -1748,6 +1749,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
+        self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
 
         self.shaderAction = QAction()
         self.shaderAction.setCheckable(True)
@@ -1786,7 +1788,7 @@ class ProjectTab(QWidget):
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.layout.setSpacing(0)
-        self.sideSliders.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
+        self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
         self.ng_browser_container_outer = HWidget(
             self.ngVertLab,
