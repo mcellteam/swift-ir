@@ -3058,17 +3058,17 @@ class MainWindow(QMainWindow):
         self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
         self.faqButton.clicked.connect(fn_view_faq)
 
-        self.faqButton = QPushButton(' FAQ')
-        def fn_view_faq():
-            logger.info('Showing FAQ...')
+        self.gettingStartedButton = QPushButton('Getting Started')
+        def fn_view_getting_started():
+            logger.info('Showing Tips...')
             self.html_resource(resource='faq.html', title='AlignEM-SWiFT FAQ')
-        self.faqButton.setFont(f)
-        self.faqButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
-        self.faqButton.setFixedHeight(16)
-        self.faqButton.setIconSize(QSize(16, 16))
-        self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
-        self.faqButton.clicked.connect(fn_view_faq)
+        self.gettingStartedButton.setFont(f)
+        self.gettingStartedButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.gettingStartedButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
+        self.gettingStartedButton.setFixedHeight(16)
+        self.gettingStartedButton.setIconSize(QSize(16, 16))
+        self.gettingStartedButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
+        self.gettingStartedButton.clicked.connect(fn_view_getting_started)
 
 
 
