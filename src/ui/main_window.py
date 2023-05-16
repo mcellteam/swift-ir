@@ -3031,6 +3031,8 @@ class MainWindow(QMainWindow):
             self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isMaximized()])
             if self._isProjectTab():
                 cfg.project_tab.initNeuroglancer()
+                QApplication.processEvents()
+                self.refreshTab()
 
         self.fullScreenButton.clicked.connect(fn)
         # self.fullScreenButton.setStyleSheet(button_gradient_style)
