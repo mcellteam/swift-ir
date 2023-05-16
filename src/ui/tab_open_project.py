@@ -475,7 +475,7 @@ class OpenProject(QWidget):
 
             if cfg.data['data']['autoalign_flag']:
                 cfg.mw.tell('Aligning ALL scales...')
-                cfg.mw.alignAllScales()
+                cfg.mw.alignAll()
                 cfg.main_window._autosave(silently=True)
 
             # self.onStartProject(mendenhall=True)
