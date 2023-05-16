@@ -196,10 +196,10 @@ def remove_zarr(path) -> None:
         logger.info('Done Removing Zarr')
 
 
-def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
+def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=True):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
-    cname, clevel, chunkshape = cfg.data.get_user_zarr_settings()
-    src = os.path.abspath(cfg.data.dest())
+    cname, clevel, chunkshape = dm.get_user_zarr_settings()
+    src = os.path.abspath(dm.dest())
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
@@ -207,7 +207,8 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
     logger.critical(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
                     f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
 
-    cfg.main_window.hud(f'Preallocating {path_base}/{group} Zarr...')
+    if gui:
+        cfg.main_window.hud(f'Preallocating {path_base}/{group} Zarr...')
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return
@@ -245,7 +246,7 @@ def preallocate_zarr(name, group, dimx, dimy, dimz, dtype, overwrite):
         print_exception()
         cfg.main_window.warn('Zarr Preallocation Encountered A Problem')
     else:
-        cfg.main_window.hud.done()
+        # cfg.main_window.hud.done()
         logger.info(output_text)
 
 

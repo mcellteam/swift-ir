@@ -111,7 +111,6 @@ class align_recipe:
 
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
-        # self.iters = 3
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
         # Configure platform-specific path to executables for C SWiFT-IR
@@ -369,7 +368,11 @@ class align_ingredient:
         else:
             swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
 
-        iters = self.alData['swim_settings']['iterations']
+        if self.recipe.cur_method == 'grid-default':
+            iters = self.recipe.defaults['swim-iterations']
+        else:
+            iters = self.alData['swim_settings']['iterations']
+
         use_targ = self.alData['swim_settings']['targ']
         use_karg = self.alData['swim_settings']['karg']
         basename = os.path.basename(self.recipe.im_mov_fn)

@@ -59,10 +59,10 @@ class ExitAppDialog(QDialog):
         self.buttonGroup = QButtonGroup()
         self.cancelButton = QPushButton('Cancel')
         self.cancelButton.setStyleSheet("QPushButton{font-size: 9pt; font-weight: 500;}")
-        self.cancelButton.setFixedSize(QSize(78,20))
+        self.cancelButton.setFixedSize(QSize(80,20))
         self.saveExitButton = QPushButton('Save && Quit')
         self.saveExitButton.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 500;}")
-        self.saveExitButton.setFixedSize(QSize(78,20))
+        self.saveExitButton.setFixedSize(QSize(80,20))
         self.exitExitButton = QPushButton()
         self.exitExitButton.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 500;}")
         self.buttonGroup.addButton(self.cancelButton)
@@ -81,7 +81,7 @@ class ExitAppDialog(QDialog):
             self.message = 'Exit Align-EM-SWiFT?'
             self.exitExitButton.setText(f"Quit {hotkey('Q')}")
             self.exitExitButton.setText(f"Quit {hotkey('Q')}")
-            self.exitExitButton.setFixedSize(QSize(68,20))
+            self.exitExitButton.setFixedSize(QSize(80,20))
 
         self.layout = HBL(ExpandingWidget(self), QLabel(self.message), self.cancelButton, self.saveExitButton, self.exitExitButton)
         self.layout.setSpacing(4)
@@ -529,7 +529,8 @@ class ConfigProjectDialog(QDialog):
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['data']['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
+            # cfg.data['data']['defaults']['swim-iterations'] =
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),

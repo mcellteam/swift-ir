@@ -16,6 +16,7 @@ from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
 
 from src.ui.file_browser import FileBrowser
 from src.funcs_image import ImageSize
+from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
     create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles, is_tacc, is_joel
@@ -330,21 +331,11 @@ class OpenProject(QWidget):
 
         '''Step 1/3'''
         self.name_dialog = QFileDialog()
-        # vlabel = VerticalLabel('Test')
-        # vlabel.setFixedWidth(20)
-        # self.name_dialog_container = HWidget(vlabel, self.name_dialog)
-        self.name_dialog = QFileDialog()
         self.name_dialog.setContentsMargins(0,0,0,0)
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        # self.name_dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20; """)
-        # self.name_dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
-        # self.vbl_projects.addWidget(self.name_dialog)
-        # self.vbl_main.addWidget(self.name_dialog)
         self.vbl_main.addWidget(self.name_dialog)
-        # self.layout.addWidget(self.name_dialog)
         self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
         self.new_project_header.setText('New Project (Step: 1/3) - Name & Location')
-        # self.name_dialog.setWindowTitle('New Project (Step: 1/3) - Name & Location')
         cfg.main_window.set_status('New Project (Step: 1/3) - Name & Location')
         self.name_dialog.setNameFilter("Text Files (*.swiftir)")
         self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
@@ -358,7 +349,6 @@ class OpenProject(QWidget):
             urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
         else:
             urls.append(QUrl.fromLocalFile('/tmp'))
             if os.path.exists('/Volumes'):
@@ -397,7 +387,8 @@ class OpenProject(QWidget):
 
 
         path, extension = os.path.splitext(filename)
-        cfg.data = DataModel(name=path, mendenhall=mendenhall)
+        # cfg.data = DataModel(name=path, mendenhall=mendenhall)
+        cfg.data = DataModel(name=path)
 
         cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
         cfg.dataById[id(cfg.project_tab)] = cfg.data
@@ -416,7 +407,7 @@ class OpenProject(QWidget):
             # configure_project_paths()
             # self.user_projects.set_data()
 
-            # cfg.data.set_defaults()
+            cfg.data.set_defaults() #Todo debug this later... why twice
             # recipe_dialog = ScaleProjectDialog(parent=self)
 
             '''Step 3/3'''
@@ -440,8 +431,12 @@ class OpenProject(QWidget):
 
             self.showMainUI()
             cfg.data.set_defaults()
-            initLogFiles()
-            cfg.main_window.autoscale()
+            initLogFiles(cfg.data)
+
+
+            autoscale(dm=cfg.data, make_thumbnails=True)
+            # cfg.mw.autoscale_()
+
             cfg.main_window._autosave(silently=True)
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
             cfg.main_window._setLastTab()
@@ -517,16 +512,16 @@ class OpenProject(QWidget):
             return 1
 
         files_sorted = natural_sort(filenames)
-
         cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
         cfg.main_window.tell(f'Importing {len(files_sorted)} Images...')
         logger.info(f'Selected Images: \n{files_sorted}')
 
-        for f in files_sorted:
-            cfg.data.append_image(f)
+        # for f in files_sorted:
+        #     cfg.data.append_image(f)
+        cfg.data.append_images(files_sorted)
 
         cfg.main_window.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
-        cfg.data.link_reference_sections()
+        # cfg.data.link_reference_sections()
 
 
 
