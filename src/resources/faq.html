@@ -1,15 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <title>Keyboard Bindings</title>
+   <title>AlignEM-SWiFT FAQ</title>
     <meta charset="utf-8">
     <style>
-        h2 { color: green; }
+        h3 { color: #161c20; }
     </style>
 </head>
 <body style="font-family: Tahoma, sans-serif;">
 <h3><u>FAQs:</u></h3>
-    <br/><br/>Q: What is AlignEM-SWiFT?<br/>A: AlignEM-SWiFt is a software tool specialized for registering electron micrographs. It is<br/> &nbsp; able to generate scale image hierarchies, compute affine transforms, and generate aligned<br/> &nbsp; images using multi-image rendering.<br/><br/>Q: Can AlignEM-SWiFT be used to register or &quot;align&quot; non-EM images?<br/>A: Yes, but its forte is aligning EM images which tend to be large, and greyscale. AlignEM-SWIFT<br/> &nbsp; provides functionality for downscaling and the ability to pass alignment results (affines)<br/> &nbsp; from lower scale levels to higher ones.<br/><br/>Q: What are scales?<br/>A: In AlignEM-SWiFT a &quot;scale&quot; means a downsampled (or decreased resolution) series of images.<br/><br/>Q: Why should data be scaled? Is it okay to align the full resolution series with brute force?<br/>A: You could, but EM images tend to run large. A more efficient workflow is to:<br/> &nbsp; 1) generate a hierarchy of downsampled images from the full resolution images<br/> &nbsp; 2) align the lowest resolution images first<br/> &nbsp; 3) pass the computed affines to the scale of next-highest resolution, and repeat<br/> &nbsp; &nbsp; &nbsp;until the full resolution images are in alignment. In these FAQs this is referred to<br/> &nbsp; &nbsp; &nbsp;as &quot;climbing the scale hierarchy&quot;&quot;<br/><br/>Q: Why do SNR values not necessarily increase as we &quot;climb the scale hierarchy&quot;?<br/>A: SNR values returned by SWIM are a relative metric which depend on image resolution. It is<br/> &nbsp; therefore most useful when comparing the relative alignment quality of aligned image<br/> &nbsp; pairs at the same scale.<br/><br/>Q: Why are the selected manual correlation regions not mutually independent? In other words,<br/> &nbsp; why does moving or removing an argument to SWIM affect the signal-to-noise ratio and<br/> &nbsp; resulting correlation signals of the other selected SWIM regions?<br/>A:<br/><br/>Q: What is Neuroglancer?<br/>A: Neuroglancer is an open-source WebGL and typescript-based web application for displaying<br/> &nbsp; volumetric data. AlignEM-SWiFT uses a Chromium-based API called QtWebEngine together<br/> &nbsp; with the Neuroglancer Python API to render large volumetric data efficiently and conveniently<br/> &nbsp; within the application window.<br/><br/>Q: What is Zarr?<br/>A: Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays<br/> &nbsp; with an interface similar to NumPy. It has a Nature Methods paper:<br/> &nbsp; <a href='https://www.nature.com/articles/s41592-021-01326-w'>https://www.nature.com/articles/s41592-021-01326-w</a><br/><br/>Q: Why is AlignEM-SWiFT so swift?<br/>A: For several reasons:<br/> &nbsp; 1) Time-intensive processes are executed in parallel.<br/> &nbsp; 2) Data scaling, SWIM alignment, and affine processing functions are all implemented<br/> &nbsp; &nbsp; &nbsp;in highly efficient C code written by computer scientist Arthur Wetzel.<br/> &nbsp; 3) Fast Fourier Transform is a fast algorithm.<br/><br/>Q: How many CPUs or &quot;cores&quot; does AlignEM-SWiFT use?<br/>A: By default, as many cores as the system has available.<br/><br/>Q: What file types are supported?<br/>A: Currently, only images formatted as TIFF.<br/><br/>Q: Where can I learn more about the principles of Signal Whitening Fourier Transform Image Matching?<br/>A: <a href='https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf'>https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf</a><br/>
+<b>Q: What is AlignEM-SWiFT?</b><br/>
+A: AlignEM-SWiFt is a software tool specialized for registering electron micrographs. It is<br/> &nbsp; able to generate scale image hierarchies, compute affine transforms, and generate aligned<br/> &nbsp; images using multi-image rendering.<br/><br/>
+<b>Q: Can AlignEM-SWiFT be used to register or &quot;align&quot; non-EM images?</b><br/>
+A: Yes, but its forte is aligning EM images which tend to be large, and greyscale. AlignEM-SWIFT<br/> &nbsp; provides functionality for downscaling and the ability to pass alignment results (affines)<br/> &nbsp; from lower scale levels to higher ones.<br/><br/>
+<b>Q: What is meant by "scales"?</b><br/>
+A: In AlignEM-SWiFT a &quot;scale&quot; means a downsampled (or decreased resolution) series of images.<br/><br/>
+<b>Q: Why should data be scaled at all? Is it okay to align the full resolution series with brute force?</b><br/>
+A: You could, but EM images tend to run large. A more efficient workflow is to:<br/> &nbsp; 1) generate a hierarchy of downsampled images from the full resolution images<br/> &nbsp; 2) align the lowest resolution images first<br/> &nbsp; 3) pass the computed affines to the scale of next-highest resolution, and repeat<br/> &nbsp; &nbsp; &nbsp;until the full resolution images are in alignment. In these FAQs this is referred to<br/> &nbsp; &nbsp; &nbsp;as &quot;climbing the scale hierarchy&quot;&quot;<br/><br/>
+<b>Q: Why do SNR values not necessarily increase as we &quot;climb the scale hierarchy&quot;?</b><br/>
+A: SNR values returned by SWIM are a relative metric which depend on image resolution. It is<br/> &nbsp; therefore most useful when comparing the relative alignment quality of aligned image<br/> &nbsp; pairs at the same scale.<br/><br/>
+<b>Q: Why are the selected manual correlation regions not mutually independent? In other words,<br/> &nbsp; why does moving or removing an argument to SWIM affect the signal-to-noise ratio and<br/> &nbsp; resulting correlation signals of the other selected SWIM regions?</b><br/>
+A:<br/><br/>
+<b>Q: What is Neuroglancer?</b><br/>
+A: Neuroglancer is an open-source WebGL and typescript-based web application for displaying<br/> &nbsp; volumetric data. AlignEM-SWiFT uses a Chromium-based API called QtWebEngine together<br/> &nbsp; with the Neuroglancer Python API to render large volumetric data efficiently and conveniently<br/> &nbsp; within the application window.<br/><br/>
+<b>Q: What is Zarr?</b><br/>
+A: Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays<br/> &nbsp; with an interface similar to NumPy. It has a Nature Methods paper:<br/> &nbsp; <a href='https://www.nature.com/articles/s41592-021-01326-w'>https://www.nature.com/articles/s41592-021-01326-w</a><br/><br/>
+<b>Q: Why makes AlignEM-SWiFT so <i>swift</i></b><br/>
+A: A few reasons:<br/> &nbsp; 1) Time-intensive processes are executed in parallel.<br/> &nbsp; 2) Data scaling, SWIM alignment, and affine processing functions are all implemented<br/> &nbsp; &nbsp; &nbsp;in highly efficient C code written by computer scientist Arthur Wetzel.<br/> &nbsp; 3) Fast Fourier Transform is a fast algorithm.<br/><br/>
+<b>Q: How many CPUs or &quot;cores&quot; will AlignEM-SWiFT use?</b><br/>
+A: By default, as many cores as the system has available (greedy).<br/><br/>
+<b>Q: What file types are supported?</b><br/>
+A: Currently, only images formatted as TIFF are supported.<br/><br/>
+<b>Q: Where can I learn more about the principles of Signal Whitening Fourier Transform Image Matching?</b><br/>
+A: <a href='https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf'>https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf</a><br/>
 
 
 </body>

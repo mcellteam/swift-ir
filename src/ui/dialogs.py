@@ -811,21 +811,22 @@ class NewConfigureProjectDialog(QDialog):
         #    cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
         # self.cb_alignLowestScale.clicked.connect(fn_align_coarsest)
 
-        self.cb_alignLowestScale = QCheckBox()
-        self.cb_alignLowestScale_lab = QLabel('Immediately Align the Coarsest Scale ')
+        # self.cb_alignLowestScale = QCheckBox()
+        self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
+        # self.cb_alignLowestScale_lab = QLabel('Immediately Align the Coarsest Scale ')
         self.cb_alignLowestScale.setFixedSize(QSize(128,20))
         def fn_align_coarsest():
             logger.info('')
             cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
         self.cb_alignLowestScale.stateChanged.connect(fn_align_coarsest)
 
-        hbl = HBL()
-        hbl.addWidget(self.cb_alignLowestScale, alignment=Qt.AlignRight)
-        hbl.addWidget(self.cb_alignLowestScale_lab, alignment=Qt.AlignLeft)
+        # hbl = HBL()
+        # hbl.addWidget(self.cb_alignLowestScale, alignment=Qt.AlignRight)
+        # hbl.addWidget(self.cb_alignLowestScale_lab, alignment=Qt.AlignLeft)
 
-        self.cb_alignLowestScale_widget = QWidget()
-        # self.cb_alignLowestScale_widget.setContentsMargins(0,0,0,0)
-        self.cb_alignLowestScale_widget.setLayout(hbl)
+        # self.cb_alignLowestScale_widget = QWidget()
+        # # self.cb_alignLowestScale_widget.setContentsMargins(0,0,0,0)
+        # self.cb_alignLowestScale_widget.setLayout(hbl)
 
 
         self.applyButton = QPushButton('Create Scales')
@@ -838,7 +839,7 @@ class NewConfigureProjectDialog(QDialog):
         self.cancelButton.clicked.connect(self.on_cancel)
 
         self.w_buttons = QWidget()
-        self.w_buttons.setLayout(HBL(self.cb_alignLowestScale_widget, self.cancelButton, self.applyButton, ExpandingWidget(self)))
+        self.w_buttons.setLayout(HBL(self.cb_alignLowestScale, self.cancelButton, self.applyButton, ExpandingWidget(self)))
 
         '''Scales Input Field'''
         if do_scales_exist():
