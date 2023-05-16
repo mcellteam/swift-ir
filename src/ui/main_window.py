@@ -1510,7 +1510,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        cfg.project_tab._overlayLab.hide()
+        # cfg.project_tab._overlayLab.hide()
         logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} ng_layer={ng_layer} >>>>")
         self.count_calls.setdefault('dataUpdateWidgets', {})
         self.count_calls['dataUpdateWidgets'].setdefault(caller, 0)
@@ -1543,9 +1543,9 @@ class MainWindow(QMainWindow):
                 cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
-            elif ng_layer == 0:
-                cfg.project_tab._overlayLab.setText('       No Reference\n\n')
-                cfg.project_tab._overlayLab.show()
+            # elif ng_layer == 0:
+            #     cfg.project_tab._overlayLab.setText('       No Reference\n\n')
+            #     cfg.project_tab._overlayLab.show()
 
             img_siz = cfg.data.image_size()
             self.statusBar.showMessage(cfg.data.scale_pretty() + ', ' +
