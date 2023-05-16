@@ -3041,16 +3041,40 @@ class MainWindow(QMainWindow):
         self.refreshButton.setFont(f)
         self.refreshButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.refreshButton.setToolTip(f"Refresh View {hotkey('R')}")
-        # self.refreshButton.setFixedSize(QSize(78,16))
         self.refreshButton.setFixedHeight(16)
         self.refreshButton.setIconSize(QSize(16, 16))
-        # self.refreshButton.setIcon(qta.icon('fa.refresh', color='#161c20'))
         self.refreshButton.setIcon(qta.icon('mdi.refresh', color='#161c20'))
         self.refreshButton.clicked.connect(self.refreshTab)
-        # self.refreshButton.setStyleSheet(button_gradient_style)
+
+        self.faqButton = QPushButton(' FAQ')
+        def fn_view_faq():
+            logger.info('Showing FAQ...')
+            self.html_resource(resource='faq.html', title='AlignEM-SWiFT FAQ')
+        self.faqButton.setFont(f)
+        self.faqButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
+        self.faqButton.setFixedHeight(16)
+        self.faqButton.setIconSize(QSize(16, 16))
+        self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
+        self.faqButton.clicked.connect(fn_view_faq)
+
+        self.faqButton = QPushButton(' FAQ')
+        def fn_view_faq():
+            logger.info('Showing FAQ...')
+            self.html_resource(resource='faq.html', title='AlignEM-SWiFT FAQ')
+        self.faqButton.setFont(f)
+        self.faqButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
+        self.faqButton.setFixedHeight(16)
+        self.faqButton.setIconSize(QSize(16, 16))
+        self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
+        self.faqButton.clicked.connect(fn_view_faq)
+
+
+
 
         self.navWidget = HWidget(QLabel(' '), self.exitButton, self.minimizeButton, self.fullScreenButton,
-                                 self.refreshButton, ExpandingWidget(self))
+                                 self.refreshButton, self.faqButton, ExpandingWidget(self))
         self.navWidget.setFixedHeight(18)
         # self.navWidget.setC
 
