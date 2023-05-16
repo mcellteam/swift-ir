@@ -3199,7 +3199,7 @@ class MainWindow(QMainWindow):
         self.cbMonitor.setFixedSize(142, 16)  # tacc
         self.cbFlicker.setFixedSize(96, 16)
         # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
-        self.cbSignals.setFixedSize(QSize(154, 16))  # tacc
+        self.cbSignals.setFixedSize(QSize(158, 16))  # tacc
 
         # self.toolbar.addWidget(QLabel('    '))
         self.toolbar.layout().setSpacing(4)
