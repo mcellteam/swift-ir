@@ -11,7 +11,7 @@ import textwrap
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
-    QListView
+    QListView, QApplication
 from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint
 from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
 
@@ -472,11 +472,14 @@ class OpenProject(QWidget):
             cfg.main_window._setLastTab()
             cfg.data.zpos = int(len(cfg.data) / 2)
             cfg.main_window.onStartProject()
+            QApplication.processEvents()
+            cfg.project_tab.initNeuroglancer()
 
             if cfg.data['data']['autoalign_flag']:
                 cfg.mw.tell('Aligning ALL scales...')
                 cfg.mw.alignAll()
                 cfg.main_window._autosave(silently=True)
+
 
             # self.onStartProject(mendenhall=True)
             # turn OFF onStartProject for Mendenhall
