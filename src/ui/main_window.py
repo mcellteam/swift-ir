@@ -154,14 +154,13 @@ class MainWindow(QMainWindow):
 
         self.showMaximized()
 
-        # self.settings = QSettings("cnl", "alignem")
+        self.settings = QSettings("cnl", "alignem")
         # if not self.settings.value("geometry") == None:
         #     self.restoreGeometry(self.settings.value("geometry"))
-        # if not self.settings.value("windowState") == None:
-        #     self.restoreState(self.settings.value("windowState"))
+        if not self.settings.value("windowState") == None:
+            self.restoreState(self.settings.value("windowState"))
 
 
-        # self.
 
 
         # self.oldPos = None
