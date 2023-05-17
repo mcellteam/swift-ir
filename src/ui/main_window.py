@@ -6171,22 +6171,14 @@ class DockWidget(QDockWidget):
         self.setObjectName(text)
         self.setAllowedAreas(
             Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
-        self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
-
+        self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
 
     def event(self, event):
         if event.type() == QEvent.MouseButtonPress and event.button() == 1:
             self.hasFocus.emit(self)
-            logger.critical(f'Emission from {self.objectName()}')
+            logger.info(f'Emission from {self.objectName()}')
         return super().event(event)
 
-
-class Dock(QDockWidget):
-    def __init__(self, title, parent=None):
-        super(Dock, self).__init__(parent)
-
-        self.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
-        self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable )
 
 
 

@@ -249,12 +249,12 @@ class HeadupDisplay(QWidget):
             margin: 0px 0px 0px 0px;
         """)
 
-    def sizeHint(self):
-        if cfg.main_window:
-            width = int(cfg.main_window.width() / 2)
-        else:
-            width = int(cfg.WIDTH / 2)
-        return QSize(width, 90)
+    # def sizeHint(self):
+    #     if cfg.main_window:
+    #         width = int(cfg.main_window.width() / 2)
+    #     else:
+    #         width = int(cfg.WIDTH / 2)
+    #     return QSize(width, 90)
 
 
 
