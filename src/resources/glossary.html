@@ -1,12 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+   <title>AlignEM-SWiFT FAQ</title>
+    <meta charset="utf-8">
+    <style>
+        h3 { color: #161c20; }
+    </style>
 </head>
-<body>
+<body style="font-family: Tahoma, sans-serif;">
 
-    <h3>Coming Soon.</h3>
+    <b>Default SWIM Settings</b>:
+    <br/><ul>
+        <li><b>Window Width</b> - The full width of an imaginary, centered grid which SWIM aligns against (default=81.25% of image width).<br/></li>
+        <li><b>Signal Whitening</b> - A SWIM parameter which takes values in the range of -1.00 and 0.00 (default=-0.68).<br/></li>
+        <li><b>Iterations</b> - The number of sequential SWIM refinements. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3).<br/></li>
+    </ul>
+
+    Manual Intervention - There are several different methods for human-assisted or forced alignment (Note: It is not possible to enter Manual Alignment Mode until 'Align All' has been run for a given scale):
+    <br/><ul>
+        <li><b>Custom Grid</b> - Similar to the Default Grid method, but the user is able to avoid image defects by adjusting the grid shape and location and adding or removing quadrants of the grid. An affine transformation requires at least 3 quadrants.<br/></li>
+        <li><b>Feature Matching (Hint)</b> - User provides an alignment "hint" to SWIM by selecting a set of manual correspondence (or "matching") regions. An affine transformation requires at least 3 correspondence regions.<br/></li>
+        <li><b>Feature Matching (Strict)</b> - User forces an alignment by selecting a set of at least 3 manual correspondence (or "matching") points. An affine transformation requires at least 3 correspondence points.<br/></li>
+        <li><b>Include/Exclude</b> - In cases of severe defects it is possible to exclude images from the alignment altogether by unselecting the box marked "Include" in the control panel. Images marked for exclusion (not Included) sections will not be aligned and will not be used as the reference to any other (like a dropped frame).<br/></li>
+    </ul>
+
+
+    <b>Output Settings</b> – Regenerating the alignment--distinct from computing the alignment--refers to the process of generating a new aligned image stack at a particular scale from source images of the same scale using predetermined affine transformations. The resulting images depend on:
+    <br/><ul>
+        <li><b>Generate TIFFs</b> - Whether or not to generate TIFF and Zarr output for any alignment, regardless of the alignment method used.<br/></li>
+        <li><b>Bounding Box</b> - When Bounding Box is turned ON, the resulting images will grow an arbitrary amount to ensure that the entire alignment is within frame and no data is cropped out of frame. When Bounding Box is turned OFF (default=OFF) the aligned images will always have the same dimensions as the source images at a particular scale, regardless of drift and the data loss that may result from it.<br/></li>
+        <li><b>Corrective (Polynomial) Bias</b> - An adjustment that can subtract systematic drift of various polynomial orders between 0° and 4° or None (default=None).<br/></li>
+    </ul>
 
 </body>
 </html>
