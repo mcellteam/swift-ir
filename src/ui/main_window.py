@@ -1496,6 +1496,7 @@ class MainWindow(QMainWindow):
             #     cfg.project_tab._overlayLab.setText('       No Reference\n\n')
             #     cfg.project_tab._overlayLab.show()
 
+
             img_siz = cfg.data.image_size()
             self.statusBar.showMessage(cfg.data.scale_pretty() + ', ' +
                                        'x'.join(map(str, img_siz)) + ', ' +
