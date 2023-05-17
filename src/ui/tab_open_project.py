@@ -282,14 +282,14 @@ class OpenProject(QWidget):
     def validate_path(self):
         # logger.info(f'caller:{inspect.stack()[1].function}')
         path = self.selectionReadout.text()
-        logger.info(f'Validating ath : {path}')
+        # logger.info(f'Validating path : {path}')
         if validate_project_selection(path) or validate_zarr_selection(path) or path == '':
             if validate_zarr_selection(path):
                 self._buttonOpen.setText('Open Zarr')
-                logger.info(f'The requested Zarr is valid')
+                # logger.info(f'The requested Zarr is valid')
             else:
                 self._buttonOpen.setText('Open Project')
-                logger.info(f'The requested project is valid')
+                # logger.info(f'The requested project is valid')
             self.validity_label.hide()
             # self._buttonOpen.setEnabled(True)
             self._buttonOpen.show()
@@ -354,9 +354,10 @@ class OpenProject(QWidget):
         urls = self.name_dialog.sidebarUrls()
 
         if '.tacc.utexas.edu' in platform.node():
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+
         else:
             urls.append(QUrl.fromLocalFile('/tmp'))
             if os.path.exists('/Volumes'):
@@ -377,13 +378,10 @@ class OpenProject(QWidget):
             QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
             QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
         }
-
-
         sidebar = self.name_dialog.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
         delegate.mapping = places
         sidebar.setItemDelegate(delegate)
-
         urls = self.name_dialog.sidebarUrls()
         logger.info(f'urls: {urls}')
 
@@ -450,7 +448,7 @@ class OpenProject(QWidget):
             self.vbl_main.addWidget(dialog)
 
             result = dialog.exec()
-            logger.info(f'result = {result}, type = {type(result)}')
+            # logger.info(f'result = {result}, type = {type(result)}')
 
             if result:
                 logger.info('Save File Path: %s' % path)
@@ -473,7 +471,7 @@ class OpenProject(QWidget):
             cfg.data.zpos = int(len(cfg.data) / 2)
             cfg.main_window.onStartProject()
             QApplication.processEvents()
-            cfg.project_tab.initNeuroglancer()
+            # cfg.project_tab.initNeuroglancer()
 
             if cfg.data['data']['autoalign_flag']:
                 cfg.mw.tell('Aligning ALL scales...')
@@ -533,6 +531,19 @@ class OpenProject(QWidget):
                     urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
 
         dialog.setSidebarUrls(urls)
+
+        places = {
+            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
+            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
+            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
+        }
+        sidebar = self.name_dialog.findChild(QListView, "sidebar")
+        delegate = StyledItemDelegate(sidebar)
+        delegate.mapping = places
+        sidebar.setItemDelegate(delegate)
+
+
+
         cfg.main_window.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
         if dialog.exec_() == QDialog.Accepted:
@@ -564,15 +575,10 @@ class OpenProject(QWidget):
 
 
     def setSelectionPathText(self, path):
-        # logger.info(f'caller:{inspect.stack()[1].function}')
         self.selectionReadout.setText(path)
-        logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
+        # logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
 
         if validate_project_selection(path) or validate_zarr_selection(path):
-            # if validate_zarr_selection(path):
-            #     self._buttonOpen.setText('Open Zarr')
-            # else:
-            #     self._buttonOpen.setText('Open Project')
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
             self._buttonDelete.setEnabled(True)
@@ -597,8 +603,8 @@ class OpenProject(QWidget):
         cfg.main_window._setLastTab()
 
     def open_project_selected(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'caller: {caller}')
         path = self.selectionReadout.text()
         if validate_zarr_selection(path):
             self.open_zarr_selected()
@@ -972,7 +978,7 @@ def validate_project_selection(path) -> bool:
     if extension != '.swiftir':
         return False
     else:
-        logger.info('Directory contains .zarray -> selection is a valid project')
+        # logger.info('Directory contains .zarray -> selection is a valid project')
         return True
 
 def validate_zarr_selection(path) -> bool:
@@ -980,7 +986,7 @@ def validate_zarr_selection(path) -> bool:
     # called by setSelectionPathText
     if os.path.isdir(path):
         if '.zarray' in os.listdir(path):
-            logger.info('Directory contains .zarray -> selection is a valid Zarr')
+            # logger.info('Directory contains .zarray -> selection is a valid Zarr')
             return True
     return False
 

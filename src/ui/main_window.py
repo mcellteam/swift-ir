@@ -2043,7 +2043,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_defaults()  # 0.5357 -> 0.5438, ~.0081s
 
         t_ng = time.time()
-        cfg.project_tab.initNeuroglancer()  # dt = 0.543 -> dt = 0.587 = 0.044 ~ 1/20 second
+        # cfg.project_tab.initNeuroglancer()  # dt = 0.543 -> dt = 0.587 = 0.044 ~ 1/20 second
         logger.info(f't(initialize neuroglancer): {time.time() - t_ng}')
         self.update()
 
