@@ -24,7 +24,7 @@ QMainWindow::separator:hover {
 QToolTip {
    font-family: Tahoma, sans-serif;
    /*background-color: #339933;*/
-   color: #ede9e8;
+   color: #161c20;
    border: 1px solid #ede9e8;
 }
 
