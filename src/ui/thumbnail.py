@@ -137,7 +137,7 @@ class CorrSignalThumbnail(QLabel):
         self.setScaledContents(True)
         self.setMinimumSize(QSize(QSize(32,32)))
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) #Original!
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path

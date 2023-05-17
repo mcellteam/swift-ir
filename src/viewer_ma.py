@@ -151,14 +151,15 @@ class MAViewer(neuroglancer.Viewer):
         cfg.alLV.invalidate()
 
 
-    def initViewer(self):
+    def initViewer(self, obey_zpos=True):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller}]...')
 
-        if self.role == 'ref':
-            self.index = max(cfg.data.zpos - 1, 0)
-        elif self.role == 'base':
-            self.index = cfg.data.zpos #
+        if obey_zpos:
+            if self.role == 'ref':
+                self.index = max(cfg.data.zpos - 1, 0)
+            elif self.role == 'base':
+                self.index = cfg.data.zpos #
 
         # self.clear_layers()
         self.restoreManAlignPts()
@@ -177,13 +178,8 @@ class MAViewer(neuroglancer.Viewer):
             raise e
 
         # logger.critical('Creating Local Volume for %d' %self.index)
-        self.LV = ng.LocalVolume(
-            volume_type='image',
-            data=self.store[self.index:self.index+1, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[0, 0, 0]
-        )
 
+        self.get_lv_slice()
 
         with self.txn() as s:
             s.layout.type = 'yz'
@@ -227,6 +223,16 @@ class MAViewer(neuroglancer.Viewer):
         QApplication.processEvents()
         self.initZoom()
         # self._set_zmag()
+
+    def get_lv_slice(self):
+        self.LV = ng.LocalVolume(
+            volume_type='image',
+            data=self.store[self.index:self.index+1, :, :],
+            dimensions=self.coordinate_space,
+            voxel_offset=[0, 0, 0]
+        )
+        return self.LV
+
 
     def on_state_changed_any(self):
         caller = inspect.stack()[1].function

@@ -184,11 +184,7 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
   padding: 1px -1px -1px 1px;
 }
 
-QTabWidget {
-    border: none;
 
-
-}
 
 
 QTabBar::tab {
