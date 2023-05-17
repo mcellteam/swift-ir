@@ -107,14 +107,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
 
-        self.showMaximized()
-
-        self.settings = QSettings("cnl", "alignem")
-        # if not self.settings.value("geometry") == None:
-        #     self.restoreGeometry(self.settings.value("geometry"))
-        if not self.settings.value("windowState") == None:
-            self.restoreState(self.settings.value("windowState"))
-
         self.menu = self.menuBar()
         # self.menu = QMenu()
         cfg.thumb = Thumbnailer()
@@ -156,7 +148,19 @@ class MainWindow(QMainWindow):
             self.show_splash()
 
         self.pbar_cancel_button.setEnabled(cfg.DAEMON_THREADS)
-        self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
+
+        # self.settings = QSettings("cnl", "alignem")
+        # # if not self.settings.value("geometry") == None:
+        # #     self.restoreGeometry(self.settings.value("geometry"))
+        # if not self.settings.value("windowState") == None:
+        #     self.restoreState(self.settings.value("windowState"))
+
+        self.settings = QSettings("cnl", "alignem")
+        if self.settings.value("windowState") == None:
+            self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
+        else:
+            self.restoreState(self.settings.value("windowState"))
+            self.restoreGeometry(self.settings.value("geometry"))
 
         font = QFont("Tahoma")
         QApplication.setFont(font)
@@ -213,6 +217,7 @@ class MainWindow(QMainWindow):
         # cp.setX(cp.x() - 200)
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+        # self.showMaximized()
 
     def cleanupAfterCancel(self):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
@@ -2081,6 +2086,8 @@ class MainWindow(QMainWindow):
 
     def saveUserPreferences(self):
         logger.info('Saving User Preferences...')
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         try:
             f = open(userpreferencespath, 'w')
@@ -2262,6 +2269,9 @@ class MainWindow(QMainWindow):
 
     def shutdownInstructions(self):
         logger.info('Performing Shutdown Instructions...')
+
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
 
         # if ng.server.is_server_running():
         #     try:
