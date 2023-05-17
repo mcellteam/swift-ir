@@ -4563,6 +4563,7 @@ class MainWindow(QMainWindow):
         # self._btn_manualAlign = QPushButton('Manual Align Mode →')
         self._btn_manualAlign = QPushButton(f"Manual Align {hotkey('M')} ")
         # self._btn_manualAlign.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
+        self._btn_manualAlign.setStyleSheet("""""")
         self._btn_manualAlign.setIconSize(QSize(12, 12))
         self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
         self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))

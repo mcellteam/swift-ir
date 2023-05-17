@@ -32,7 +32,9 @@ A: In AlignEM-SWiFT a &quot;scale&quot; simply means a downsampled (of decreased
 <b>Q: Why should data be scaled at all? Is it okay to align the full resolution series with brute force?</b><br/>
 A: You could, but EM images tend to run large. A more efficient workflow is to:<br/> &nbsp; 1) generate a hierarchy of downsampled images from the full resolution images<br/> &nbsp; 2) align the lowest resolution images first<br/> &nbsp; 3) pass the computed affines to the scale of next-highest resolution, and repeat until the full resolution images are in alignment. In these FAQs this is referred to as &quot;climbing the scale hierarchy&quot;&quot;<br/><br/>
 
-<b>Q: What is meant by "scales"?</b><br/>
+<b>Q: Is it possible to generate a new scale pyramid without starting a new project?</b>
+A: Yes. To rescale your dataset use the menu option <b>Actions > Rescale...</b> <b><u>Caution</u> (!) - </b> Rescaling is effectually like starting over but using the same images imported previously.<br/></li>
+<br/><br/>
 
 <b>Q: Why do SNR values not necessarily increase as we &quot;climb the scale hierarchy&quot;?</b><br/>
 A: SNR values returned by SWIM are a relativistic readout of alignment quality which depends on image resolution. It is most useful when comparing the performance of the SWIM image matching algorithm between stationary/moving image pairs at the same scale.<br/><br/>
