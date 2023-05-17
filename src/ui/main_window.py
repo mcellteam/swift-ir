@@ -106,6 +106,15 @@ class MainWindow(QMainWindow):
         self.window_title = 'AlignEM-SWiFT'
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
+
+        self.showMaximized()
+
+        self.settings = QSettings("cnl", "alignem")
+        # if not self.settings.value("geometry") == None:
+        #     self.restoreGeometry(self.settings.value("geometry"))
+        if not self.settings.value("windowState") == None:
+            self.restoreState(self.settings.value("windowState"))
+
         self.menu = self.menuBar()
         # self.menu = QMenu()
         cfg.thumb = Thumbnailer()
@@ -152,13 +161,7 @@ class MainWindow(QMainWindow):
         font = QFont("Tahoma")
         QApplication.setFont(font)
 
-        self.showMaximized()
 
-        self.settings = QSettings("cnl", "alignem")
-        # if not self.settings.value("geometry") == None:
-        #     self.restoreGeometry(self.settings.value("geometry"))
-        if not self.settings.value("windowState") == None:
-            self.restoreState(self.settings.value("windowState"))
 
 
 

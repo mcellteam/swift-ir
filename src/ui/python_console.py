@@ -8,7 +8,7 @@ import qtconsole
 # from IPython.lib import guisupport
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QSizePolicy
 from qtpy.QtCore import Qt, QSize
 from src.helpers import is_tacc
 import src.config as cfg
@@ -29,6 +29,8 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client = self._kernel_manager.client()
         self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
         # if not is_tacc():
         if 1:
             self.execute_command('import src.config as cfg')
@@ -87,6 +89,9 @@ class PythonConsole(RichJupyterWidget):
     #     else:
     #         width = int(cfg.WIDTH / 2)
     #     return QSize(width, 90)
+
+    def sizeHint(self):
+        return QSize(int(cfg.WIDTH / 2), 90)
 
 
 if __name__ == '__main__':
