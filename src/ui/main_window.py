@@ -31,7 +31,8 @@ import numpy as np
 import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QPoint, QRectF, QPropertyAnimation
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QPoint, QRectF, \
+    QPropertyAnimation, QSettings
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion
 from qtpy.QtWebEngineWidgets import *
@@ -151,6 +152,18 @@ class MainWindow(QMainWindow):
         font = QFont("Tahoma")
         QApplication.setFont(font)
 
+        self.showMaximized()
+
+        # self.settings = QSettings("cnl", "alignem")
+        # if not self.settings.value("geometry") == None:
+        #     self.restoreGeometry(self.settings.value("geometry"))
+        # if not self.settings.value("windowState") == None:
+        #     self.restoreState(self.settings.value("windowState"))
+
+
+        # self.
+
+
         # self.oldPos = None
 
         # self.gripSize = 12 # originally 12
@@ -189,6 +202,7 @@ class MainWindow(QMainWindow):
     # self.grips[1].move(rect.right() - self.gripSize, 0) # top right
     # self.grips[2].move(rect.right() - self.gripSize, rect.bottom() - self.gripSize) # bottom right
     # self.grips[3].move(0, rect.bottom() - self.gripSize) # bottom left
+
 
     def initSizeAndPos(self, width, height):
         self.resize(width, height)
@@ -232,7 +246,8 @@ class MainWindow(QMainWindow):
                     v.set_zmag()
                 self.hud.done()
                 self.updateEnabledButtons()  # 0301+
-                self.updateAllCpanelDetails()
+                # self.updateAllCpanelDetails()
+                self.updateCpanelDetails()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
@@ -643,7 +658,8 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
         finally:
-            self.updateAllCpanelDetails()
+            # self.updateAllCpanelDetails()
+            self.updateCpanelDetails()
             self.pbarLabel.setText('')
             self.hidePbar()
             self.updateDtWidget()
@@ -733,6 +749,10 @@ class MainWindow(QMainWindow):
                 t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
                 t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
                 t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
+                
+                t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
+                t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
+                t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
 
                 t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
                 for s in cfg.data.scales():
@@ -742,8 +762,7 @@ class MainWindow(QMainWindow):
                     t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
                     t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
 
-                    t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
-                    t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
+
 
                 t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
                 for s in cfg.data.scales():
@@ -755,16 +774,10 @@ class MainWindow(QMainWindow):
 
                 fl_l = QFormLayout()
                 fl_l.setContentsMargins(0, 0, 0, 0)
-                fl_l.setVerticalSpacing(2)
-                fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t1m))
+                fl_l.setVerticalSpacing(1)
+                fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t0m))
                 fl_l.addRow('Convert All Scales to Zarr', QLabel(t1 + ' / ' + t1m))
                 fl_l.addRow('Generate Source Image Thumbnails', QLabel(t2 + ' / ' + t2m))
-                str3 = ''
-                str4 = ''
-                str5 = ''
-                str6 = ''
-                str7 = ''
-
                 # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s],t3m[s]) for s in cfg.data.scales()])))
                 fl_l.addRow('Compute Affines', QLabel(''))
                 for s in cfg.data.scales():
@@ -802,7 +815,7 @@ class MainWindow(QMainWindow):
                 w.setStyleSheet("""
                 QLabel{
                     color: #161c20;
-                    font-size: 9px;
+                    font-size: 8px;
                 }
                 """)
                 w.setLayout(fl_l)
@@ -866,11 +879,15 @@ class MainWindow(QMainWindow):
                 self.updateDtWidget()
                 cfg.project_tab.updateTreeWidget()
                 cfg.project_tab.updateProjectLabels()
+                self.updateEnabledButtons()
+                self.updateProjectTable()  # +
                 self._bbToggle.setChecked(cfg.data.has_bb())
+
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
 
-                self.updateAllCpanelDetails()
+                # self.updateAllCpanelDetails()
+                self.updateCpanelDetails()
         except:
             print_exception()
         finally:
@@ -1413,97 +1430,6 @@ class MainWindow(QMainWindow):
             # w.setLayout(self.fl_main_results)
             # self.sa_tab1.setWidget(w)
 
-    def updateLowest8widget(self):
-
-        if cfg.data.is_aligned():
-            n_lowest = min(8, len(cfg.data) - 1)
-            lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
-            lowest_X = list(cfg.data.snr_lowest(n_lowest))
-            logger.info(f'lowest_X_i : {lowest_X_i}')
-            logger.info(f'lowest_X : {lowest_X}')
-            logger.info(f'n_lowest : {n_lowest}')
-
-            funcs = []
-            for i in range(n_lowest):
-                funcs.append(lambda: self.jump_to_manual(lowest_X_i[i]))
-
-            self.lowestX_btns = []
-            self.lowestX_txt = []
-
-            for i in range(n_lowest):
-                logger.info(f'i = {i}')
-
-                try:
-                    # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
-                    s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
-                    s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
-                    combined = s1 + ' ' + s2
-                    # btn = QPushButton('Jump')
-                    # self.lowestX_btns.append(QPushButton('Align Manually →'))
-                    self.lowestX_btns.append(QPushButton('Manual Align'))
-                    f = QFont()
-                    f.setPointSizeF(7)
-                    self.lowestX_btns[i].setFont(f)
-                    self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
-                    self.lowestX_btns[i].setFixedSize(QSize(80, 14))
-                    self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
-                    self.lowestX_btns[i].setIconSize(QSize(10, 10))
-                    self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-                    self.lowestX_btns[i].clicked.connect(funcs[i])
-                    self.lowestX_txt.append(combined)
-
-                # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
-                except:
-                    print_exception()
-                # self.results3 = QLabel('...Worst 5 SNR')
-        else:
-            label = QLabel('Not Aligned.')
-            label.setAlignment(Qt.AlignTop)
-            self.sa_tab2.setWidget(label)
-            return
-
-        self.lowX_left_fl = QFormLayout()
-        self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
-        self.lowX_left_fl.setVerticalSpacing(1)
-        if n_lowest >= 1:
-            self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
-        if n_lowest >= 2:
-            self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
-        if n_lowest >= 3:
-            self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
-        if n_lowest >= 4:
-            self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
-        # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
-        self.lowX_left = QWidget()
-        self.lowX_left.setContentsMargins(0, 0, 0, 0)
-        self.lowX_left.setLayout(self.lowX_left_fl)
-
-        self.lowX_right_fl = QFormLayout()
-        self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
-        self.lowX_right_fl.setVerticalSpacing(1)
-        if n_lowest >= 5:
-            self.lowX_right_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
-        if n_lowest >= 6:
-            self.lowX_right_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
-        if n_lowest >= 7:
-            self.lowX_right_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
-        if n_lowest >= 8:
-            self.lowX_right_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
-        # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
-        self.lowX_right = QWidget()
-        self.lowX_right.setContentsMargins(0, 0, 0, 0)
-        self.lowX_right.setLayout(self.lowX_right_fl)
-
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(2, 2, 2, 2)
-        hbl.addWidget(self.lowX_left)
-        hbl.addWidget(self.lowX_right)
-        w = QWidget()
-        w.setLayout(hbl)
-
-        logger.critical('Setting sa_tab2 Layout...')
-        # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
-        self.sa_tab2.setWidget(w)
 
         # @Slot()
 
@@ -1511,12 +1437,21 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
-        logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} ng_layer={ng_layer} >>>>")
+        logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
         self.count_calls.setdefault('dataUpdateWidgets', {})
-        self.count_calls['dataUpdateWidgets'].setdefault(caller, 0)
-        self.count_calls['dataUpdateWidgets'][caller] += 1
-        if ng_layer:
-            logger.info(f'ng_layer (requested): {ng_layer}')
+        self.count_calls['dataUpdateWidgets'].setdefault(caller, {})
+        self.count_calls['dataUpdateWidgets'][caller].setdefault('total_count',0)
+        self.count_calls['dataUpdateWidgets'][caller].setdefault('same_count',0)
+        self.count_calls['dataUpdateWidgets'][caller].setdefault('diff_count',0)
+        self.count_calls['dataUpdateWidgets'][caller].setdefault('none_count',0)
+        self.count_calls['dataUpdateWidgets'][caller]['total_count'] += 1
+
+        if ng_layer == None:
+            self.count_calls['dataUpdateWidgets'][caller]['none_count'] += 1
+        elif cfg.data.zpos == ng_layer:
+            self.count_calls['dataUpdateWidgets'][caller]['same_count'] += 1
+        elif cfg.data.zpos != ng_layer:
+            self.count_calls['dataUpdateWidgets'][caller]['diff_count'] += 1
 
         if self._isProjectTab():
 
@@ -1528,21 +1463,26 @@ class MainWindow(QMainWindow):
                 if type(ng_layer) != bool:
                     try:
                         if 0 <= ng_layer < len(cfg.data):
-                            logger.info(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
+                            logger.critical(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
+                            if cfg.data.zpos != ng_layer:
+                                logger.critical('Changing layer')
+                            elif cfg.data.zpos == ng_layer:
+                                logger.critical(f'NOT changing layer {caller}')
                             cfg.data.zpos = ng_layer
                             # self._sectionSlider.setValue(ng_layer)
                     except:
                         print_exception()
 
-            logger.info('Updating the UI...')
+            # logger.info('Updating the UI...')
 
-            cfg.project_tab._overlayRect.hide()
-            cfg.project_tab._overlayLab.hide()
             if cfg.data.skipped():
-                cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+                # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
                 cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
+            else:
+                cfg.project_tab._overlayRect.hide()
+                cfg.project_tab._overlayLab.hide()
             # elif ng_layer == 0:
             #     cfg.project_tab._overlayLab.setText('       No Reference\n\n')
             #     cfg.project_tab._overlayLab.show()
@@ -1577,10 +1517,7 @@ class MainWindow(QMainWindow):
                 self._skipCheckbox.setChecked(not cfg.data.skipped())
             except:
                 logger.warning('Skip Toggle Widget Failed to Update')
-            try:
-                self._bbToggle.setChecked(cfg.data.use_bb())
-            except:
-                logger.warning('Bounding Box Toggle Failed to Update')
+
 
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
@@ -1618,27 +1555,6 @@ class MainWindow(QMainWindow):
 
             if self.cpanelTabWidget.currentIndex() == 3:
                 self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
-
-            # if cfg.project_tab.detailsAFM.isVisible():
-            #     afm, cafm = cfg.data.afm(), cfg.data.cafm()
-            #     afm_txt, cafm_txt = [], []
-            #     for x in range(2):
-            #         for y in range(3):
-            #             if y == 0:
-            #                 afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-            #                 cafm_txt.append(('%.2f' % cafm[x][y]).ljust(8))
-            #             elif y == 1:
-            #                 afm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-            #                 cafm_txt.append(('%.2f' % afm[x][y]).ljust(8))
-            #             else:
-            #                 afm_txt.append(('%.2f' % afm[x][y]).ljust(11))
-            #                 cafm_txt.append(('%.2f' % cafm[x][y]).ljust(11))
-            #             if (x == 0) and (y == 2):
-            #                 afm_txt.append(f'{nl}')
-            #                 cafm_txt.append(f'{nl}')
-            #     cfg.project_tab.detailsAFM.setText(
-            #         f"{a}Affine:{b}{nl}" + "".join(afm_txt) +
-            #         f"{nl}{a}Cumulative Affine:{b}{nl}" + "".join(cafm_txt))
 
             if cfg.project_tab.detailsSNR.isVisible():
                 if (cfg.data.zpos == 0) or cfg.data.skipped() or cfg.data.snr() == 0:
@@ -2073,8 +1989,10 @@ class MainWindow(QMainWindow):
             if getData('state,manual_mode') == True:
                 return
             if self._isProjectTab() or self._isZarrTab():
-                if cfg.emViewer:
+                try:
                     self.detachedNg = WebPage(url=cfg.emViewer.url())
+                except:
+                    logger.info('Cannot open detached neuroglancer view')
 
     def openDetatchedZarr(self):
         logger.info('')
@@ -2129,9 +2047,11 @@ class MainWindow(QMainWindow):
         self.setControlPanelData()  # Added 2023-04-23
 
         logger.info('Setting FPS spinbox value...')
-        # self.spinbox_fps.setValue(cfg.DEFAULT_PLAYBACK_SPEED)
+        # self.spinbox_fps.setValue(czfg.DEFAULT_PLAYBACK_SPEED)
         self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
+        try:    self._bbToggle.setChecked(cfg.data.use_bb())
+        except: logger.warning('Bounding Box Toggle Failed to Update')
 
         # dt = 1.1032602787017822
         self.updateEnabledButtons()
@@ -2150,7 +2070,8 @@ class MainWindow(QMainWindow):
         self.sa_cpanel.show()
         cfg.project_tab.showSecondaryNgTools()
 
-        self.updateAllCpanelDetails()
+        # self.updateAllCpanelDetails()
+        self.updateCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
 
@@ -2267,7 +2188,13 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         logger.critical("closeEvent called by %s..." % inspect.stack()[1].function)
         # self.shutdownInstructions()
+
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
+
         self.exit_app()
+        QMainWindow.closeEvent(self, event)
+
 
     def cancelExitProcedure(self):
         logger.info('')
@@ -3177,42 +3104,7 @@ class MainWindow(QMainWindow):
         self._detachNgButton.clicked.connect(self.detachNeuroglancer)
         self._detachNgButton.setToolTip('Detach Neuroglancer (open in a separate window)')
 
-        #
-        # self._highContrastNgAction = QAction()
-        # self._highContrastNgAction.setStatusTip('Toggle High Contrast Mode')
-        # self._highContrastNgAction.setIcon(qta.icon("mdi.theme-light-dark", color='#161c20'))
-        # self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#161c20'))
-        # self._highContrastNgAction.setCheckable(True)
-        # self._highContrastNgAction.setChecked(getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
-        # if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
-        #     self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#161c20'))
-        # else:
-        #     self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-outline", color='#161c20'))
-        #
-        # self._highContrastNgAction.triggered.connect(lambda: setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', self._highContrastNgAction.isChecked()))
-        # def fn():
-        #     if self._isProjectTab():
-        #         if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
-        #             self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#161c20'))
-        #         else:
-        #             self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-outline", color='#161c20'))
-        #         for v in cfg.project_tab.get_viewers():
-        #             try:
-        #                 v.updateHighContrastMode()
-        #             except:
-        #                 logger.warning('Cant update contrast mode setting for %s' %str(v))
-        #                 print_exception()
-        # self._highContrastNgAction.triggered.connect(fn)
-        # self._highContrastNgAction.setStatusTip('Neuroglancer background setting')
-
-        # self.toolbar.addWidget(QLabel(' '))
-        # self.toolbar.addWidget(self._btn_refreshTab)
-        # self.toolbar.addWidget(QLabel('  '))
         self.toolbar.addWidget(ExpandingWidget(self))
-        # self.labToolWindows = QLabel("Tool Windows  ")
-        # self.labToolWindows.setStyleSheet('font-weight: 600; font-size: 9px;')
-        # self.toolbar.addWidget(ExpandingWidget(self))
-        # self.toolbar.addWidget(self.labToolWindows)
         self.toolbar.addWidget(self.cbMonitor)
         self.toolbar.addWidget(self.cbPython)
         self.toolbar.addWidget(self.cbFlicker)
@@ -3228,10 +3120,10 @@ class MainWindow(QMainWindow):
         # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
         self.cbSignals.setFixedSize(QSize(164, 16))  # tacc
 
-        # self.toolbar.addWidget(QLabel('    '))
         self.toolbar.layout().setSpacing(4)
         self.toolbar.layout().setAlignment(Qt.AlignRight)
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
+
 
     def _disableGlobTabs(self):
         indexes = list(range(0, self.globTabs.count()))
@@ -3383,11 +3275,14 @@ class MainWindow(QMainWindow):
             self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
-            self._bbToggle.setChecked(cfg.data.use_bb())  # 0309+
+
             # cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
 
             self.setControlPanelData()
-            self.updateAllCpanelDetails()
+            # self.updateAllCpanelDetails()
+            self.updateCpanelDetails()
+
+
             self.dataUpdateResults()
 
             try:
@@ -3784,27 +3679,6 @@ class MainWindow(QMainWindow):
         self.ngShowSnrAction.setText('SNR')
         viewMenu.addAction(self.ngShowSnrAction)
 
-        # self.ngShowAffineAction = QAction(self)
-        # def fn():
-        #     if self._isProjectTab():
-        #         cfg.project_tab.detailsAFM.setVisible(self.ngShowAffineAction.isChecked())
-        #         self.dataUpdateWidgets()
-        #
-        # self.ngShowAffineAction.triggered.connect(fn)
-        # self.ngShowAffineAction.setCheckable(True)
-        # self.ngShowAffineAction.setText('Affine')
-        # viewMenu.addAction(self.ngShowAffineAction)
-
-        # self.ngShowRuntimesAction = QAction(self)
-        # def fn():
-        #     if self._isProjectTab():
-        #         cfg.project_tab.detailsRuntime.setVisible(self.ngShowRuntimesAction.isChecked())
-        #         self.dataUpdateWidgets()
-        # self.ngShowRuntimesAction.triggered.connect(fn)
-        # self.ngShowRuntimesAction.setCheckable(True)
-        # self.ngShowRuntimesAction.setText('Runtimes')
-        # viewMenu.addAction(self.ngShowRuntimesAction)
-
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
         # self.ngColorMenu= QColorDialog(self)
@@ -3896,14 +3770,16 @@ class MainWindow(QMainWindow):
         self.ngLayout6Action = QAction('xz-3d', self)
         self.ngLayout7Action = QAction('3d', self)
         self.ngLayout8Action = QAction('4panel', self)
-        ngPerspectiveMenu.addAction(self.ngLayout1Action)
-        ngPerspectiveMenu.addAction(self.ngLayout2Action)
-        ngPerspectiveMenu.addAction(self.ngLayout3Action)
-        ngPerspectiveMenu.addAction(self.ngLayout4Action)
-        ngPerspectiveMenu.addAction(self.ngLayout5Action)
-        ngPerspectiveMenu.addAction(self.ngLayout6Action)
-        # ngPerspectiveMenu.addAction(self.ngLayout7Action)
-        ngPerspectiveMenu.addAction(self.ngLayout8Action)
+        #############
+        # ngPerspectiveMenu.addAction(self.ngLayout1Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout2Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout3Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout4Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout5Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout6Action)
+        # # ngPerspectiveMenu.addAction(self.ngLayout7Action)
+        # ngPerspectiveMenu.addAction(self.ngLayout8Action)
+        #############
         # self.ngLayout1Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xy'))
         # self.ngLayout2Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xz'))
         # self.ngLayout3Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('yz'))
@@ -4224,7 +4100,7 @@ class MainWindow(QMainWindow):
         if caller == 'main':
             val = float(self.sb_whiteningControl.value())
             cfg.data.default_whitening = val
-            self.tell('Whitening Factor is set to %.3f' % val)
+            self.tell('Signal Whitening is set to %.3f' % val)
             self.updateCpanelDetails_i1()
 
     def _valueChangedPolyOrder(self):
@@ -4352,7 +4228,7 @@ class MainWindow(QMainWindow):
         self._btn_clear_skips.clicked.connect(self.clear_skips)
         self._btn_clear_skips.setFixedSize(button_size)
 
-        tip = "Whitening factor parameter used by SWIM (default: -0.68)"
+        tip = "SWIM signal whitening factor (default: -0.68)"
         lab = QLabel("Whitening\nFactor:")
         lab.setStyleSheet(ctl_lab_style)
         lab.setAlignment(left)
@@ -4484,6 +4360,8 @@ class MainWindow(QMainWindow):
         # self._sectionSlider.setFixedHeight(13)
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
+
+
 
         '''section # / jump-to lineedit'''
         tip = 'Jumpt to section #'
@@ -4910,7 +4788,7 @@ class MainWindow(QMainWindow):
         self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
         self.fl_swimSettings.setVerticalSpacing(4)
         self.fl_swimSettings.addRow('Window Width (px): ', self._swimWindowControl)
-        self.fl_swimSettings.addRow('Whitening Factor: ', self.sb_whiteningControl)
+        self.fl_swimSettings.addRow('Signal Whitening: ', self.sb_whiteningControl)
         self.fl_swimSettings.addRow('Iterations', self.sb_SWIMiterations)
 
         self.swimSettings = QGroupBox("Default SWIM Settings")
@@ -5053,11 +4931,11 @@ class MainWindow(QMainWindow):
         self.sa_tab2.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         self.runtimeWidget = QWidget()
-        # self.runtimeWidget.setStyleSheet("""
-        #         font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
-        #         font-size: 9px;
-        #         color: #161c20;
-        # """)
+        self.runtimeWidget.setStyleSheet("""
+                font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+                font-size: 9px;
+                color: #161c20;
+        """)
         # self.runtimeWidget.setReadOnly(True)
         self.sa_tab3 = QScrollArea()
         self.sa_tab3.setWidgetResizable(True)
@@ -5100,7 +4978,7 @@ class MainWindow(QMainWindow):
 
         QTabBar::tab {
             height: 14px;
-            width: 80px;
+            width: 64px;
             padding-left: 0px;
             padding-right: 0px;
             font-size: 8px;
@@ -5619,11 +5497,12 @@ class MainWindow(QMainWindow):
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::tab {
-            min-width: 80px;
-            max-width: 220px;
+            min-width: 100px;
+            max-width: 260px;
             height: 16px;
-            padding: 2px;
-            margin: 2px;
+            padding-left:0px;
+            padding-right:0px;
+            padding: 1px;
             font-size: 11px;
         }
         QTabBar::tab:selected
@@ -5911,22 +5790,80 @@ class MainWindow(QMainWindow):
         # self.setMenuWidget(self.menu)
         self.setCentralWidget(self.globTabsAndCpanel)
 
-        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
+        # self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
+        self.setDockOptions(QMainWindow.AnimatedDocks)
 
-    def updateAllCpanelDetails(self):
-        self.updateCpanelDetails_i1()
-        self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+
+
+    def setControlPanelData(self):
+
+        self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
+        self.sb_whiteningControl.setValue(float(getData('data,defaults,signal-whitening')))
+        self.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
+
+        poly = getData('data,defaults,corrective-polynomial')
+        if (poly == None) or (poly == 'None'):
+            self._polyBiasCombo.setCurrentText('None')
+        else:
+            self._polyBiasCombo.setCurrentText(str(poly))
+
+        self._bbToggle.setChecked(bool(getData(f'data,defaults,bounding-box')))
+
+    # def updateAllCpanelDetails(self):
+    #     '''
+    #     _onGlobTabChange  (1 usage found)
+    #         3392 self.updateAllCpanelDetails()
+    #     onAlignmentEnd  (1 usage found)
+    #         876 self.updateAllCpanelDetails()
+    #     onStartProject  (1 usage found)
+    #         2155 self.updateAllCpanelDetails()
+    #     refreshTab  (1 usage found)
+    #         235 self.updateAllCpanelDetails()
+    #     regenerate  (1 usage found)
+    #         646 self.updateAllCpanelDetails()
+    #     '''
+    #     self.updateCpanelDetails_i1()
+    #     self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+    #     self.updateLowest8widget()
+    #
+    #     try:    self._bbToggle.setChecked(cfg.data.use_bb())
+    #     except: logger.warning('Bounding Box Toggle Failed to Update')
 
     def updateCpanelDetails(self):
+        '''
+        usages:
+        cpanelTabWidget tab change
+        '''
         logger.info('')
         if self.cpanelTabWidget.currentIndex() == 0:
             self.updateCpanelDetails_i1()
         if self.cpanelTabWidget.currentIndex() == 1:
             self.updateLowest8widget()
+        if self.cpanelTabWidget.currentIndex() == 2:
+            self.updateDtWidget()
+        #Cancel- tab 2 - runtimes are updated when runtimes change
         if self.cpanelTabWidget.currentIndex() == 3:
             self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
 
     def updateCpanelDetails_i1(self):
+        """
+        _valueChangedWhitening  (1 usage found)
+            4223 self.updateCpanelDetails_i1()
+        fn_scales_combobox  (1 usage found)
+            1948 self.updateCpanelDetails_i1()
+        fn_swim_iters  (1 usage found)
+            4374 self.updateCpanelDetails_i1()
+        initControlPanel  (2 usages found)
+            4337 self._skipCheckbox.stateChanged.connect(self.updateCpanelDetails_i1)
+            5032 self._bbToggle.stateChanged.connect(self.updateCpanelDetails_i1)
+        updateAllCpanelDetails  (1 usage found)
+            5940 self.updateCpanelDetails_i1()
+        updateCpanelDetails  (1 usage found)
+            5954 self.updateCpanelDetails_i1()
+
+        """
+
+
         logger.info('')
         if self._isProjectTab():
             caller = inspect.stack()[1].function
@@ -5963,6 +5900,99 @@ class MainWindow(QMainWindow):
                 self.secAlignedImageSize.setText('--')
                 self.secSNR.setText('--')
             self.secDefaults.setText(cfg.data.defaults_pretty)
+
+
+    def updateLowest8widget(self):
+
+        if cfg.data.is_aligned():
+            n_lowest = min(8, len(cfg.data) - 1)
+            lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
+            lowest_X = list(cfg.data.snr_lowest(n_lowest))
+            logger.info(f'lowest_X_i : {lowest_X_i}')
+            logger.info(f'lowest_X : {lowest_X}')
+            logger.info(f'n_lowest : {n_lowest}')
+
+            funcs = []
+            for i in range(n_lowest):
+                funcs.append(lambda: self.jump_to_manual(lowest_X_i[i]))
+
+            self.lowestX_btns = []
+            self.lowestX_txt = []
+
+            for i in range(n_lowest):
+                logger.info(f'i = {i}')
+
+                try:
+                    # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
+                    s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
+                    s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
+                    combined = s1 + ' ' + s2
+                    # btn = QPushButton('Jump')
+                    # self.lowestX_btns.append(QPushButton('Align Manually →'))
+                    self.lowestX_btns.append(QPushButton('Manual Align'))
+                    f = QFont()
+                    f.setPointSizeF(7)
+                    self.lowestX_btns[i].setFont(f)
+                    self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
+                    self.lowestX_btns[i].setFixedSize(QSize(80, 14))
+                    self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
+                    self.lowestX_btns[i].setIconSize(QSize(10, 10))
+                    self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                    self.lowestX_btns[i].clicked.connect(funcs[i])
+                    self.lowestX_txt.append(combined)
+
+                # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
+                except:
+                    print_exception()
+                # self.results3 = QLabel('...Worst 5 SNR')
+        else:
+            label = QLabel('Not Aligned.')
+            label.setAlignment(Qt.AlignTop)
+            self.sa_tab2.setWidget(label)
+            return
+
+        self.lowX_left_fl = QFormLayout()
+        self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
+        self.lowX_left_fl.setVerticalSpacing(1)
+        if n_lowest >= 1:
+            self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
+        if n_lowest >= 2:
+            self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
+        if n_lowest >= 3:
+            self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
+        if n_lowest >= 4:
+            self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
+        # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        self.lowX_left = QWidget()
+        self.lowX_left.setContentsMargins(0, 0, 0, 0)
+        self.lowX_left.setLayout(self.lowX_left_fl)
+
+        self.lowX_right_fl = QFormLayout()
+        self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
+        self.lowX_right_fl.setVerticalSpacing(1)
+        if n_lowest >= 5:
+            self.lowX_right_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        if n_lowest >= 6:
+            self.lowX_right_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+        if n_lowest >= 7:
+            self.lowX_right_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+        if n_lowest >= 8:
+            self.lowX_right_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
+        # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
+        self.lowX_right = QWidget()
+        self.lowX_right.setContentsMargins(0, 0, 0, 0)
+        self.lowX_right.setLayout(self.lowX_right_fl)
+
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(2, 2, 2, 2)
+        hbl.addWidget(self.lowX_left)
+        hbl.addWidget(self.lowX_right)
+        w = QWidget()
+        w.setLayout(hbl)
+
+        logger.critical('Setting sa_tab2 Layout...')
+        # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
+        self.sa_tab2.setWidget(w)
 
     def initLaunchTab(self):
         self._launchScreen = OpenProject()
@@ -6105,17 +6135,6 @@ class MainWindow(QMainWindow):
     def store_var(self, name, var):
         setattr(cfg, name, var)
 
-    def setControlPanelData(self):
-
-        self.sb_whiteningControl.setValue(float(getData('data,defaults,whitening-factor')))
-        poly = getData('data,defaults,corrective-polynomial')
-        if (poly == None) or (poly == 'None'):
-            self._polyBiasCombo.setCurrentText('None')
-        else:
-            self._polyBiasCombo.setCurrentText(str(poly))
-        self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
-        self._bbToggle.setChecked(bool(getData(f'data,defaults,bounding-box')))
-        self.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
 
     def get_dw_monitor(self):
         for i, dock in enumerate(cfg.mw.findChildren(QDockWidget)):
@@ -6143,18 +6162,33 @@ class MainWindow(QMainWindow):
                 self.showMaximized()
 
 
+
+
 class DockWidget(QDockWidget):
     hasFocus = Signal([QDockWidget])
 
     def __init__(self, text, parent=None):
         super().__init__(text)
         self.setObjectName(text)
+        self.setAllowedAreas(
+            Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
+        self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
+
 
     def event(self, event):
         if event.type() == QEvent.MouseButtonPress and event.button() == 1:
             self.hasFocus.emit(self)
             logger.critical(f'Emission from {self.objectName()}')
         return super().event(event)
+
+
+class Dock(QDockWidget):
+    def __init__(self, title, parent=None):
+        super(Dock, self).__init__(parent)
+
+        self.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
+        self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable )
+
 
 
 class ExpandingWidget(QWidget):

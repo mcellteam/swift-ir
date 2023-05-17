@@ -251,14 +251,6 @@ class DataModel:
         return convert[self.current_method]
 
     @property
-    def hint_or_strict(self):
-        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['manual_settings']['hint-or-strict']
-
-    @hint_or_strict.setter
-    def hint_or_strict(self, str):
-        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['manual_settings']['hint-or-strict'] = str
-
-    @property
     def grid_default_regions(self):
         return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid_default_regions']
 
@@ -301,11 +293,11 @@ class DataModel:
 
     @property
     def default_whitening(self):
-        return self._data['data']['defaults']['whitening-factor']
+        return self._data['data']['defaults']['signal-whitening']
 
     @default_whitening.setter
     def default_whitening(self, x):
-        self._data['data']['defaults']['whitening-factor'] = x
+        self._data['data']['defaults']['signal-whitening'] = x
 
     @property
     def defaults(self):
@@ -321,7 +313,7 @@ class DataModel:
                         f"Initial Rotation: {d['initial-rotation']}\n" \
                         f"SWIM Window Dimensions:\n{nl.join(['  %s: %s' % (s.ljust(9), '%sx%s' % tuple(d[s]['swim-window-px'])) for s in self.scales()])}\n" \
                         f"SWIM iterations: {d['swim-iterations']}\n" \
-                        f"SWIM Whitening Factor: {d['whitening-factor']}"
+                        f"SWIM Signal Whitening: {d['signal-whitening']}"
         return defaults_str
 
     # layer['alignment']['swim_settings'].setdefault('karg', False)
@@ -738,11 +730,10 @@ class DataModel:
         self._data['data'].setdefault('t_thumbs', 0.0)
         self._data['data'].setdefault('defaults', {})
         # self._data['data']['defaults'].setdefault('swim-width-px', None)
-        self._data['data']['defaults'].setdefault('whitening-factor', cfg.DEFAULT_WHITENING)
+        self._data['data']['defaults'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
         self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_BOUNDING_BOX)
         self._data['data']['defaults'].setdefault('scales', {})
-        self._data['data']['defaults'].setdefault('whitening-factor', cfg.DEFAULT_WHITENING)
         self._data['data']['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
         self._data['data']['defaults'].setdefault('swim-iterations', cfg.DEFAULT_SWIM_ITERATIONS)
 
@@ -758,6 +749,7 @@ class DataModel:
         logger.critical('<<<< Setting Defaults')
 
         for s in self.scales():
+            logger.critical(f'LOOP s={s}')
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
             scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
@@ -788,8 +780,9 @@ class DataModel:
                 layer.setdefault('alignment', {})
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
-                layer['alignment']['swim_settings'].setdefault('karg_path', os.path.join(self.dest(), s, 'tmp'))
-                layer['alignment']['swim_settings'].setdefault('targ_path', os.path.join(self.dest(), s, 'tmp'))
+                logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")
+                layer['alignment']['swim_settings']['karg_path'] = os.path.join(self.dest(), s, 'tmp')
+                layer['alignment']['swim_settings']['targ_path'] = os.path.join(self.dest(), s, 'tmp')
                 layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise', False)
                 layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise_px', cfg.DEFAULT_CLOBBER_PX)
                 layer['alignment']['swim_settings'].setdefault('extra_kwargs', '')
@@ -798,11 +791,11 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('grid_default_regions', [1,1,1,1])
                 layer['alignment']['swim_settings'].setdefault('grid-custom-regions', [1,1,1,1])
                 layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
+                layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('method_data', {})
                 layer['alignment'].setdefault('manual_settings', {})
                 layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
                 layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
-                layer['alignment']['manual_settings'].setdefault('hint-or-strict', 'hint')
                 layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC)
                 layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('manpoints', {})
@@ -1439,7 +1432,7 @@ class DataModel:
                 self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['iterations'] = val
 
     def whitening(self) -> float:
-        '''Returns the Whitening Factor for the Current Layer.'''
+        '''Returns the Signal Whitening Factor for the Current Layer.'''
         return float(self._data['data']['scales'][self.scale]['stack'][
                          self.zpos]['alignment']['method_data']['whitening_factor'])
 

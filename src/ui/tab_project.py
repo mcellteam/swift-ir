@@ -638,7 +638,7 @@ class ProjectTab(QWidget):
             cfg.data.set_all_methods_automatic()
             # Todo include all of this functionality somewhere
             # cfg.data.set_auto_swim_windows_to_default()
-            # cfg.main_window.setControlPanelData()
+            cfg.main_window.setControlPanelData()
             # cfg.data['data']['defaults']['whitening-factor'] = cfg.DEFAULT_WHITENING
             # cfg.data['data']['defaults']['initial-rotation'] = cfg.DEFAULT_INITIAL_ROTATION
             cfg.refViewer.drawSWIMwindow()
@@ -1014,7 +1014,7 @@ class ProjectTab(QWidget):
         self.AS_2x2_SWIM_window_le.returnPressed.connect(fn)
         self.AS_2x2_SWIM_window_le.setFixedHeight(18)
 
-        tip = "SWIM whitening factor"
+        tip = "SWIM Signal Whitening Factor"
 
         def fn():
             caller = inspect.stack()[1].function
@@ -1144,7 +1144,7 @@ class ProjectTab(QWidget):
         # self.fl_MA_settings.addRow("Manual Window", self.MA_swim_window_widget)
         self.fl_MA_settings.addRow("SWIM Full Window", self.AS_swim_window_widget)
         self.fl_MA_settings.addRow("SWIM 2x2 Window", self.AS_2x2_swim_window_widget)
-        self.fl_MA_settings.addRow("Whitening Factor", self.spinbox_whitening)
+        self.fl_MA_settings.addRow("Signal Whitening", self.spinbox_whitening)
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
@@ -1236,10 +1236,24 @@ class ProjectTab(QWidget):
         self.rb_bg_MA_targ_karg.addButton(self.rb_targ)
         self.rb_bg_MA_targ_karg.addButton(self.rb_karg)
 
+        self.toggleTargKarg = QPushButton('Toggle')
+        self.toggleTargKarg.setStyleSheet("font-size: 9px;")
+        self.toggleTargKarg.setFixedSize(60,16)
+        def fn_toggleTargKarg():
+            if self.rb_targ.isChecked():
+                self.rb_karg.setChecked(True)
+            elif self.rb_karg.isChecked():
+                self.rb_targ.setChecked(True)
+            self.setTargKargPixmaps()
+
+        self.toggleTargKarg.clicked.connect(fn_toggleTargKarg)
+
+
+
         def setTargKargPixmaps_fn():
             caller = inspect.stack()[1].function
-            if caller == 'main':
-                self.setTargKargPixmaps()
+            # if caller in ('main', 'fn_toggleTargKarg'):
+            self.setTargKargPixmaps()
 
         self.rb_bg_MA_targ_karg.buttonClicked.connect(setTargKargPixmaps_fn)
         self.radioboxes_targ_karg = HWidget(self.rb_targ, self.rb_karg)
@@ -1299,6 +1313,7 @@ class ProjectTab(QWidget):
         hbl = HBL()
         hbl.addWidget(self.targ_karg_back_btn, alignment=Qt.AlignRight)
         hbl.addWidget(self.radioboxes_targ_karg, alignment=Qt.AlignLeft)
+        hbl.addWidget(self.toggleTargKarg, alignment=Qt.AlignLeft)
         hbl.addWidget(ExpandingWidget(self))
 
         w = QWidget()
@@ -1809,8 +1824,8 @@ class ProjectTab(QWidget):
         self.te_logs.verticalScrollBar().setValue(self.te_logs.verticalScrollBar().maximum())
 
     def setTargKargPixmaps(self):
-        logger.info('setTargKargPixmaps >>>>')
-        # caller = inspect.stack()[1].function
+        caller = inspect.stack()[1].function
+        logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
 
         self.lab_swim_cutouts.setText(f'SWIM Cutouts ({cfg.data.current_method_pretty}):')
         basename = cfg.data.filename_basename()
@@ -2234,7 +2249,8 @@ class ProjectTab(QWidget):
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
             self.btnNextSection.setEnabled(cfg.data.zpos < len(cfg.data) - 1)
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
-            self.spinbox_whitening.setValue(int(cfg.data.manual_whitening()))
+            # self.spinbox_whitening.setValue(float(cfg.data.manual_whitening()))
+            self.spinbox_whitening.setValue(float(cfg.data.whitening()))
             self.updateProjectLabels()  # 0424+
 
             img_siz = cfg.data.image_size()
@@ -2889,7 +2905,7 @@ class ProjectTab(QWidget):
 
         self.combo_data_tree = QComboBox()
         self.combo_data_tree.setFixedWidth(120)
-        items = ['--', 'Results', 'SWIM Arguments', 'SWIM Out', 'SWIM Err', 'MIR Arguments', 'MIR Tokens',
+        items = ['--', 'Results', 'SWIM Arguments', 'SWIM Out', 'SWIM Err', 'SWIM Settings', 'MIR Arguments', 'MIR Tokens',
                  'Alignment History']
         self.combo_data_tree.addItems(items)
 
@@ -2990,9 +3006,10 @@ class ProjectTab(QWidget):
             font-weight: 300;
             border-top-left-radius: 2px;
             border-top-right-radius: 2px;
+            border: 1px solid #ede9e8
         }
         QTabBar::tab:selected
-        {
+        {   
             font-weight: 600;
             color: #ede9e8;
             background-color: #222222;

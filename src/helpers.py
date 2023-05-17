@@ -481,11 +481,11 @@ def get_bytes(start_path = '.'):
     return total_size
 
 
-def make_affine_widget_HTML(afm, cafm, fs1=9, fs2=9):
+def make_affine_widget_HTML(afm, cafm, fs1=9, fs2=8):
     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
-    text = f"<table table-layout='fixed' style='border-bottom: 1pt solid #161c20;' cellspacing='1' cellpadding='1'>"\
+    text = f"<table table-layout='fixed' style='border-bottom: 1pt solid #161c20;' cellspacing='2' cellpadding='1'>"\
            f"  <tr>"\
            f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Affine'.rjust(9)}</td>"\
            f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\

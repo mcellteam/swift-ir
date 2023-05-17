@@ -106,8 +106,14 @@ class align_recipe:
         self.defaults = defaults
         self.cur_method = layer_dict['current_method']
         self.option = self.alData['method_data']['alignment_option']
-        self.wht    = self.alData['method_data']['whitening_factor']
+        if self.cur_method == 'grid-default':
+            self.wht = self.defaults['signal-whitening']
+            self.iters = self.defaults['swim-iterations']
+        else:
+            self.wht = self.alData['method_data']['whitening_factor']
+            self.iters = self.alData['swim_settings']['iterations']
         self.grid_custom_regions  = self.alData['swim_settings']['grid-custom-regions']
+
 
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
@@ -368,13 +374,6 @@ class align_ingredient:
         else:
             swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
 
-        if self.recipe.cur_method == 'grid-default':
-            iters = self.recipe.defaults['swim-iterations']
-        else:
-            iters = self.alData['swim_settings']['iterations']
-
-        use_targ = self.alData['swim_settings']['targ']
-        use_karg = self.alData['swim_settings']['karg']
         basename = os.path.basename(self.recipe.im_mov_fn)
         filename, extension = os.path.splitext(basename)
 
@@ -400,19 +399,19 @@ class align_ingredient:
             if self.alData['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alData['swim_settings']['clobber_fixed_noise_px'])
             # args.add_flag(flag='-i', arg=str(self.rcipe.iters))
-            args.add_flag(flag='-i', arg=str(iters))
+            args.add_flag(flag='-i', arg=str(self.recipe.iters))
             args.add_flag(flag='-w', arg=str(self.recipe.wht))
             if self.recipe.cur_method not in ('manual-hint'):
                 args.add_flag(flag='-x', arg=str(offx))
                 args.add_flag(flag='-y', arg=str(offy))
             args.add_flag(flag='-b', arg=b_arg)
-            if use_karg:
-                if self.last:
+            if self.last:
+                if self.alData['swim_settings']['karg']:
                     k_arg_name = '%s_%s_k_%d%s' % (filename, self.recipe.cur_method, i, extension)
                     k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                     args.add_flag(flag='-k', arg=k_arg_path)
-            if use_targ:
-                if self.last:
+            if self.last:
+                if self.alData['swim_settings']['targ']:
                     t_arg_name = '%s_%s_t_%d%s' % (filename, self.recipe.cur_method, i, extension)
                     t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
                     args.add_flag(flag='-t', arg=t_arg_path)

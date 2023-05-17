@@ -88,7 +88,7 @@ class ProjectTable(QWidget):
 
     def selection_changed(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        # logger.critical(f'caller: {caller}')
         if caller != 'setScaleData':
             if cfg.project_tab._tabs.currentIndex() == 1:
                 row = self.table.currentIndex().row()
@@ -349,7 +349,7 @@ class ProjectTable(QWidget):
             print_exception()
 
     def onTableFinishedLoading(self):
-        logger.critical('')
+        logger.info('Data table finished loading.')
         self.loadScreenLabel.hide()
         self.table.show()
         # self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
