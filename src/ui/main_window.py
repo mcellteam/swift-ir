@@ -1445,6 +1445,8 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
         logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
+        cfg.project_tab._overlayRect.hide()
+        cfg.project_tab._overlayLab.hide()
         self.count_calls.setdefault('dataUpdateWidgets', {})
         self.count_calls['dataUpdateWidgets'].setdefault(caller, {})
         self.count_calls['dataUpdateWidgets'][caller].setdefault('total_count',0)
@@ -1487,9 +1489,9 @@ class MainWindow(QMainWindow):
                 cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
-            else:
-                cfg.project_tab._overlayRect.hide()
-                cfg.project_tab._overlayLab.hide()
+            # else:
+            #     cfg.project_tab._overlayRect.hide()
+            #     cfg.project_tab._overlayLab.hide()
             # elif ng_layer == 0:
             #     cfg.project_tab._overlayLab.setText('       No Reference\n\n')
             #     cfg.project_tab._overlayLab.show()
@@ -2994,7 +2996,7 @@ class MainWindow(QMainWindow):
         self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
         self.faqButton.setFixedHeight(16)
         self.faqButton.setIconSize(QSize(16, 16))
-        self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
+        # self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
         self.faqButton.clicked.connect(fn_view_faq)
 
         self.gettingStartedButton = QPushButton('Getting Started')
@@ -3006,8 +3008,20 @@ class MainWindow(QMainWindow):
         self.gettingStartedButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
         self.gettingStartedButton.setFixedHeight(16)
         self.gettingStartedButton.setIconSize(QSize(16, 16))
-        self.gettingStartedButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
+        # self.gettingStartedButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
         self.gettingStartedButton.clicked.connect(fn_view_getting_started)
+
+        self.glossaryButton = QPushButton('Glossary')
+        def fn_glossary():
+            logger.info('Showing Getting Started Tips...')
+            self.html_resource(resource='getting-started.html', title='Getting Started')
+        self.glossaryButton.setFont(f)
+        self.glossaryButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.glossaryButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
+        self.glossaryButton.setFixedHeight(16)
+        self.glossaryButton.setIconSize(QSize(16, 16))
+        # self.glossaryButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
+        self.glossaryButton.clicked.connect(fn_view_getting_started)
 
 
 

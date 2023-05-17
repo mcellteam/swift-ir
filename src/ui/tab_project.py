@@ -487,12 +487,12 @@ class ProjectTab(QWidget):
 
         # self.MA_refViewerTitle = YellowTextLabel('Reference')
         # self.MA_baseViewerTitle = YellowTextLabel('Working')
-        self.MA_refViewerTitle = QLabel('Landmarks, Left')
-        self.MA_refViewerTitle.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_refViewerTitle = QLabel('Reference Image (Left)')
+        self.MA_refViewerTitle.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
         self.MA_refViewerTitle.setMaximumHeight(14)
 
-        self.MA_baseViewerTitle = QLabel('Landmarks, Right')
-        self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_baseViewerTitle = QLabel('Transforming Image (Right)')
+        self.MA_baseViewerTitle.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
@@ -1172,7 +1172,7 @@ class ProjectTab(QWidget):
         self.method_rb0 = QRadioButton('Default Grid')
         self.method_rb1 = QRadioButton('Custom Grid')
         # self.method_rb2 = QRadioButton('Correspondence Points')
-        self.method_rb2 = QRadioButton('Landmarks')
+        self.method_rb2 = QRadioButton('Feature Matching')
         self.method_bg = QButtonGroup(self)
         self.method_bg.setExclusive(True)
         self.method_bg.addButton(self.method_rb0)
