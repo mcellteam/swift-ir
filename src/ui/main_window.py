@@ -2960,6 +2960,7 @@ class MainWindow(QMainWindow):
         self.fullScreenButton = QPushButton('Full Screen')
         f = QFont()
         f.setBold(True)
+        f.setPixelSize(10)
         self.fullScreenButton.setFont(f)
         self.fullScreenButton.setFixedHeight(16)
         self.fullScreenButton.setIconSize(QSize(16, 16))
@@ -2981,7 +2982,7 @@ class MainWindow(QMainWindow):
 
         self.refreshButton = QPushButton(' Refresh')
         self.refreshButton.setFont(f)
-        self.refreshButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.refreshButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.refreshButton.setToolTip(f"Refresh View {hotkey('R')}")
         self.refreshButton.setFixedHeight(16)
         self.refreshButton.setIconSize(QSize(16, 16))
@@ -2993,9 +2994,10 @@ class MainWindow(QMainWindow):
             logger.info('Showing FAQ...')
             self.html_resource(resource='faq.html', title='FAQ')
         self.faqButton.setFont(f)
-        self.faqButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.faqButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
         self.faqButton.setFixedHeight(16)
+        self.faqButton.setFixedWidth(40)
         self.faqButton.setIconSize(QSize(16, 16))
         # self.faqButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
         self.faqButton.clicked.connect(fn_view_faq)
@@ -3005,7 +3007,7 @@ class MainWindow(QMainWindow):
             logger.info('Showing Getting Started Tips...')
             self.html_resource(resource='getting-started.html', title='Getting Started')
         self.gettingStartedButton.setFont(f)
-        self.gettingStartedButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.gettingStartedButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.gettingStartedButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
         self.gettingStartedButton.setFixedHeight(16)
         self.gettingStartedButton.setIconSize(QSize(16, 16))
@@ -3015,20 +3017,20 @@ class MainWindow(QMainWindow):
         self.glossaryButton = QPushButton('Glossary')
         def fn_glossary():
             logger.info('Showing Getting Started Tips...')
-            self.html_resource(resource='getting-started.html', title='Getting Started')
+            self.html_resource(resource='glossary.html', title='Glossary')
         self.glossaryButton.setFont(f)
-        self.glossaryButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # self.glossaryButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.glossaryButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
         self.glossaryButton.setFixedHeight(16)
         self.glossaryButton.setIconSize(QSize(16, 16))
         # self.glossaryButton.setIcon(qta.icon('fa.info-circle', color='#161c20'))
-        self.glossaryButton.clicked.connect(fn_view_getting_started)
+        self.glossaryButton.clicked.connect(fn_glossary)
 
 
 
 
         self.navWidget = HWidget(QLabel(' '), self.exitButton, self.minimizeButton, self.fullScreenButton,
-                                 self.refreshButton, self.faqButton, self.gettingStartedButton, ExpandingWidget(self))
+                                 self.refreshButton, self.faqButton, self.gettingStartedButton, self.glossaryButton, ExpandingWidget(self))
         self.navWidget.setFixedHeight(18)
         # self.navWidget.setC
 
@@ -4625,7 +4627,7 @@ class MainWindow(QMainWindow):
         self.fl_cpButtonsLeft.setContentsMargins(2, 2, 2, 2)
         self.fl_cpButtonsLeft.addWidget(self._btn_alignAll)
         self.fl_cpButtonsLeft.addWidget(self._btn_alignOne)
-        self.fl_cpButtonsLeft.addWidget(self._btn_regenerate)
+        self.fl_cpButtonsLeft.addWidget(HWidget(self._btn_manualAlign))
         self.cpButtonsLeft = QWidget()
         self.cpButtonsLeft.setAutoFillBackground(True)
         self.cpButtonsLeft.setLayout(self.fl_cpButtonsLeft)
@@ -4643,7 +4645,7 @@ class MainWindow(QMainWindow):
         fl.addWidget(range_widget)
         # fl.addWidget(self.sectionRangeSlider)
         fl.addWidget(HWidget(self._btn_alignRange))
-        fl.addWidget(HWidget(self._btn_manualAlign))
+        fl.addWidget(self._btn_regenerate)
         self.cpButtonsRight.setLayout(fl)
 
         self.gb_ctlActions = QGroupBox("Scale Actions")
@@ -5815,6 +5817,7 @@ class MainWindow(QMainWindow):
         # self.globTabsAndCpanel.show()
 
         # self.setMenuWidget(self.menu)
+        # self.globTabsAndCpanel.setStyleSheet("""background-color: #f3f6fb;""")
         self.setCentralWidget(self.globTabsAndCpanel)
 
         # self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
@@ -6044,12 +6047,11 @@ class MainWindow(QMainWindow):
         self.statusBar = QStatusBar()
         self.statusBar.setFixedHeight(16)
         self.statusBar.setStyleSheet("""
-        font-size: 10px;
-        font-weight: 600;
-        color: #161c20;
-        background-color: #ede9e8;
-        margin: 0px;
-        padding: 0px;
+            font-size: 10px;
+            color: #161c20;
+            background-color: #ede9e8;
+            margin: 0px;
+            padding: 0px;
         """)
         self.setStatusBar(self.statusBar)
 

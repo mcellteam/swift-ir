@@ -9,10 +9,31 @@
 </head>
 <body style="font-family: Tahoma, sans-serif;">
 <h3><u>Tips for Getting Started:</u></h3>
-
-    <li><b>Refresh Often</b> – Refresh often, especially whenever Neuroglancer is not responding like it should. Refresh not only reloads Neuroglancer, but also updates several other UI views. Use refresh just as freely as you would with a browser. It is harmless, almost instantaneous, and does not affect data or the state of your project in any way. It merely refreshes the user interface views including Neuroglancer viewers, browsers, tree views, table views, list views, and the SNR plot.</li>
-    <br/><li><b>Align All</b> – Align All will always put the scale you are working on into a state where the cumulative affine is fully propogated through the image stack. Note that Align All means "align all images of the current scale". However, it is also possible to align all scales with refinement of the alignment at each level in just a single click. For that use the menu option: <b>Align > Align All Scales</b></li>
-<br/><li><b>Rescaling</b> – It is possible to rescale your dataset with the menu option <b>Actions > Rescale...</b> <b><u>Caution</u> (!):</b> Rescaling causes loss of progress. It is equivalent to rewinding you project to immediately after importing images.</b></li>
-
+<ul>
+    <li><b>Spend The Most Time at the Coarsest Scale</b> – The most efficient workflow is to work through any and all alignment issues at the coarsest scale of images before proceeding to align higher scales. Good alignment at one scale generally leads to similar alignment--but with greater refinement--at higher scales. Usually there is no benefit to manually intervening and adjusting the alignment at multiple scale levels, and doing so is inefficient.</li>
+    <li><b>'Refresh' Often</b> – Refresh fixes many issues, and is most useful in cases where Neuroglancer is not rendering data properly or behaving as expected. Refresh not only refreshes Neuroglancer, Refresh also updates several other UI views in the event that any become out of sync. Use refresh as liberally as you would in a web browser. It is harmless, close to instantaneous, and does not alter any data or the state of your project in any way. It merely refreshes the user interface views including Neuroglancer viewers, browsers, tree views, table views, list views, and the SNR plot.</li>
+    <li><b>'Align All' Before Anything Else</b> – For each scale it is necessary to run Align All (which uses the settings in the control panel and Default Grid alignment strategy) before other functionality becomes available. The enabled/disabled state of UI controls prevents users from accessing such additional functionality prior to running Align All at least once.</li>
+    <li><b>'Align All' As Needed</b> – Align All ensures that the scale being working on is in a state where the cumulative affine is fully propagated through the image stack. Note that Align All means "align all images of the current scale". However, it is also possible to align all scales automatically using the menu option: <b>Align > Align All Scales</b>. In this case the affine transformation is refined during each successive scale level up to and including the full scale images.</li>
+    <li><b>First Try is Always Brute Force</b> - The default alignment method before any manual intervention is always a brute force strategy referred to as "Grid Default". Grid Default always uses the settings listed under <b>Default SWIM Settings</b>:
+        <br/><br/><ul>
+            <li><b>Window Width</b> - The full width of an imaginary, centered grid which SWIM aligns against (default=81.25% of image width).<br/></li>
+            <li><b>Signal Whitening</b> - A SWIM parameter which takes values in the range of -1.00 and 0.00 (default=-0.68).<br/></li>
+            <li><b>Iterations</b> - The number of sequential SWIM refinements. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3).<br/></li>
+        </ul><br/>
+    <li><b>Manual Intervention Options</b> - There are several different methods for human-assisted or forced alignment (Note: It is not possible to enter Manual Alignment Mode until 'Align All' has been run for a given scale):
+        <br/><br/><ul>
+            <li><b>Custom Grid</b> - Similar to the Default Grid method, but the user is able to avoid image defects by adjusting the grid shape and location and adding or removing quadrants of the grid. An affine transformation requires at least 3 quadrants.<br/></li>
+            <li><b>Feature Matching (Hint)</b> - User provides an alignment "hint" to SWIM by selecting a set of manual correspondence (or "matching") regions. An affine transformation requires at least 3 correspondence regions.<br/></li>
+            <li><b>Feature Matching (Strict)</b> - User forces an alignment by selecting a set of at least 3 manual correspondence (or "matching") points. An affine transformation requires at least 3 correspondence points.<br/></li>
+            <li><b>Include/Exclude</b> - In cases of severe defects it is possible to exclude images from the alignment altogether by unselecting the box marked "Include" in the control panel. Images marked for exclusion (not Included) sections will not be aligned and will not be used as the reference to any other (like a dropped frame).<br/></li>
+        </ul><br/>
+    <li><b>Regenerate Images</b> – Regenerating the alignment--distinct from computing the alignment--refers to the process of generating a new aligned image stack at a particular scale from source images of the same scale using predetermined affine transformations. The resulting images depend on:
+        <br/><ul>
+            <li><b>Generate TIFFs</b> - Whether or not to generate TIFF and Zarr output for any alignment, regardless of the alignment method used.<br/></li>
+            <li><b>Bounding Box</b> - When Bounding Box is turned ON, the resulting images will grow an arbitrary amount to ensure that the entire alignment is within frame and no data is cropped out of frame. When Bounding Box is turned OFF (default=OFF) the aligned images will always have the same dimensions as the source images at a particular scale, regardless of drift and the data loss that may result from it.<br/></li>
+            <li><b>Corrective (Polynomial) Bias</b> - An adjustment that can subtract systematic drift of various polynomial orders between 0° and 4° or None (default=None).<br/></li>
+        </ul><br/>
+    <li><b>Rescaling</b> – It is possible to rescale your dataset with the menu option <b>Actions > Rescale...</b> <b><u>Caution</u> (!):</b> Rescaling causes loss of progress. It is equivalent to rewinding you project to immediately after importing images.</li>
+</ul>
 </body>
 </html>
