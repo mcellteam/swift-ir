@@ -2084,6 +2084,8 @@ class MainWindow(QMainWindow):
         self.updateCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
+        QApplication.processEvents()
+        cfg.project_tab.initNeuroglancer()
 
         # dt = 1.1060302257537842
 
