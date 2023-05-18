@@ -1769,17 +1769,17 @@ class ProjectTab(QWidget):
                 cfg.emViewer.updateUIControls()
             if opt:
                 self.ngcl_uiControls.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
             else:
                 self.ngcl_uiControls.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""")
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
         self.ngcl_uiControls = NgClickLabel(self)
         self.ngcl_uiControls.setText('NG Controls')
         self.ngcl_uiControls.clicked.connect(fn)
         self.ngcl_uiControls.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""",
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
                                             """background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                                            [getOpt('neuroglancer,SHOW_UI_CONTROLS')])
         self.w_ng_extended_toolbar.addWidget( self.ngcl_uiControls)
 
@@ -1796,17 +1796,17 @@ class ProjectTab(QWidget):
                 cfg.emViewer.updateUIControls()
             if opt:
                 self.ngcl_bounds.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
             else:
                 self.ngcl_bounds.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""")
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
         self.ngcl_bounds = NgClickLabel(self)
         self.ngcl_bounds.setText('Bounds')
         self.ngcl_bounds.clicked.connect(fn)
         self.ngcl_bounds.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""",
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
                                             """background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600;  border-color: #339933;""")
                                            [getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
         self.w_ng_extended_toolbar.addWidget(self.ngcl_bounds)
 
@@ -1823,17 +1823,17 @@ class ProjectTab(QWidget):
                 cfg.emViewer.updateAxisLines()
             if opt:
                 self.ngcl_axes.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600;  border-color: #339933;""")
             else:
                 self.ngcl_axes.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""")
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
         self.ngcl_axes = NgClickLabel(self)
         self.ngcl_axes.setText('Axes')
         self.ngcl_axes.clicked.connect(fn)
         self.ngcl_axes.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""",
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
                                             """background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                                            [getOpt('neuroglancer,SHOW_AXIS_LINES')])
         self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
 
@@ -1844,18 +1844,18 @@ class ProjectTab(QWidget):
             logger.info(f'isClicked = {self.ngcl_snr.isClicked}')
             if self.ngcl_snr.isClicked:
                 self.ngcl_snr.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                 self.detailsSNR.show()
             else:
                 self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""")
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
                 self.detailsSNR.hide()
                 cfg.mw.dataUpdateWidgets()
         self.ngcl_snr = NgClickLabel(self)
         self.ngcl_snr.setText('SNR')
         self.ngcl_snr.clicked.connect(fn)
         self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px;""")
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
         # self.ngcl_snr.setStyleSheet(("""background: #222222; color: #f3f6fb;
         #             border-radius: 3px; padding: 0px; margin: 1px;""",
         #                                     """background: #339933; color: #f3f6fb;
@@ -1872,28 +1872,57 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
         # self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
 
-        self.shaderAction = QAction()
-        self.shaderAction.setCheckable(True)
-        self.shaderAction.setText('Shader')
-        self.shaderAction.setToolTip('Show Brightness & Contrast Shaders')
-        self.shaderAction.setIcon(qta.icon('mdi.format-paint', color='#ede9e8'))
 
         def fn():
-            if not self.shaderAction.isChecked():
+            if not self.ngcl_shader.isClicked:
                 self.shaderToolbar.hide()
-                self.shaderAction.setToolTip('Show Brightness & Contrast Shaders')
+                self.ngcl_shader.setToolTip('Show Brightness & Contrast Shaders')
             else:
                 self.contrastSlider.setValue(int(cfg.data.contrast))
                 self.contrastLE.setText('%.2f' % cfg.data.contrast)
                 self.brightnessSlider.setValue(int(cfg.data.brightness))
                 self.brightnessLE.setText('%.2f' % cfg.data.brightness)
                 self.shaderToolbar.show()
-                self.shaderAction.setToolTip('Hide Brightness & Contrast Shaders')
+                self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
 
-        self.shaderAction.triggered.connect(fn)
+        self.ngcl_shader = NgClickLabel(self)
+        self.ngcl_shader.setText('Shader')
+        self.ngcl_shader.clicked.connect(fn)
+        self.ngcl_shader.setStyleSheet("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
+
+
+
+        # def fn():
+        #     logger.info('')
+        #     QApplication.processEvents()
+        #     logger.info(f'isClicked = {self.ngcl_snr.isClicked}')
+        #     if self.ngcl_snr.isClicked:
+        #         self.ngcl_snr.setStyleSheet("""background: #339933; color: #f3f6fb;
+        #             border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+        #         self.detailsSNR.show()
+        #     else:
+        #         self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
+        #             border-radius: 3px; padding: 0px; margin: 1px;""")
+        #         self.detailsSNR.hide()
+        #         cfg.mw.dataUpdateWidgets()
+        # self.ngcl_snr = NgClickLabel(self)
+        # self.ngcl_snr.setText('SNR')
+        # self.ngcl_snr.clicked.connect(fn)
+        # self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
+        #             border-radius: 3px; padding: 0px; margin: 1px;""")
+        # # self.ngcl_snr.setStyleSheet(("""background: #222222; color: #f3f6fb;
+        # #             border-radius: 3px; padding: 0px; margin: 1px;""",
+        # #                                     """background: #339933; color: #f3f6fb;
+        # #             border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+        # #                                    [self.ngcl_snr.isClicked])
+        # self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
+
+
+
 
         self.w_ng_extended_toolbar.addActions([
-            self.shaderAction,
             self._highContrastNgAction
         ])
 
