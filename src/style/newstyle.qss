@@ -157,14 +157,14 @@ QProgressBar::chunk {
     background-color: #88d788;
 }
 
-
+/*
 QDockWidget {
     font-family: Tahoma, sans-serif;
     font-weight: 600;
     color: #ede9e8;
     border: 0px solid #ede9e8;
 }
-
+*/
 /*
 QDockWidget::title {
     text-align: left;
@@ -175,13 +175,44 @@ QDockWidget::title {
     font-weight: 600;
 }
 */
-
+/*
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
   background: #ede9e8;
 }
-
 QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
   padding: 1px -1px -1px 1px;
+}
+*/
+
+
+
+QDockWidget {
+    font-family: Tahoma, sans-serif;
+    font-weight: 600;
+    color: #ede9e8;
+    border: 0px solid #ede9e8;
+}
+QDockWidget::title {
+    text-align: left;
+    /*background: #222222;*/
+    padding-left: 5px;
+    padding-bottom: 0px;
+    padding-top: 0px;
+    margin: 0px;
+    font-weight: 600;
+}
+QDockWidget::close-button, QDockWidget::float-button {
+    border: 1px solid transparent;
+    background: none;
+    padding: 0px;
+}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+    background: #ede9e8;
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+    padding: 1px -1px -1px 1px;
 }
 
 
