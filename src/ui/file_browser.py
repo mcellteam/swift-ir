@@ -109,11 +109,13 @@ class FileBrowser(QWidget):
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 0, 0, 0)
-        if not is_tacc(): hbl.addWidget(self.buttonSetRootRoot)
-        hbl.addWidget(self.buttonSetRootHome)
-
-        if self.path_work: hbl.addWidget(self.buttonSetRootWork)
+        if not is_tacc():
+            hbl.addWidget(self.buttonSetRootRoot)
+        if not is_tacc():
+            hbl.addWidget(self.buttonSetRootHome)
         if self.path_scratch: hbl.addWidget(self.buttonSetRootScratch)
+        if self.path_work: hbl.addWidget(self.buttonSetRootWork)
+
         if is_joel():
             if os.path.exists(self.path_special):
                 hbl.addWidget(self.buttonSetRootSpecial)
