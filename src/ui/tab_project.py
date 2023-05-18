@@ -1571,90 +1571,12 @@ class ProjectTab(QWidget):
 
         # TOOLBARS
 
-        self._highContrastNgAction = QAction()
-        self._highContrastNgAction.setToolTip('Toggle High Contrast Mode')
-        self._highContrastNgAction.setIcon(qta.icon("mdi.theme-light-dark", color='#ede9e8'))
-        self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
-        self._highContrastNgAction.setCheckable(True)
-        self._highContrastNgAction.setChecked(getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
-        if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
-            self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
-        else:
-            self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-outline", color='#ede9e8'))
-
-        self._highContrastNgAction.triggered.connect(
-            lambda: setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', self._highContrastNgAction.isChecked()))
-
-        def fn():
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
-                self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-on", color='#ede9e8'))
-            else:
-                self._highContrastNgAction.setIcon(qta.icon("mdi.lightbulb-outline", color='#ede9e8'))
-            for v in self.get_viewers():
-                try:
-                    v.updateHighContrastMode()
-                except:
-                    logger.warning('Cant update contrast mode setting for %s' % str(v))
-                    print_exception()
-
-        self._highContrastNgAction.triggered.connect(fn)
-        self._highContrastNgAction.setToolTip('Neuroglancer background setting')
-
         ngFont = QFont('Tahoma')
         ngFont.setBold(True)
         pal = QPalette()
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
 
         self.comboNgLayout = QComboBox(self)
-        # self.comboNgLayout.setStyleSheet("""
-        # QComboBox {
-        #     padding-left: 6px;
-        #     border: 1px solid #339933;
-        #     border-radius: 4px;
-        #     color: #f3f6fb;
-        #     combobox-popup: 0;
-        #     background: transparent;
-        # }
-        # QComboBox QAbstractItemView {
-        #     border-bottom-right-radius: 10px;
-        #     border-bottom-left-radius: 10px;
-        #     border-top-right-radius: 0px;
-        #     border-top-left-radius: 0px;
-        # }
-        # QComboBox:hover {
-        #     border: 2px solid #339933;
-        # }
-        # QListView {
-        #     color: #f3f6fb;
-        #     border: 1px solid #339933;
-        #     border-top: 0px solid #339933;
-        #     border-radius: 10px;
-        #     background-color: rgba(0, 0, 0, 200)
-        # }
-        # QListView::item:selected
-        # {
-        #     color: #31cecb;
-        #     background-color: #454e5e;
-        #     border: 2px solid magenta;
-        #     border-radius: 10px;
-        # }
-        # QListView::item:!selected
-        # {
-        #     color:white;
-        #     background-color: transparent;
-        #     border: none;
-        #     padding-left : 10px;
-        #
-        # }
-        # QListView::item:!selected:hover
-        # {
-        #     color: #bbbcba;
-        #     background-color: #454e5e;
-        #     border: transparent;
-        #     padding-left : 10px;
-        #     border-radius: 10px;
-        # }
-        # """)
         self.comboNgLayout.setFixedSize(100, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
@@ -1677,6 +1599,30 @@ class ProjectTab(QWidget):
         self.generated_label.setFixedHeight(16)
         self.generated_label.hide()
 
+        self.ngcl_background = NgClickLabel(self)
+        self.ngcl_background.setText('Background')
+        self.ngcl_background.setToolTip('Toggle Background')
+
+        if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
+                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+        else:
+            self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
+                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+
+        def fn():
+            setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', not getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
+            [v.updateHighContrastMode() for v in self.get_viewers()]
+            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+                self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
+                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+            else:
+                self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
+                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+
+        self.ngcl_background.clicked.connect(fn)
+        self.ngcl_background.setToolTip('Neuroglancer background setting')
+
         self.toolbarLabelsWidget = HWidget()
         self.toolbarLabelsWidget.layout.setSpacing(2)
         self.toolbarLabelsWidget.addWidget(self.aligned_label)
@@ -1689,7 +1635,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.setFixedHeight(20)
         self.w_ng_extended_toolbar.setStyleSheet("""
         QToolBar {
-            background-color: #222222; 
+            background-color: #222222;
             color: #f3f6fb;
             font-size: 10px;
         }
@@ -1714,7 +1660,7 @@ class ProjectTab(QWidget):
             color: #f3f6fb;
 
         }
-        
+
         """)
         self.labShowHide = QLabel('Display: ')
         self.labShowHide.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -1723,40 +1669,6 @@ class ProjectTab(QWidget):
         # self.labScaleStatus = QLabel('Scale Status: ')
         self.labScaleStatus = QLabel('Status: ')
         self.labScaleStatus.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
-
-        # self.showHudOverlayAction = QAction('HUD', self)
-        # def fn():
-        #     opt = self.showHudOverlayAction.isChecked()
-        #     setOpt('neuroglancer,SHOW_HUD_OVERLAY', opt)
-        #     self._ProcessMonitorWidget.setVisible(opt)
-        # self.showHudOverlayAction.triggered.connect(fn)
-        # self.showHudOverlayAction.setCheckable(True)
-        # self.showHudOverlayAction.setChecked(getOpt('neuroglancer,SHOW_HUD_OVERLAY'))
-        # self.showHudOverlayAction.setText('HUD')
-
-        # self.w_ng_extended_toolbar.addWidget(self._highContrastNgAction)
-
-        # self.w_ng_extended_toolbar.addWidget(QLabel(' '))
-
-        # self.secondary_ng_tools = HWidget(
-        #     self.labShowHide,
-        #     cfg.main_window.ngShowUiControlsAction,
-        #     cfg.main_window.ngShowScaleBarAction,
-        #     cfg.main_window.ngShowYellowFrameAction,
-        #     cfg.main_window.ngShowAxisLinesAction,
-        #     self.showHudOverlayAction,
-        #     QLabel('      '),
-        #     self.labNgLayout,
-        #     self.comboNgLayout,
-        # )
-
-        self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
-        self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
-        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.addWidget(self.labShowHide)
-        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
-
-
 
         def fn():
             logger.info('')
@@ -1781,7 +1693,6 @@ class ProjectTab(QWidget):
                                             """background: #339933; color: #f3f6fb; 
                     border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                                            [getOpt('neuroglancer,SHOW_UI_CONTROLS')])
-        self.w_ng_extended_toolbar.addWidget( self.ngcl_uiControls)
 
 
         def fn():
@@ -1808,7 +1719,6 @@ class ProjectTab(QWidget):
                                             """background: #339933; color: #f3f6fb; 
                     border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600;  border-color: #339933;""")
                                            [getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_bounds)
 
 
         def fn():
@@ -1835,8 +1745,6 @@ class ProjectTab(QWidget):
                                             """background: #339933; color: #f3f6fb; 
                     border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                                            [getOpt('neuroglancer,SHOW_AXIS_LINES')])
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
-
 
         def fn():
             logger.info('')
@@ -1850,28 +1758,12 @@ class ProjectTab(QWidget):
                 self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
                 self.detailsSNR.hide()
-                cfg.mw.dataUpdateWidgets()
+            cfg.mw.dataUpdateWidgets()
         self.ngcl_snr = NgClickLabel(self)
         self.ngcl_snr.setText('SNR')
         self.ngcl_snr.clicked.connect(fn)
         self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
-        # self.ngcl_snr.setStyleSheet(("""background: #222222; color: #f3f6fb;
-        #             border-radius: 3px; padding: 0px; margin: 1px;""",
-        #                                     """background: #339933; color: #f3f6fb;
-        #             border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
-        #                                    [self.ngcl_snr.isClicked])
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
-
-
-        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
-        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
-        self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
-        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.setAutoFillBackground(True)
-        # self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
-
 
         def fn():
             if not self.ngcl_shader.isClicked:
@@ -1884,56 +1776,36 @@ class ProjectTab(QWidget):
                 self.brightnessLE.setText('%.2f' % cfg.data.brightness)
                 self.shaderToolbar.show()
                 self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
+            self.ngcl_shader.setStyleSheet(("""background: #222222; color: #f3f6fb;
+                        border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
+                                          """background: #339933; color: #f3f6fb; 
+                  border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
+                                         [self.ngcl_shader.isClicked])
 
         self.ngcl_shader = NgClickLabel(self)
         self.ngcl_shader.setText('Shader')
         self.ngcl_shader.clicked.connect(fn)
         self.ngcl_shader.setStyleSheet("""background: #222222; color: #f3f6fb;
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
+
+        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
+        self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
+        self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
+        # self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
+        # self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
+        # self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
+        self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
+        self.w_ng_extended_toolbar.addWidget(self.labShowHide)
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
-
-
-
-        # def fn():
-        #     logger.info('')
-        #     QApplication.processEvents()
-        #     logger.info(f'isClicked = {self.ngcl_snr.isClicked}')
-        #     if self.ngcl_snr.isClicked:
-        #         self.ngcl_snr.setStyleSheet("""background: #339933; color: #f3f6fb;
-        #             border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
-        #         self.detailsSNR.show()
-        #     else:
-        #         self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
-        #             border-radius: 3px; padding: 0px; margin: 1px;""")
-        #         self.detailsSNR.hide()
-        #         cfg.mw.dataUpdateWidgets()
-        # self.ngcl_snr = NgClickLabel(self)
-        # self.ngcl_snr.setText('SNR')
-        # self.ngcl_snr.clicked.connect(fn)
-        # self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
-        #             border-radius: 3px; padding: 0px; margin: 1px;""")
-        # # self.ngcl_snr.setStyleSheet(("""background: #222222; color: #f3f6fb;
-        # #             border-radius: 3px; padding: 0px; margin: 1px;""",
-        # #                                     """background: #339933; color: #f3f6fb;
-        # #             border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
-        # #                                    [self.ngcl_snr.isClicked])
-        # self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
-
-
-
-
-        self.w_ng_extended_toolbar.addActions([
-            self._highContrastNgAction
-        ])
-
-        # self.w_ng_display_ext = VWidget()
-        # # self.w_ng_display_ext.setStyleSheet('background-color: #222222; color: #f3f6fb;')
-        # self.w_ng_display_ext.layout.setSpacing(0)
-        # self.w_ng_display_ext.addWidget(self.w_ng_extended_toolbar)
-        # self.w_ng_display_ext.addWidget(self.shaderToolbar)
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_bounds)
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
+        self.w_ng_extended_toolbar.setAutoFillBackground(True)
+        # self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
 
         self.ngCombinedHwidget = HWidget(self.w_ng_display, self.MA_splitter)
-
         self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.ngCombinedHwidget)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
@@ -2090,6 +1962,10 @@ class ProjectTab(QWidget):
             else:
                 self.rb_MA_hint.setChecked(True)
 
+        logger.critical(f'caller     = {caller}')
+        logger.critical(f'soft       = {soft}')
+        logger.critical(f'cur_index  = {cur_index}')
+
         if soft and (cur_index in (3, 4)):
             self.MA_stackedWidget.setCurrentIndex(cur_index)
 
@@ -2099,11 +1975,14 @@ class ProjectTab(QWidget):
             self.btn_view_targ_karg.setText('View SWIM Cutouts')
 
     def hideSecondaryNgTools(self):
-        for i in range(0, 14):
+        # for i in range(0, 14):
+        #     self.w_ng_extended_toolbar.actions()[i].setVisible(False)
+        for i in range(0, 10):
             self.w_ng_extended_toolbar.actions()[i].setVisible(False)
 
     def showSecondaryNgTools(self):
-        for i in range(0, 14):
+        # for i in range(0, 13):
+        for i in range(0, 10):
             self.w_ng_extended_toolbar.actions()[i].setVisible(True)
 
     def onTranslate(self):
@@ -2432,7 +2311,10 @@ class ProjectTab(QWidget):
             self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
 
             self.cb_keep_swim_templates.setChecked((cfg.data.targ == True) or (cfg.data.karg == True))
-            self.updateMethodSelectWidget(soft=True)
+            try:
+                self.updateMethodSelectWidget(soft=True)
+            except:
+                print_exception()
             if self.MA_stackedWidget.currentIndex() == 3:
                 self.setTargKargPixmaps()
 
@@ -3278,11 +3160,7 @@ class ProjectTab(QWidget):
         # }
         # QLabel { color: #f3f6fb; }
         # """)
-        self.shaderToolbar.setStyleSheet("""
-        background-color: #222222;
-        color: #f3f6fb;
-        """)
-
+        self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
         self.shaderToolbar.addWidget(QLabel('<b>Shader:&nbsp;&nbsp;&nbsp;&nbsp;</b>'))
         self.shaderToolbar.addWidget(self.bcWidget)
         self.shaderToolbar.addWidget(self.shaderSideButtons)
