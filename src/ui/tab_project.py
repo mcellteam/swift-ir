@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
-    QStackedWidget, QHeaderView
+    QStackedWidget, QHeaderView, QWidgetAction
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator
@@ -1714,6 +1714,7 @@ class ProjectTab(QWidget):
             color: #f3f6fb;
 
         }
+        
         """)
         self.labShowHide = QLabel('Display: ')
         self.labShowHide.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -1753,11 +1754,116 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
-        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowScaleBarAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowYellowFrameAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAxisLinesAction)
-        self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowSnrAction)
+        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowUiControlsAction)
+
+
+
+        def fn():
+            logger.info('')
+            opt = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            setOpt('neuroglancer,SHOW_UI_CONTROLS', not opt)
+            opt = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            self.spreadW.setVisible(opt)
+            self.updateUISpacing()
+            if cfg.emViewer:
+                cfg.emViewer.updateUIControls()
+            if opt:
+                self.ngcl_uiControls.setStyleSheet("""background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+            else:
+                self.ngcl_uiControls.setStyleSheet("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""")
+        self.ngcl_uiControls = NgClickLabel(self)
+        self.ngcl_uiControls.setText('NG Controls')
+        self.ngcl_uiControls.clicked.connect(fn)
+        self.ngcl_uiControls.setStyleSheet(("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""",
+                                            """background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                                           [getOpt('neuroglancer,SHOW_UI_CONTROLS')])
+        self.w_ng_extended_toolbar.addWidget( self.ngcl_uiControls)
+
+
+        def fn():
+            logger.info('')
+            opt = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+            setOpt('neuroglancer,SHOW_YELLOW_FRAME', not opt)
+            opt = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+            # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[opt])
+            if cfg.emViewer:
+                cfg.emViewer.updateDefaultAnnotations()
+            if cfg.emViewer:
+                cfg.emViewer.updateUIControls()
+            if opt:
+                self.ngcl_bounds.setStyleSheet("""background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+            else:
+                self.ngcl_bounds.setStyleSheet("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""")
+        self.ngcl_bounds = NgClickLabel(self)
+        self.ngcl_bounds.setText('Bounds')
+        self.ngcl_bounds.clicked.connect(fn)
+        self.ngcl_bounds.setStyleSheet(("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""",
+                                            """background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                                           [getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_bounds)
+
+
+        def fn():
+            logger.info('')
+            opt = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            setOpt('neuroglancer,SHOW_AXIS_LINES', not opt)
+            opt = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[opt])
+            # for v in self.get_viewers():
+            #     v.updateAxisLines()
+            if cfg.emViewer:
+                cfg.emViewer.updateAxisLines()
+            if opt:
+                self.ngcl_axes.setStyleSheet("""background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+            else:
+                self.ngcl_axes.setStyleSheet("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""")
+        self.ngcl_axes = NgClickLabel(self)
+        self.ngcl_axes.setText('Axes')
+        self.ngcl_axes.clicked.connect(fn)
+        self.ngcl_axes.setStyleSheet(("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""",
+                                            """background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                                           [getOpt('neuroglancer,SHOW_AXIS_LINES')])
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
+
+
+        def fn():
+            logger.info('')
+            QApplication.processEvents()
+            logger.info(f'isClicked = {self.ngcl_snr.isClicked}')
+            if self.ngcl_snr.isClicked:
+                self.ngcl_snr.setStyleSheet("""background: #339933; color: #f3f6fb; 
+                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+                self.detailsSNR.show()
+            else:
+                self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""")
+                self.detailsSNR.hide()
+                cfg.mw.dataUpdateWidgets()
+        self.ngcl_snr = NgClickLabel(self)
+        self.ngcl_snr.setText('SNR')
+        self.ngcl_snr.clicked.connect(fn)
+        self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
+                    border-radius: 3px; padding: 0px; margin: 1px;""")
+        # self.ngcl_snr.setStyleSheet(("""background: #222222; color: #f3f6fb;
+        #             border-radius: 3px; padding: 0px; margin: 1px;""",
+        #                                     """background: #339933; color: #f3f6fb;
+        #             border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; """)
+        #                                    [self.ngcl_snr.isClicked])
+        self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
+
+
         # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
@@ -3416,6 +3522,21 @@ class ClickLabel(QLabel):
         self.setStyleSheet('color: #f3f6fb;')
 
     def mousePressEvent(self, ev):
+        self.clicked.emit()
+
+
+class NgClickLabel(QLabel):
+    clicked = Signal()
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        # super().__init__(parent)
+        self.setStyleSheet('color: #f3f6fb;')
+        # self.isClicked = False
+        self.isClicked = False
+
+    def mousePressEvent(self, ev):
+        self.isClicked = not self.isClicked
         self.clicked.emit()
 
 

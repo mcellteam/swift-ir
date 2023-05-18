@@ -3627,22 +3627,6 @@ class MainWindow(QMainWindow):
 
         self.ngShowAxisLinesAction = QAction(self)
 
-        def fn():
-            if self._isProjectTab():
-                opt = self.ngShowAxisLinesAction.isChecked()
-                setOpt('neuroglancer,SHOW_AXIS_LINES', opt)
-                # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[opt])
-                # for v in self.get_viewers():
-                #     v.updateAxisLines()
-                if cfg.emViewer:
-                    cfg.emViewer.updateAxisLines()
-
-        self.ngShowAxisLinesAction.triggered.connect(fn)
-        self.ngShowAxisLinesAction.setCheckable(True)
-        self.ngShowAxisLinesAction.setChecked(getOpt('neuroglancer,SHOW_AXIS_LINES'))
-        # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[getOpt('neuroglancer,SHOW_AXIS_LINES')])
-        self.ngShowAxisLinesAction.setText('Axes')
-        viewMenu.addAction(self.ngShowAxisLinesAction)
 
         # self.ngShowScaleBarAction = QAction(self)
         # def fn():
@@ -3661,54 +3645,7 @@ class MainWindow(QMainWindow):
         # self.ngShowScaleBarAction.triggered.connect(fn)
         # viewMenu.addAction(self.ngShowScaleBarAction)
 
-        self.ngShowUiControlsAction = QAction(self)
 
-        def fn():
-            if self._isProjectTab():
-                opt = self.ngShowUiControlsAction.isChecked()
-                setOpt('neuroglancer,SHOW_UI_CONTROLS', opt)
-                cfg.project_tab.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-                cfg.project_tab.updateUISpacing()
-                # self.ngShowUiControlsAction.setText(('Show NG UI Controls', 'Hide NG UI Controls')[opt])
-                # self.initAllViewers()
-                if cfg.emViewer:
-                    cfg.emViewer.updateUIControls()
-
-        self.ngShowUiControlsAction.triggered.connect(fn)
-        self.ngShowUiControlsAction.setCheckable(True)
-        self.ngShowUiControlsAction.setChecked(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        # self.ngShowUiControlsAction.setText(('Show NG UI Controls', 'Hide NG UI Controls')[getOpt('neuroglancer,SHOW_UI_CONTROLS')])
-        self.ngShowUiControlsAction.setText('NG Controls')
-        viewMenu.addAction(self.ngShowUiControlsAction)
-
-        self.ngShowYellowFrameAction = QAction(self)
-
-        def fn():
-            if self._isProjectTab():
-                opt = self.ngShowYellowFrameAction.isChecked()
-                setOpt('neuroglancer,SHOW_YELLOW_FRAME', opt)
-                # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[opt])
-                if cfg.emViewer:
-                    cfg.emViewer.updateDefaultAnnotations()
-
-        self.ngShowYellowFrameAction.setCheckable(True)
-        self.ngShowYellowFrameAction.setChecked(getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
-        # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
-        self.ngShowYellowFrameAction.setText('Bounds')
-        self.ngShowYellowFrameAction.triggered.connect(fn)
-        viewMenu.addAction(self.ngShowYellowFrameAction)
-
-        self.ngShowSnrAction = QAction(self)
-
-        def fn():
-            if self._isProjectTab():
-                cfg.project_tab.detailsSNR.setVisible(self.ngShowSnrAction.isChecked())
-                self.dataUpdateWidgets()
-
-        self.ngShowSnrAction.triggered.connect(fn)
-        self.ngShowSnrAction.setCheckable(True)
-        self.ngShowSnrAction.setText('SNR')
-        viewMenu.addAction(self.ngShowSnrAction)
 
         # self.colorMenu = ngMenu.addMenu('Select Background Color')
         # from qtpy.QtWidgets import QColorDialog
