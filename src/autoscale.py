@@ -73,8 +73,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True):
 
     if gui:
         cfg.mw.hidePbar()
-        if cfg.mw._isProjectTab():
-            cfg.project_tab.initNeuroglancer()
+        # if cfg.mw._isProjectTab():
+        #     cfg.project_tab.initNeuroglancer()
         cfg.mw.tell('**** Autoscaling Complete ****')
     logger.info('<<<< autoscale <<<<')
 
