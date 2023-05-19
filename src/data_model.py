@@ -694,7 +694,6 @@ class DataModel:
         logger.critical(f'Setting Defaults caller: {inspect.stack()[1].function} >>>>')
         import src.config as cfg
 
-
         initial_zpos = int(len(self)/2)
         self._data['data']['zposition'] = initial_zpos
 
@@ -729,14 +728,12 @@ class DataModel:
         self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
         self._data['data'].setdefault('t_thumbs', 0.0)
         self._data['data'].setdefault('defaults', {})
-        # self._data['data']['defaults'].setdefault('swim-width-px', None)
         self._data['data']['defaults'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
         self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_BOUNDING_BOX)
         self._data['data']['defaults'].setdefault('scales', {})
         self._data['data']['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
         self._data['data']['defaults'].setdefault('swim-iterations', cfg.DEFAULT_SWIM_ITERATIONS)
-
         self._data['rendering'].setdefault('normalize', [1,255])
         self._data['rendering'].setdefault('brightness', 0)
         self._data['rendering'].setdefault('contrast', 0)
@@ -749,7 +746,6 @@ class DataModel:
         logger.critical('<<<< Setting Defaults')
 
         for s in self.scales():
-            logger.critical(f'LOOP s={s}')
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
             scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
@@ -780,7 +776,7 @@ class DataModel:
                 layer.setdefault('alignment', {})
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
-                logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")
+                # logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")
                 layer['alignment']['swim_settings']['karg_path'] = os.path.join(self.dest(), s, 'tmp')
                 layer['alignment']['swim_settings']['targ_path'] = os.path.join(self.dest(), s, 'tmp')
                 layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise', False)

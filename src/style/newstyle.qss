@@ -157,33 +157,26 @@ QProgressBar::chunk {
     background-color: #88d788;
 }
 
-/*
+
 QDockWidget {
     font-family: Tahoma, sans-serif;
-    font-weight: 600;
+    font-size: 10px;
     color: #ede9e8;
     border: 0px solid #ede9e8;
 }
-*/
-/*
+
+
 QDockWidget::title {
+    font-family: Tahoma, sans-serif;
+    font-weight: 600;
+    font-size: 10px;
     text-align: left;
     padding-left: 5px;
     padding-bottom: 0px;
     padding-top: 0px;
     margin: 0px;
-    font-weight: 600;
-}
-*/
-/*
-QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-  background: #ede9e8;
-}
-QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
-  padding: 1px -1px -1px 1px;
-}
-*/
 
+}
 
 
 QDockWidget {
@@ -207,6 +200,7 @@ QDockWidget::close-button, QDockWidget::float-button {
     padding: 0px;
 }
 
+/*
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background: #ede9e8;
 }
@@ -214,6 +208,7 @@ QDockWidget::close-button:hover, QDockWidget::float-button:hover {
 QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
     padding: 1px -1px -1px 1px;
 }
+*/
 
 
 

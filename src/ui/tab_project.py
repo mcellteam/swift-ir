@@ -244,7 +244,7 @@ class ProjectTab(QWidget):
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
 
-        self.updateProjectLabels()
+        # self.updateProjectLabels()
 
     def updateNeuroglancer(self):
         caller = inspect.stack()[1].function
@@ -452,9 +452,10 @@ class ProjectTab(QWidget):
         self.MA_webengine_ref = WebEngine(ID='ref')
         self.MA_webengine_base = WebEngine(ID='base')
         self.MA_webengine_stage = WebEngine(ID='stage')
-        setWebengineProperties(self.MA_webengine_ref)
-        setWebengineProperties(self.MA_webengine_base)
-        setWebengineProperties(self.MA_webengine_stage)
+        self.MA_webengine_stage.setMinimumHeight(64)
+        # setWebengineProperties(self.MA_webengine_ref)
+        # setWebengineProperties(self.MA_webengine_base)
+        # setWebengineProperties(self.MA_webengine_stage)
         # self.MA_webengine_ref.inFocus.triggered.connect(self.focusedViewerChanged)
         # self.MA_webengine_base.inFocus.triggered.connect(self.focusedViewerChanged)
         self.MA_webengine_ref.setMinimumWidth(100)
@@ -465,14 +466,6 @@ class ProjectTab(QWidget):
         '''Mouse move events will occur only when a mouse button is pressed down, 
         unless mouse tracking has been enabled with setMouseTracking() .'''
 
-        # self.MA_webengine_stage.setMinimumWidth(240)
-        # self.MA_webengine_stage.setMinimumHeight(128)
-        self.MA_webengine_stage.setMinimumWidth(100)
-        self.MA_webengine_stage.setMinimumHeight(100)
-
-        # self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus)
-        # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus)
-        # self.MA_webengine_stage.setFocusPolicy(Qt.StrongFocus)
         self.MA_webengine_base.setFocus()
 
         # NO CHANGE----------------------
@@ -485,8 +478,6 @@ class ProjectTab(QWidget):
 
         # MA Stage Buffer Widget
 
-        # self.MA_refViewerTitle = YellowTextLabel('Reference')
-        # self.MA_baseViewerTitle = YellowTextLabel('Working')
         self.MA_refViewerTitle = QLabel('Reference Image (Left)')
         self.MA_refViewerTitle.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
         self.MA_refViewerTitle.setMaximumHeight(14)
@@ -496,40 +487,36 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.setMaximumHeight(54)
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
-        # self.MA_ptsListWidget_ref.setMaximumHeight(64)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
-        # self.MA_ptsListWidget_ref.itemClicked.connect(self.refListItemClicked)
         self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; ')
 
         self.MA_refNextColorTxt = QLabel('Next Color: ')
-        self.MA_refNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.MA_refNextColorTxt.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
         self.MA_refNextColorLab = QLabel()
-        # self.MA_refNextColorLab.setMaximumHeight(12)
-        self.MA_refNextColorLab.setFixedSize(20, 20)
+        self.MA_refNextColorLab.setFixedSize(16, 16)
 
         self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.setMaximumHeight(54)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
-        # self.MA_ptsListWidget_base.setMaximumHeight(64)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
-        # self.MA_ptsListWidget_base.itemClicked.connect(self.baseListItemClicked)
         self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.MA_baseNextColorTxt = QLabel('Next Color: ')
-        self.MA_baseNextColorTxt.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.MA_baseNextColorTxt.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
         self.MA_baseNextColorLab = QLabel()
-        # self.MA_baseNextColorLab.setMaximumHeight(12)
-        self.MA_baseNextColorLab.setFixedSize(20, 20)
+        self.MA_baseNextColorLab.setFixedSize(16, 16)
 
         self.MA_ptsListWidget_ref.itemSelectionChanged.connect(self.MA_ptsListWidget_base.selectionModel().clear)
         self.MA_ptsListWidget_base.itemSelectionChanged.connect(self.MA_ptsListWidget_ref.selectionModel().clear)
 
         self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab)
-        self.baseNextColorWidget.setMaximumHeight(14)
+        self.baseNextColorWidget.setFixedHeight(12)
         self.refNextColorWidget = HWidget(self.MA_refNextColorTxt, self.MA_refNextColorLab)
-        self.refNextColorWidget.setMaximumHeight(14)
+        self.refNextColorWidget.setFixedHeight(12)
 
         self.automatic_label = QLabel()
         self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
@@ -737,16 +724,16 @@ class ProjectTab(QWidget):
         self.btn_view_logs.setFixedSize(QSize(28, 18))
         self.btn_view_logs.clicked.connect(fn)
 
-        self.btn_view_targ_karg = QPushButton('View SWIM Cutouts')
+        self.btn_view_targ_karg = QPushButton('View Match Regions')
 
         def btn_view_targ_karg_fn():
             if self.MA_stackedWidget.currentIndex() == 3:
                 self.updateMethodSelectWidget(soft=False)
-                self.btn_view_targ_karg.setText('View SWIM Cutouts')
+                self.btn_view_targ_karg.setText('View Match Regions')
             else:
                 self.setTargKargPixmaps()
                 self.MA_stackedWidget.setCurrentIndex(3)
-                self.btn_view_targ_karg.setText('Hide SWIM Cutouts')
+                self.btn_view_targ_karg.setText('Hide Match Regions')
 
         self.btn_view_targ_karg.clicked.connect(btn_view_targ_karg_fn)
         self.btn_view_targ_karg.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
@@ -775,7 +762,10 @@ class ProjectTab(QWidget):
         #         self.btnResetAllMA,
         #         self.btnExitMA))
 
+        tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
+              "but do not generate any new images"
         self.btnQuickSWIM = QPushButton('Quick\n&SWIM')
+        self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedSize(QSize(44, 38))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(cfg.main_window.alignOne)
@@ -850,22 +840,6 @@ class ProjectTab(QWidget):
         self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
         self.msg_MAinstruct.setFixedSize(300, 24)
 
-        # def fn():
-        #     # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
-        #     cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
-        # self.cb_showYellowFrame = QCheckBox('Show Frame')
-        # self.cb_showYellowFrame.setChecked(getData('state,stage_viewer,show_yellow_frame'))
-        # self.cb_showYellowFrame.toggled.connect(lambda val: setData('state,stage_viewer,show_yellow_frame', val))
-        # # self.cb_showYellowFrame.toggled.connect(self.initNeuroglancer)
-        # self.cb_showYellowFrame.toggled.connect(fn)
-
-        # self.labNoArrays = QLabel('')
-        # self.stageDetails = VWidget()
-        # lab = QLabel('No. Generated Arrays: 1')
-        # lab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        # self.stageDetails.addWidget(HWidget(lab, self.labNoArrays))
-        # Todo self.labNoArrays
-
         self.gb_stageInfoText = QGroupBox()
         vbl = VBL()
         vbl.setSpacing(0)
@@ -877,6 +851,7 @@ class ProjectTab(QWidget):
         # self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
 
         self.btnTranslate = QPushButton('Move')
+        self.btnTranslate.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.btnTranslate.setFixedSize(QSize(40, 18))
         self.btnTranslate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnTranslate.clicked.connect(self.onTranslate)
@@ -1117,7 +1092,7 @@ class ProjectTab(QWidget):
         self.Q3.setAutoFillBackground(True)
         self.Q4.setAutoFillBackground(True)
 
-        siz = 32
+        siz = 22
         self.Q1.setFixedSize(siz, siz)
         self.Q2.setFixedSize(siz, siz)
         self.Q3.setFixedSize(siz, siz)
@@ -1148,7 +1123,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
-        self.fl_MA_settings.addRow("SWIM Regions", HWidget(self.Q_widget, ExpandingWidget(self)))
+        self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3)", HWidget(self.Q_widget, ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
         # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
@@ -1169,10 +1144,25 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
+
+
+
         self.method_rb0 = QRadioButton('Default Grid')
+
+        tip = """Similar to the Default Grid method, but the user is able to avoid image defects 
+        by adjusting the grid shape and location and adding or removing quadrants of the grid. 
+        An affine transformation requires at least 3 regions (quadrants)."""
         self.method_rb1 = QRadioButton('Custom Grid')
+        self.method_rb1.setToolTip(tip)
+
+
+        tip = """User provides an alignment hint for SWIM by selecting 3 matching regions (manual correspondence). 
+        Note: An affine transformation requires at least 3 correspondence regions."""
         # self.method_rb2 = QRadioButton('Correspondence Points')
-        self.method_rb2 = QRadioButton('Feature Matching')
+        self.method_rb2 = QRadioButton('Match Regions')
+        self.method_rb2.setToolTip(tip)
+
+
         self.method_bg = QButtonGroup(self)
         self.method_bg.setExclusive(True)
         self.method_bg.addButton(self.method_rb0)
@@ -1269,43 +1259,43 @@ class ProjectTab(QWidget):
         # clr = ['#efb435', '#e50000', '#137e6d', '#75bbfd']
         clr = cfg.glob_colors
 
-        self.cutout_tn0 = ThumbnailFast(self)
-        self.cutout_tn1 = ThumbnailFast(self)
-        self.cutout_tn2 = ThumbnailFast(self)
-        self.cutout_tn3 = ThumbnailFast(self)
-        self.cutout_tn0.border_color = clr[0]
-        self.cutout_tn1.border_color = clr[1]
-        self.cutout_tn2.border_color = clr[2]
-        self.cutout_tn3.border_color = clr[3]
-        self.cutout_tn0.updateStylesheet()
-        self.cutout_tn1.updateStylesheet()
-        self.cutout_tn2.updateStylesheet()
-        self.cutout_tn3.updateStylesheet()
-        # self.cutout_tn0.setStyleSheet(f"border: 2px solid #{clr['ul']};")
-        # self.cutout_tn1.setStyleSheet(f"border: 2px solid #{clr['ur']};")
-        # self.cutout_tn2.setStyleSheet(f"border: 2px solid #{clr['ll']};")
-        # self.cutout_tn3.setStyleSheet(f"border: 2px solid #{clr['lr']};")
-        self.cutout_thumbnails = [self.cutout_tn0, self.cutout_tn1, self.cutout_tn2, self.cutout_tn3]
+        self.matches_tn0 = ThumbnailFast(self)
+        self.matches_tn1 = ThumbnailFast(self)
+        self.matches_tn2 = ThumbnailFast(self)
+        self.matches_tn3 = ThumbnailFast(self)
+        self.matches_tn0.border_color = clr[0]
+        self.matches_tn1.border_color = clr[1]
+        self.matches_tn2.border_color = clr[2]
+        self.matches_tn3.border_color = clr[3]
+        self.matches_tn0.updateStylesheet()
+        self.matches_tn1.updateStylesheet()
+        self.matches_tn2.updateStylesheet()
+        self.matches_tn3.updateStylesheet()
+        # self.matches_tn0.setStyleSheet(f"border: 2px solid #{clr['ul']};")
+        # self.matches_tn1.setStyleSheet(f"border: 2px solid #{clr['ur']};")
+        # self.matches_tn2.setStyleSheet(f"border: 2px solid #{clr['ll']};")
+        # self.matches_tn3.setStyleSheet(f"border: 2px solid #{clr['lr']};")
+        self.cutout_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
 
         max_siz = 80
-        self.cutout_tn0.setMaximumHeight(max_siz)
-        self.cutout_tn1.setMaximumHeight(max_siz)
-        self.cutout_tn2.setMaximumHeight(max_siz)
-        self.cutout_tn3.setMaximumHeight(max_siz)
+        self.matches_tn0.setMaximumHeight(max_siz)
+        self.matches_tn1.setMaximumHeight(max_siz)
+        self.matches_tn2.setMaximumHeight(max_siz)
+        self.matches_tn3.setMaximumHeight(max_siz)
 
-        self.cutout_tn0.setMaximumWidth(max_siz)
-        self.cutout_tn1.setMaximumWidth(max_siz)
-        self.cutout_tn2.setMaximumWidth(max_siz)
-        self.cutout_tn3.setMaximumWidth(max_siz)
+        self.matches_tn0.setMaximumWidth(max_siz)
+        self.matches_tn1.setMaximumWidth(max_siz)
+        self.matches_tn2.setMaximumWidth(max_siz)
+        self.matches_tn3.setMaximumWidth(max_siz)
 
         self.gl_targ_karg = QGridLayout()
         self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
         self.gl_targ_karg.setSpacing(2)
         self.gl_targ_karg.setAlignment(Qt.AlignCenter)
-        self.gl_targ_karg.addWidget(self.cutout_tn0, 0, 0)
-        self.gl_targ_karg.addWidget(self.cutout_tn1, 0, 1)
-        self.gl_targ_karg.addWidget(self.cutout_tn2, 1, 0)
-        self.gl_targ_karg.addWidget(self.cutout_tn3, 1, 1)
+        self.gl_targ_karg.addWidget(self.matches_tn0, 0, 0)
+        self.gl_targ_karg.addWidget(self.matches_tn1, 0, 1)
+        self.gl_targ_karg.addWidget(self.matches_tn2, 1, 0)
+        self.gl_targ_karg.addWidget(self.matches_tn3, 1, 1)
         # self.gl_targ_karg.addWidget(self.targ_karg_back_btn, 2, 0, 1, 2)
         self.targ_karg_widget = QWidget()
         self.targ_karg_widget.setLayout(self.gl_targ_karg)
@@ -1323,8 +1313,8 @@ class ProjectTab(QWidget):
         vbl = VBL()
         vbl.setSpacing(0)
         vbl.setContentsMargins(2, 2, 2, 2)
-        self.lab_swim_cutouts = BoldLabel('SWIM Cutouts:')
-        vbl.addWidget(self.lab_swim_cutouts, alignment=Qt.AlignLeft | Qt.AlignTop)
+        self.lab_swim_matches = BoldLabel('Match Regions:')
+        vbl.addWidget(self.lab_swim_matches, alignment=Qt.AlignLeft | Qt.AlignTop)
         vbl.addWidget(self.targ_karg_widget)
         vbl.addWidget(w, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.swim_cutout_panel.setLayout(vbl)
@@ -1497,7 +1487,7 @@ class ProjectTab(QWidget):
             logger.info('Settings applied to current section.')
 
         self.btn_settings_apply_cur_sec.clicked.connect(fn)
-        self.btn_settings_apply_cur_sec.setFixedSize(QSize(128, 18))
+        self.btn_settings_apply_cur_sec.setFixedSize(QSize(140, 18))
 
         self.btn_settings_apply_everywhere = QPushButton('Apply Everywhere')
 
@@ -1508,7 +1498,7 @@ class ProjectTab(QWidget):
             logger.info('Settings applied to entire project.')
 
         self.btn_settings_apply_everywhere.clicked.connect(fn)
-        self.btn_settings_apply_everywhere.setFixedSize(QSize(128, 18))
+        self.btn_settings_apply_everywhere.setFixedSize(QSize(140, 18))
 
         self.fl_settings = QFormLayout()
         self.fl_settings.setVerticalSpacing(4)
@@ -1516,7 +1506,7 @@ class ProjectTab(QWidget):
         self.fl_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_settings.setSpacing(2)
         self.fl_settings.setContentsMargins(0, 0, 0, 0)
-        self.fl_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
+        self.fl_settings.addRow('Save Match Regions', self.cb_keep_swim_templates)
         self.fl_settings.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
@@ -1586,18 +1576,18 @@ class ProjectTab(QWidget):
         self.comboNgLayout.activated.connect(self.onNgLayoutCombobox)
         self.comboNgLayout.setCurrentText(getData('state,ng_layout'))
 
-        self.aligned_label = QLabel(' Aligned ')
-        self.aligned_label.setObjectName('green_toolbar_label')
-        self.aligned_label.setFixedHeight(16)
-        self.aligned_label.hide()
-        self.unaligned_label = QLabel(' Not Aligned ')
-        self.unaligned_label.setObjectName('red_toolbar_label')
-        self.unaligned_label.setFixedHeight(16)
-        self.unaligned_label.hide()
-        self.generated_label = QLabel(' Generated ')
-        self.generated_label.setObjectName('green_toolbar_label')
-        self.generated_label.setFixedHeight(16)
-        self.generated_label.hide()
+        # self.aligned_label = QLabel(' Aligned ')
+        # self.aligned_label.setObjectName('green_toolbar_label')
+        # self.aligned_label.setFixedHeight(16)
+        # self.aligned_label.hide()
+        # self.unaligned_label = QLabel(' Not Aligned ')
+        # self.unaligned_label.setObjectName('red_toolbar_label')
+        # self.unaligned_label.setFixedHeight(16)
+        # self.unaligned_label.hide()
+        # self.generated_label = QLabel(' Generated ')
+        # self.generated_label.setObjectName('green_toolbar_label')
+        # self.generated_label.setFixedHeight(16)
+        # self.generated_label.hide()
 
         self.ngcl_background = NgClickLabel(self)
         self.ngcl_background.setText('Background')
@@ -1611,8 +1601,10 @@ class ProjectTab(QWidget):
                         border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
 
         def fn():
+            logger.critical(f"getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE') = {getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE')}")
             setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', not getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
             [v.updateHighContrastMode() for v in self.get_viewers()]
+
             if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
                 self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
                         border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
@@ -1623,11 +1615,11 @@ class ProjectTab(QWidget):
         self.ngcl_background.clicked.connect(fn)
         self.ngcl_background.setToolTip('Neuroglancer background setting')
 
-        self.toolbarLabelsWidget = HWidget()
-        self.toolbarLabelsWidget.layout.setSpacing(2)
-        self.toolbarLabelsWidget.addWidget(self.aligned_label)
-        self.toolbarLabelsWidget.addWidget(self.unaligned_label)
-        self.toolbarLabelsWidget.addWidget(self.generated_label)
+        # self.toolbarLabelsWidget = HWidget()
+        # self.toolbarLabelsWidget.layout.setSpacing(2)
+        # self.toolbarLabelsWidget.addWidget(self.aligned_label)
+        # self.toolbarLabelsWidget.addWidget(self.unaligned_label)
+        # self.toolbarLabelsWidget.addWidget(self.generated_label)
 
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -1834,7 +1826,8 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
 
-        self.lab_swim_cutouts.setText(f'SWIM Cutouts ({cfg.data.current_method_pretty}):')
+        # self.lab_swim_matches.setText(f'Match Regions ({cfg.data.current_method_pretty}):')
+        self.lab_swim_matches.setText(f'Match Regions')
         basename = cfg.data.filename_basename()
         filename, extension = os.path.splitext(basename)
         if self.rb_targ.isChecked():
@@ -1970,9 +1963,9 @@ class ProjectTab(QWidget):
             self.MA_stackedWidget.setCurrentIndex(cur_index)
 
         if self.MA_stackedWidget.currentIndex() == 3:
-            self.btn_view_targ_karg.setText('Hide SWIM Cutouts')
+            self.btn_view_targ_karg.setText('Hide SWIM Matches')
         else:
-            self.btn_view_targ_karg.setText('View SWIM Cutouts')
+            self.btn_view_targ_karg.setText('View SWIM Matches')
 
     def hideSecondaryNgTools(self):
         # for i in range(0, 14):
@@ -2118,28 +2111,28 @@ class ProjectTab(QWidget):
                 print_exception()
                 logger.error('Unable To Change Neuroglancer Layout')
 
-    def updateProjectLabels(self):
-        caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        self.aligned_label.hide()
-        self.unaligned_label.hide()
-        self.generated_label.hide()
-
-        # if cfg.data['state']['mode'] == 'stack':
-        #     setData('state,ng_layout', '4panel')
-        #     cfg.main_window.combo_mode.setCurrentIndex(0)
-        # elif cfg.data['state']['mode'] == 'comparison':
-        #     setData('state,ng_layout', 'xy')
-        #     cfg.main_window.combo_mode.setCurrentIndex(1)
-
-        # self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
-        if cfg.data.is_aligned_and_generated():
-            self.aligned_label.show()
-            self.generated_label.show()
-        elif cfg.data.is_aligned():
-            self.aligned_label.show()
-        else:
-            self.unaligned_label.show()
+    # def updateProjectLabels(self):
+    #     caller = inspect.stack()[1].function
+    #     # logger.info(f'caller: {caller}')
+    #     self.aligned_label.hide()
+    #     self.unaligned_label.hide()
+    #     self.generated_label.hide()
+    #
+    #     # if cfg.data['state']['mode'] == 'stack':
+    #     #     setData('state,ng_layout', '4panel')
+    #     #     cfg.main_window.combo_mode.setCurrentIndex(0)
+    #     # elif cfg.data['state']['mode'] == 'comparison':
+    #     #     setData('state,ng_layout', 'xy')
+    #     #     cfg.main_window.combo_mode.setCurrentIndex(1)
+    #
+    #     # self.comboboxNgLayout.setCurrentText(cfg.data['ui']['ng_layout'])
+    #     if cfg.data.is_aligned_and_generated():
+    #         self.aligned_label.show()
+    #         self.generated_label.show()
+    #     elif cfg.data.is_aligned():
+    #         self.aligned_label.show()
+    #     else:
+    #         self.unaligned_label.show()
 
     def MA_layer_left(self):
         if self.btnPrevSection.isEnabled():
@@ -2265,7 +2258,7 @@ class ProjectTab(QWidget):
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             # self.spinbox_whitening.setValue(float(cfg.data.manual_whitening()))
             self.spinbox_whitening.setValue(float(cfg.data.whitening()))
-            self.updateProjectLabels()  # 0424+
+            # self.updateProjectLabels()  # 0424+
 
             img_siz = cfg.data.image_size()
             img_w = int(img_siz[0])
@@ -3018,17 +3011,21 @@ class ProjectTab(QWidget):
         self._tabs.setStyleSheet("""
         QTabBar::tab {
             height: 16px;
-            width: 110px;
-            font-size: 10px;
-            font-weight: 300;
-            border-top-left-radius: 2px;
-            border-top-right-radius: 2px;
-            border: 1px solid #ede9e8
+            width: 100px;
+            font-size: 9px;
+            font-weight: 600;
+            border-top-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            border-bottom-left-radius: 1px;
+            border-top-right-radius: 1px;
+            border: 0px solid #ede9e8;
+            background-color: #dadada;
+            
         }
         QTabBar::tab:selected
         {   
             font-weight: 600;
-            color: #ede9e8;
+            color: #f3f6fb;
             background-color: #222222;
         }
         """)
@@ -3081,6 +3078,7 @@ class ProjectTab(QWidget):
             # cfg.project_tab.initNeuroglancer()
 
         self._btn_resetBrightnessAndContrast = QPushButton('Reset')
+        self._btn_resetBrightnessAndContrast.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self._btn_resetBrightnessAndContrast.setFixedSize(QSize(40, 18))
         self._btn_resetBrightnessAndContrast.clicked.connect(resetBrightessAndContrast)
 
