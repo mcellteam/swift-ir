@@ -22,7 +22,7 @@
         <li><b>Re-Align #_</b> - Align and generate the current section only.<br/></li>
         <li><b>Manual Align</b> - Enter/Exit Manual Align Mode (see section on Manual Intervention below).<br/></li>
         <li><b>Re-Align #_ to #_</b> - Align and generate the selected range of sections.<br/></li>
-        <li><b>Regenerate All</b> - Regenerate output based on the current Null Bias and Bounding Box presets.<br/></li>
+        <li><b>Regenerate All</b> - Regenerate output based on the Null Bias and Bounding Box presets.<br/></li>
     </ul>
 
     <b>Output Settings</b> – Regenerating the alignment--distinct from computing the alignment--refers to the process of generating a new aligned image stack at a particular scale from source images of the same scale using predetermined affine transformations. The resulting images depend on:
@@ -32,7 +32,7 @@
         <li><b>Corrective (Polynomial) Bias</b> - An adjustment that can subtract systematic drift of various polynomial orders between 0° and 4° or None (default=None).<br/></li>
     </ul>
 
-    Manual Intervention - When Default Grid alignment fails, there are several different options for fixing misalignment
+    Correcting Misalignment - When Default Grid alignment fails, there are several different options to correct with human-intervention.
     <br/><ul>
         <li><b>Manual Align Mode</b> (Note: It is not possible to enter Manual Align Mode until 'Align All' has been run at least once for a given scale)<br/>
             <ul>
@@ -41,7 +41,7 @@
                 <li><b>Point Matching</b> - User forces an alignment based on 3 matching points (SWIM is not used). Note: An affine requires at least 3 corresponding points.<br/></li>
             </ul>
         </li>
-        <li><b>Include/Exclude</b> - By deselecting the "Include" toggle switch in the control panel, individual sections can be excluded from the alignment. Sections not included will not be aligned or serve as a SWIM reference for any other section (like a dropped frame).<br/></li>
+        <li><b>Include/Exclude</b> - Individual sections may be excluded by deselecting the "Include" toggle switch in the control panel. Sections flagged not to include will not serve as a SWIM reference for any other section (like a dropped frame).<br/></li>
     </ul>
 
 </body>

@@ -3010,20 +3010,17 @@ class ProjectTab(QWidget):
         self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.setStyleSheet("""
         QTabBar::tab {
-            height: 16px;
+            height: 12px;
             width: 100px;
             font-size: 9px;
             font-weight: 600;
-            border-top-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-            border-bottom-left-radius: 1px;
-            border-top-right-radius: 1px;
-            border: 0px solid #ede9e8;
+
+            border: 1px solid #ede9e8;
             background-color: #dadada;
-            
+
         }
         QTabBar::tab:selected
-        {   
+        {
             font-weight: 600;
             color: #f3f6fb;
             background-color: #222222;
