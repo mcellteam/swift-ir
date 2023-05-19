@@ -885,7 +885,7 @@ class MainWindow(QMainWindow):
                 self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
                 self.updateDtWidget()
                 cfg.project_tab.updateTreeWidget()
-                cfg.project_tab.updateProjectLabels()
+                # cfg.project_tab.updateProjectLabels()
                 self.updateEnabledButtons()
                 self.updateProjectTable()  # +
                 self._bbToggle.setChecked(cfg.data.has_bb())
@@ -1226,7 +1226,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
             # self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
-            self.gb_ctlActions.setTitle('%s Multiprocessing Commands' % cfg.data.scale_pretty())
+            self.gb_ctlActions.setTitle('%s Multiprocessing Functions' % cfg.data.scale_pretty())
             # self.alignmentResults.setTitle('%s Data && Results' % cfg.data.scale_pretty())
             # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
             self._skipCheckbox.setEnabled(True)
@@ -1798,7 +1798,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        # logger.info(f'jump_to_slider [caller: {caller}] >>>>')
+        logger.critical(f'jump_to_slider [caller: {caller}] >>>>')
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
         if caller in ('dataUpdateWidgets'):
             return
@@ -1872,10 +1872,10 @@ class MainWindow(QMainWindow):
                             # 0414-
                             index = self._changeScaleCombo.currentIndex()
                             cfg.data.scale = cfg.data.scales()[index]
-                            try:
-                                cfg.project_tab.updateProjectLabels()
-                            except:
-                                pass
+                            # try:
+                            #     cfg.project_tab.updateProjectLabels()
+                            # except:
+                            #     pass
                             self.updateEnabledButtons()
                             self.dataUpdateWidgets()
                             self.updateCpanelDetails_i1()
@@ -2327,13 +2327,14 @@ class MainWindow(QMainWindow):
     #     self.browser_web.setHtml(html)
     #     self.main_stack_widget.setCurrentIndex(1)
 
-    def html_resource(self, resource='features.html', title='Features'):
+    def html_resource(self, resource='features.html', title='Features', ID=''):
 
         html_f = os.path.join(self.get_application_root(), 'src', 'resources', resource)
         with open(html_f, 'r') as f:
             html = f.read()
 
-        webengine = QWebEngineView()
+        # webengine = QWebEngineView()
+        webengine = WebEngine(ID=ID)
         webengine.setFocusPolicy(Qt.StrongFocus)
         webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
         webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -2343,7 +2344,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def url_resource(self, url, title):
@@ -2357,7 +2358,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def remote_view(self):
@@ -2366,7 +2367,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.globTabs.addTab(browser, 'Neuroglancer')
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def open_url(self, text: str) -> None:
@@ -2503,7 +2504,7 @@ class MainWindow(QMainWindow):
         self.browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.globTabs.addTab(self.browser, 'WebGL Test')
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def google(self):
@@ -2513,7 +2514,7 @@ class MainWindow(QMainWindow):
         self.browser.setUrl(QUrl('https://www.google.com'))
         self.globTabs.addTab(self.browser, 'Google')
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def gpu_config(self):
@@ -2522,7 +2523,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('chrome://gpu'))
         self.globTabs.addTab(browser, 'GPU Configuration')
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def chromium_debug(self):
@@ -2531,7 +2532,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('http://127.0.0.1:9000'))
         self.globTabs.addTab(browser, 'Debug Chromium')
         self._setLastTab()
-        self.cpanel.hide()
+        # self.cpanel.hide()
         self.sa_cpanel.hide()
 
     def get_ng_state(self):
@@ -2687,6 +2688,8 @@ class MainWindow(QMainWindow):
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
+                tip = 'Exit Manual Align Mode'
+                self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
                 # cfg.project_tab.cpanel.hide()
                 # self._btn_manualAlign.setText('← Exit Manual Mode')
                 self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
@@ -2742,6 +2745,8 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.cpanel.show()
 
             setData('state,manual_mode', False)
+            tip = 'Enter Manual Align Mode'
+            self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
             self.updateEnabledButtons()
             self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
             self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
@@ -2993,8 +2998,14 @@ class MainWindow(QMainWindow):
 
         self.faqButton = QPushButton(' FAQ')
         def fn_view_faq():
-            logger.info('Showing FAQ...')
-            self.html_resource(resource='faq.html', title='FAQ')
+            search = self.lookForTabID(search='faq')
+            if search:
+                self.globTabs.setCurrentIndex(search)
+                self.statusBar.showMessage("FAQ is already open!", msecs=3000)
+            else:
+                logger.info('Showing FAQ...')
+                self.html_resource(resource='faq.html', title='FAQ', ID='faq')
+
         self.faqButton.setFont(f)
         # self.faqButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.faqButton.setToolTip(f"Read AlignEM-SWiFT FAQ")
@@ -3005,9 +3016,22 @@ class MainWindow(QMainWindow):
         self.faqButton.clicked.connect(fn_view_faq)
 
         self.gettingStartedButton = QPushButton('Getting Started')
+        # def fn_view_faq():
+        #     logger.info('Showing FAQ...')
+        #     search = self.lookForTabID(search='FAQ')
+        #     if search:
+        #         self.globTabs.setCurrentIndex(search)
+        #         self.statusBar.showMessage("FAQ is already open!", msecs=3000)
+        #     else:
+        #         self.html_resource(resource='faq.html', title='FAQ', ID='FAQ')
         def fn_view_getting_started():
-            logger.info('Showing Getting Started Tips...')
-            self.html_resource(resource='getting-started.html', title='Getting Started')
+            search = self.lookForTabID(search='getting-started')
+            if search:
+                self.globTabs.setCurrentIndex(search)
+                self.statusBar.showMessage("Getting started document is already open!", msecs=3000)
+            else:
+                logger.info('Showing Getting Started Tips...')
+                self.html_resource(resource='getting-started.html', title='Getting Started', ID='getting-started')
         self.gettingStartedButton.setFont(f)
         # self.gettingStartedButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.gettingStartedButton.setToolTip(f"Read AlignEM-SWiFT Tips for Getting Started")
@@ -3018,8 +3042,13 @@ class MainWindow(QMainWindow):
 
         self.glossaryButton = QPushButton('Glossary')
         def fn_glossary():
-            logger.info('Showing Getting Started Tips...')
-            self.html_resource(resource='glossary.html', title='Glossary')
+            search = self.lookForTabID(search='glossary')
+            if search:
+                self.globTabs.setCurrentIndex(search)
+                self.statusBar.showMessage("Glossary is already open!", msecs=3000)
+            else:
+                logger.info('Showing Glossary...')
+                self.html_resource(resource='glossary.html', title='Glossary', ID='glossary')
         self.glossaryButton.setFont(f)
         # self.glossaryButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.glossaryButton.setToolTip(f"Read AlignEM-SWiFT Glossary")
@@ -3171,6 +3200,14 @@ class MainWindow(QMainWindow):
             for i in range(0, 4):
                 cfg.project_tab._tabs.setTabEnabled(i, True)
         # self._btn_refreshTab.setEnabled(True)
+
+    def lookForTabID(self, search):
+        for i in range(self.globTabs.count()):
+            w = self.globTabs.widget(i)
+            if hasattr(w, 'ID'):
+                if w.ID == search:
+                    return i
+        return None
 
     def _isProjectTab(self):
         if self._getTabType() == 'ProjectTab':
@@ -4006,15 +4043,19 @@ class MainWindow(QMainWindow):
         action.triggered.connect(lambda: self.html_resource(resource='zarr-nature-2021.html', title="Help: NGFF"))
         zarrHelpMenu.addAction(action)
 
-        action = QAction('Remod Help', self)
-        action.triggered.connect(lambda: self.html_resource(resource='remod.html', title='Help: Remod (beta)'))
+        action = QAction('Lonestar6', self)
+        action.triggered.connect(lambda: self.html_resource(resource='ls6.html', title='Lonestar6', ID='ls6'))
         helpMenu.addAction(action)
 
-        self.documentationAction = QAction('GitHub', self)
+        # action = QAction('Remod Help', self)
+        # action.triggered.connect(lambda: self.html_resource(resource='remod.html', title='Help: Remod (beta)'))
+        # helpMenu.addAction(action)
+
+        action = QAction('GitHub', self)
         action.triggered.connect(
             lambda: self.url_resource(url='https://github.com/mcellteam/swift-ir/blob/development_ng/docs/README.md',
                                       title='Source Code (GitHub)'))
-        helpMenu.addAction(self.documentationAction)
+        helpMenu.addAction(action)
 
         researchGroupMenu = helpMenu.addMenu('Our Research Groups')
 
@@ -4175,7 +4216,7 @@ class MainWindow(QMainWindow):
 
         ctl_lab_style = 'color: #ede9e8; font-size: 10px;'
 
-        tip = 'Whether to include the current section'
+        tip = """Sections marked for exclusion will not be aligned or used by SWIM in any way (like a dropped frame)."""
         self._lab_keep_reject = QLabel('Include:')
         self._lab_keep_reject.setStyleSheet(ctl_lab_style)
         self._lab_keep_reject.setToolTip(tip)
@@ -4187,7 +4228,6 @@ class MainWindow(QMainWindow):
         self._skipCheckbox.setToolTip(tip)
         self._skipCheckbox.setEnabled(False)
 
-        tip = 'Use all the images (include all)'
         self._btn_clear_skips = QPushButton('Reset')
         self._btn_clear_skips.setEnabled(False)
         self._btn_clear_skips.setStyleSheet("font-size: 10px;")
@@ -4196,12 +4236,12 @@ class MainWindow(QMainWindow):
         self._btn_clear_skips.clicked.connect(self.clear_skips)
         self._btn_clear_skips.setFixedSize(button_size)
 
-        tip = "SWIM signal whitening factor (default: -0.68)"
+        tip = """A SWIM parameter which takes values in the range of -1.00 and 0.00 (default=-0.68)."""
         lab = QLabel("Whitening\nFactor:")
         lab.setStyleSheet(ctl_lab_style)
         lab.setAlignment(left)
         self.sb_whiteningControl = QDoubleSpinBox(self)
-        self.sb_whiteningControl.setToolTip(tip)
+        self.sb_whiteningControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.sb_whiteningControl.setFixedSize(QSize(50, 18))
         self.sb_whiteningControl.valueChanged.connect(self._callbk_unsavedChanges)
         self.sb_whiteningControl.valueChanged.connect(self._valueChangedWhitening)
@@ -4210,9 +4250,9 @@ class MainWindow(QMainWindow):
         self.sb_whiteningControl.setMinimum(-2)
         self.sb_whiteningControl.setMaximum(2)
 
-        tip = "The number of SWIM iterations used to refine alignment"
+        tip = """The number of sequential SWIM refinements to alignment. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3)."""
         self.sb_SWIMiterations = QSpinBox(self)
-        self.sb_SWIMiterations.setToolTip(tip)
+        self.sb_SWIMiterations.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.sb_SWIMiterations.setFixedSize(QSize(50, 18))
         self.sb_SWIMiterations.valueChanged.connect(self._callbk_unsavedChanges)
 
@@ -4226,14 +4266,14 @@ class MainWindow(QMainWindow):
         self.sb_SWIMiterations.setMinimum(1)
         self.sb_SWIMiterations.setMaximum(9)
 
-        tip = f"The region size SWIM uses for computing alignment, specified as pixels " \
-              f"width. (default:  {cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)"
+        tip = f"""The full width in pixels of an imaginary, centered grid which SWIM 
+        aligns against (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)."""
         lab = QLabel("SWIM\nWindow:")
         lab.setStyleSheet(ctl_lab_style)
         lab.setAlignment(left)
         # self._swimWindowControl = QSpinBox(self)
         self._swimWindowControl = QLineEdit(self)
-        self._swimWindowControl.setToolTip(tip)
+        self._swimWindowControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._swimWindowControl.setFixedSize(QSize(50, 18))
 
         # self._swimWindowControl.setStyleSheet("font-size: 10px;")
@@ -4398,7 +4438,7 @@ class MainWindow(QMainWindow):
         self.spinbox_fps.setToolTip('Scroll Speed (frames/second)')
         self.spinbox_fps.clear()
 
-        '''scale combobox'''
+        """scale combobox"""
         self._changeScaleCombo = QComboBox(self)
         self._changeScaleCombo.setFixedSize(QSize(148, 16))
         self._changeScaleCombo.setStyleSheet('font-size: 10px;')
@@ -4430,28 +4470,28 @@ class MainWindow(QMainWindow):
         self.navControls.setObjectName('gb_cpanel')
         self.navControls.setLayout(self.fl_nav)
 
-        tip = 'Align and generate all sections.'
+        tip = """Align and generate all sections for the current scale"""
         self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         # self._btn_alignAll.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_alignAll.setEnabled(False)
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignAll.setToolTip(tip)
+        self._btn_alignAll.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignAll.clicked.connect(self.alignAll)
         self._btn_alignAll.setFixedSize(long_button_size)
 
-        tip = 'Align and regenerate the current section only'
+        tip = """Align and generate the current section only"""
         self._btn_alignOne = QPushButton('Align One')
         # self._btn_alignOne.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
-        self._btn_alignOne.setToolTip(tip)
+        self._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignOne.setEnabled(False)
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.clicked.connect(self.alignOne)
         self._btn_alignOne.setFixedSize(long_button_size)
 
-        tip = 'The range of sections to align for the align range button.'
+        tip = """The range of sections to align for the align range button"""
         self.sectionRangeSlider = RangeSlider()
         self.sectionRangeSlider.setMinimumWidth(100)
-        self.sectionRangeSlider.setToolTip(tip)
+        self.sectionRangeSlider.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.sectionRangeSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sectionRangeSlider.setMinimumWidth(40)
         self.sectionRangeSlider.setMaximumWidth(150)
@@ -4470,7 +4510,7 @@ class MainWindow(QMainWindow):
         self.endRangeInput.setFixedSize(30, 16)
         self.endRangeInput.setEnabled(False)
 
-        tip = 'The range of sections to align.'
+        tip = """The range of sections to align."""
         self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(':'), self.endRangeInput)
         self.rangeInputWidget.setMaximumWidth(140)
         self.rangeInputWidget.setToolTip(tip)
@@ -4488,17 +4528,17 @@ class MainWindow(QMainWindow):
         self.startRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setStart(int(val)))
         self.endRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setEnd(int(val)))
 
-        tip = 'Align the selected range of sections'
+        tip = """Align and generate the selected range of sections"""
         self._btn_alignRange = QPushButton('Realign Range')
         # self._btn_alignRange.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_alignRange.setEnabled(False)
         # self._btn_alignRange.setStyleSheet("font-size: 10px; color: #161c20;")
         self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignRange.setToolTip(tip)
+        self._btn_alignRange.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignRange.clicked.connect(self.alignRange)
         self._btn_alignRange.setFixedSize(long_button_size)
 
-        # tip = ''
+        tip = 'Enter Manual Align Mode'
         # self._btn_manualAlign = QPushButton('Manual Align Mode →')
         self._btn_manualAlign = QPushButton(f"Manual Align {hotkey('M')} ")
         # self._btn_manualAlign.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
@@ -4509,15 +4549,15 @@ class MainWindow(QMainWindow):
         # self._btn_manualAlign.setStyleSheet("font-size: 10px; color: #161c20;")
         # self._btn_manualAlign.setEnabled(False)
         self._btn_manualAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self._btn_manualAlign.setStatusTip(tip)
+        self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_manualAlign.clicked.connect(self.enterExitManAlignMode)
         self._btn_manualAlign.setFixedSize(long_button_size)
 
-        tip = 'Whether to auto-generate aligned images following alignment.'
+        tip = """Whether to auto-generate aligned images following alignment."""
         self._toggleAutogenerate = ToggleSwitch()
         self._toggleAutogenerate.stateChanged.connect(self._toggledAutogenerate)
         self._toggleAutogenerate.stateChanged.connect(self._callbk_unsavedChanges)
-        self._toggleAutogenerate.setToolTip(tip)
+        self._toggleAutogenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._toggleAutogenerate.setChecked(True)
         self._toggleAutogenerate.setEnabled(False)
 
@@ -4526,7 +4566,7 @@ class MainWindow(QMainWindow):
         # self._polyBiasCombo.setStyleSheet("font-size: 10px; padding-left: 6px;")
         self._polyBiasCombo.currentIndexChanged.connect(self._valueChangedPolyOrder)
         self._polyBiasCombo.currentIndexChanged.connect(self._callbk_unsavedChanges)
-        self._polyBiasCombo.setToolTip(tip)
+        self._polyBiasCombo.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4534,19 +4574,18 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.setEnabled(False)
         self._polyBiasCombo.lineEdit()
 
-        tip = 'Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may ' \
-              'significantly increase the size of generated images.'
+        tip = """Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may 
+        significantly increase the size of generated images."""
         self._bbToggle = ToggleSwitch()
-        self._bbToggle.setToolTip(tip)
+        self._bbToggle.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._bbToggle.toggled.connect(self._callbk_bnding_box)
         self._bbToggle.setEnabled(False)
 
-        tip = "Recompute cumulative affine and generate new images" \
-              "based on the current Null Bias and Bounding Box presets."
-        self._btn_regenerate = QPushButton('Regenerate Images')
+        tip = """Regenerate output based on the current Null Bias and Bounding Box presets."""
+        self._btn_regenerate = QPushButton('Regenerate All')
         # self._btn_regenerate.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_regenerate.setEnabled(False)
-        self._btn_regenerate.setToolTip(tip)
+        self._btn_regenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale))
         self._btn_regenerate.setFixedSize(long_button_size)
         self._btn_regenerate.setEnabled(False)
@@ -4756,9 +4795,9 @@ class MainWindow(QMainWindow):
         self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
         self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
         self.fl_swimSettings.setVerticalSpacing(4)
-        self.fl_swimSettings.addRow('Window Width (px): ', self._swimWindowControl)
-        self.fl_swimSettings.addRow('Signal Whitening: ', self.sb_whiteningControl)
-        self.fl_swimSettings.addRow('Iterations', self.sb_SWIMiterations)
+        self.fl_swimSettings.addRow('Window Width (px):', self._swimWindowControl)
+        self.fl_swimSettings.addRow('Signal Whitening:', self.sb_whiteningControl)
+        self.fl_swimSettings.addRow('Iterations:', self.sb_SWIMiterations)
 
         self.swimSettings = QGroupBox("Default SWIM Settings")
         # self.swimSettings.setStyleSheet('font-size: 10px;')
@@ -4919,7 +4958,6 @@ class MainWindow(QMainWindow):
             font-weight: 600;
             border: none;
             }
-
         """)
 
         self.sa_tab4 = QScrollArea()
@@ -5464,21 +5502,44 @@ class MainWindow(QMainWindow):
         # self.globTabs.setContentsMargins(4,4,4,4)
         self.globTabs.setContentsMargins(0, 0, 0, 0)
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.globTabs.tabBar().setStyleSheet("""
-        QTabBar::tab {
-            min-width: 100px;
-            max-width: 260px;
-            height: 16px;
-            padding-left:0px;
-            padding-right:0px;
-            padding: 1px;
-            font-size: 11px;
-        }
-        QTabBar::tab:selected
-        {
-            font-weight: 600;
-        }
-        """)
+        # self.globTabs.tabBar().setStyleSheet("""
+        # QTabBar::tab {
+        #     min-width: 100px;
+        #     max-width: 260px;
+        #     height: 16px;
+        #     padding-left:0px;
+        #     padding-right:0px;
+        #     padding: 1px;
+        #     font-size: 11px;
+        # }
+        # QTabBar::tab:selected
+        # {
+        #     font-weight: 600;
+        # }
+        # """)
+
+        self.globTabs.setStyleSheet("""
+                QTabBar::tab {
+                    height: 16px;
+                    min-width: 100px;
+                    max-width: 240px;
+                    font-size: 9px;
+                    font-weight: 600;
+                    border-top-left-radius: 1px;
+                    border-bottom-right-radius: 1px;
+                    border-bottom-left-radius: 8px;
+                    border-top-right-radius: 8px;
+                    border: 0px solid #ede9e8;
+                    background-color: #88d788;
+
+                }
+                QTabBar::tab:selected
+                {   
+                    font-weight: 600;
+                    color: #f3f6fb;
+                    background-color: #339933;
+                }
+                """)
 
         # self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
 
@@ -5747,9 +5808,23 @@ class MainWindow(QMainWindow):
         # self.sa_cpanel.setWidget(HWidget(self.cpanel))
         self.sa_cpanel.setWidget(self.cpanel)
 
-        # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.cpanel, self.pbar_widget, self.statusBar)
-        # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget, self.statusBar)
-        # self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
+
+        self.dw_cpanel = DockWidget('Controls', self)
+        self.dw_cpanel.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_cpanel.DockWidgetVerticalTitleBar)
+        self.dw_cpanel.setFeatures(self.dw_monitor.DockWidgetVerticalTitleBar)
+        self.dw_cpanel.setObjectName('Dock Widget HUD')
+        self.dw_cpanel.setStyleSheet("""
+        QDockWidget {color: #ede9e8;}
+        QDockWidget::title {
+                    background-color: #161c20;
+                    color: #ede9e8;
+                    font-weight: 600;
+                    padding-left: 5px;
+                    text-align: left;
+                }""")
+        self.dw_cpanel.setWidget(self.sa_cpanel)
+        self.dw_cpanel.hide()
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_cpanel)
         self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
         # self.globTabsAndCpanel.layout.setSpacing(0)
         # self.globTabsAndCpanel.setAutoFillBackground(True)
@@ -6195,6 +6270,15 @@ class CorrelationSignals(QWidget):
             width = int(cfg.WIDTH / 2)
         return QSize(width, 120)
 
+
+class WebEngine(QWebEngineView):
+
+    def __init__(self, ID='webengine'):
+        QWebEngineView.__init__(self)
+        self.ID = ID
+        self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+        # self.inFocus = Signal(str)
+        # self.installEventFilter(self)
 
 '''
 #indicators css
