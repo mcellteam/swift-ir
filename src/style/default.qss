@@ -285,8 +285,6 @@ QTabWidget#project_tabs{
     padding-right: 0px;
 }
 
-/* QTabBar::tab:hover{color: #206020;} */
-
 QTabBar::tab:selected
 {
     color: #339933;

@@ -154,7 +154,7 @@ QProgressBar {
     font-weight: 600;
 }
 QProgressBar::chunk {
-    background-color: #88d788;
+    background-color: #9fdf9f;
 }
 
 

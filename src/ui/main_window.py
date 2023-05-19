@@ -43,7 +43,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox, QFrame, \
-    QSizeGrip
+    QSizeGrip, QTabBar
 
 import src.config as cfg
 import src.shaders
@@ -2697,7 +2697,7 @@ class MainWindow(QMainWindow):
                 self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
                 self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
                 self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-                cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ffe135;""")
+                cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
@@ -5519,8 +5519,12 @@ class MainWindow(QMainWindow):
         # """)
 
         self.globTabs.setStyleSheet("""
+                 QTabBar::close-button {
+                     image: url(src/resources/close-tab.png)
+                 }
+                
                 QTabBar::tab {
-                    height: 16px;
+                    height: 13px;
                     min-width: 100px;
                     max-width: 240px;
                     font-size: 9px;
@@ -5529,8 +5533,8 @@ class MainWindow(QMainWindow):
                     border-bottom-right-radius: 1px;
                     border-bottom-left-radius: 8px;
                     border-top-right-radius: 8px;
-                    border: 0px solid #ede9e8;
-                    background-color: #88d788;
+                    border: 1px solid #ede9e8;
+                    background-color: #9fdf9f;
 
                 }
                 QTabBar::tab:selected
@@ -6042,6 +6046,7 @@ class MainWindow(QMainWindow):
     def initLaunchTab(self):
         self._launchScreen = OpenProject()
         self.globTabs.addTab(self._launchScreen, 'Open...')
+        self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         self._setLastTab()
 
     def get_application_root(self):

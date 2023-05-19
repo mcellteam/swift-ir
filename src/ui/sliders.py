@@ -65,8 +65,8 @@ https://stackoverflow.com/questions/47342158/porting-range-slider-widget-to-pyqt
 
 DEFAULT_CSS = """
 RangeSlider * { border: 0px; padding: 0px; font-size: 7px;}
-RangeSlider #Head { background: #206020; }
-RangeSlider #Tail { background: #206020; } 
+RangeSlider #Head { background: #194d19; }
+RangeSlider #Tail { background: #194d19; } 
 RangeSlider #Span { background: #8bb8e8; }
 RangeSlider #Span:active { background: #00FF00; }
 RangeSlider > QSplitter::handle { background: #f3f6fb; }

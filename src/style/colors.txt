@@ -6,11 +6,11 @@
 #ede9e8 - my dirty white
 #141414 - Chinese Black (darker than Duron)
 #222222 - Neuroglancer grey
-#339933 - Neuroglancer green
-#206020 - Neuroglancer green, darkened
-#174517 - Neuroglancer green, extra darkened
-#66cc66 - Neuroglancer green, lightened, rgba(102, 204, 102, 1)
-#88d788 - Neuroglancer green, even more lightened
+#339933 - Neuroglancer green (*** 40% lightness ***)
+#194d19 - Neuroglancer green (20% lightness)
+#9fdf9f - Neuroglancer green, (75% lightness)
+#c6ecc6 - Neuroglancer green, (85% lightness)
+#d9f2d9 - Neuroglancer green, (90% lightness)
 #FFFF66 = Neuroglancer light yellow (text)
 #FFFF00 - standard yellow
 #2774ae - Blue
