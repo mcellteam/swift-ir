@@ -195,6 +195,7 @@ class ProjectTab(QWidget):
             time.sleep(cfg.DELAY_AFTER)
 
     def initNeuroglancer(self):
+        QApplication.processEvents()
         logger.info(f'\n\n  Initializing Neuroglancer [{inspect.stack()[1].function}]...\n')
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):
@@ -1038,8 +1039,10 @@ class ProjectTab(QWidget):
 
             cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
-        self.rb_MA_hint = QRadioButton('Hint')
-        self.rb_MA_strict = QRadioButton('Strict')
+        # self.rb_MA_hint = QRadioButton('Hint')
+        # self.rb_MA_strict = QRadioButton('Strict')
+        self.rb_MA_hint = QRadioButton('Match Regions (SWIM)')
+        self.rb_MA_strict = QRadioButton('Match Points')
         self.MA_bg = QButtonGroup(self)
         self.MA_bg.setExclusive(True)
         self.MA_bg.addButton(self.rb_MA_hint)
@@ -1124,7 +1127,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
-        self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3)", HWidget(self.Q_widget, ExpandingWidget(self)))
+        self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3 required)", HWidget(self.Q_widget, ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
         # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)

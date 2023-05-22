@@ -229,10 +229,13 @@ class align_recipe:
         # Retrieve alignment result
         self.layer_dict.setdefault('alignment_history', {})
         self.layer_dict['alignment_history'].setdefault(self.cur_method, [])
-        if type(snr) == float:
-            self.layer_dict['alignment']['method_results']['snr'] = [snr]
-        else:
-            self.layer_dict['alignment']['method_results']['snr'] = list(snr)
+        # if type(snr) == float:
+        #     self.layer_dict['alignment']['method_results']['snr'] = [snr]
+        # else:
+        # self.layer_dict['alignment']['method_results']['snr'] = list(snr)
+        self.layer_dict['alignment']['method_results']['snr'] = snr.tolist()
+        self.layer_dict['alignment']['method_results']['snr_type'] = str(type(snr))
+        self.layer_dict['alignment']['method_results']['snr_str'] = str(snr)
         self.layer_dict['alignment']['method_results']['snr_report'] = str(snr_report)
         self.layer_dict['alignment']['method_results']['affine_matrix'] = afm.tolist()
         self.layer_dict['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
@@ -256,6 +259,7 @@ class align_recipe:
         self.layer_dict['alignment']['mir_script'] = {}
         self.layer_dict['alignment']['mir_out'] = {}
         self.layer_dict['alignment']['mir_err'] = {}
+        self.layer_dict['alignment']['swim_ww_arg'] = {}
         for i,ing in enumerate(self.ingredients):
             try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = {}
             except: print_exception(self.pd)
@@ -395,6 +399,7 @@ class align_ingredient:
         self.psta = psta
         self.pmov = pmov
         self.rota = rota
+        # self.snr = 0.0
         self.snr = 0.0
         self.snr_report = 'SNR: --'
         self.threshold = (3.5, 200, 200)
@@ -450,20 +455,11 @@ class align_ingredient:
         self.cy = int(self.recipe.siz[1] / 2.0)
 
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
-        rota_arg = ''
 
-        # self.alData['swim_settings']['_type_self_ww'] = type(self.ww)
-
-        # swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1]))  # <--
         if isinstance(self.ww, float):
             self.swim_ww_arg = str(int(self.ww))
         else:
             self.swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
-
-        # if type(self.ww) == type((1, 2)):
-        #     swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
-        # else:
-        #     swim_ww_arg = str(int(self.ww))
 
         basename = os.path.basename(self.recipe.im_mov_fn)
         filename, extension = os.path.splitext(basename)
@@ -565,10 +561,10 @@ class align_ingredient:
         dx = dy = 0.0
         # loop over SWIM output to build the MIR script:
 
-        if len(swim_output) == 1:
+        if (len(swim_output) == 1) and (self.recipe.cur_method in ('default-grid', 'custom-grid')):
             toks = swim_output[0].replace('(', ' ').replace(')', ' ').strip().split()
-            dx = float(toks[8])
-            dy = float(toks[9])
+            self.dx = float(toks[8])
+            self.dy = float(toks[9])
             aim = np.eye(2, 3, dtype=np.float32)
             aim = copy.deepcopy(self.afm)
             aim[0, 2] += self.dx
@@ -644,7 +640,6 @@ class align_ingredient:
                           f'manual mir Out:\n{mir_mp_out_lines}\n\n'
                           f'manual mir Err:\n{mir_mp_err_lines}\n'
                           f'==========')
-
         afm = np.eye(2, 3, dtype=np.float32)
         self.mir_out_lines = mir_mp_out_lines
         for line in mir_mp_out_lines:

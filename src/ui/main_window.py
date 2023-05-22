@@ -43,7 +43,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox, QFrame, \
-    QSizeGrip, QTabBar
+    QSizeGrip, QTabBar, QAbstractItemView
 
 import src.config as cfg
 import src.shaders
@@ -390,10 +390,18 @@ class MainWindow(QMainWindow):
         thumbs = cfg.data.get_signals_filenames()
         n = len(thumbs)
         snr_vals = cfg.data.snr_components()
+        logger.info(f'snr_vals = {snr_vals}')
         colors = cfg.glob_colors
         count = 0
         for i in range(7):
             self.corrSignalsList[i].set_no_image()
+            self.corrSignalsList[i].setStyleSheet(f"""border: none; padding: 3px;""")
+            self.corrSignalsList[i].update()
+        # QApplication.processEvents()
+
+        if not snr_vals:
+            return
+
 
         # logger.critical('thumbs: %s' % str(thumbs))
         # logger.critical('snr_vals: %s' % str(snr_vals))
@@ -410,6 +418,7 @@ class MainWindow(QMainWindow):
                         self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
                         self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
                         self.corrSignalsList[i].show()
+                        self.corrSignalsList[i].update()
                         count += 1
                     except:
                         print_exception()
@@ -429,6 +438,7 @@ class MainWindow(QMainWindow):
                         logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
                     finally:
                         self.corrSignalsList[i].show()
+                        self.corrSignalsList[i].update()
                 else:
                     self.corrSignalsList[i].hide()
 
@@ -447,6 +457,15 @@ class MainWindow(QMainWindow):
         self.cbNotes.setChecked(self.dw_notes.isVisible())
         self.cbSignals.setChecked(self.dw_signals.isVisible())
         self.cbFlicker.setChecked(self.dw_flicker.isVisible())
+
+    def callbackFlickerDwVisibilityChanged(self):
+        logger.critical('')
+        # logger.critical(f'self.dw_flicker.width() = {self.dw_flicker.width()}')
+        # logger.critical(f'self.cbFlicker.height() = {self.cbFlicker.height()}')
+        self.cbFlicker.setChecked(self.dw_flicker.isVisible())
+        # if self.cbFlicker.isVisible():
+            # self.cbFlicker.resize(self.dw_flicker.width(), self.cbFlicker.height())
+            # self.cbFlicker.resize(self.cbFlicker.height(), self.dw_flicker.width())
 
     def callbackToolwindows(self):
         self.dw_python.setVisible(self.cbPython.isChecked())
@@ -896,9 +915,13 @@ class MainWindow(QMainWindow):
 
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
-
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
+
+
+                self.dw_signals.show()
+                self.dw_flicker.show()
+
         except:
             print_exception()
         finally:
@@ -1227,7 +1250,7 @@ class MainWindow(QMainWindow):
         (1) Update the visibility of next/prev s buttons depending on current s.
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
-        # logger.info('updateEnabledButtons >>>>')
+        logger.critical('')
         # self.dataUpdateResults()
 
         if self._isProjectTab():
@@ -2092,8 +2115,12 @@ class MainWindow(QMainWindow):
         self.updateCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
+
+        self.dw_monitor.show()
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
+
+
 
         # dt = 1.1060302257537842
 
@@ -5384,16 +5411,16 @@ class MainWindow(QMainWindow):
         self.cs6 = CorrSignalThumbnail(self)
         self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3,
                                 self.cs4, self.cs5, self.cs6]
-        self.cs_layout = HBL()
-        self.cs_layout.setContentsMargins(2, 2, 2, 2)
-        self.cs_layout.addWidget(self.cs0)
-        self.cs_layout.addWidget(self.cs1)
-        self.cs_layout.addWidget(self.cs2)
-        self.cs_layout.addWidget(self.cs3)
-        self.cs_layout.addWidget(self.cs4)
-        self.cs_layout.addWidget(self.cs5)
-        self.cs_layout.addWidget(self.cs6)
-        self.cs_layout.addWidget(ExpandingWidget(self))
+        # self.cs_layout = HBL()
+        # self.cs_layout.setContentsMargins(2, 2, 2, 2)
+        # self.cs_layout.addWidget(self.cs0)
+        # self.cs_layout.addWidget(self.cs1)
+        # self.cs_layout.addWidget(self.cs2)
+        # self.cs_layout.addWidget(self.cs3)
+        # self.cs_layout.addWidget(self.cs4)
+        # self.cs_layout.addWidget(self.cs5)
+        # self.cs_layout.addWidget(self.cs6)
+        # self.cs_layout.addWidget(ExpandingWidget(self))
 
         self.lab_corr_signals = QLabel('No Signals Found for Current Alignment Method.')
         self.lab_corr_signals.setMaximumHeight(18)
@@ -5630,9 +5657,9 @@ class MainWindow(QMainWindow):
         # self.flicker.setMaximumSize(QSize(256,256))
 
         self.dw_flicker = DockWidget('Flicker', self)
-        self.dw_flicker.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable)
-        # self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
+        self.dw_flicker.visibilityChanged.connect(self.callbackFlickerDwVisibilityChanged)
+        # self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable)
+        self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
         # self.dw_flicker.visibilityChanged.connect(lambda: self.cbFlicker.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
 
         self.dw_flicker.setStyleSheet("""
@@ -5644,19 +5671,21 @@ class MainWindow(QMainWindow):
             font-weight: 600;
         }""")
 
-        self.flickerContainer = VWidget(self.flicker, ExpandingWidget(self))
-        self.flickerContainer.layout.setStretch(0, 0)
-        self.flickerContainer.layout.setStretch(1, 9)
-        self.flickerContainer.layout.setAlignment(Qt.AlignTop)
-        self.flicker.setAlignment(Qt.AlignTop)
+        # self.flickerContainer = VWidget(self.flicker, ExpandingWidget(self))
+        # self.flickerContainer.layout.setStretch(0, 0)
+        # self.flickerContainer.layout.setStretch(1, 9)
+        # self.flickerContainer.layout.setAlignment(Qt.AlignTop)
+        # self.flicker.setAlignment(Qt.AlignTop)
 
         # self.flickerContainer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.flickerContainer.resize(QSize(100, 100))
+        # self.flickerContainer.resize(QSize(100, 100))
         # self.flickerContainer.layout.setStretch(0,0)
         # self.flickerContainer.layout.setStretch(1,9)
-        self.dw_flicker.setWidget(self.flickerContainer)
+        # self.dw_flicker.setWidget(self.flickerContainer)
+        self.dw_flicker.setWidget(self.flicker)
         # self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
+        # self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
         self.dw_flicker.hide()
 
         '''Documentation Panel'''
@@ -5757,6 +5786,46 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
+
+        self.csWidget = QTableWidget()
+        self.csWidget.setRowCount(1)
+        self.csWidget.setColumnCount(4)
+        self.csWidget.resizeRowToContents(0)
+        self.csWidget.resizeColumnToContents(0)
+        self.csWidget.resizeColumnToContents(1)
+        self.csWidget.resizeColumnToContents(2)
+        self.csWidget.resizeColumnToContents(3)
+
+        self.correlation_signals = CorrelationSignals(self)
+        # self.correlation_signals = AspectWidget(self, ratio=4/1)
+        vbl = VBL(self.csWidget)
+        self.correlation_signals.setLayout(vbl)
+
+        # self.csWidget.setCellWidget(0,0, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs0, ExpandingHWidget(self)), ExpandingVWidget(self)))
+        # self.csWidget.setCellWidget(0,1, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs1, ExpandingHWidget(self)), ExpandingVWidget(self)))
+        # self.csWidget.setCellWidget(0,2, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs2, ExpandingHWidget(self)), ExpandingVWidget(self)))
+        # self.csWidget.setCellWidget(0,3, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs3, ExpandingHWidget(self)), ExpandingVWidget(self)))
+        # self.csWidget.setCellWidget(0,0, HWidget(ExpandingHWidget(self), self.cs0, ExpandingHWidget(self)))
+        self.csWidget.setCellWidget(0,0, self.cs0)
+        self.csWidget.setCellWidget(0,1, self.cs1)
+        self.csWidget.setCellWidget(0,2, self.cs2)
+        self.csWidget.setCellWidget(0,3, self.cs3)
+        self.csWidget.verticalHeader().setVisible(False)
+        self.csWidget.horizontalHeader().setVisible(False)
+        self.csWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.csWidget.setShowGrid(False)
+        v_header = self.csWidget.verticalHeader()
+        v_header.setSectionResizeMode(0, QHeaderView.Stretch)
+        h_header = self.csWidget.horizontalHeader()
+        h_header.setSectionResizeMode(0, QHeaderView.Stretch)
+        h_header.setSectionResizeMode(1, QHeaderView.Stretch)
+        h_header.setSectionResizeMode(2, QHeaderView.Stretch)
+        h_header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+        self.test_widget = QLabel()
+        self.test_widget.setFixedSize(40,40)
+        self.test_widget.setStyleSheet("background-color: #000000;")
+
         self.dw_signals = DockWidget('Signals', self)
         self.dw_signals.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         self.dw_signals.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
@@ -5769,62 +5838,11 @@ class MainWindow(QMainWindow):
                     padding-left: 5px;
                     text-align: left;
                 }""")
-        # self.dw_signals.visibilityChanged.connect(lambda: self.cbSignals.setToolTip(('Hide Correlation Signals Tool Window', 'Show Correlation Signals Tool Window')[self.dw_signals.isHidden()]))
-        #
-        # def dw_signals_fn():
-        #     caller = inspect.stack()[1].function
-        #     logger.info(f'caller: {caller}')
-        #     if caller == 'main':
-        #         for i, dock in enumerate(self.findChildren(QDockWidget)):
-        #             title = dock.windowTitle()
-        #             area = self.dockWidgetArea(dock)
-        #             if title == 'Correlation Signals':
-        #                 logger.critical("Adding CorrSignalThumbnails to view...")
-        #                 self.cs_layout = VBL()
-        #                 # if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
-        #                 #     self.cs_layout = VBL()
-        #                 #     logger.info('Stacking correlation signals vertically...')
-        #                 # else:
-        #                 #     # self.cs_layout = HBL()
-        #                 #     self.cs_layout = QGridLayout()
-        #                 #     logger.info('Stacking correlation signals horizontally...')
-        #                 self.cs0 = CorrSignalThumbnail(self)
-        #                 self.cs1 = CorrSignalThumbnail(self)
-        #                 self.cs2 = CorrSignalThumbnail(self)
-        #                 self.cs3 = CorrSignalThumbnail(self)
-        #                 # self.cs4 = CorrSignalThumbnail(self)
-        #                 # self.cs5 = CorrSignalThumbnail(self)
-        #                 # self.cs6 = CorrSignalThumbnail(self)
-        #                 self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3,
-        #                                         self.cs4, self.cs5, self.cs6]
-        #                 self.cs_layout.setContentsMargins(2, 2, 2, 2)
-        #                 self.cs_layout.addWidget(self.cs0,0,0)
-        #                 self.cs_layout.addWidget(self.cs1,1,0)
-        #                 self.cs_layout.addWidget(self.cs2,2,0)
-        #                 self.cs_layout.addWidget(self.cs3,3,0)
-        #                 # self.cs_layout.addWidget(self.cs4,0,0)
-        #                 # self.cs_layout.addWidget(self.cs5,0,0)
-        #                 # self.cs_layout.addWidget(self.cs6,0,0)
-        #                 # self.cs_layout.addWidget(ExpandingWidget(self))
-        #                 self.csWidget.setLayout(self.cs_layout)
-        #                 # self.dw_signals.setWidget(self.csWidget)
-        #     # self.csWidget = CorrelationSignals()
-        #     self.csWidget = QWidget()
-        #     vbl = VBL()
-        #     vbl.addWidget(ExpandingWidget(self))
-        #     vbl.addLayout(self.cs_layout)
-        #     self.csWidget.setLayout(vbl)
-        #     self.dw_signals.setWidget(self.csWidget)
-        #     # self.updateCorrSignalsDrawer()
-        #     # QApplication.processEvents()
-        # self.dw_signals.dockLocationChanged.connect(fn)
-        # self.dw_signals.featuresChanged.connect(lambda area: print(f'featuresChanged: {area}'))
-        # self.dw_signals.topLevelChanged.connect(lambda area: print(f'topLevelChanged: {area}'))
-        # self.dw_signals.visibilityChanged.connect(lambda area: print(f'visibilityChanged: {area}'))
-        # self.dw_signals.visibilityChanged.connect(dw_signals_fn)
-        self.csWidget = CorrelationSignals(self)
-        self.csWidget.setLayout(self.cs_layout)
-        self.dw_signals.setWidget(self.csWidget)
+
+        # self.csWidget = CorrelationSignals(self)
+        # self.csWidget.setLayout(self.cs_layout)
+        # self.dw_signals.setWidget(self.csWidget)
+        self.dw_signals.setWidget(self.correlation_signals)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_signals)
         self.dw_signals.hide()
 
@@ -6279,6 +6297,22 @@ class ExpandingWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+class ExpandingHWidget(QWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        # self.setStyleSheet("background-color: #000000;")
+        # self.setAutoFillBackground(True)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+class ExpandingVWidget(QWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        # self.setStyleSheet("background-color: #000000;")
+        # self.setAutoFillBackground(True)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
 
 class VerticalLabel(QLabel):
 
@@ -6305,7 +6339,8 @@ class CorrelationSignals(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
 
         # self.parent = parent
 
@@ -6314,6 +6349,7 @@ class CorrelationSignals(QWidget):
             width = int(cfg.main_window.width() / 2)
         else:
             width = int(cfg.WIDTH / 2)
+        logger.info(f'WIDTH = {width}')
         return QSize(width, 120)
 
 
@@ -6325,6 +6361,35 @@ class WebEngine(QWebEngineView):
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
         # self.inFocus = Signal(str)
         # self.installEventFilter(self)
+
+
+class AspectWidget(QWidget):
+    '''
+    A widget that maintains its aspect ratio.
+    '''
+    def __init__(self, *args, ratio=4/1, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ratio = ratio
+        self.adjusted_to_size = (-1, -1)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
+
+    def resizeEvent(self, event):
+        size = event.size()
+        if size == self.adjusted_to_size:
+            # Avoid infinite recursion. I suspect Qt does this for you,
+            # but it's best to be safe.
+            return
+        self.adjusted_to_size = size
+
+        full_width = size.width()
+        full_height = size.height()
+        width = min(full_width, full_height * self.ratio)
+        height = min(full_height, full_width / self.ratio)
+
+        h_margin = round((full_width - width) / 2)
+        v_margin = round((full_height - height) / 2)
+
+        self.setContentsMargins(h_margin, v_margin, h_margin, v_margin)
 
 '''
 #indicators css

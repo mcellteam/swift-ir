@@ -690,7 +690,7 @@ def print_exception():
         lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
         file = Path(lf)
         file.touch(exist_ok=True)
-        with open(lf, 'w+') as f:
+        with open(lf, 'a+') as f:
             f.write('\n' + txt)
 
 
@@ -754,7 +754,7 @@ def make_absolute(file_path, proj_path):
 def initLogFiles(dm):
     logpath = os.path.join(dm.dest(), 'logs')
     os.makedirs(logpath, exist_ok=True)
-    open(os.path.join(logpath, 'exceptions.log'), 'a').close()
+    open(os.path.join(logpath, 'exceptions.log'), 'a+').close()
     open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
     open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
     open(os.path.join(logpath, 'swim.log'), 'a').close()
