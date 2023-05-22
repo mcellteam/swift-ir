@@ -793,6 +793,7 @@ class ProjectTab(QWidget):
                     ExpandingWidget(self))
             ), alignment=Qt.AlignCenter)
         self.MA_controls = QWidget()
+        self.MA_controls.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.MA_controls.setLayout(hbl)
         # self.MA_controls.setStyleSheet("""
         # QPushButton {
