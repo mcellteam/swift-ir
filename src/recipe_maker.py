@@ -453,11 +453,10 @@ class align_ingredient:
 
         # swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1]))  # <--
         if isinstance(self.ww, float):
-            swim_ww_arg = str(int(self.ww))
+            self.swim_ww_arg = str(int(self.ww))
         else:
-            swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
+            self.swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
 
-        self.swim_ww_arg = swim_ww_arg
         # if type(self.ww) == type((1, 2)):
         #     swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
         # else:
@@ -483,7 +482,7 @@ class align_ingredient:
                 '%s_%s_%d%s' % (filename, self.recipe.cur_method, i, extension))
 
             args = ArgString(sep=' ')
-            args.append('ww_' + swim_ww_arg)
+            args.append('ww_' + self.swim_ww_arg)
             if self.alData['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alData['swim_settings']['clobber_fixed_noise_px'])
             # args.add_flag(flag='-i', arg=str(self.rcipe.iters))
@@ -534,7 +533,7 @@ class align_ingredient:
         SWIMlogger.critical(f'Multi-SWIM Argument String:\n{multi_arg_str()}')
         o = run_command(
             self.recipe.swim_c,
-            arg_list=[swim_ww_arg],
+            arg_list=[self.swim_ww_arg],
             cmd_input=multi_arg_str(),
             extra=f'Automatic SWIM Alignment ({self.ID})',
         )
