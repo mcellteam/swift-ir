@@ -17,13 +17,12 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-
 sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
 sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
 # sys.path.append('../')
 # from src import *
 from src.data_model import DataModel
-
+from src.funcs_image import SetStackCafm
 from src.generate_aligned import generate_aligned
 from src.thumbnailer import Thumbnailer
 from src.mp_queue import TaskQueue
@@ -243,6 +242,9 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
 
         dm = updated_model
 
+        SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.use_corrective_polynomial(),
+                     poly_order=dm.corrective_polynomial())
+
         save2file(dm=dm,name=dm.dest())
         write_run_to_file(dm)
 
@@ -345,7 +347,7 @@ def delete_correlation_signals(dm, scale, start, end):
     logger.info('')
     for i in range(start, end):
         sigs = dm.get_signals_filenames(s=scale, l=i)
-        logger.info(f'Deleting:\n{sigs}')
+        # logger.info(f'Deleting:\n{sigs}')
         for f in sigs:
             if os.path.isfile(f):  # this makes the code more robust
                 os.remove(f)

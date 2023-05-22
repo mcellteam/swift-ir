@@ -1526,19 +1526,20 @@ class ProjectTab(QWidget):
         self.MA_stackedWidget.addWidget(self.sw_logs)
         self.MA_stackedWidget.addWidget(self.settings_widget)
 
-        self.MA_stackedWidget_gb = QGroupBox()
-        vbl = QVBoxLayout()
-        vbl.setContentsMargins(0, 0, 0, 0)
-        vbl.setSpacing(0)
-        vbl.addWidget(self.MA_stackedWidget)
-        self.MA_stackedWidget_gb.setLayout(vbl)
+        # self.MA_stackedWidget_gb = QGroupBox()
+        # vbl = QVBoxLayout()
+        # vbl.setContentsMargins(0, 0, 0, 0)
+        # vbl.setSpacing(0)
+        # vbl.addWidget(self.MA_stackedWidget)
+        # self.MA_stackedWidget_gb.setLayout(vbl)
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         # self.MA_stageSplitter.addWidget(VWidget(self.radioboxes_method, self.MA_tabs, self.gb_actionsMA))
         # self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget, self.gb_actionsMA))
-        self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget_gb, self.MA_controls))
+        # self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget_gb, self.MA_controls))
+        self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
 
@@ -1601,7 +1602,7 @@ class ProjectTab(QWidget):
                         border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
 
         def fn():
-            logger.critical(f"getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE') = {getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE')}")
+            # logger.info(f"getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE') = {getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE')}")
             setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', not getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
             [v.updateHighContrastMode() for v in self.get_viewers()]
 
@@ -1937,9 +1938,8 @@ class ProjectTab(QWidget):
 
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-
         cur_index = self.MA_stackedWidget.currentIndex()
+        logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
 
         if cfg.data.current_method == 'grid-default':
             self.method_rb0.setChecked(True)
@@ -1954,10 +1954,6 @@ class ProjectTab(QWidget):
                 self.rb_MA_strict.setChecked(True)
             else:
                 self.rb_MA_hint.setChecked(True)
-
-        logger.critical(f'caller     = {caller}')
-        logger.critical(f'soft       = {soft}')
-        logger.critical(f'cur_index  = {cur_index}')
 
         if soft and (cur_index in (3, 4)):
             self.MA_stackedWidget.setCurrentIndex(cur_index)
@@ -2249,7 +2245,7 @@ class ProjectTab(QWidget):
         self.dataUpdateMA_calls += 1
 
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller} ; call #{self.dataUpdateMA_calls}')
+        logger.critical(f'>>>> dataUpdateMA caller: {caller} ; call #{self.dataUpdateMA_calls} ; cfg.data.current_method={cfg.data.current_method} >>>>')
         if getData('state,manual_mode'):
 
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
@@ -2313,6 +2309,9 @@ class ProjectTab(QWidget):
 
             if self.MA_stackedWidget.currentIndex() == 4:
                 self.refreshLogs()
+
+        logger.critical('<<<< dataUpdateMA <<<<')
+
 
     def updateEnabledButtonsMA(self):
         method = cfg.data.current_method
@@ -2808,7 +2807,7 @@ class ProjectTab(QWidget):
         self.treeview.setAnimated(True)
         self.treeview.setIndentation(20)
         # self.treeview.header().resizeSection(0, 380)
-        self.treeview.header().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.treeview.header().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.treeview_model = JsonModel()
         self.treeview_model.signals.dataModelChanged.connect(self.load_data_from_treeview)
         self.treeview.setModel(self.treeview_model)
@@ -2863,30 +2862,41 @@ class ProjectTab(QWidget):
             keys = ['data', 'scales', scale, 'stack', section]
 
             opt = self.combo_data_tree.currentText()
+            logger.info(f'opt = {opt}')
             if opt:
                 try:
                     if opt == 'Section':
                         pass
                     elif opt == 'Results':
                         keys.extend(['alignment', 'method_results'])
-                    elif opt == 'SWIM Out':
-                        keys.extend(['alignment', 'swim_out'])
-                    elif opt == 'SWIM Err':
-                        keys.extend(['alignment', 'swim_err'])
-                    elif opt == 'SWIM Arguments':
-                        keys.extend(['alignment', 'swim_args'])
-                    elif opt == 'SWIM Settings':
-                        keys.extend(['alignment', 'swim_settings'])
-                    elif opt == 'MIR Arguments':
-                        keys.extend(['alignment', 'mir_args'])
-                    elif opt == 'MIR Tokens':
-                        keys.extend(['alignment', 'mir_toks'])
                     elif opt == 'Alignment History':
                         keys.extend(['alignment_history'])
+                    elif opt == 'Method Results':
+                        keys.extend(['alignment', 'method_results'])
+                    # elif opt == 'Ingredient 0':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_0'])
+                    # elif opt == 'Ingredient 1':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_1'])
+                    # elif opt == 'Ingredient 2':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_2'])
+                    elif opt == 'SWIM Settings':
+                        keys.extend(['alignment', 'swim_settings'])
+                    # elif opt == 'SWIM Out':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_out'])
+                    # elif opt == 'SWIM Err':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_err'])
+                    # elif opt == 'SWIM Arguments':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_args'])
+                    # elif opt == 'MIR Err':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'mir_err_lines'])
+                    # elif opt == 'MIR Out':
+                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'mir_out_lines'])
+
+                    logger.info(f'keys = {keys}')
                 except:
                     print_exception()
-
-            self.treeview_model.jumpToKey(keys=keys)
+                else:
+                    self.treeview_model.jumpToKey(keys=keys)
 
         self.le_tree_jumpToScale = QLineEdit()
         self.le_tree_jumpToScale.setFixedHeight(18)
@@ -2915,8 +2925,11 @@ class ProjectTab(QWidget):
 
         self.combo_data_tree = QComboBox()
         self.combo_data_tree.setFixedWidth(120)
-        items = ['--', 'Results', 'SWIM Arguments', 'SWIM Out', 'SWIM Err', 'SWIM Settings', 'MIR Arguments', 'MIR Tokens',
-                 'Alignment History']
+        # items = ['--', 'Results', 'SWIM Arguments', 'SWIM Out', 'SWIM Err', 'SWIM Settings', 'MIR Arguments', 'MIR Tokens',
+        #          'Alignment History']
+        # items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings', 'SWIM Out',
+        #          'SWIM Err', 'SWIM Arguments', 'MIR Err', 'MIR Out']
+        items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings']
         self.combo_data_tree.addItems(items)
 
         self.btn_tree_go = QPushButton('Go')

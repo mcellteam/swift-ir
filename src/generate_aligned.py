@@ -48,7 +48,7 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
 
         print_example_cafms(dm)
         logger.info('Setting Stack CAFM...')
-        SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.null_cafm(s=scale), poly_order=dm.poly_order(s=scale))
+        SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.use_corrective_polynomial(), poly_order=dm.corrective_polynomial())
         od = os.path.join(dm.dest(), scale, 'img_aligned')
         if renew_od:
             logger.info('Renewing Directory %s...' % od)
@@ -66,8 +66,8 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
 
-            logger.info(f'Bounding Box      : ON\nNew Bounding Box  : {str(rect)}')
-            logger.info(f'Null Bias         : {dm.null_cafm()} (Polynomial Order: {dm.poly_order()})')
+            logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
+            logger.info(f'Corrective Polynomial  : {dm.use_corrective_polynomial()} (Polynomial Order: {dm.corrective_polynomial()})')
         else:
             logger.info(f'Bounding Box      : OFF')
             w, h = dm.image_size(s=scale)
@@ -233,8 +233,8 @@ def tryRemoveFile(directory):
 
 def tryRemoveDatFiles(dm, scale, path):
     bb_str = str(dm.use_bb())
-    poly_order_str = str(dm.poly_order())
-    null_cafm_str = str(dm.null_cafm())
+    poly_order_str = str(dm.corrective_polynomial())
+    null_cafm_str = str(dm.use_corrective_polynomial())
     bias_data_path = os.path.join(path, scale, 'bias_data')
     tryRemoveFile(os.path.join(path, scale,
                                'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))

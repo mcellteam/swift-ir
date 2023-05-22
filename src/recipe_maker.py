@@ -102,7 +102,7 @@ class align_recipe:
         self.im_sta_fn = layer_dict['reference']
         self.im_mov_fn = layer_dict['filename']
         self.alData = layer_dict['alignment']
-        self.scale=scale
+        self.scale = scale
         self.defaults = defaults
         self.cur_method = layer_dict['current_method']
         self.option = self.alData['method_data']['alignment_option']
@@ -113,8 +113,6 @@ class align_recipe:
             self.wht = self.alData['method_data']['whitening_factor']
             self.iters = self.alData['swim_settings']['iterations']
         self.grid_custom_regions  = self.alData['swim_settings']['grid-custom-regions']
-
-
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
@@ -214,7 +212,10 @@ class align_recipe:
                                    f'  AFM (before): {self.afm}\n'
                                    f'----------------')
             ingredient.afm = self.afm
-            self.afm = ingredient.execute_ingredient()
+            try:
+                self.afm = ingredient.execute_ingredient()
+            except:
+                print_exception(self.pd)
 
         scratchlogger.critical(f'Final AFM = {self.afm}')
 
@@ -234,46 +235,124 @@ class align_recipe:
         self.layer_dict['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
         self.layer_dict['alignment']['method_results']['datetime'] = time
         self.layer_dict['alignment']['method_results']['wht'] = self.wht
+        self.layer_dict['alignment']['method_results']['swim-iterations'] = self.iters
+        self.layer_dict['alignment']['method_results']['option'] = self.option
+        self.layer_dict['alignment']['method_results']['current_method'] = self.cur_method
+        self.layer_dict['alignment']['method_results']['ingredients'] = {}
+        self.layer_dict['alignment']['method_results']['im_sta_fn']= self.im_sta_fn
+        self.layer_dict['alignment']['method_results']['im_mov_fn']= self.im_mov_fn
+        self.layer_dict['alignment']['method_results']['siz']= self.siz
+        if self.cur_method == 'grid-custom':
+            self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
+        # self.layer_dict['alignment_history'][self.cur_method].append(self.layer_dict['alignment']['method_results'])
+        self.layer_dict['alignment_history'][self.cur_method] = self.layer_dict['alignment']['method_results']
+        self.layer_dict['alignment']['swim_args'] = {}
+        self.layer_dict['alignment']['swim_out'] = {}
+        self.layer_dict['alignment']['swim_err'] = {}
+        self.layer_dict['alignment']['mir_toks'] = {}
+        self.layer_dict['alignment']['mir_script'] = {}
+        self.layer_dict['alignment']['mir_out'] = {}
+        self.layer_dict['alignment']['mir_err'] = {}
+        for i,ing in enumerate(self.ingredients):
+            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = {}
+            except: print_exception(self.pd)
+            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['ww'] = ing.ww
+            except: print_exception(self.pd)
+            # if self.cur_method == 'manual-hint':
+            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
+            except: print_exception(self.pd)
+            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
+            except: print_exception(self.pd)
+            if self.cur_method in ('grid-default', 'grid-custom'):
+                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cx'] = str(ing.cx)
+                # except: print_exception(self.pd)
+                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cy'] = str(ing.cy)
+                # except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
+                except: print_exception(self.pd)
+            if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
+                try: self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
+                except: print_exception(self.pd)
+                # try: self.layer_dict['alignment']['dx']['ingredient_%d' % i] = ing.dx
+                # except: print_exception(self.pd)
+                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = ing.dy
+                # except: print_exception(self.pd)
+                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['swim_drift'] = ing.swim_drift
+                # except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
+                except: print_exception(self.pd)
+                try: self.layer_dict['alignment']['swim_ww_arg']['ingredient_%d' % i] = ing.swim_ww_arg
+                except: print_exception(self.pd)
+
+
+        # cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out']
+        # ['28.6787: /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif 512 512 /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif 518.514 506.982  1 0 0 1 (6.5141 -5.01831 8.22295)']
+        # ['28.6787: /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif 512 512 /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif 518.514 506.982  1 0 0 1 (6.5141 -5.01831 8.22295)']
+        # a = cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out'][0]
+        # a.replace('(', ' ').replace(')', ' ').strip().split()
+        # ['28.6787:',
+        #  '/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif',
+        #  '512',
+        #  '512',
+        #  '/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif',
+        #5  '518.514',
+        #6  '506.982',
+        #  '1',
+        #8  '0',
+        #9  '0',
+        #  '1',
+        #  '6.5141',
+        #  '-5.01831',
+        #  '8.22295']
+        #
+
         # self.layer_dict['alignment']['method_results']['auto_ww'] = self.auto_ww
         # self.layer_dict['alignment']['method_results']['pts_base'] = self.man_pmov.tolist()
         # self.layer_dict['alignment']['method_results']['pts_ref'] = self.man_psta.tolist()
-        if self.cur_method == 'grid-custom':
-            self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
 
-        scratchlogger.critical(f'<<<< 2 >>>>')
 
-        self.layer_dict['alignment']['method_data']['bias_x_per_image'] = 0
-        self.layer_dict['alignment']['method_data']['bias_y_per_image'] = 0
-        self.layer_dict['alignment']['method_data']['bias_rot_per_image'] = 0
-        self.layer_dict['alignment']['method_data']['bias_scale_x_per_image'] = 1
-        self.layer_dict['alignment']['method_data']['bias_scale_y_per_image'] = 1
-        self.layer_dict['alignment']['method_data']['bias_skew_x_per_image'] = 0
-        self.layer_dict['alignment']['mir_toks'] = self.ingredients[-1].mir_toks
-        self.layer_dict['alignment']['mir_args'] = self.ingredients[-1].mir_script
-        self.layer_dict['alignment'].setdefault('swim_args', {})
-        self.layer_dict['alignment'].setdefault('swim_out', {})
-        self.layer_dict['alignment'].setdefault('swim_err', {})
 
-        scratchlogger.critical(f'<<<< 3 >>>>')
+        # self.layer_dict['alignment']['method_data']['bias_x_per_image'] = 0
+        # self.layer_dict['alignment']['method_data']['bias_y_per_image'] = 0
+        # self.layer_dict['alignment']['method_data']['bias_rot_per_image'] = 0
+        # self.layer_dict['alignment']['method_data']['bias_scale_x_per_image'] = 1
+        # self.layer_dict['alignment']['method_data']['bias_scale_y_per_image'] = 1
+        # self.layer_dict['alignment']['method_data']['bias_skew_x_per_image'] = 0
+
+        # self.layer_dict['alignment']['mir_toks'] = self.ingredients[-1].mir_toks
+        # self.layer_dict['alignment']['mir_args'] = self.ingredients[-1].mir_script
+        # self.layer_dict['alignment'].setdefault('swim_args', {})
+        # self.layer_dict['alignment'].setdefault('swim_out', {})
+        # self.layer_dict['alignment'].setdefault('swim_err', {})
 
         # self.layer_dict['alignment']['ingredient0_dx'] = self.ingredients[0].dx
         # self.layer_dict['alignment']['ingredient0_dy'] = self.ingredients[0].dy
 
-        self.layer_dict['alignment']['swim_args'] = {}
-        self.layer_dict['alignment']['swim_out'] = {}
-        self.layer_dict['alignment']['swim_err'] = {}
-        if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
-            for i,ingredient in enumerate(range(len(self.ingredients))):
-                try:    self.layer_dict['alignment']['swim_args']['ingredient_' + str(i)] = self.ingredients[i].multi_arg_str
-                except: print_exception(self.pd)
-                try:    self.layer_dict['alignment']['swim_out']['ingredient_' + str(i)] = self.ingredients[i].swim_output
-                except: print_exception(self.pd)
-                try:    self.layer_dict['alignment']['swim_err']['ingredient_' + str(i)] = self.ingredients[i].swim_err_lines
-                except: print_exception(self.pd)
-
-        scratchlogger.critical(f'<<<< 4 >>>>')
-
-        self.layer_dict['alignment_history'][self.cur_method].append(self.layer_dict['alignment']['method_results'])
+        # self.layer_dict['alignment']['swim_args'] = {}
+        # self.layer_dict['alignment']['swim_out'] = {}
+        # self.layer_dict['alignment']['swim_err'] = {}
+        # if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
+        #     for i,ing in enumerate(self.ingredients):
+        #         try:    self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
+        #         except: print_exception(self.pd)
+        #         try:    self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
+        #         except: print_exception(self.pd)
+        #         try:    self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
+        #         except: print_exception(self.pd)
 
         scratchlogger.critical('<<<<  execute_recipe')
         return afm
@@ -359,10 +438,14 @@ class align_ingredient:
     def run_swim(self):
         scratchlogger.critical(f'run_swim [{self.ID}] >>>>')
 
-        cx = int(self.recipe.siz[0] / 2.0)
-        cy = int(self.recipe.siz[1] / 2.0)
-        adjust_x = '%.6f' % (cx + self.afm[0, 2])
-        adjust_y = '%.6f' % (cy + self.afm[1, 2])
+        # cx = int(self.recipe.siz[0] / 2.0)
+        # cy = int(self.recipe.siz[1] / 2.0)
+        # adjust_x = '%.6f' % (cx + self.afm[0, 2])
+        # adjust_y = '%.6f' % (cy + self.afm[1, 2])
+
+        self.cx = int(self.recipe.siz[0] / 2.0)
+        self.cy = int(self.recipe.siz[1] / 2.0)
+
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         rota_arg = ''
 
@@ -373,6 +456,12 @@ class align_ingredient:
             swim_ww_arg = str(int(self.ww))
         else:
             swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
+
+        self.swim_ww_arg = swim_ww_arg
+        # if type(self.ww) == type((1, 2)):
+        #     swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
+        # else:
+        #     swim_ww_arg = str(int(self.ww))
 
         basename = os.path.basename(self.recipe.im_mov_fn)
         filename, extension = os.path.splitext(basename)
@@ -392,8 +481,7 @@ class align_ingredient:
                 self.recipe.scale_dir,
                 'signals_raw',
                 '%s_%s_%d%s' % (filename, self.recipe.cur_method, i, extension))
-            offx = int(self.psta[0][i] - cx)
-            offy = int(self.psta[1][i] - cy)
+
             args = ArgString(sep=' ')
             args.append('ww_' + swim_ww_arg)
             if self.alData['swim_settings']['clobber_fixed_noise']:
@@ -401,16 +489,19 @@ class align_ingredient:
             # args.add_flag(flag='-i', arg=str(self.rcipe.iters))
             args.add_flag(flag='-i', arg=str(self.recipe.iters))
             args.add_flag(flag='-w', arg=str(self.recipe.wht))
-            if self.recipe.cur_method not in ('manual-hint'):
-                args.add_flag(flag='-x', arg=str(offx))
-                args.add_flag(flag='-y', arg=str(offy))
+            if self.recipe.cur_method in ('grid-default', 'grid-custom'):
+                self.offx = int(self.psta[0][i] - self.cx)
+                self.offy = int(self.psta[1][i] - self.cy)
+                # self.offx = '%.6f' % (self.psta[0][i] - self.cx)
+                # self.offy = '%.6f' % (self.psta[1][i] - self.cy)
+                args.add_flag(flag='-x', arg=str(self.offx))
+                args.add_flag(flag='-y', arg=str(self.offy))
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
                 if self.alData['swim_settings']['karg']:
                     k_arg_name = '%s_%s_k_%d%s' % (filename, self.recipe.cur_method, i, extension)
                     k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
                     args.add_flag(flag='-k', arg=k_arg_path)
-            if self.last:
                 if self.alData['swim_settings']['targ']:
                     t_arg_name = '%s_%s_t_%d%s' % (filename, self.recipe.cur_method, i, extension)
                     t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
@@ -420,19 +511,21 @@ class align_ingredient:
             if self.recipe.cur_method in ('manual-hint'):
                 args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
-                args.append('%s %s' % (cx, cy))
+                args.append('%s %s' % (self.cx, self.cy))
             args.append(self.recipe.im_mov_fn)
             if self.recipe.cur_method in ('manual-hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
-                args.append('%s %s' % (adjust_x, adjust_y))
+                self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
+                self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
+                args.append('%s %s' % (self.adjust_x, self.adjust_y))
             r = self.recipe.initial_rotation
             if abs(r) > 0:
                 args.append(convert_rotation(r))
             args.append(afm_arg)
             args.append(self.alData['swim_settings']['extra_args'])
-
             multi_arg_str.append(args())
+
 
         scratchlogger.critical('Running command >>>>')
 
@@ -465,56 +558,55 @@ class align_ingredient:
             self.snr_report = snr_report(self.snr)
             return self.afm
 
-        mir_script = ""
+        self.mir_script = ""
         snr_list = []
         dx = dy = 0.0
         # loop over SWIM output to build the MIR script:
-        for i,l in enumerate(swim_output):
-            toks = l.replace('(', ' ').replace(')', ' ').strip().split()
-            self.mir_toks[i] = str(toks)
-            MIRlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
-            if len(swim_output) == 1:
-                dx = float(toks[8])
-                dy = float(toks[9])
-                self.dx = float(toks[8])
-                self.dy = float(toks[9])
-                mir_toks = [toks[k] for k in [2, 3, 5, 6]]
-                mir_script += ' '.join(mir_toks) + '\n'
-                snr_list.append(float(toks[0][0:-1]))
-            else:
-                mir_toks = [toks[k] for k in [2, 3, 5, 6]]
-                mir_script += ' '.join(mir_toks) + '\n'
-                snr_list.append(float(toks[0][0:-1]))
-        mir_script += 'R\n'
-        self.mir_script = mir_script
-
-        o = run_command(
-            self.recipe.mir_c,
-            arg_list=[],
-            cmd_input=mir_script,
-            extra=f'MIR to get affine using SWIM output ({self.ID})',
-        )
-
-        mir_out_lines = o['out'].strip().split('\n')
-        mir_err_lines = o['err'].strip().split('\n')
-
-        MIRlogger.critical(f'***MIR script***\n{str(mir_script)}\n'
-                           f'MIR std out:\n{str(mir_out_lines)}\n'
-                           f'MIR std err:\n{str(mir_err_lines)}')
-
-        if self.mode == 'SWIM-Manual':
-            MAlogger.critical(f'***MIR script***\n{str(mir_script)}\n'
-                              f'MIR std out:\n{str(mir_out_lines)}\n'
-                              f'MIR std err:\n{str(mir_err_lines)}')
-
-        aim = np.eye(2, 3, dtype=np.float32)
 
         if len(swim_output) == 1:
+            toks = swim_output[0].replace('(', ' ').replace(')', ' ').strip().split()
+            dx = float(toks[8])
+            dy = float(toks[9])
+            aim = np.eye(2, 3, dtype=np.float32)
             aim = copy.deepcopy(self.afm)
-            aim[0, 2] += dx # "what swim said, how far to move it"
-            aim[1, 2] += dy
+            aim[0, 2] += self.dx
+            aim[1, 2] += self.dy
+            self.afm = aim
+            self.snr = np.array(snr_list)
+            self.snr_report = snr_report(self.snr)
+            return self.afm
         else:
-            for line in mir_out_lines:
+            for i,l in enumerate(swim_output):
+                toks = l.replace('(', ' ').replace(')', ' ').strip().split()
+                self.mir_toks[i] = str(toks)
+                MIRlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
+                # if len(swim_output) == 1:
+                #     dx = float(toks[8])
+                #     dy = float(toks[9])
+                #     self.dx = float(toks[8])
+                #     self.dy = float(toks[9])
+                # else:
+                mir_toks = [toks[k] for k in [2, 3, 5, 6]]
+                self.mir_script += ' '.join(mir_toks) + '\n'
+                snr_list.append(float(toks[0][0:-1]))
+            self.mir_script += 'R\n'
+            o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=self.mir_script, extra=f'MIR the SWIM offsets to get affine ({self.ID})', )
+            self.mir_out_lines = o['out'].strip().split('\n')
+            self.mir_err_lines = o['err'].strip().split('\n')
+
+            MIRlogger.critical(f'***MIR script***\n{str(self.mir_script)}\n'
+                               f'MIR std out:\n{str(self.mir_out_lines)}\n'
+                               f'MIR std err:\n{str(self.mir_err_lines)}')
+
+            aim = np.eye(2, 3, dtype=np.float32)
+
+            # if len(swim_output) == 1:
+            #     # 1x1 offset can be plugged directly into the affine's translation components
+            #     aim = copy.deepcopy(self.afm)
+            #     aim[0, 2] += self.dx
+            #     aim[1, 2] += self.dy
+            # else:
+            for line in self.mir_out_lines:
                 toks = line.strip().split()
                 if (toks[0] == 'AI'):
                     aim[0, 0] = float(toks[1])
@@ -524,10 +616,10 @@ class align_ingredient:
                     aim[1, 1] = float(toks[5])
                     aim[1, 2] = float(toks[6]) + self.swim_drift
 
-        self.afm = aim
-        self.snr = np.array(snr_list)
-        self.snr_report = snr_report(self.snr)
-        return self.afm
+            self.afm = aim
+            self.snr = np.array(snr_list)
+            self.snr_report = snr_report(self.snr)
+            return self.afm
 
 
     def run_manual_mir(self):
@@ -552,6 +644,7 @@ class align_ingredient:
                           f'==========')
 
         afm = np.eye(2, 3, dtype=np.float32)
+        self.mir_out_lines = mir_mp_out_lines
         for line in mir_mp_out_lines:
             MAlogger.info("Line: " + str(line))
             toks = line.strip().split()

@@ -35,7 +35,6 @@ data_template = \
                     "method_data": {
                         "alignment_option": "init_affine"
                     },
-                    "null_cafm_trends": cfg.DEFAULT_NULL_BIAS,
                     "use_bounding_rect": cfg.DEFAULT_BOUNDING_BOX,
                     "stack": [],
                     "thumb_scaling_factor_aligned": None,

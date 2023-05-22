@@ -270,7 +270,7 @@ class ProjectTable(QWidget):
 
     def updateTableDimensions(self, h):
         caller = inspect.stack()[1].function
-        # logger.critical(f'[{caller}] h = {h}')
+        logger.critical(f'[{caller}] h = {h}')
 
         self.image_col_width = h
         # logger.critical(f'\n\ncaller: {caller}\n')
@@ -298,9 +298,8 @@ class ProjectTable(QWidget):
 
 
     def get_data(self):
-        # logger.info('')
+        logger.critical('')
         is_aligned = cfg.data.is_aligned_and_generated()
-        # logger.critical('is aligned? %r' % is_aligned)
         try:
             try:     scale = [cfg.data.scale_pretty()] * len(cfg.data)
             except:  scale = ['Unknown'] * len(cfg.data); print_exception()

@@ -423,6 +423,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 
 def SetStackCafm(iterator, scale, null_biases=False, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
+    logger.critical(f'Setting Stack CAFM (iterator={str(iterator)}, scale={scale}, null_biases={null_biases}, poly_order={poly_order})...')
     if null_biases == True:
         # To perform bias correction, first initialize Cafms without bias correction
         SetStackCafm(scale=scale, null_biases=False)

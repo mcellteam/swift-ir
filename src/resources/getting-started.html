@@ -26,8 +26,15 @@ Start by aligning the coarsest scale with 'Align All'. Navigate to the 'SNR Plot
     <li><b>'Refresh' Often</b> – Refresh fixes many issues, and is most useful in cases where Neuroglancer is not rendering data properly or behaving as expected. Refresh not only refreshes Neuroglancer, Refresh also updates several other UI views in the event that any become out of sync. Use refresh as liberally as you would in a web browser. It is harmless, close to instantaneous, and does not alter any data or the state of your project in any way. It merely refreshes the user interface views including Neuroglancer viewers, browsers, tree views, table views, list views, and the SNR plot.<br/><br/></li>
     <li><b>'Align All' Before Anything Else</b> – For each scale it is necessary to run Align All (which uses the settings in the control panel and Default Grid alignment strategy) before other functionality becomes available. The enabled/disabled state of UI controls prevents users from accessing such additional functionality prior to running Align All at least once.<br/><br/></li>
     <li><b>'Align All' As Needed</b> – Align All ensures that the scale being working on is in a state where the cumulative affine is fully propagated through the image stack. Note that Align All means "align all images of the current scale". However, it is also possible to align all scales automatically using the menu option: <b>Align > Align All Scales</b>. In this case the affine transformation is refined during each successive scale level up to and including the full scale images.<br/><br/></li>
-    <li><b>Grid Default may misfire</b> - The default alignment method is termed "Grid Default". It is a robust SWIM-based alignment method whose parameters can be adjusted using the control panel settings under <b>Default SWIM Settings</b>. For a list of the options to correct misalignment, see Glossary section <b><i>Correcting Misalignment</i></b>.<br/><br/>
+    <li><b>Grid Default might misfire</b> - The default alignment method is termed "Grid Default". It is a robust SWIM-based alignment method whose parameters can be adjusted using the control panel settings under <b>Default SWIM Settings</b>. For a list of the options to correct misalignment, see Glossary section <b><i>Correcting Misalignment</i></b>.<br/><br/>
 
 </ul>
+
+<h3><u>TACC Tips:</u></h3>
+<ul>
+    <li><b>$SCRATCH >> $WORK</b> – Create projects on $SCRATCH it is ~2x faster $WORK<br/><br/></li>
+
+</ul>
+
 </body>
 </html>
