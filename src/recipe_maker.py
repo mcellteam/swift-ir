@@ -229,7 +229,8 @@ class align_recipe:
         # Retrieve alignment result
         self.layer_dict.setdefault('alignment_history', {})
         self.layer_dict['alignment_history'].setdefault(self.cur_method, [])
-        self.layer_dict['alignment']['method_results']['snr'] = list(snr)
+        # self.layer_dict['alignment']['method_results']['snr'] = list(snr)
+        self.layer_dict['alignment']['method_results']['snr'] = snr
         self.layer_dict['alignment']['method_results']['snr_report'] = str(snr_report)
         self.layer_dict['alignment']['method_results']['affine_matrix'] = afm.tolist()
         self.layer_dict['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
