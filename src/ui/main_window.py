@@ -630,6 +630,8 @@ class MainWindow(QMainWindow):
     def regenerate(self, scale, start=0, end=None) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
         logger.info('regenerate >>>>')
+        if cfg.event.is_set():
+            cfg.event.clear()
         if not self._isProjectTab():
             return
         if self._working == True:
@@ -835,6 +837,8 @@ class MainWindow(QMainWindow):
 
     def onAlignmentStart(self, scale):
         logger.info('')
+        if cfg.event.is_set():
+            cfg.event.clear()
         t0 = time.time()
         dt = datetime.datetime.now()
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
@@ -898,6 +902,9 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
         finally:
+            if cfg.event.is_set():
+                cfg.event.clear()
+
             self._working = False
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
@@ -1444,23 +1451,27 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
-        logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
+        logger.info('')
+        # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
+        if not cfg.project_tab:
+            logger.warning('No Current Project Tab (!)')
+            return
+        # self.count_calls.setdefault('dataUpdateWidgets', {})
+        # self.count_calls['dataUpdateWidgets'].setdefault(caller, {})
+        # self.count_calls['dataUpdateWidgets'][caller].setdefault('total_count',0)
+        # self.count_calls['dataUpdateWidgets'][caller].setdefault('same_count',0)
+        # self.count_calls['dataUpdateWidgets'][caller].setdefault('diff_count',0)
+        # self.count_calls['dataUpdateWidgets'][caller].setdefault('none_count',0)
+        # self.count_calls['dataUpdateWidgets'][caller]['total_count'] += 1
+        # if ng_layer == None:
+        #     self.count_calls['dataUpdateWidgets'][caller]['none_count'] += 1
+        # elif cfg.data.zpos == ng_layer:
+        #     self.count_calls['dataUpdateWidgets'][caller]['same_count'] += 1
+        # elif cfg.data.zpos != ng_layer:
+        #     self.count_calls['dataUpdateWidgets'][caller]['diff_count'] += 1
+
         cfg.project_tab._overlayRect.hide()
         cfg.project_tab._overlayLab.hide()
-        self.count_calls.setdefault('dataUpdateWidgets', {})
-        self.count_calls['dataUpdateWidgets'].setdefault(caller, {})
-        self.count_calls['dataUpdateWidgets'][caller].setdefault('total_count',0)
-        self.count_calls['dataUpdateWidgets'][caller].setdefault('same_count',0)
-        self.count_calls['dataUpdateWidgets'][caller].setdefault('diff_count',0)
-        self.count_calls['dataUpdateWidgets'][caller].setdefault('none_count',0)
-        self.count_calls['dataUpdateWidgets'][caller]['total_count'] += 1
-
-        if ng_layer == None:
-            self.count_calls['dataUpdateWidgets'][caller]['none_count'] += 1
-        elif cfg.data.zpos == ng_layer:
-            self.count_calls['dataUpdateWidgets'][caller]['same_count'] += 1
-        elif cfg.data.zpos != ng_layer:
-            self.count_calls['dataUpdateWidgets'][caller]['diff_count'] += 1
 
         if self._isProjectTab():
 
@@ -1472,11 +1483,7 @@ class MainWindow(QMainWindow):
                 if type(ng_layer) != bool:
                     try:
                         if 0 <= ng_layer < len(cfg.data):
-                            logger.critical(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
-                            if cfg.data.zpos != ng_layer:
-                                logger.critical('Changing layer')
-                            elif cfg.data.zpos == ng_layer:
-                                logger.critical(f'NOT changing layer {caller}')
+                            logger.info(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
                             cfg.data.zpos = ng_layer
                             # self._sectionSlider.setValue(ng_layer)
                     except:
@@ -1798,7 +1805,8 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         # if cfg.data:
         caller = inspect.stack()[1].function
-        logger.critical(f'jump_to_slider [caller: {caller}] >>>>')
+        logger.info('')
+        # logger.critical(f'jump_to_slider [caller: {caller}] >>>>')
         # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
         if caller in ('dataUpdateWidgets'):
             return
@@ -1828,10 +1836,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        caller = inspect.stack()[1].function
-        logger.info(f'reload_scales_combobox [{caller}] >>>>')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'reload_scales_combobox [{caller}] >>>>')
         if self._isProjectTab():
-            logger.info('Reloading Scale Combobox (caller: %s)' % caller)
+            # logger.info('Reloading Scale Combobox (caller: %s)' % caller)
             self._changeScaleCombo.show()
             self._scales_combobox_switch = 0
             self._changeScaleCombo.clear()
@@ -1848,7 +1856,7 @@ class MainWindow(QMainWindow):
             self._scales_combobox_switch = 1
         else:
             self._changeScaleCombo.hide()
-        logger.info(f'<<<< reload_scales_combobox [{caller}]')
+        # logger.info(f'<<<< reload_scales_combobox [{caller}]')
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
@@ -2974,17 +2982,25 @@ class MainWindow(QMainWindow):
         # self.fullScreenButton.setIcon(qta.icon('mdi.fullscreen', color='#161c20'))
         self.fullScreenButton.setIcon(qta.icon('mdi.fullscreen', color='#161c20'))
 
-        def fn():
-            (cfg.mw.showMaximized, cfg.mw.showNormal)[cfg.mw.isMaximized()]()
-            self.fullScreenButton.setIcon(
-                qta.icon(('mdi.fullscreen', 'mdi.fullscreen-exit')[self.isMaximized()], color='#161c20'))
-            self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isMaximized()])
-            if self._isProjectTab():
-                cfg.project_tab.initNeuroglancer()
-                QApplication.processEvents()
-                self.refreshTab()
+        # def fn():
+        #     # (cfg.mw.showMaximized, cfg.mw.showNormal)[cfg.mw.isMaximized()]()
+        #     # self.fullScreenButton.setIcon(
+        #     #     qta.icon(('mdi.fullscreen', 'mdi.fullscreen-exit')[self.isMaximized()], color='#161c20'))
+        #     # self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isMaximized()])
+        #
+        #
+        #     (cfg.mw.showFullScreen(), cfg.mw.showNormal)[cfg.mw.isFullScreen()]()
+        #     self.fullScreenButton.setIcon(
+        #         qta.icon(('mdi.fullscreen', 'mdi.fullscreen-exit')[self.isFullScreen()], color='#161c20'))
+        #     self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isFullScreen()])
+        #
+        #     if self._isProjectTab():
+        #         cfg.project_tab.initNeuroglancer()
+        #         QApplication.processEvents()
+        #         self.refreshTab()
 
-        self.fullScreenButton.clicked.connect(fn)
+        # self.fullScreenButton.clicked.connect(fn)
+        self.fullScreenButton.clicked.connect(self.fullScreenCallback)
         # self.fullScreenButton.setStyleSheet(button_gradient_style)
 
         self.refreshButton = QPushButton(' Refresh')
@@ -3106,10 +3122,11 @@ class MainWindow(QMainWindow):
         # tb_button_size = QSize(64,18)
         tb_button_size = QSize(90, 16)
 
-        tip = f"Show Notepad Tool Window {hotkey('N')}"
+        tip = f"Show Notepad Tool Window {hotkey('Z')}"
         # self.cbNotes = QPushButton(' Notes')
         # self.cbNotes = QCheckBox(f"Notes {hotkey('N')}")
-        self.cbNotes = QCheckBox(f"Notes {hotkey('N')}")
+        # self.cbNotes = QCheckBox(f"Notes {hotkey('N')}")
+        self.cbNotes = QCheckBox(f"Notes {hotkey('Z')}")
         # self.cbNotes.setStyleSheet(button_gradient_style)
         # self.cbNotes.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.cbNotes.setToolTip(tip)
@@ -3184,6 +3201,25 @@ class MainWindow(QMainWindow):
         self.toolbar.layout().setAlignment(Qt.AlignRight)
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
 
+    # def resizeEvent(self, e):
+    #     logger.info('')
+
+    def fullScreenCallback(self):
+        logger.info('')
+        (self.showMaximized, self.showNormal)[self.isMaximized()]()
+        self.fullScreenButton.setIcon(
+            qta.icon(('mdi.fullscreen', 'mdi.fullscreen-exit')[self.isMaximized()], color='#161c20'))
+        self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isMaximized()])
+
+        # (cfg.mw.showFullScreen(), cfg.mw.showNormal)[cfg.mw.isFullScreen()]()
+        # self.fullScreenButton.setIcon(
+        #     qta.icon(('mdi.fullscreen', 'mdi.fullscreen-exit')[self.isFullScreen()], color='#161c20'))
+        # self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isFullScreen()])
+
+        if self._isProjectTab():
+            cfg.project_tab.initNeuroglancer()
+            QApplication.processEvents()
+            self.refreshTab()
 
     def _disableGlobTabs(self):
         indexes = list(range(0, self.globTabs.count()))
@@ -3578,7 +3614,7 @@ class MainWindow(QMainWindow):
         self.openAction = QAction('&Open...', self)
         # self.openAction.triggered.connect(self.open_project)
         self.openAction.triggered.connect(self.open_project_new)
-        self.openAction.setShortcut('Ctrl+O')
+        # self.openAction.setShortcut('Ctrl+O')
         self.addAction(self.openAction)
         fileMenu.addAction(self.openAction)
 
@@ -3627,9 +3663,10 @@ class MainWindow(QMainWindow):
         self.showMonitorAction.setShortcut('Ctrl+H')
         fileMenu.addAction(self.showMonitorAction)
 
+        # self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
-        self.showNotesAction.setShortcut('Ctrl+N')
+        self.showNotesAction.setShortcut('Ctrl+Z')
         fileMenu.addAction(self.showNotesAction)
 
         self.showFlickerAction = QAction('Show &Flicker', self)
@@ -3644,7 +3681,8 @@ class MainWindow(QMainWindow):
 
         def fn():
             if self.globTabs.count() > 0:
-                self.globTabs.removeTab(self.globTabs.currentIndex())
+                if cfg.mw._getTabType() == 'OpenProject':
+                    self.globTabs.removeTab(self.globTabs.currentIndex())
             else:
                 self.exit_app()
 
@@ -4581,7 +4619,7 @@ class MainWindow(QMainWindow):
         self._bbToggle.toggled.connect(self._callbk_bnding_box)
         self._bbToggle.setEnabled(False)
 
-        tip = """Regenerate output based on the current Null Bias and Bounding Box presets."""
+        tip = """Regenerate output based on the current Corrective Bias and Bounding Box presets."""
         self._btn_regenerate = QPushButton('Regenerate All')
         # self._btn_regenerate.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_regenerate.setEnabled(False)
@@ -5388,12 +5426,13 @@ class MainWindow(QMainWindow):
         self.notes.setPlaceholderText('Type any notes here...')
         self.notes.textChanged.connect(fn)
 
+        # self.dw_notes = DockWidget('Notes', self)
         self.dw_notes = DockWidget('Notes', self)
         # self.dw_notes.visibilityChanged.connect(
         #     lambda: self.cbNotes.setText((' Hide', ' Notes')[self.dw_notes.isHidden()]))
         # self.dw_notes.visibilityChanged.connect(lambda: )
         self.dw_notes.visibilityChanged.connect(lambda: self.cbNotes.setToolTip(
-            ('Hide Notepad Tool Window', 'Show Notepad Tool Window')[self.dw_notes.isHidden()]))
+            ('Hide Notes Tool Window', 'Show Notes Tool Window')[self.dw_notes.isHidden()]))
         # self.dw_notes.visibilityChanged.connect(self.dataUpdateResults()) #???
         self.dw_notes.visibilityChanged.connect(self.callbackDwVisibilityChanged)
 
@@ -6077,8 +6116,9 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
-        self.pbar.setFixedHeight(16)
-        # self.pbar.setStyleSheet("font-size: 10px;")
+        self.pbar.setFixedHeight(14)
+        # self.pbar.setStyleSheet("font-size: 9px; font-weight: 600;")
+        self.pbar.setStyleSheet("font-size: 9px;")
         self.pbar.setTextVisible(True)
         # font = QFont('Arial', 12)
         # font.setBold(True)
@@ -6091,20 +6131,21 @@ class MainWindow(QMainWindow):
         self.status_bar_layout.setContentsMargins(4, 0, 4, 0)
         self.status_bar_layout.setSpacing(4)
         self.pbar_cancel_button = QPushButton('Stop')
-        self.pbar_cancel_button.setFixedSize(42, 14)
+        self.pbar_cancel_button.setFixedSize(42, 16)
         self.pbar_cancel_button.setIconSize(QSize(14, 14))
         self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""
         QPushButton{
             font-size: 9px;
+            font-weight: 600;
         }""")
         self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
 
         self.pbar_widget.setLayout(self.status_bar_layout)
         self.pbarLabel = QLabel('Task... ')
         self.pbarLabel.setStyleSheet("""
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 600;""")
         self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.status_bar_layout.addWidget(self.pbar)

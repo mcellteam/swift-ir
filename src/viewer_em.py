@@ -140,8 +140,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             # get_loc = floor(self.state.position[0])
             if isinstance(self.state.position, np.ndarray):
                 request_layer = int(self.state.position[0])
-
-                logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
+                #ConfirmedOkay
+                # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
                 if request_layer == self._layer:
                     logger.debug('[%s] State Changed, But Layer Is The Same - '
                                  'Suppressing The stateChanged Callback Signal' %self.type)
@@ -334,9 +334,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def get_tensors(self):
-        del cfg.tensor
-        del cfg.unal_tensor
-        del cfg.al_tensor
+        # del cfg.tensor
+        # del cfg.unal_tensor
+        # del cfg.al_tensor
         sf = cfg.data.scale_val(s=cfg.data.scale)
         al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
         unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))

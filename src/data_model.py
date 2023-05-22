@@ -729,11 +729,12 @@ class DataModel:
         self._data['data'].setdefault('t_thumbs', 0.0)
         self._data['data'].setdefault('defaults', {})
         self._data['data']['defaults'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
-        self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_BOUNDING_BOX)
-        self._data['data']['defaults'].setdefault('scales', {})
+        self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
+        self._data['data']['defaults'].setdefault('use-corrective-polynomial', cfg.DEFAULT_USE_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
         self._data['data']['defaults'].setdefault('swim-iterations', cfg.DEFAULT_SWIM_ITERATIONS)
+        self._data['data']['defaults'].setdefault('scales', {})
         self._data['rendering'].setdefault('normalize', [1,255])
         self._data['rendering'].setdefault('brightness', 0)
         self._data['rendering'].setdefault('contrast', 0)
@@ -750,8 +751,8 @@ class DataModel:
             scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('has_bounding_rect', cfg.DEFAULT_BOUNDING_BOX) #0512+
-            scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
-            scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+            # scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
+            # scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
             self._data['data']['benchmarks']['scales'].setdefault(s, {})
             self._data['data']['benchmarks']['scales'][s].setdefault('t_align', 0.0)
@@ -869,13 +870,16 @@ class DataModel:
     def snr(self, s=None, l=None, method=None) -> float:
         if s == None: s = self.scale
         if l == None: l = self.zpos
+        if method == None: method = self.current_method
+        # logger.critical('')
         if l == 0:
             return 0.0
         try:
             # if method == None:
             #     method = self.current_method
             # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
-            components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
+            # components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr'] #prev
+            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
 
             # value = self.method_results(s=s, l=l)['snr']
             # return statistics.fmean(map(float, value))
@@ -928,7 +932,8 @@ class DataModel:
         if l == 0:
             return []
         try:
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
             # return self.method_results(s=s, l=l)['snr']
         except:
             print_exception()
@@ -1593,7 +1598,7 @@ class DataModel:
 
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.scale
-        logger.debug('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return tuple(self._data['data']['scales'][s]['image_src_size'])
         except:
@@ -1609,10 +1614,11 @@ class DataModel:
 
     def set_image_size(self, s=None) -> None:
         if s == None: s = self.scale
-        self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+        # self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
+        self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
         val = self._data['data']['scales'][s]['image_src_size']
-        # logger.info(f'Just Set {s} image size to {val}')
-        logger.info(f'Scale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
+        logger.critical(f'Just Set {s} image size to {val}')
+        # logger.critical(f'\n\nScale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}\n')
 
     def image_size_aligned(self, s=None) -> tuple:
         if s == None: s = self.scale
@@ -1645,10 +1651,16 @@ class DataModel:
         if s == None: s = self.scale
         return int(self._data['data']['scales'][s]['poly_order'])
 
-    def null_cafm(self, s=None) -> bool:
+    def use_corrective_polynomial(self) -> bool:
         '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
-        if s == None: s = self.scale
-        return bool(self._data['data']['scales'][s]['null_cafm_trends'])
+        # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
+        return bool(self._data['data']['defaults']['use-corrective-polynomial'])
+
+
+    def corrective_polynomial(self, s=None) -> int:
+        '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
+        # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
+        return int(self._data['data']['defaults']['corrective-polynomial'])
 
     def al_option(self, s=None) -> str:
         '''Gets the Alignment Option for the Current Scale.'''
@@ -1773,14 +1785,14 @@ class DataModel:
         logger.info(f"Setting Image Sizes Directly, {s}, ImageSize: {size}")
         self._data['data']['scales'][s]['image_src_size'] = size
 
-    def set_poly_order(self, x: int, s=None) -> None:
-        '''Sets the Polynomial Order for the Current Scale.'''
-        if s == None: s = self.scale
-        self._data['data']['scales'][s]['poly_order'] = int(x)
+    # def set_poly_order(self, x: int, s=None) -> None:
+    #     '''Sets the Polynomial Order for the Current Scale.'''
+    #     if s == None: s = self.scale
+    #     self._data['data']['scales'][s]['poly_order'] = int(x)
 
-    def set_use_poly_order(self, b: bool) -> None:
-        '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.scale]['null_cafm_trends'] = bool(b)
+    # def set_use_poly_order(self, b: bool) -> None:
+    #     '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
+    #     self._data['data']['scales'][self.scale]['null_cafm_trends'] = bool(b)
 
     def set_al_dict(self, aldict, s=None):
         if s == None: s = self.scale

@@ -234,16 +234,12 @@ QTabWidget::pane {
     background: #ede9e8;
 }
 
-
-
-
 QMenu {
     font-family: Tahoma, sans-serif;
 	border-width: 1px;
 	border-color: #1b1e23;
 	border-style: outset;
 	font-size: 10px;
-
 }
 
 /* affects main menu top-of-window*/
@@ -252,7 +248,6 @@ QMenuBar::item {
 	padding: 2px 2px;
   	background: transparent;
   	font-size: 10px;
-
 }
 
 QMenuBar::item:selected {

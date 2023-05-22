@@ -77,33 +77,38 @@ class FileBrowser(QWidget):
         self.controls.setLayout(hbl)
         self.controls.hide()
 
-        button_size = QSize(62, 18)
+        button_size = QSize(54, 16)
 
         # with open('src/style/buttonstyle.qss', 'r') as f:
         #     button_gradient_style = f.read()
 
         self.buttonSetRootRoot = QPushButton('Root')
         # self.buttonSetRootRoot.setStyleSheet(button_gradient_style)
+        self.buttonSetRootRoot.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif;')
         self.buttonSetRootRoot.setFixedSize(button_size)
         self.buttonSetRootRoot.clicked.connect(self.setRootRoot)
 
         self.buttonSetRootHome = QPushButton('Home')
         # self.buttonSetRootHome.setStyleSheet(button_gradient_style)
+        self.buttonSetRootHome.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif;')
         self.buttonSetRootHome.setFixedSize(button_size)
         self.buttonSetRootHome.clicked.connect(self.setRootHome)
 
         self.buttonSetRootWork = QPushButton('Work')
         # self.buttonSetRootWork.setStyleSheet(button_gradient_style)
+        self.buttonSetRootWork.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif;')
         self.buttonSetRootWork.setFixedSize(button_size)
         self.buttonSetRootWork.clicked.connect(self.setRootWork)
 
         self.buttonSetRootScratch = QPushButton('Scratch')
         # self.buttonSetRootScratch.setStyleSheet(button_gradient_style)
+        self.buttonSetRootScratch.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif;')
         self.buttonSetRootScratch.setFixedSize(button_size)
         self.buttonSetRootScratch.clicked.connect(self.setRootScratch)
 
         self.buttonSetRootSpecial = QPushButton('SanDisk')
         # self.buttonSetRootSpecial.setStyleSheet(button_gradient_style)
+        self.buttonSetRootSpecial.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif;')
         self.buttonSetRootSpecial.setFixedSize(button_size)
         self.buttonSetRootSpecial.clicked.connect(self.setRootSpecial)
 

@@ -618,9 +618,8 @@ class ConfigProjectDialog(QDialog):
         self.chunk_layout.addWidget(self.chunk_shape_label, alignment=Qt.AlignLeft)
         self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
 
-        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for rapid viewing of " \
-              "volumetric datamodel in Neuroglancer. These settings determine the way volumetric datamodel is " \
-              "stored and retrieved from disk storage."
+        txt = "These presets control the way volumetric data is stored. Zarr is an open-source format for " \
+              "the storage of chunked, compressed, N-dimensional arrays with an interface similar to NumPy."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
         self.storage_info_label.setStyleSheet("""font-size: 10px; color: #161c20;""")
@@ -660,7 +659,7 @@ class ConfigProjectDialog(QDialog):
         self.scales_input.setFixedWidth(130)
         self.scales_input.setText(scales_str)
         self.scales_input.setAlignment(Qt.AlignCenter)
-        tip = "Scale factors, separated by spaces.\n(example) To generate 4x 2x and 1x/full scales, cur_method: 4 2 1"
+        tip = "Scale factors, space-delimited.\n(example) To generate 4x 2x and 1x/full scales, cur_method: 4 2 1"
         self.scale_instructions_label = QLabel(tip)
         self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_label.setToolTip(tip)
@@ -805,29 +804,12 @@ class NewConfigureProjectDialog(QDialog):
             self.accept()
 
     def initUI(self):
-        # self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale')
-        # self.cb_alignLowestScale.setFixedSize(QSize(128,20))
-        # def fn_align_coarsest(self):
-        #    cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
-        # self.cb_alignLowestScale.clicked.connect(fn_align_coarsest)
 
-        # self.cb_alignLowestScale = QCheckBox()
         self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
-        # self.cb_alignLowestScale_lab = QLabel('Immediately Align the Coarsest Scale ')
-        self.cb_alignLowestScale.setFixedSize(QSize(128,20))
         def fn_align_coarsest():
             logger.info('')
             cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
         self.cb_alignLowestScale.stateChanged.connect(fn_align_coarsest)
-
-        # hbl = HBL()
-        # hbl.addWidget(self.cb_alignLowestScale, alignment=Qt.AlignRight)
-        # hbl.addWidget(self.cb_alignLowestScale_lab, alignment=Qt.AlignLeft)
-
-        # self.cb_alignLowestScale_widget = QWidget()
-        # # self.cb_alignLowestScale_widget.setContentsMargins(0,0,0,0)
-        # self.cb_alignLowestScale_widget.setLayout(hbl)
-
 
         self.applyButton = QPushButton('Create Scales')
         self.applyButton.setFixedSize(QSize(128,20))
@@ -839,7 +821,7 @@ class NewConfigureProjectDialog(QDialog):
         self.cancelButton.clicked.connect(self.on_cancel)
 
         self.w_buttons = QWidget()
-        self.w_buttons.setLayout(HBL(self.cb_alignLowestScale, self.cancelButton, self.applyButton, ExpandingWidget(self)))
+        self.w_buttons.setLayout(VBL(self.cb_alignLowestScale, HWidget(self.cancelButton, self.applyButton, ExpandingWidget(self)), ExpandingWidget(self)))
 
         '''Scales Input Field'''
         if do_scales_exist():
@@ -863,7 +845,7 @@ class NewConfigureProjectDialog(QDialog):
         self.scales_input.setFixedWidth(130)
         self.scales_input.setText(scales_str)
         self.scales_input.setAlignment(Qt.AlignCenter)
-        tip = "Scale factors, separated by spaces.\nExample: To generate a 4x 2x and 1x scale hierarchy:\n\n4 2 1"
+        tip = "Scale factors, space-delimited.\nExample: To generate a 4x 2x and 1x scale hierarchy:\n\n4 2 1"
         self.scale_instructions_label = QLabel(tip)
         self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -992,9 +974,8 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_storage_options.addRow('Compression Level (1-9):', self.clevel_input)
         self.fl_storage_options.addRow('Compression Option:', self.cname_combobox)
         self.fl_storage_options.addRow('Chunk Shape:', self.chunk_shape_widget)
-        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for " \
-              "rapid viewing of volumetric datamodel in Neuroglancer. These settings determine the way " \
-              "volumetric datamodel is stored on disk."
+        txt = "These presets control the way volumetric data is stored. Zarr is an open-source format for " \
+              "the storage of chunked, compressed, N-dimensional arrays with an interface similar to NumPy."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         lab = QLabel(txt)
         lab.setStyleSheet("""font-size: 10px; color: #161c20;""")
@@ -1119,9 +1100,8 @@ class RechunkDialog(QDialog):
         self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
         self.chunk_shape_widget.setLayout(self.chunk_shape_layout)
 
-        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for " \
-              "rapid viewing of volumetric datamodel in Neuroglancer. These settings determine the way " \
-              "volumetric datamodel is stored on disk."
+        txt = "These presets control the way volumetric data is stored. Zarr is an open-source format for " \
+              "the storage of chunked, compressed, N-dimensional arrays with an interface similar to NumPy."
         txt = '\n'.join(textwrap.wrap(txt, width=55))
         self.storage_info_label = QLabel(txt)
         self.storage_info_label.setStyleSheet("""font-size: 10px; color: #161c20;""")

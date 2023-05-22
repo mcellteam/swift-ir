@@ -20,6 +20,7 @@ __all__ = ['Thumbnailer']
 
 logger = logging.getLogger(__name__)
 tnLogger = logging.getLogger('tnLogger')
+tnLogger.propagate = False
 
 
 
@@ -65,7 +66,6 @@ class Thumbnailer:
 
         logger.info(f'\n\n################ Reducing: Correlation Signals ################\n')
 
-
         pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
@@ -104,7 +104,8 @@ class Thumbnailer:
                 # logger.info(f'Search Path: {search_path}')
                 filenames.extend(glob(search_path))
 
-            tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
+            # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
+            tnLogger.info(f'Reducing {len(filenames)} corr spot thumbnails...')
 
             dt = self.reduce(src=src, od=od,
                              rmdir=rmdir, prefix='',
@@ -200,7 +201,7 @@ class Thumbnailer:
                       f'# files   : {len(filenames)}'
                       )
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
-        logger.info(f'Generating thumbnails for:\n{str(filenames)}')
+        # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
         if use_gui:
             task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
