@@ -452,6 +452,7 @@ class MainWindow(QMainWindow):
         logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
     def callbackDwVisibilityChanged(self):
+        QApplication.processEvents()
         self.cbPython.setChecked(self.dw_python.isVisible())
         self.cbMonitor.setChecked(self.dw_monitor.isVisible())
         self.cbNotes.setChecked(self.dw_notes.isVisible())
@@ -2115,10 +2116,11 @@ class MainWindow(QMainWindow):
         self.updateCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
-
-        self.dw_monitor.show()
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
+        self.dw_monitor.show()
+        self.cbMonitor.setChecked(True) #Why?
+
 
 
 
@@ -5641,7 +5643,7 @@ class MainWindow(QMainWindow):
 
         self.dw_python = DockWidget('Python', self)
         self.dw_python.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dw_python.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
+        self.dw_python.setFeatures(self.dw_python.DockWidgetClosable | self.dw_python.DockWidgetVerticalTitleBar)
         # self.dw_python.visibilityChanged.connect(lambda: self.cbPython.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_python.isHidden()]))
         self.dw_python.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
@@ -5657,7 +5659,8 @@ class MainWindow(QMainWindow):
         # self.flicker.setMaximumSize(QSize(256,256))
 
         self.dw_flicker = DockWidget('Flicker', self)
-        self.dw_flicker.visibilityChanged.connect(self.callbackFlickerDwVisibilityChanged)
+        # self.dw_flicker.visibilityChanged.connect(self.callbackFlickerDwVisibilityChanged)
+        self.dw_flicker.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         # self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable)
         self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
         # self.dw_flicker.visibilityChanged.connect(lambda: self.cbFlicker.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
@@ -5788,6 +5791,7 @@ class MainWindow(QMainWindow):
 
 
         self.csWidget = QTableWidget()
+        self.csWidget.setMinimumWidth(328)
         self.csWidget.setRowCount(1)
         self.csWidget.setColumnCount(4)
         self.csWidget.resizeRowToContents(0)
@@ -5797,6 +5801,7 @@ class MainWindow(QMainWindow):
         self.csWidget.resizeColumnToContents(3)
 
         self.correlation_signals = CorrelationSignals(self)
+        self.correlation_signals.setMinimumWidth(328)
         # self.correlation_signals = AspectWidget(self, ratio=4/1)
         vbl = VBL(self.csWidget)
         self.correlation_signals.setLayout(vbl)
@@ -5828,7 +5833,7 @@ class MainWindow(QMainWindow):
 
         self.dw_signals = DockWidget('Signals', self)
         self.dw_signals.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dw_signals.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
+        self.dw_signals.setFeatures(self.dw_signals.DockWidgetClosable | self.dw_signals.DockWidgetVerticalTitleBar)
         self.dw_signals.setStyleSheet("""
         QDockWidget {color: #ede9e8;}
         QDockWidget::title {
@@ -5871,8 +5876,8 @@ class MainWindow(QMainWindow):
 
 
         self.dw_cpanel = DockWidget('Controls', self)
-        self.dw_cpanel.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_cpanel.DockWidgetVerticalTitleBar)
-        self.dw_cpanel.setFeatures(self.dw_monitor.DockWidgetVerticalTitleBar)
+        self.dw_cpanel.setFeatures(self.dw_cpanel.DockWidgetClosable | self.dw_cpanel.DockWidgetVerticalTitleBar)
+        self.dw_cpanel.setFeatures(self.dw_cpanel.DockWidgetVerticalTitleBar)
         self.dw_cpanel.setObjectName('Dock Widget HUD')
         self.dw_cpanel.setStyleSheet("""
         QDockWidget {color: #ede9e8;}
@@ -6341,6 +6346,7 @@ class CorrelationSignals(QWidget):
         super().__init__(parent)
         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        # self.setMinimumWidth(324)
 
         # self.parent = parent
 
