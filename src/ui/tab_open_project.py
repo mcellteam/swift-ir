@@ -69,6 +69,7 @@ class OpenProject(QWidget):
         # self.updateRowHeight(self.initial_row_height)
 
         self.fetchSizesCheckbox = QCheckBox('Fetch Sizes')
+        self.fetchSizesCheckbox.setStyleSheet("font-size: 10px;")
         # self.fetchSizesCheckbox.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
@@ -87,7 +88,9 @@ class OpenProject(QWidget):
         hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(w)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(QLabel('Row Height'))
+        lab_row_height = QLabel('Row Height')
+        lab_row_height.setStyleSheet("font-size: 10px;")
+        hbl.addWidget(lab_row_height)
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
         self.controls.setLayout(hbl)
 

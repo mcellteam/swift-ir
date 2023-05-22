@@ -866,6 +866,11 @@ class DataModel:
         except:
             return {}
 
+    def get_method_data(self, method, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]
+
 
     def snr(self, s=None, l=None, method=None) -> float:
         if s == None: s = self.scale
@@ -938,7 +943,8 @@ class DataModel:
         except:
             # print_exception()
             logger.warning(f'No SNR components for section {l}, method {method} [caller: {caller}]...\n')
-            return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr']
+            return []
         # if self.method(s=s, l=l) == 'Manual-Hint':
         #     files = self.get_signals_filenames()
         #     n = len(files)

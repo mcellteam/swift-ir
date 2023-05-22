@@ -452,7 +452,7 @@ def print_exception():
 
     if cfg.data:
         lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
-        with open(lf, 'w+') as f:
+        with open(lf, 'a+') as f:
             f.write('\n' + txt)
 
 '''

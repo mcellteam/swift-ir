@@ -135,9 +135,9 @@ class CorrSignalThumbnail(QLabel):
     def __init__(self, parent, path='', snr='', extra=''):
         super().__init__(parent)
         self.setScaledContents(True)
-        self.setMinimumSize(QSize(QSize(32,32)))
+        # self.setMinimumSize(QSize(QSize(64,64)))
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) #Original!
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) #Original!
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path
@@ -210,9 +210,13 @@ class CorrSignalThumbnail(QLabel):
             print_exception()
             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
 
+    # def heightForWidth(self, w):
+    #     if self.pixmap():
+    #         return int(w * (self.pixmap().height() / self.pixmap().width()))
+
 
     def sizeHint(self):
-        # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        # return QSize(pm.width(), pm.height())
-        return QSize(100,100)
+        pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        return QSize(pm.width(), pm.height())
+        # return QSize(100,100)
 
