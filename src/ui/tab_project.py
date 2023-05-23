@@ -2258,7 +2258,7 @@ class ProjectTab(QWidget):
     #     if not os.path.isdir(path):
     #         os.mkdir(path)
     #     file = cfg.data.filename()
-    #     out = os.path.join(path, os.path.basename(file))
+    #     out = os.path.join(path, os.path.basename(filrestoreManAlignPtse))
     #     logger.critical('Copying FROM %s' % str(file))
     #     logger.critical('Copying TO %s' % str(out))
     #     shutil.copyfile(file, out)

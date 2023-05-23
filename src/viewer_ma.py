@@ -373,6 +373,9 @@ class MAViewer(neuroglancer.Viewer):
 
     def draw_point_annotations(self):
         logger.info('Drawing point annotations...')
+
+
+        logger.info(self.pts.values())
         try:
             anns = list(self.pts.values())
             if anns:
@@ -406,6 +409,12 @@ class MAViewer(neuroglancer.Viewer):
 
         self.undrawSWIMwindows()
         marker_size = 1
+
+
+        # if cfg.data.current_method == 'manual-hint':
+        #     self.draw_point_annotations()
+        #     return
+        #
 
         if cfg.data.current_method == 'grid-custom':
             logger.info('Drawing SWIM Window Annotations for Custom Grid Alignment...')
@@ -519,7 +528,14 @@ class MAViewer(neuroglancer.Viewer):
             except:
                 logger.warning(f'len(pts) = {len(pts)}, len(cfg.data.manpoints()[self.role]) = {len(cfg.data.manpoints()[self.role])}')
             annotations = []
-            ww = cfg.data.manual_swim_window_px()
+            if cfg.data.current_method == 'manual-strict':
+                self.undrawSWIMwindows()
+                ww_x = 16
+                ww_y = 16
+            else:
+                ww_x = ww_y = cfg.data.manual_swim_window_px()
+
+
             for i, pt in enumerate(pts):
                 coords = pt[1].point
                 color = pt[0]
@@ -527,8 +543,8 @@ class MAViewer(neuroglancer.Viewer):
                     self.makeRect(
                         prefix=str(i),
                         coords=(coords[2], coords[1]),
-                        ww_x=ww,
-                        ww_y=ww,
+                        ww_x=ww_x,
+                        ww_y=ww_y,
                         color=color,
                         marker_size=marker_size
                     )
@@ -578,24 +594,16 @@ class MAViewer(neuroglancer.Viewer):
         logger.info('Restoring manual alignment points for role: %s' %self.role)
         # self.pts = {}
         self.pts = OrderedDict()
+
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
+
         for i, p in enumerate(pts_data):
             props = [self.colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
             self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
 
-        # with self.txn() as s:
-        #     s.layers['ann'] = ng.LocalAnnotationLayer(
-        #         dimensions=self.coordinate_space,
-        #         annotations=self.pt2ann(points=pts_data),
-        #         annotation_properties=[
-        #             ng.AnnotationPropertySpec(id='ptColor', cur_method='rgb', default='white', ),
-        #             ng.AnnotationPropertySpec(id='ptWidth', cur_method='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT')),
-        #             ng.AnnotationPropertySpec(id='size', cur_method='float32', default=getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'))
-        #         ],
-        #         shader=copy.deepcopy(ann_shader),
-        #     )
+
 
 
         # json_str = self.state.layers.to_json()
