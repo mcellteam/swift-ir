@@ -1630,11 +1630,7 @@ class ProjectTab(QWidget):
         # self.toolbarLabelsWidget.addWidget(self.unaligned_label)
         # self.toolbarLabelsWidget.addWidget(self.generated_label)
 
-        self.w_ng_extended_toolbar = QToolBar()
-        self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
-        self.w_ng_extended_toolbar.setFixedHeight(20)
-        self.w_ng_extended_toolbar.setStyleSheet("""
+        toolbar_style = """
         QToolBar {
             background-color: #222222;
             color: #f3f6fb;
@@ -1661,8 +1657,53 @@ class ProjectTab(QWidget):
             color: #f3f6fb;
 
         }
+        
+        
+        
+        """
+        self.lab_reference = QLabel('Reference Section')
+        self.lab_reference.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
+        self.lab_transforming = QLabel('Transforming Section')
+        self.lab_transforming.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
+        self.lab_output = QLabel('Aligned Output')
+        self.lab_output.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
-        """)
+        self.w_ng_MA_toolbar = QToolBar()
+        self.w_ng_MA_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.w_ng_MA_toolbar.setIconSize(QSize(18, 18))
+        self.w_ng_MA_toolbar.setFixedHeight(20)
+        self.w_ng_MA_toolbar.setStyleSheet(toolbar_style)
+        self.w_ng_MA_toolbar.setAutoFillBackground(True)
+
+        self.layout_ng_MA_toolbar = QHBoxLayout()
+        self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
+        self.w_ng_MA_toolbar.setLayout(self.layout_ng_MA_toolbar)
+
+        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        # self.layout_ng_MA_toolbar.addStretch()
+        self.w_ng_MA_toolbar.addWidget(self.lab_reference)
+        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        # self.layout_ng_MA_toolbar.addStretch()
+        self.w_ng_MA_toolbar.addWidget(self.lab_transforming)
+        # self.layout_ng_MA_toolbar.addStretch()
+        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        self.w_ng_MA_toolbar.addWidget(self.lab_output)
+        # self.layout_ng_MA_toolbar.addStretch()
+        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        self.w_ng_MA_toolbar.hide()
+
+
+
+        self.w_ng_extended_toolbar = QToolBar()
+        self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
+        self.w_ng_extended_toolbar.setFixedHeight(20)
+        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style)
+        self.w_ng_extended_toolbar.setAutoFillBackground(True)
+
+
         self.labShowHide = QLabel('Display: ')
         self.labShowHide.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
         self.labNgLayout = QLabel('Layout: ')
@@ -1789,12 +1830,8 @@ class ProjectTab(QWidget):
         self.ngcl_shader.setStyleSheet("""background: #222222; color: #f3f6fb;
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
 
-        # self.w_ng_extended_toolbar.addAction(cfg.main_window.ngShowAffineAction)
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
-        # self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        # self.w_ng_extended_toolbar.addWidget(self.labScaleStatus)
-        # self.w_ng_extended_toolbar.addWidget(self.toolbarLabelsWidget)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
@@ -1803,11 +1840,9 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
-        self.w_ng_extended_toolbar.setAutoFillBackground(True)
-        # self.w_ng_extended_toolbar.setStyleSheet("""font-size: 10px; color: #ede9e8;""")
 
         self.ngCombinedHwidget = HWidget(self.w_ng_display, self.MA_splitter)
-        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.ngCombinedHwidget)
+        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.w_ng_MA_toolbar, self.shaderToolbar, self.ngCombinedHwidget)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.layout.setSpacing(0)
