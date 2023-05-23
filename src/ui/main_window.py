@@ -43,7 +43,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox, QFrame, \
-    QSizeGrip, QTabBar, QAbstractItemView
+    QSizeGrip, QTabBar, QAbstractItemView, QStyledItemDelegate
 
 import src.config as cfg
 import src.shaders
@@ -393,7 +393,8 @@ class MainWindow(QMainWindow):
         logger.info(f'snr_vals = {snr_vals}')
         colors = cfg.glob_colors
         count = 0
-        for i in range(7):
+        # for i in range(7):
+        for i in range(4):
             self.corrSignalsList[i].set_no_image()
             self.corrSignalsList[i].setStyleSheet(f"""border: none; padding: 3px;""")
             self.corrSignalsList[i].update()
@@ -407,7 +408,7 @@ class MainWindow(QMainWindow):
         # logger.critical('snr_vals: %s' % str(snr_vals))
 
         if cfg.data.current_method == 'grid-custom':
-            for i in range(7):
+            for i in range(4):
                 self.corrSignalsList[i].hide()
             regions = cfg.data.grid_custom_regions
             names = cfg.data.get_grid_custom_filenames()
@@ -416,7 +417,8 @@ class MainWindow(QMainWindow):
                 if regions[i]:
                     try:
                         self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
-                        self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+                        # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
+                        # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
                         self.corrSignalsList[i].show()
                         self.corrSignalsList[i].update()
                         count += 1
@@ -424,14 +426,15 @@ class MainWindow(QMainWindow):
                         print_exception()
                         logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
         else:
-            for i in range(7):
+            for i in range(4):
                 if i < n:
                     # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
                     try:
 
                         self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
-                        self.corrSignalsList[i].setStyleSheet(f"""border: 6px solid {colors[i]}; padding: 3px;""")
+                        # self.corrSignalsList[i].setStyleSheet(f"""border: 6px solid {colors[i]}; padding: 3px;""")
+                        # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
                     except:
                         print_exception()
                         self.corrSignalsList[i].set_no_image()
@@ -919,9 +922,8 @@ class MainWindow(QMainWindow):
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
 
-
-                self.dw_signals.show()
-                self.dw_flicker.show()
+                self.cbSignals.setChecked(True)
+                self.cbFlicker.setChecked(True)
 
         except:
             print_exception()
@@ -1267,8 +1269,8 @@ class MainWindow(QMainWindow):
             self._btn_clear_skips.setEnabled(True)
             self._swimWindowControl.setEnabled(True)
             self.sb_whiteningControl.setEnabled(True)
-            self.cbSignals.setEnabled(True)
-            self.cbFlicker.setEnabled(True)
+            # self.cbSignals.setEnabled(True)
+            # self.cbFlicker.setEnabled(True)
             # self._ctlpanel_applyAllButton.setEnabled(True)
             self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
             self._changeScaleCombo.setEnabled(True)
@@ -1281,8 +1283,8 @@ class MainWindow(QMainWindow):
             self._bbToggle.setEnabled(False)
             self._polyBiasCombo.setEnabled(False)
             self._btn_clear_skips.setEnabled(False)
-            self.cbFlicker.setEnabled(False)
-            self.cbSignals.setEnabled(False)
+            # self.cbFlicker.setEnabled(False)
+            # self.cbSignals.setEnabled(False)
 
             # self._ctlpanel_applyAllButton.setEnabled(False)
 
@@ -1355,8 +1357,8 @@ class MainWindow(QMainWindow):
             self._btn_manualAlign.setEnabled(False)
             self.startRangeInput.setEnabled(False)
             self.endRangeInput.setEnabled(False)
-            self.cbFlicker.setEnabled(False)
-            self.cbSignals.setEnabled(False)
+            # self.cbFlicker.setEnabled(False)
+            # self.cbSignals.setEnabled(False)
 
     def layer_left(self):
         caller = inspect.stack()[1].function
@@ -2118,8 +2120,11 @@ class MainWindow(QMainWindow):
         # self.refreshTab()
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
-        self.dw_monitor.show()
+        # self.dw_monitor.show()
         self.cbMonitor.setChecked(True) #Why?
+        if cfg.data.is_aligned():
+            self.cbFlicker.setChecked(True)
+            self.cbSignals.setChecked(True)
 
 
 
@@ -5239,7 +5244,6 @@ class MainWindow(QMainWindow):
                     background-color: #161c20;
                     color: #ede9e8;
                     font-weight: 600;
-                    padding-left: 5px;
                     text-align: left;
                 }""")
         self.dw_monitor.setWidget(self.hud)
@@ -5408,11 +5412,12 @@ class MainWindow(QMainWindow):
         self.cs1 = CorrSignalThumbnail(self)
         self.cs2 = CorrSignalThumbnail(self)
         self.cs3 = CorrSignalThumbnail(self)
-        self.cs4 = CorrSignalThumbnail(self)
-        self.cs5 = CorrSignalThumbnail(self)
-        self.cs6 = CorrSignalThumbnail(self)
-        self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3,
-                                self.cs4, self.cs5, self.cs6]
+        # self.cs4 = CorrSignalThumbnail(self)
+        # self.cs5 = CorrSignalThumbnail(self)
+        # self.cs6 = CorrSignalThumbnail(self)
+        # self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3,
+        #                         self.cs4, self.cs5, self.cs6]
+        self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3]
         # self.cs_layout = HBL()
         # self.cs_layout.setContentsMargins(2, 2, 2, 2)
         # self.cs_layout.addWidget(self.cs0)
@@ -5471,7 +5476,6 @@ class MainWindow(QMainWindow):
         QDockWidget::title {
             background-color: #FFE873;
             font-weight: 600;
-            padding-left: 5px;
             text-align: left;
         }""")
         self.dw_notes.setWidget(self.notes)
@@ -5602,7 +5606,7 @@ class MainWindow(QMainWindow):
                     border-bottom-left-radius: 8px;
                     border-top-right-radius: 8px;
                     border: 1px solid #ede9e8;
-                    background-color: #9fdf9f;
+                    background-color: #b3e6b3;
 
                 }
                 QTabBar::tab:selected
@@ -5648,7 +5652,6 @@ class MainWindow(QMainWindow):
         self.dw_python.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
             background: #4B8BBE;
-            padding-left: 5px;
             font-weight: 600;
         }""")
         self.dw_python.setWidget(self.pythonConsole)
@@ -5670,7 +5673,6 @@ class MainWindow(QMainWindow):
         QDockWidget::title {
             text-align: left; /* align the text to the left */
             background: #380282;
-            padding-left: 5px;
             font-weight: 600;
         }""")
 
@@ -5686,8 +5688,6 @@ class MainWindow(QMainWindow):
         # self.flickerContainer.layout.setStretch(1,9)
         # self.dw_flicker.setWidget(self.flickerContainer)
         self.dw_flicker.setWidget(self.flicker)
-        # self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
-        # self.addDockWidget(Qt.RightDockWidgetArea, self.dw_flicker)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
         self.dw_flicker.hide()
 
@@ -5791,6 +5791,10 @@ class MainWindow(QMainWindow):
 
 
         self.csWidget = QTableWidget()
+        self.csWidget.horizontalHeader().setHighlightSections(False)
+        self.csWidget.verticalHeader().setHighlightSections(False)
+        self.csWidget.setFocusPolicy(Qt.NoFocus)
+        self.csWidget.setSelectionMode(QAbstractItemView.NoSelection)
         self.csWidget.setMinimumWidth(328)
         self.csWidget.setRowCount(1)
         self.csWidget.setColumnCount(4)
@@ -5801,7 +5805,7 @@ class MainWindow(QMainWindow):
         self.csWidget.resizeColumnToContents(3)
 
         self.correlation_signals = CorrelationSignals(self)
-        self.correlation_signals.setMinimumWidth(328)
+        self.correlation_signals.setMinimumWidth(334)
         # self.correlation_signals = AspectWidget(self, ratio=4/1)
         vbl = VBL(self.csWidget)
         self.correlation_signals.setLayout(vbl)
@@ -5810,11 +5814,27 @@ class MainWindow(QMainWindow):
         # self.csWidget.setCellWidget(0,1, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs1, ExpandingHWidget(self)), ExpandingVWidget(self)))
         # self.csWidget.setCellWidget(0,2, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs2, ExpandingHWidget(self)), ExpandingVWidget(self)))
         # self.csWidget.setCellWidget(0,3, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs3, ExpandingHWidget(self)), ExpandingVWidget(self)))
+        # self.csWidget.setCellWidget(0,0, VWidget(ExpandingVWidget(self), self.cs0, ExpandingVWidget(self)))
+        # self.csWidget.setCellWidget(0,1, VWidget(ExpandingVWidget(self), self.cs1, ExpandingHWidget(self)))
+        # self.csWidget.setCellWidget(0,2, VWidget(ExpandingVWidget(self), self.cs2, ExpandingHWidget(self)))
+        # self.csWidget.setCellWidget(0,3, VWidget(ExpandingVWidget(self), self.cs3, ExpandingVWidget(self)))
         # self.csWidget.setCellWidget(0,0, HWidget(ExpandingHWidget(self), self.cs0, ExpandingHWidget(self)))
+        # self.csWidget.setCellWidget(0,1, HWidget(ExpandingHWidget(self), self.cs1, ExpandingHWidget(self)))
+        # self.csWidget.setCellWidget(0,2, HWidget(ExpandingHWidget(self), self.cs2, ExpandingHWidget(self)))
+        # self.csWidget.setCellWidget(0,3, HWidget(ExpandingHWidget(self), self.cs3, ExpandingHWidget(self)))
         self.csWidget.setCellWidget(0,0, self.cs0)
         self.csWidget.setCellWidget(0,1, self.cs1)
         self.csWidget.setCellWidget(0,2, self.cs2)
         self.csWidget.setCellWidget(0,3, self.cs3)
+        self.csWidget.setItem(0, 0, QTableWidgetItem())
+        self.csWidget.setItem(0, 1, QTableWidgetItem())
+        self.csWidget.setItem(0, 2, QTableWidgetItem())
+        self.csWidget.setItem(0, 3, QTableWidgetItem())
+        self.csWidget.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
+        self.csWidget.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
+        self.csWidget.item(0, 2).setBackground(QColor(cfg.glob_colors[2]))
+        self.csWidget.item(0, 3).setBackground(QColor(cfg.glob_colors[3]))
+
         self.csWidget.verticalHeader().setVisible(False)
         self.csWidget.horizontalHeader().setVisible(False)
         self.csWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -5840,7 +5860,6 @@ class MainWindow(QMainWindow):
                     background-color: #306998;
                     color: #161c20;
                     font-weight: 600;
-                    padding-left: 5px;
                     text-align: left;
                 }""")
 
@@ -5885,7 +5904,6 @@ class MainWindow(QMainWindow):
                     background-color: #161c20;
                     color: #ede9e8;
                     font-weight: 600;
-                    padding-left: 5px;
                     text-align: left;
                 }""")
         self.dw_cpanel.setWidget(self.sa_cpanel)

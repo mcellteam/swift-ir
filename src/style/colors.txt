@@ -9,6 +9,7 @@
 #339933 - Neuroglancer green (*** 40% lightness ***)
 #194d19 - Neuroglancer green (20% lightness)
 #9fdf9f - Neuroglancer green, (75% lightness)
+#b3e6b3 - Neuroglancer green, (80% lightness)
 #c6ecc6 - Neuroglancer green, (85% lightness)
 #d9f2d9 - Neuroglancer green, (90% lightness)
 #FFFF66 = Neuroglancer light yellow (text)

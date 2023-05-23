@@ -137,8 +137,8 @@ class CorrSignalThumbnail(QLabel):
         self.setScaledContents(True)
         # self.setMinimumSize(QSize(QSize(64,64)))
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) #Original!
-        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) #Original!
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.path = path
         if self.path:
@@ -147,9 +147,23 @@ class CorrSignalThumbnail(QLabel):
         self.extra = extra
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         # self.setStyleSheet("""border: 3px solid #ffe135;""")
+        self.setAlignment(Qt.AlignCenter)
+        self.setStyleSheet("""background-color: #ffffff;""")
+        self.setMinimumSize(QSize(90, 90))
+        self.setAutoFillBackground(True)
+
+
+
+        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # policy.setHeightForWidth(True)
+        # self.setSizePolicy(policy)
+
+    # def heightForWidth(self, width):
+    #     return width
 
     def resizeEvent(self, e):
         self.setMaximumWidth(self.height())
+
 
     def paintEvent(self, event):
         if self.pixmap():
@@ -160,6 +174,9 @@ class CorrSignalThumbnail(QLabel):
                 qp = QPainter(self)
 
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                if (pm.width() == 0) or (pm.height() == 0):
+                    self.set_no_image()
+                    return
 
                 # pm.fill()
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
@@ -213,10 +230,4 @@ class CorrSignalThumbnail(QLabel):
     # def heightForWidth(self, w):
     #     if self.pixmap():
     #         return int(w * (self.pixmap().height() / self.pixmap().width()))
-
-
-    def sizeHint(self):
-        pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        return QSize(pm.width(), pm.height())
-        # return QSize(100,100)
 

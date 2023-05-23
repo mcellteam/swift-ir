@@ -694,7 +694,7 @@ class OpenProject(QWidget):
         if not validate_project_selection(project_file):
             logger.warning('Invalid Project For Deletion (!)\n%s' % project)
             return
-        cfg.main_window.warn("Delete the following project?\nProject: %s" % project)
+        cfg.main_window.warn("Delete this project? %s" % project)
         txt = "Are you sure you want to PERMANENTLY DELETE " \
               "the following project?\n\n" \
               "Project: %s" % project

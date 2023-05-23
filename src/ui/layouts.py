@@ -65,7 +65,7 @@ class VWidget(QWidget):
 class HSplitter(QSplitter):
     def __init__(self, *args):
         super().__init__(Qt.Orientation.Horizontal)
-        self.setHandleWidth(2)
+        self.setHandleWidth(4)
         for w in args:
             self.addWidget(w)
 
@@ -73,7 +73,7 @@ class HSplitter(QSplitter):
 class VSplitter(QSplitter):
     def __init__(self, *args):
         super().__init__(Qt.Orientation.Vertical)
-        self.setHandleWidth(2)
+        self.setHandleWidth(4)
         for w in args:
             self.addWidget(w)
 
