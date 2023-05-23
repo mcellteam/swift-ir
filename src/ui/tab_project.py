@@ -1679,7 +1679,7 @@ class ProjectTab(QWidget):
         self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
         self.w_ng_MA_toolbar.setLayout(self.layout_ng_MA_toolbar)
 
-        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        # self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
         # self.layout_ng_MA_toolbar.addStretch()
         self.w_ng_MA_toolbar.addWidget(self.lab_reference)
         self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
@@ -1691,7 +1691,7 @@ class ProjectTab(QWidget):
         self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_MA_toolbar.addWidget(self.lab_output)
         # self.layout_ng_MA_toolbar.addStretch()
-        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        # self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_MA_toolbar.hide()
 
 
