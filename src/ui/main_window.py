@@ -463,7 +463,7 @@ class MainWindow(QMainWindow):
         self.cbFlicker.setChecked(self.dw_flicker.isVisible())
 
     def callbackFlickerDwVisibilityChanged(self):
-        logger.critical('')
+        # logger.critical('')
         # logger.critical(f'self.dw_flicker.width() = {self.dw_flicker.width()}')
         # logger.critical(f'self.cbFlicker.height() = {self.cbFlicker.height()}')
         self.cbFlicker.setChecked(self.dw_flicker.isVisible())
@@ -511,9 +511,9 @@ class MainWindow(QMainWindow):
         self.updateNotes()
 
     def setdw_signals(self, state):
-        if not self._isProjectTab():
-            state = False
-            self.cbSignals.setChecked(False)
+        # if not self._isProjectTab():
+        #     state = False
+        #     self.cbSignals.setChecked(False)
         self.flicker.resize(QSize(180, 180))
         self.dw_signals.setVisible(state)
         self.showSignalsAction.setText(('Show Correlation Signals', 'Hide Correlation Signals')[state])
@@ -526,8 +526,8 @@ class MainWindow(QMainWindow):
 
     def setdw_flicker(self, state):
         if not self._isProjectTab():
-            state = False
-            self.cbFlicker.setChecked(False)
+            # state = False
+            # self.cbFlicker.setChecked(False)
             self.flicker.stop()
 
         self.dw_flicker.setVisible(state)
@@ -930,13 +930,12 @@ class MainWindow(QMainWindow):
         finally:
             if cfg.event.is_set():
                 cfg.event.clear()
-
+            self._autosave()
             self._working = False
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
             if self._isProjectTab():
                 self.enableAllTabs()
-                self._autosave()
                 try:
                     if cfg.project_tab._tabs.currentIndex() == 3:
                         cfg.project_tab.snr_plot.initSnrPlot()
