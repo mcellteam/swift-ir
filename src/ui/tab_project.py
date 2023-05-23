@@ -2677,14 +2677,16 @@ class ProjectTab(QWidget):
         self._allow_zoom_change = True
 
     def setZoomSlider(self):
+        caller = inspect.stack()[1].function
         logger.info('')
+        if caller == 'main':
         # logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
-        if self._allow_zoom_change:
-            # caller = inspect.stack()[1].function
-            zoom = cfg.emViewer.zoom()
-            # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
-            self.zoomSlider.setValue(1 / zoom)
-            self._allow_zoom_change = True
+            if self._allow_zoom_change:
+                # caller = inspect.stack()[1].function
+                zoom = cfg.emViewer.zoom()
+                # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
+                self.zoomSlider.setValue(1 / zoom)
+                self._allow_zoom_change = True
 
     def onZoomSlider(self):
         caller = inspect.stack()[1].function
