@@ -2727,6 +2727,10 @@ class MainWindow(QMainWindow):
                 #         logger.warning(f'Unable to delete viewer: {str(v)}')
 
                 # self.combo_mode.setCurrentIndex(2)
+
+                cfg.project_tab.w_ng_MA_toolbar.show()
+                cfg.project_tab.w_ng_extended_toolbar.hide()
+
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
@@ -2739,7 +2743,7 @@ class MainWindow(QMainWindow):
                 self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
                 self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
                 self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-                cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
+                # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
@@ -2762,6 +2766,9 @@ class MainWindow(QMainWindow):
             #     cfg.stageViewer = None
             # except:
             #     print_exception()
+
+            cfg.project_tab.w_ng_MA_toolbar.hide()
+            cfg.project_tab.w_ng_extended_toolbar.show()
 
             self._btn_manualAlign.setStyleSheet("""""")
             self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
