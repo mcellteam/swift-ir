@@ -10,7 +10,7 @@ import qtawesome as qta
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
     QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy, QDial, QFormLayout, QGroupBox, QButtonGroup, \
-    QStyle
+    QStyle, QSpinBox
 from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize, QObject
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
@@ -772,7 +772,6 @@ class NewConfigureProjectDialog(QDialog):
 
 
     def on_cancel(self):
-
         self.reject()
         # self.close()
         # return 1
@@ -781,7 +780,8 @@ class NewConfigureProjectDialog(QDialog):
         try:
             cfg.main_window.hud('Applying Project Settings...')
 
-
+            cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=True)
+            cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=True)
 
             cfg.data.set_scales_from_string(self.scales_input.text())
             cfg.data.set_method_options()
@@ -912,6 +912,16 @@ class NewConfigureProjectDialog(QDialog):
         self.initial_rotation_widget.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
         self.initial_rotation_widget.setLayout(self.initial_rotation_layout)
 
+
+        self.cb_clobber = QCheckBox()
+        self.sb_clobber_pixels = QSpinBox()
+        self.sb_clobber_pixels.setFixedSize(QSize(38, 18))
+        self.sb_clobber_pixels.setMinimum(1)
+        self.sb_clobber_pixels.setMaximum(16)
+        self.sb_clobber_pixels.setMaximum(16)
+        self.cb_clobber.setChecked(cfg.data.clobber())
+        self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
+
         '''Bounding Box Field'''
         self.bounding_rectangle_label = QLabel("Bounding Box:")
         self.bounding_rectangle_checkbox = QCheckBox()
@@ -982,7 +992,6 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_storage_options.addWidget(lab)
         self.gb_storage_options.setLayout(self.fl_storage_options)
 
-
         self.gb_config = QGroupBox('Main')
         self.fl_config = QFormLayout()
         # self.fl_config.setVerticalSpacing(4)
@@ -994,6 +1003,8 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_config.addWidget(self.scale_instructions_label)
         self.fl_config.addRow('Voxel Size (nm):', self.resolution_widget)
         self.fl_config.addRow('Initial Rotation (°):', self.initial_rotation_widget)
+        self.fl_config.addRow('Clobber Fixed Pattern', self.cb_clobber)
+        self.fl_config.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_config.addRow('Bounding Box:', self.bounding_rectangle_checkbox)
         self.gb_config.setLayout(self.fl_config)
 
@@ -1008,7 +1019,6 @@ class NewConfigureProjectDialog(QDialog):
         # w.layout.setAlignment(Qt.AlignTop)
         vbl = VBL(w, self.w_buttons, ExpandingWidget(self))
         self.setLayout(vbl)
-
 
 
 class RechunkDialog(QDialog):
@@ -1134,6 +1144,7 @@ class RechunkDialog(QDialog):
         vbl.addWidget(self.storage_info_label)
 
         self.setLayout(vbl)
+
 
 
 

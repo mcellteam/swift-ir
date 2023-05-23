@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QLabe
 from qtpy.QtCore import Qt, QRect, QSize, QPoint, QTimer
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
 import src.config as cfg
-from src.helpers import print_exception
+from src.helpers import print_exception, get_appdir
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,8 @@ class Flicker(QLabel):
         self.extra = extra
         self.border_color = '#000000'
         self.showBorder = False
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.timer = QTimer(self)
         self.timer.setInterval(500)
@@ -32,8 +32,17 @@ class Flicker(QLabel):
         self.series = None
         self.cur = 0
         self._isPlaying = False
-        self.setMinimumSize(QSize(64,64))
+        self.setMinimumSize(QSize(90,90))
         # self.resize(QSize(180,180))
+        self.setStyleSheet("""background-color: #ffffff;""")
+
+        self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
+
+        policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        policy.setHeightForWidth(True)
+        self.setSizePolicy(policy)
+
+
 
     def set(self):
         # logger.critical('Setting pixmap...')
@@ -65,10 +74,22 @@ class Flicker(QLabel):
         self._isPlaying = 0
         logger.info('<<<< stop')
 
+    def set_no_image(self):
+        self.snr = None
+        try:
+            self.setPixmap(QPixmap(self.no_image_path))
+        except:
+            print_exception()
+            logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+
+
     def paintEvent(self, event):
         if self.pixmap():
             try:
                 pm = self.pixmap()
+                if (pm.width() == 0) or (pm.height() == 0):
+                    self.set_no_image()
+                    return
                 originalRatio = pm.width() / pm.height()
                 currentRatio = self.width() / self.height()
                 if originalRatio != currentRatio:
@@ -94,5 +115,13 @@ class Flicker(QLabel):
     # def resizeEvent(self, e):
     #     self.setMaximumWidth(self.height())
 
-    def sizeHint(self):
-        return QSize(100, 100)
+    # def sizeHint(self):
+    #     return QSize(100, 100)
+
+    # def sizeHint(self):
+    #     try:
+    #         pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    #         return QSize(pm.width(), pm.height())
+    #         # return QSize(100,100)
+    #     except:
+    #         pass

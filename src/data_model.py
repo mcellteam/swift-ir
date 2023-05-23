@@ -633,7 +633,6 @@ class DataModel:
     def clobber(self):
         return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['clobber_fixed_noise']
 
-
     def set_clobber(self, b, l=None, glob=False):
         if l == None: l = self.zpos
         for s in self.scales():

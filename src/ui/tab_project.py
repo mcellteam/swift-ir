@@ -1157,6 +1157,7 @@ class ProjectTab(QWidget):
         by adjusting the grid shape and location and adding or removing quadrants of the grid. 
         An affine transformation requires at least 3 regions (quadrants)."""
         self.method_rb1 = QRadioButton('Custom Grid')
+        self.method_rb1.setStyleSheet("font-size: 10px;")
         self.method_rb1.setToolTip(tip)
 
 
@@ -1164,6 +1165,7 @@ class ProjectTab(QWidget):
         Note: An affine transformation requires at least 3 correspondence regions."""
         # self.method_rb2 = QRadioButton('Correspondence Points')
         self.method_rb2 = QRadioButton('Match Regions')
+        self.method_rb2.setStyleSheet("font-size: 10px;")
         self.method_rb2.setToolTip(tip)
 
 
