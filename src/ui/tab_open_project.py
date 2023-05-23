@@ -56,7 +56,7 @@ class OpenProject(QWidget):
         self.userProjectsWidget = QWidget()
         # lab = QLabel('Saved AlignEM-SWiFT Projects:')
         lab = QLabel('Project Management')
-        lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
+        # lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
 
 
         self.row_height_slider = Slider(self)
@@ -93,6 +93,7 @@ class OpenProject(QWidget):
         hbl.addWidget(lab_row_height)
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
         self.controls.setLayout(hbl)
+        self.controls.setStyleSheet('font-size: 13px; font-weight: 600; color: #f3f6fb; background-color: #339933;')
 
         self.new_project_lab1 = QLabel()
         self.new_project_lab1.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
