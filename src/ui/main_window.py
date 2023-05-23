@@ -645,10 +645,10 @@ class MainWindow(QMainWindow):
                     lst_names += f'\n  Section: {name}'
                 self.warn(f'No SNR Data For Sections: {", ".join(map(str, indexes))}')
 
-    # def regenerateOne(self):
-    #     start = cfg.data.zpos
-    #     end = cfg.data.zpos + 1
-    #     self.regenerate(scale=cfg.data.scale, start=start, end=end)
+    def regenerateOne(self):
+        start = cfg.data.zpos
+        end = cfg.data.zpos + 1
+        self.regenerate(scale=cfg.data.scale, start=start, end=end)
 
     def regenerate(self, scale, start=0, end=None) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
