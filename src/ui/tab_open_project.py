@@ -371,6 +371,7 @@ class OpenProject(QWidget):
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile('/corral-repl/projects/NeuroNex-3DEM/projects/'))
 
         else:
             urls.append(QUrl.fromLocalFile(QDir.homePath()))
@@ -549,6 +550,7 @@ class OpenProject(QWidget):
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile('/corral-repl/projects/NeuroNex-3DEM/projects/'))
 
         else:
             urls.append(QUrl.fromLocalFile(QDir.homePath()))
