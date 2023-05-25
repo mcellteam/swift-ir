@@ -32,7 +32,7 @@ class Flicker(QLabel):
         self.series = None
         self.cur = 0
         self._isPlaying = False
-        self.setMinimumSize(QSize(90,90))
+        self.setMinimumSize(QSize(128,128))
         # self.resize(QSize(180,180))
         self.setStyleSheet("""background-color: #ffffff;""")
 
@@ -65,6 +65,7 @@ class Flicker(QLabel):
 
     def start(self):
         logger.info('start >>>>')
+        self.set_position(cfg.data.zpos)
         self.set()
         self.timer.start()
         self._isPlaying = 1

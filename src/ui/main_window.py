@@ -488,6 +488,7 @@ class MainWindow(QMainWindow):
             # self.cbFlicker.resize(self.cbFlicker.height(), self.dw_flicker.width())
 
     def callbackToolwindows(self):
+        QApplication.processEvents()
         self.dw_python.setVisible(self.cbPython.isChecked())
         self.dw_notes.setVisible(self.cbNotes.isChecked())
         self.dw_monitor.setVisible(self.cbMonitor.isChecked())
@@ -496,7 +497,6 @@ class MainWindow(QMainWindow):
         if self.dw_flicker.isHidden():
             self.flicker.stop()
         else:
-            self.flicker.set_position(cfg.data.zpos)
             self.flicker.start()
 
     def setdw_python(self, state):
@@ -556,7 +556,6 @@ class MainWindow(QMainWindow):
             if self.dw_flicker.isHidden():
                 self.flicker.stop()
             else:
-                self.flicker.set_position(cfg.data.zpos)
                 self.flicker.start()
 
     # def _callbk_showHidePython(self):
@@ -872,7 +871,8 @@ class MainWindow(QMainWindow):
                 self.updateCpanelDetails()
 
                 self.cbSignals.setChecked(True)
-                # self.cbFlicker.setChecked(True)
+                self.cbFlicker.setChecked(True)
+                self.flicker.start()
 
         except:
             print_exception()
@@ -2099,7 +2099,8 @@ class MainWindow(QMainWindow):
         # self.dw_monitor.show()
         self.cbMonitor.setChecked(True) #Why?
         if cfg.data.is_aligned():
-            # self.cbFlicker.setChecked(True)s
+            self.cbFlicker.setChecked(True)
+            self.flicker.start()
             self.cbSignals.setChecked(True)
 
 
@@ -3355,6 +3356,7 @@ class MainWindow(QMainWindow):
             # self.dw_corrspots_layout.hide()
             self.cbSignals.setChecked(False)
             self.cbFlicker.setChecked(False)
+            self.cbFlicker.stop()
             self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
