@@ -337,11 +337,14 @@ class CorrSignalThumbnail(QLabel):
         if self.pixmap():
             try:
                 # originalRatio = pm.width() / pm.height()
-                # currentRatio = self.width() / self.height()
+                # currentRatio = self.width() / self.height()s
                 # if originalRatio != currentRatio:
                 qp = QPainter(self)
 
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                if (pm.width() == 0) or (pm.height() == 0):
+                    self.set_no_image()
+                    return
 
                 # pm.fill()
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
