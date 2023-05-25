@@ -258,8 +258,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
 
 
 
-        SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.use_corrective_polynomial(),
-                     poly_order=dm.corrective_polynomial())
+        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
         save2file(dm=dm,name=dm.dest())
 

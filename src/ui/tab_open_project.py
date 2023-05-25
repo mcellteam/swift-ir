@@ -501,7 +501,7 @@ class OpenProject(QWidget):
 
             if cfg.data['data']['autoalign_flag']:
                 cfg.mw.tell('Aligning coarsest scale...')
-                cfg.mw.alignAll(set_pbar=False, force=True)
+                cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
 
             QApplication.processEvents()
 

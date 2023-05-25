@@ -742,7 +742,6 @@ class DataModel:
         self._data['data']['defaults'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
         self._data['data']['defaults'].setdefault('bounding-box', cfg.DEFAULT_BOUNDING_BOX)
         self._data['data']['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
-        self._data['data']['defaults'].setdefault('use-corrective-polynomial', cfg.DEFAULT_USE_CORRECTIVE_POLYNOMIAL)
         self._data['data']['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
         self._data['data']['defaults'].setdefault('swim-iterations', cfg.DEFAULT_SWIM_ITERATIONS)
         self._data['data']['defaults'].setdefault('scales', {})
@@ -1243,7 +1242,9 @@ class DataModel:
             return self._data['data']['scales'][s]['stack'][l][
                 'alignment']['method_results']['affine_matrix']
         except:
+            print_exception()
             return [[0, 0, 0], [0, 0, 0]]
+
 
     def afm_(self, s=None, l=None) -> zip:
         if s == None: s = self.scale
@@ -1264,7 +1265,9 @@ class DataModel:
             return self._data['data']['scales'][s]['stack'][l][
                 'alignment']['method_results']['cumulative_afm']
         except:
+            print_exception()
             return [[0, 0, 0], [0, 0, 0]]
+
 
     def cafm_(self, s=None, l=None) -> zip:
         if s == None: s = self.scale
@@ -1665,21 +1668,21 @@ class DataModel:
     def full_scale_size(self):
         return ImageSize(self.path_base(s='scale_1'))
 
-    def poly_order(self, s=None) -> int:
-        '''Returns the Polynomial Order for the Current Scale.'''
-        if s == None: s = self.scale
-        return int(self._data['data']['scales'][s]['poly_order'])
+    # def poly_order(self, s=None) -> int:
+    #     '''Returns the Polynomial Order for the Current Scale.'''
+    #     if s == None: s = self.scale
+    #     return int(self._data['data']['scales'][s]['poly_order'])
 
-    def use_corrective_polynomial(self) -> bool:
-        '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
-        # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
-        return bool(self._data['data']['defaults']['use-corrective-polynomial'])
-
-
-    def corrective_polynomial(self, s=None) -> int:
-        '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
-        # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
-        return int(self._data['data']['defaults']['corrective-polynomial'])
+    # def use_corrective_polynomial(self) -> bool:
+    #     '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
+    #     # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
+    #     return bool(self._data['data']['defaults']['use-corrective-polynomial'])
+    #
+    #
+    # def corrective_polynomial(self, s=None) -> int:
+    #     '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
+    #     # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
+    #     return int(self._data['data']['defaults']['corrective-polynomial'])
 
     # def al_option(self, s=None) -> str:
     #     '''Gets the Alignment Option for the Current Scale.'''
@@ -1778,14 +1781,6 @@ class DataModel:
 
     def set_use_bounding_rect(self, b: bool) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-
-        # if s == None:
-        #     for s in self.scales():
-        #         logger.info(f'Setting USE bb to {b}, for {s}')
-        #         self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
-        # else:
-        #     logger.info(f'Setting USE bb to {b}, for {s}')
-        #     self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
         self._data['data']['defaults']['bounding-box'] = bool(b)
 
     def set_bounding_rect(self, bounding_rect: list, s=None) -> None:
@@ -1835,8 +1830,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            self._data['data']['scales'][s]['stack'][l][
-                'alignment']['method_results']['cumulative_afm'] = cafm
+            self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm'] = cafm
         except:
             print_exception()
 
