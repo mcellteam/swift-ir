@@ -60,7 +60,8 @@ from src.autoscale import autoscale
 from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
-    update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML
+    update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML, \
+    check_project_status
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -426,7 +427,9 @@ class MainWindow(QMainWindow):
                         except:
                             snr = 0.0
                             logger.info(f'no SNR data for corr signal index {i}')
+                            self.corrSignalsList[i].set_no_image()
                             # print_exception()
+                            continue
 
                         self.corrSignalsList[i].set_data(path=names[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
@@ -447,7 +450,9 @@ class MainWindow(QMainWindow):
                         except:
                             snr = 0.0
                             logger.info(f'no SNR data for corr signal index {i}')
+                            self.corrSignalsList[i].set_no_image()
                             # print_exception()
+                            continue
 
                         self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
