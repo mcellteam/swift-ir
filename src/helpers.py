@@ -57,6 +57,25 @@ def run_checks():
         assert(cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
 
 
+def check_project_status():
+    iter = cfg.data.get_iter()
+    for i,section in enumerate(iter):
+        if section['current_method'] in ('manual-hint'):
+            n_ref_pts = len(section['manpoints']['ref'])
+            n_base_pts = len(section['manpoints']['base'])
+            if n_ref_pts < 3:
+                cfg.mw.warn(f'# of match regions for Reference image {i} is fewer than 3: {n_ref_pts}')
+            if n_base_pts < 3:
+                cfg.mw.warn(f'# of match regions for Transforming image {i} is fewer than 3: {n_ref_pts}')
+        if section['current_method'] in ('manual-strict'):
+            n_ref_pts = len(section['manpoints']['ref'])
+            n_base_pts = len(section['manpoints']['base'])
+            if n_ref_pts < 3:
+                cfg.mw.warn(f'# of match points for Reference image {i} is fewer than 3: {n_ref_pts}')
+            if n_base_pts < 3:
+                cfg.mw.warn(f'# of match points for Transforming image {i} is fewer than 3: {n_ref_pts}')
+
+
 def getOpt(lookup):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
