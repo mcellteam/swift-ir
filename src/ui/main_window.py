@@ -425,7 +425,8 @@ class MainWindow(QMainWindow):
                             snr = snr_vals[count]
                         except:
                             snr = 0.0
-                            print_exception()
+                            logger.info(f'no SNR data for corr signal index {i}')
+                            # print_exception()
 
                         self.corrSignalsList[i].set_data(path=names[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
@@ -445,7 +446,8 @@ class MainWindow(QMainWindow):
                             snr = snr_vals[i]
                         except:
                             snr = 0.0
-                            print_exception()
+                            logger.info(f'no SNR data for corr signal index {i}')
+                            # print_exception()
 
                         self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
