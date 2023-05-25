@@ -822,7 +822,7 @@ class NewConfigureProjectDialog(QDialog):
         self.createScalesButton.setDefault(True)
         self.createScalesButton.clicked.connect(self.on_apply)
 
-        self.scaleAndAlignButton = QPushButton('Create Scales &\nInitialize Alignment')
+        self.scaleAndAlignButton = QPushButton('Create Scales &&\nInitialize Alignment')
         self.scaleAndAlignButton.setStyleSheet("font-size: 9px;")
         self.scaleAndAlignButton.setFixedSize(QSize(128,28))
         self.scaleAndAlignButton.setDefault(True)

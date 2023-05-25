@@ -277,8 +277,9 @@ def BiasMat(x, bias_funcs):
 # NEW
 # Find the bias functions that best fit the trends in cafm across the whole stack
 # For now the form of the functions is an Nth-order polynomial
-def BiasFuncs(layerator, bias_funcs=None, poly_order=4):
-    logger.debug('BiasFuncs:')
+# def BiasFuncs(layerator, bias_funcs=None, poly_order=4):
+def BiasFuncs(layerator, poly_order=0, bias_funcs=None):
+    logger.critical('\n\nBiasFuncs:\n')
     poly_order = int(poly_order)
     n_tasks = sum(1 for _ in copy.deepcopy(layerator))
     if type(bias_funcs) == type(None):
@@ -348,7 +349,7 @@ def BiasFuncs(layerator, bias_funcs=None, poly_order=4):
     if init_scalars:
         bias_funcs['y'][poly_order] = p[poly_order]
 
-    logging.debug("init_scalars=%s\nReturning Biases: %s\n" % (str(init_scalars), str(bias_funcs)))
+    logging.info("init_scalars=%s\nReturning Biases: %s\n" % (str(init_scalars), str(bias_funcs)))
 
     return bias_funcs
 
@@ -416,39 +417,39 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         c_afm = composeAffine(bias_mat, c_afm)
     atrm['method_results']['cumulative_afm'] = c_afm.tolist()
 
-    # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
+    logger.info('Returning c_afm: %s' % format_cafm(c_afm))
 
     return c_afm
 
 
-def SetStackCafm(iterator, scale, null_biases=False, poly_order=None):
+# def SetStackCafm(iterator, scale, poly_order=None):
+def SetStackCafm(iterator, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
-    logger.critical(f'Setting Stack CAFM (iterator={str(iterator)}, scale={scale}, null_biases={null_biases}, poly_order={poly_order})...')
-    if null_biases == True:
-        # To perform bias correction, first initialize Cafms without bias correction
-        SetStackCafm(scale=scale, null_biases=False)
+    logger.critical(f'Setting Stack CAFM (iterator={str(iterator)}, scale={scale}, poly_order={poly_order})...')
+    use_poly = (poly_order != None)
+    if use_poly:
+        SetStackCafm(iterator, scale=scale, poly_order=None) # first initialize Cafms without bias correction
     bias_mat = None
-    if null_biases:
+    if use_poly:
         # If null_biases==True, Iteratively determine and null out bias in cafm
         bias_funcs = BiasFuncs(cfg.data.get_iter(scale), poly_order=poly_order)
         c_afm_init = InitCafm(bias_funcs)
     else:
         c_afm_init = identityAffine()
-    bias_iters = 2 if null_biases else 1
+
+    bias_iters = (1,2)[use_poly]
     for bi in range(bias_iters):
+        # logger.critical(f'\n\nbi = {bi}\n')
         c_afm = c_afm_init
-        for i, layer in enumerate(iterator):
-            if null_biases:
+        for i, layer in enumerate(cfg.data.get_iter(scale)):
+            if use_poly:
                 bias_mat = BiasMat(i, bias_funcs)
             c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
-            # if i in [0,1,2,n,n-1]:
-            # logger.info('c_afm: %s' % format_cafm(c_afm))
-            # cfg.datamodel.set_cafm(c_afm.tolist(), l=align_idx)
 
         if bi < bias_iters - 1:
-            bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs)
+            bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs, poly_order=poly_order)
 
-    return c_afm_init
+    return c_afm_init,
 
 
 def composeAffine(afm, bfm):

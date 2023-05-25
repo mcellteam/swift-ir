@@ -36,6 +36,7 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
         #     ng.server.stop()
 
         tryRemoveDatFiles(dm, scale,dm.dest())
+
         Z_STRIDE = 0
 
         if cfg.USE_PYTHON:
@@ -48,26 +49,28 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
 
         print_example_cafms(dm)
         logger.info('Setting Stack CAFM...')
-        SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.use_corrective_polynomial(), poly_order=dm.corrective_polynomial())
+        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
         od = os.path.join(dm.dest(), scale, 'img_aligned')
         if renew_od:
             logger.info('Renewing Directory %s...' % od)
             renew_directory(directory=od)
         # print_example_cafms(scale_dict)
         bias_path = os.path.join(dm.dest(), scale, 'bias_data')
-        # save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+        try:
+            save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+        except:
+            print_exception()
+
         if end == None:
             end = len(dm)
         n_tasks = len(list(range(start,end)))
-        # if dm.use_bb():
 
-        # logger.critical(f'dm.has_bb() :{dm.has_bb()}')
         if dm.has_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
 
             logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
-            logger.info(f'Corrective Polynomial  : {dm.use_corrective_polynomial()} (Polynomial Order: {dm.corrective_polynomial()})')
+            logger.info(f'Corrective Polynomial  : {cfg.data.default_poly_order} (Polynomial Order: {cfg.data.default_poly_order})')
         else:
             logger.info(f'Bounding Box      : OFF')
             w, h = dm.image_size(s=scale)
@@ -232,14 +235,13 @@ def tryRemoveFile(directory):
         pass
 
 def tryRemoveDatFiles(dm, scale, path):
-    bb_str = str(dm.use_bb())
-    poly_order_str = str(dm.corrective_polynomial())
-    null_cafm_str = str(dm.use_corrective_polynomial())
+    # bb_str = str(dm.has_bb())
+    # poly_order_str = str(cfg.data.default_poly_order)
     bias_data_path = os.path.join(path, scale, 'bias_data')
-    tryRemoveFile(os.path.join(path, scale,
-                               'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
-    tryRemoveFile(os.path.join(path, scale,
-                               'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
+    # tryRemoveFile(os.path.join(path, scale,
+    #                            'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
+    # tryRemoveFile(os.path.join(path, scale,
+    #                            'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
     tryRemoveFile(os.path.join(path, scale, 'swim_log.dat'))
     tryRemoveFile(os.path.join(path, scale, 'mir_commands.dat'))
     tryRemoveFile(os.path.join(path, 'fdm_new.txt'))

@@ -48,22 +48,21 @@ WIDTH, HEIGHT = 1280, 640
 
 '''Default Alignment Params'''
 
-DEFAULT_POLY_ORDER           = int(0)
-DEFAULT_NULL_BIAS            = bool(False)
-DEFAULT_BOUNDING_BOX         = bool(False)
-DEFAULT_INITIAL_ROTATION     = float(0.0000)
-DEFAULT_INITIAL_SCALE        = float(1.0000)
-DEFAULT_DTYPE                = '|u1'
-DEFAULT_MANUAL_SWIM_WINDOW   = int(128)
+DEFAULT_POLY_ORDER            = int(0)
+DEFAULT_NULL_BIAS             = bool(False)
+DEFAULT_BOUNDING_BOX          = bool(False)
+DEFAULT_INITIAL_ROTATION      = float(0.0000)
+DEFAULT_INITIAL_SCALE         = float(1.0000)
+DEFAULT_DTYPE                 = '|u1'
+DEFAULT_MANUAL_SWIM_WINDOW    = int(128)
 DEFAULT_MANUAL_SWIM_WINDOW_PERC = float(.125)
 DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
-DEFAULT_MANUAL_WHITENING     = float(-0.6800)
-DEFAULT_CLOBBER_PX           = 3
-DEFAULT_SWIM_ITERATIONS      = 3 # in pixels
+DEFAULT_MANUAL_WHITENING      = float(-0.6800)
+DEFAULT_CLOBBER_PX            = 3
+DEFAULT_SWIM_ITERATIONS       = 3 # in pixels
 
-DEFAULT_WHITENING            = float(-0.6800)
-DEFAULT_CORRECTIVE_POLYNOMIAL     = 0
-DEFAULT_USE_CORRECTIVE_POLYNOMIAL = False
+DEFAULT_WHITENING             = float(-0.6800)
+DEFAULT_CORRECTIVE_POLYNOMIAL = None
 
 '''Default Image Resolution (Voxel Dimensions)'''
 DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50

@@ -836,7 +836,6 @@ class MainWindow(QMainWindow):
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
         if not cfg.ignore_pbar:
             self.showZeroedPbar()
-        cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
         self._autosave()
@@ -897,7 +896,7 @@ class MainWindow(QMainWindow):
             logger.critical(f'Time Elapsed: {dt}s')
             self.tell(f'Time Elapsed: {dt}s')
 
-    def alignAll(self, set_pbar=True, force=False):
+    def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
         if (not force) and (not self._isProjectTab()):
             return
         scale = cfg.data.scale
@@ -916,7 +915,6 @@ class MainWindow(QMainWindow):
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
-        cfg.data['data']['scales'][scale]['use_bounding_rect'] = self._bbToggle.isChecked()
         self.align(
             scale=cfg.data.scale,
             start=0,
@@ -925,6 +923,7 @@ class MainWindow(QMainWindow):
             reallocate_zarr=True,
             # stageit=stageit,
             stageit=True,
+            ignore_bb=ignore_bb
         )
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
@@ -1024,7 +1023,7 @@ class MainWindow(QMainWindow):
         self.tell('**** Processes Complete ****')
         cfg.ignore_pbar = False
 
-    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False):
+    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False):
         # Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
@@ -1033,6 +1032,9 @@ class MainWindow(QMainWindow):
 
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
+
+        if not ignore_bb:
+            cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
 
         if cfg.ignore_pbar:
             self.showZeroedPbar()
@@ -2632,15 +2634,17 @@ class MainWindow(QMainWindow):
     def _callbk_bnding_box(self, state):
         caller = inspect.stack()[1].function
         logger.info(f'Bounding Box Toggle Callback (caller: {caller})')
-        if caller != 'dataUpdateWidgets':
+        # if caller != 'dataUpdateWidgets':
+
+
+        if caller == 'main':
+            state = self._bbToggle.isChecked()
             # self._bbToggle.setEnabled(state)
             if state:
                 self.warn('Bounding Box is ON. Warning: Output dimensions may grow larger than source.')
-                # cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = True
                 cfg.data['data']['defaults']['bounding-box'] = True
             else:
                 self.tell('Bounding Box is OFF. Output dimensions will match source.')
-                # cfg.data['data']['scales'][cfg.data['data']['current_scale']]['use_bounding_rect'] = False
                 cfg.data['data']['defaults']['bounding-box'] = False
 
     def _callbk_skipChanged(self, state: int):  # 'state' is connected to skipped toggle
