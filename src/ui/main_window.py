@@ -142,7 +142,7 @@ class MainWindow(QMainWindow):
         # self.setAttribute(Qt.WA_TranslucentBackground)
         # self.showFullScreen()
 
-        self.tell('To Relaunch on Lonestar6:\n\n  cd $WORK/swift-ir\n  source tacc_boostrap\n')
+        self.tell('To Relaunch on Lonestar6:\n\n  source $WORK/swift-ir/tacc_boostrap\n')
 
         if not cfg.NO_SPLASH:
             self.show_splash()
