@@ -196,6 +196,7 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self):
         QApplication.processEvents()
+        cfg.mw.tell('Initializing Neuroglancer...')
         logger.info(f'\n\n  Initializing Neuroglancer [{inspect.stack()[1].function}]...\n')
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):

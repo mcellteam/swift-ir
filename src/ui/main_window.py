@@ -2046,6 +2046,14 @@ class MainWindow(QMainWindow):
         setData('state,mode', 'comparison')
         setData('state,ng_layout', 'xy')
 
+        self.cbMonitor.setChecked(True) #Why?
+        if cfg.data.is_aligned():
+            self.cbFlicker.setChecked(True)
+            self.flicker.start()
+            self.cbSignals.setChecked(True)
+
+        QApplication.processEvents()
+
         # dt = 0.0009050369262695312
 
         # self.combo_mode.setCurrentIndex(1)
@@ -2086,9 +2094,8 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()  # fast
         # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
-        self._autosave()  # 0412+
+        # self._autosave()  # 0412+
         # self._sectionSlider.setValue(int(len(cfg.data) / 2))
-        self.update()
         self._dontReinit = False
 
         self.cpanel.show()
@@ -2102,12 +2109,6 @@ class MainWindow(QMainWindow):
         self.updateCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
-        QApplication.processEvents()
-        self.cbMonitor.setChecked(True) #Why?
-        if cfg.data.is_aligned():
-            self.cbFlicker.setChecked(True)
-            self.flicker.start()
-            self.cbSignals.setChecked(True)
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
         # self.dw_monitor.show()
