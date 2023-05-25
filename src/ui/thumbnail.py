@@ -359,7 +359,9 @@ class CorrSignalThumbnail(QLabel):
 
                 font = QFont()
                 font.setBold(True)
-                font.setPointSize(14)
+                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 8)
+                font.setPointSize(size)
+                # font.setPointSize(14)
                 qp.setFont(font)
                 # qp.setPen(QColor('#ff0000'))
                 qp.setPen(QColor('#a30000'))
