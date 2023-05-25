@@ -896,8 +896,8 @@ class MainWindow(QMainWindow):
             logger.critical(f'Time Elapsed: {dt}s')
             self.tell(f'Time Elapsed: {dt}s')
 
-    def alignAll(self, set_pbar=True):
-        if not self._isProjectTab():
+    def alignAll(self, set_pbar=True, force=False):
+        if (not force) and (not self._isProjectTab()):
             return
         scale = cfg.data.scale
         if not self.verify_alignment_readiness():

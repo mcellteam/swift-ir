@@ -107,13 +107,19 @@ class Thumbnailer:
             # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
             tnLogger.info(f'Reducing {len(filenames)} corr spot thumbnails...')
 
+            if scale == list(cfg.data.scales())[-1]:
+                full_size = True
+            else:
+                full_size = False
+
             dt = self.reduce(src=src, od=od,
                              rmdir=rmdir, prefix='',
                              start=start, end=end,
                              pbar_text=pbar_text,
                              filenames=filenames,
                              dest=dest,
-                             use_gui=use_gui
+                             use_gui=use_gui,
+                             full_size=full_size
                              )
             cfg.data.t_thumbs_spot = dt
             cfg.main_window.tell('Discarding Raw (Full Size) Correlation Signals...')
@@ -136,6 +142,7 @@ class Thumbnailer:
                pbar_text='',
                filenames=None,
                target_size=cfg.TARGET_THUMBNAIL_SIZE,
+               full_size=False,
                dest='',
                use_gui=True,
                ):
@@ -164,7 +171,9 @@ class Thumbnailer:
 
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))
-            scale_factor = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
+            scale_factor = int(max(siz_x, siz_y) / target_size)
+            if full_size:
+                scale_factor = 1
             if scale_factor == 0:
                 scale_factor = 1
         except Exception as e:
@@ -214,11 +223,14 @@ class Thumbnailer:
         task_queue.taskNameList = basefilenames
         task_queue.start(cpus)
 
+        logger.critical(f'scale factor: {scale_factor}')
+
         logger.info('Removing up to %d files...' %len(filenames))
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
             if os.path.exists(ofn):
                 os.remove(ofn)
+
             task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
