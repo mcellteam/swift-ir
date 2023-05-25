@@ -2103,13 +2103,15 @@ class MainWindow(QMainWindow):
         # QApplication.processEvents()
         # self.refreshTab()
         QApplication.processEvents()
-        cfg.project_tab.initNeuroglancer()
-        # self.dw_monitor.show()
         self.cbMonitor.setChecked(True) #Why?
         if cfg.data.is_aligned():
             self.cbFlicker.setChecked(True)
             self.flicker.start()
             self.cbSignals.setChecked(True)
+        QApplication.processEvents()
+        cfg.project_tab.initNeuroglancer()
+        # self.dw_monitor.show()
+
 
 
 
