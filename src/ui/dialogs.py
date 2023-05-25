@@ -776,6 +776,11 @@ class NewConfigureProjectDialog(QDialog):
         # self.close()
         # return 1
 
+    def onScaleAndAlign(self):
+        cfg.data['data']['autoalign_flag'] = True
+        self.on_apply()
+
+
     def on_apply(self):
         try:
             cfg.main_window.hud('Applying Project Settings...')
@@ -805,23 +810,32 @@ class NewConfigureProjectDialog(QDialog):
 
     def initUI(self):
 
-        self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
-        def fn_align_coarsest():
-            logger.info('')
-            cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
-        self.cb_alignLowestScale.stateChanged.connect(fn_align_coarsest)
+        # self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
+        # def fn_align_coarsest():
+        #     logger.info('')
+        #     cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
+        # self.cb_alignLowestScale.stateChanged.connect(fn_align_coarsest)
 
-        self.applyButton = QPushButton('Create Scales')
-        self.applyButton.setFixedSize(QSize(128,20))
-        self.applyButton.setDefault(True)
-        self.applyButton.clicked.connect(self.on_apply)
+        self.createScalesButton = QPushButton('Create Scale Pyramid')
+        # self.createScalesButton.setStyleSheet("font-size: 10px;")
+        self.createScalesButton.setFixedSize(QSize(128, 28))
+        self.createScalesButton.setDefault(True)
+        self.createScalesButton.clicked.connect(self.on_apply)
+
+        self.scaleAndAlignButton = QPushButton('Create Scales &\nInitialize Alignment')
+        self.scaleAndAlignButton.setStyleSheet("font-size: 9px;")
+        self.scaleAndAlignButton.setFixedSize(QSize(128,28))
+        self.scaleAndAlignButton.setDefault(True)
+        self.scaleAndAlignButton.clicked.connect(self.onScaleAndAlign)
 
         self.cancelButton = QPushButton('Cancel')
-        self.cancelButton.setFixedSize(QSize(128,20))
+        self.cancelButton.setFixedSize(QSize(128,28))
         self.cancelButton.clicked.connect(self.on_cancel)
 
         self.w_buttons = QWidget()
-        self.w_buttons.setLayout(VBL(self.cb_alignLowestScale, HWidget(self.cancelButton, self.applyButton, ExpandingWidget(self)), ExpandingWidget(self)))
+        self.w_buttons.setStyleSheet("font-size: 10px;")
+        # self.w_buttons.setLayout(VBL(self.cb_alignLowestScale, HWidget(self.cancelButton, self.createScalesButton, ExpandingWidget(self)), ExpandingWidget(self)))
+        self.w_buttons.setLayout(VBL(HWidget(self.cancelButton, self.createScalesButton, self.scaleAndAlignButton, ExpandingWidget(self)), ExpandingWidget(self)))
 
         '''Scales Input Field'''
         if do_scales_exist():
