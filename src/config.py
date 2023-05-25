@@ -44,7 +44,7 @@ is_mendenhall = False
 # WIDTH, HEIGHT = 1180, 680
 # WIDTH, HEIGHT = 1380, 900
 # WIDTH, HEIGHT = 1180, 720
-WIDTH, HEIGHT = 1280, 640
+WIDTH, HEIGHT = 1280, 700
 
 '''Default Alignment Params'''
 
@@ -83,10 +83,11 @@ PROFILING_TIMER_SPEED = 5000
 PROFILING_TIMER_AUTOSTART = False
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 256
-if 'Joels-' in platform.node():
-    DEV_MODE = 1
-else:
-    DEV_MODE = 0
+# if 'Joels-' in platform.node():
+#     DEV_MODE = 1
+# else:
+#     DEV_MODE = 0
+DEV_MODE = 0
 PROFILING_MODE = False
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True

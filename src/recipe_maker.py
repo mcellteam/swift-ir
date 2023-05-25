@@ -85,7 +85,8 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
                 scale=scale_key,
                 defaults=project['data']['defaults'],
                 initial_rotation=initial_rotation,
-                isRefinement=isRefinement
+                isRefinement=isRefinement,
+                dev_mode=dev_mode
             )
             recipe.assemble_recipe()
             recipe.execute_recipe()
@@ -101,7 +102,7 @@ class align_recipe:
     global RMlogger
     global MAlogger
 
-    def __init__(self, pd, od, init_afm, img_size, layer_dict, scale, defaults, initial_rotation, isRefinement):
+    def __init__(self, pd, od, init_afm, img_size, layer_dict, scale, defaults, initial_rotation, isRefinement, dev_mode):
         self.pd = pd
         self.od = od
         self.scale_dir = os.path.abspath(os.path.dirname(self.od))
@@ -130,6 +131,7 @@ class align_recipe:
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+        self.dev_mode = dev_mode
 
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')['tacc.utexas' in platform.node()]
@@ -266,58 +268,61 @@ class align_recipe:
             self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
         # self.layer_dict['alignment_history'][self.cur_method].append(self.layer_dict['alignment']['method_results'])
         self.layer_dict['alignment_history'][self.cur_method] = self.layer_dict['alignment']['method_results']
-        self.layer_dict['alignment']['swim_args'] = {}
-        self.layer_dict['alignment']['swim_out'] = {}
-        self.layer_dict['alignment']['swim_err'] = {}
-        self.layer_dict['alignment']['mir_toks'] = {}
-        self.layer_dict['alignment']['mir_script'] = {}
-        self.layer_dict['alignment']['mir_out'] = {}
-        self.layer_dict['alignment']['mir_err'] = {}
-        self.layer_dict['alignment']['swim_ww_arg'] = {}
-        for i,ing in enumerate(self.ingredients):
-            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = {}
-            except: print_exception(self.pd)
-            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['ww'] = ing.ww
-            except: print_exception(self.pd)
-            # if self.cur_method == 'manual-hint':
-            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
-            except: print_exception(self.pd)
-            try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
-            except: print_exception(self.pd)
-            if self.cur_method in ('grid-default', 'grid-custom'):
-                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cx'] = str(ing.cx)
-                # except: print_exception(self.pd)
-                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cy'] = str(ing.cy)
-                # except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
+
+
+        if self.dev_mode:
+            self.layer_dict['alignment']['swim_args'] = {}
+            self.layer_dict['alignment']['swim_out'] = {}
+            self.layer_dict['alignment']['swim_err'] = {}
+            self.layer_dict['alignment']['mir_toks'] = {}
+            self.layer_dict['alignment']['mir_script'] = {}
+            self.layer_dict['alignment']['mir_out'] = {}
+            self.layer_dict['alignment']['mir_err'] = {}
+            self.layer_dict['alignment']['swim_ww_arg'] = {}
+            for i,ing in enumerate(self.ingredients):
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = {}
                 except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['ww'] = ing.ww
                 except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
+                # if self.cur_method == 'manual-hint':
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
                 except: print_exception(self.pd)
-            if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
-                try: self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
+                try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
                 except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
-                except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
-                except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
-                except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
-                except: print_exception(self.pd)
-                # try: self.layer_dict['alignment']['dx']['ingredient_%d' % i] = ing.dx
-                # except: print_exception(self.pd)
-                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = ing.dy
-                # except: print_exception(self.pd)
-                # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['swim_drift'] = ing.swim_drift
-                # except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
-                except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
-                except: print_exception(self.pd)
-                try: self.layer_dict['alignment']['swim_ww_arg']['ingredient_%d' % i] = ing.swim_ww_arg
-                except: print_exception(self.pd)
+                if self.cur_method in ('grid-default', 'grid-custom'):
+                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cx'] = str(ing.cx)
+                    # except: print_exception(self.pd)
+                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cy'] = str(ing.cy)
+                    # except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
+                    except: print_exception(self.pd)
+                if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
+                    try: self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
+                    except: print_exception(self.pd)
+                    # try: self.layer_dict['alignment']['dx']['ingredient_%d' % i] = ing.dx
+                    # except: print_exception(self.pd)
+                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = ing.dy
+                    # except: print_exception(self.pd)
+                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['swim_drift'] = ing.swim_drift
+                    # except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
+                    except: print_exception(self.pd)
+                    try: self.layer_dict['alignment']['swim_ww_arg']['ingredient_%d' % i] = ing.swim_ww_arg
+                    except: print_exception(self.pd)
 
 
         # cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out']

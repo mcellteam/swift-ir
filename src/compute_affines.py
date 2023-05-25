@@ -157,8 +157,8 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                              temp_file,             # Temp project file name
                              str(scale_val),        # Scale to use or 0
                              str(zpos),             # Section index to run recipe alignment
-                             str(USE_FILE_IO),  # Use File IO instead of Pipe
-                             str(DEV_MODE),     # Use development mode
+                             str(USE_FILE_IO),      # Use File IO instead of Pipe
+                             str(DEV_MODE),         # Use development mode
                              ]
                 task_queue.add_task(task_args)
                 if use_gui:
