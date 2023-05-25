@@ -3356,7 +3356,7 @@ class MainWindow(QMainWindow):
             # self.dw_corrspots_layout.hide()
             self.cbSignals.setChecked(False)
             self.cbFlicker.setChecked(False)
-            self.cbFlicker.stop()
+            self.flicker.stop()
             self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
