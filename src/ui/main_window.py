@@ -944,7 +944,8 @@ class MainWindow(QMainWindow):
         scales.reverse()
         for s in scales:
             cfg.data.scale = s
-            self.alignAll()
+            if not cfg.data.is_aligned(s=s):
+                self.alignAll()
 
     def alignRange(self):
         cfg.ignore_pbar = False
@@ -3752,7 +3753,7 @@ class MainWindow(QMainWindow):
         self.alignAllAction.setShortcut('Ctrl+A')
         alignMenu.addAction(self.alignAllAction)
 
-        self.alignAllScalesAction = QAction('Align All Scales', self)
+        self.alignAllScalesAction = QAction('Align Scales to Full Res', self)
         self.alignAllScalesAction.triggered.connect(self.alignAllScales)
         alignMenu.addAction(self.alignAllScalesAction)
 
