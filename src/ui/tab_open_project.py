@@ -488,22 +488,24 @@ class OpenProject(QWidget):
             else:
                 autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=True)
             # cfg.mw.autoscale_()
-            cfg.main_window._autosave(silently=True)
+            # cfg.main_window._autosave(silently=True)
 
             # cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
-
-
 
             # cfg.main_window._setLastTab()
             # cfg.data.zpos = int(len(cfg.data) / 2)
             # cfg.main_window.onStartProject()
             # QApplication.processEvents()
 
+            logger.critical(f"cfg.data['data']['autoalign_flag'] = {cfg.data['data']['autoalign_flag']}")
+
             if cfg.data['data']['autoalign_flag']:
                 cfg.mw.tell('Aligning coarsest scale...')
-                cfg.mw.alignAll(set_pbar=False)
-                cfg.main_window._autosave(silently=True)
+                cfg.mw.alignAll(set_pbar=False, force=True)
 
+            QApplication.processEvents()
+
+            cfg.main_window._autosave(silently=True)
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path))
             cfg.main_window._setLastTab()
             cfg.data.zpos = int(len(cfg.data) / 2)

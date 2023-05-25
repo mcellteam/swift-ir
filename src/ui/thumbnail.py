@@ -320,7 +320,6 @@ class ThumbnailFast(QLabel):
 #         return QSize(100,100)
 
 
-
 class CorrSignalThumbnail(QLabel):
     def __init__(self, parent, path='', snr='', extra=''):
         super().__init__(parent)
@@ -367,7 +366,7 @@ class CorrSignalThumbnail(QLabel):
 
                 if self.snr:
                     # loc = QPoint(0, self.rect().height() - 4)
-                    loc = QPoint(4, self.rect().height() - 8)
+                    loc = QPoint(4, self.rect().height() - 6)
                     if self.extra:
                         qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
                     else:

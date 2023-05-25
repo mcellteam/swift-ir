@@ -11,7 +11,7 @@ data_template = \
         "state": {
             "mode": "comparison",
             "previous_mode": None,
-            "manual_mode": True,
+            "manual_mode": False,
             "ng_layout": 'xy',
             "stage_viewer": {
                 "show_yellow_frame": True

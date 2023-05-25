@@ -9,6 +9,7 @@ import sys
 import logging
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtWidgets import QSlider
+from src.helpers import print_exception
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +20,12 @@ class DoubleSlider(QSlider):
         self.decimals = 5
         self._max_int = 10 ** self.decimals
 
+        # super().setMinimum(0)
         super().setMinimum(0)
         super().setMaximum(self._max_int)
 
-        self._min_value = 0.0
+        # self._min_value = 0.0
+        self._min_value = 0.001
         self._max_value = 1.0
 
     @property
@@ -30,15 +33,16 @@ class DoubleSlider(QSlider):
         return self._max_value - self._min_value
 
     def value(self):
-        # return float(super().value()) / self._max_int * self._value_range + self._min_value
         return float(super().value()) / self._max_int * self._value_range + self._min_value
+        # return float(super().value()) / self._max_int * self._value_range + self._min_value
 
     def setValue(self, value):
         try:
-            # super().setValue(int((value - self._min_value) / self._value_range * self._max_int))
-            super().setValue(float((value - self._min_value) / self._value_range * self._max_int))
+            super().setValue(int((value - self._min_value) / self._value_range * self._max_int))
+            # super().setValue(float((value - self._min_value) / self._value_range * self._max_int))
         except:
             logger.warning('Unable to set slider value to %s' %str(value))
+            print_exception()
 
 
     def setMinimum(self, value):
