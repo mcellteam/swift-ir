@@ -2035,22 +2035,19 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
+        logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
+        self.cbMonitor.setChecked(True) #Why?
 
         initLogFiles(cfg.data)
         self._dontReinit = True
         caller = inspect.stack()[1].function
         # self.tell("Loading project '%s'..." %cfg.data.dest())
-        logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
 
         setData('state,manual_mode', False)
         setData('state,mode', 'comparison')
         setData('state,ng_layout', 'xy')
 
-        self.cbMonitor.setChecked(True) #Why?
-        if cfg.data.is_aligned():
-            self.cbFlicker.setChecked(True)
-            self.flicker.start()
-            self.cbSignals.setChecked(True)
+
 
         QApplication.processEvents()
 
@@ -2103,7 +2100,10 @@ class MainWindow(QMainWindow):
         cfg.project_tab.showSecondaryNgTools()
         cfg.project_tab.updateLabelsHeader()
 
-
+        if cfg.data.is_aligned():
+            self.cbFlicker.setChecked(True)
+            self.flicker.start()
+            self.cbSignals.setChecked(True)
 
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
