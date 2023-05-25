@@ -692,6 +692,7 @@ class OpenProject(QWidget):
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             cfg.main_window._setLastTab()
             cfg.main_window.hud.done()
+            cfg.main_window.tell("Done.")
         else:
             cfg.main_window.warn("Invalid Path")
 
