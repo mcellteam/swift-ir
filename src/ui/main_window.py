@@ -861,6 +861,7 @@ class MainWindow(QMainWindow):
                 self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
                 self.updateDtWidget()
                 cfg.project_tab.updateTreeWidget()
+                cfg.project_tab.updateLabelsHeader()
                 # cfg.project_tab.updateProjectLabels()
                 self.updateEnabledButtons()
                 self.updateProjectTable()  # +
@@ -1883,6 +1884,7 @@ class MainWindow(QMainWindow):
                             self.dataUpdateWidgets()
                             self.updateCpanelDetails_i1()
                             self._showSNRcheck()
+                            cfg.project_tab.updateLabelsHeader()
                             cfg.project_tab.refreshTab()
         logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
 
@@ -2082,6 +2084,9 @@ class MainWindow(QMainWindow):
         self.cpanel.show()
         self.sa_cpanel.show()
         cfg.project_tab.showSecondaryNgTools()
+        cfg.project_tab.updateLabelsHeader()
+
+
 
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
@@ -2690,7 +2695,7 @@ class MainWindow(QMainWindow):
                 logger.info('\n\nEnter Manual Alignment Mode >>>>\n')
                 self.tell('Entering Manual Align Mode...')
 
-                cfg.project_tab.w_ng_MA_toolbar.show()
+                # cfg.project_tab.w_section_label_header.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
 
                 setData('state,previous_mode', getData('state,mode'))
@@ -2721,7 +2726,7 @@ class MainWindow(QMainWindow):
             # except:
             #     print_exception()
 
-            cfg.project_tab.w_ng_MA_toolbar.hide()
+            # cfg.project_tab.w_section_label_header.hide()
             cfg.project_tab.w_ng_extended_toolbar.show()
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
             self.setWindowTitle(self.window_title)
@@ -3371,12 +3376,13 @@ class MainWindow(QMainWindow):
 
             self.updateManualAlignModeButton()
 
-            # cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
+            # cfg.project_tab.refreshTab() #Todo - Refactor! may init ng twice.
 
             self.setControlPanelData()
             # self.updateAllCpanelDetails()
             self.updateCpanelDetails()
             # self.dataUpdateResults()
+            cfg.project_tab.updateLabelsHeader()
 
             try:
                 if not getData('state,manual_mode'):

@@ -38,9 +38,9 @@ class Flicker(QLabel):
 
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
 
-        policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        policy.setHeightForWidth(True)
-        self.setSizePolicy(policy)
+        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # policy.setHeightForWidth(True)
+        # self.setSizePolicy(policy)
 
 
 

@@ -1148,9 +1148,6 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
-
-
-
         self.method_rb0 = QRadioButton('Default Grid')
 
         tip = """Similar to the Default Grid method, but the user is able to avoid image defects 
@@ -1668,33 +1665,25 @@ class ProjectTab(QWidget):
         self.lab_output = QLabel('Aligned Output')
         self.lab_output.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
-        self.w_ng_MA_toolbar = QToolBar()
-        self.w_ng_MA_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.w_ng_MA_toolbar.setIconSize(QSize(18, 18))
-        self.w_ng_MA_toolbar.setFixedHeight(20)
-        self.w_ng_MA_toolbar.setStyleSheet(toolbar_style)
-        self.w_ng_MA_toolbar.setAutoFillBackground(True)
+        # self.w_section_label_header = QToolBar()
+        self.w_section_label_header = QWidget()
+        self.w_section_label_header.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
+        # self.w_section_label_header.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        # self.w_section_label_header.setIconSize(QSize(18, 18))
+        self.w_section_label_header.setFixedHeight(20)
+        # self.w_section_label_header.setStyleSheet(toolbar_style)
+        # self.w_section_label_header.setAutoFillBackground(True)
 
         self.layout_ng_MA_toolbar = QHBoxLayout()
         self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
-        self.w_ng_MA_toolbar.setLayout(self.layout_ng_MA_toolbar)
+        self.w_section_label_header.setLayout(self.layout_ng_MA_toolbar)
 
-        # self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        # self.layout_ng_MA_toolbar.addStretch()
-        self.w_ng_MA_toolbar.addWidget(self.lab_reference)
-        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        # self.layout_ng_MA_toolbar.addStretch()
-        self.w_ng_MA_toolbar.addWidget(self.lab_transforming)
-        # self.layout_ng_MA_toolbar.addStretch()
-        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_MA_toolbar.addWidget(self.lab_output)
-        # self.layout_ng_MA_toolbar.addStretch()
-        # self.w_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_MA_toolbar.hide()
-
-
+        self.layout_ng_MA_toolbar.addWidget(self.lab_reference)
+        self.layout_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        self.layout_ng_MA_toolbar.addWidget(self.lab_transforming)
+        self.tbEndLabWidget = HWidget(ExpandingWidget(self), self.lab_output)
+        self.layout_ng_MA_toolbar.addWidget(self.tbEndLabWidget)
+        # self.w_section_label_header.hide()
 
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -1702,7 +1691,6 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.setFixedHeight(20)
         self.w_ng_extended_toolbar.setStyleSheet(toolbar_style)
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
-
 
         self.labShowHide = QLabel('Display: ')
         self.labShowHide.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -1842,7 +1830,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
 
         self.ngCombinedHwidget = HWidget(self.w_ng_display, self.MA_splitter)
-        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.w_ng_MA_toolbar, self.shaderToolbar, self.ngCombinedHwidget)
+        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ngCombinedHwidget)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.layout.setSpacing(0)
@@ -1854,6 +1842,18 @@ class ProjectTab(QWidget):
             self.sideSliders,
         )
         self.ng_browser_container_outer.layout.setSpacing(0)
+
+
+    def updateLabelsHeader(self):
+        view = getData('state,mode')
+        if view == 'comparison':
+            self.w_section_label_header.show()
+            if cfg.data.is_aligned_and_generated():
+                self.tbEndLabWidget.show()
+            else:
+                self.tbEndLabWidget.hide()
+        else:
+            self.w_section_label_header.hide()
 
     def refreshLogs(self):
         logs_path = os.path.join(cfg.data.dest(), 'logs', 'recipemaker.log')
