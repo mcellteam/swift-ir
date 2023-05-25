@@ -407,7 +407,7 @@ class SnrPlot(QWidget):
         if index in range(len(cfg.data)):
             snr = float(points[0].pos()[1])
             pt = points[0] # just allow one point clicked
-            cfg.main_window.hud.post('Jump to Section #%d (SNR: %.3f)' % (index, snr))
+            cfg.main_window.hud.post('Jumping to Section #%d (SNR: %.3f)' % (index, snr))
             clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
             if self.last_snr_click:
                 self.last_snr_click.resetPen()
