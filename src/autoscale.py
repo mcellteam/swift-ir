@@ -18,7 +18,7 @@ __all__ = ['autoscale']
 logger = logging.getLogger(__name__)
 
 
-def autoscale(dm:DataModel, make_thumbnails=True, gui=True):
+def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     logger.critical('>>>> autoscale >>>>')
 
     threadpool = QThreadPool.globalInstance()
@@ -29,7 +29,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True):
     logger.info('Generating TIFF Scale Image Hierarchy...')
     if gui:
         cfg.mw.tell('Generating TIFF Scale Image Hierarchy...')
-        cfg.mw.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
+        if set_pbar:
+            cfg.mw.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
     try:
         worker = BackgroundWorker(fn=generate_scales(dm=dm, gui=gui))
         threadpool.start(worker)

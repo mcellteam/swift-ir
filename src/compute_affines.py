@@ -35,7 +35,7 @@ __all__ = ['compute_affines']
 
 logger = logging.getLogger(__name__)
 
-def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False):
+def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False, dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     caller = inspect.stack()[1].function
     scale_val = get_scale_val(scale)
@@ -49,7 +49,8 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         logger.info(f'\n\n################ Computing Affines ################\n')
         logger.info(f'path: {path}')
 
-        if path:
+        # if path:
+        if not use_gui:
             with open(path, 'r') as f:
                 try:
                     data = json.load(f)
@@ -63,10 +64,11 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
             logger.info(f'dm.dest(): {dm.dest()}')
             dm.set_defaults()
         else:
+            logger.critical('using GUI...')
             USE_FILE_IO = cfg.USE_FILE_IO
             DEV_MODE = cfg.DEV_MODE
             TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
-            dm = cfg.data
+            # dm = cfg.data
 
         logger.info('continuing 1...')
 
@@ -87,7 +89,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         rename_switch = False
         alignment_dict = dm['data']['scales'][scale]['stack']
 
-        alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
+        # alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
         logger.info('Start Layer: %s /End layer: %s' % (str(start), str(end)))
 
         # path = os.path.join(dm.dest(), scale, 'img_aligned')
@@ -108,6 +110,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
 
         dm_ = copy.deepcopy(dm) # Copy the datamodel previewmodel for this datamodel to add local fields for SWiFT
         substack = dm_()[start:end]
+        # substack = dm()[start:end]
         n_tasks = n_skips = 0
         for layer in substack: # Operating on the Copy!
             if not layer['skipped']: n_tasks +=1
@@ -133,7 +136,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
             task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
         else:
             task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
-        task_queue.taskPrefix = 'Alignment Computed for '
+        task_queue.taskPrefix = 'Computing Alignment for '
         # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
         # if end == None:
         #     end = len(dm)
@@ -146,6 +149,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         # ADD ALIGNMENT TASKS TO QUEUE
         for sec in substack:
             zpos = dm_().index(sec)
+            # zpos = dm().index(sec)
 
             if not sec['skipped']:
                 task_args = [sys.executable,
@@ -185,7 +189,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
             task_dict[int(t['args'][index_arg])] = t
 
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
-        updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
+        # updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
         logger.info('Reading task results and updating data model...')
 
@@ -214,7 +218,8 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                 fdm_new = results_dict['data_model']
 
                 # Get the same s from both the old and new datamodel models
-                al_stack_old = updated_model['data']['scales'][scale]['stack']
+                # al_stack_old = updated_model['data']['scales'][scale]['stack']
+                al_stack_old = dm['data']['scales'][scale]['stack']
                 al_stack_new = fdm_new['data']['scales'][scale]['stack']
                 layer_index = int(task_list[tnum]['args'][index_arg]) # may differ from tnum!
                 al_stack_old[layer_index] = al_stack_new[layer_index]
@@ -236,17 +241,30 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                     al_stack_old[layer_index]['skipped'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-        logger.critical(f'use_gui: {use_gui}')
-        if use_gui:
-            cfg.data = updated_model #0809-
+        cfg.mw.test()
 
-        dm = updated_model
+        logger.info(f'Use GUI: {use_gui}')
+
+        # dm = updated_model
+
+        # if use_gui:
+        #     cfg.data = updated_model #0809-
+            # cfg.data = cfg.dataById[id(cfg.pt)] = updated_model
+            # cfg.data = updated_model
+            # cfg.data = dm
+            # cfg.dataById[id(cfg.pt)] = dm
+
+        cfg.mw.test()
+
+
 
         SetStackCafm(dm.get_iter(scale), scale=scale, null_biases=dm.use_corrective_polynomial(),
                      poly_order=dm.corrective_polynomial())
 
         save2file(dm=dm,name=dm.dest())
+
         write_run_to_file(dm)
+
 
         if cfg.ignore_pbar:
             cfg.nCompleted +=1
