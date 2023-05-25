@@ -782,6 +782,36 @@ class NewConfigureProjectDialog(QDialog):
 
 
     def on_apply(self):
+
+        try:
+            cfg.main_window.hud('Applying Project Settings...')
+
+            cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=True)
+            cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=True)
+
+            cfg.data.set_scales_from_string(self.scales_input.text())
+            cfg.data.set_method_options()
+            cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
+            cfg.data['data']['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['data']['clevel'] = int(self.clevel_input.text())
+            cfg.data['data']['cname'] = self.cname_combobox.currentText()
+            cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
+                                              int(self.chunk_y_lineedit.text()),
+                                              int(self.chunk_x_lineedit.text()))
+            for scale in cfg.data.scales():
+                scale_val = get_scale_val(scale)
+                res_x = int(self.res_x_lineedit.text()) * scale_val
+                res_y = int(self.res_y_lineedit.text()) * scale_val
+                res_z = int(self.res_z_lineedit.text())
+                cfg.data.set_resolution(s=scale, res_x=res_x, res_y=res_y, res_z=res_z)
+        except Exception as e:
+            logger.warning(e)
+        finally:
+            self.accept()
+
+    def scale_only(self):
+        cfg.data['data']['autoalign_flag'] = False
+
         try:
             cfg.main_window.hud('Applying Project Settings...')
 
@@ -820,7 +850,8 @@ class NewConfigureProjectDialog(QDialog):
         # self.createScalesButton.setStyleSheet("font-size: 10px;")
         self.createScalesButton.setFixedSize(QSize(128, 28))
         self.createScalesButton.setDefault(True)
-        self.createScalesButton.clicked.connect(self.on_apply)
+        # self.createScalesButton.clicked.connect(self.on_apply)
+        self.createScalesButton.clicked.connect(self.scale_only)
 
         self.scaleAndAlignButton = QPushButton('Create Scales &&\nInitialize Alignment')
         self.scaleAndAlignButton.setStyleSheet("font-size: 9px;")
