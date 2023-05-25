@@ -50,6 +50,9 @@ class ScaleIterator:
 class Scale:
     pass
 
+def time():
+    return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
 
 class DataModel:
 
@@ -60,10 +63,10 @@ class DataModel:
             self._data = data  # Load project data from file
         else:
             self._data = copy.deepcopy(data_template)  # Initialize new project data
-            self._data['created'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self._data['created'] = time()
             self.set_system_info()
         if not quietly:
-            self._data['modified'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self._data['modified'] = time()
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
@@ -111,6 +114,12 @@ class DataModel:
 
     # def loc(self):
     #     return self._data['data']['scales'][self.scale]['stack']
+
+    def to_file(self):
+        path = os.path.join(self.dest(), 'state_' + time() + '.swiftir')
+        with open(path, 'w') as f:
+            f.write(str(self.to_json()))
+
 
     @property
     def created(self):
@@ -238,7 +247,9 @@ class DataModel:
 
     @current_method.setter
     def current_method(self, str):
-        self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method'] = str
+        # self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method'] = str
+        for s in self.scales():
+            self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
 
     @property
     def current_method_pretty(self):
@@ -761,6 +772,10 @@ class DataModel:
             self._data['data']['benchmarks']['scales'][s].setdefault('t_thumbs_spot', 0.0)
             # self._data['data']['benchmarks']['scales'][s].setdefault('thumb_scaling_factor_aligned', 0.0)
             self._data['data']['defaults']['scales'].setdefault(s, {})
+            if s == self.coarsest_scale_key():
+                self._data['data']['scales'][s]['isRefinement'] = False
+            else:
+                self._data['data']['scales'][s]['isRefinement'] = True
 
             for i in range(len(self)):
                 layer = scale['stack'][i]
@@ -788,12 +803,10 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('grid-custom-regions', [1,1,1,1])
                 layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
                 layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
-                layer['alignment'].setdefault('method_data', {})
+                # layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('manual_settings', {})
                 layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
                 layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
-                layer['alignment']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC)
-                layer['alignment']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
                 layer['alignment'].setdefault('manpoints', {})
                 layer['alignment']['manpoints'].setdefault('ref', [])
                 layer['alignment']['manpoints'].setdefault('base', [])
@@ -801,11 +814,11 @@ class DataModel:
                 layer['alignment']['manpoints_mir'].setdefault('ref', [])
                 layer['alignment']['manpoints_mir'].setdefault('base', [])
                 if s == self.coarsest_scale_key():
-                    layer['alignment']['method_data']['alignment_option'] = 'init_affine'
+                    # layer['alignment']['method_data']['alignment_option'] = 'init_affine'
                     layer['alignment']['swim_settings'].setdefault('targ', True)
                     layer['alignment']['swim_settings'].setdefault('karg', True)
                 else:
-                    layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
+                    # layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
                     layer['alignment']['swim_settings'].setdefault('targ', False)
                     layer['alignment']['swim_settings'].setdefault('karg', False)
 
@@ -814,7 +827,8 @@ class DataModel:
         self.set_auto_swim_windows_to_default()
         self.set_manual_swim_windows_to_default()
 
-
+    def isRefinement(self):
+        return  self._data['data']['scales'][self.scale]['isRefinement']
 
     def set_source_path(self, dir):
         # self._data['data']['src_img_root'] = dir
@@ -1439,14 +1453,13 @@ class DataModel:
 
     def whitening(self) -> float:
         '''Returns the Signal Whitening Factor for the Current Layer.'''
-        return float(self._data['data']['scales'][self.scale]['stack'][
-                         self.zpos]['alignment']['method_data']['whitening_factor'])
+        return float(self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['signal-whitening'])
 
 
     def set_whitening(self, f: float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
-        self._data['data']['scales'][self.scale]['stack'][self.zpos][
-            'alignment']['method_data']['whitening_factor'] = f
+        # self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['method_data']['whitening_factor'] = f
+        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['signal-whitening'] = f
 
 
     def manual_whitening(self) -> float:
@@ -1461,7 +1474,7 @@ class DataModel:
 
     def swim_window(self) -> float:
         '''Returns the SWIM Window for the Current Layer.'''
-        return float(self.stack()[self.zpos]['alignment']['method_data']['win_scale_factor'])
+        return float(self.stack()[self.zpos]['alignment']['swim_settings']['win_scale_factor'])
 
     def swim_window_px(self):
         '''Returns the SWIM Window in pixels'''
@@ -1667,10 +1680,10 @@ class DataModel:
         # return bool(self._data['data']['scales'][s]['null_cafm_trends'])
         return int(self._data['data']['defaults']['corrective-polynomial'])
 
-    def al_option(self, s=None) -> str:
-        '''Gets the Alignment Option for the Current Scale.'''
-        if s == None: s = self.scale
-        return self._data['data']['scales'][s]['method_data']['alignment_option']
+    # def al_option(self, s=None) -> str:
+    #     '''Gets the Alignment Option for the Current Scale.'''
+    #     if s == None: s = self.scale
+    #     return self._data['data']['scales'][s]['method_data']['alignment_option']
 
     def path_ref(self, s=None, l=None) -> str:
         if s == None: s = self.scale
@@ -1958,14 +1971,19 @@ class DataModel:
     def set_method_options(self):
         coarsest = self.coarsest_scale_key()
         for s in self.scales():
-            if s == coarsest:  self._data['data']['scales'][s]['method_data']['alignment_option'] = 'init_affine'
-            else:  self._data['data']['scales'][s]['method_data']['alignment_option'] = 'refine_affine'
-            for i in range(self.n_scales()):
-                layer = self._data['data']['scales'][s]['stack'][i]
-                if s == coarsest:
-                    layer['alignment']['method_data']['alignment_option'] = 'init_affine'
-                else:
-                    layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
+            if s == coarsest:
+                self._data['data']['scales'][s]['isRefinement'] = False
+                # self._data['data']['scales'][s]['method_data']['alignment_option'] = 'init_affine'
+            else:
+                self._data['data']['scales'][s]['isRefinement'] = True
+                # self._data['data']['scales'][s]['method_data']['alignment_option'] = 'refine_affine'
+
+            # for i in range(self.n_scales()):
+            #     layer = self._data['data']['scales'][s]['stack'][i]
+            #     if s == coarsest:
+            #         layer['alignment']['method_data']['alignment_option'] = 'init_affine'
+            #     else:
+            #         layer['alignment']['method_data']['alignment_option'] = 'refine_affine'
 
 
 
@@ -1991,8 +2009,10 @@ class DataModel:
             logger.info(f'Adding Scale Keys (copying from scale_1): {scales_to_add}...')
             for key in scales_to_add:
                 new_stack = [deepcopy(l) for l in self.stack(s='scale_1')]
+                # self._data['data']['scales'][key] = \
+                #     {'stack': new_stack, 'method_data': { 'alignment_option': 'init_affine' } }
                 self._data['data']['scales'][key] = \
-                    {'stack': new_stack, 'method_data': { 'alignment_option': 'init_affine' } }
+                    {'stack': new_stack}
 
 
     def link_reference_sections(self):

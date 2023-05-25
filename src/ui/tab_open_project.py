@@ -93,7 +93,7 @@ class OpenProject(QWidget):
         hbl.addWidget(lab_row_height)
         hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
         self.controls.setLayout(hbl)
-        self.controls.setStyleSheet('font-size: 13px; font-weight: 600; color: #f3f6fb; background-color: #339933;')
+        self.controls.setStyleSheet('font-size: 13px; font-weight: 600;')
 
         self.new_project_lab1 = QLabel()
         self.new_project_lab1.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
@@ -481,29 +481,34 @@ class OpenProject(QWidget):
             cfg.data.set_defaults()
             initLogFiles(cfg.data)
 
-
-            autoscale(dm=cfg.data, make_thumbnails=True)
+            if cfg.data['data']['autoalign_flag']:
+                cfg.ignore_pbar = False
+                cfg.mw.showZeroedPbar(reset_n_tasks=8, cancel_processes=False)
+                autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=False)
+            else:
+                autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=True)
             # cfg.mw.autoscale_()
             cfg.main_window._autosave(silently=True)
 
             # cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
+
+
+
+            # cfg.main_window._setLastTab()
+            # cfg.data.zpos = int(len(cfg.data) / 2)
+            # cfg.main_window.onStartProject()
+            # QApplication.processEvents()
+
+            if cfg.data['data']['autoalign_flag']:
+                cfg.mw.tell('Aligning coarsest scale...')
+                cfg.mw.alignAll(set_pbar=False)
+                cfg.main_window._autosave(silently=True)
+
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path))
-            # for i in range(cfg.mw.globTabs.count()):
-            #     logger.info(cfg.mw.globTabs.tabText(i))
-            #     if cfg.mw.globTabs.tabText(i) == path:
-            #         cfg.mw.globTabs.setCurrentIndex(i)
-            #     else:
-            #         pass
             cfg.main_window._setLastTab()
             cfg.data.zpos = int(len(cfg.data) / 2)
             cfg.main_window.onStartProject()
             QApplication.processEvents()
-            # cfg.project_tab.initNeuroglancer()
-
-            if cfg.data['data']['autoalign_flag']:
-                cfg.mw.tell('Aligning ALL scales...')
-                cfg.mw.alignAll()
-                cfg.main_window._autosave(silently=True)
 
 
             # self.onStartProject(mendenhall=True)

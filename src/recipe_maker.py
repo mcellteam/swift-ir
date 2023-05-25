@@ -45,7 +45,12 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
 
     s_tbd = project['data']['scales'][scale_key]['stack']
     img_size = project['data']['scales'][scale_key]['image_src_size']
-    option = s_tbd[zpos]['alignment']['method_data']['alignment_option']
+    # option = s_tbd[zpos]['alignment']['method_data']['alignment_option']
+    if project['data']['scales'][scale_key]['isRefinement']:
+        option = 'refine_affine'
+    else:
+        option = 'init_affine'
+    # option = s_tbd[zpos]['alignment']['method_data']['alignment_option'] #Refactor
     init_afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
     if option in ('refine_affine', 'apply_affine'):
@@ -54,7 +59,9 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
         prev_scale_val = int(scale_prev[len('scale_'):])
         upscale = (float(prev_scale_val) / float(scale_val))
         scale_prev_dict = project['data']['scales'][scale_prev]['stack']
-        prev_afm = np.array(scale_prev_dict[zpos]['alignment']['method_results']['affine_matrix']).copy()
+        # prev_afm = np.array(scale_prev_dict[zpos]['alignment']['method_results']['affine_matrix']).copy()
+        prev_method = scale_prev_dict[zpos]['current_method']
+        prev_afm = np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']).copy()
         prev_afm[0][2] *= upscale
         prev_afm[1][2] *= upscale
         init_afm = prev_afm
@@ -64,6 +71,7 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
     s_tbd[zpos]['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
 
     initial_rotation = float(project['data']['defaults']['initial-rotation'])
+    isRefinement = project['data']['scales'][scale_key]['isRefinement']
 
 
     if not s_tbd[zpos]['skipped']:
@@ -77,6 +85,7 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
                 scale=scale_key,
                 defaults=project['data']['defaults'],
                 initial_rotation=initial_rotation,
+                isRefinement=isRefinement
             )
             recipe.assemble_recipe()
             recipe.execute_recipe()
@@ -92,7 +101,7 @@ class align_recipe:
     global RMlogger
     global MAlogger
 
-    def __init__(self, pd, od, init_afm, img_size, layer_dict, scale, defaults, initial_rotation):
+    def __init__(self, pd, od, init_afm, img_size, layer_dict, scale, defaults, initial_rotation, isRefinement):
         self.pd = pd
         self.od = od
         self.scale_dir = os.path.abspath(os.path.dirname(self.od))
@@ -105,12 +114,17 @@ class align_recipe:
         self.scale = scale
         self.defaults = defaults
         self.cur_method = layer_dict['current_method']
-        self.option = self.alData['method_data']['alignment_option']
+        if isRefinement:
+            self.option = 'refine_affine'
+        else:
+            self.option = 'init_affine'
+        # self.option = self.alData['method_data']['alignment_option']
         if self.cur_method == 'grid-default':
             self.wht = self.defaults['signal-whitening']
             self.iters = self.defaults['swim-iterations']
         else:
-            self.wht = self.alData['method_data']['whitening_factor']
+            # self.wht = self.alData['method_data']['whitening_factor']
+            self.wht = self.alData['swim_settings']['whitening_factor']
             self.iters = self.alData['swim_settings']['iterations']
         self.grid_custom_regions  = self.alData['swim_settings']['grid-custom-regions']
         self.ingredients = []

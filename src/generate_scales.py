@@ -27,7 +27,7 @@ def generate_scales(dm, gui=True):
         dest = dm['data']['destination_path']
         logger.info(f'\n\n################ Generating Scales ################\n')
         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text, use_gui=gui)
-        task_queue.taskPrefix = 'Scale Generated for '
+        task_queue.taskPrefix = 'Downsampling '
         task_name_list = []
         for s in dm.downscales():  # value string '1 2 4'
             scale_val = get_scale_val(s)

@@ -32,13 +32,8 @@ data_template = \
             "thumb_scaling_factor_source": None,
             "scales": {
                 "scale_1": {
-                    "method_data": {
-                        "alignment_option": "init_affine"
-                    },
                     "use_bounding_rect": cfg.DEFAULT_BOUNDING_BOX,
                     "stack": [],
-                    "thumb_scaling_factor_aligned": None,
-                    "thumb_scaling_factor_corr_spot": None,
                 }
             },
         },
@@ -49,7 +44,6 @@ layer_template = \
     {
         "alignment": {
             "manual_settings": {},
-            "method_data": {},
             "method_options": {},
             "manpoints": {
                 "ref": [],

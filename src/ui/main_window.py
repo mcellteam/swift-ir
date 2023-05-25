@@ -249,8 +249,8 @@ class MainWindow(QMainWindow):
             logger.critical('Refreshing...')
             if self._isProjectTab():
                 cfg.project_tab.refreshTab()
-                for v in cfg.project_tab.get_viewers():
-                    v.set_zmag()
+                # for v in cfg.project_tab.get_viewers():
+                #     v.set_zmag() #0524-
                 self.hud.done()
                 self.updateEnabledButtons()  # 0301+
                 # self.updateAllCpanelDetails()
@@ -319,7 +319,6 @@ class MainWindow(QMainWindow):
         self._isPlayingBack = 0
         self._isProfiling = 0
         self.detachedNg = WebPage()
-        self._lastRefresh = 0
         self.count_calls = {}
         self._exiting = 0
 
@@ -379,6 +378,12 @@ class MainWindow(QMainWindow):
     #         # self.csWidget.resize(QSize(w,200))
     #         self.updateCorrSignalsDrawer()
 
+    def test(self):
+        if self._isProjectTab():
+            logger.critical(f'id(cfg.pt)   = {id(cfg.pt)}')
+            # logger.critical(f'cfg.dataById = {str(cfg.dataById)}')
+            logger.critical(f'cfg.data == cfg.dataById[{id(cfg.pt)}]? {cfg.data == cfg.dataById[id(cfg.pt)]}')
+
     def updateCorrSignalsDrawer(self):
         #             siz = cfg.data.image_size()
         #             ar = siz[0] / siz[1]  # aspect ratio
@@ -400,8 +405,8 @@ class MainWindow(QMainWindow):
             self.corrSignalsList[i].update()
         # QApplication.processEvents()
 
-        if not snr_vals:
-            return
+        # if not snr_vals:
+        #     return
 
 
         # logger.critical('thumbs: %s' % str(thumbs))
@@ -416,7 +421,13 @@ class MainWindow(QMainWindow):
             for i in range(4):
                 if regions[i]:
                     try:
-                        self.corrSignalsList[i].set_data(path=names[i], snr=snr_vals[count])
+                        try:
+                            snr = snr_vals[count]
+                        except:
+                            snr = 0.0
+                            print_exception()
+
+                        self.corrSignalsList[i].set_data(path=names[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
                         # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
                         self.corrSignalsList[i].show()
@@ -430,8 +441,13 @@ class MainWindow(QMainWindow):
                 if i < n:
                     # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
                     try:
+                        try:
+                            snr = snr_vals[i]
+                        except:
+                            snr = 0.0
+                            print_exception()
 
-                        self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr_vals[i])
+                        self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 6px solid {colors[i]}; padding: 3px;""")
                         # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
@@ -562,73 +578,6 @@ class MainWindow(QMainWindow):
     #     tip2 = '\n'.join(textwrap.wrap('Show Head-up Display (Process Monitor) Tool Window', width=35))
     #     self.cbMonitor.setToolTip((tip1, tip2)[self.dw_monitor.isHidden()])
 
-    #
-    def autoscale_(self, make_thumbnails=True):
-
-        logger.critical('>>>> autoscale >>>>')
-
-        # Todo This should check for existence of original source files before doing anything
-
-        self.tell('Generating TIFF Scale Image Hierarchy...')
-
-        # cfg.event = multiprocessing.Event()
-        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
-        self.showZeroedPbar()
-        self.set_status('Autoscaling...')
-        # self.stopNgServer()  # 0202-
-        self._disableGlobTabs()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_scales(dm=cfg.data))
-                self.threadpool.start(self.worker)
-            else:
-                generate_scales(dm=cfg.data)
-        except:
-            print_exception()
-            self.warn('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
-
-        # show_status_report(results=cfg.results, dt=cfg.dt)
-
-        # cfg.data.link_reference_sections() #Todo: check if this is necessary
-        cfg.data.scale = cfg.data.scales()[-1]
-
-        for s in cfg.data.scales():
-            cfg.data.set_image_size(s=s)
-
-        self.tell('Copy-converting TIFFs to NGFF-Compliant Zarr...')
-        self.showZeroedPbar()
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_scales_zarr(cfg.data))
-                self.threadpool.start(self.worker)
-            else:
-                generate_scales_zarr(cfg.data)
-        except:
-            print_exception()
-            self.warn('Something Unexpected Happened While Converting The Scale Hierarchy To Zarr')
-
-        if make_thumbnails:
-            self.tell('Generating Thumbnails...')
-            self.showZeroedPbar()
-            try:
-                if cfg.USE_EXTRA_THREADING:
-                    self.worker = BackgroundWorker(fn=cfg.thumb.reduce_main(dest=cfg.data.dest()))
-                    self.threadpool.start(self.worker)
-                else:
-                    cfg.thumb.reduce_main(dest=cfg.data.dest())
-
-            except:
-                print_exception()
-                self.warn('Something Unexpected Happened While Generating Thumbnails')
-
-            finally:
-                cfg.data.scale = cfg.data.scales()[-1]
-                self.hidePbar()
-
-        self.pbarLabel.setText('')
-        self.tell('**** Processes Complete ****')
-        logger.info('<<<< autoscale <<<<')
-
     def _showSNRcheck(self, s=None):
         logger.info('')
         caller = inspect.stack()[1].function
@@ -705,7 +654,7 @@ class MainWindow(QMainWindow):
         logger.info('<<<< regenerate')
 
     def verify_alignment_readiness(self) -> bool:
-        logger.critical('')
+        # logger.critical('')
         ans = False
         if not cfg.data:
             self.warn('No project yet!')
@@ -716,7 +665,7 @@ class MainWindow(QMainWindow):
             self.warn(warning_msg)
         else:
             ans = True
-        logger.critical(f'Returning: {ans}')
+        # logger.info(f'Returning: {ans}')
         return ans
 
     @Slot()
@@ -923,7 +872,7 @@ class MainWindow(QMainWindow):
                 self.updateCpanelDetails()
 
                 self.cbSignals.setChecked(True)
-                self.cbFlicker.setChecked(True)
+                # self.cbFlicker.setChecked(True)
 
         except:
             print_exception()
@@ -947,7 +896,7 @@ class MainWindow(QMainWindow):
             logger.critical(f'Time Elapsed: {dt}s')
             self.tell(f'Time Elapsed: {dt}s')
 
-    def alignAll(self):
+    def alignAll(self, set_pbar=True):
         if not self._isProjectTab():
             return
         scale = cfg.data.scale
@@ -955,12 +904,14 @@ class MainWindow(QMainWindow):
             self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
             return
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
-        cfg.ignore_pbar = False
-        if self._toggleAutogenerate.isChecked():
-            cfg.nTasks = 5
-        else:
-            cfg.nTasks = 3
-        cfg.nCompleted = 0
+        if set_pbar:
+            cfg.ignore_pbar = False
+            if self._toggleAutogenerate.isChecked():
+                cfg.nTasks = 5
+            else:
+                cfg.nTasks = 3
+            cfg.nCompleted = 0
+
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
@@ -1080,8 +1031,7 @@ class MainWindow(QMainWindow):
         logger.info(f'Aligning start:{start}, end: {end}, scale: {scale}...')
 
         self.onAlignmentStart(scale=scale)
-        m = {'init_affine': 'Initializing', 'refine_affine': 'Refining'}
-        self.tell("%s Affines (%s)..." % (m[cfg.data.al_option(s=scale)], cfg.data.scale_pretty(s=scale)))
+        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
 
         if cfg.ignore_pbar:
             self.showZeroedPbar()
@@ -1090,11 +1040,11 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od,
-                                       reallocate_zarr=reallocate_zarr, stageit=stageit))
+                                       reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data))
                 self.threadpool.start(self.worker)
             else:
-                compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od,
-                                reallocate_zarr=reallocate_zarr, stageit=stageit)
+                compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data)
+            self.test()
         except:
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
@@ -1246,7 +1196,26 @@ class MainWindow(QMainWindow):
         self._toggleAutogenerate.setEnabled(True)
         self.startRangeInput.setEnabled(True)
         self.endRangeInput.setEnabled(True)
+        
+    
+    def updateManualAlignModeButton(self):
+        if getData('state,manual_mode'):
+            tip = 'Exit Manual Align Mode'
+            self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
+            self.alignMatchPointAction.setText(f"Exit Manual Align Mode {hotkey('M')} ")
+            self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
+            self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
+            self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
+        else:
+            tip = 'Enter Manual Align Mode'
+            self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
+            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+            self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+            self._btn_manualAlign.setStyleSheet("""""")
+            
+    
     def updateEnabledButtons(self) -> None:
         '''This method does three things:
         (1) Update the visibility of next/prev s buttons depending on current s.
@@ -1289,6 +1258,9 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             # if cfg.data.is_aligned_and_generated(): #0202-
+
+            self.updateManualAlignModeButton()
+
             if cfg.data.is_aligned():
                 # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
                 # self._btn_alignAll.setText('Align All')
@@ -1429,48 +1401,46 @@ class MainWindow(QMainWindow):
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
 
-    def dataUpdateResults(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'>>>> dataUpdateResults [{caller}] >>>>')
+    # def dataUpdateResults(self):
+    #     caller = inspect.stack()[1].function
+    #     logger.critical(f'>>>> dataUpdateResults [{caller}] >>>>')
+    #
+    #     if cfg.data:
+    #         # self.results0 = QLabel('...Image Dimensions')
+    #         # self.results1 = QLabel('...# Images')
+    #         # self.results2 = QLabel('...SNR (average)')
+    #         # self.results3 = QLabel('...Worst 5 SNR')
+    #
+    #         self.results0 = QLabel()  # Image dimensions
+    #         self.results1 = QLabel()  # # of images
+    #         self.results2 = QLabel()  # SNR average
+    #
+    #         # self.fl_main_results = QFormLayout()
+    #         # self.fl_main_results.setContentsMargins(2,2,2,2)
+    #         # self.fl_main_results.setVerticalSpacing(2)
+    #         # self.fl_main_results.addRow('Source Dimensions', self.results0)
+    #         # self.fl_main_results.addRow('# Images', self.results1)
+    #         # self.fl_main_results.addRow('SNR (average)', self.results2)
+    #         # # self.fl_main_results.addRow('Lowest 10 SNR', self.results3)
+    #
+    #         siz = cfg.data.image_size()
+    #         try:
+    #             self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
+    #         except:
+    #             self.results0.setText("N/A")
+    #         try:
+    #             self.results1.setText("%d" % len(cfg.data))
+    #         except:
+    #             self.results1.setText("N/A")
+    #         try:
+    #             self.results2.setText("%.2f" % cfg.data.snr_average())
+    #         except:
+    #             self.results2.setText("N/A")
+    #
+    #         # w = QWidget()
+    #         # w.setLayout(self.fl_main_results)
+    #         # self.sa_tab1.setWidget(w)
 
-        if cfg.data:
-            # self.results0 = QLabel('...Image Dimensions')
-            # self.results1 = QLabel('...# Images')
-            # self.results2 = QLabel('...SNR (average)')
-            # self.results3 = QLabel('...Worst 5 SNR')
-
-            self.results0 = QLabel()  # Image dimensions
-            self.results1 = QLabel()  # # of images
-            self.results2 = QLabel()  # SNR average
-
-            # self.fl_main_results = QFormLayout()
-            # self.fl_main_results.setContentsMargins(2,2,2,2)
-            # self.fl_main_results.setVerticalSpacing(2)
-            # self.fl_main_results.addRow('Source Dimensions', self.results0)
-            # self.fl_main_results.addRow('# Images', self.results1)
-            # self.fl_main_results.addRow('SNR (average)', self.results2)
-            # # self.fl_main_results.addRow('Lowest 10 SNR', self.results3)
-
-            siz = cfg.data.image_size()
-            try:
-                self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
-            except:
-                self.results0.setText("N/A")
-            try:
-                self.results1.setText("%d" % len(cfg.data))
-            except:
-                self.results1.setText("N/A")
-            try:
-                self.results2.setText("%.2f" % cfg.data.snr_average())
-            except:
-                self.results2.setText("N/A")
-
-            # w = QWidget()
-            # w.setLayout(self.fl_main_results)
-            # self.sa_tab1.setWidget(w)
-
-
-        # @Slot()
 
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
@@ -2122,7 +2092,7 @@ class MainWindow(QMainWindow):
         # self.dw_monitor.show()
         self.cbMonitor.setChecked(True) #Why?
         if cfg.data.is_aligned():
-            self.cbFlicker.setChecked(True)
+            # self.cbFlicker.setChecked(True)s
             self.cbSignals.setChecked(True)
 
 
@@ -2719,13 +2689,6 @@ class MainWindow(QMainWindow):
             if cfg.data.is_aligned_and_generated():
                 logger.info('\n\nEnter Manual Alignment Mode >>>>\n')
                 self.tell('Entering Manual Align Mode...')
-                # for v in cfg.project_tab.get_viewers():
-                #     try:
-                #         v = None
-                #     except:
-                #         logger.warning(f'Unable to delete viewer: {str(v)}')
-
-                # self.combo_mode.setCurrentIndex(2)
 
                 cfg.project_tab.w_ng_MA_toolbar.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
@@ -2733,15 +2696,7 @@ class MainWindow(QMainWindow):
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
-                tip = 'Exit Manual Align Mode'
-                self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-                # cfg.project_tab.cpanel.hide()
-                # self._btn_manualAlign.setText('← Exit Manual Mode')
-                self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
-                self.alignMatchPointAction.setText(f"Exit Manual Align Mode {hotkey('M')} ")
-                self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
-                self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
-                self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+                self.updateManualAlignModeButton()
                 # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
@@ -2768,9 +2723,6 @@ class MainWindow(QMainWindow):
 
             cfg.project_tab.w_ng_MA_toolbar.hide()
             cfg.project_tab.w_ng_extended_toolbar.show()
-
-            self._btn_manualAlign.setStyleSheet("""""")
-            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
@@ -2793,11 +2745,7 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.cpanel.show()
 
             setData('state,manual_mode', False)
-            tip = 'Enter Manual Align Mode'
-            self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-            self.updateEnabledButtons()
-            self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
-            self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
+            self.updateManualAlignModeButton()
             self.alignMatchPointAction.setText(f"Align Manually {hotkey('M')} ")
             self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
@@ -3331,6 +3279,9 @@ class MainWindow(QMainWindow):
     def _getTabObject(self):
         return self.globTabs.currentWidget()
 
+    def isManual(self):
+        return getData('state,manual_mode')
+
     def _onGlobTabChange(self):
 
         # if self._dontReinit == True:
@@ -3339,9 +3290,8 @@ class MainWindow(QMainWindow):
 
         caller = inspect.stack()[1].function
         logger.info('>>>> _onGlobTabChange [{caller}] >>>>')
-        # if caller not in ('onStartProject', '_setLastTab'):
-        if caller not in ('onStartProject', '_setLastTab'):
-            self.shutdownNeuroglancer()  # 0329+
+        # if caller not in ('onStartProject', '_setLastTab'): #0524-
+        #     self.shutdownNeuroglancer()  # 0329+
 
         tabtype = self._getTabType()
         # if tabtype == 'ProjectTab':
@@ -3369,7 +3319,7 @@ class MainWindow(QMainWindow):
         self.enableAllTabs()  # Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
         self._changeScaleCombo.clear()
-        self.combo_mode.clear()
+        # self.combo_mode.clear()
         self._jumpToLineedit.clear()
         self._sectionSlider.setValue(0)
         self._sectionSlider.setRange(0, 0)
@@ -3399,15 +3349,14 @@ class MainWindow(QMainWindow):
             self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
-            items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
-            self.combo_mode.addItems(items)
+            # items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
+            # self.combo_mode.addItems(items)
+
+            cfg.data = self.globTabs.currentWidget().datamodel
+            cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
 
             self.cpanel.show()
             self.sa_cpanel.show()
-            cfg.data = self.globTabs.currentWidget().datamodel
-            cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
-            cfg.zarr_tab = None
-            self._lastRefresh = 0
             # self.statusBar.setStyleSheet("""
             #         font-size: 10px;
             #         font-weight: 600;
@@ -3420,14 +3369,14 @@ class MainWindow(QMainWindow):
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
 
+            self.updateManualAlignModeButton()
+
             # cfg.project_tab.refreshTab() #Todo - Refactor!!!!! may init neuroglancer twice.
 
             self.setControlPanelData()
             # self.updateAllCpanelDetails()
             self.updateCpanelDetails()
-
-
-            self.dataUpdateResults()
+            # self.dataUpdateResults()
 
             try:
                 if not getData('state,manual_mode'):
@@ -4619,14 +4568,12 @@ class MainWindow(QMainWindow):
         tip = 'Enter Manual Align Mode'
         # self._btn_manualAlign = QPushButton('Manual Align Mode →')
         self._btn_manualAlign = QPushButton(f"Manual Align {hotkey('M')} ")
+        self._btn_manualAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._btn_manualAlign.setIconSize(QSize(12, 12))
         # self._btn_manualAlign.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_manualAlign.setStyleSheet("""""")
-        self._btn_manualAlign.setIconSize(QSize(12, 12))
         self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
         self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-        # self._btn_manualAlign.setStyleSheet("font-size: 10px; color: #161c20;")
-        # self._btn_manualAlign.setEnabled(False)
-        self._btn_manualAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_manualAlign.clicked.connect(self.enterExitManAlignMode)
         self._btn_manualAlign.setFixedSize(long_button_size)
@@ -5418,6 +5365,10 @@ class MainWindow(QMainWindow):
         self.cs1 = CorrSignalThumbnail(self)
         self.cs2 = CorrSignalThumbnail(self)
         self.cs3 = CorrSignalThumbnail(self)
+        self.cs0.setContentsMargins(4,4,4,4)
+        self.cs1.setContentsMargins(4,4,4,4)
+        self.cs2.setContentsMargins(4,4,4,4)
+        self.cs3.setContentsMargins(4,4,4,4)
         # self.cs4 = CorrSignalThumbnail(self)
         # self.cs5 = CorrSignalThumbnail(self)
         # self.cs6 = CorrSignalThumbnail(self)

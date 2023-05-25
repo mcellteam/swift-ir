@@ -1982,7 +1982,7 @@ class ProjectTab(QWidget):
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
         cur_index = self.MA_stackedWidget.currentIndex()
-        logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
+        # logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
 
         if cfg.data.current_method == 'grid-default':
             self.method_rb0.setChecked(True)
@@ -2288,7 +2288,7 @@ class ProjectTab(QWidget):
         self.dataUpdateMA_calls += 1
 
         caller = inspect.stack()[1].function
-        logger.critical(f'>>>> dataUpdateMA caller: {caller} ; call #{self.dataUpdateMA_calls} ; cfg.data.current_method={cfg.data.current_method} >>>>')
+        # logger.critical(f'>>>> dataUpdateMA caller: {caller} ; call #{self.dataUpdateMA_calls} ; cfg.data.current_method={cfg.data.current_method} >>>>')
         if getData('state,manual_mode'):
 
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
@@ -2353,7 +2353,7 @@ class ProjectTab(QWidget):
             if self.MA_stackedWidget.currentIndex() == 4:
                 self.refreshLogs()
 
-        logger.critical('<<<< dataUpdateMA <<<<')
+        # logger.critical('<<<< dataUpdateMA <<<<')
 
 
     def updateEnabledButtonsMA(self):

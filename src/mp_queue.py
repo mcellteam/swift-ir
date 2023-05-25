@@ -310,7 +310,7 @@ class TaskQueue(QObject):
                                 try:
                                     name = self.taskNameList[img_index]
                                     # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
-                                    self.parent.statusBar.showMessage(self.taskPrefix + name)
+                                    self.parent.statusBar.showMessage(self.taskPrefix + name + '...')
                                 except:
                                     # print_exception()
                                     logger.warning('Improperly sized taskNameList! [size=%d] '
