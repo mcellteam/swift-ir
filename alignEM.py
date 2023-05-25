@@ -63,6 +63,7 @@ import threading
 import cProfile
 import pstats
 import qtpy
+import subprocess
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ["BLOSC_NOLOCK"] = "1"
@@ -75,7 +76,7 @@ from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences
+from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, is_tacc, print_exception
 import src.config as cfg
 from qtconsole import __version__ as qcv
 
@@ -200,6 +201,25 @@ def main():
     if args.dummy: cfg.DUMMY = True
     if args.profile:
         cfg.PROFILING_MODE = True
+
+    if is_tacc():
+        try:
+            bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
+            appendme = """alias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
+            check_str = """$WORK/swift-ir/tacc_bootstrap"""
+            with open(bashrc, "r") as f:
+                found = any(check_str in x for x in f)
+
+            logger.critical(f'Quick launch alias found? {found}')
+
+            if not found:
+                logger.critical("Adding quick launch alias 'alignem'..")
+                with open(bashrc, "a+") as f:
+                    f.write(appendme)
+
+
+        except:
+            print_exception()
 
 
     # https://doc.qt.io/qtforpython-5/PySide2/QtCore/Qt.html
