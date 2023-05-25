@@ -124,7 +124,7 @@ class align_recipe:
             self.iters = self.defaults['swim-iterations']
         else:
             # self.wht = self.alData['method_data']['whitening_factor']
-            self.wht = self.alData['swim_settings']['whitening_factor']
+            self.wht = self.alData['swim_settings']['signal-whitening']
             self.iters = self.alData['swim_settings']['iterations']
         self.grid_custom_regions  = self.alData['swim_settings']['grid-custom-regions']
         self.ingredients = []
