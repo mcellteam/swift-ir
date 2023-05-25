@@ -2783,6 +2783,8 @@ class MainWindow(QMainWindow):
 
             cfg.project_tab.initNeuroglancer()
             cfg.emViewer.set_layer(cfg.data.zpos)
+
+            check_project_status()
             logger.info('\n\n<<<< Exit Manual Alignment Mode\n')
 
     def clear_match_points(self):
