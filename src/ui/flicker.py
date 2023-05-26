@@ -136,7 +136,7 @@ class Flicker(QLabel):
                     # qp.setPen(QColor(('#FFFF66', '#a30000')[self.cur == 1]))
                     qp.setPen(QColor('#a30000'))
                     # loc = QPoint(0, self.rect().height() - 20)
-                    txt = ("Reference", "Transforming")[self.cur == 1]
+                    txt = ("Transforming", "Reference")[self.cur == 1]
                     # loc = (QPoint(5, 13), QPoint(5, self.rect().height() - 6))[self.cur == 1]
                     loc = QPoint(5, self.rect().height() - 6)
                     qp.drawText(loc, txt)
