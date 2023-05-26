@@ -915,10 +915,12 @@ class MainWindow(QMainWindow):
         if set_pbar:
             cfg.ignore_pbar = False
             if self._toggleAutogenerate.isChecked():
-                cfg.nTasks = 5
+                # cfg.nTasks = 5
+                cfg.mw.showZeroedPbar(reset_n_tasks=5, cancel_processes=False)
             else:
-                cfg.nTasks = 3
-            cfg.nCompleted = 0
+                # cfg.nTasks = 3
+                cfg.mw.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
+
 
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
