@@ -275,7 +275,8 @@ class DataModel:
 
     @grid_custom_regions.setter
     def grid_custom_regions(self, lst):
-        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid-custom-regions'] = lst
+        for s in self.scales():
+            self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['grid-custom-regions'] = lst
 
     @property
     def karg(self):
@@ -915,12 +916,25 @@ class DataModel:
             # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
             # components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr'] #prev
             components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            '''
+            13:55:45 WARNING [helpers.print_exception:731]   [20230526_13:55:45]
+            Error Type : <class 'TypeError'>
+            Error Value : list indices must be integers or slices, not str
+            Traceback (most recent call last):
+              File "/Users/joelyancey/swift-ir/src/data_model.py", line 918, in snr
+                components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            TypeError: list indices must be integers or slices, not str
+            
+            13:55:45 WARNING [data_model.snr:925] Unable to return SNR for layer #18
+
+            
+            '''
 
             # value = self.method_results(s=s, l=l)['snr']
             # return statistics.fmean(map(float, value))
             return statistics.fmean(map(float, components))
         except:
-            print_exception()
+            # print_exception()
             logger.warning('Unable to return SNR for layer #%d' %l)
             return 0.0
 
