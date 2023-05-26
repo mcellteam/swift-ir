@@ -1523,7 +1523,7 @@ class MainWindow(QMainWindow):
                 self.updateNotes()
 
             if self.dw_flicker.isVisible():
-                self.flicker.set_position(cfg.data.zpos)
+                self.flicker.start()
 
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
@@ -2680,6 +2680,8 @@ class MainWindow(QMainWindow):
                 else:
                     self.tell("Exclude: %s" % cfg.data.name_base())
                 cfg.data.link_reference_sections()
+                if self.dw_flicker.isVisible():
+                    self.flicker.start()
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.setScaleData()
