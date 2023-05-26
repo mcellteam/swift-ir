@@ -920,8 +920,8 @@ class DataModel:
             # return statistics.fmean(map(float, value))
             return statistics.fmean(map(float, components))
         except:
-            # print_exception()
-            # logger.warning('Unable to return SNR for layer #%d' %l)
+            print_exception()
+            logger.warning('Unable to return SNR for layer #%d' %l)
             return 0.0
 
     def snr_prev(self, s=None, l=None) -> float:
