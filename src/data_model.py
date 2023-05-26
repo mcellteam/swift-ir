@@ -793,6 +793,20 @@ class DataModel:
                 layer['alignment_history'].setdefault('manual-hint', [])
                 layer['alignment_history'].setdefault('manual-strict', [])
 
+                # init_afm = [[1., 0., 0.], [0., 1., 0.]]
+                # layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
+                # layer['alignment_history']['grid-custom'].setdefault('affine_matrix', init_afm)
+                # layer['alignment_history']['manual-hint'].setdefault('affine_matrix', init_afm)
+                # layer['alignment_history']['manual-strict'].setdefault('affine_matrix', init_afm)
+
+                # if cfg.data.scale != cfg.data.coarsest_scale_key():
+                #     for i, section in range(0, len(cfg.data)):
+                #         scales = cfg.data.scales()
+                #         scale_prev = scales[scales.index(scale) + 1]
+                #         scale_prev_dict = cfg.data['data']['scales'][scale_prev]['stack']
+                #         prev_method = scale_prev_dict[i]['current_method']
+                #         scale_prev_dict[i]['alignment_history'].setdefault[prev_method]['affine_matrix']
+
                 layer.setdefault('alignment', {})
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
@@ -2041,15 +2055,22 @@ class DataModel:
                     {'stack': new_stack}
 
 
+    def first_unskipped(self):
+        for i,section in enumerate(self.get_iter()):
+            if not section['skipped']:
+                return i
+
+
     def link_reference_sections(self):
         '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'
         Link layers, taking into accounts skipped layers'''
         # self.set_default_data()  # 0712 #0802 #original
         for s in self.scales():
             skip_list = self.skips_indices()
+            # first_unskipped = self.first_unskipped()
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
-                if (layer_index == 0) or (layer_index in skip_list):
+                if (layer_index <= self.first_unskipped()) or (layer_index in skip_list):
                     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
                 else:
                     j = layer_index - 1  # Find nearest previous non-skipped l

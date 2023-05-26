@@ -55,7 +55,7 @@ class Flicker(QLabel):
 
         self.position = p
 
-        if (self.position == 0) or (cfg.data.skipped()):
+        if (self.position <= cfg.data.first_unskipped()) or (cfg.data.skipped()):
             self.a = self.no_image_path
             self.b = self.no_image_path
             self.series = [self.a, self.b]

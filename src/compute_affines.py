@@ -16,6 +16,7 @@ import psutil
 import logging
 from datetime import datetime
 from pathlib import Path
+import numpy as np
 
 sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
 sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
