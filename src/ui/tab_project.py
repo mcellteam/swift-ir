@@ -313,7 +313,8 @@ class ProjectTab(QWidget):
 
         # self.joystick = Joystick()
 
-        self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        # self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5, alignment=Qt.AlignHCenter | Qt.AlignBottom)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.ngVertLab.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
