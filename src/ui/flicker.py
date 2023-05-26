@@ -124,7 +124,7 @@ class Flicker(QLabel):
 
                 qp.drawPixmap(rect, pm)
 
-                if not cfg.data.skipped():
+                if (not cfg.data.skipped()) or ():
                     font = QFont()
                     font.setBold(True)
                     # size = max(min(int(11 * (max(pm.height(), 1) / 60)), 14), 7)
