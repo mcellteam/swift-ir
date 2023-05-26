@@ -908,8 +908,8 @@ class DataModel:
         if l == None: l = self.zpos
         if method == None: method = self.current_method
         # logger.critical('')
-        if l == 0:
-            return 0.0
+        # if l == 0:
+        #     return 0.0
         try:
             # if method == None:
             #     method = self.current_method
