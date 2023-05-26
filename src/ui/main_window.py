@@ -2111,6 +2111,7 @@ class MainWindow(QMainWindow):
         # self.refreshTab()
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
+        check_project_status()
         # self.dw_monitor.show()
 
 
