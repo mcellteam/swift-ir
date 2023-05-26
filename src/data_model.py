@@ -864,6 +864,9 @@ class DataModel:
         logger.info(f'filename = {filename}')
         return self.transforming_list().index(filename)
 
+    def get_ref_index_offset(self):
+        return self.zpos - self.get_ref_index()
+
     def method_results(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
