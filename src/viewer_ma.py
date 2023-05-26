@@ -154,10 +154,13 @@ class MAViewer(neuroglancer.Viewer):
     def initViewer(self, obey_zpos=True):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller}]...')
+        if cfg.data.skipped():
+            return
 
         if obey_zpos:
             if self.role == 'ref':
                 self.index = max(cfg.data.zpos - 1, 0)
+                self.index = cfg.data.get_ref_index()
             elif self.role == 'base':
                 self.index = cfg.data.zpos #
 

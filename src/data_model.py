@@ -338,6 +338,10 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]
 
+    def get_ref_index(self):
+        reference = self._data['data']['scales'][self.scale]['stack'][self.zpos]['reference']
+        return self.get_index(reference)
+
     # @cache
     def is_aligned(self, s=None):
         caller = inspect.stack()[1].function
@@ -857,6 +861,7 @@ class DataModel:
         return [x['filename'] for x in self.get_iter()]
 
     def get_index(self, filename):
+        logger.info(f'filename = {filename}')
         return self.transforming_list().index(filename)
 
     def method_results(self, s=None, l=None):
