@@ -2670,28 +2670,29 @@ class MainWindow(QMainWindow):
     def _callbk_skipChanged(self, state: int):  # 'state' is connected to skipped toggle
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
-        if self._isProjectTab():
-            if caller != 'dataUpdateWidgets':
-                skip_state = not self._skipCheckbox.isChecked()
-                for s in cfg.data.scales():
-                    layer = cfg.data.zpos
-                    if layer < len(cfg.data):
-                        cfg.data.set_skip(skip_state, s=s, l=layer)
+        if caller == 'main':
+            if self._isProjectTab():
+                if caller != 'dataUpdateWidgets':
+                    skip_state = not self._skipCheckbox.isChecked()
+                    for s in cfg.data.scales():
+                        layer = cfg.data.zpos
+                        if layer < len(cfg.data):
+                            cfg.data.set_skip(skip_state, s=s, l=layer)
+                        else:
+                            logger.warning(f'Request layer is out of range ({layer}) - Returning')
+                            return
+                    if skip_state:
+                        self.tell("Include: %s" % cfg.data.name_base())
                     else:
-                        logger.warning(f'Request layer is out of range ({layer}) - Returning')
-                        return
-                if skip_state:
-                    self.tell("Include: %s" % cfg.data.name_base())
-                else:
-                    self.tell("Exclude: %s" % cfg.data.name_base())
-                cfg.data.link_reference_sections()
-                if self.dw_flicker.isVisible():
-                    self.flicker.start()
-                self.dataUpdateWidgets()
-                if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.setScaleData()
-            if cfg.project_tab._tabs.currentIndex() == 3:
-                cfg.project_tab.snr_plot.initSnrPlot()
+                        self.tell("Exclude: %s" % cfg.data.name_base())
+                    cfg.data.link_reference_sections()
+                    if self.dw_flicker.isVisible():
+                        self.flicker.start()
+                    self.dataUpdateWidgets()
+                    if cfg.project_tab._tabs.currentIndex() == 1:
+                        cfg.project_tab.project_table.setScaleData()
+                if cfg.project_tab._tabs.currentIndex() == 3:
+                    cfg.project_tab.snr_plot.initSnrPlot()
 
     def skip_change_shortcut(self):
         logger.info('')
