@@ -2671,6 +2671,7 @@ class MainWindow(QMainWindow):
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
         if caller == 'main':
+            logger.critical('')
             if self._isProjectTab():
                 if caller != 'dataUpdateWidgets':
                     skip_state = not self._skipCheckbox.isChecked()
