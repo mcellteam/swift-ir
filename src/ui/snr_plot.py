@@ -117,7 +117,7 @@ class SnrPlot(QWidget):
 
     def updateLayerLinePos(self):
         caller = inspect.stack()[1].function
-        # logger.info(f'caller={caller}')
+        logger.info(f'caller={caller}')
         if cfg.data:
             offset = self._getScaleOffset(s=cfg.data.scale)
             pos = [cfg.data.zpos + offset, 1]
@@ -386,8 +386,8 @@ class SnrPlot(QWidget):
                 # mouseClickEvent is a pyqtgraph.GraphicsScene.mouseEvents.MouseClickEvent
                 # logger.info('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
                 pos_click = int(mouseClickEvent.pos()[0])
-                # logger.info('Position Clicked: %d' % pos_click)
-                cfg.data.zpos = pos_click
+                logger.info('Position Clicked: %d' % pos_click)
+                cfg.data.zpos = int(pos_click)
                 self.updateLayerLinePos()
                 cfg.main_window.dataUpdateWidgets()
             except:
