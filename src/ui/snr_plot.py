@@ -401,9 +401,12 @@ class SnrPlot(QWidget):
 
     # def onSnrClick(self, plot, points, scale):
     def onSnrClick(self, plot, points):
-        # logger.info(f'onSnrClick ({scale}):')
+        logger.info(f'onSnrClick')
+
 
         index = int(points[0].pos()[0])
+        logger.info(f'index = {index}')
+        index = int(index)
         if index in range(len(cfg.data)):
             snr = float(points[0].pos()[1])
             pt = points[0] # just allow one point clicked
