@@ -135,7 +135,7 @@ class SnrPlot(QWidget):
 
 
     def updateSpecialLayerLines(self):
-        logger.debug('')
+        logger.info('')
         offset = self._getScaleOffset(s=cfg.data.scale)
         layers_mp = cfg.data.find_layers_with_manpoints()
         for line in self._mp_lines:   self.plot.removeItem(line)
