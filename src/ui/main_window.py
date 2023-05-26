@@ -846,7 +846,7 @@ class MainWindow(QMainWindow):
             cfg.data.set_previous_results()
         self._autosave()
         self._changeScaleCombo.setEnabled(False)
-        self.check_project_status()
+        check_project_status()
 
     def onAlignmentEnd(self, start, end):
         logger.info('Running Post-Alignment Tasks...')

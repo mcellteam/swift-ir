@@ -401,9 +401,11 @@ class EMViewer(AbstractEMViewer):
 
         cfg.refLV = ng.LocalVolume(
             volume_type='image',
-            data=cfg.unal_tensor[0:len(cfg.data) - 1, :, :],
+            # data=cfg.unal_tensor[0:len(cfg.data) - 1, :, :],
+            data=cfg.unal_tensor[:, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[1, y_nudge, x_nudge]
+            # voxel_offset=[cfg.data.get_ref_index_offset(), y_nudge, x_nudge]
         )
         cfg.baseLV = cfg.LV = ng.LocalVolume(
             volume_type='image',
