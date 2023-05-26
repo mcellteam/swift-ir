@@ -56,10 +56,10 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
             renew_directory(directory=od)
         # print_example_cafms(scale_dict)
         bias_path = os.path.join(dm.dest(), scale, 'bias_data')
-        try:
-            save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
-        except:
-            print_exception()
+        # try:
+        #     save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+        # except:
+        #     print_exception()
 
         if end == None:
             end = len(dm)
