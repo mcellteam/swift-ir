@@ -161,6 +161,7 @@ class MAViewer(neuroglancer.Viewer):
             elif self.role == 'base':
                 self.index = cfg.data.zpos #
 
+
         # self.clear_layers()
         self.restoreManAlignPts()
 

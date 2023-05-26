@@ -59,21 +59,41 @@ def run_checks():
 
 def check_project_status():
     iter = cfg.data.get_iter()
+    glob_problem_flag = 0
+    problem_indices = []
     for i,section in enumerate(iter):
+        local_problem_flag = 0
+
         if section['current_method'] in ('manual-hint'):
             n_ref_pts = len(section['alignment']['manpoints']['ref'])
             n_base_pts = len(section['alignment']['manpoints']['base'])
             if n_ref_pts < 3:
-                cfg.mw.warn(f'# of match regions for Reference image {i} is fewer than 3: {n_ref_pts}')
+                cfg.mw.warn(f'Fatal! # of match regions for Reference image {i} is fewer than 3: {n_ref_pts}')
+                glob_problem_flag = 1
+                local_problem_flag = 1
             if n_base_pts < 3:
-                cfg.mw.warn(f'# of match regions for Transforming image {i} is fewer than 3: {n_ref_pts}')
+                cfg.mw.warn(f'Fatal! # of match regions for Transforming image {i} is fewer than 3: {n_ref_pts}')
+                glob_problem_flag = 1
+                local_problem_flag = 1
         if section['current_method'] in ('manual-strict'):
             n_ref_pts = len(section['alignment']['manpoints']['ref'])
             n_base_pts = len(section['alignment']['manpoints']['base'])
             if n_ref_pts < 3:
-                cfg.mw.warn(f'# of match points for Reference image {i} is fewer than 3: {n_ref_pts}')
+                cfg.mw.warn(f'Fatal! # of match points for Reference image {i} is fewer than 3: {n_ref_pts}')
+                glob_problem_flag = 1
+                local_problem_flag = 1
             if n_base_pts < 3:
-                cfg.mw.warn(f'# of match points for Transforming image {i} is fewer than 3: {n_ref_pts}')
+                cfg.mw.warn(f'Fatal! # of match points for Transforming image {i} is fewer than 3: {n_ref_pts}')
+                glob_problem_flag = 1
+                local_problem_flag = 1
+        if local_problem_flag:
+            problem_indices.append(i)
+
+    if glob_problem_flag:
+        cfg.mw.warn(f"  To fix the Match alignment issues with sections {['#%d ' for x in problem_indices]}, do one of the following:\n "
+                    f"    1) add more match selections (at least 3 are necessary) to each or,"
+                    f"    2) change the alignment method for each to Grid Default or Grid Custom or,"
+                    f"    3) exclude each of these sections")
 
 
 def getOpt(lookup):
