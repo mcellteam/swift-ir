@@ -2124,6 +2124,8 @@ class MainWindow(QMainWindow):
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
+        if not os.path.exists(userpreferencespath):
+            open(userpreferencespath, 'a').close()
         try:
             f = open(userpreferencespath, 'w')
             json.dump(cfg.settings, f, indent=2)

@@ -850,6 +850,15 @@ class DataModel:
         if s == None: s = self.scale
         return ScaleIterator(self._data['data']['scales'][s]['stack'][start:end])
 
+    def references_list(self):
+        return [x['reference'] for x in self.get_iter()]
+
+    def transforming_list(self):
+        return [x['filename'] for x in self.get_iter()]
+
+    def get_index(self, filename):
+        return self.transforming_list().index(filename)
+
     def method_results(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos

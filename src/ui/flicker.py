@@ -50,9 +50,23 @@ class Flicker(QLabel):
 
     def set_position(self, p:int):
         # logger.critical('Setting flicker position')
+
         self.position = p
+
+        if (self.position == 0) or (cfg.data.skipped()):
+            self.a = self.no_image_path
+            self.b = self.no_image_path
+            self.series = [self.a, self.b]
+            self.set_no_image()
+            return
+
         self.a = cfg.data.thumbnail_aligned(l=p)
-        self.b = cfg.data.thumbnail_aligned(l=max(0, p - 1))
+
+        reference = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['reference']
+        ind_reference = cfg.data.get_index(reference)
+
+        # self.b = cfg.data.thumbnail_aligned(l=max(0, p - 1))
+        self.b = cfg.data.thumbnail_aligned(l=ind_reference)
         # self.a = cfg.data.filename(l=p)
         # self.b = cfg.data.filename(l=max(0,p-1))
         self.series = [self.a, self.b]

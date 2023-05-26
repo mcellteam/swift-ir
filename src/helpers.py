@@ -197,6 +197,7 @@ def initialize_user_preferences():
                 cfg.settings = json.load(f)
         else:
             # logger.info(f'Loading user settings from defaults...')
+            open(userpreferencespath, 'a').close()
             cfg.settings = {}
     except:
         print_exception()
@@ -283,6 +284,8 @@ def get_project_list():
     logger.info('')
     try:
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+        if not os.path.exists(userprojectspath):
+            open(userprojectspath, 'a').close()
         with open(userprojectspath, 'r') as f:
             projectpaths = [line.rstrip() for line in f]
         return projectpaths
@@ -294,6 +297,8 @@ def get_project_list():
 def append_project_path(path):
     logger.info('')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+    if not os.path.exists(userprojectspath):
+        open(userprojectspath, 'a').close()
     with open(userprojectspath, 'r') as f:
         lines = f.readlines()
     paths = [line.rstrip() for line in lines]
