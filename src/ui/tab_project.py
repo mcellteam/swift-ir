@@ -304,7 +304,8 @@ class ProjectTab(QWidget):
         self._overlayRect.hide()
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('Test Label')
-        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 22px;""")
+        # self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 22px;""")
+        self._overlayLab.setStyleSheet("""color: #a30000; font-size: 22px;""")
         self._overlayLab.hide()
 
         self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
@@ -1540,6 +1541,8 @@ class ProjectTab(QWidget):
         # vbl.addWidget(self.MA_stackedWidget)
         # self.MA_stackedWidget_gb.setLayout(vbl)
 
+
+
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
@@ -1553,8 +1556,18 @@ class ProjectTab(QWidget):
         self.MA_ng_widget = QWidget()
         self.MA_gl = GL()
         self.MA_gl.setSpacing(1)
+
+        # self.MA_gl_overlay = QWidget()
+        self.MA_gl_overlay = QLabel()
+        self.MA_gl_overlay.setAlignment(Qt.AlignCenter)
+        # .setStyleSheet("""color: #FF0000; font-size: 22px;""")
+        self.MA_gl_overlay.setStyleSheet("""color: #a30000; font-size: 22px; background-color: rgba(0, 0, 0, 1.0);""")
+        # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.MA_gl_overlay.hide()
+
         self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
         self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
+        self.MA_gl.addWidget(self.MA_gl_overlay, 0, 0, 4, 4)
         self.MA_gl.addWidget(self.msg_MAinstruct, 3, 0, 1, 4, alignment=Qt.AlignCenter | Qt.AlignBottom)
         # self.MA_gl.addWidget(self.msg_MAinstruct, 3, 0, 1, 4, alignment=Qt.AlignCenter)
         # self.MA_ng_widget.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
@@ -2290,9 +2303,19 @@ class ProjectTab(QWidget):
     def dataUpdateMA(self):
         self.dataUpdateMA_calls += 1
 
+
+        #0526 set skipped overlay
+
         caller = inspect.stack()[1].function
         # logger.critical(f'>>>> dataUpdateMA caller: {caller} ; call #{self.dataUpdateMA_calls} ; cfg.data.current_method={cfg.data.current_method} >>>>')
         if getData('state,manual_mode'):
+
+            if cfg.data.skipped():
+                self.MA_gl_overlay.setText('X EXCLUDED - %s' % cfg.data.name_base())
+                self.MA_gl_overlay.show()
+
+            else:
+                self.MA_gl_overlay.hide()
 
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)

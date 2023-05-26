@@ -846,6 +846,7 @@ class MainWindow(QMainWindow):
             cfg.data.set_previous_results()
         self._autosave()
         self._changeScaleCombo.setEnabled(False)
+        self.check_project_status()
 
     def onAlignmentEnd(self, start, end):
         logger.info('Running Post-Alignment Tasks...')
@@ -1212,7 +1213,7 @@ class MainWindow(QMainWindow):
     def updateManualAlignModeButton(self):
         if getData('state,manual_mode'):
             tip = 'Exit Manual Align Mode'
-            self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')} ")
+            self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')}")
             self.alignMatchPointAction.setText(f"Exit Manual Align Mode {hotkey('M')} ")
             self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
             self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -1221,6 +1222,8 @@ class MainWindow(QMainWindow):
 
         else:
             tip = 'Enter Manual Align Mode'
+            self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
+            self.alignMatchPointAction.setText(f"Align Manually {hotkey('M')} ")
             self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
             self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
             self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
@@ -1499,7 +1502,7 @@ class MainWindow(QMainWindow):
 
             if cfg.data.skipped():
                 # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                cfg.project_tab._overlayLab.setText('X REJECTED - %s' % cfg.data.name_base())
+                cfg.project_tab._overlayLab.setText('X EXCLUDED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
             # else:
@@ -5318,7 +5321,7 @@ class MainWindow(QMainWindow):
             QLabel('Bounds :'),
             QLabel('SNR :'),
             QLabel('Progress :'),
-            QLabel('Rejected Layer :'),
+            QLabel('Excluded Layer :'),
             QLabel('Matchpoints :'),
         )
         self._tool_textInfo_NEW = WidgetArea(parent=self, title='Details', labels=self._layer_details)
