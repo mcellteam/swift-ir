@@ -37,6 +37,7 @@ class Flicker(QLabel):
         self.setStyleSheet("""background-color: #ffffff;""")
 
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
+        self.extra = "test"
 
         # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # policy.setHeightForWidth(True)
@@ -47,6 +48,7 @@ class Flicker(QLabel):
     def set(self):
         # logger.critical('Setting pixmap...')
         self.setPixmap(QPixmap(self.series[self.cur]))
+        self.repaint()
 
     def set_position(self, p:int):
         # logger.critical('Setting flicker position')
@@ -58,6 +60,7 @@ class Flicker(QLabel):
             self.b = self.no_image_path
             self.series = [self.a, self.b]
             self.set_no_image()
+            self.update()
             return
 
         self.a = cfg.data.thumbnail_aligned(l=p)
@@ -72,8 +75,8 @@ class Flicker(QLabel):
         self.series = [self.a, self.b]
 
     def onTimer(self):
-        self.set()
         self.cur = 1 - self.cur
+        self.set()
         # logger.info(f'Timer is timing cur = {self.cur}, {self.series[self.cur]} ...')
 
 
@@ -93,33 +96,52 @@ class Flicker(QLabel):
         self.snr = None
         try:
             self.setPixmap(QPixmap(self.no_image_path))
+            self.update()
         except:
             print_exception()
             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
 
 
     def paintEvent(self, event):
+        # logger.info('')
         if self.pixmap():
+            # logger.info('trying >>>')
             try:
                 pm = self.pixmap()
                 if (pm.width() == 0) or (pm.height() == 0):
                     self.set_no_image()
                     return
-                originalRatio = pm.width() / pm.height()
-                currentRatio = self.width() / self.height()
-                if originalRatio != currentRatio:
-                    qp = QPainter(self)
-                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                    rect.moveBottomLeft(self.rect().bottomLeft())
-                    qp.drawPixmap(rect, pm)
+                # originalRatio = pm.width() / pm.height()
+                # currentRatio = self.width() / self.height()
+                qp = QPainter(self)
+                # if originalRatio != currentRatio:
+                # qp = QPainter(self)
+                pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.r = rect = QRect(0, 0, pm.width(), pm.height())
+                # rect.moveBottomLeft(self.rect().bottomLeft())
+                # qp.drawPixmap(rect, pm)
+                rect.moveCenter(self.rect().center())
 
-                    if self.extra:
-                        qp.setPen(QColor('#ede9e8'))
-                        loc = QPoint(0, self.rect().height() - 4)
-                        if self.extra:
-                            qp.drawText(loc, self.extra)
+                qp.drawPixmap(rect, pm)
+
+                if not cfg.data.skipped():
+                    font = QFont()
+                    font.setBold(True)
+                    size = max(min(int(11 * (max(pm.height(), 1) / 60)), 14), 7)
+                    font.setPointSize(size)
+                    qp.setFont(font)
+                    # logger.info(f"self.rect().height() = {self.rect().height()}")
+                    # qp.setPen(QColor('#FFFF66'))
+                    # qp.setPen(QColor(('#FFFF66', '#a30000')[self.cur == 1]))
+                    qp.setPen(QColor('#a30000'))
+                    # loc = QPoint(0, self.rect().height() - 20)
+                    txt = ("Reference", "Transforming")[self.cur == 1]
+                    # loc = (QPoint(5, 13), QPoint(5, self.rect().height() - 6))[self.cur == 1]
+                    loc = QPoint(5, self.rect().height() - 6)
+                    qp.drawText(loc, txt)
+                    # return
                     return
+
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
                 # print_exception()
