@@ -266,7 +266,8 @@ class SnrPlot(QWidget):
                 if cfg.data.is_aligned(s=s):
                     if self._snr_checkboxes[s].isChecked():
                         self.plotSingleScale(s=s)
-            max_snr = cfg.data.snr_max_all_scales()
+            # max_snr = cfg.data.snr_max_all_scales()
+            max_snr = min(99, max(cfg.data.snr_list())) #FixThis #Temporary
             if not max_snr:
                 logger.warning('No max SNR, Nothing to plot - Returning')
                 return
@@ -279,7 +280,7 @@ class SnrPlot(QWidget):
                 maxXRange=xmax,
                 yMin=0,
                 yMax=ymax,
-                minYRange=ymax,
+                minYRange=20,
                 maxYRange=ymax,
             )
             # ax = self.plot.getAxis('bottom')  # This is the trick
@@ -295,7 +296,7 @@ class SnrPlot(QWidget):
             # ax.setTicks([[(v, str(v)) for v in ticks ]])
 
             self.updateSpecialLayerLines()
-            self.plot.autoRange() # !!!
+            # self.plot.autoRange() # !!! #0601-
 
     def _getScaleOffset(self, s):
         return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
