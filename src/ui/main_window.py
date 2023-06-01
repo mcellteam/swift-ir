@@ -934,8 +934,8 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.initNeuroglancer()
                 cfg.project_tab.refreshTab()
                 self.dataUpdateWidgets()
-                if getData('state,manual_mode'):
-                    cfg.pt.dataUpdateMA()
+                # if getData('state,manual_mode'):
+                #     cfg.pt.dataUpdateMA()
                 self.alignAll(set_pbar=False)
 
             self.onAlignmentEnd()
