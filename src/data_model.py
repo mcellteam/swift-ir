@@ -563,6 +563,13 @@ class DataModel:
         return lst
 
 
+    def thumbnail_ref(self) -> list:
+        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['data']['scales'][self.scale]['stack'][self.zpos]['reference']))
+
+
+    def thumbnail_tra(self) -> list:
+        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['data']['scales'][self.scale]['stack'][self.zpos]['filename']))
+
     def thumbnails_ref(self) -> list:
         paths = []
         for l in self.stack():
@@ -723,6 +730,7 @@ class DataModel:
         self._data['state'].setdefault('mode', 'comparison')
         self._data['state'].setdefault('previous_mode', 'comparison')
         self._data['state'].setdefault('ng_layout', 'xy')
+        self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})
         self._data['state']['tool_windows'].setdefault('python',False)
         self._data['state']['tool_windows'].setdefault('notes',False)
@@ -788,10 +796,38 @@ class DataModel:
                 layer.setdefault('current_method', 'grid-default')
 
                 layer.setdefault('alignment_history', {})
-                layer['alignment_history'].setdefault('grid-default', [])
-                layer['alignment_history'].setdefault('grid-custom', [])
-                layer['alignment_history'].setdefault('manual-hint', [])
-                layer['alignment_history'].setdefault('manual-strict', [])
+
+                layer['alignment_history'].setdefault('grid-default', {})
+                layer['alignment_history'].setdefault('grid-custom', {})
+                layer['alignment_history'].setdefault('manual-hint', {})
+                layer['alignment_history'].setdefault('manual-strict', {})
+
+                if type(layer['alignment_history']['grid-default']) == list:
+                    layer['alignment_history']['grid-default'] = {}
+                if type(layer['alignment_history']['grid-custom']) == list:
+                    layer['alignment_history']['grid-custom'] = {}
+                if type(layer['alignment_history']['manual-hint']) == list:
+                    layer['alignment_history']['manual-hint'] = {}
+                if type(layer['alignment_history']['manual-strict']) == list:
+                    layer['alignment_history']['manual-strict'] = {}
+
+
+                layer['alignment_history']['grid-default'].setdefault('snr', 0.0)
+                layer['alignment_history']['grid-custom'].setdefault('snr', 0.0)
+                layer['alignment_history']['manual-hint'].setdefault('snr', 0.0)
+                layer['alignment_history']['manual-strict'].setdefault('snr', 0.0)
+
+                # report = 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>'
+                layer['alignment_history']['grid-default'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
+                layer['alignment_history']['grid-custom'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
+                layer['alignment_history']['manual-hint'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
+                layer['alignment_history']['manual-strict'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
+
+                init_afm = [[1., 0., 0.], [0., 1., 0.]]
+                layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['grid-custom'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['manual-hint'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['manual-strict'].setdefault('affine_matrix', init_afm)
 
                 # init_afm = [[1., 0., 0.], [0., 1., 0.]]
                 # layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
@@ -940,16 +976,19 @@ class DataModel:
             TypeError: list indices must be integers or slices, not str
             
             13:55:45 WARNING [data_model.snr:925] Unable to return SNR for layer #18
-
             
             '''
 
             # value = self.method_results(s=s, l=l)['snr']
             # return statistics.fmean(map(float, value))
-            return statistics.fmean(map(float, components))
+            if type(components) == float:
+                return components
+            else:
+                return statistics.fmean(map(float, components))
         except:
-            # print_exception()
-            logger.warning('Unable to return SNR for layer #%d' %l)
+            print_exception()
+            # logger.warning('Unable to return SNR for layer #%d' %l)
+            logger.warning('Unable to return SNR for layer #%d. Returning 0.0...' % l)
             return 0.0
 
     def snr_prev(self, s=None, l=None) -> float:
@@ -1665,7 +1704,7 @@ class DataModel:
 
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.scale
-        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return tuple(self._data['data']['scales'][s]['image_src_size'])
         except:
@@ -2070,8 +2109,10 @@ class DataModel:
             # first_unskipped = self.first_unskipped()
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
-                if (layer_index <= self.first_unskipped()) or (layer_index in skip_list):
+                if layer_index in skip_list:
                     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
+                elif layer_index <= self.first_unskipped():
+                    self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
                 else:
                     j = layer_index - 1  # Find nearest previous non-skipped l
                     while (j in skip_list) and (j >= 0):

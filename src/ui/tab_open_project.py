@@ -672,7 +672,6 @@ class OpenProject(QWidget):
             # filename = self.selected_file
             filename = self.selectionReadout.text()
             logger.info(f'Opening Project {filename}...')
-            cfg.main_window.tell("Loading Project '%s'..." % filename)
             try:
                 with open(filename, 'r') as f:
                     cfg.data = DataModel(data=json.load(f))
@@ -691,8 +690,7 @@ class OpenProject(QWidget):
             cfg.main_window.onStartProject()
             cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             cfg.main_window._setLastTab()
-            cfg.main_window.hud.done()
-            cfg.main_window.tell("Done.")
+            # cfg.main_window.hud.done()
         else:
             cfg.main_window.warn("Invalid Path")
 

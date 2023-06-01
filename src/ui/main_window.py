@@ -75,7 +75,7 @@ from src.ui.tab_browser import WebBrowser
 from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast, SnrThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
-from src.ui.flicker import Flicker
+# from src.ui.flicker import Flicker
 
 # from src.ui.components import AutoResizingTextEdit
 from src.mendenhall_protocol import Mendenhall
@@ -393,6 +393,15 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # logger.info('>>>> updateCorrSignalsDrawer >>>>')
 
+        if not self._isProjectTab():
+            return
+
+        # if not cfg.data.is_aligned():
+        #     cfg.pt.ms_widget.hide()
+        #     return
+        # else:
+        #     cfg.pt.ms_widget.show()
+
         thumbs = cfg.data.get_signals_filenames()
         n = len(thumbs)
         snr_vals = cfg.data.snr_components()
@@ -404,6 +413,8 @@ class MainWindow(QMainWindow):
             self.corrSignalsList[i].set_no_image()
             self.corrSignalsList[i].setStyleSheet(f"""border: none; padding: 3px;""")
             self.corrSignalsList[i].update()
+
+            cfg.pt.msList[i].set_no_image()
         # QApplication.processEvents()
 
         # if not snr_vals:
@@ -414,8 +425,8 @@ class MainWindow(QMainWindow):
         # logger.critical('snr_vals: %s' % str(snr_vals))
 
         if cfg.data.current_method == 'grid-custom':
-            for i in range(4):
-                self.corrSignalsList[i].hide()
+            # for i in range(4):
+            #     self.corrSignalsList[i].hide()
             regions = cfg.data.grid_custom_regions
             names = cfg.data.get_grid_custom_filenames()
             # logger.info('names: %s' % str(names))
@@ -429,13 +440,17 @@ class MainWindow(QMainWindow):
                             logger.info(f'no SNR data for corr signal index {i}')
                             self.corrSignalsList[i].set_no_image()
                             # print_exception()
+                            self.msList[i].set_no_image()
                             continue
 
                         self.corrSignalsList[i].set_data(path=names[i], snr=snr)
-                        # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
-                        # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
                         self.corrSignalsList[i].show()
                         self.corrSignalsList[i].update()
+
+                        cfg.pt.msList[i].set_data(path=names[i], snr=snr)
+                        cfg.pt.msList[i].update()
+
+
                         count += 1
                     except:
                         print_exception()
@@ -451,20 +466,24 @@ class MainWindow(QMainWindow):
                             snr = 0.0
                             logger.info(f'no SNR data for corr signal index {i}')
                             self.corrSignalsList[i].set_no_image()
+                            cfg.pt.msList[i].set_no_image()
                             # print_exception()
                             continue
 
                         self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr)
+                        cfg.pt.msList[i].set_data(path=thumbs[i], snr=snr)
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
                         # self.corrSignalsList[i].setStyleSheet(f"""border: 6px solid {colors[i]}; padding: 3px;""")
                         # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
                     except:
                         print_exception()
                         self.corrSignalsList[i].set_no_image()
+                        cfg.pt.msList[i].set_no_image()
                         logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
                     finally:
                         self.corrSignalsList[i].show()
                         self.corrSignalsList[i].update()
+                        cfg.pt.msList[i].update()
                 else:
                     self.corrSignalsList[i].hide()
 
@@ -482,29 +501,12 @@ class MainWindow(QMainWindow):
         self.cbPython.setChecked(self.dw_python.isVisible())
         self.cbMonitor.setChecked(self.dw_monitor.isVisible())
         self.cbNotes.setChecked(self.dw_notes.isVisible())
-        self.cbSignals.setChecked(self.dw_signals.isVisible())
-        self.cbFlicker.setChecked(self.dw_flicker.isVisible())
-
-    def callbackFlickerDwVisibilityChanged(self):
-        # logger.critical('')
-        # logger.critical(f'self.dw_flicker.width() = {self.dw_flicker.width()}')
-        # logger.critical(f'self.cbFlicker.height() = {self.cbFlicker.height()}')
-        self.cbFlicker.setChecked(self.dw_flicker.isVisible())
-        # if self.cbFlicker.isVisible():
-            # self.cbFlicker.resize(self.dw_flicker.width(), self.cbFlicker.height())
-            # self.cbFlicker.resize(self.cbFlicker.height(), self.dw_flicker.width())
 
     def callbackToolwindows(self):
         QApplication.processEvents()
         self.dw_python.setVisible(self.cbPython.isChecked())
         self.dw_notes.setVisible(self.cbNotes.isChecked())
         self.dw_monitor.setVisible(self.cbMonitor.isChecked())
-        self.dw_signals.setVisible(self.cbSignals.isChecked())
-        self.dw_flicker.setVisible(self.cbFlicker.isChecked())
-        if self.dw_flicker.isHidden():
-            self.flicker.stop()
-        else:
-            self.flicker.start()
 
     def setdw_python(self, state):
         self.dw_python.setVisible(state)
@@ -532,38 +534,6 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['notes'] = state
         self.updateNotes()
-
-    def setdw_signals(self, state):
-        # if not self._isProjectTab():
-        #     state = False
-        #     self.cbSignals.setChecked(False)
-        self.flicker.resize(QSize(180, 180))
-        self.dw_signals.setVisible(state)
-        self.showSignalsAction.setText(('Show Correlation Signals', 'Hide Correlation Signals')[state])
-        self.cbSignals.setToolTip(("Show Correlation Signals Tool Window (" + ('^', '⌘')[is_mac()] + "C)",
-                                   "Hide Correlation Signals Tool Window (" + ('^', '⌘')[is_mac()] + "C)")[state])
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['signals'] = state
-        if self.dw_signals.isVisible():
-            self.updateCorrSignalsDrawer()
-
-    def setdw_flicker(self, state):
-        if not self._isProjectTab():
-            # state = False
-            # self.cbFlicker.setChecked(False)
-            self.flicker.stop()
-
-        self.dw_flicker.setVisible(state)
-
-        self.showFlickerAction.setText(('Show Flicker', 'Hide Flicker')[state])
-        self.cbFlicker.setToolTip(("Show Flicker Tool Window (" + ('^', '⌘')[is_mac()] + "F)",
-                                   "Hide Flicker Tool Window (" + ('^', '⌘')[is_mac()] + "F)")[state])
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['signals'] = state
-            if self.dw_flicker.isHidden():
-                self.flicker.stop()
-            else:
-                self.flicker.start()
 
     # def _callbk_showHidePython(self):
     #     # self.dw_python.setHidden(not self.dw_python.isHidden())
@@ -859,7 +829,7 @@ class MainWindow(QMainWindow):
                 self.pbarLabel.setText('')
                 cfg.project_tab.snr_plot.initSnrPlot()
                 self.updateEnabledButtons()
-                self.updateProjectTable()  # +
+                # self.updateProjectTable()  # +
                 self.updateMenus()
                 self.present_snr_results(start=start, end=end)
                 prev_snr_average = cfg.data.snr_prev_average()
@@ -878,9 +848,7 @@ class MainWindow(QMainWindow):
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
 
-                self.cbSignals.setChecked(True)
-                self.cbFlicker.setChecked(True)
-                self.flicker.start()
+                # self.flicker.start()
 
         except:
             print_exception()
@@ -1253,8 +1221,6 @@ class MainWindow(QMainWindow):
             self._btn_clear_skips.setEnabled(True)
             self._swimWindowControl.setEnabled(True)
             self.sb_whiteningControl.setEnabled(True)
-            # self.cbSignals.setEnabled(True)
-            # self.cbFlicker.setEnabled(True)
             # self._ctlpanel_applyAllButton.setEnabled(True)
             self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
             self._changeScaleCombo.setEnabled(True)
@@ -1267,8 +1233,6 @@ class MainWindow(QMainWindow):
             self._bbToggle.setEnabled(False)
             self._polyBiasCombo.setEnabled(False)
             self._btn_clear_skips.setEnabled(False)
-            # self.cbFlicker.setEnabled(False)
-            # self.cbSignals.setEnabled(False)
 
             # self._ctlpanel_applyAllButton.setEnabled(False)
 
@@ -1344,8 +1308,6 @@ class MainWindow(QMainWindow):
             self._btn_manualAlign.setEnabled(False)
             self.startRangeInput.setEnabled(False)
             self.endRangeInput.setEnabled(False)
-            # self.cbFlicker.setEnabled(False)
-            # self.cbSignals.setEnabled(False)
 
     def layer_left(self):
         caller = inspect.stack()[1].function
@@ -1507,6 +1469,15 @@ class MainWindow(QMainWindow):
                 cfg.project_tab._overlayLab.setText('X EXCLUDED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
+
+
+            if cfg.pt.tn_widget.isVisible():
+                os.path.isdir(cfg.data.thumbnail_ref())
+
+                cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
+                cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
+
+
             # else:
             #     cfg.project_tab._overlayRect.hide()
             #     cfg.project_tab._overlayLab.hide()
@@ -1520,15 +1491,14 @@ class MainWindow(QMainWindow):
                                        'x'.join(map(str, img_siz)) + ', ' +
                                        cfg.data.name_base())
 
-            if self.dw_signals.isVisible():
+            # if self.dw_signals.isVisible():
+            #     self.updateCorrSignalsDrawer()
+            if cfg.pt.ms_widget.isVisible():
                 self.updateCorrSignalsDrawer()
 
             cur = cfg.data.zpos
             if self.notes.isVisible():
                 self.updateNotes()
-
-            if self.dw_flicker.isVisible():
-                self.flicker.start()
 
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
@@ -2043,13 +2013,18 @@ class MainWindow(QMainWindow):
         logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
         self.cbMonitor.setChecked(True) #Why?
 
+        self.tell("Loading Project '%s'..." % cfg.data.dest())
+
         initLogFiles(cfg.data)
         self._dontReinit = True
         caller = inspect.stack()[1].function
         # self.tell("Loading project '%s'..." %cfg.data.dest())
 
         setData('state,manual_mode', False)
-        setData('state,mode', 'comparison')
+        # setData('state,mode', 'comparison')
+        # setData('state,ng_layout', 'xy')
+
+        setData('state,mode', 'stack-xy')
         setData('state,ng_layout', 'xy')
 
 
@@ -2105,17 +2080,16 @@ class MainWindow(QMainWindow):
         cfg.project_tab.showSecondaryNgTools()
         cfg.project_tab.updateLabelsHeader()
 
-        if cfg.data.is_aligned():
-            self.cbFlicker.setChecked(True)
-            self.flicker.start()
-            self.cbSignals.setChecked(True)
-
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
         # QApplication.processEvents()
         # self.refreshTab()
+
+        self.hud.done()
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
+        # QApplication.processEvents()
+        # cfg.project_tab.initNeuroglancer()
         check_project_status()
         # self.dw_monitor.show()
 
@@ -2687,8 +2661,8 @@ class MainWindow(QMainWindow):
                 else:
                     self.tell("Exclude: %s" % cfg.data.name_base())
                 cfg.data.link_reference_sections()
-                if self.dw_flicker.isVisible():
-                    self.flicker.start()
+                if getData('state,blink'):
+                    self.bli
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.setScaleData()
@@ -3179,24 +3153,6 @@ class MainWindow(QMainWindow):
         # self.cbMonitor.setIcon(qta.icon("mdi.monitor", color='#161c20'))
         self.cbMonitor.stateChanged.connect(lambda: self.setdw_monitor(self.cbMonitor.isChecked()))
 
-        tip = f"Show Flicker Tool Window {hotkey('F')}"
-        # self.cbFlicker = QPushButton(' Flicker')
-        self.cbFlicker = QCheckBox(f"Flicker {hotkey('F')}")
-        # self.cbFlicker.setStyleSheet(button_gradient_style)
-        # self.cbFlicker.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        self.cbFlicker.setToolTip(tip)
-        self.cbFlicker.setIconSize(QSize(14, 14))
-        self.cbFlicker.stateChanged.connect(lambda: self.setdw_flicker(self.cbFlicker.isChecked()))
-
-        tip = f"Show Correlation Signals Tool Window {hotkey('C')}"
-        # self.cbSignals = QPushButton(' Signals')
-        self.cbSignals = QCheckBox(f"Correlation Signals {hotkey('C')}")
-        # self.cbSignals.setStyleSheet(button_gradient_style)
-        # self.cbSignals.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        self.cbSignals.setToolTip(tip)
-        self.cbSignals.setIconSize(QSize(14, 14))
-        self.cbSignals.stateChanged.connect(lambda: self.setdw_signals(self.cbSignals.isChecked()))
-
         self._detachNgButton = QPushButton()
         self._detachNgButton.setFixedSize(QSize(18, 18))
         self._detachNgButton.setIconSize(QSize(14, 14))
@@ -3207,18 +3163,11 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(ExpandingWidget(self))
         self.toolbar.addWidget(self.cbMonitor)
         self.toolbar.addWidget(self.cbPython)
-        self.toolbar.addWidget(self.cbFlicker)
-        self.toolbar.addWidget(self.cbSignals)
         self.toolbar.addWidget(self.cbNotes)
 
         self.cbNotes.setFixedSize(QSize(96, 16))
-        # self.cbPython.setFixedSize(QSize(110,16)) #macOS
         self.cbPython.setFixedSize(QSize(148, 16))  # tacc
-        # self.cbMonitor.setFixedSize(116,16) #macos
         self.cbMonitor.setFixedSize(152, 16)  # tacc
-        self.cbFlicker.setFixedSize(98, 16)
-        # self.cbSignals.setFixedSize(QSize(120, 16)) #macos
-        self.cbSignals.setFixedSize(QSize(164, 16))  # tacc
 
         self.toolbar.layout().setSpacing(4)
         self.toolbar.layout().setAlignment(Qt.AlignRight)
@@ -3378,10 +3327,6 @@ class MainWindow(QMainWindow):
             self._getTabObject().user_projects.set_data()
             self.cpanel.hide()
             self.sa_cpanel.hide()
-            # self.dw_corrspots_layout.hide()
-            self.cbSignals.setChecked(False)
-            self.cbFlicker.setChecked(False)
-            self.flicker.stop()
             self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
@@ -3613,6 +3558,12 @@ class MainWindow(QMainWindow):
             for v in cfg.project_tab.get_viewers():
                 v.initViewer()
 
+
+    def turnBlinkOnOff(self):
+        if self._isProjectTab():
+            cfg.pt.blinkToggle.setChecked(not cfg.pt.blinkToggle.isChecked())
+
+
     def initMenu(self):
         '''Initialize Menu'''
         logger.info('')
@@ -3694,16 +3645,6 @@ class MainWindow(QMainWindow):
         self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
         self.showNotesAction.setShortcut('Ctrl+Z')
         fileMenu.addAction(self.showNotesAction)
-
-        self.showFlickerAction = QAction('Show &Flicker', self)
-        self.showFlickerAction.triggered.connect(lambda: self.cbFlicker.setChecked(not self.cbFlicker.isChecked()))
-        self.showFlickerAction.setShortcut('Ctrl+F')
-        fileMenu.addAction(self.showFlickerAction)
-
-        self.showSignalsAction = QAction('Show &Correlation Signals', self)
-        self.showSignalsAction.triggered.connect(lambda: self.cbSignals.setChecked(not self.cbSignals.isChecked()))
-        self.showSignalsAction.setShortcut('Ctrl+C')
-        fileMenu.addAction(self.showSignalsAction)
 
         def fn():
             if self.globTabs.count() > 0:
@@ -3815,6 +3756,13 @@ class MainWindow(QMainWindow):
         mendenhallMenu.addAction(self.stopMendenhallAction)
 
         ngMenu = self.menu.addMenu("Neuroglancer")
+
+
+        self.blinkAction = QAction('Turn Blink On/Off', self)
+        self.blinkAction.triggered.connect(self.turnBlinkOnOff)
+        self.blinkAction.setShortcut('Ctrl+B')
+        ngMenu.addAction(self.blinkAction)
+
 
         self.ngStateMenu = ngMenu.addMenu('JSON State')  # get_ng_state
         self.ngStateMenuText = QTextEdit(self)
@@ -5652,38 +5600,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_python)
         self.dw_python.hide()
 
-        self.flicker = Flicker(self)
-        # self.flicker.setMaximumSize(QSize(256,256))
 
-        self.dw_flicker = DockWidget('Flicker', self)
-        # self.dw_flicker.visibilityChanged.connect(self.callbackFlickerDwVisibilityChanged)
-        self.dw_flicker.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        # self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable)
-        self.dw_flicker.setFeatures(self.dw_flicker.DockWidgetClosable | self.dw_flicker.DockWidgetVerticalTitleBar)
-        # self.dw_flicker.visibilityChanged.connect(lambda: self.cbFlicker.setToolTip(('Hide Flicker Tool Window', 'Show Flicker Tool Window')[self.dw_flicker.isHidden()]))
-
-        self.dw_flicker.setStyleSheet("""
-        QDockWidget {color: #ede9e8;}
-        QDockWidget::title {
-            text-align: left; /* align the text to the left */
-            background: #380282;
-            font-weight: 600;
-        }""")
-
-        # self.flickerContainer = VWidget(self.flicker, ExpandingWidget(self))
-        # self.flickerContainer.layout.setStretch(0, 0)
-        # self.flickerContainer.layout.setStretch(1, 9)
-        # self.flickerContainer.layout.setAlignment(Qt.AlignTop)
-        # self.flicker.setAlignment(Qt.AlignTop)
-
-        # self.flickerContainer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # self.flickerContainer.resize(QSize(100, 100))
-        # self.flickerContainer.layout.setStretch(0,0)
-        # self.flickerContainer.layout.setStretch(1,9)
-        # self.dw_flicker.setWidget(self.flickerContainer)
-        self.dw_flicker.setWidget(self.flicker)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_flicker)
-        self.dw_flicker.hide()
 
         '''Documentation Panel'''
         self.browser_web = QWebEngineView()
@@ -5798,24 +5715,6 @@ class MainWindow(QMainWindow):
         self.csWidget.resizeColumnToContents(2)
         self.csWidget.resizeColumnToContents(3)
 
-        self.correlation_signals = CorrelationSignals(self)
-        self.correlation_signals.setMinimumWidth(334)
-        # self.correlation_signals = AspectWidget(self, ratio=4/1)
-        vbl = VBL(self.csWidget)
-        self.correlation_signals.setLayout(vbl)
-
-        # self.csWidget.setCellWidget(0,0, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs0, ExpandingHWidget(self)), ExpandingVWidget(self)))
-        # self.csWidget.setCellWidget(0,1, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs1, ExpandingHWidget(self)), ExpandingVWidget(self)))
-        # self.csWidget.setCellWidget(0,2, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs2, ExpandingHWidget(self)), ExpandingVWidget(self)))
-        # self.csWidget.setCellWidget(0,3, VWidget(ExpandingVWidget(self), HWidget(ExpandingHWidget(self), self.cs3, ExpandingHWidget(self)), ExpandingVWidget(self)))
-        # self.csWidget.setCellWidget(0,0, VWidget(ExpandingVWidget(self), self.cs0, ExpandingVWidget(self)))
-        # self.csWidget.setCellWidget(0,1, VWidget(ExpandingVWidget(self), self.cs1, ExpandingHWidget(self)))
-        # self.csWidget.setCellWidget(0,2, VWidget(ExpandingVWidget(self), self.cs2, ExpandingHWidget(self)))
-        # self.csWidget.setCellWidget(0,3, VWidget(ExpandingVWidget(self), self.cs3, ExpandingVWidget(self)))
-        # self.csWidget.setCellWidget(0,0, HWidget(ExpandingHWidget(self), self.cs0, ExpandingHWidget(self)))
-        # self.csWidget.setCellWidget(0,1, HWidget(ExpandingHWidget(self), self.cs1, ExpandingHWidget(self)))
-        # self.csWidget.setCellWidget(0,2, HWidget(ExpandingHWidget(self), self.cs2, ExpandingHWidget(self)))
-        # self.csWidget.setCellWidget(0,3, HWidget(ExpandingHWidget(self), self.cs3, ExpandingHWidget(self)))
         self.csWidget.setCellWidget(0,0, self.cs0)
         self.csWidget.setCellWidget(0,1, self.cs1)
         self.csWidget.setCellWidget(0,2, self.cs2)
@@ -5828,7 +5727,6 @@ class MainWindow(QMainWindow):
         self.csWidget.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
         self.csWidget.item(0, 2).setBackground(QColor(cfg.glob_colors[2]))
         self.csWidget.item(0, 3).setBackground(QColor(cfg.glob_colors[3]))
-
         self.csWidget.verticalHeader().setVisible(False)
         self.csWidget.horizontalHeader().setVisible(False)
         self.csWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -5840,6 +5738,13 @@ class MainWindow(QMainWindow):
         h_header.setSectionResizeMode(1, QHeaderView.Stretch)
         h_header.setSectionResizeMode(2, QHeaderView.Stretch)
         h_header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+        self.correlation_signals = CorrelationSignals(self)
+        self.correlation_signals.setMinimumWidth(334)
+        # self.correlation_signals = AspectWidget(self, ratio=4/1)
+        vbl = VBL(self.csWidget)
+        self.correlation_signals.setLayout(vbl)
+
 
         self.test_widget = QLabel()
         self.test_widget.setFixedSize(40,40)
@@ -6359,7 +6264,6 @@ class CorrelationSignals(QWidget):
         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setMinimumWidth(324)
-
         # self.parent = parent
 
     def sizeHint(self):
