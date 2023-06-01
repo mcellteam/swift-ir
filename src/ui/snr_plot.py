@@ -266,8 +266,8 @@ class SnrPlot(QWidget):
                 if cfg.data.is_aligned(s=s):
                     if self._snr_checkboxes[s].isChecked():
                         self.plotSingleScale(s=s)
-            # max_snr = cfg.data.snr_max_all_scales()
-            max_snr = min(99, max(cfg.data.snr_list())) #FixThis #Temporary
+            max_snr = cfg.data.snr_max_all_scales() #FixThis #Temporary
+            # max_snr = min(99, max(cfg.data.snr_list())) #FixThis #Temporary
             if not max_snr:
                 logger.warning('No max SNR, Nothing to plot - Returning')
                 return
