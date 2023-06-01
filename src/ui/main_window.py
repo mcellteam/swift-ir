@@ -890,10 +890,10 @@ class MainWindow(QMainWindow):
             cfg.ignore_pbar = False
             if self._toggleAutogenerate.isChecked():
                 # cfg.nTasks = 5
-                cfg.mw.showZeroedPbar(reset_n_tasks=5, cancel_processes=False)
+                self.showZeroedPbar(reset_n_tasks=5, cancel_processes=False)
             else:
                 # cfg.nTasks = 3
-                cfg.mw.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
+                self.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
 
 
         cfg.CancelProcesses = False
@@ -917,12 +917,28 @@ class MainWindow(QMainWindow):
         self.tell('**** Processes Complete ****')
 
     def alignAllScales(self):
-        scales = cfg.data.scales()
-        scales.reverse()
-        for s in scales:
-            cfg.data.scale = s
-            if not cfg.data.is_aligned(s=s):
-                self.alignAll()
+        if self._isProjectTab():
+            scales = cfg.data.scales()
+            scales.reverse()
+            alignThese = []
+            for s in scales:
+                if not cfg.data.is_aligned(s=s):
+                    alignThese.append(s)
+                #     alignThese.app
+
+            self.tell(f'# Scales Unaligned: {len(alignThese)}. Aligning now...')
+            ntasks = 5 * len(alignThese)
+            self.showZeroedPbar(reset_n_tasks=ntasks, cancel_processes=False)
+            for s in alignThese:
+                cfg.data.scale = s
+                # cfg.project_tab.initNeuroglancer()
+                cfg.project_tab.refreshTab()
+                self.dataUpdateWidgets()
+                if getData('state,manual_mode'):
+                    cfg.pt.dataUpdateMA()
+                self.alignAll(set_pbar=False)
+
+            self.onAlignmentEnd()
 
     def alignRange(self):
         cfg.ignore_pbar = False

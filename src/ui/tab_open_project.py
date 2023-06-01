@@ -731,8 +731,8 @@ class OpenProject(QWidget):
             os.remove(project_file)
         except:
             print_exception()
-        else:
-            cfg.main_window.hud.done()
+        # else:
+        #     cfg.main_window.hud.done()
 
         logger.info('Deleting Project Directory %s...' % project)
         cfg.main_window.warn('Deleting Project Directory %s...' % project)
