@@ -168,23 +168,24 @@ class HeadupDisplay(QWidget):
 
 
     def done(self):
-        # # caller = inspect.stack()[1].function
-        # txt = self.textedit.toPlainText()
-        # last_line = txt.split('[INFO]')[-1].lstrip()
-        # if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
-        #     return
-        #
-        # # if cfg.project_tab:
-        # #     cfg.project_tab.hud_overlay.textedit.undo()
-        # #     cfg.project_tab.hud_overlay.post(last_line + 'done.')
-        # #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
-        #
-        # self.textedit.undo()
-        # self.post(last_line + 'done.')
-        # # self.post(last_line + 'done(%s).' % caller)
-        # self.textedit.moveCursor(QTextCursor.End)
-        # self.update()
-        pass
+        logger.info('')
+        # caller = inspect.stack()[1].function
+        txt = self.textedit.toPlainText()
+        last_line = txt.split('[INFO]')[-1].lstrip()
+        if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
+            return
+
+        # if cfg.project_tab:
+        #     cfg.project_tab.hud_overlay.textedit.undo()
+        #     cfg.project_tab.hud_overlay.post(last_line + 'done.')
+        #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
+
+        self.textedit.undo()
+        self.post(last_line + 'done.')
+        # self.post(last_line + 'done(%s).' % caller)
+        self.textedit.moveCursor(QTextCursor.End)
+        self.update()
+        # pass
 
 
     # def cycle_text(self):

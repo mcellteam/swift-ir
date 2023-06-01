@@ -55,6 +55,9 @@ class Flicker(QLabel):
 
         self.position = p
 
+        logger.info(f"self.position                 = {self.position}")
+        logger.info(f"cfg.data.first_unskipped()    = {cfg.data.first_unskipped()}")
+
         if (self.position <= cfg.data.first_unskipped()) or (cfg.data.skipped()):
             self.a = self.no_image_path
             self.b = self.no_image_path

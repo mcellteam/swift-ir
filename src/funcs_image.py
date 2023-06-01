@@ -417,7 +417,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         c_afm = composeAffine(bias_mat, c_afm)
     atrm['method_results']['cumulative_afm'] = c_afm.tolist()
 
-    logger.info('Returning c_afm: %s' % format_cafm(c_afm))
+    # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
 
     return c_afm
 

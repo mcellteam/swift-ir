@@ -15,13 +15,13 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
-    QStackedWidget, QHeaderView, QWidgetAction
+    QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
-from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort
+from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey
 from src.viewer_em import EMViewer, EMViewerStage, EMViewerSnr
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
@@ -98,6 +98,13 @@ class ProjectTab(QWidget):
         #     self.buttonstyle = f.read()
 
         self.oldPos = None
+
+        self.blinkTimer = QTimer(self)
+        self.blinkTimer.setInterval(300)
+        self.blinkTimer.timeout.connect(self.onBlinkTimer)
+
+        self.blinkCur = 0
+
 
     # def mousePressEvent(self, event):
     #     if event.button() == Qt.MouseButton.LeftButton:
@@ -246,6 +253,8 @@ class ProjectTab(QWidget):
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
 
+        cfg.mw.hud.done()
+
         # self.updateProjectLabels()
 
     def updateNeuroglancer(self):
@@ -305,7 +314,7 @@ class ProjectTab(QWidget):
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('Test Label')
         # self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 22px;""")
-        self._overlayLab.setStyleSheet("""color: #a30000; font-size: 22px;""")
+        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 22px;""")
         self._overlayLab.hide()
 
         self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
@@ -1469,6 +1478,7 @@ class ProjectTab(QWidget):
         self.sw_logs.addWidget(self.logs_widget)
 
         self.cb_clobber = QCheckBox()
+        self.cb_clobber.toggled.connect(lambda: cfg.data.set_clobber(b=self.cb_clobber.isChecked()))
         self.sb_clobber_pixels = QSpinBox()
         self.sb_clobber_pixels.setFixedSize(QSize(38, 18))
         self.sb_clobber_pixels.setMinimum(1)
@@ -1477,27 +1487,18 @@ class ProjectTab(QWidget):
         self.cb_keep_swim_templates = QCheckBox()
 
         def fn():
-            if self.cb_keep_swim_templates.isChecked():
-                cfg.data.targ = True
-                cfg.data.karg = True
-            else:
-                cfg.data.targ = False
-                cfg.data.karg = False
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                if self.cb_keep_swim_templates.isChecked():
+                    cfg.data.targ = True
+                    cfg.data.karg = True
+                else:
+                    cfg.data.targ = False
+                    cfg.data.karg = False
 
         self.cb_keep_swim_templates.toggled.connect(fn)
 
-        self.btn_settings_apply_cur_sec = QPushButton('Apply To Current Section')
-
-        def fn():
-            cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=False)
-            cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=False)
-            cfg.main_window.tell('Settings Applied!')
-            logger.info('Settings applied to current section.')
-
-        self.btn_settings_apply_cur_sec.clicked.connect(fn)
-        self.btn_settings_apply_cur_sec.setFixedSize(QSize(140, 18))
-
-        self.btn_settings_apply_everywhere = QPushButton('Apply Everywhere')
+        self.btn_settings_apply_everywhere = QPushButton('Apply Clobber to All')
 
         def fn():
             cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=True)
@@ -1517,10 +1518,11 @@ class ProjectTab(QWidget):
         self.fl_settings.addRow('Save Match Regions', self.cb_keep_swim_templates)
         self.fl_settings.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
-        self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
+        # self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
         self.fl_settings.addWidget(self.btn_settings_apply_everywhere)
 
         self.settings_widget = QWidget()
+        self.settings_widget.setStyleSheet("font-size: 9px;")
         self.settings_widget.setLayout(self.fl_settings)
 
         '''MA STACKED WIDGET'''
@@ -1561,7 +1563,7 @@ class ProjectTab(QWidget):
         self.MA_gl_overlay = QLabel()
         self.MA_gl_overlay.setAlignment(Qt.AlignCenter)
         # .setStyleSheet("""color: #FF0000; font-size: 22px;""")
-        self.MA_gl_overlay.setStyleSheet("""color: #a30000; font-size: 22px; background-color: rgba(0, 0, 0, 1.0);""")
+        self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 22px; background-color: rgba(0, 0, 0, 1.0);""")
         # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.MA_gl_overlay.hide()
 
@@ -1684,12 +1686,7 @@ class ProjectTab(QWidget):
         # self.w_section_label_header = QToolBar()
         self.w_section_label_header = QWidget()
         self.w_section_label_header.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
-        # self.w_section_label_header.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        # self.w_section_label_header.setIconSize(QSize(18, 18))
         self.w_section_label_header.setFixedHeight(20)
-        # self.w_section_label_header.setStyleSheet(toolbar_style)
-        # self.w_section_label_header.setAutoFillBackground(True)
-
         self.layout_ng_MA_toolbar = QHBoxLayout()
         self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
         self.w_section_label_header.setLayout(self.layout_ng_MA_toolbar)
@@ -1834,8 +1831,16 @@ class ProjectTab(QWidget):
         self.ngcl_shader.setStyleSheet("""background: #222222; color: #f3f6fb;
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
 
+        self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
+        self.blinkLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
+
+        self.blinkToggle = ToggleSwitch()
+        self.blinkToggle.stateChanged.connect(self.blinkChanged)
+
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
+        self.w_ng_extended_toolbar.addWidget(self.blinkLab)
+        self.w_ng_extended_toolbar.addWidget(self.blinkToggle)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
@@ -1845,19 +1850,227 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
 
-        self.ngCombinedHwidget = HWidget(self.w_ng_display, self.MA_splitter)
-        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ngCombinedHwidget)
-
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
+        self.sideSliders.setFixedWidth(16)
         self.sideSliders.layout.setSpacing(0)
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
+        self.tn_ref = ThumbnailFast(self)
+        # self.tn_ref.setStyleSheet("""background-color: #f3f6fb;""")
+        self.tn_tra = ThumbnailFast(self)
+        # self.tn_tra.setStyleSheet("""background-color: #f3f6fb;""")
+        self.tn_ref.setMinimumSize(QSize(128,128))
+        self.tn_tra.setMinimumSize(QSize(128,128))
+        self.tn_ref_lab = QLabel('Reference Section')
+        self.tn_ref_lab.setStyleSheet("""font-size: 9px;""")
+        self.tn_ref_lab_layout = HBL(self.tn_ref_lab)
+        self.tn_ref_lab_layout.setSpacing(0)
+        self.tn_ref_lab_w = QWidget(self)
+        self.tn_ref_lab_w.setMinimumWidth(200)
+        # self.tn_ref_lab_w.resize(QSize(200, 200))
+        # self.tn_ref_lab_w.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.tn_ref_lab_w.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.tn_ref_lab_w.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
+        self.tn_ref_lab_w.setLayout(self.tn_ref_lab_layout)
+        # self.tn_ref_lab_w.setStyleSheet(
+        #     """QLabel {color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;}""")
+        self.tn_ref_lab_w.setFixedHeight(18)
+
+        self.tn_tra_lab = QLabel('Transforming Section')
+        self.tn_tra_lab.setStyleSheet("""font-size: 9px;""")
+        self.tn_tra_lab_layout = HBL(self.tn_tra_lab)
+        self.tn_tra_lab_layout.setSpacing(0)
+        self.tn_tra_lab_w = QWidget(self)
+        self.tn_tra_lab_w.setMinimumWidth(200)
+        # self.tn_tra_lab_w.resize(QSize(200,200))
+        # self.tn_tra_lab_w.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.tn_tra_lab_w.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.tn_tra_lab_w.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
+        self.tn_tra_lab_w.setLayout(self.tn_tra_lab_layout)
+        # self.tn_tra_lab_w.setStyleSheet(
+        #     """QLabel {color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;}""")
+        self.tn_tra_lab_w.setFixedHeight(18)
+
+        self.tn_widget = VWidget(self.tn_ref_lab_w, self.tn_ref, self.tn_tra_lab_w, self.tn_tra)
+        # self.tn_widget.layout.setStretch(0,1)
+        # self.tn_widget.layout.setStretch(2,1)
+        # self.tn_widget.layout.setStretch(3,1)
+        # self.tn_widget.layout.setStretch(4,1)
+        # self.tn_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.tn_widget.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
+
+        ########################
+        self.tn_ms0 = CorrSignalThumbnail(self)
+        self.tn_ms1 = CorrSignalThumbnail(self)
+        self.tn_ms2 = CorrSignalThumbnail(self)
+        self.tn_ms3 = CorrSignalThumbnail(self)
+
+        self.msList = [self.tn_ms0, self.tn_ms1, self.tn_ms2, self.tn_ms3]
+        # self.tn_ms0.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[0]}; border-width: 3px;""")
+        # self.tn_ms1.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[1]}; border-width: 3px;""")
+        # self.tn_ms2.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[2]}; border-width: 3px;""")
+        # self.tn_ms3.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[3]}; border-width: 3px;""")
+        # self.tn_ms0.setStyleSheet(f"""background-color: {cfg.glob_colors[0]}; border-width: 3px;""")
+        # self.tn_ms1.setStyleSheet(f"""background-color: {cfg.glob_colors[1]}; border-width: 3px;""")
+        # self.tn_ms2.setStyleSheet(f"""background-color: {cfg.glob_colors[2]}; border-width: 3px;""")
+        # self.tn_ms3.setStyleSheet(f"""background-color: {cfg.glob_colors[3]}; border-width: 3px;""")
+        self.tn_ms0.setMinimumSize(QSize(128, 128))
+        self.tn_ms1.setMinimumSize(QSize(128, 128))
+        self.tn_ms2.setMinimumSize(QSize(128, 128))
+        self.tn_ms3.setMinimumSize(QSize(128, 128))
+        self.tn_ms0.set_no_image()
+        self.tn_ms1.set_no_image()
+        self.tn_ms2.set_no_image()
+        self.tn_ms3.set_no_image()
+        self.ms_lab = QLabel('Match Signals')
+        self.ms_lab.setFixedHeight(18)
+        self.ms_lab.setStyleSheet("""font-size: 9px;""")
+        # self.ms_layout = QGridLayout()
+        # self.ms_layout.setContentsMargins(0,0,0,0)
+        # self.ms_layout.setSpacing(0)
+        lab0 = QLabel('Match Signal 0')
+        lab1 = QLabel('Match Signal 1')
+        lab2 = QLabel('Match Signal 2')
+        lab3 = QLabel('Match Signal 3')
+        for lab in [lab0, lab1, lab2, lab3]:
+            lab.setStyleSheet("""QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
+
+        lab0.setFixedHeight(18)
+        lab1.setFixedHeight(18)
+        lab2.setFixedHeight(18)
+        lab3.setFixedHeight(18)
+        # self.ms_layout.addWidget(self.ms_lab, 0, 0, 1, 2)
+        # self.ms_layout.addWidget(VWidget(lab0, self.tn_ms0), 1, 0)
+        # self.ms_layout.addWidget(VWidget(lab1, self.tn_ms1), 1, 1)
+        # self.ms_layout.addWidget(VWidget(lab2, self.tn_ms2), 2, 0)
+        # self.ms_layout.addWidget(VWidget(lab3, self.tn_ms3), 2, 1)
+        # self.ms_widget = QWidget(self)
+        # self.ms_widget.setContentsMargins(0,0,0,0)
+        # self.ms_widget.setLayout(self.ms_layout)
+        # self.ms_widget.setStyleSheet(
+        #     """color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px;""")
+
+        self.ms_widget = QTableWidget()
+        self.ms_widget.setMinimumWidth(400)
+        self.ms_widget.setContentsMargins(0,0,0,0)
+        # self.ms_widget.setStyleSheet(
+        #     """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
+        self.ms_widget.horizontalHeader().setHighlightSections(False)
+        self.ms_widget.verticalHeader().setHighlightSections(False)
+        self.ms_widget.setFocusPolicy(Qt.NoFocus)
+        self.ms_widget.setSelectionMode(QAbstractItemView.NoSelection)
+        # self.ms_widget.setMinimumWidth(328)
+        self.ms_widget.setRowCount(2)
+        self.ms_widget.setColumnCount(2)
+        self.ms_widget.resizeRowToContents(0)
+        self.ms_widget.resizeRowToContents(1)
+        self.ms_widget.resizeColumnToContents(0)
+        self.ms_widget.resizeColumnToContents(1)
+
+        self.ms_widget.setCellWidget(0,0, VWidget(lab0, self.tn_ms0))
+        self.ms_widget.setCellWidget(0,1, VWidget(lab1, self.tn_ms1))
+        self.ms_widget.setCellWidget(1,0, VWidget(lab2, self.tn_ms2))
+        self.ms_widget.setCellWidget(1,1, VWidget(lab3, self.tn_ms3))
+        self.ms_widget.setItem(0, 0, QTableWidgetItem())
+        self.ms_widget.setItem(0, 1, QTableWidgetItem())
+        self.ms_widget.setItem(1, 0, QTableWidgetItem())
+        self.ms_widget.setItem(1, 1, QTableWidgetItem())
+        self.ms_widget.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
+        self.ms_widget.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
+        self.ms_widget.item(1, 0).setBackground(QColor(cfg.glob_colors[2]))
+        self.ms_widget.item(1, 1).setBackground(QColor(cfg.glob_colors[3]))
+        self.ms_widget.verticalHeader().setVisible(False)
+        self.ms_widget.horizontalHeader().setVisible(False)
+        self.ms_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ms_widget.setShowGrid(False)
+        v_header = self.ms_widget.verticalHeader()
+        h_header = self.ms_widget.horizontalHeader()
+        v_header.setSectionResizeMode(0, QHeaderView.Stretch)
+        v_header.setSectionResizeMode(1, QHeaderView.Stretch)
+        h_header.setSectionResizeMode(0, QHeaderView.Stretch)
+        h_header.setSectionResizeMode(1, QHeaderView.Stretch)
+        # h_header.setSectionResizeMode(0, QHeaderView.Stretch)
+        # h_header.setSectionResizeMode(1, QHeaderView.Stretch)
+        # h_header.setSectionResizeMode(2, QHeaderView.Stretch)
+        # h_header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+
+
+
+        ############
+        # self.ngCombinedHwidget = HWidget(HWidget(self.w_ng_display, self.ms_widget),  self.MA_splitter)
+        self.ngCombinedHwidget = HWidget(self.w_ng_display,  self.MA_splitter)
+        # self.ngCombinedHwidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.w_ng_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.webengine.show()
+        # self.w_ng_display.show()
+        # self.ngCombinedHwidget.show()
+        self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ngCombinedHwidget)
+        self.ngCombinedOutterVwidget.show()
+
+        self.hsplitter_tn_ng = QSplitter(Qt.Orientation.Horizontal)
+        # self.hsplitter_tn_ng.setStyleSheet("""QLabel {background-color: #222222; } QSplitter::handle { background: #339933; width: 1px; height: 1px;} QSplitter::handle:hover { background: #339933; width: 4px; height: 4px;}""")
+        # self.hsplitter_tn_ng.setStyleSheet("""QLabel{background-color: #222222;} QSplitter::handle { background: #339933; width: 1px; height: 1px;} QSplitter::handle:hover { background: #339933; border-width: 3px; margin: 2px; width: 4px; height: 4px;}""")
+        self.hsplitter_tn_ng.addWidget(self.tn_widget)
+        self.hsplitter_tn_ng.addWidget(HWidget(self.ngVertLab, self.ngCombinedOutterVwidget))
+        self.hsplitter_tn_ng.addWidget(self.ms_widget)
+        self.hsplitter_tn_ng.setCollapsible(0,False)
+        self.hsplitter_tn_ng.setCollapsible(1,False)
+        self.hsplitter_tn_ng.setCollapsible(2,False)
+
+        # self.ng_browser_container_outer = HWidget(
+        #     self.tn_widget,
+        #     self.hsplitter_tn_ng,
+        #     self.sideSliders,
+        #     self.ms_widget
+        # )
         self.ng_browser_container_outer = HWidget(
-            self.ngVertLab,
-            self.ngCombinedOutterVwidget,
+            self.hsplitter_tn_ng,
             self.sideSliders,
         )
+        self.ng_browser_container_outer.layout.setStretch(0,0)
+        self.ng_browser_container_outer.layout.setStretch(2,3)
+        self.ng_browser_container_outer.layout.setStretch(3,0)
+        self.ng_browser_container_outer.layout.setStretch(4,6)
         self.ng_browser_container_outer.layout.setSpacing(0)
+
+        self.update()
+        logger.critical(f'mw width: {cfg.mw.width()}')
+        logger.critical(f'splitter sizes: {self.hsplitter_tn_ng.sizes()}')
+        logger.critical(f'sum splitter sizes: {sum(self.hsplitter_tn_ng.sizes())}')
+
+        w = cfg.mw.width()
+        # self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
+        self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
+
+
+
+    def onBlinkTimer(self):
+        logger.info('')
+
+        if cfg.emViewer:
+            cfg.emViewer.blink()
+
+            # self.blinkCur = 1 - self.blinkCur
+            # if self.blinkCur:
+            #     ref_index = cfg.data.get_index(cfg.data.reference())
+            #     logger.info(f'ref_index = {ref_index}')
+            #     cfg.emViewer.set_layer(ref_index)
+            # else:
+            #     cfg.emViewer.set_layer(cfg.data.zpos)
+
+    def stopBlinkTimer(self):
+        setData('state,blink', False)
+        self.blinkTimer.stop()
+
+
+    def blinkChanged(self):
+        setData('state,blink', self.blinkToggle.isChecked())
+        if getData('state,blink'):
+            self.blinkTimer.start()
+        else:
+            self.blinkTimer.stop()
 
 
     def updateLabelsHeader(self):
@@ -3228,17 +3441,7 @@ class ProjectTab(QWidget):
 
         self.shaderToolbar = QToolBar()
         self.shaderToolbar.setFixedHeight(20)
-        # self.shaderToolbar.setStyleSheet("""
-        # QToolBar {
-        # background-color: #222222;
-        # color: #f3f6fb;
-        # border-top-width: 1px;
-        # border-bottom-width: 1px;
-        # border-color: #339933;
-        # border-style: solid;
-        # }
-        # QLabel { color: #f3f6fb; }
-        # """)
+
         self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
         self.shaderToolbar.addWidget(QLabel('<b>Shader:&nbsp;&nbsp;&nbsp;&nbsp;</b>'))
         self.shaderToolbar.addWidget(self.bcWidget)

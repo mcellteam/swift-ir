@@ -21,7 +21,7 @@ import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, QUrl
-from qtpy.QtWidgets import QApplication, QSizePolicy
+from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, obj_to_string, print_exception
@@ -66,8 +66,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info('viewer constructed!')
         caller = inspect.stack()[1].function
         self._zmag_set = 0
-        self._blinking = 0
-        self._blinkState = 0
 
 
     def __repr__(self):
@@ -122,8 +120,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
-        if self._blinking:
-            return
         if self._blockZoom:
             return
         caller = inspect.stack()[1].function
@@ -170,18 +166,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def get_loc(self):
         return math.floor(self.state.position[0])
-
-    def blink(self):
-        self._blinking = 1
-        if self._blinkState:
-            self.set_layer(self._layer)
-        else:
-            self.set_layer(self._layer - cfg.data.get_ref_index_offset())
-
-        self._blinkState = 1 - self._blinkState
-        self._blinking = 0
-
-
 
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
@@ -240,12 +224,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def set_layer(self, index):
         if self.type != 'EMViewerStage': #Critical!
-            # state = copy.deepcopy(self.state)
-            # state.position[0] = index
-            # self.set_state(state)
-            with self.txn() as s:
-                vc = s.voxel_coordinates
-                vc[0] = index
+            state = copy.deepcopy(self.state)
+            state.position[0] = index
+            self.set_state(state)
 
     def set_brightness(self, val=None):
         state = copy.deepcopy(self.state)
@@ -326,13 +307,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def initZoom(self, w, h, adjust=1.20):
-        QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._blockZoom = True
-
-        logger.critical(f'initZoom... w={w}, h={h}')
-        logger.critical(f'initZoom... w_ng_display w={cfg.project_tab.w_ng_display.width()}, w_ng_display h={cfg.project_tab.w_ng_display.height()}')
-        # logger.critical(f'cfg.mw.dw_monitor.isVisible()?... {cfg.mw.dw_monitor.isVisible()}')
 
         if self.cs_scale:
             # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
@@ -355,23 +331,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return cs_scale
 
         # self._blockZoom = False
-
-    # def get_tensor(self):
-    #     # del cfg.tensor
-    #     # del cfg.unal_tensor
-    #     # del cfg.al_tensor
-    #     sf = cfg.data.scale_val(s=cfg.data.scale)
-    #     al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-    #     unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-    #     cfg.tensor = None
-    #     try:
-    #         cfg.unal_tensor = get_zarr_tensor(unal_path).result()
-    #         if cfg.data.is_aligned_and_generated():
-    #             cfg.al_tensor = get_zarr_tensor(al_path).result()
-    #         cfg.tensor = (cfg.unal_tensor, cfg.al_tensor)[cfg.data.is_aligned_and_generated()]
-    #     except Exception as e:
-    #         logger.warning('Failed to acquire Tensorstore view')
-    #         print_exception()
 
 
     def get_tensors(self):
@@ -448,14 +407,14 @@ class EMViewer(AbstractEMViewer):
             voxel_offset=[1, y_nudge, x_nudge]
             # voxel_offset=[cfg.data.get_ref_index_offset(), y_nudge, x_nudge]
         )
-        cfg.baseLV = ng.LocalVolume(
+        cfg.baseLV = cfg.LV = ng.LocalVolume(
             volume_type='image',
             data=cfg.unal_tensor[:, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[0, y_nudge, x_nudge],
         )
         if cfg.data.is_aligned_and_generated():
-            cfg.LV = ng.LocalVolume(
+            cfg.alLV = cfg.LV = ng.LocalVolume(
                 volume_type='image',
                 data=cfg.al_tensor[:, :, :],
                 dimensions=self.coordinate_space,
@@ -525,10 +484,8 @@ class EMViewer(AbstractEMViewer):
 
         # w = cfg.project_tab.w_ng_display.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
         #Critical must use main_window width
-        # w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
-        # h = cfg.project_tab.w_ng_display.height()
-        w = cfg.project_tab.webengine.width()
-        h = cfg.main_window.globTabs.height() - 24
+        w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+        h = cfg.project_tab.w_ng_display.height()
 
         QApplication.processEvents()
         self.initZoom(w=w, h=h, adjust=1.10)
@@ -538,8 +495,8 @@ class EMViewer(AbstractEMViewer):
 
     def initViewerSlim(self, nglayout=None):
         # t0 = time.time()
-        caller = inspect.stack()[1].function
-        logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
+        # caller = inspect.stack()[1].function
+        # logger.critical(f'Initializing EMViewer Slim (caller: {caller})....')
 
         if not nglayout:
             requested = getData('state,ng_layout')
@@ -558,7 +515,7 @@ class EMViewer(AbstractEMViewer):
 
         self.coordinate_space = self.getCoordinateSpace()
 
-        cfg.LV = ng.LocalVolume(
+        self.LV = cfg.LV = cfg.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
@@ -567,16 +524,8 @@ class EMViewer(AbstractEMViewer):
 
         if getData('state,ng_layout') == 'xy':
             # logger.info('Initializing zoom for xy plane ...')
-            # w = cfg.main_window.width()
-            # w = cfg.project_tab.webengine.width()
-            # h = cfg.project_tab.webengine.height()
-            # cfg.project_tab.ngCombinedHwidget.show()
-            # cfg.project_tab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            cfg.project_tab.webengine.show()
-            cfg.project_tab.w_ng_display.show()
-            QApplication.processEvents()
-            w = cfg.project_tab.webengine.width()
-            h = cfg.main_window.globTabs.height() - 22
+            w = cfg.main_window.width()
+            h = cfg.project_tab.webengine.height()
             self.initZoom(w=w, h=h, adjust=1.10)
 
 
@@ -588,7 +537,7 @@ class EMViewer(AbstractEMViewer):
             s.show_scale_bar = False
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[cfg.data.zpos, self.store.shape[1]/2, self.store.shape[2]/2]
-            s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
+            s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
                 s.crossSectionBackgroundColor = '#808080'
             else:

@@ -38,6 +38,8 @@ if __name__ == '__main__':
     name2 = 'corr_spot_2_' + fn
     name3 = 'corr_spot_3_' + fn
 
+    # mir T argument = triangle
+
     mir_script = \
     'B 1024 1024\n' \
     'Z\n' \
