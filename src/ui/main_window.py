@@ -809,9 +809,9 @@ class MainWindow(QMainWindow):
         # time point 5: = 0.0032761096954345703
         self.stopPlaybackTimer()
         self._disableGlobTabs()
-        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
-        if not cfg.ignore_pbar:
-            self.showZeroedPbar()
+        # self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
+        # if not cfg.ignore_pbar:
+        #     self.showZeroedPbar()
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
         self._autosave()
@@ -873,6 +873,10 @@ class MainWindow(QMainWindow):
             self.tell(f'Time Elapsed: {dt}s')
 
     def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
+        caller = inspect.stack()[1].function
+        if caller == 'main':
+            set_pbar = True
+
         if (not force) and (not self._isProjectTab()):
             return
         scale = cfg.data.scale
@@ -880,7 +884,9 @@ class MainWindow(QMainWindow):
             self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
             return
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
+        logger.critical(f'alignAll caller={caller}, set_pbar={set_pbar} >>>>')
         if set_pbar:
+            logger.critical('set_pbar >>>>')
             cfg.ignore_pbar = False
             if self._toggleAutogenerate.isChecked():
                 # cfg.nTasks = 5
@@ -1014,7 +1020,7 @@ class MainWindow(QMainWindow):
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
-
+        
         if cfg.ignore_pbar:
             self.showZeroedPbar()
             self.setPbarText('Computing Affine...')
@@ -6101,6 +6107,7 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(x)
 
     def updatePbar(self, x=None):
+        logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
         if x == None: x = cfg.nCompleted
         # caller = inspect.stack()[1].function
         # logger.info(f'[caller: {caller}] Updating pbar, x={x}')
@@ -6109,6 +6116,7 @@ class MainWindow(QMainWindow):
 
     def setPbarText(self, text: str):
         # logger.critical('')
+        logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
         self.pbar.setFormat('(%p%) ' + text)
         self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
         # logger.info('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
@@ -6116,11 +6124,15 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
 
     def showZeroedPbar(self, reset_n_tasks=None, cancel_processes=None):
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller = {caller}, reset_n_tasks = {reset_n_tasks}')
         if reset_n_tasks:
+            logger.critical('Resetting # tasks...')
             cfg.nTasks = reset_n_tasks
             cfg.nCompleted = 0
         if cancel_processes:
             cfg.CancelProcesses = True
+        logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Tasks...')
         self.pbar_widget.show()
