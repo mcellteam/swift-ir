@@ -129,28 +129,45 @@ class ThumbnailFast(QLabel):
         if self.pixmap():
             try:
                 pm = self.pixmap()
-                originalRatio = pm.width() / pm.height()
-                currentRatio = self.width() / self.height()
-                if originalRatio != currentRatio:
-                    qp = QPainter(self)
-                    pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                    rect.moveBottomLeft(self.rect().bottomLeft())
-                    qp.drawPixmap(rect, pm)
+                # originalRatio = pm.width() / pm.height()
+                # currentRatio = self.width() / self.height()
+                # if originalRatio != currentRatio:
+                qp = QPainter(self)
+                pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.r = rect = QRect(0, 0, pm.width(), pm.height())
+                # rect.moveBottomLeft(self.rect().bottomLeft())
+                qp.drawPixmap(rect, pm)
+
+                # if cfg.data.current_method == 'grid-default':
+                #     coords = self.r.getCoords()
+                #     cp = QPointF(self.r.center())  # center point
+                #     # tn_size = ImageSize(cfg.data.thumbnail_tra())
+                #     # full_size =
+                #
+                #     qp.drawLine(QPointF(coords[0], coords[1]), cp + QPointF(float(-val), float(-val)))
+                #     qp.drawLine(QPointF(coords[2], coords[1]), cp + QPointF(float(val), float(-val)))
+                #     qp.drawLine(QPointF(coords[0], coords[3]), cp + QPointF(float(-val), float(val)))
+                #     qp.drawLine(QPointF(coords[2], coords[3]), cp + QPointF(float(val), float(val)))
+
+
+                if self.extra:
+                    qp.setPen(QColor('#ede9e8'))
+                    loc = QPoint(0, self.rect().height() - 4)
                     if self.extra:
-                        qp.setPen(QColor('#ede9e8'))
-                        loc = QPoint(0, self.rect().height() - 4)
-                        if self.extra:
-                            qp.drawText(loc, self.extra)
-                    return
+                        qp.drawText(loc, self.extra)
+                return
+
+
+
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
                 # print_exception()
+                self.set_no_image()
                 pass
         super().paintEvent(event)
 
-    def resizeEvent(self, e):
-        self.setMaximumWidth(self.height())
+    # def resizeEvent(self, e):
+    #     self.setMaximumWidth(self.height())
 
 
 
@@ -385,68 +402,27 @@ class CorrSignalThumbnail(QLabel):
                     return
 
                 # if (pm.width() == 0) or (pm.height() == 0):
-
                 # pm.fill()
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                # rect.moveBottomLeft(self.rect().bottomLeft())
                 # rect.moveBottomLeft(self.rect().bottomLeft())
                 self.r.moveCenter(self.rect().center())
 
                 qp.drawPixmap(self.r, pm)
-                # pen = QPen()
-                # brush = QBrush()
-                # brush.setColor(QColor("#141414"))
-                # pen.setBrush(brush)
-                # pen.setColor(QColor('#ffe135'))
-                # qp.setPen(pen)
-
                 coords = self.r.getCoords()
-                # print(coords)
+                cp = QPointF(self.r.center())  # center point
 
-                center = self.r.center()
-
-                # painter = QPainter(self)
-                # pen = QPen(Qt.red, 1, Qt.DashLine)
-                # pen = QPen(Qt.red, 1, Qt.SolidLine)
-                # painter.setPen(pen)
-
-                # qp.drawLine(coords[0], coords[1], coords[2], coords[3])
-                # qp.drawLine(coords[0], coords[3], coords[2], coords[1])
-
-                # qp.drawLine(coords[0], coords[1], center.x() - (siz/2), center.y() - (siz/2))
-                # qp.drawLine(coords[0], coords[1], center - QPoint(int(siz/2), int(siz/2)))
-                # painter.drawLine(QPointF(coords[0], coords[1]), QPointF(center) - QPointF(float(siz/2), float(siz/2)))
-
-                # siz = 12
                 siz = pm.width() / 4
                 # logger.info(f'siz = {siz}')
 
                 # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
                 qp.setPen(QPen(QColor('#a30000'), 1, Qt.SolidLine))
 
-                cp = QPointF(center) # center point
-
                 val = float(convert_rotation(45) * siz/2)
                 qp.drawLine(QPointF(coords[0], coords[1]), cp + QPointF(float(-val), float(-val)))
                 qp.drawLine(QPointF(coords[2], coords[1]), cp + QPointF(float(val), float(-val)))
                 qp.drawLine(QPointF(coords[0], coords[3]), cp + QPointF(float(-val), float(val)))
                 qp.drawLine(QPointF(coords[2], coords[3]), cp + QPointF(float(val), float(val)))
-                # logger.info(f'')
-                # logger.info(f'p1: {QPoint(coords[0], coords[1])}')
-                # logger.info(f'p2: {QPoint(center)}')
-                # logger.info(f'p3: {QPoint(int(siz/2), int(siz/2))}')
-                # logger.info(f'p4: {QPoint(center) - QPoint(int(siz/2), int(siz/2))}')
-                # logger.info(f'')
 
-                # qp.drawLine(coords[0], coords[3], coords[2], coords[1])
-
-                # qp.setPen(QPen(QColor('#a30000'), 1, Qt.SolidLine))
-
-
-                # qp.drawEllipse(center.x() - (siz/2), center.y() - (siz/2), siz, siz)
-                # painter.drawEllipse(center - QPointF(siz/2, siz/2) , siz, siz)
-
-                # qp.drawEllipse(center, float(siz) / 2, float(siz) / 2)
 
                 arcRect = QRectF(cp + QPointF(float(-siz/2), float(-siz/2)), cp + QPointF(float(siz/2), float(siz/2)))
                 # qp.drawArc(arcRect, 0, 90*16)
@@ -459,15 +435,6 @@ class CorrSignalThumbnail(QLabel):
                 qp.drawArc(arcRect, 30*16 + 180*16, spanAngle*16)
                 qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
                 qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
-
-
-                # print('  ' + str(coords[0]))
-                # print('  ' + str(coords[1]))
-                # print('  ' + str(coords[2]))
-                # print('  ' + str(coords[3]))
-                # printcoords[1] + coords[3], coords[1], coords[0] + coords[2])
-                # # qp.drawLine(pm.width(), 0, pm.height(), 0 )
-
 
                 font = QFont()
                 font.setBold(True)
@@ -495,7 +462,7 @@ class CorrSignalThumbnail(QLabel):
 
 
     def set_data(self, path, snr):
-        logger.critical('')
+        # logger.critical('')
         self._noImage = 0
         self.path = path
         self.snr = snr
@@ -508,7 +475,7 @@ class CorrSignalThumbnail(QLabel):
             logger.warning(f'WARNING path={self.path}, label={self.snr}')
 
     def set_no_image(self):
-        logger.critical('')
+        # logger.critical('')
         self.snr = None
         self._noImage = 1
         try:

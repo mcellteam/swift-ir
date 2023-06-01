@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
-    QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView
+    QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator
@@ -1618,7 +1618,7 @@ class ProjectTab(QWidget):
         self.ngcl_background.setText('Background')
         self.ngcl_background.setToolTip('Toggle Background')
 
-        if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+        if getData('state,neutral_contrast'):
             self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
                         border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
         else:
@@ -1626,11 +1626,10 @@ class ProjectTab(QWidget):
                         border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
 
         def fn():
-            # logger.info(f"getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE') = {getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE')}")
-            setOpt('neuroglancer,NEUTRAL_CONTRAST_MODE', not getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
+            setData('state,neutral_contrast', not getData('state,neutral_contrast'))
             [v.updateHighContrastMode() for v in self.get_viewers()]
 
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
                         border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
             else:
@@ -1716,9 +1715,9 @@ class ProjectTab(QWidget):
 
         def fn():
             logger.info('')
-            opt = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            setOpt('neuroglancer,SHOW_UI_CONTROLS', not opt)
-            opt = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            opt = getData('state,show_ng_controls')
+            opt = not opt
+            setData('state,show_ng_controls', opt)
             self.spreadW.setVisible(opt)
             self.updateUISpacing()
             if cfg.emViewer:
@@ -1736,15 +1735,14 @@ class ProjectTab(QWidget):
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
                                             """background: #339933; color: #f3f6fb; 
                     border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-                                           [getOpt('neuroglancer,SHOW_UI_CONTROLS')])
+                                           [getData('state,show_ng_controls')])
 
 
         def fn():
             logger.info('')
-            opt = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
-            setOpt('neuroglancer,SHOW_YELLOW_FRAME', not opt)
-            opt = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
-            # self.ngShowYellowFrameAction.setText(('Show Boundary', 'Hide Boundary')[opt])
+            opt = getData('state,show_yellow_frame')
+            opt = not opt
+            setData('state,show_yellow_frame', opt)
             if cfg.emViewer:
                 cfg.emViewer.updateDefaultAnnotations()
             if cfg.emViewer:
@@ -1762,14 +1760,14 @@ class ProjectTab(QWidget):
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
                                             """background: #339933; color: #f3f6fb; 
                     border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600;  border-color: #339933;""")
-                                           [getOpt('neuroglancer,SHOW_YELLOW_FRAME')])
+                                           [getData('state,show_yellow_frame')])
 
 
         def fn():
             logger.info('')
-            opt = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            setOpt('neuroglancer,SHOW_AXIS_LINES', not opt)
-            opt = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            opt = getData('state,show_axis_lines')
+            opt = not opt
+            opt = setData('state,show_axis_lines', opt)
             # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[opt])
             # for v in self.get_viewers():
             #     v.updateAxisLines()
@@ -1788,7 +1786,7 @@ class ProjectTab(QWidget):
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
                                             """background: #339933; color: #f3f6fb; 
                     border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-                                           [getOpt('neuroglancer,SHOW_AXIS_LINES')])
+                                           [getData('state,show_axis_lines')])
 
         def fn():
             logger.info('')
@@ -1857,48 +1855,45 @@ class ProjectTab(QWidget):
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
         self.tn_ref = ThumbnailFast(self)
-        # self.tn_ref.setStyleSheet("""background-color: #f3f6fb;""")
         self.tn_tra = ThumbnailFast(self)
-        # self.tn_tra.setStyleSheet("""background-color: #f3f6fb;""")
-        self.tn_ref.setMinimumSize(QSize(128,128))
-        self.tn_tra.setMinimumSize(QSize(128,128))
+        # self.tn_ref.setMinimumSize(QSize(128,128))
+        # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.tn_tra.setMinimumSize(QSize(128,128))
+        # self.tn_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tn_ref_lab = QLabel('Reference Section')
+        self.tn_ref_lab.setFixedHeight(18)
         self.tn_ref_lab.setStyleSheet("""font-size: 9px;""")
-        self.tn_ref_lab_layout = HBL(self.tn_ref_lab)
-        self.tn_ref_lab_layout.setSpacing(0)
-        self.tn_ref_lab_w = QWidget(self)
-        self.tn_ref_lab_w.setMinimumWidth(200)
-        # self.tn_ref_lab_w.resize(QSize(200, 200))
-        # self.tn_ref_lab_w.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # self.tn_ref_lab_w.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.tn_ref_lab_w.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
-        self.tn_ref_lab_w.setLayout(self.tn_ref_lab_layout)
-        # self.tn_ref_lab_w.setStyleSheet(
-        #     """QLabel {color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;}""")
-        self.tn_ref_lab_w.setFixedHeight(18)
 
         self.tn_tra_lab = QLabel('Transforming Section')
+        self.tn_tra_lab.setFixedHeight(18)
         self.tn_tra_lab.setStyleSheet("""font-size: 9px;""")
-        self.tn_tra_lab_layout = HBL(self.tn_tra_lab)
-        self.tn_tra_lab_layout.setSpacing(0)
-        self.tn_tra_lab_w = QWidget(self)
-        self.tn_tra_lab_w.setMinimumWidth(200)
-        # self.tn_tra_lab_w.resize(QSize(200,200))
-        # self.tn_tra_lab_w.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # self.tn_tra_lab_w.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.tn_tra_lab_w.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
-        self.tn_tra_lab_w.setLayout(self.tn_tra_lab_layout)
-        # self.tn_tra_lab_w.setStyleSheet(
-        #     """QLabel {color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;}""")
-        self.tn_tra_lab_w.setFixedHeight(18)
 
-        self.tn_widget = VWidget(self.tn_ref_lab_w, self.tn_ref, self.tn_tra_lab_w, self.tn_tra)
+        # self.tn_widget = VWidget(self.tn_ref_lab_w, self.tn_ref, self.tn_tra_lab_w, self.tn_tra)
+        self.tn_vbl = VBL()
+        self.tn_vbl.addWidget(self.tn_ref_lab)
+        self.tn_vbl.addWidget(self.tn_ref, alignment=Qt.AlignTop)
+        # verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # self.tn_vbl.addItem(verticalSpacer)
+        # self.tn_vbl.addStretch(1)
+        # self.tn_vbl.addStretch()
+        self.tn_vbl.addWidget(self.tn_tra_lab)
+        self.tn_vbl.addWidget(self.tn_tra, alignment=Qt.AlignTop)
+        # verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # self.tn_vbl.addItem(verticalSpacer)
+        # self.tn_vbl.addStretch(1)
+        # self.tn_vbl.addStretch()
+
+        self.tn_widget = QWidget()
+        self.tn_widget.setLayout(self.tn_vbl)
+
+        # self.tn_widget = VWidget(self.tn_ref_lab, self.tn_ref, self.tn_tra_lab, self.tn_tra)
         # self.tn_widget.layout.setStretch(0,1)
         # self.tn_widget.layout.setStretch(2,1)
         # self.tn_widget.layout.setStretch(3,1)
         # self.tn_widget.layout.setStretch(4,1)
         # self.tn_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.tn_widget.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
+
 
         ########################
         self.tn_ms0 = CorrSignalThumbnail(self)
@@ -1984,6 +1979,7 @@ class ProjectTab(QWidget):
         self.ms_widget.horizontalHeader().setVisible(False)
         self.ms_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ms_widget.setShowGrid(False)
+        self.ms_widget.setVisible(getData('state,tool_windows,signals'))
         v_header = self.ms_widget.verticalHeader()
         h_header = self.ms_widget.horizontalHeader()
         v_header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -2012,13 +2008,24 @@ class ProjectTab(QWidget):
 
         self.hsplitter_tn_ng = QSplitter(Qt.Orientation.Horizontal)
         # self.hsplitter_tn_ng.setStyleSheet("""QLabel {background-color: #222222; } QSplitter::handle { background: #339933; width: 1px; height: 1px;} QSplitter::handle:hover { background: #339933; width: 4px; height: 4px;}""")
-        # self.hsplitter_tn_ng.setStyleSheet("""QLabel{background-color: #222222;} QSplitter::handle { background: #339933; width: 1px; height: 1px;} QSplitter::handle:hover { background: #339933; border-width: 3px; margin: 2px; width: 4px; height: 4px;}""")
+        # self.hsplitter_tn_ng.setStyleSheet("""QLabel{background-color: #222222;} QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; border-width: 3px; margin: 5px; width: 5px; height: 5px;}""")
+        self.hsplitter_tn_ng.setStyleSheet("""QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; border-width: 3px; margin: 5px; width: 5px; height: 5px;}""")
         self.hsplitter_tn_ng.addWidget(self.tn_widget)
         self.hsplitter_tn_ng.addWidget(HWidget(self.ngVertLab, self.ngCombinedOutterVwidget))
         self.hsplitter_tn_ng.addWidget(self.ms_widget)
         self.hsplitter_tn_ng.setCollapsible(0,False)
         self.hsplitter_tn_ng.setCollapsible(1,False)
-        self.hsplitter_tn_ng.setCollapsible(2,False)
+        # self.hsplitter_tn_ng.setCollapsible(2,False)
+        self.hsplitter_tn_ng.setStretchFactor(0,0)
+        self.hsplitter_tn_ng.setStretchFactor(1,1)
+        self.hsplitter_tn_ng.setStretchFactor(2,1)
+
+        def fn_splitterMoved():
+            # if cfg.pt.hsplitter_tn_ng.sizes()[2] == 0:
+            # cfg.mw.cbSignals.setChecked(self.ms_widget.isVisible())
+            cfg.mw.cbSignals.setChecked(cfg.pt.hsplitter_tn_ng.sizes()[2])
+
+        self.hsplitter_tn_ng.splitterMoved.connect(fn_splitterMoved)
 
         # self.ng_browser_container_outer = HWidget(
         #     self.tn_widget,
@@ -2044,6 +2051,8 @@ class ProjectTab(QWidget):
         w = cfg.mw.width()
         # self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
         self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
+
+        # self.restoreState(cfg.mw.settings.value("hsplitter_tn_ngSizes"))
 
 
 

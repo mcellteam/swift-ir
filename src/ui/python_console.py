@@ -36,7 +36,7 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('import src.config as cfg')
             self.execute_command('from src.config import main_window')
             self.execute_command('import src.helpers')
-            self.execute_command('from src.helpers import find_allocated_widgets, count_widgets, obj_to_string')
+            self.execute_command('from src.helpers import find_allocated_widgets, count_widgets, obj_to_string, getData, setData, getOpt, setOpt')
             self.execute_command('import os, sys, copy, json, stat')
             self.execute_command('import zarr')
             self.execute_command('import neuroglancer as ng')

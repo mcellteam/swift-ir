@@ -23,7 +23,7 @@ from functools import cache, cached_property
 import numpy as np
 
 from src.data_structs import data_template, layer_template
-from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments
+from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt
 from src.funcs_image import ComputeBoundingRect, ImageSize
 
 __all__ = ['DataModel']
@@ -732,11 +732,38 @@ class DataModel:
         self._data['state'].setdefault('ng_layout', 'xy')
         self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})
+        # Set default to value from user preferences... Todo: all user preferences should work this way
+        try:
+            self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
+        except:
+            self._data['state'].setdefault('neutral_contrast',True)
+            print_exception()
+
+        try:
+            self._data['state'].setdefault('show_yellow_frame', getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
+        except:
+            self._data['state'].setdefault('show_yellow_frame',True)
+            print_exception()
+
+        try:
+            self._data['state'].setdefault('show_axis_lines', getOpt('neuroglancer,SHOW_AXIS_LINES'))
+        except:
+            self._data['state'].setdefault('show_axis_lines',True)
+            print_exception()
+
+        try:
+            self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+        except:
+            self._data['state'].setdefault('show_ng_controls',True)
+            print_exception()
+
+        logger.critical(str(self._data['state']))
+
         self._data['state']['tool_windows'].setdefault('python',False)
         self._data['state']['tool_windows'].setdefault('notes',False)
         self._data['state']['tool_windows'].setdefault('hud',False)
-        self._data['state']['tool_windows'].setdefault('flicker',False)
-        self._data['state']['tool_windows'].setdefault('signals',False)
+        # self._data['state']['tool_windows'].setdefault('flicker',False)
+        self._data['state']['tool_windows'].setdefault('signals',True)
         self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)

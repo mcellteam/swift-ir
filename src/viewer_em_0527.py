@@ -172,7 +172,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def updateHighContrastMode(self):
         with self.txn() as s:
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
@@ -451,7 +451,7 @@ class EMViewer(AbstractEMViewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.layout = ng.row_layout(self.grps)
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
@@ -538,7 +538,7 @@ class EMViewer(AbstractEMViewer):
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.position=[cfg.data.zpos, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=self.LV, shader=cfg.data['rendering']['shader'], )
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
@@ -604,7 +604,7 @@ class EMViewerStage(AbstractEMViewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')])
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
@@ -696,7 +696,7 @@ class EMViewerSnr(AbstractEMViewer):
             s.system_memory_limit = -1
             # s.displayDimensions = ["z", "y"]
 
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'

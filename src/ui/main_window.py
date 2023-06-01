@@ -75,6 +75,7 @@ from src.ui.tab_browser import WebBrowser
 from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast, SnrThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
+from src.ui.timer import Timer
 # from src.ui.flicker import Flicker
 
 # from src.ui.components import AutoResizingTextEdit
@@ -162,6 +163,7 @@ class MainWindow(QMainWindow):
         else:
             self.restoreState(self.settings.value("windowState"))
             self.restoreGeometry(self.settings.value("geometry"))
+
 
         font = QFont("Tahoma")
         QApplication.setFont(font)
@@ -409,16 +411,13 @@ class MainWindow(QMainWindow):
         colors = cfg.glob_colors
         count = 0
         # for i in range(7):
-        for i in range(4):
-            self.corrSignalsList[i].set_no_image()
-            self.corrSignalsList[i].setStyleSheet(f"""border: none; padding: 3px;""")
-            self.corrSignalsList[i].update()
 
-            cfg.pt.msList[i].set_no_image()
-        # QApplication.processEvents()
-
-        # if not snr_vals:
-        #     return
+        #Critical0601-
+        if not cfg.data.is_aligned_and_generated():
+            for i in range(4):
+                if not cfg.pt.msList[i]._noImage:
+                    cfg.pt.msList[i].set_no_image()
+            return
 
 
         # logger.critical('thumbs: %s' % str(thumbs))
@@ -438,14 +437,8 @@ class MainWindow(QMainWindow):
                         except:
                             snr = 0.0
                             logger.info(f'no SNR data for corr signal index {i}')
-                            self.corrSignalsList[i].set_no_image()
-                            # print_exception()
                             self.msList[i].set_no_image()
                             continue
-
-                        self.corrSignalsList[i].set_data(path=names[i], snr=snr)
-                        self.corrSignalsList[i].show()
-                        self.corrSignalsList[i].update()
 
                         cfg.pt.msList[i].set_data(path=names[i], snr=snr)
                         cfg.pt.msList[i].update()
@@ -465,27 +458,17 @@ class MainWindow(QMainWindow):
                         except:
                             snr = 0.0
                             logger.info(f'no SNR data for corr signal index {i}')
-                            self.corrSignalsList[i].set_no_image()
                             cfg.pt.msList[i].set_no_image()
                             # print_exception()
                             continue
 
-                        self.corrSignalsList[i].set_data(path=thumbs[i], snr=snr)
                         cfg.pt.msList[i].set_data(path=thumbs[i], snr=snr)
-                        # self.corrSignalsList[i].setStyleSheet(f"""border: 4px solid {colors[i]}; padding: 3px;""")
-                        # self.corrSignalsList[i].setStyleSheet(f"""border: 6px solid {colors[i]}; padding: 3px;""")
-                        # self.corrSignalsList[i].setStyleSheet(f"""background-color: {colors[i]};""")
                     except:
                         print_exception()
-                        self.corrSignalsList[i].set_no_image()
                         cfg.pt.msList[i].set_no_image()
                         logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
                     finally:
-                        self.corrSignalsList[i].show()
-                        self.corrSignalsList[i].update()
                         cfg.pt.msList[i].update()
-                else:
-                    self.corrSignalsList[i].hide()
 
         # h = self.csWidget.height()
         # siz = cfg.data.image_size()
@@ -1247,6 +1230,11 @@ class MainWindow(QMainWindow):
             self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
             self._changeScaleCombo.setEnabled(True)
 
+            self.cbSignals.setChecked(getData('state,tool_windows,signals'))
+            self.cbMonitor.setChecked(getData('state,tool_windows,hud'))
+            self.cbNotes.setChecked(getData('state,tool_windows,notes'))
+            self.cbPython.setChecked(getData('state,tool_windows,python'))
+
         else:
             self._skipCheckbox.setEnabled(False)
             self.sb_whiteningControl.setEnabled(False)
@@ -1444,6 +1432,8 @@ class MainWindow(QMainWindow):
 
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
+        # timer = Timer()
+        # timer.start()
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
         logger.info('')
@@ -1468,6 +1458,8 @@ class MainWindow(QMainWindow):
         cfg.project_tab._overlayRect.hide()
         cfg.project_tab._overlayLab.hide()
 
+        # timer.report() #0
+
         if self._isProjectTab():
 
             if self._working == True:
@@ -1486,12 +1478,15 @@ class MainWindow(QMainWindow):
 
             # logger.info('Updating the UI...')
 
+            # timer.report() #1
+
             if cfg.data.skipped():
                 # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
                 cfg.project_tab._overlayLab.setText('X EXCLUDED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
 
+            # timer.report() #2
 
             if cfg.pt.tn_widget.isVisible():
                 os.path.isdir(cfg.data.thumbnail_ref())
@@ -1515,8 +1510,13 @@ class MainWindow(QMainWindow):
 
             # if self.dw_signals.isVisible():
             #     self.updateCorrSignalsDrawer()
+
+            # timer.report()  # 3
+
             if cfg.pt.ms_widget.isVisible():
                 self.updateCorrSignalsDrawer()
+
+            # timer.report()  # 4
 
             cur = cfg.data.zpos
             if self.notes.isVisible():
@@ -1538,6 +1538,7 @@ class MainWindow(QMainWindow):
             except:
                 logger.warning('Skip Toggle Widget Failed to Update')
 
+            # timer.report() #5
 
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
@@ -1553,6 +1554,8 @@ class MainWindow(QMainWindow):
 
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.snrViewer.set_layer(cfg.data.zpos)
+
+            # timer.report() #6
 
             br = '&nbsp;'
             a = """<span style='color: #ffe135;'>"""
@@ -1619,7 +1622,7 @@ class MainWindow(QMainWindow):
 
             # self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
             self._btn_alignOne.setText('Re-Align #%d' % cfg.data.zpos)
-
+        # timer.stop() #7
         # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
 
     def updateNotes(self):
@@ -1806,11 +1809,11 @@ class MainWindow(QMainWindow):
                 self._sectionSlider.setValue(requested)
 
     def jump_to_slider(self):
-        # if cfg.data:
         caller = inspect.stack()[1].function
+        # logger.critical(f'>>>> jump_to_slider (caller: {caller}) >>>>')
+
         logger.info('')
-        # logger.critical(f'jump_to_slider [caller: {caller}] >>>>')
-        # if caller in ('dataUpdateWidgets', '_resetSlidersAndJumpInput'): #0323-
+        #0601 this seems to work as intended with no time lag
         if caller in ('dataUpdateWidgets'):
             return
         # if caller in ('main', 'onTimer','jump'):
@@ -1835,7 +1838,7 @@ class MainWindow(QMainWindow):
             logger.warning('Current Section Widget Failed to Update')
             print_exception()
 
-        # logger.info('<<<< jump_to_slider')
+        # logger.critical('<<<< jump_to_slider <<<<')
 
     @Slot()
     def reload_scales_combobox(self) -> None:
@@ -2062,7 +2065,7 @@ class MainWindow(QMainWindow):
 
         self.updateDtWidget()  # <.001s
 
-        cfg.data.set_defaults()  # 0.5357 -> 0.5438, ~.0081s
+        # cfg.data.set_defaults()  # 0.5357 -> 0.5438, ~.0081s
 
         t_ng = time.time()
         # cfg.project_tab.initNeuroglancer()  # dt = 0.543 -> dt = 0.587 = 0.044 ~ 1/20 second
@@ -2125,6 +2128,8 @@ class MainWindow(QMainWindow):
         logger.info('Saving User Preferences...')
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
+        # if self._isProjectTab():
+        #     self.settings.setValue("hsplitter_tn_ngSizes", cfg.pt.hsplitter_tn_ng.saveState())
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         if not os.path.exists(userpreferencespath):
             open(userpreferencespath, 'a').close()
@@ -2209,7 +2214,13 @@ class MainWindow(QMainWindow):
                         f.write(proj_json)
                     self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
                     # self.statusBar.showMessage('Project Saved!', 3000)
+
+                    # self.saveUserPreferences()
+
                     self.statusBar.showMessage('Project Saved!')
+
+
+
                 except:
                     print_exception()
                 else:
@@ -2683,8 +2694,7 @@ class MainWindow(QMainWindow):
                 else:
                     self.tell("Exclude: %s" % cfg.data.name_base())
                 cfg.data.link_reference_sections()
-                if getData('state,blink'):
-                    self.bli
+                # if getData('state,blink'):
                 self.dataUpdateWidgets()
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.setScaleData()
@@ -2721,10 +2731,12 @@ class MainWindow(QMainWindow):
 
                 # cfg.project_tab.w_section_label_header.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
+                cfg.pt.tn_widget.hide()
 
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
+
                 self.updateManualAlignModeButton()
                 # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
@@ -2752,6 +2764,7 @@ class MainWindow(QMainWindow):
 
             # cfg.project_tab.w_section_label_header.hide()
             cfg.project_tab.w_ng_extended_toolbar.show()
+            cfg.pt.tn_widget.show()
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
@@ -3175,6 +3188,27 @@ class MainWindow(QMainWindow):
         # self.cbMonitor.setIcon(qta.icon("mdi.monitor", color='#161c20'))
         self.cbMonitor.stateChanged.connect(lambda: self.setdw_monitor(self.cbMonitor.isChecked()))
 
+        def toggleSignalVisibility():
+            state = self.cbSignals.isChecked()
+            setData('state,tool_windows,signals', state)
+            if self._isProjectTab():
+                new_size = (0,400)[state]
+                cfg.pt.ms_widget.setVisible(state)
+                sizes = cfg.pt.hsplitter_tn_ng.sizes()
+                sizes[2] = new_size
+                cfg.pt.hsplitter_tn_ng.setSizes(sizes)
+                self.showMatchSignalsAction.setText(('Show Match Signals', 'Hide Match Signals')[state])
+                tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
+                tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
+                self.cbSignals.setToolTip((tip1, tip2)[state])
+
+
+        tip = f"Show Match Signals {hotkey('I')}"
+        self.cbSignals = QCheckBox(f"Match Signals {hotkey('I')}")
+        self.cbSignals.setToolTip(tip)
+        self.cbSignals.setIconSize(QSize(14, 14))
+        self.cbSignals.stateChanged.connect(toggleSignalVisibility)
+
         self._detachNgButton = QPushButton()
         self._detachNgButton.setFixedSize(QSize(18, 18))
         self._detachNgButton.setIconSize(QSize(14, 14))
@@ -3186,10 +3220,12 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.cbMonitor)
         self.toolbar.addWidget(self.cbPython)
         self.toolbar.addWidget(self.cbNotes)
+        self.toolbar.addWidget(self.cbSignals)
 
         self.cbNotes.setFixedSize(QSize(96, 16))
         self.cbPython.setFixedSize(QSize(148, 16))  # tacc
         self.cbMonitor.setFixedSize(152, 16)  # tacc
+        self.cbSignals.setFixedSize(152, 16)  # tacc
 
         self.toolbar.layout().setSpacing(4)
         self.toolbar.layout().setAlignment(Qt.AlignRight)
@@ -3661,6 +3697,12 @@ class MainWindow(QMainWindow):
         self.showMonitorAction.triggered.connect(lambda: self.cbMonitor.setChecked(not self.cbMonitor.isChecked()))
         self.showMonitorAction.setShortcut('Ctrl+H')
         fileMenu.addAction(self.showMonitorAction)
+
+        self.showMatchSignalsAction = QAction('Show Match S&ignals', self)
+        self.showMatchSignalsAction.triggered.connect(lambda: self.cbSignals.setChecked(not self.cbSignals.isChecked()))
+        self.showMatchSignalsAction.setShortcut('Ctrl+I')
+        fileMenu.addAction(self.showMatchSignalsAction)
+
 
         # self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction = QAction('Show &Notes', self)

@@ -15,6 +15,16 @@ class Timer:
     def __init__(self):
 
         self._start_time = None
+        self._n = 0
+
+
+    def report(self):
+
+        elapsed_time = time.perf_counter() - self._start_time
+        # logger.critical(f"Elapsed time (report #{self._n}): {elapsed_time:0.4f} seconds")
+        logger.critical(f"Elapsed time (report #{self._n}): {elapsed_time:0.4f} seconds")
+
+        self._n += 1
 
 
     def start(self):
@@ -42,4 +52,5 @@ class Timer:
 
         self._start_time = None
 
-        logger.critical(f"Elapsed time: {elapsed_time:0.4f} seconds")
+        logger.critical(f"Elapsed time (report #{self._n}): {elapsed_time:0.4f} seconds")
+        self._n = 0

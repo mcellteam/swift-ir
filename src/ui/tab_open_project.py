@@ -675,6 +675,7 @@ class OpenProject(QWidget):
             try:
                 with open(filename, 'r') as f:
                     cfg.data = DataModel(data=json.load(f))
+                cfg.data.set_defaults()
                 cfg.main_window._autosave()
             except:
                 cfg.main_window.warn(f'No Such File Found: {filename}')
