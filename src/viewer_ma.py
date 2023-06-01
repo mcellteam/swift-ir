@@ -107,7 +107,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def updateHighContrastMode(self):
         with self.txn() as s:
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
@@ -194,7 +194,7 @@ class MAViewer(neuroglancer.Viewer):
             s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
-            if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
+            if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
