@@ -434,6 +434,7 @@ class OpenProject(QWidget):
         path, extension = os.path.splitext(filename)
         # cfg.data = DataModel(name=path, mendenhall=mendenhall)
         cfg.data = DataModel(name=path)
+        cfg.data.set_defaults()
 
         cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
         cfg.dataById[id(cfg.project_tab)] = cfg.data
