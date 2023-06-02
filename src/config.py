@@ -132,7 +132,7 @@ event = None
 ignore_pbar = False
 
 # glob_colors = ['#75bbfd', '#e50000', '#fcfc81', '#acc2d9', '#b2996e', '#a8ff04',]
-glob_colors = ['#be013c', '#42d4f4', '#FFFF66', '#ffffe4', '#b2996e', '#a8ff04',]
+glob_colors = ['#ffffe4', '#be013c', '#42d4f4', '#FFFF66', '#b2996e', '#a8ff04',]
 
 SHADER = shader_default_ = '''#uicontrol vec3 color color(default="white")
 #uicontrol float brightness slider(min=-1, max=1, step=0.01)
