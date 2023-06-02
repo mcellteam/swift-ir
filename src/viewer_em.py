@@ -156,8 +156,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
                                  'Suppressing The stateChanged Callback Signal' %self.type)
                 else:
                     self._layer = request_layer
-                    logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     if getData('state,auto_update_ui'):
+                        logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                         self.signals.stateChanged.emit(request_layer)
                     else:
                         cfg.data.zpos = request_layer
@@ -165,8 +165,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
-                    logger.info(f'[{self.type}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
                     if getData('state,auto_update_ui'):
+                        logger.info(f'[{self.type}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
                         self.signals.zoomChanged.emit(zoom)
                 self._crossSectionScale = zoom
         except:
