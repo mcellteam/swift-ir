@@ -328,10 +328,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._blockZoom = True
-
-        logger.critical(f'initZoom... w={w}, h={h}')
-        logger.critical(f'initZoom... w_ng_display w={cfg.project_tab.w_ng_display.width()}, w_ng_display h={cfg.project_tab.w_ng_display.height()}')
-        # logger.critical(f'cfg.mw.dw_monitor.isVisible()?... {cfg.mw.dw_monitor.isVisible()}')
+        # logger.critical(f'initZoom... w={w}, h={h}')
+        # logger.critical(f'initZoom... w_ng_display w={cfg.project_tab.w_ng_display.width()}, w_ng_display h={cfg.project_tab.w_ng_display.height()}')
 
         if self.cs_scale:
             # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')

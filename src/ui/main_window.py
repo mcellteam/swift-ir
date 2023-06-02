@@ -1023,7 +1023,6 @@ class MainWindow(QMainWindow):
                 self.threadpool.start(self.worker)
             else:
                 compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data)
-            self.test()
         except:
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
@@ -6077,10 +6076,7 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(x)
 
     def updatePbar(self, x=None):
-        logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
         if x == None: x = cfg.nCompleted
-        # caller = inspect.stack()[1].function
-        # logger.info(f'[caller: {caller}] Updating pbar, x={x}')
         self.pbar.setValue(x)
         QApplication.processEvents()
 
@@ -6095,14 +6091,14 @@ class MainWindow(QMainWindow):
 
     def showZeroedPbar(self, reset_n_tasks=None, cancel_processes=None):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller = {caller}, reset_n_tasks = {reset_n_tasks}')
+        # logger.critical(f'caller = {caller}, reset_n_tasks = {reset_n_tasks}')
         if reset_n_tasks:
-            logger.critical('Resetting # tasks...')
+            # logger.critical('Resetting # tasks...')
             cfg.nTasks = reset_n_tasks
             cfg.nCompleted = 0
         if cancel_processes:
             cfg.CancelProcesses = True
-        logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
+        # logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
         self.pbar.setValue(0)
         self.setPbarText('Preparing Tasks...')
         self.pbar_widget.show()

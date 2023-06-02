@@ -242,7 +242,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                     al_stack_old[layer_index]['skipped'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-        cfg.mw.test()
+        # cfg.mw.test()
 
         logger.info(f'Use GUI: {use_gui}')
 
@@ -255,9 +255,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
             # cfg.data = dm
             # cfg.dataById[id(cfg.pt)] = dm
 
-        cfg.mw.test()
-
-
+        # cfg.mw.test()
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
