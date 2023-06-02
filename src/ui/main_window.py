@@ -380,9 +380,6 @@ class MainWindow(QMainWindow):
             logger.critical(f'cfg.data == cfg.dataById[{id(cfg.pt)}]? {cfg.data == cfg.dataById[id(cfg.pt)]}')
 
     def updateCorrSignalsDrawer(self):
-        #             siz = cfg.data.image_size()
-        #             ar = siz[0] / siz[1]  # aspect ratio
-        #             self.corrSignalsList[i].setFixedSize(QSize(int(h*ar), h))
 
         # caller = inspect.stack()[1].function
         # logger.info('>>>> updateCorrSignalsDrawer >>>>')
@@ -416,8 +413,6 @@ class MainWindow(QMainWindow):
         # logger.critical('snr_vals: %s' % str(snr_vals))
 
         if cfg.data.current_method == 'grid-custom':
-            # for i in range(4):
-            #     self.corrSignalsList[i].hide()
             regions = cfg.data.grid_custom_regions
             names = cfg.data.get_grid_custom_filenames()
             # logger.info('names: %s' % str(names))
@@ -470,13 +465,6 @@ class MainWindow(QMainWindow):
                 else:
                     cfg.pt.msList[i].set_no_image()
                     cfg.pt.msList[i].update()
-
-        # h = self.csWidget.height()
-        # siz = cfg.data.image_size()
-        # ar = siz[0] / siz[1]  # aspect ratio
-        # self.corrSignalsList[i].resize(QSize(int(h*ar), h))
-        # logger.info("<<<< updateCorrSignalsDrawer")
-        # self.csWidget.setMinimumWidth(self.cs0.width() * 4)
 
         logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
@@ -5419,35 +5407,6 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.addWidget(self.splash_widget)
         # self.viewer_stack_widget.addWidget(self.permFileBrowser)
 
-        self.cs0 = CorrSignalThumbnail(self)
-        self.cs1 = CorrSignalThumbnail(self)
-        self.cs2 = CorrSignalThumbnail(self)
-        self.cs3 = CorrSignalThumbnail(self)
-        self.cs0.setContentsMargins(4,4,4,4)
-        self.cs1.setContentsMargins(4,4,4,4)
-        self.cs2.setContentsMargins(4,4,4,4)
-        self.cs3.setContentsMargins(4,4,4,4)
-        # self.cs4 = CorrSignalThumbnail(self)
-        # self.cs5 = CorrSignalThumbnail(self)
-        # self.cs6 = CorrSignalThumbnail(self)
-        # self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3,
-        #                         self.cs4, self.cs5, self.cs6]
-        self.corrSignalsList = [self.cs0, self.cs1, self.cs2, self.cs3]
-        # self.cs_layout = HBL()
-        # self.cs_layout.setContentsMargins(2, 2, 2, 2)
-        # self.cs_layout.addWidget(self.cs0)
-        # self.cs_layout.addWidget(self.cs1)
-        # self.cs_layout.addWidget(self.cs2)
-        # self.cs_layout.addWidget(self.cs3)
-        # self.cs_layout.addWidget(self.cs4)
-        # self.cs_layout.addWidget(self.cs5)
-        # self.cs_layout.addWidget(self.cs6)
-        # self.cs_layout.addWidget(ExpandingWidget(self))
-
-        self.lab_corr_signals = QLabel('No Signals Found for Current Alignment Method.')
-        self.lab_corr_signals.setMaximumHeight(18)
-        self.lab_corr_signals.setStyleSheet('color: #ede9e8;')
-        self.lab_corr_signals.setContentsMargins(8, 0, 0, 0)
 
         '''Show/Hide Primary Tools Buttons'''
 
@@ -5772,51 +5731,6 @@ class MainWindow(QMainWindow):
         browser_bottom_controls.setLayout(hbl)
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
-
-
-        self.csWidget = QTableWidget()
-        self.csWidget.horizontalHeader().setHighlightSections(False)
-        self.csWidget.verticalHeader().setHighlightSections(False)
-        self.csWidget.setFocusPolicy(Qt.NoFocus)
-        self.csWidget.setSelectionMode(QAbstractItemView.NoSelection)
-        self.csWidget.setMinimumWidth(328)
-        self.csWidget.setRowCount(1)
-        self.csWidget.setColumnCount(4)
-        self.csWidget.resizeRowToContents(0)
-        self.csWidget.resizeColumnToContents(0)
-        self.csWidget.resizeColumnToContents(1)
-        self.csWidget.resizeColumnToContents(2)
-        self.csWidget.resizeColumnToContents(3)
-
-        self.csWidget.setCellWidget(0,0, self.cs0)
-        self.csWidget.setCellWidget(0,1, self.cs1)
-        self.csWidget.setCellWidget(0,2, self.cs2)
-        self.csWidget.setCellWidget(0,3, self.cs3)
-        self.csWidget.setItem(0, 0, QTableWidgetItem())
-        self.csWidget.setItem(0, 1, QTableWidgetItem())
-        self.csWidget.setItem(0, 2, QTableWidgetItem())
-        self.csWidget.setItem(0, 3, QTableWidgetItem())
-        self.csWidget.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
-        self.csWidget.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
-        self.csWidget.item(0, 2).setBackground(QColor(cfg.glob_colors[2]))
-        self.csWidget.item(0, 3).setBackground(QColor(cfg.glob_colors[3]))
-        self.csWidget.verticalHeader().setVisible(False)
-        self.csWidget.horizontalHeader().setVisible(False)
-        self.csWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.csWidget.setShowGrid(False)
-        v_header = self.csWidget.verticalHeader()
-        v_header.setSectionResizeMode(0, QHeaderView.Stretch)
-        h_header = self.csWidget.horizontalHeader()
-        h_header.setSectionResizeMode(0, QHeaderView.Stretch)
-        h_header.setSectionResizeMode(1, QHeaderView.Stretch)
-        h_header.setSectionResizeMode(2, QHeaderView.Stretch)
-        h_header.setSectionResizeMode(3, QHeaderView.Stretch)
-
-        self.correlation_signals = CorrelationSignals(self)
-        self.correlation_signals.setMinimumWidth(334)
-        # self.correlation_signals = AspectWidget(self, ratio=4/1)
-        vbl = VBL(self.csWidget)
-        self.correlation_signals.setLayout(vbl)
 
 
         self.test_widget = QLabel()
@@ -6312,23 +6226,6 @@ class VerticalLabel(QLabel):
         if style != '':
             self.setStyleSheet(style)
 
-
-class CorrelationSignals(QWidget):
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        # self.setMinimumWidth(324)
-        # self.parent = parent
-
-    def sizeHint(self):
-        if cfg.main_window:
-            width = int(cfg.main_window.width() / 2)
-        else:
-            width = int(cfg.WIDTH / 2)
-        logger.info(f'WIDTH = {width}')
-        return QSize(width, 120)
 
 
 class WebEngine(QWebEngineView):
