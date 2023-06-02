@@ -1626,7 +1626,8 @@ class ProjectTab(QWidget):
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
 
         self.comboNgLayout = QComboBox(self)
-        self.comboNgLayout.setFixedSize(100, 16)
+        self.comboNgLayout.setStyleSheet("font-size: 9px;")
+        self.comboNgLayout.setFixedSize(80, 16)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '3d']
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
@@ -1652,23 +1653,28 @@ class ProjectTab(QWidget):
         self.ngcl_background.setText('Background')
         self.ngcl_background.setToolTip('Toggle Background')
 
-        if getData('state,neutral_contrast'):
-            self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
-        else:
-            self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
-
-        def fn():
-            setData('state,neutral_contrast', not getData('state,neutral_contrast'))
-            [v.updateHighContrastMode() for v in self.get_viewers()]
+        try:
 
             if getData('state,neutral_contrast'):
                 self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+                            border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
             else:
                 self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+                            border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+
+            def fn():
+                setData('state,neutral_contrast', not getData('state,neutral_contrast'))
+                [v.updateHighContrastMode() for v in self.get_viewers()]
+
+                if getData('state,neutral_contrast'):
+                    self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
+                            border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+                else:
+                    self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
+                            border-radius: 0px; padding: 2px; margin: 0px; font-weight: 600;  border-color: #339933;""")
+
+        except:
+            print_exception()
 
         self.ngcl_background.clicked.connect(fn)
         self.ngcl_background.setToolTip('Neuroglancer background setting')
