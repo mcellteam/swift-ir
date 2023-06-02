@@ -1078,6 +1078,8 @@ class ProjectTab(QWidget):
                 elif self.rb_MA_strict.isChecked():
                     cfg.data.current_method = 'manual-strict'
 
+                cfg.mw.updateCorrSignalsDrawer()
+
             cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
         # self.rb_MA_hint = QRadioButton('Hint')
@@ -1236,7 +1238,7 @@ class ProjectTab(QWidget):
                 self.setTargKargPixmaps()
             elif cur_index == 4:
                 self.MA_stackedWidget.setCurrentIndex(4)
-
+            cfg.mw.updateCorrSignalsDrawer()
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
