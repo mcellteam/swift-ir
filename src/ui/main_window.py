@@ -2689,9 +2689,9 @@ class MainWindow(QMainWindow):
                         logger.warning(f'Request layer is out of range ({layer}) - Returning')
                         return
                 if skip_state:
-                    self.tell("Include: %s" % cfg.data.name_base())
-                else:
                     self.tell("Exclude: %s" % cfg.data.name_base())
+                else:
+                    self.tell("Include: %s" % cfg.data.name_base())
                 cfg.data.link_reference_sections()
                 # if getData('state,blink'):
                 self.dataUpdateWidgets()
@@ -4296,6 +4296,12 @@ class MainWindow(QMainWindow):
         self._skipCheckbox.setToolTip(tip)
         self._skipCheckbox.setEnabled(False)
 
+        self.labInclude = QLabel('Include Section:')
+        self.labInclude.setStyleSheet('font-size: 9px; font-weight: 600;')
+
+        self._w_skipCheckbox = HWidget(self.labInclude, self._skipCheckbox)
+        self._w_skipCheckbox.layout.setAlignment(Qt.AlignCenter)
+
         self._btn_clear_skips = QPushButton('Reset')
         self._btn_clear_skips.setEnabled(False)
         self._btn_clear_skips.setStyleSheet("font-size: 10px;")
@@ -4410,9 +4416,14 @@ class MainWindow(QMainWindow):
         self._btn_nextSection.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
         self._btn_nextSection.setEnabled(False)
 
-        self._sectionChangeWidget = QWidget()
-        self._sectionChangeWidget.setLayout(HBL(self._btn_prevSection, self._btn_nextSection))
-        self._sectionChangeWidget.setAutoFillBackground(True)
+        # self.labSectionChange = QLabel('   Section: ')
+        # self.labSectionChange.setStyleSheet('font-size: 10px;')
+
+        self._sectionChangeWidget = HWidget(self._btn_prevSection, self._btn_nextSection)
+        # self._sectionChangeWidget.setLayout(HBL(self.labSectionChange, self._btn_prevSection, self._btn_nextSection))
+        # self._sectionChangeWidget.setLayout(HBL(self._btn_prevSection, self._btn_nextSection))
+        self._sectionChangeWidget.layout.setAlignment(Qt.AlignCenter)
+        # self._sectionChangeWidget.setAutoFillBackground(True)
 
         tip = 'Go To Previous Scale.'
         self._scaleDownButton = QPushButton()
@@ -4436,15 +4447,11 @@ class MainWindow(QMainWindow):
         self._scaleUpButton.setIconSize(QSize(14, 14))
         self._scaleUpButton.setIcon(qta.icon("fa.arrow-up", color=ICON_COLOR))
 
-        self._scaleSetWidget = HWidget()
-        self._scaleSetWidget.addWidget(self._scaleDownButton)
-        self._scaleSetWidget.addWidget(self._scaleUpButton)
+        self._scaleSetWidget = HWidget(self._scaleDownButton, self._scaleUpButton)
         self._scaleSetWidget.layout.setAlignment(Qt.AlignCenter)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
-        self._sectionSlider.setFixedWidth(76)
-        # self._sectionSlider.setFixedWidth(90)
-        # self._sectionSlider.setFixedHeight(13)
+        # self._sectionSlider.setFixedWidth(76)
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
 
@@ -4495,7 +4502,7 @@ class MainWindow(QMainWindow):
 
         hbl = QHBoxLayout()
         hbl.setSpacing(0)
-        hbl.setContentsMargins(4, 0, 4, 0)
+        hbl.setContentsMargins(2, 0, 2, 0)
         # hbl.addWidget(self._btn_automaticPlayTimer, alignment=Qt.AlignmentFlag.AlignRight)
         # hbl.addWidget(self._sectionSlider, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(self._btn_automaticPlayTimer)
@@ -4536,15 +4543,26 @@ class MainWindow(QMainWindow):
         self.combo_mode.addItems(items)
         self.combo_mode.currentTextChanged.connect(self.onComboModeChange)
 
+
+
         # self.navControls = QWidget()
         self.fl_nav = QFormLayout()
         self.fl_nav.setVerticalSpacing(2)
         self.fl_nav.setHorizontalSpacing(2)
         self.fl_nav.setContentsMargins(2, 0, 2, 0)
-        self.fl_nav.addRow('View:', HWidget(self.combo_mode, ExpandingWidget(self)))
-        self.fl_nav.addRow('Scale: ', HWidget(self._changeScaleCombo, self._scaleSetWidget, ExpandingWidget(self)))
+        # self.fl_nav.addRow('View:', HWidget(self.combo_mode, ExpandingWidget(self)))
+        # self.fl_nav.addRow('Scale: ', HWidget(self._changeScaleCombo, self._scaleSetWidget, ExpandingWidget(self)))
+        # self.fl_nav.addRow('Section:', HWidget(self._jumpToLineedit, self._sectionSliderWidget, self.spinbox_fps))
+        # # self.fl_nav.addRow('Include:', HWidget(self._skipCheckbox, self._sectionChangeWidget))
+        # self.fl_nav.addRow('', HWidget(self._sectionChangeWidget, self._skipCheckbox, self._sectionChangeWidget))
+
+        self.fl_nav.addRow('Scale: ', HWidget(self._changeScaleCombo, ExpandingHWidget(self), self._scaleSetWidget))
         self.fl_nav.addRow('Section:', HWidget(self._jumpToLineedit, self._sectionSliderWidget, self.spinbox_fps))
-        self.fl_nav.addRow('Include:', self._skipCheckbox)
+        # self.fl_nav.addRow('', HWidget(self.spinbox_fps, self._sectionSliderWidget, self._sectionChangeWidget))
+        self.fl_nav.addRow('', HWidget(self._w_skipCheckbox, ExpandingHWidget(self), self._sectionChangeWidget))
+        # self.fl_nav.addRow('Include:', HWidget(self._skipCheckbox, self._sectionChangeWidget))
+        # self.fl_nav.addRow('', HWidget(self._sectionChangeWidget, self._skipCheckbox))
+
         self.navControls = QGroupBox()
         self.navControls.setContentsMargins(0, 0, 0, 0)
         self.navControls.setObjectName('gb_cpanel')
