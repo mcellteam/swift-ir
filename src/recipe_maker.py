@@ -430,7 +430,7 @@ class align_ingredient:
         self.pmov = pmov
         self.rota = rota
         # self.snr = 0.0
-        self.snr = 0.0
+        self.snr = [0.0]
         self.snr_report = 'SNR: --'
         self.threshold = (3.5, 200, 200)
         self.mir_toks = {}
