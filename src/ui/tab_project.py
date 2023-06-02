@@ -1678,6 +1678,7 @@ class ProjectTab(QWidget):
         """
 
         self.lab_filename = QLabel('Filename')
+        self.lab_filename.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
         self.layout_ng_MA_toolbar = QHBoxLayout()
         self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
@@ -1687,7 +1688,7 @@ class ProjectTab(QWidget):
         self.layout_ng_MA_toolbar.addWidget(ExpandingWidget(self))
 
         self.w_section_label_header = QWidget()
-        self.w_section_label_header.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
+        self.w_section_label_header.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
         self.w_section_label_header.setFixedHeight(20)
         self.w_section_label_header.setLayout(self.layout_ng_MA_toolbar)
 
@@ -1864,13 +1865,18 @@ class ProjectTab(QWidget):
         # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tn_tra.setMinimumSize(QSize(160,160))
         # self.tn_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+
         self.tn_ref_lab = QLabel('Reference Section')
-        self.tn_ref_lab.setFixedHeight(16)
-        self.tn_ref_lab.setStyleSheet("""font-size: 9px;""")
+        self.tn_ref_lab.setMaximumWidth(220)
+        # self.tn_ref_lab.setFixedHeight(16)
+        self.tn_ref_lab.setMaximumHeight(22)
+        self.tn_ref_lab.setStyleSheet("""font-size: 9px; color: #ede9e8; """)
 
         self.tn_tra_lab = QLabel('Transforming Section')
-        self.tn_tra_lab.setFixedHeight(16)
-        self.tn_tra_lab.setStyleSheet("""font-size: 9px;""")
+        self.tn_tra_lab.setMaximumWidth(220)
+        self.tn_tra_lab.setMaximumHeight(22)
+        self.tn_tra_lab.setStyleSheet("""font-size: 9px; color: #ede9e8;""")
 
         # self.tn_widget = VWidget(self.tn_ref_lab_w, self.tn_ref, self.tn_tra_lab_w, self.tn_tra)
         self.tn_vbl = VBL()
@@ -1930,17 +1936,13 @@ class ProjectTab(QWidget):
         # self.ms_layout = QGridLayout()
         # self.ms_layout.setContentsMargins(0,0,0,0)
         # self.ms_layout.setSpacing(0)
-        lab0 = QLabel('Match Signal 0')
-        lab1 = QLabel('Match Signal 1')
-        lab2 = QLabel('Match Signal 2')
-        lab3 = QLabel('Match Signal 3')
-        for lab in [lab0, lab1, lab2, lab3]:
-            lab.setStyleSheet("""QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
-
-        lab0.setFixedHeight(18)
-        lab1.setFixedHeight(18)
-        lab2.setFixedHeight(18)
-        lab3.setFixedHeight(18)
+        self.mslab0 = QLabel('Match Signal 0')
+        self.mslab1 = QLabel('Match Signal 1')
+        self.mslab2 = QLabel('Match Signal 2')
+        self.mslab3 = QLabel('Match Signal 3')
+        for lab in [self.mslab0, self.mslab1, self.mslab2, self.mslab3]:
+            lab.setStyleSheet("""QLabel{ color: #f3f6fb; border-color: #ede9e8; border-width: 2px; background-color: #222222; font-weight: 600; font-size: 9px; }""")
+            lab.setFixedHeight(14)
         # self.ms_layout.addWidget(self.ms_lab, 0, 0, 1, 2)
         # self.ms_layout.addWidget(VWidget(lab0, self.tn_ms0), 1, 0)
         # self.ms_layout.addWidget(VWidget(lab1, self.tn_ms1), 1, 1)
@@ -1970,10 +1972,10 @@ class ProjectTab(QWidget):
         # self.ms_widget.resizeColumnToContents(0)
         # self.ms_widget.resizeColumnToContents(1)
 
-        self.ms_widget.setCellWidget(0,0, VWidget(lab0, self.tn_ms0))
-        self.ms_widget.setCellWidget(0,1, VWidget(lab1, self.tn_ms1))
-        self.ms_widget.setCellWidget(1,0, VWidget(lab2, self.tn_ms2))
-        self.ms_widget.setCellWidget(1,1, VWidget(lab3, self.tn_ms3))
+        self.ms_widget.setCellWidget(0,0, VWidget(self.mslab0, self.tn_ms0))
+        self.ms_widget.setCellWidget(0,1, VWidget(self.mslab1, self.tn_ms1))
+        self.ms_widget.setCellWidget(1,0, VWidget(self.mslab2, self.tn_ms2))
+        self.ms_widget.setCellWidget(1,1, VWidget(self.mslab3, self.tn_ms3))
         self.ms_widget.setItem(0, 0, QTableWidgetItem())
         self.ms_widget.setItem(0, 1, QTableWidgetItem())
         self.ms_widget.setItem(1, 0, QTableWidgetItem())
