@@ -215,6 +215,9 @@ class ProjectTab(QWidget):
         if getData('state,manual_mode'):
             # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
             # self.shutdownNeuroglancer()
+            self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
+            self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
+            self.MA_webengine_stage.setUrl(QUrl("http://localhost:8888/"))
 
             cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
