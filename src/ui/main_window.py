@@ -1507,8 +1507,12 @@ class MainWindow(QMainWindow):
             cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()}")
             cfg.pt.tn_tra_lab.setText(f'Transforming Section\n'
                                       f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
-            cfg.pt.tn_ref_lab.setText(f'Reference Section\n'
-                                      f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
+            try:
+                cfg.pt.tn_ref_lab.setText(f'Reference Section\n'
+                                          f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
+            except:
+                cfg.pt.tn_ref_lab.setText(f'Reference Section')
+
 
 
             # else:
