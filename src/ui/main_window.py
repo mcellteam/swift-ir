@@ -1814,7 +1814,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         caller = inspect.stack()[1].function
         # logger.critical(f'>>>> jump_to_slider (caller: {caller}) >>>>')
-        logger.info('')
+        # logger.info('')
         #0601 this seems to work as intended with no time lag
         if caller in ('dataUpdateWidgets'):
             return
@@ -3541,15 +3541,17 @@ class MainWindow(QMainWindow):
                 menu.addAction(action)
 
             if self._isProjectTab():
-                if cfg.unal_tensor:
-                    # logger.info('Adding Raw Series tensor to menu...')
-                    txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
-                    addTensorMenuInfo(label='Raw Series', body=txt)
-                if cfg.data.is_aligned():
-                    if cfg.al_tensor:
-                        # logger.info('Adding Aligned Series tensor to menu...')
-                        txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
-                        addTensorMenuInfo(label='Aligned Series', body=txt)
+                txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
+                addTensorMenuInfo(label='Tensor Metadata', body=txt)
+                # if cfg.unal_tensor:
+                #     # logger.info('Adding Raw Series tensor to menu...')
+                #     txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
+                #     addTensorMenuInfo(label='Raw Series', body=txt)
+                # if cfg.data.is_aligned():
+                #     if cfg.al_tensor:
+                #         # logger.info('Adding Aligned Series tensor to menu...')
+                #         txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
+                #         addTensorMenuInfo(label='Aligned Series', body=txt)
             if self._isZarrTab():
                 txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
                 addTensorMenuInfo(label='Zarr Series', body=txt)
