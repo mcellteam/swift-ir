@@ -1504,7 +1504,11 @@ class MainWindow(QMainWindow):
                 cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
                 cfg.pt.labMethod2.setText(cfg.data.method_pretty())
 
-            cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {os.path.basename(cfg.data.filename())}")
+            cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()}")
+            cfg.pt.tn_tra_lab.setText(f'Transforming Section\n'
+                                      f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
+            cfg.pt.tn_ref_lab.setText(f'Reference Section\n'
+                                      f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
 
 
             # else:
