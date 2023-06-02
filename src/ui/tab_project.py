@@ -41,6 +41,8 @@ __all__ = ['ProjectTab']
 logger = logging.getLogger(__name__)
 
 
+
+
 class ProjectTab(QWidget):
 
     def __init__(self,
@@ -185,6 +187,7 @@ class ProjectTab(QWidget):
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
 
+        cfg.mw.dataUpdateWidgets()
         logger.info('<<<< Refreshing')
 
     def initSnrViewer(self):
@@ -257,7 +260,9 @@ class ProjectTab(QWidget):
             # if caller != '_onGlobTabChange':
             logger.info('Initializing...')
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)  # 0424-
+            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgetsThreaded)
+            # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets, Qt.QueuedConnection)
             cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer._set_zmag) #0424(?)
             cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
@@ -1859,10 +1864,20 @@ class ProjectTab(QWidget):
         self.blinkToggle = ToggleSwitch()
         self.blinkToggle.stateChanged.connect(self.blinkChanged)
 
+        self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
+        self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
+
+        self.uiUpdateToggle = ToggleSwitch()
+        self.uiUpdateToggle.stateChanged.connect(self.uiUpdateToggleChanged)
+        self.uiUpdateToggle.setChecked(getData('state,auto_update_ui'))
+
+
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.blinkToggle)
+        self.w_ng_extended_toolbar.addWidget(self.uiUpdateLab)
+        self.w_ng_extended_toolbar.addWidget(self.uiUpdateToggle)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
@@ -2120,6 +2135,10 @@ class ProjectTab(QWidget):
             self.blinkTimer.start()
         else:
             self.blinkTimer.stop()
+
+    def uiUpdateToggleChanged(self):
+        setData('state,auto_update_ui', self.uiUpdateToggle.isChecked())
+
 
 
     # def updateLabelsHeader(self):
