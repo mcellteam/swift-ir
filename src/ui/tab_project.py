@@ -21,7 +21,8 @@ from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalet
     QDoubleValidator, QIntValidator
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
-from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey
+from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
+    get_appdir
 from src.viewer_em import EMViewer, EMViewerStage, EMViewerSnr
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
@@ -1911,9 +1912,11 @@ class ProjectTab(QWidget):
         # self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
         self.tn_ref = ThumbnailFast(self, name='reference')
         self.tn_tra = ThumbnailFast(self, name='transforming')
-        self.tn_ref.setMinimumSize(QSize(160,160))
+        # self.tn_ref.setMinimumSize(QSize(160,160))
+        self.tn_ref.setMinimumSize(QSize(180,180))
         # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.tn_tra.setMinimumSize(QSize(160,160))
+        # self.tn_tra.setMinimumSize(QSize(160,160))
+        self.tn_tra.setMinimumSize(QSize(180,180))
         # self.tn_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
@@ -1963,6 +1966,42 @@ class ProjectTab(QWidget):
         self.tn_ms2 = CorrSignalThumbnail(self)
         self.tn_ms3 = CorrSignalThumbnail(self)
 
+
+
+        # path = os.path.join(get_appdir(), 'resources', 'x_reticle.png')
+        #
+        # self.tn_reticle1 = QWidget()
+        # layout = QGridLayout()
+        # layout.setContentsMargins(0,0,0,0)
+        # self.tn_reticle1.setLayout(layout)
+        # self.reticle1 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.tn_reticle1.layout().addWidget(self.tn_ms0,0,0)
+        # self.tn_reticle1.layout().addWidget(self.reticle1,0,0)
+        #
+        # self.tn_reticle2 = QWidget()
+        # layout = QGridLayout()
+        # layout.setContentsMargins(0,0,0,0)
+        # self.tn_reticle2.setLayout(layout)
+        # self.reticle2 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.tn_reticle2.layout().addWidget(self.tn_ms1,0,0)
+        # self.tn_reticle2.layout().addWidget(self.reticle2,0,0)
+        #
+        # self.tn_reticle3 = QWidget()
+        # layout = QGridLayout()
+        # layout.setContentsMargins(0,0,0,0)
+        # self.tn_reticle3.setLayout(layout)
+        # self.reticle3 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.tn_reticle3.layout().addWidget(self.tn_ms2,0,0)
+        # self.tn_reticle3.layout().addWidget(self.reticle3,0,0)
+        #
+        # self.tn_reticle4 = QWidget()
+        # layout = QGridLayout()
+        # layout.setContentsMargins(0,0,0,0)
+        # self.tn_reticle4.setLayout(layout)
+        # self.reticle4 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.tn_reticle4.layout().addWidget(self.tn_ms3,0,0)
+        # self.tn_reticle4.layout().addWidget(self.reticle4,0,0)
+
         self.msList = [self.tn_ms0, self.tn_ms1, self.tn_ms2, self.tn_ms3]
         # self.tn_ms0.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[0]}; border-width: 3px;""")
         # self.tn_ms1.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[1]}; border-width: 3px;""")
@@ -1980,9 +2019,9 @@ class ProjectTab(QWidget):
         self.tn_ms1.set_no_image()
         self.tn_ms2.set_no_image()
         self.tn_ms3.set_no_image()
-        self.ms_lab = QLabel('Match Signals')
-        self.ms_lab.setFixedHeight(18)
-        self.ms_lab.setStyleSheet("""font-size: 9px;""")
+        # self.ms_lab = QLabel('Match Signals')
+        # self.ms_lab.setFixedHeight(18)
+        # self.ms_lab.setStyleSheet("""font-size: 9px;""")
         # self.ms_layout = QGridLayout()
         # self.ms_layout.setContentsMargins(0,0,0,0)
         # self.ms_layout.setSpacing(0)
@@ -1991,7 +2030,7 @@ class ProjectTab(QWidget):
         self.mslab2 = QLabel('Match Signal 2')
         self.mslab3 = QLabel('Match Signal 3')
         for lab in [self.mslab0, self.mslab1, self.mslab2, self.mslab3]:
-            lab.setStyleSheet("""QLabel{ color: #f3f6fb; border-color: #ede9e8; border-width: 2px; background-color: #222222; font-weight: 600; font-size: 9px; }""")
+            lab.setStyleSheet("""QLabel{ color: #f3f6fb; border-color: #ede9e8; border-width: 2px; background-color: #222222; font-weight: 600; font-size: 9px; margin: 0px; padding: 0px;}""")
             lab.setFixedHeight(14)
         # self.ms_layout.addWidget(self.ms_lab, 0, 0, 1, 2)
         # self.ms_layout.addWidget(VWidget(lab0, self.tn_ms0), 1, 0)
@@ -2007,7 +2046,7 @@ class ProjectTab(QWidget):
         self.ms_widget = QTableWidget()
         # self.ms_widget.setMinimumWidth(200)
         self.ms_widget.setMinimumWidth(160)
-        self.ms_widget.setMaximumWidth(400)
+        # self.ms_widget.setMaximumWidth(400)
         self.ms_widget.setContentsMargins(0,0,0,0)
         # self.ms_widget.setStyleSheet(
         #     """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
@@ -2023,6 +2062,12 @@ class ProjectTab(QWidget):
         # self.ms_widget.resizeColumnToContents(0)
         # self.ms_widget.resizeColumnToContents(1)
 
+        # self.ms_widget.setCellWidget(0,0, VWidget(self.mslab0, self.tn_ms0))
+        # self.ms_widget.setCellWidget(0,0, VWidget(self.mslab0, self.tn_ms0))
+        # self.ms_widget.setCellWidget(0,0, VWidget(self.mslab0, self.tn_reticle1))
+        # self.ms_widget.setCellWidget(0,1, VWidget(self.mslab1, self.tn_reticle2))
+        # self.ms_widget.setCellWidget(1,0, VWidget(self.mslab2, self.tn_reticle3))
+        # self.ms_widget.setCellWidget(1,1, VWidget(self.mslab3, self.tn_reticle4))
         self.ms_widget.setCellWidget(0,0, VWidget(self.mslab0, self.tn_ms0))
         self.ms_widget.setCellWidget(0,1, VWidget(self.mslab1, self.tn_ms1))
         self.ms_widget.setCellWidget(1,0, VWidget(self.mslab2, self.tn_ms2))
@@ -2044,12 +2089,14 @@ class ProjectTab(QWidget):
         h_header = self.ms_widget.horizontalHeader()
         v_header.setSectionResizeMode(0, QHeaderView.Stretch)
         v_header.setSectionResizeMode(1, QHeaderView.Stretch)
+        # v_header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        # v_header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
+        #
+        # h_header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        # h_header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
         h_header.setSectionResizeMode(1, QHeaderView.Stretch)
-        # h_header.setSectionResizeMode(0, QHeaderView.Stretch)
-        # h_header.setSectionResizeMode(1, QHeaderView.Stretch)
-        # h_header.setSectionResizeMode(2, QHeaderView.Stretch)
-        # h_header.setSectionResizeMode(3, QHeaderView.Stretch)
 
 
 
