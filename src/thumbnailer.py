@@ -218,7 +218,7 @@ class Thumbnailer:
             task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, use_gui=False)
 
 
-        task_queue.taskPrefix = 'Thumbnail Generated for '
+        task_queue.taskPrefix = 'Generating Thumbnail for '
         basefilenames = [os.path.basename(x) for x in filenames]
         task_queue.taskNameList = basefilenames
         task_queue.start(cpus)

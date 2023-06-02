@@ -240,12 +240,18 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def set_layer(self, index):
         if self.type != 'EMViewerStage': #Critical!
+            logger.info('')
             # state = copy.deepcopy(self.state)
             # state.position[0] = index
             # self.set_state(state)
             with self.txn() as s:
                 vc = s.voxel_coordinates
                 vc[0] = index
+
+            self.volume_manager.update()
+
+
+
 
     def set_brightness(self, val=None):
         state = copy.deepcopy(self.state)
