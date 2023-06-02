@@ -914,9 +914,11 @@ class DataModel:
                     layer['alignment']['swim_settings'].setdefault('karg', False)
 
                 # layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', man_ww)
-
-        self.set_auto_swim_windows_to_default()
-        self.set_manual_swim_windows_to_default()
+        try:
+            self.set_auto_swim_windows_to_default()
+            self.set_manual_swim_windows_to_default()
+        except:
+            print_exception()
 
     def isRefinement(self):
         return  self._data['data']['scales'][self.scale]['isRefinement']
