@@ -248,7 +248,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 vc = s.voxel_coordinates
                 vc[0] = index
 
-            self.volume_manager.update()
+            # self.volume_manager.update(json_str)
 
 
 
