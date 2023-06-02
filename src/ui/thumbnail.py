@@ -158,8 +158,8 @@ class ThumbnailFast(QLabel):
                 # rect.moveBottomLeft(self.rect().bottomLeft())
                 qp.drawPixmap(rect, pm)
                 img_size = cfg.data.image_size()
-                # sf = self.r.getCoords()[2] / img_size[0]  # scale factor
-                sf = self.r.getRect()[2] / img_size[0]  # scale factor
+                sf = self.r.getCoords()[2] / img_size[0]  # scale factor
+                # sf = self.r.getRect()[2] / img_size[0]  # scale factor
 
                 # logger.critical(f"self.r.getCoords() = {self.r.getCoords()}")
                 # logger.critical(f"self.r.getRect() = {self.r.getRect()}")
@@ -550,8 +550,8 @@ class CorrSignalThumbnail(QLabel):
                 self.r.moveCenter(self.rect().center())
 
                 qp.drawPixmap(self.r, pm)
-                # coords = self.r.getCoords()
-                coords = self.r.getRect()
+                coords = self.r.getCoords()
+                # coords = self.r.getRect()
                 cp = QPointF(self.r.center())  # center point
 
                 siz = pm.width() / 4
