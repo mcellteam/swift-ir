@@ -417,7 +417,7 @@ class MainWindow(QMainWindow):
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
-            return
+            # return
 
 
         # logger.critical('thumbs: %s' % str(thumbs))
@@ -437,7 +437,7 @@ class MainWindow(QMainWindow):
                         except:
                             snr = 0.0
                             logger.info(f'no SNR data for corr signal index {i}')
-                            self.msList[i].set_no_image()
+                            cfg.pt.msList[i].set_no_image()
                             continue
 
                         cfg.pt.msList[i].set_data(path=names[i], snr=snr)
@@ -448,6 +448,12 @@ class MainWindow(QMainWindow):
                     except:
                         print_exception()
                         logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
+        # elif cfg.data.current_method == 'manual-hint':
+        #     cfg.data.snr_components()
+        elif cfg.data.current_method == 'manual-strict':
+            for i in range(4):
+                if not cfg.pt.msList[i]._noImage:
+                    cfg.pt.msList[i].set_no_image()
         else:
             for i in range(4):
                 if i < n:
@@ -469,6 +475,9 @@ class MainWindow(QMainWindow):
                         logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
                     finally:
                         cfg.pt.msList[i].update()
+                else:
+                    cfg.pt.msList[i].set_no_image()
+                    cfg.pt.msList[i].update()
 
         # h = self.csWidget.height()
         # siz = cfg.data.image_size()
@@ -807,25 +816,24 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
+                self.updateEnabledButtons()
                 if self.dw_signals.isVisible():
                     self.updateCorrSignalsDrawer()
                 self.pbarLabel.setText('')
                 cfg.project_tab.snr_plot.initSnrPlot()
-                self.updateEnabledButtons()
                 # self.updateProjectTable()  # +
-                self.updateMenus()
+                try:
+                    self.updateMenus()
+                except:
+                    print_exception()
                 self.present_snr_results(start=start, end=end)
-                prev_snr_average = cfg.data.snr_prev_average()
-                snr_average = cfg.data.snr_average()
-                self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (snr_average, prev_snr_average))
+                self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
                 self.updateDtWidget()
                 cfg.project_tab.updateTreeWidget()
-                cfg.project_tab.updateLabelsHeader()
+                # cfg.project_tab.updateLabelsHeader()
                 # cfg.project_tab.updateProjectLabels()
-                self.updateEnabledButtons()
-                self.updateProjectTable()  # +
+                # self.updateProjectTable()  # +
                 self._bbToggle.setChecked(cfg.data.has_bb())
-
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
                 # self.updateAllCpanelDetails()
@@ -969,7 +977,7 @@ class MainWindow(QMainWindow):
             align_one=True,
             swim_only=True,
         )
-        # self.onAlignmentEnd(start=start, end=end)
+        self.onAlignmentEnd(start=start, end=end) #0601+ why was this uncommented?
         self._working = False
         self.enableAllTabs()
         self.updateCorrSignalsDrawer()
@@ -1493,6 +1501,9 @@ class MainWindow(QMainWindow):
 
                 cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
                 cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
+                cfg.pt.labMethod2.setText(cfg.data.method_pretty())
+
+            cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {os.path.basename(cfg.data.filename())}")
 
 
             # else:
@@ -1894,7 +1905,7 @@ class MainWindow(QMainWindow):
                             self.dataUpdateWidgets()
                             self.updateCpanelDetails_i1()
                             self._showSNRcheck()
-                            cfg.project_tab.updateLabelsHeader()
+                            # cfg.project_tab.updateLabelsHeader()
                             cfg.project_tab.refreshTab()
         logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
 
@@ -2103,7 +2114,6 @@ class MainWindow(QMainWindow):
         self.cpanel.show()
         self.sa_cpanel.show()
         cfg.project_tab.showSecondaryNgTools()
-        cfg.project_tab.updateLabelsHeader()
 
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
@@ -3416,7 +3426,7 @@ class MainWindow(QMainWindow):
             # self.updateAllCpanelDetails()
             self.updateCpanelDetails()
             # self.dataUpdateResults()
-            cfg.project_tab.updateLabelsHeader()
+            # cfg.project_tab.updateLabelsHeader()
 
             try:
                 if not getData('state,manual_mode'):
@@ -4352,23 +4362,23 @@ class MainWindow(QMainWindow):
         self._swimWindowControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._swimWindowControl.setFixedSize(QSize(50, 18))
 
-        # self._swimWindowControl.setStyleSheet("font-size: 10px;")
-        # self._swimWindowControl.setSuffix('px')
-        # self._swimWindowControl.setMaximum(9999)
-        # self._swimWindowControl.setFixedHeight(2)
-
         def fn():
             # logger.info('')
             caller = inspect.stack()[1].function
-            if caller == 'main':
-                logger.info(f'caller: {caller}')
-                # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-                # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-                # cfg.data.set_swim_window_px(self._swimWindowControl.value())
-                # setData(f'data,scales,{cfg.data.scale},')
-                cfg.data.set_auto_swim_windows_to_default(
-                    factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
-                self.swimWindowChanged.emit()
+            if self._isProjectTab():
+                if caller == 'main':
+                    logger.info(f'caller: {caller}')
+                    # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
+                    # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
+                    # cfg.data.set_swim_window_px(self._swimWindowControl.value())
+                    # setData(f'data,scales,{cfg.data.scale},')
+                    cfg.data.set_auto_swim_windows_to_default(
+                        factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
+                    self.swimWindowChanged.emit()
+
+                cfg.pt.tn_ref.update()
+                cfg.pt.tn_tra.update()
+
 
         self._swimWindowControl.textChanged.connect(fn)
         self._swimWindowControl.textChanged.connect(self._callbk_unsavedChanges)

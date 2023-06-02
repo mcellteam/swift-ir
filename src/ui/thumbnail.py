@@ -6,10 +6,11 @@ import inspect
 import logging
 import textwrap
 import numpy as np
+from functools import cache
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider, QSizePolicy
-from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF
+from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSizeF
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
 from src.helpers import absFilePaths
 from src.helpers import print_exception, get_appdir
@@ -78,10 +79,12 @@ class Thumbnail(QWidget):
         self.layout.addWidget(self.thumbnail, 0, 0)
         self.setLayout(self.layout)
 
+        self.setWidgetResizable(True)
+
 
 
 class ThumbnailFast(QLabel):
-    def __init__(self, parent, path=None, extra=''):
+    def __init__(self, parent, path=None, extra='', name=''):
         super().__init__(parent)
         self.setAlignment(Qt.AlignCenter)
         self.setScaledContents(True)
@@ -91,9 +94,9 @@ class ThumbnailFast(QLabel):
             self.path = path
         self.setPixmap(QPixmap(self.path))
         self.extra = extra
+        self.name = name
         self.border_color = '#000000'
         self.showBorder = False
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
 
     def showPixmap(self):
@@ -133,21 +136,62 @@ class ThumbnailFast(QLabel):
                 # currentRatio = self.width() / self.height()
                 # if originalRatio != currentRatio:
                 qp = QPainter(self)
-                pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                # pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio)
+
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
                 # rect.moveBottomLeft(self.rect().bottomLeft())
                 qp.drawPixmap(rect, pm)
+                img_size = cfg.data.image_size()
+                sf = self.r.getCoords()[2] / img_size[0]  # scale factor
+                if self.name in ('reference', 'transforming'):
+                    if cfg.data.current_method == 'grid-default':
+                        cp = QPoint(self.r.center())  # center point
+                        # ww = cfg.data.swim_window_px()
+                        ww = tuple(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'])
+                        # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y())):
+                        for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y())):
+                            qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
+                            qp.drawRect(r)
+                    elif cfg.data.current_method == 'grid-custom':
+                        ww1x1 = cfg.data.swim_window_px()
+                        ww2x2 = cfg.data.swim_2x2_px()
+                        a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
+                        b = [img_size[0] - a[0], img_size[1] - a[1]]
+                        regions = cfg.data.grid_custom_regions
+                        if regions[0]:
+                            qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
+                            rect = get_rect(sf, a[0], a[1], ww2x2[0])
+                            qp.drawRect(rect)
+                        if regions[1]:
+                            qp.setPen(QPen(QColor(cfg.glob_colors[1]), 2, Qt.DotLine))
+                            rect = get_rect(sf, b[0], a[1], ww2x2[0])
+                            qp.drawRect(rect)
+                        if regions[2]:
+                            qp.setPen(QPen(QColor(cfg.glob_colors[2]), 2, Qt.DotLine))
+                            rect = get_rect(sf, a[0], b[1], ww2x2[0])
+                            qp.drawRect(rect)
+                        if regions[3]:
+                            qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
+                            rect = get_rect(sf, b[0], b[1], ww2x2[0])
+                            qp.drawRect(rect)
+                    elif cfg.data.current_method == 'manual-hint':
+                        pts = []
+                        ww = cfg.data.manual_swim_window_px()
+                        if self.name == 'reference':
+                            # pts = cfg.data.manpoints_mir('ref')
+                            pts = cfg.data.manpoints_mir('ref')
+                        elif self.name == 'transforming':
+                            # pts = cfg.data.manpoints_mir('base')
+                            pts = cfg.data.manpoints_mir('base')
+                        for i,pt in enumerate(pts):
+                            qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
+                            x = int(pt[0])
+                            y = int(pt[1])
+                            r = get_rect(sf, x, y, ww)
+                            qp.drawRect(r)
 
-                # if cfg.data.current_method == 'grid-default':
-                #     coords = self.r.getCoords()
-                #     cp = QPointF(self.r.center())  # center point
-                #     # tn_size = ImageSize(cfg.data.thumbnail_tra())
-                #     # full_size =
-                #
-                #     qp.drawLine(QPointF(coords[0], coords[1]), cp + QPointF(float(-val), float(-val)))
-                #     qp.drawLine(QPointF(coords[2], coords[1]), cp + QPointF(float(val), float(-val)))
-                #     qp.drawLine(QPointF(coords[0], coords[3]), cp + QPointF(float(-val), float(val)))
-                #     qp.drawLine(QPointF(coords[2], coords[3]), cp + QPointF(float(val), float(val)))
 
 
                 if self.extra:
@@ -165,6 +209,66 @@ class ThumbnailFast(QLabel):
                 self.set_no_image()
                 pass
         super().paintEvent(event)
+
+
+@cache
+def get_rect(sf, x, y, ww):
+    rect = QRect(QPoint(int(x*sf), int(y*sf)), QSize(int(ww*sf), int(ww*sf)))
+    rect.moveCenter(QPoint(int(x*sf), int(y*sf)))
+    return rect
+    # return QRect(QPointF(x*sf, y*sf), QSizeF(ww*sf, ww*sf))
+
+
+
+@cache
+def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y):
+    # half_ww = [int(ww[0] / 2), int(ww[1] / 2)]
+
+    a = ((img_size[0] - ww[0]) / 2, (img_size[1] - ww[1]) / 2)
+    # b = (int((a[0] + ww[0])), int((a[1] + ww[1])))
+    # # cp = (int(tn_size[0]/2), int(tn_size[1]/2))
+    # rx1 = int(a[0] * sf) # ratio x1 (short)
+    # ry1 = int(a[1] * sf) # ratio y1 (short)
+    # rx2 = int(b[0] * sf) # ratio x2 (long)
+    # ry2 = int(b[1] * sf)  # ratio y3 (long)
+
+    rx1 = int(a[0] * sf)  # ratio x1 (short)
+    ry1 = int(a[1] * sf)  # ratio y1 (short)
+    rx2 = int((a[0] + ww[0]) * sf)  # ratio x2 (long)
+    ry2 = int((a[1] + ww[1]) * sf)  # ratio y3 (long)
+
+    cp = QPoint(cp_x, cp_y)
+
+    # logger.critical('self.r: ' + str(self.r))
+    # logger.critical('cp: ' + str(cp))
+    # logger.critical('cp.x(): ' + str(cp.x()))
+    # logger.critical('cp.y(): ' + str(cp.y()))
+    # logger.critical('ww: ' + str(ww))
+    # logger.critical('a: ' + str(a))
+    # logger.critical('rx1: ' + str(rx1))
+    # logger.critical('rx2: ' + str(rx2))
+    # logger.critical('ry1: ' + str(ry1))
+    # logger.critical('ry2: ' + str(ry2))
+    # _p1 =
+    # _cp = QPoint(cp.x(), cp.y())
+
+    # p1---p2
+    #      |
+    # p4---p3
+    p1 = QPoint(rx1, ry1)
+    p2 = QPoint(rx2, ry1)
+    p3 = QPoint(rx2, ry2)
+    p4 = QPoint(rx1, ry2)
+
+    # yield QRect(p1, cp)
+    # yield QRect(p2, cp)
+    # yield QRect(p3, cp)
+    # yield QRect(p4, cp)
+
+    return (QRect(p1, cp + QPoint(-1,-1)), QRect(p2, cp + QPoint(1,-1)), QRect(p4, cp + QPoint(-1,1)), QRect(p3, cp + QPoint(1,1)))
+
+
+
 
     # def resizeEvent(self, e):
     #     self.setMaximumWidth(self.height())
