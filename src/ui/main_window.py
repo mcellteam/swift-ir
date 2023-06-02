@@ -4173,7 +4173,7 @@ class MainWindow(QMainWindow):
     #     if caller == 'main':
     #         logger.info(f'caller: {caller}')
     #         # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-    #         cfg.data.set_swim_window_px(self._swimWindowControl.value())
+    #         cfg.data.set_swim_1x1_custom_px(self._swimWindowControl.value())
 
     def _valueChangedWhitening(self):
         # logger.info('')
@@ -4348,7 +4348,6 @@ class MainWindow(QMainWindow):
         self._swimWindowControl = QLineEdit(self)
         self._swimWindowControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._swimWindowControl.setFixedSize(QSize(50, 18))
-
         def fn():
             # logger.info('')
             caller = inspect.stack()[1].function
@@ -4357,18 +4356,30 @@ class MainWindow(QMainWindow):
                     logger.info(f'caller: {caller}')
                     # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
                     # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-                    # cfg.data.set_swim_window_px(self._swimWindowControl.value())
+                    # cfg.data.set_swim_1x1_custom_px(self._swimWindowControl.value())
                     # setData(f'data,scales,{cfg.data.scale},')
-                    cfg.data.set_auto_swim_windows_to_default(
-                        factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
+                    try:
+                        val = int(self._swimWindowControl.text())
+                    except:
+                        self._swimWindowControl.setText(str(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'][0]))
+                        return
+                    logger.critical(f"val = {val}")
+                    if (val % 2) == 1:
+                        new_val = val - 1
+                        self.tell(f'SWIM requires even values as input. Setting value to {new_val}')
+                        self._swimWindowControl.setText(str(new_val))
+                        return
+                    logger.critical(f"val = {val}...........")
+                    # cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
+                    cfg.data.set_auto_swim_windows_to_default(factor=val / cfg.data.image_size()[0])
                     self.swimWindowChanged.emit()
 
                 cfg.pt.tn_ref.update()
                 cfg.pt.tn_tra.update()
-
-
-        self._swimWindowControl.textChanged.connect(fn)
-        self._swimWindowControl.textChanged.connect(self._callbk_unsavedChanges)
+        self._swimWindowControl.selectionChanged.connect(fn)
+        self._swimWindowControl.returnPressed.connect(fn)
+        self._swimWindowControl.selectionChanged.connect(self._callbk_unsavedChanges)
+        self._swimWindowControl.returnPressed.connect(self._callbk_unsavedChanges)
         self._swimWindowControl.setValidator(QIntValidator())
         # self._swimWindowControl.setFixedSize(std_input_size)
 
