@@ -400,7 +400,7 @@ class MainWindow(QMainWindow):
         thumbs = cfg.data.get_signals_filenames()
         n = len(thumbs)
         snr_vals = cfg.data.snr_components()
-        logger.info(f'snr_vals = {snr_vals}')
+        # logger.info(f'snr_vals = {snr_vals}')
         colors = cfg.glob_colors
         count = 0
         # for i in range(7):
@@ -427,7 +427,7 @@ class MainWindow(QMainWindow):
                             snr = snr_vals[count]
                         except:
                             snr = 0.0
-                            logger.info(f'no SNR data for corr signal index {i}')
+                            # logger.info(f'no SNR data for corr signal index {i}')
                             cfg.pt.msList[i].set_no_image()
                             continue
 
@@ -454,7 +454,7 @@ class MainWindow(QMainWindow):
                             snr = snr_vals[i]
                         except:
                             snr = 0.0
-                            logger.info(f'no SNR data for corr signal index {i}')
+                            # logger.info(f'no SNR data for corr signal index {i}')
                             cfg.pt.msList[i].set_no_image()
                             # print_exception()
                             continue
@@ -470,7 +470,7 @@ class MainWindow(QMainWindow):
                     cfg.pt.msList[i].set_no_image()
                     cfg.pt.msList[i].update()
 
-        logger.info('<<<< updateCorrSignalsDrawer <<<<')
+        # logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
     def callbackDwVisibilityChanged(self):
         QApplication.processEvents()
