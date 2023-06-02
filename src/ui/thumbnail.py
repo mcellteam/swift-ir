@@ -98,8 +98,10 @@ class ThumbnailFast(QLabel):
         self.border_color = '#000000'
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self._noImage = 0
 
     def showPixmap(self):
+        self._noImage = 0
         self.setPixmap(QPixmap(self.path))
 
     def selectPixmap(self, path:str):
@@ -107,6 +109,7 @@ class ThumbnailFast(QLabel):
             self.set_no_image()
             return
         # logger.critical(f"path = {path}")
+        self._noImage = 0
         try:
             self.path = path
             self.setPixmap(QPixmap(self.path))
@@ -115,6 +118,7 @@ class ThumbnailFast(QLabel):
             self.set_no_image()
 
     def set_no_image(self):
+        self._noImage = 1
         self.snr = None
         try:
             self.setPixmap(QPixmap(self.no_image_path))
@@ -139,6 +143,13 @@ class ThumbnailFast(QLabel):
                 # pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio)
+
+                if self._noImage:
+                    # self.set_no_image()
+                    self.r = rect = QRect(0, 0, pm.width(), pm.height())
+                    self.r.moveCenter(self.rect().center())
+                    qp.drawPixmap(self.r, pm)
+                    return
 
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
                 # rect.moveBottomLeft(self.rect().bottomLeft())
