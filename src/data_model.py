@@ -733,8 +733,10 @@ class DataModel:
         self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
         self._data['state']['stage_viewer'].setdefault('show_overlay_message', True)
         self._data['state'].setdefault('manual_mode', False)
-        self._data['state'].setdefault('mode', 'comparison')
-        self._data['state'].setdefault('previous_mode', 'comparison')
+        # self._data['state'].setdefault('mode', 'stack-xy')
+        # self._data['state'].setdefault('previous_mode', 'stack-xy')
+        self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
+        self._data['state']['previous_mode'] = 'stack-xy'
         self._data['state'].setdefault('ng_layout', 'xy')
         self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})

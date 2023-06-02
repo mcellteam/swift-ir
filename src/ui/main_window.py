@@ -1804,11 +1804,13 @@ class MainWindow(QMainWindow):
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.table.selectRow(requested)
                 self._sectionSlider.setValue(requested)
+                # if cfg.pt.ms_widget.isVisible():     #0601+ untried
+                #     self.updateCorrSignalsDrawer()
+                # self.dataUpdateWidgets() #0601+
 
     def jump_to_slider(self):
         caller = inspect.stack()[1].function
         # logger.critical(f'>>>> jump_to_slider (caller: {caller}) >>>>')
-
         logger.info('')
         #0601 this seems to work as intended with no time lag
         if caller in ('dataUpdateWidgets'):
@@ -1818,8 +1820,6 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             logger.info('Jumping To Section #%d' % requested)
             cfg.data.zpos = requested
-            # if not getData('state,manual_mode'):
-            #     cfg.emViewer._layer = requested
 
             for viewer in cfg.project_tab.get_viewers():
                 viewer.set_layer(cfg.data.zpos)
@@ -1827,7 +1827,7 @@ class MainWindow(QMainWindow):
             if getData('state,manual_mode'):
                 cfg.project_tab.initNeuroglancer()
 
-            # self.dataUpdateWidgets()
+            self.dataUpdateWidgets() #0601+ for corr signals to update
 
         try:
             self._jumpToLineedit.setText(str(requested))
@@ -2921,8 +2921,8 @@ class MainWindow(QMainWindow):
             return 'Stack View (xy plane)'
         elif key == 'stack-4panel':
             return 'Stack View (4 panel)'
-        elif key == 'comparison':
-            return 'Comparison View'
+        # elif key == 'comparison':
+        #     return 'Comparison View'
         elif key == 'manual_align':
             return 'Manual Align Mode'
 
@@ -2931,8 +2931,8 @@ class MainWindow(QMainWindow):
             return 'stack-xy'
         elif key == 'Stack View (4 panel)':
             return 'stack-4panel'
-        elif key == 'Comparison View':
-            return 'comparison'
+        # elif key == 'Comparison View':
+        #     return 'comparison'
         elif key == 'Manual Align Mode':
             return 'manual_align'
 
@@ -4536,7 +4536,8 @@ class MainWindow(QMainWindow):
         self.combo_mode.setFixedSize(QSize(148, 16))
         self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
-        items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View']
+        # items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View']
+        items = ['Stack View (4 panel)', 'Stack View (xy plane)']
         self.combo_mode.addItems(items)
         self.combo_mode.currentTextChanged.connect(self.onComboModeChange)
 
