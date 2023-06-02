@@ -1856,8 +1856,10 @@ class ProjectTab(QWidget):
         self.labMethod2.setFixedHeight(18)
         self.labMethod2.setStyleSheet("""font-size: 10px; color: #FFFF66;""")
 
-        self.tn_ref = ThumbnailFast(self, name='reference', extra='reference')
-        self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
+        # self.tn_ref = ThumbnailFast(self, name='reference', extra='reference')
+        # self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
+        self.tn_ref = ThumbnailFast(self, name='reference')
+        self.tn_tra = ThumbnailFast(self, name='transforming')
         self.tn_ref.setMinimumSize(QSize(160,160))
         # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tn_tra.setMinimumSize(QSize(160,160))

@@ -977,10 +977,11 @@ class MainWindow(QMainWindow):
             align_one=True,
             swim_only=True,
         )
+        self.updateCorrSignalsDrawer()
         self.onAlignmentEnd(start=start, end=end) #0601+ why was this uncommented?
         self._working = False
         self.enableAllTabs()
-        self.updateCorrSignalsDrawer()
+        # self.updateCorrSignalsDrawer()
         cfg.project_tab.initNeuroglancer()
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
