@@ -947,7 +947,7 @@ class DataModel:
         return [x['filename'] for x in self.get_iter()]
 
     def get_index(self, filename):
-        logger.info(f'filename = {filename}')
+        # logger.info(f'filename = {filename}')
         return self.transforming_list().index(filename)
 
     def get_ref_index_offset(self):

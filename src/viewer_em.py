@@ -359,38 +359,22 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         # self._blockZoom = False
 
-    # def get_tensor(self):
-    #     # del cfg.tensor
-    #     # del cfg.unal_tensor
-    #     # del cfg.al_tensor
-    #     sf = cfg.data.scale_val(s=cfg.data.scale)
-    #     al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-    #     unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-    #     cfg.tensor = None
-    #     try:
-    #         cfg.unal_tensor = get_zarr_tensor(unal_path).result()
-    #         if cfg.data.is_aligned_and_generated():
-    #             cfg.al_tensor = get_zarr_tensor(al_path).result()
-    #         cfg.tensor = (cfg.unal_tensor, cfg.al_tensor)[cfg.data.is_aligned_and_generated()]
-    #     except Exception as e:
-    #         logger.warning('Failed to acquire Tensorstore view')
-    #         print_exception()
-
 
     def get_tensors(self):
         # del cfg.tensor
         # del cfg.unal_tensor
         # del cfg.al_tensor
-        cfg.mw.tell('Opening dataset asynchronously using Tensorstore')
+        cfg.mw.hud.post('Opening dataset asynchronously using Tensorstore...')
         sf = cfg.data.scale_val(s=cfg.data.scale)
-        al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-        unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-        cfg.tensor = cfg.unal_tensor = cfg.al_tensor = None
+        cfg.tensor = None
         try:
-            cfg.unal_tensor = get_zarr_tensor(unal_path).result()
+            # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
+
             if cfg.data.is_aligned_and_generated():
-                cfg.al_tensor = get_zarr_tensor(al_path).result()
-            cfg.tensor = (cfg.unal_tensor, cfg.al_tensor)[cfg.data.is_aligned_and_generated()]
+                path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+            else:
+                path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+            cfg.tensor = get_zarr_tensor(path).result()
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
             cfg.mw.warn('Failed to acquire Tensorstore view')
@@ -421,126 +405,125 @@ class EMViewer(AbstractEMViewer):
     def initViewer(self):
         caller = inspect.stack()[1].function
         logger.info(f'>>>> Initializing [{self.type}] [{caller}] >>>>')
-        caller = inspect.stack()[1].function
-        if getData('state,mode') in ('stack-4panel', 'stack-xy'):
+        # if getData('state,mode') in ('stack-4panel', 'stack-xy'):
             # cfg.data['ui']['ng_layout'] = '4panel'
-            self.initViewerSlim()
-        elif cfg.data['state']['mode'] == 'comparison':
-            # cfg.data['ui']['ng_layout'] = 'xy'
-            self.initViewerSbs()
+        self.initViewerSlim()
+        # elif cfg.data['state']['mode'] == 'comparison':
+        #     # cfg.data['ui']['ng_layout'] = 'xy'
+        #     self.initViewerSbs()
         logger.info(f'<<<< Initializing [{self.type}] [{caller}] <<<<')
 
-    def initViewerSbs(self):
-        # caller = inspect.stack()[1].function
-        # logger.critical(f'Initializing EMViewer (caller: {caller})....')
-
-        requested = getData('state,ng_layout')
-        mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
-          'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        nglayout = mapping[requested]
-
-        self.coordinate_space = self.getCoordinateSpace()
-        self.get_tensors()
-
-        x_nudge, y_nudge = 0, 0
-        if cfg.data.is_aligned_and_generated():
-            _, tensor_y, tensor_x = cfg.al_tensor.shape
-            x_nudge, y_nudge = (tensor_x - cfg.unal_tensor.shape[2]) / 2, (tensor_y - cfg.unal_tensor.shape[1]) / 2
-
-        cfg.refLV = ng.LocalVolume(
-            volume_type='image',
-            data=cfg.unal_tensor[0:len(cfg.data) - 1, :, :],
-            # data=cfg.unal_tensor[:, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[1, y_nudge, x_nudge]
-            # voxel_offset=[cfg.data.get_ref_index_offset(), y_nudge, x_nudge]
-        )
-        cfg.baseLV = ng.LocalVolume(
-            volume_type='image',
-            data=cfg.unal_tensor[:, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[0, y_nudge, x_nudge],
-        )
-        if cfg.data.is_aligned_and_generated():
-            cfg.LV = ng.LocalVolume(
-                volume_type='image',
-                data=cfg.al_tensor[:, :, :],
-                dimensions=self.coordinate_space,
-                voxel_offset=[0, ] * 3,
-            )
-
-        is_aligned = cfg.data.is_aligned_and_generated()
-        _, tensor_y, tensor_x = cfg.tensor.shape
-
-        # w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
-        # h = cfg.project_tab.webengine.height()
-        # self.initZoom(w=w, h=h, adjust=1.10)
-
-        sf = cfg.data.scale_val(s=cfg.data.scale)
-        self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
-
-        self.grps = []
-        self.grps.append(ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout))
-        self.grps.append(ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout))
-        if is_aligned:
-            self.grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout))
-
-        # box = ng.AxisAlignedBoundingBoxAnnotation(
-        #     point_a=[5, 50, 50],
-        #     point_b=[5, 500, 500],
-        #     id="bounding-box",
-        # )
-
-        with self.txn() as s:
-            '''other settings: 
-            s.displayDimensions = ["z", "y", "x"]
-            s.perspective_orientation
-            s.concurrent_downloads = 512'''
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            s.layout = ng.row_layout(self.grps)
-            if getData('state,neutral_contrast'):
-                s.crossSectionBackgroundColor = '#808080'
-            else:
-                s.crossSectionBackgroundColor = '#222222'
-            # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            s.show_scale_bar = False
-            s.show_axis_lines = getData('state,show_axis_lines')
-            s.show_default_annotations = getData('state,show_yellow_frame')
-            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
-            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'],)
-            if is_aligned:
-                s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'],)
-            # s.showSlices=False
-            s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
-
-            # s.layers["bounding-box"] = ng.AnnotationLayer(annotations=[box], ) #0316
-
-        with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,show_ng_controls')
-            s.scale_bar_options.scale_factor = 1
-            s.show_panel_borders = False
-
-        self._crossSectionScale = self.state.cross_section_scale
-        self.initial_cs_scale = self.state.cross_section_scale
-
-        self.set_brightness()
-        self.set_contrast()
-        # self.set_zmag()
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
-
-        # w = cfg.project_tab.w_ng_display.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
-        #Critical must use main_window width
-        # w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
-        # h = cfg.project_tab.w_ng_display.height()
-        w = cfg.project_tab.webengine.width()
-        h = cfg.main_window.globTabs.height() - 20
-
-        QApplication.processEvents()
-        self.initZoom(w=w, h=h, adjust=1.10)
-
-        # self.set_zmag()
+    # def initViewerSbs(self):
+    #     # caller = inspect.stack()[1].function
+    #     # logger.critical(f'Initializing EMViewer (caller: {caller})....')
+    #
+    #     requested = getData('state,ng_layout')
+    #     mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+    #       'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+    #     nglayout = mapping[requested]
+    #
+    #     self.coordinate_space = self.getCoordinateSpace()
+    #     self.get_tensors()
+    #
+    #     x_nudge, y_nudge = 0, 0
+    #     if cfg.data.is_aligned_and_generated():
+    #         _, tensor_y, tensor_x = cfg.al_tensor.shape
+    #         x_nudge, y_nudge = (tensor_x - cfg.unal_tensor.shape[2]) / 2, (tensor_y - cfg.unal_tensor.shape[1]) / 2
+    #
+    #     cfg.refLV = ng.LocalVolume(
+    #         volume_type='image',
+    #         data=cfg.unal_tensor[0:len(cfg.data) - 1, :, :],
+    #         # data=cfg.unal_tensor[:, :, :],
+    #         dimensions=self.coordinate_space,
+    #         voxel_offset=[1, y_nudge, x_nudge]
+    #         # voxel_offset=[cfg.data.get_ref_index_offset(), y_nudge, x_nudge]
+    #     )
+    #     cfg.baseLV = ng.LocalVolume(
+    #         volume_type='image',
+    #         data=cfg.unal_tensor[:, :, :],
+    #         dimensions=self.coordinate_space,
+    #         voxel_offset=[0, y_nudge, x_nudge],
+    #     )
+    #     if cfg.data.is_aligned_and_generated():
+    #         cfg.LV = ng.LocalVolume(
+    #             volume_type='image',
+    #             data=cfg.al_tensor[:, :, :],
+    #             dimensions=self.coordinate_space,
+    #             voxel_offset=[0, ] * 3,
+    #         )
+    #
+    #     is_aligned = cfg.data.is_aligned_and_generated()
+    #     _, tensor_y, tensor_x = cfg.tensor.shape
+    #
+    #     # w = cfg.project_tab.webengine.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+    #     # h = cfg.project_tab.webengine.height()
+    #     # self.initZoom(w=w, h=h, adjust=1.10)
+    #
+    #     sf = cfg.data.scale_val(s=cfg.data.scale)
+    #     self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
+    #
+    #     self.grps = []
+    #     self.grps.append(ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout))
+    #     self.grps.append(ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout))
+    #     if is_aligned:
+    #         self.grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout))
+    #
+    #     # box = ng.AxisAlignedBoundingBoxAnnotation(
+    #     #     point_a=[5, 50, 50],
+    #     #     point_b=[5, 500, 500],
+    #     #     id="bounding-box",
+    #     # )
+    #
+    #     with self.txn() as s:
+    #         '''other settings:
+    #         s.displayDimensions = ["z", "y", "x"]
+    #         s.perspective_orientation
+    #         s.concurrent_downloads = 512'''
+    #         s.gpu_memory_limit = -1
+    #         s.system_memory_limit = -1
+    #         s.layout = ng.row_layout(self.grps)
+    #         if getData('state,neutral_contrast'):
+    #             s.crossSectionBackgroundColor = '#808080'
+    #         else:
+    #             s.crossSectionBackgroundColor = '#222222'
+    #         # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
+    #         s.show_scale_bar = False
+    #         s.show_axis_lines = getData('state,show_axis_lines')
+    #         s.show_default_annotations = getData('state,show_yellow_frame')
+    #         s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
+    #         s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'],)
+    #         if is_aligned:
+    #             s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'],)
+    #         # s.showSlices=False
+    #         s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
+    #
+    #         # s.layers["bounding-box"] = ng.AnnotationLayer(annotations=[box], ) #0316
+    #
+    #     with self.config_state.txn() as s:
+    #         s.show_ui_controls = getData('state,show_ng_controls')
+    #         s.scale_bar_options.scale_factor = 1
+    #         s.show_panel_borders = False
+    #
+    #     self._crossSectionScale = self.state.cross_section_scale
+    #     self.initial_cs_scale = self.state.cross_section_scale
+    #
+    #     self.set_brightness()
+    #     self.set_contrast()
+    #     # self.set_zmag()
+    #     self.webengine.setUrl(QUrl(self.get_viewer_url()))
+    #
+    #
+    #     # w = cfg.project_tab.w_ng_display.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+    #     #Critical must use main_window width
+    #     # w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
+    #     # h = cfg.project_tab.w_ng_display.height()
+    #     w = cfg.project_tab.webengine.width()
+    #     h = cfg.main_window.globTabs.height() - 20
+    #
+    #     QApplication.processEvents()
+    #     self.initZoom(w=w, h=h, adjust=1.10)
+    #
+    #     # self.set_zmag()
 
 
 
