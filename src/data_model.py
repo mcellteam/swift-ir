@@ -767,6 +767,7 @@ class DataModel:
 
         logger.critical(str(self._data['state']))
 
+        self._data['state'].setdefault('auto_update_ui', True)
         self._data['state']['tool_windows'].setdefault('python',False)
         self._data['state']['tool_windows'].setdefault('notes',False)
         self._data['state']['tool_windows'].setdefault('hud',False)

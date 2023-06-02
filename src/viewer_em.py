@@ -122,6 +122,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
+
+
         if self._blinking:
             return
         if self._blockZoom:
@@ -133,11 +135,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if caller == '<lambda>':
             return
 
-        if not self.cs_scale:
-            if self.state.cross_section_scale:
-                if self.state.cross_section_scale > .0001:
-                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-                    self.cs_scale = self.state.cross_section_scale
+        # if not getData('state,auto_update_ui'):
+        #     return
+
+        # if not self.cs_scale:
+        #     if self.state.cross_section_scale:
+        #         if self.state.cross_section_scale > .0001:
+        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+        #             self.cs_scale = self.state.cross_section_scale
 
         try:
             # print('requested layer: %s' % str(self.state.position[0]))
@@ -152,17 +157,27 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 else:
                     self._layer = request_layer
                     logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
-                    self.signals.stateChanged.emit(request_layer)
+                    if getData('state,auto_update_ui'):
+                        self.signals.stateChanged.emit(request_layer)
+                    else:
+                        cfg.data.zpos = request_layer
 
             zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
                     logger.info(f'[{self.type}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                    self.signals.zoomChanged.emit(zoom)
+                    if getData('state,auto_update_ui'):
+                        self.signals.zoomChanged.emit(zoom)
                 self._crossSectionScale = zoom
         except:
             print_exception()
             logger.error(f'[{self.type}] ERROR on_state_change')
+
+        if not self.cs_scale:
+            if self.state.cross_section_scale:
+                if self.state.cross_section_scale > .0001:
+                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+                    self.cs_scale = self.state.cross_section_scale
 
 
     def url(self):
@@ -554,7 +569,8 @@ class EMViewer(AbstractEMViewer):
             volume_type='image',
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
-            voxel_offset=[0, ] * 3,
+            # voxel_offset=[0, ] * 3,
+            voxel_offset=[.5, ] * 3,
         )
 
         if getData('state,ng_layout') == 'xy':

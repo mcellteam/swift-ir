@@ -32,7 +32,7 @@ import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QPoint, QRectF, \
-    QPropertyAnimation, QSettings
+    QPropertyAnimation, QSettings, QObject, QThread
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion
 from qtpy.QtWebEngineWidgets import *
@@ -89,7 +89,6 @@ __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
 
-
 # logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
 
 class MainWindow(QMainWindow):
@@ -100,6 +99,7 @@ class MainWindow(QMainWindow):
     cancelMultiprocessing = Signal()
     sectionChanged = Signal()
     swimWindowChanged = Signal()
+
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
@@ -168,49 +168,6 @@ class MainWindow(QMainWindow):
         font = QFont("Tahoma")
         QApplication.setFont(font)
 
-
-
-
-
-
-        # self.oldPos = None
-
-        # self.gripSize = 12 # originally 12
-        # self.grips = []
-        # for i in range(4):
-        #     grip = QSizeGrip(self)
-        #     grip.resize(self.gripSize, self.gripSize)
-        #     self.grips.append(grip)
-
-        # self.setDockNestingEnabled(True)
-
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.MouseButton.LeftButton:
-    #         self.oldPos = event.globalPos()
-    #
-    # def mouseMoveEvent(self, event):
-    #     if self.oldPos is not None:
-    #         delta = event.globalPos() - self.oldPos
-    #         self.move(self.pos() + delta)
-    #         self.oldPos = event.globalPos()
-    #
-    # def mouseReleaseEvent(self, event):
-    #     self.oldPos = None
-
-    # def resizeEvent(self, event):
-    # logger.info('')
-    # if self._working:
-    #     return
-    # if self._isProjectTab():
-    #     # if cfg.project_tab._tabs.currentIndex() == 0:
-    #     if getData('state,mode') == 'comparison':
-    #         cfg.project_tab.initNeuroglancer()
-
-    # rect = self.rect()
-    # # top left grip doesn't need to be moved...
-    # self.grips[1].move(rect.right() - self.gripSize, 0) # top right
-    # self.grips[2].move(rect.right() - self.gripSize, rect.bottom() - self.gripSize) # bottom right
-    # self.grips[3].move(0, rect.bottom() - self.gripSize) # bottom left
 
 
     def initSizeAndPos(self, width, height):
@@ -1201,7 +1158,7 @@ class MainWindow(QMainWindow):
         (1) Update the visibility of next/prev s buttons depending on current s.
         (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
-        logger.critical('')
+        # logger.critical('')
         # self.dataUpdateResults()
 
         if self._isProjectTab():
@@ -1427,7 +1384,8 @@ class MainWindow(QMainWindow):
         # timer.start()
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
-        logger.info('')
+        # logger.info('')
+
         # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
         if not cfg.project_tab:
             logger.warning('No Current Project Tab (!)')
@@ -5903,7 +5861,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self._isProjectTab():
             caller = inspect.stack()[1].function
-            logger.critical(f'caller: {caller}')
+            # logger.critical(f'caller: {caller}')
             # if self.cpanelTabWidget.currentIndex() == 0:
             self.secName.setText(cfg.data.filename_basename())
             ref = cfg.data.reference_basename()
