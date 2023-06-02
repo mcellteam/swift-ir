@@ -162,10 +162,12 @@ class ThumbnailFast(QLabel):
 
                 if self.name in ('reference-table', 'transforming-table'):
                     method = cfg.data.method(s=self.s, l=self.l)
+                    s = self.s
+                    l = self.l
                 else:
                     method = cfg.data.current_method
-                if self.s == None: self.s = cfg.data.scale
-                if self.l == None: self.l = cfg.data.zpos
+                    s = cfg.data.scale
+                    l = cfg.data.zpos
 
                 if self.name in ('reference', 'transforming', 'reference-table', 'transforming-table'):
                     if method == 'grid-default':
@@ -176,9 +178,10 @@ class ThumbnailFast(QLabel):
                             qp.drawRect(r)
                     elif method == 'grid-custom':
 
-                        regions = cfg.data.get_grid_custom_regions(s=self.s, l=self.l)
-                        ww1x1 = cfg.data.swim_1x1_custom_px(s=self.s, l=self.l)
-                        ww2x2 = cfg.data.swim_2x2_custom_px(s=self.s, l=self.l)
+                        regions = cfg.data.get_grid_custom_regions(s=s, l=l)
+                        ww1x1 = cfg.data.swim_1x1_custom_px(s=s, l=l)
+                        ww2x2 = cfg.data.swim_2x2_custom_px(s=s, l=l)
+
                         # logger.info(f'ww1x1 = {ww1x1}')
                         # logger.info(f'ww2x2 = {ww2x2}')
 
@@ -206,12 +209,12 @@ class ThumbnailFast(QLabel):
                         ww = cfg.data.manual_swim_window_px()
                         if self.name in ('reference','reference-table'):
                             if self.name == 'reference-table':
-                                pts = cfg.data.manpoints_mir('ref', s=self.s, l=self.l)
+                                pts = cfg.data.manpoints_mir('ref', s=s, l=l)
                             else:
                                 pts = cfg.data.manpoints_mir('ref')
                         elif self.name in ('transforming', 'transforming-table'):
                             if self.name == 'transforming-table':
-                                pts = cfg.data.manpoints_mir('base', s=self.s, l=self.l)
+                                pts = cfg.data.manpoints_mir('base', s=s, l=l)
                             else:
                                 pts = cfg.data.manpoints_mir('base')
                         for i,pt in enumerate(pts):
