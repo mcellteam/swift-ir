@@ -381,6 +381,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # del cfg.tensor
         # del cfg.unal_tensor
         # del cfg.al_tensor
+        cfg.mw.tell('Opening dataset asynchronously using Tensorstore')
         sf = cfg.data.scale_val(s=cfg.data.scale)
         al_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
         unal_path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
@@ -392,9 +393,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
             cfg.tensor = (cfg.unal_tensor, cfg.al_tensor)[cfg.data.is_aligned_and_generated()]
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
+            cfg.mw.warn('Failed to acquire Tensorstore view')
             print_exception()
             ### Add funcitonality to recreate Zarr
             # raise e # raising will ensure crash
+        else:
+            cfg.mw.hud.done()
 
     def post_message(self, msg):
         with self.config_state.txn() as cs:
