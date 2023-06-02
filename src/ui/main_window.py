@@ -1854,7 +1854,9 @@ class MainWindow(QMainWindow):
                 lst = []
                 for s in cfg.data.scales():
                     siz = cfg.data.image_size(s=s)
-                    lst.append('%s %dx%d' % (cfg.data.scale_pretty(s=s), siz[0], siz[1]))
+                    # lst.append('%s / %dx%dpx' % (cfg.data.scale_pretty(s=s), siz[0], siz[1]))
+                    # if s =
+                    lst.append('%d / %d x %dpx' % (cfg.data.scale_val(s=s), siz[0], siz[1]))
                 return lst
 
             self._changeScaleCombo.addItems(pretty_scales())
@@ -4297,7 +4299,7 @@ class MainWindow(QMainWindow):
         self._skipCheckbox.setEnabled(False)
 
         self.labInclude = QLabel('Include Section:')
-        self.labInclude.setStyleSheet('font-size: 9px; font-weight: 600;')
+        self.labInclude.setStyleSheet('font-size: 8px; font-weight: 600;')
 
         self._w_skipCheckbox = HWidget(self.labInclude, self._skipCheckbox)
         self._w_skipCheckbox.layout.setAlignment(Qt.AlignCenter)
@@ -4557,6 +4559,9 @@ class MainWindow(QMainWindow):
         # self.fl_nav.addRow('', HWidget(self._sectionChangeWidget, self._skipCheckbox, self._sectionChangeWidget))
 
         self.fl_nav.addRow('Scale: ', HWidget(self._changeScaleCombo, ExpandingHWidget(self), self._scaleSetWidget))
+        self.resLab = QLabel('Level / Downsampled Image Resolution')
+        self.resLab.setStyleSheet('font-size: 8px; font-weight: 600;')
+        self.fl_nav.addRow('', HWidget(self.resLab, ExpandingHWidget(self)))
         self.fl_nav.addRow('Section:', HWidget(self._jumpToLineedit, self._sectionSliderWidget, self.spinbox_fps))
         # self.fl_nav.addRow('', HWidget(self.spinbox_fps, self._sectionSliderWidget, self._sectionChangeWidget))
         self.fl_nav.addRow('', HWidget(self._w_skipCheckbox, ExpandingHWidget(self), self._sectionChangeWidget))
