@@ -812,7 +812,7 @@ class UserProjects(QWidget):
         # self.table = TableWidget(self)
 
         # self.table.setShowGrid(False)
-        self.table.setSortingEnabled(True)
+        self.table.setSortingEnabled(False)
         self.table.setWordWrap(True)
         self.table.horizontalHeader().setHighlightSections(False)
         self.table.horizontalHeader().setStretchLastSection(True)
