@@ -188,9 +188,6 @@ class SnrPlot(QWidget):
     def initSnrPlot(self, s=None):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if not cfg.data:
-            logger.warning(f'initSnrPlot was called by {inspect.stack()[1].function} but data does not exist.')
-            return
         try:
             if caller != 'initUI_plot':
                 self.wipePlot()
@@ -245,7 +242,8 @@ class SnrPlot(QWidget):
     def get_axis_data(self, s=None) -> tuple:
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
-        for layer, snr in enumerate(cfg.data.snr_list(s=s)):
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
+        for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+
             if cfg.data.skipped(s=s, l=layer):
                 x_axis.append(layer)
                 y_axis.append(0)

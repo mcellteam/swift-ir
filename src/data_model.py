@@ -983,7 +983,8 @@ class DataModel:
     def snr(self, s=None, l=None, method=None) -> float:
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        if method == None: method = self.current_method
+        if method == None:
+            method = self.method(s=s,l=l)
         # logger.critical('')
         # if l == 0:
         #     return 0.0
@@ -1011,7 +1012,8 @@ class DataModel:
             if type(components) == float:
                 return components
             else:
-                return statistics.fmean(map(float, components))
+                # return statistics.fmean(map(float, components))
+                return statistics.fmean(components)
         except:
             print_exception()
             # logger.warning('Unable to return SNR for layer #%d' %l)
@@ -1036,6 +1038,7 @@ class DataModel:
             return [self.snr(s=s, l=i) for i in range(len(self))]
         except:
             logger.warning(f'No SNR Data Found. Returning 0s List [caller: {inspect.stack()[1].function}]...')
+            print_exception()
             return [0] * len(self)
 
 
@@ -1144,7 +1147,8 @@ class DataModel:
         try:
             for s in self.scales():
                 if self.is_aligned(s=s):
-                    m = max(self.snr_list(s=s))
+                    # m = max(self.snr_list(s=s))
+                    m = max(self.snr_list(s=s)[1:]) #0601+ temp fix for self-alignment high SNR bug on first image
                     # logger.critical(f'm: {m}')
                     max_snr.append(m)
             return max(max_snr)
@@ -1593,7 +1597,8 @@ class DataModel:
 
     def swim_window_px(self):
         '''Returns the SWIM Window in pixels'''
-        return self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px']
+        # return self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px']
+        return tuple(self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px'])
 
     def set_swim_window_px(self, pixels=None):
         '''Sets the SWIM Window for the Current Section across all scales.'''

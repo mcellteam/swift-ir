@@ -531,7 +531,7 @@ class EMViewer(AbstractEMViewer):
         # w = cfg.main_window.width() / ((2, 3)[cfg.data.is_aligned_and_generated()])
         # h = cfg.project_tab.w_ng_display.height()
         w = cfg.project_tab.webengine.width()
-        h = cfg.main_window.globTabs.height() - 24
+        h = cfg.main_window.globTabs.height() - 20
 
         QApplication.processEvents()
         self.initZoom(w=w, h=h, adjust=1.10)
@@ -580,9 +580,10 @@ class EMViewer(AbstractEMViewer):
             cfg.project_tab.webengine.show()
             cfg.project_tab.w_ng_display.show()
             QApplication.processEvents()
-            w = cfg.project_tab.webengine.width()
-            h = cfg.main_window.globTabs.height() - 22
-            self.initZoom(w=w, h=h, adjust=1.10)
+            # w = cfg.project_tab.webengine.width()
+            # h = cfg.main_window.globTabs.height() - 22
+
+
 
 
         with self.txn() as s:
@@ -614,6 +615,14 @@ class EMViewer(AbstractEMViewer):
         self.set_brightness()
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+        QApplication.processEvents()
+        # w_ng_display
+        w = cfg.project_tab.webengine.width()
+        # h = max(cfg.main_window.globTabs.height() - 20, 520)
+        h = max(cfg.project_tab.w_ng_display.height() - 20, 520)
+        # h = cfg.main_window.globTabs.height() - 20
+        self.initZoom(w=w, h=h, adjust=1.10)
 
 
 class EMViewerStage(AbstractEMViewer):

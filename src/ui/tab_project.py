@@ -126,8 +126,7 @@ class ProjectTab(QWidget):
 
     def _onTabChange(self):
         logger.info('>>>> _onTabChange >>>>')
-        index = self._tabs.currentIndex()
-        QApplication.restoreOverrideCursor()
+        # QApplication.restoreOverrideCursor()
         index = self._tabs.currentIndex()
 
         # if getData('state,manual_mode'):
@@ -147,7 +146,8 @@ class ProjectTab(QWidget):
             self.updateTreeWidget()
             # self.treeview_model.jumpToLayer()
         elif index == 3:
-            self.snr_plot.data = cfg.data
+            # self.snr_plot.data = cfg.data
+            self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
         logger.info('<<<< _onTabChange <<<<')
@@ -174,7 +174,8 @@ class ProjectTab(QWidget):
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
         elif index == 3:
-            self.snr_plot.data = cfg.data
+            # self.snr_plot.data = cfg.data
+            self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
             self.initSnrViewer()
 
@@ -663,6 +664,7 @@ class ProjectTab(QWidget):
             # cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
 
             cfg.main_window.alignGenerateOne()
+            self.updateEnabledButtons()
 
         self.btnRealignMA = QPushButton('Align && Regenerate')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1212,8 +1214,6 @@ class ProjectTab(QWidget):
             cfg.baseViewer.drawSWIMwindow()
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             # cfg.main_window.dataUpdateWidgets()
-            if cfg.main_window.dw_signals.isVisible():
-                cfg.main_window.updateCorrSignalsDrawer()
 
         self.method_bg.buttonClicked.connect(method_bg_fn)
 
@@ -1676,27 +1676,20 @@ class ProjectTab(QWidget):
         
         
         """
-        self.lab_reference = QLabel('Reference Section')
-        self.lab_reference.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
-        self.lab_transforming = QLabel('Transforming Section')
-        self.lab_transforming.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
-        self.lab_output = QLabel('Aligned Output')
-        self.lab_output.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
-        # self.w_section_label_header = QToolBar()
+        self.lab_filename = QLabel('Filename')
+
+        self.layout_ng_MA_toolbar = QHBoxLayout()
+        self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
+
+
+        self.layout_ng_MA_toolbar.addWidget(self.lab_filename)
+        self.layout_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+
         self.w_section_label_header = QWidget()
         self.w_section_label_header.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
         self.w_section_label_header.setFixedHeight(20)
-        self.layout_ng_MA_toolbar = QHBoxLayout()
-        self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
         self.w_section_label_header.setLayout(self.layout_ng_MA_toolbar)
-
-        self.layout_ng_MA_toolbar.addWidget(self.lab_reference)
-        self.layout_ng_MA_toolbar.addWidget(ExpandingWidget(self))
-        self.layout_ng_MA_toolbar.addWidget(self.lab_transforming)
-        self.tbEndLabWidget = HWidget(ExpandingWidget(self), self.lab_output)
-        self.layout_ng_MA_toolbar.addWidget(self.tbEndLabWidget)
-        # self.w_section_label_header.hide()
 
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -1854,34 +1847,45 @@ class ProjectTab(QWidget):
         self.sideSliders.layout.setSpacing(0)
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
-        self.tn_ref = ThumbnailFast(self)
-        self.tn_tra = ThumbnailFast(self)
-        # self.tn_ref.setMinimumSize(QSize(128,128))
+
+        self.labMethod1 = QLabel('Alignment Method:')
+        self.labMethod1.setFixedHeight(18)
+        self.labMethod1.setStyleSheet("""font-size: 9px; color: #ede9e8;""")
+
+        self.labMethod2 = QLabel()
+        self.labMethod2.setFixedHeight(18)
+        self.labMethod2.setStyleSheet("""font-size: 10px; color: #FFFF66;""")
+
+        self.tn_ref = ThumbnailFast(self, name='reference', extra='reference')
+        self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
+        self.tn_ref.setMinimumSize(QSize(160,160))
         # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.tn_tra.setMinimumSize(QSize(128,128))
+        self.tn_tra.setMinimumSize(QSize(160,160))
         # self.tn_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tn_ref_lab = QLabel('Reference Section')
-        self.tn_ref_lab.setFixedHeight(18)
+        self.tn_ref_lab.setFixedHeight(16)
         self.tn_ref_lab.setStyleSheet("""font-size: 9px;""")
 
         self.tn_tra_lab = QLabel('Transforming Section')
-        self.tn_tra_lab.setFixedHeight(18)
+        self.tn_tra_lab.setFixedHeight(16)
         self.tn_tra_lab.setStyleSheet("""font-size: 9px;""")
 
         # self.tn_widget = VWidget(self.tn_ref_lab_w, self.tn_ref, self.tn_tra_lab_w, self.tn_tra)
         self.tn_vbl = VBL()
         self.tn_vbl.addWidget(self.tn_ref_lab)
-        self.tn_vbl.addWidget(self.tn_ref, alignment=Qt.AlignTop)
+        self.tn_vbl.addWidget(self.tn_ref)
+        # self.tn_vbl.addWidget(self.tn_ref, alignment=Qt.AlignTop)
         # verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         # self.tn_vbl.addItem(verticalSpacer)
         # self.tn_vbl.addStretch(1)
         # self.tn_vbl.addStretch()
         self.tn_vbl.addWidget(self.tn_tra_lab)
-        self.tn_vbl.addWidget(self.tn_tra, alignment=Qt.AlignTop)
-        # verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        # self.tn_vbl.addItem(verticalSpacer)
-        # self.tn_vbl.addStretch(1)
-        # self.tn_vbl.addStretch()
+        self.tn_vbl.addWidget(self.tn_tra)
+        # self.tn_vbl.addWidget(self.tn_tra, alignment=Qt.AlignTop)
+
+        hw = HWidget(self.labMethod1,self.labMethod2)
+        hw.setMaximumHeight(16)
+        self.tn_vbl.addWidget(hw)
 
         self.tn_widget = QWidget()
         self.tn_widget.setLayout(self.tn_vbl)
@@ -1910,10 +1914,10 @@ class ProjectTab(QWidget):
         # self.tn_ms1.setStyleSheet(f"""background-color: {cfg.glob_colors[1]}; border-width: 3px;""")
         # self.tn_ms2.setStyleSheet(f"""background-color: {cfg.glob_colors[2]}; border-width: 3px;""")
         # self.tn_ms3.setStyleSheet(f"""background-color: {cfg.glob_colors[3]}; border-width: 3px;""")
-        self.tn_ms0.setMinimumSize(QSize(128, 128))
-        self.tn_ms1.setMinimumSize(QSize(128, 128))
-        self.tn_ms2.setMinimumSize(QSize(128, 128))
-        self.tn_ms3.setMinimumSize(QSize(128, 128))
+        # self.tn_ms0.setMinimumSize(QSize(128, 128))
+        # self.tn_ms1.setMinimumSize(QSize(128, 128))
+        # self.tn_ms2.setMinimumSize(QSize(128, 128))
+        # self.tn_ms3.setMinimumSize(QSize(128, 128))
         self.tn_ms0.set_no_image()
         self.tn_ms1.set_no_image()
         self.tn_ms2.set_no_image()
@@ -1947,7 +1951,8 @@ class ProjectTab(QWidget):
         #     """color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px;""")
 
         self.ms_widget = QTableWidget()
-        self.ms_widget.setMinimumWidth(400)
+        self.ms_widget.setMinimumWidth(200)
+        self.ms_widget.setMaximumWidth(400)
         self.ms_widget.setContentsMargins(0,0,0,0)
         # self.ms_widget.setStyleSheet(
         #     """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
@@ -1958,10 +1963,10 @@ class ProjectTab(QWidget):
         # self.ms_widget.setMinimumWidth(328)
         self.ms_widget.setRowCount(2)
         self.ms_widget.setColumnCount(2)
-        self.ms_widget.resizeRowToContents(0)
-        self.ms_widget.resizeRowToContents(1)
-        self.ms_widget.resizeColumnToContents(0)
-        self.ms_widget.resizeColumnToContents(1)
+        # self.ms_widget.resizeRowToContents(0)
+        # self.ms_widget.resizeRowToContents(1)
+        # self.ms_widget.resizeColumnToContents(0)
+        # self.ms_widget.resizeColumnToContents(1)
 
         self.ms_widget.setCellWidget(0,0, VWidget(lab0, self.tn_ms0))
         self.ms_widget.setCellWidget(0,1, VWidget(lab1, self.tn_ms1))
@@ -2050,7 +2055,7 @@ class ProjectTab(QWidget):
 
         w = cfg.mw.width()
         # self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
-        self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
+        self.hsplitter_tn_ng.setSizes([int(w*(1.4/8)), int(w*(4.6/8)), int(w*(2/8))])
 
         # self.restoreState(cfg.mw.settings.value("hsplitter_tn_ngSizes"))
 
@@ -2083,16 +2088,16 @@ class ProjectTab(QWidget):
             self.blinkTimer.stop()
 
 
-    def updateLabelsHeader(self):
-        view = getData('state,mode')
-        if view == 'comparison':
-            self.w_section_label_header.show()
-            if cfg.data.is_aligned_and_generated():
-                self.tbEndLabWidget.show()
-            else:
-                self.tbEndLabWidget.hide()
-        else:
-            self.w_section_label_header.hide()
+    # def updateLabelsHeader(self):
+    #     view = getData('state,mode')
+    #     if view == 'comparison':
+    #         self.w_section_label_header.show()
+    #         if cfg.data.is_aligned_and_generated():
+    #             self.tbEndLabWidget.show()
+    #         else:
+    #             self.tbEndLabWidget.hide()
+    #     else:
+    #         self.w_section_label_header.hide()
 
     def refreshLogs(self):
         logs_path = os.path.join(cfg.data.dest(), 'logs', 'recipemaker.log')
@@ -3304,7 +3309,7 @@ class ProjectTab(QWidget):
         self.snrWebengine = WebEngine(ID='snr')
         setWebengineProperties(self.snrWebengine)
         # self.snrWebengine.setMinimumWidth(140)
-        self.snrWebengine.setMinimumWidth(140)
+        self.snrWebengine.setMinimumWidth(200)
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #222222;')
         self.snrPlotSplitter.addWidget(self.snr_plt_wid)
