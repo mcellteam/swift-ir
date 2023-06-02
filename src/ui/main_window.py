@@ -2766,6 +2766,8 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.w_section_label_header.hide()
             cfg.project_tab.w_ng_extended_toolbar.show()
             cfg.pt.tn_widget.show()
+            cfg.pt.tn_ref.update()
+            cfg.pt.tn_tra.update()
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
