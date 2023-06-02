@@ -250,6 +250,8 @@ class MainWindow(QMainWindow):
 
         if not self._working:
             logger.critical('Refreshing...')
+            if cfg.pt.ms_widget.isVisible():
+                self.updateCorrSignalsDrawer()
             if self._isProjectTab():
                 cfg.project_tab.refreshTab()
                 # for v in cfg.project_tab.get_viewers():
@@ -265,6 +267,8 @@ class MainWindow(QMainWindow):
             elif self._getTabType() == 'OpenProject':
                 configure_project_paths()
                 self._getTabObject().user_projects.set_data()
+
+
 
         else:
             self.warn('The application is busy')
@@ -3137,16 +3141,6 @@ class MainWindow(QMainWindow):
         """
         with open('src/style/buttonstyle.qss', 'r') as f:
             button_gradient_style = f.read()
-
-        # self._btn_refreshTab = QPushButton()
-        # # self._btn_refreshTab.setStyleSheet("background-color: #161c20;")
-        # # self._btn_refreshTab.setStyleSheet(button_gradient_style)
-        # self._btn_refreshTab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        # self._btn_refreshTab.setToolTip("Refresh View (" + ('^','⌘')[is_mac()] + "R)")
-        # self._btn_refreshTab.setFixedSize(18,18)
-        # self._btn_refreshTab.setIconSize(QSize(16,16))
-        # self._btn_refreshTab.setIcon(qta.icon('fa.refresh', color='#161c20'))
-        # self._btn_refreshTab.clicked.connect(self.refreshTab)
 
         # tb_button_size = QSize(64,18)
         tb_button_size = QSize(90, 16)
