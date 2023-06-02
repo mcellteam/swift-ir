@@ -1601,17 +1601,19 @@ class DataModel:
         '''Returns the SWIM Window for the Current Layer.'''
         return float(self.stack()[self.zpos]['alignment']['swim_settings']['win_scale_factor'])
 
-    def swim_window_px(self, s=None, l=None):
+    def swim_1x1_custom_px(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
         # return self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px']
         return tuple(self.stack(s=s)[l]['alignment']['swim_settings']['grid-custom-px'])
 
-    def set_swim_window_px(self, pixels=None):
+    def set_swim_1x1_custom_px(self, pixels=None):
         '''Sets the SWIM Window for the Current Section across all scales.'''
         if pixels == None:
             self.set_auto_swim_windows_to_default(current_only=True)
+        if (pixels % 2) == 1:
+            pixels -= 1
         else:
             img_w, img_h = self.image_size(s=self.scale)
             WW_X = pixels
@@ -1623,18 +1625,20 @@ class DataModel:
                     ww_x = WW_X * scale_factor
                     ww_y = WW_Y * scale_factor
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-px'] = [ww_x, ww_y]
-                    if (self.swim_2x2_px()[0] * 2) > ww_x:
+                    if (self.swim_2x2_custom_px()[0] * 2) > ww_x:
                         self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = \
                             [ww_x / 2, ww_y / 2]
 
-    def swim_2x2_px(self, s=None, l=None):
+    def swim_2x2_custom_px(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
         return tuple(self.stack(s=s)[l]['alignment']['swim_settings']['grid-custom-2x2-px'])
 
-    def set_swim_2x2_px(self, pixels=None, scale=None):
+    def set_swim_2x2_custom_px(self, pixels=None, scale=None):
         '''Returns the SWIM Window in pixels'''
+        if (pixels % 2) == 1:
+            pixels -= 1
         if pixels == None:
             self.set_auto_swim_windows_to_default(current_only=True)
         else:
@@ -1645,11 +1649,11 @@ class DataModel:
                 scale_factor = get_scale_val(s) / self.scale_val()
                 ww_x = WW_X * scale_factor
                 ww_y = WW_Y * scale_factor
-                if (2 * ww_x) <= self.swim_window_px()[0]:
+                if (2 * ww_x) <= self.swim_1x1_custom_px()[0]:
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = [ww_x, ww_y]
                 else:
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = \
-                        [self.swim_window_px()[0] / 2, self.swim_window_px()[1] / 2]
+                        [self.swim_1x1_custom_px()[0] / 2, self.swim_1x1_custom_px()[1] / 2]
 
     # def set_swim_window(self, perc=None) -> None:
     #     '''Sets the SWIM Window for the Current Layer.'''
@@ -1700,6 +1704,8 @@ class DataModel:
         logger.critical(f'Setting Local SWIM Window to {pixels}...')
         if pixels == None:
             self.set_manual_swim_windows_to_default(current_only=True)
+        if (pixels % 2) == 1:
+            pixels -= 1
         else:
             s1_ww = pixels * self.scale_val()
             for s in self.scales():

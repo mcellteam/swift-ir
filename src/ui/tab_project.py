@@ -139,7 +139,11 @@ class ProjectTab(QWidget):
         if index == 0:
             # self.updateNeuroglancer()
             # self.initNeuroglancer()
-            cfg.emViewer.set_layer(cfg.data.zpos)
+            if getData('state,manual_mode'):
+                self.refreshTab()
+            else:
+                cfg.emViewer.set_layer(cfg.data.zpos)
+
         elif index == 1:
             pass
         elif index == 2:
@@ -701,9 +705,9 @@ class ProjectTab(QWidget):
             cfg.data.set_swim_iterations_glob(val=cfg.DEFAULT_SWIM_ITERATIONS)
             setData('state,stage_viewer,show_overlay_message', True)
 
-            self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_window_px()[0]))
-            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
-            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
+            self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_1x1_custom_px()[0]))
+            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
+            self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
 
             self.slider_MA_SWIM_window.setValue(int(cfg.data.manual_swim_window_px()))
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
@@ -916,7 +920,12 @@ class ProjectTab(QWidget):
             caller = inspect.stack()[1].function
             if caller == 'main':
                 logger.info('caller: %s' % caller)
-                cfg.data.set_manual_swim_window_px(int(self.slider_MA_SWIM_window.value()))
+                val = int(self.slider_MA_SWIM_window.value())
+                if (val % 2) == 1:
+                    self.slider_MA_SWIM_window.setValue(val - 1)
+                    return
+
+                cfg.data.set_manual_swim_window_px(val)
                 self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
@@ -924,6 +933,7 @@ class ProjectTab(QWidget):
 
         # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
         self.slider_MA_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_MA_SWIM_window.setMinimum(64)
         self.slider_MA_SWIM_window.setToolTip(tip)
         self.slider_MA_SWIM_window.valueChanged.connect(fn)
         self.slider_MA_SWIM_window.setFixedWidth(80)
@@ -959,23 +969,29 @@ class ProjectTab(QWidget):
         def fn():
             caller = inspect.stack()[1].function
             if caller == 'main':
-                cfg.data.set_swim_window_px(int(self.slider_AS_SWIM_window.value()))
-                self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
 
-                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
-                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
+                val = int(self.slider_AS_SWIM_window.value())
+                if (val % 2) == 1:
+                    self.slider_AS_SWIM_window.setValue(val - 1)
+                    return
+                cfg.data.set_swim_1x1_custom_px(val)
+                self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
+
+                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
+                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
 
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_AS_SWIM_window.setMinimum(64)
         self.slider_AS_SWIM_window.setToolTip(tip)
         self.slider_AS_SWIM_window.valueChanged.connect(fn)
         self.slider_AS_SWIM_window.setMaximumWidth(100)
 
         def fn():
-            cfg.data.set_swim_window_px(int(self.AS_SWIM_window_le.text()))
+            cfg.data.set_swim_1x1_custom_px(int(self.AS_SWIM_window_le.text()))
             self.dataUpdateMA()
 
         self.AS_SWIM_window_le = QLineEdit()
@@ -987,9 +1003,13 @@ class ProjectTab(QWidget):
         def fn():
             caller = inspect.stack()[1].function
             if caller == 'main':
-                cfg.data.set_swim_2x2_px(int(self.slider_AS_2x2_SWIM_window.value()))
-                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
-                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
+                val = int(self.slider_AS_2x2_SWIM_window.value())
+                if (val % 2) == 1:
+                    self.slider_AS_2x2_SWIM_window.setValue(val - 1)
+                    return
+                cfg.data.set_swim_2x2_custom_px(val)
+                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
+                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
                 cfg.refViewer.drawSWIMwindow()
                 cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
@@ -1000,7 +1020,7 @@ class ProjectTab(QWidget):
         self.slider_AS_2x2_SWIM_window.setMaximumWidth(100)
 
         def fn():
-            cfg.data.set_swim_2x2_px(int(self.AS_2x2_SWIM_window_le.text()))
+            cfg.data.set_swim_2x2_custom_px(int(self.AS_2x2_SWIM_window_le.text()))
             self.dataUpdateMA()
 
         self.AS_2x2_SWIM_window_le = QLineEdit()
@@ -2565,14 +2585,14 @@ class ProjectTab(QWidget):
             # Update widgets w/ data
 
             self.AS_SWIM_window_le.setValidator(QIntValidator(64, img_w))
-            self.AS_SWIM_window_le.setText(str(cfg.data.swim_window_px()[0]))
+            self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
             self.slider_AS_SWIM_window.setMaximum(img_w)
-            self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_window_px()[0]))
+            self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_1x1_custom_px()[0]))
 
             self.AS_2x2_SWIM_window_le.setValidator(QIntValidator(64, int(img_w / 2)))
-            self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_px()[0]))
+            self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
             self.slider_AS_2x2_SWIM_window.setMaximum(int(img_w / 2))
-            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_px()[0]))
+            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
 
             self.MA_SWIM_window_le.setValidator(QIntValidator(64, img_w))
             self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))

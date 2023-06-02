@@ -29,7 +29,8 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client = self._kernel_manager.client()
         self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
 
         # if not is_tacc():
         if 1:

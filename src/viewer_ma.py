@@ -425,8 +425,8 @@ class MAViewer(neuroglancer.Viewer):
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
-            ww_full = cfg.data.swim_window_px() # full window width
-            ww_2x2 = cfg.data.swim_2x2_px() # 2x2 window width
+            ww_full = cfg.data.swim_1x1_custom_px() # full window width
+            ww_2x2 = cfg.data.swim_2x2_custom_px() # 2x2 window width
 
             offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
             offset_x2 = img_w - offset_x1
@@ -481,7 +481,7 @@ class MAViewer(neuroglancer.Viewer):
             offset_y1 = (img_h / 2) - (ww_full[1] * (1 / 4))
             offset_y2 = (img_h / 2) + (ww_full[1] * (1 / 4))
 
-            # ww_2x2 = cfg.data.swim_2x2_px() # 2x2 window width
+            # ww_2x2 = cfg.data.swim_2x2_custom_px() # 2x2 window width
             # offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
             # offset_x2 = img_w - offset_x1
             # offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)

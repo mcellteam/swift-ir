@@ -88,7 +88,8 @@ class HeadupDisplay(QWidget):
             self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.textedit.setReadOnly(True)
         # self.textedit.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.handler = h = QtHandler(self.update_status)
         fs = '%(asctime)s [%(levelname)s] %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
