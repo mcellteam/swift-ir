@@ -295,24 +295,20 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def updateScaleBar(self):
         with self.txn() as s:
-            # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_scale_bar = False
 
     def updateAxisLines(self):
         with self.txn() as s:
-            # s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
             s.show_axis_lines = getData('state,show_axis_lines')
 
 
     def updateDefaultAnnotations(self):
         with self.txn() as s:
-            # s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
             s.show_default_annotations = getData('state,show_yellow_frame')
 
 
     def updateUIControls(self):
         with self.config_state.txn() as s:
-            # s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.show_ui_controls = getData('state,show_ng_controls')
 
 
@@ -501,8 +497,8 @@ class EMViewer(AbstractEMViewer):
                 s.crossSectionBackgroundColor = '#222222'
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_scale_bar = False
-            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
-            s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+            s.show_axis_lines = getData('state,show_axis_lines')
+            s.show_default_annotations = getData('state,show_yellow_frame')
             s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
             s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'],)
             if is_aligned:
@@ -513,7 +509,7 @@ class EMViewer(AbstractEMViewer):
             # s.layers["bounding-box"] = ng.AnnotationLayer(annotations=[box], ) #0316
 
         with self.config_state.txn() as s:
-            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            s.show_ui_controls = getData('state,show_ng_controls')
             s.scale_bar_options.scale_factor = 1
             s.show_panel_borders = False
 
@@ -592,18 +588,18 @@ class EMViewer(AbstractEMViewer):
             s.system_memory_limit = -1
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_scale_bar = False
-            s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
+            s.show_axis_lines = getData('state,show_axis_lines')
             s.position=[cfg.data.zpos, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
-            s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+            s.show_default_annotations = getData('state,show_yellow_frame')
 
 
         with self.config_state.txn() as s:
-            s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
+            s.show_ui_controls = getData('state,show_ng_controls')
             s.show_panel_borders = False
             # s.viewer_size = [100,100]
 
@@ -620,7 +616,12 @@ class EMViewer(AbstractEMViewer):
         # w_ng_display
         w = cfg.project_tab.webengine.width()
         # h = max(cfg.main_window.globTabs.height() - 20, 520)
-        h = max(cfg.project_tab.w_ng_display.height() - 20, 420)
+        if getData('state,show_ng_controls'):
+            extra_space = 48
+        else:
+            extra_space = 0
+
+        h = max(cfg.project_tab.w_ng_display.height() - 20 - extra_space, 420 - extra_space)
         # h = cfg.main_window.globTabs.height() - 20
         self.initZoom(w=w, h=h, adjust=1.10)
 
@@ -669,7 +670,6 @@ class EMViewerStage(AbstractEMViewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')])
-            # if getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'):
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:

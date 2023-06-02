@@ -2079,7 +2079,7 @@ class ProjectTab(QWidget):
 
         w = cfg.mw.width()
         # self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
-        self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
+        self.hsplitter_tn_ng.setSizes([int(w*(1.1/8)), int(w*(4.9/8)), int(w*(2/8))])
 
         # self.restoreState(cfg.mw.settings.value("hsplitter_tn_ngSizes"))
 
