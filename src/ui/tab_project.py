@@ -1984,7 +1984,8 @@ class ProjectTab(QWidget):
         #     """color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px;""")
 
         self.ms_widget = QTableWidget()
-        self.ms_widget.setMinimumWidth(200)
+        # self.ms_widget.setMinimumWidth(200)
+        self.ms_widget.setMinimumWidth(160)
         self.ms_widget.setMaximumWidth(400)
         self.ms_widget.setContentsMargins(0,0,0,0)
         # self.ms_widget.setStyleSheet(
