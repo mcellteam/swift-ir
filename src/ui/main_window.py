@@ -2079,9 +2079,8 @@ class MainWindow(QMainWindow):
         # self.tell('Updating UI...')
         self.dataUpdateWidgets()  # 0.5878 -> 0.5887 ~.001s
 
-        self._changeScaleCombo.setCurrentText(cfg.data.scale)
+        # self._changeScaleCombo.setCurrentText(cfg.data.scale)
 
-        self.setControlPanelData()  # Added 2023-04-23
 
         logger.info('Setting FPS spinbox value...')
         # self.spinbox_fps.setValue(czfg.DEFAULT_PLAYBACK_SPEED)
@@ -2091,10 +2090,12 @@ class MainWindow(QMainWindow):
         except: logger.warning('Bounding Box Toggle Failed to Update')
 
         # dt = 1.1032602787017822
+        self.reload_scales_combobox()  # fast
         self.updateEnabledButtons()
         self.updateMenus()
         self._resetSlidersAndJumpInput()  # fast
-        self.reload_scales_combobox()  # fast
+        self.setControlPanelData()  # Added 2023-04-23
+
         self.enableAllTabs()  # fast
         # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
@@ -3406,9 +3407,16 @@ class MainWindow(QMainWindow):
 
             # cfg.project_tab.refreshTab() #Todo - Refactor! may init ng twice.
 
-            self.setControlPanelData()
+            try:
+                self.setControlPanelData()
+            except:
+                print_exception()
+
             # self.updateAllCpanelDetails()
-            self.updateCpanelDetails()
+            try:
+                self.updateCpanelDetails()
+            except:
+                print_exception()
             # self.dataUpdateResults()
             # cfg.project_tab.updateLabelsHeader()
 
