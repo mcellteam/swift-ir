@@ -179,6 +179,8 @@ class ThumbnailFast(QLabel):
                         regions = cfg.data.get_grid_custom_regions(s=self.s, l=self.l)
                         ww1x1 = cfg.data.swim_1x1_custom_px(s=self.s, l=self.l)
                         ww2x2 = cfg.data.swim_2x2_custom_px(s=self.s, l=self.l)
+                        # logger.info(f'ww1x1 = {ww1x1}')
+                        # logger.info(f'ww2x2 = {ww2x2}')
 
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
                         b = [img_size[0] - a[0], img_size[1] - a[1]]
