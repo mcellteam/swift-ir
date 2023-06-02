@@ -6,6 +6,7 @@ import inspect
 import logging
 import textwrap
 import numpy as np
+from math import sqrt
 from functools import cache
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
@@ -536,7 +537,7 @@ class CorrSignalThumbnail(QLabel):
 
                 # if self._noImage:
                 #     return
-                if self._noImage:
+                if self._noImage or self.extra == 'reticle':
                     # self.set_no_image()
                     self.r = rect = QRect(0, 0, pm.width(), pm.height())
                     self.r.moveCenter(self.rect().center())
@@ -554,20 +555,73 @@ class CorrSignalThumbnail(QLabel):
                 # coords = self.r.getRect()
                 cp = QPointF(self.r.center())  # center point
 
-                siz = pm.width() / 4
+                # siz = pm.width() / 4
                 # logger.info(f'siz = {siz}')
 
                 # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
-                qp.setPen(QPen(QColor('#a30000'), 1, Qt.SolidLine))
-
-                val = float(convert_rotation(45) * siz/2)
-                qp.drawLine(QPointF(coords[0], coords[1]), cp + QPointF(float(-val), float(-val)))
-                qp.drawLine(QPointF(coords[2], coords[1]), cp + QPointF(float(val), float(-val)))
-                qp.drawLine(QPointF(coords[0], coords[3]), cp + QPointF(float(-val), float(val)))
-                qp.drawLine(QPointF(coords[2], coords[3]), cp + QPointF(float(val), float(val)))
+                # qp.setPen(QPen(QColor('#a30000'), 1, Qt.DashLine))
+                qp.setPen(QPen(QColor('#339933'), 1, Qt.DashLine))
 
 
-                arcRect = QRectF(cp + QPointF(float(-siz/2), float(-siz/2)), cp + QPointF(float(siz/2), float(siz/2)))
+                # 14:15:11 [thumbnail.paintEvent:575] PyQt5.QtCore.QPointF(2.0, 11.0)
+                # 14:15:11 [thumbnail.paintEvent:576] PyQt5.QtCore.QPointF(180.0, 11.0)
+                # 14:15:11 [thumbnail.paintEvent:577] PyQt5.QtCore.QPointF(2.0, 189.0)
+                # 14:15:11 [thumbnail.paintEvent:578] PyQt5.QtCore.QPointF(180.0, 189.0)
+                # p1 = QPointF(coords[0], coords[1])
+                # p2 = QPointF(coords[2], coords[1])
+                # p3 = QPointF(coords[0], coords[3])
+                # p4 = QPointF(coords[2], coords[3])
+                p1 = QPoint(coords[0], coords[1])
+                p2 = QPoint(coords[2], coords[1])
+                p3 = QPoint(coords[0], coords[3])
+                p4 = QPoint(coords[2], coords[3])
+
+                # val = float(convert_rotation(45) * siz/2)
+                # qp.drawLine(p1, cp + QPoint(float(-val), float(-val)))
+                # qp.drawLine(p2, cp + QPointF(float(val), float(-val)))
+                # qp.drawLine(p3, cp + QPointF(float(-val), float(val)))
+                # qp.drawLine(p4, cp + QPointF(float(val), float(val)))
+
+                # x = 12
+                x = int((pm.width() / 10) + .5)
+
+
+
+                qp.drawLine(p1, cp + QPoint(-x, -x))
+                qp.drawLine(p2, cp + QPoint(x, -x))
+                qp.drawLine(p3, cp + QPoint(-x, x))
+                qp.drawLine(p4, cp + QPoint(x, x))
+
+
+
+                # qp.setPen(QPen(QColor('#a30000'), 2, Qt.SolidLine))
+                # qp.setPen(QPen(QColor('#161c20'), 2, Qt.SolidLine))
+                qp.setPen(QPen(QColor('#339933'), 2, Qt.SolidLine))
+
+                qp.drawLine(p1, p2)
+                qp.drawLine(p1, p3)
+                # qp.drawLine(p2, p3)
+                qp.drawLine(p4, p2)
+                qp.drawLine(p4, p3)
+                # qp.drawLine(p4, p1)
+
+                # qp.setPen(QPen(QColor('#a30000'), 1, Qt.SolidLine))
+                qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
+
+                # logger.critical(str(coords))
+                # logger.critical(str(p1))
+                # logger.critical(str(p2))
+                # logger.critical(str(p3))
+                # logger.critical(str(p4))
+                # logger.critical(f'pm.width() = {pm.width()}')
+                # logger.critical(f'pm.height() = {pm.height()}')
+
+                # d = float(sqrt(x ** 2 + x ** 2))
+                d = float(sqrt(x ** 2 + x ** 2)) * 2
+
+                # arcRect = QRectF(cp + QPoint(int(-siz/2 + .5), int(-siz/2 + .5)), cp + QPointF(int(siz/2 + .5), int(siz/2 + .5)))
+                arcRect = QRectF(cp + QPointF(-d, -d), cp + QPointF(d, d))
+                # arcRect = QRectF(cp + QPointF(float(-siz/2), float(-siz/2)), cp + QPointF(float(siz/2), float(siz/2)))
                 # qp.drawArc(arcRect, 0, 90*16)
                 # The startAngle and spanAngle must be specified in 1/16th of a degree, i.e.
                 # a full circle equals 5760 (16 * 360). Positive values for the angles mean
@@ -581,17 +635,18 @@ class CorrSignalThumbnail(QLabel):
 
                 font = QFont()
                 font.setBold(True)
-                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 8)
+                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 6)
                 font.setPointSize(size)
                 # font.setPointSize(14)
                 qp.setFont(font)
                 # qp.setPen(QColor('#ff0000'))
-                qp.setPen(QColor('#a30000'))
+                # qp.setPen(QColor('#a30000'))
+                qp.setPen(QColor('#339933'))
 
                 if self.snr:
                     # loc = QPoint(0, self.rect().height() - 4)
                     # loc = QPoint(16, self.rect().height() - 6)
-                    loc = QPointF(coords[0] + pm.width()/2 - size, coords[3])
+                    loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
                     if self.extra:
                         qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
                     else:

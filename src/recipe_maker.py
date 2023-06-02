@@ -573,51 +573,50 @@ class align_ingredient:
         self.swim_output = o['out'].strip().split('\n')
         self.swim_err_lines = o['err'].strip().split('\n')
 
-        scratchlogger.critical('Cropping Match Signals...')
-        keep = .30
-        px_keep = 128
-        if self.recipe.cur_method in ('grid-default', 'grid-custom'):
-            w = str(int(self.ww[0] / 2.0))
-            h = str(int(self.ww[1] / 2.0))
-            # x1 = str(int(self.ww[0] * ((1.0 - keep) / 2.0)))  # short
-            # x2 = str(int(self.ww[0] * (.50 + (keep / 2.0))))  # long
-            # y1 = str(int(self.ww[1] * ((1.0 - keep) / 2.0)))  # short
-            # y2 = str(int(self.ww[1] * (.50 + (keep / 2.0))))  # long
-            x1 = str(int((self.ww[0] - px_keep) / 2.0))
-            y1 = str(int((self.ww[1] - px_keep) / 2.0))
-            x2 = str(int((.50 * self.ww[0]) + (px_keep / 2.0)))
-            y2 = str(int((.50 * self.ww[1]) + (px_keep / 2.0)))
-        else:
-            w = h = str(int(self.ww))
-            # x1 = y1 = str(int(self.ww * ((1.0 - keep) / 2.0)))
-            # x2 = y2 = str(int(self.ww * (.50 + (keep / 2.0))))
-            x1 = y1 = str(int((self.ww - px_keep) / 2.0))
-            x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
+#         scratchlogger.critical('Cropping Match Signals...')
+#         keep = .30
+#         px_keep = 128
+#         if self.recipe.cur_method in ('grid-default', 'grid-custom'):
+#             w = str(int(self.ww[0] / 2.0))
+#             h = str(int(self.ww[1] / 2.0))
+#             # x1 = str(int(self.ww[0] * ((1.0 - keep) / 2.0)))  # short
+#             # x2 = str(int(self.ww[0] * (.50 + (keep / 2.0))))  # long
+#             # y1 = str(int(self.ww[1] * ((1.0 - keep) / 2.0)))  # short
+#             # y2 = str(int(self.ww[1] * (.50 + (keep / 2.0))))  # long
+#             x1 = str(int((self.ww[0] - px_keep) / 2.0))
+#             y1 = str(int((self.ww[1] - px_keep) / 2.0))
+#             x2 = str(int((.50 * self.ww[0]) + (px_keep / 2.0)))
+#             y2 = str(int((.50 * self.ww[1]) + (px_keep / 2.0)))
+#         else:
+#             w = h = str(int(self.ww))
+#             # x1 = y1 = str(int(self.ww * ((1.0 - keep) / 2.0)))
+#             # x2 = y2 = str(int(self.ww * (.50 + (keep / 2.0))))
+#             x1 = y1 = str(int((self.ww - px_keep) / 2.0))
+#             x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
+#
+#         for name in ms_names:
+#             self.crop_str_mir = f"""
+# B {w} {h} 1
+# Z
+# F {name}
+# 0 0 {x1} {y1}
+# {w} 0 {x2} {y1}
+# {w} {h} {x2} {y2}
+# 0 {h} {x1} {y2}
+# T
+# 0 1 2
+# 2 3 0
+# W {name}
+# """
+#
+#             o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=self.crop_str_mir,
+#                         extra=f'MIR the Match Signals to crop ({self.ID})', )
 
-        for name in ms_names:
-            self.crop_str_mir = f"""
-B {w} {h} 1
-Z
-F {name}
-0 0 {x1} {y1}
-{w} 0 {x2} {y1}
-{w} {h} {x2} {y2}
-0 {h} {x1} {y2}
-T
-0 1 2
-2 3 0
-W {name}
-"""
 
-            o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=self.crop_str_mir,
-                        extra=f'MIR the Match Signals to crop ({self.ID})', )
 
 
         if self.mode == 'SWIM-Manual':
             MAlogger.critical(f'\nSWIM OUT:\n{self.swim_output}\nSWIM ERR:\n{self.swim_err_lines}')
-
-
-
 
 
         scratchlogger.critical(f'<<<< run_swim [{self.ID}]')
