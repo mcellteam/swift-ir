@@ -84,7 +84,7 @@ class Thumbnail(QWidget):
 
 
 class ThumbnailFast(QLabel):
-    def __init__(self, parent, path=None, extra='', name=''):
+    def __init__(self, parent, path=None, extra='', name='', s=None, l=None):
         super().__init__(parent)
         self.setAlignment(Qt.AlignCenter)
         self.setScaledContents(True)
@@ -92,9 +92,12 @@ class ThumbnailFast(QLabel):
         self.path = self.no_image_path
         if path:
             self.path = path
-        self.setPixmap(QPixmap(self.path))
         self.extra = extra
         self.name = name
+        self.s = s
+        self.l = l
+
+        self.setPixmap(QPixmap(self.path))
         self.border_color = '#000000'
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
@@ -156,21 +159,30 @@ class ThumbnailFast(QLabel):
                 qp.drawPixmap(rect, pm)
                 img_size = cfg.data.image_size()
                 sf = self.r.getCoords()[2] / img_size[0]  # scale factor
-                if self.name in ('reference', 'transforming'):
-                    if cfg.data.current_method == 'grid-default':
+
+                if self.name in ('reference-table', 'transforming-table'):
+                    method = cfg.data.method(s=self.s, l=self.l)
+                else:
+                    method = cfg.data.current_method
+                if self.s == None: self.s = cfg.data.scale
+                if self.l == None: self.l = cfg.data.zpos
+
+                if self.name in ('reference', 'transforming', 'reference-table', 'transforming-table'):
+                    if method == 'grid-default':
                         cp = QPoint(self.r.center())  # center point
-                        # ww = cfg.data.swim_window_px()
                         ww = tuple(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'])
-                        # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y())):
                         for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y())):
                             qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
                             qp.drawRect(r)
-                    elif cfg.data.current_method == 'grid-custom':
-                        ww1x1 = cfg.data.swim_window_px()
-                        ww2x2 = cfg.data.swim_2x2_px()
+                    elif method == 'grid-custom':
+
+                        regions = cfg.data.get_grid_custom_regions(s=self.s, l=self.l)
+                        ww1x1 = cfg.data.swim_window_px(s=self.s, l=self.l)
+                        ww2x2 = cfg.data.swim_2x2_px(s=self.s, l=self.l)
+
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
                         b = [img_size[0] - a[0], img_size[1] - a[1]]
-                        regions = cfg.data.grid_custom_regions
+
                         if regions[0]:
                             qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
                             rect = get_rect(sf, a[0], a[1], ww2x2[0])
@@ -187,15 +199,19 @@ class ThumbnailFast(QLabel):
                             qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
                             rect = get_rect(sf, b[0], b[1], ww2x2[0])
                             qp.drawRect(rect)
-                    elif cfg.data.current_method == 'manual-hint':
+                    elif method == 'manual-hint':
                         pts = []
                         ww = cfg.data.manual_swim_window_px()
-                        if self.name == 'reference':
-                            # pts = cfg.data.manpoints_mir('ref')
-                            pts = cfg.data.manpoints_mir('ref')
-                        elif self.name == 'transforming':
-                            # pts = cfg.data.manpoints_mir('base')
-                            pts = cfg.data.manpoints_mir('base')
+                        if self.name in ('reference','reference-table'):
+                            if self.name == 'reference-table':
+                                pts = cfg.data.manpoints_mir('ref', s=self.s, l=self.l)
+                            else:
+                                pts = cfg.data.manpoints_mir('ref')
+                        elif self.name in ('transforming', 'transforming-table'):
+                            if self.name == 'transforming-table':
+                                pts = cfg.data.manpoints_mir('base', s=self.s, l=self.l)
+                            else:
+                                pts = cfg.data.manpoints_mir('base')
                         for i,pt in enumerate(pts):
                             qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
                             x = int(pt[0])

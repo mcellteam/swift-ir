@@ -132,6 +132,7 @@ class ProjectTable(QWidget):
         cfg.nTasks = len(cfg.data)
         cfg.main_window.setPbarMax(cfg.nTasks)
         cfg.main_window.showZeroedPbar()
+        scale = cfg.data.scale
 
         cur_selection = self.table.currentIndex().row()
         cur_scroll_pos = self.table.verticalScrollBar().value()
@@ -169,17 +170,23 @@ class ProjectTable(QWidget):
                             # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
                             # self.table.setCellWidget(i, j, lab)
                             self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j in (3, 4):
+                        elif j == 3:
                             # tn = Thumbnail(self, path=item)
-                            # tn = ThumbnailFast(self, path=item)
-                            tn = ScaledPixmapLabel(self)
+                            tn = ThumbnailFast(self, path=item, name='reference-table', s=scale, l=i)
+                            # tn = ScaledPixmapLabel(self)
+                            tn.setPixmap(QPixmap(item))
+                            self.table.setCellWidget(i, j, tn)
+                        elif j == 4:
+                            # tn = Thumbnail(self, path=item)
+                            tn = ThumbnailFast(self, path=item, name='transforming-table', s=scale, l=i)
+                            # tn = ScaledPixmapLabel(self)
                             tn.setPixmap(QPixmap(item))
                             self.table.setCellWidget(i, j, tn)
                         elif j == 5:
                             # tn = Thumbnail(self, path=item)
                             # tn = ThumbnailFast(self, path=item, extra=cfg.data.datetime(l=i))
-                            # tn = ThumbnailFast(self, path=item)
-                            tn = ScaledPixmapLabel(self)
+                            tn = ThumbnailFast(self, path=item)
+                            # tn = ScaledPixmapLabel(self)
                             tn.setPixmap(QPixmap(item))
                             self.table.setCellWidget(i, j, tn)
                         elif j in (6, 7, 8, 9):
