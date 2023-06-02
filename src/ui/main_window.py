@@ -373,14 +373,6 @@ class MainWindow(QMainWindow):
     #     self.pythonConsole.hide()
     #     # pass
 
-    # def _callbk_showHideCorrSpots(self):
-    #     logger.info('')
-    #     self.dw_signals.setVisible(cfg.project_tab.signalsAction.isChecked())
-    #     if cfg.project_tab.signalsAction.isChecked():
-    #         # w = self.csWidget.width()
-    #         # self.csWidget.resize(QSize(w,200))
-    #         self.updateCorrSignalsDrawer()
-
     def test(self):
         if self._isProjectTab():
             logger.critical(f'id(cfg.pt)   = {id(cfg.pt)}')
@@ -811,14 +803,13 @@ class MainWindow(QMainWindow):
         check_project_status()
 
     def onAlignmentEnd(self, start, end):
-        logger.info('Running Post-Alignment Tasks...')
+        logger.critical('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         t0 = time.time()
         try:
             if self._isProjectTab():
                 self.updateEnabledButtons()
-                if self.dw_signals.isVisible():
-                    self.updateCorrSignalsDrawer()
+                self.updateCorrSignalsDrawer()
                 self.pbarLabel.setText('')
                 cfg.project_tab.snr_plot.initSnrPlot()
                 # self.updateProjectTable()  # +
@@ -1528,8 +1519,6 @@ class MainWindow(QMainWindow):
                                        'x'.join(map(str, img_siz)) + ', ' +
                                        cfg.data.name_base())
 
-            # if self.dw_signals.isVisible():
-            #     self.updateCorrSignalsDrawer()
 
             # timer.report()  # 3
 
@@ -2757,6 +2746,7 @@ class MainWindow(QMainWindow):
                 setData('state,manual_mode', True)
 
                 self.updateManualAlignModeButton()
+                self.updateCorrSignalsDrawer()
                 # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
@@ -5833,25 +5823,6 @@ class MainWindow(QMainWindow):
         self.test_widget.setFixedSize(40,40)
         self.test_widget.setStyleSheet("background-color: #000000;")
 
-        self.dw_signals = DockWidget('Signals', self)
-        self.dw_signals.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dw_signals.setFeatures(self.dw_signals.DockWidgetClosable | self.dw_signals.DockWidgetVerticalTitleBar)
-        self.dw_signals.setStyleSheet("""
-        QDockWidget {color: #ede9e8;}
-        QDockWidget::title {
-                    background-color: #306998;
-                    color: #161c20;
-                    font-weight: 600;
-                    text-align: left;
-                }""")
-
-        # self.csWidget = CorrelationSignals(self)
-        # self.csWidget.setLayout(self.cs_layout)
-        # self.dw_signals.setWidget(self.csWidget)
-        self.dw_signals.setWidget(self.correlation_signals)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_signals)
-        self.dw_signals.hide()
-
         self.tb = HWidget(self.navWidget, self.toolbar)
         self.tb.setFixedHeight(18)
 
@@ -6265,10 +6236,6 @@ class MainWindow(QMainWindow):
             if dock.windowTitle() == 'Notes':
                 return self.children()[i]
 
-    def get_dw_signals(self):
-        for i, dock in enumerate(cfg.mw.findChildren(QDockWidget)):
-            if dock.windowTitle() == 'Correlation Signals':
-                return self.children()[i]
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:

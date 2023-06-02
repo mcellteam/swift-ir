@@ -273,6 +273,12 @@ class DataModel:
     def grid_custom_regions(self):
         return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid-custom-regions']
 
+    def get_grid_custom_regions(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings'][
+            'grid-custom-regions']
+
     @grid_custom_regions.setter
     def grid_custom_regions(self, lst):
         for s in self.scales():
@@ -1595,10 +1601,12 @@ class DataModel:
         '''Returns the SWIM Window for the Current Layer.'''
         return float(self.stack()[self.zpos]['alignment']['swim_settings']['win_scale_factor'])
 
-    def swim_window_px(self):
+    def swim_window_px(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
         # return self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px']
-        return tuple(self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px'])
+        return tuple(self.stack(s=s)[l]['alignment']['swim_settings']['grid-custom-px'])
 
     def set_swim_window_px(self, pixels=None):
         '''Sets the SWIM Window for the Current Section across all scales.'''
@@ -1619,9 +1627,11 @@ class DataModel:
                         self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = \
                             [ww_x / 2, ww_y / 2]
 
-    def swim_2x2_px(self):
+    def swim_2x2_px(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
-        return self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px']
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return tuple(self.stack(s=s)[l]['alignment']['swim_settings']['grid-custom-2x2-px'])
 
     def set_swim_2x2_px(self, pixels=None, scale=None):
         '''Returns the SWIM Window in pixels'''
