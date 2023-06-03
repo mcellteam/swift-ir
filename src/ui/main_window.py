@@ -279,7 +279,8 @@ class MainWindow(QMainWindow):
         logger.info('')
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
-        self.uiUpdateTimer.setInterval(300)
+        # self.uiUpdateTimer.setInterval(300)
+        self.uiUpdateTimer.setInterval(340)
         self._unsaved_changes = False
         self._working = False
         self._scales_combobox_switch = 0  # 1125
