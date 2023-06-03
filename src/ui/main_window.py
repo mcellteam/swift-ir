@@ -1515,8 +1515,8 @@ class MainWindow(QMainWindow):
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.updateLayerLinePos()
 
-            if cfg.project_tab._tabs.currentIndex() == 3:
-                cfg.snrViewer.set_layer(cfg.data.zpos)
+            # if cfg.project_tab._tabs.currentIndex() == 3:
+            #     cfg.snrViewer.set_layer(cfg.data.zpos)
 
             # timer.report() #6
 
