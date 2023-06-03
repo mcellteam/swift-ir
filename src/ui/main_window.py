@@ -277,6 +277,9 @@ class MainWindow(QMainWindow):
 
     def initPrivateMembers(self):
         logger.info('')
+        self.uiUpdateTimer = QTimer()
+        self.uiUpdateTimer.setSingleShot(True)
+        self.uiUpdateTimer.setInterval(300)
         self._unsaved_changes = False
         self._working = False
         self._scales_combobox_switch = 0  # 1125
@@ -558,7 +561,7 @@ class MainWindow(QMainWindow):
             cfg.nProcessSteps = 0
             cfg.project_tab.initNeuroglancer()
             logger.info('<<<< regenerate')
-            self.tell('**** Processes Complete ****')
+            self.tell('<b>**** Processes Complete ****</b>')
 
         logger.info('<<<< regenerate')
 
@@ -839,7 +842,7 @@ class MainWindow(QMainWindow):
 
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
-        self.tell('**** Processes Complete ****')
+        self.tell('<span style="color: #a30000;"><b>**** Processes Complete ****</b></span>')
 
     def alignAllScales(self):
         if self._isProjectTab():
@@ -889,7 +892,7 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
-        self.tell('**** Processes Complete ****')
+        self.tell('<b>**** Processes Complete ****</b>')
 
     # def alignOne(self, stageit=False):
     def alignOne(self):
@@ -920,7 +923,7 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.tell('**** Processes Complete ****')
+        self.tell('<b>**** Processes Complete ****</b>')
 
     def alignGenerateOne(self):
         cfg.ignore_pbar = True
@@ -947,7 +950,7 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.tell('**** Processes Complete ****')
+        self.tell('<b>**** Processes Complete ****</b>')
         cfg.ignore_pbar = False
 
     def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False):
@@ -1374,11 +1377,18 @@ class MainWindow(QMainWindow):
 
     def dataUpdateWidgets(self, ng_layer=None) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        # timer = Timer()
-        # timer.start()
+
+        if self.uiUpdateTimer.isActive():
+            logger.critical('Canceling UI Update...')
+            return
+        else:
+            logger.critical('Updating UI...')
+            self.uiUpdateTimer.start()
+
+
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
-        # logger.info('')
+        logger.info('')
 
         # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
         if not cfg.project_tab:

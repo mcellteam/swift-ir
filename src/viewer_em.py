@@ -20,7 +20,7 @@ import zarr
 import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, QUrl
+from qtpy.QtCore import QObject, Signal, QUrl, QTimer
 from qtpy.QtWidgets import QApplication, QSizePolicy
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
@@ -68,6 +68,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._zmag_set = 0
         self._blinking = 0
         self._blinkState = 0
+
+        self.uiTimer = QTimer()
+        self.uiTimer.setSingleShot(True)
+        self.uiTimer.setInterval(300)
 
 
     def __repr__(self):
@@ -122,7 +126,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def on_state_changed(self):
-
 
         if self._blinking:
             return
