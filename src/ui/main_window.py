@@ -277,10 +277,16 @@ class MainWindow(QMainWindow):
 
     def initPrivateMembers(self):
         logger.info('')
+
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
-        # self.uiUpdateTimer.setInterval(300)
         self.uiUpdateTimer.setInterval(250)
+
+        self.uiUpdateRegularTimer = QTimer()
+        self.uiUpdateRegularTimer.setInterval(1000)
+        self.uiUpdateRegularTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
+        self.uiUpdateRegularTimer.start()
+
         self._unsaved_changes = False
         self._working = False
         self._scales_combobox_switch = 0  # 1125
@@ -1375,22 +1381,30 @@ class MainWindow(QMainWindow):
     #         # w.setLayout(self.fl_main_results)
     #         # self.sa_tab1.setWidget(w)
 
+    def everySecond(self):
+        if self._isProjectTab():
+            logger.info('')
+            if not self._working:
+                self.dataUpdateWidgets()
 
-    def dataUpdateWidgets(self, ng_layer=None) -> None:
+
+
+    def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
         '''Reads Project Data to Update MainWindow.'''
-
-        if self.uiUpdateTimer.isActive():
-            # logger.critical('Canceling UI Update...')
-            return
-        else:
-            logger.critical('Updating UI...')
-            self.uiUpdateTimer.start()
-            QTimer.singleShot(200, self.dataUpdateWidgets)
+        if not silently:
+            if self.uiUpdateTimer.isActive():
+                # logger.info('Canceling UI Update...')
+                return
+            else:
+                # logger.critical('Updating UI...')
+                self.uiUpdateTimer.start()
+                # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
+                # QTimer.singleShot(300, self.dataUpdateWidgets)
 
 
         caller = inspect.stack()[1].function
         # cfg.project_tab._overlayLab.hide()
-        logger.info('')
+        # logger.info('')
 
         # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
         if not cfg.project_tab:
