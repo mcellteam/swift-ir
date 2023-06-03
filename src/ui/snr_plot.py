@@ -243,7 +243,8 @@ class SnrPlot(QWidget):
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
-        for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        for layer, snr in enumerate(cfg.data.snr_list(s=s)): #0601+
             if cfg.data.skipped(s=s, l=layer):
                 x_axis.append(layer)
                 y_axis.append(0)
@@ -318,7 +319,8 @@ class SnrPlot(QWidget):
             hoverBrush=pg.mkBrush('#ffffff'),
             # pxMode=False # points transform with zoom
         )
-        self.snr_points[s].addPoints(x_axis[1:], y_axis[1:])
+        # self.snr_points[s].addPoints(x_axis[1:], y_axis[1:]) #Todo
+        self.snr_points[s].addPoints(x_axis, y_axis)
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
         self.last_snr_click = None
@@ -333,6 +335,7 @@ class SnrPlot(QWidget):
         offset = self._getScaleOffset(s=s)
         errbars = cfg.data.snr_errorbars(s=s)
         n = len(cfg.data)
+        # n = len(cfg.data) - 1 #Todo
         deltas = np.zeros(n)
         y = np.zeros(n)
         x = np.arange(0, n ) + offset

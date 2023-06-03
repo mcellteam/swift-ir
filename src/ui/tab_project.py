@@ -1872,20 +1872,20 @@ class ProjectTab(QWidget):
         self.blinkToggle = ToggleSwitch()
         self.blinkToggle.stateChanged.connect(self.blinkChanged)
 
-        self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
-        self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
-
-        self.uiUpdateToggle = ToggleSwitch()
-        self.uiUpdateToggle.stateChanged.connect(self.uiUpdateToggleChanged)
-        self.uiUpdateToggle.setChecked(getData('state,auto_update_ui'))
+        # self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
+        # self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
+        #
+        # self.uiUpdateToggle = ToggleSwitch()
+        # self.uiUpdateToggle.stateChanged.connect(self.uiUpdateToggleChanged)
+        # self.uiUpdateToggle.setChecked(getData('state,auto_update_ui'))
 
 
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.blinkToggle)
-        self.w_ng_extended_toolbar.addWidget(self.uiUpdateLab)
-        self.w_ng_extended_toolbar.addWidget(self.uiUpdateToggle)
+        # self.w_ng_extended_toolbar.addWidget(self.uiUpdateLab)
+        # self.w_ng_extended_toolbar.addWidget(self.uiUpdateToggle)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
@@ -2190,8 +2190,8 @@ class ProjectTab(QWidget):
         else:
             self.blinkTimer.stop()
 
-    def uiUpdateToggleChanged(self):
-        setData('state,auto_update_ui', self.uiUpdateToggle.isChecked())
+    # def uiUpdateToggleChanged(self):
+    #     setData('state,auto_update_ui', self.uiUpdateToggle.isChecked())
 
 
 
