@@ -1391,6 +1391,11 @@ class MainWindow(QMainWindow):
 
     def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
         '''Reads Project Data to Update MainWindow.'''
+
+        if not self._isProjectTab():
+            # logger.warning('No Current Project Tab (!)')
+            return
+
         if not silently:
             if self.uiUpdateTimer.isActive():
                 # logger.info('Canceling UI Update...')
@@ -1407,9 +1412,7 @@ class MainWindow(QMainWindow):
         # logger.info('')
 
         # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
-        if not cfg.project_tab:
-            logger.warning('No Current Project Tab (!)')
-            return
+
         # self.count_calls.setdefault('dataUpdateWidgets', {})
         # self.count_calls['dataUpdateWidgets'].setdefault(caller, {})
         # self.count_calls['dataUpdateWidgets'][caller].setdefault('total_count',0)
