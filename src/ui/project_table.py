@@ -20,10 +20,6 @@ import src.config as cfg
 
 logger = logging.getLogger(__name__)
 
-'''
-cfg.project_tab.project_table.updateTableDimensions(100)
-'''
-
 
 class ProjectTable(QWidget):
     # tableFinishedLoading = Signal()
@@ -100,18 +96,8 @@ class ProjectTable(QWidget):
         labels = ['Z-index', 'Img\nName', 'SNR', 'Img', 'Reference', 'Aligned',
                   'Match\nSignal 1', 'Match\nSignal 2', 'Match\nSignal 3', 'Match\nSignal 4', 'Last\nAligned',
                   'Scale', 'Skip?', 'Method', 'SNR Report']
-        # if cfg.data.is_aligned():
-        #     labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned',
-        #                # 'Q0', 'Q1', 'Q2', 'Q3',
-        #                'Signal 1', 'Signal 2', 'Signal 3', 'Signal 4', 'Last\nAligned',
-        #                'Scale', 'Skip?', 'Method', 'SNR Report']
-        # else:
-        #     labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
         self.table.setHorizontalHeaderLabels(labels)
         self.table.setColumnCount(len(labels))
-
-    def setScaleRowData(self):
-        pass
 
 
     def initTableData(self):
@@ -123,18 +109,7 @@ class ProjectTable(QWidget):
         logger.info(f'')
         cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
-        # self.setUpdatesEnabled(False)
-        # cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nProcessSteps)
-        # cfg.mw.showZeroedPbar(set_n_processes=len(cfg.data), pbar_max=cfg.nProcessSteps)
         cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
-        # cfg.nProcessDone = 0
-        # cfg.nProcessSteps = len(cfg.data)
-        # cfg.main_window.setPbarMax(cfg.nProcessSteps)
-
-        # cur_selection = self.table.currentIndex().row()
-        # cur_scroll_pos = self.table.verticalScrollBar().value()
-        # self.setUpdatesEnabled(False)
-
         # self.table.clearContents()
         # self.table.clear()
         # self.table.setRowCount(0)
@@ -153,7 +128,6 @@ class ProjectTable(QWidget):
         finally:
             timer.report()
             self.table.setUpdatesEnabled(True)
-            # self.tableFinishedLoading.emit()
             cfg.mw.hidePbar()
             self.setColumnWidths()
             # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
@@ -171,17 +145,6 @@ class ProjectTable(QWidget):
             self.table.show()
 
         logger.info(f'<<<< initTableData [{caller}]')
-
-    # def initDataTableNew(self):
-    #     # for i, row in enumerate(self.data):
-    #     for row in range(0,len(cfg.data)):
-    #         cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
-    #         self.table.insertRow(row)
-    #
-    #         self.set_row_data(row=row)
-    #
-    #         cfg.nProcessDone += 1
-    #         cfg.main_window.updatePbar(cfg.nProcessDone)
 
     def updateTableData(self):
         cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
@@ -210,10 +173,7 @@ class ProjectTable(QWidget):
             self.table.setUpdatesEnabled(True)
 
 
-
-
     def setColumnWidths(self):
-        # if cfg.data.is_aligned_and_generated():
         self.table.setColumnWidth(0, 50)  # 0 index
         self.table.setColumnWidth(1, 128)   # 1 Filename
         self.table.setColumnWidth(2, 60)   # 2 SNR
@@ -229,27 +189,14 @@ class ProjectTable(QWidget):
         self.table.setColumnWidth(12, 50)  # 12 Skip
         self.table.setColumnWidth(13, 120)  # 13 Method
         self.table.setColumnWidth(14, 120) # 14 SNR_report
-        # else:
-        #     self.table.setColumnWidth(0, 128)
-        #     self.table.setColumnWidth(1, 60)
-        #     self.table.setColumnWidth(2, 100)
-        #     self.table.setColumnWidth(3, 100)
-        #     self.table.setColumnWidth(4, 50)
-        #     self.table.setColumnWidth(5, 50)
-        #     self.table.setColumnWidth(6, 80)
+
 
     def updateTableDimensions(self, h):
         # caller = inspect.stack()[1].function
         self.image_col_width = h
-        # logger.critical(f'\n\ncaller: {caller}\n')
-        # if caller == 'main':
-        # logger.info(f'Updating table dimensions...')
-        # logger.info('')
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
-
-        # if cfg.data.is_aligned_and_generated():
         self.table.setColumnWidth(3, h)
         self.table.setColumnWidth(4, h)
         self.table.setColumnWidth(5, h)
@@ -257,10 +204,6 @@ class ProjectTable(QWidget):
         self.table.setColumnWidth(7, h)
         self.table.setColumnWidth(8, h)
         self.table.setColumnWidth(9, h)
-        # else:
-        #     self.table.setColumnWidth(2, h)
-        #     self.table.setColumnWidth(3, h)
-
         size = max(min(int(11 * (max(h, 1) / 80)), 14), 8)
         self.table.setStyleSheet(f'font-size: {size}px;')
 
@@ -367,81 +310,12 @@ class ProjectTable(QWidget):
         self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
 
-        # self.initTableData()
-
-        # def initTableData():
-        #     logger.info('')
-        #     self.loadScreenLabel.setText('<center>Loading...</center>')
-        #     self.initTableData()
-        #     # self.loadScreenLabel.hide()
-        #     # self.table.show()
-
-        # self.btnLoadTable = QPushButton('Load Table')
-        # self.btnLoadTable.setFixedSize(120,30)
-        # self.btnLoadTable.setStyleSheet('font-size: 13px; font-weight: 650;')
-        # self.btnLoadTable.clicked.connect(initTableData)
-
-        # self.loadScreenWidget = VWidget(self.btnLoadTable)
-        # self.loadScreenWidget.setAutoFillBackground(True)
-        # self.loadScreenWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.loadScreenWidget.setStyleSheet('background-color: #222222; color: #ede9e8;')
-
-        # self.loadScreenLabel = ClickLabel('<center><u>→ Load Table ←</u></center>')
-        # self.loadScreenLabel.setCursor(Qt.PointingHandCursor)
-        # self.loadScreenLabel.clicked.connect(initTableData)
-        # self.loadScreenLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.loadScreenLabel.setStyleSheet(
-        #     'background-color: #222222; '
-        #     'color: #ede9e8; '
-        #     'text-align: center; '
-        #     'font-size: 14px;'
-        #     'font-weight: 650;')
-
         layout = VBL()
-        # layout.addWidget(self.loadScreenLabel)
         layout.addWidget(self.table)
         layout.addWidget(self.controls, alignment=Qt.AlignBottom)
         self.setLayout(layout)
-#
-#
-# class SnrThumbnail(QWidget):
-#
-#     def __init__(self, parent, path, snr='<SNR>'):
-#         super().__init__(parent)
-#         # thumbnail = QLabel(self)
-#         thumbnail = ScaledPixmapLabel(self)
-#         try:
-#             pixmap = QPixmap(path)
-#             thumbnail.setPixmap(pixmap)
-#             thumbnail.setScaledContents(True)
-#             snr = QLabel(snr)
-#             snr.setStyleSheet('color: #ff0000')
-#         except:
-#             snr = QLabel('<h5>' + str(snr) + '</h5>')
-#             snr.setStyleSheet('background-color: #141414')
-#             print_exception()
-#             logger.warning(f'WARNING path={path}, snr={snr}')
-#         layout = QGridLayout()
-#         layout.setContentsMargins(1, 1, 1, 1)
-#         layout.addWidget(thumbnail, 0, 0)
-#         layout.addWidget(snr, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
-#         self.setLayout(layout)
-#
-#
-# class Thumbnail(QWidget):
-#
-#     def __init__(self, parent, path):
-#         super().__init__(parent)
-#         self.thumbnail = ScaledPixmapLabel(self)
-#         self.pixmap = QPixmap(path)
-#         self.thumbnail.setPixmap(self.pixmap)
-#         self.thumbnail.setScaledContents(True)
-#         self.layout = QGridLayout()
-#         self.layout.setContentsMargins(1, 1, 1, 1)
-#         self.layout.addWidget(self.thumbnail, 0, 0)
-#         self.setLayout(self.layout)
-#
-#
+
+
 class ScaledPixmapLabel(QLabel):
     def __init__(self, parent):
         super().__init__(parent)
