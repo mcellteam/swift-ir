@@ -124,7 +124,7 @@ def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_za
     dm.set_image_aligned_size()
 
     if cfg.ignore_pbar:
-        cfg.nCompleted += 1
+        cfg.nProcessDone += 1
         cfg.main_window.updatePbar()
         cfg.main_window.setPbarText('Copy-converting Alignment to Zarr...')
 

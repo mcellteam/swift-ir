@@ -251,6 +251,12 @@ class DataModel:
         for s in self.scales():
             self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
 
+
+    def get_current_method(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['current_method']
+
     @property
     def current_method_pretty(self):
         convert = {
@@ -569,12 +575,22 @@ class DataModel:
         return lst
 
 
-    def thumbnail_ref(self) -> list:
-        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['data']['scales'][self.scale]['stack'][self.zpos]['reference']))
+    def thumbnail_ref(self, s=None, l=None) -> str:
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['data']['scales'][s]['stack'][l]['reference']))
 
 
-    def thumbnail_tra(self) -> list:
-        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['data']['scales'][self.scale]['stack'][self.zpos]['filename']))
+    def thumbnail_tra(self, s=None, l=None) -> str:
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['data']['scales'][s]['stack'][l]['filename']))
+
+    def thumbnail_aligned(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        '''Returns absolute path of thumbnail for current layer '''
+        return os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.filename_basename(s=s,l=l))
 
     def thumbnails_ref(self) -> list:
         paths = []
@@ -588,13 +604,7 @@ class DataModel:
             paths.append(os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.base_image_name(l=layer)))
         return paths
 
-    def thumbnail_aligned(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        '''Returns absolute path of thumbnail for current layer '''
-        path = os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.filename_basename(s=s,l=l))
-        # return self._data['data']['thumbnails'][self.zpos]
-        return path
+
 
     # def corr_signal_path(self, i, s=None, l=None):
     #     if s == None: s = self.scale
@@ -602,30 +612,6 @@ class DataModel:
     #     img = self.base_image_name(s=s, l=l)
     #     return os.path.join(self.dest(), s, 'signals' , 'corr_spot_%d_' %i + img)
 
-
-    def signal_q0_path(self, s=None, l=None) -> str:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'signals' , '0_grid-default_' + img)
-
-    def signal_q1_path(self, s=None, l=None) -> str:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'signals' , '1_grid-default_' + img)
-
-    def signal_q2_path(self, s=None, l=None) -> str:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'signals' , '2_grid-default_' + img)
-
-    def signal_q3_path(self, s=None, l=None) -> str:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        img = self.base_image_name(s=s, l=l)
-        return os.path.join(self.dest(), s, 'signals' , '3_grid-default_' + img)
 
     def signals_q0(self) -> list:
         names = []
@@ -854,10 +840,10 @@ class DataModel:
                 layer['alignment_history']['manual-strict'].setdefault('snr', 0.0)
 
                 # report = 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>'
-                layer['alignment_history']['grid-default'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
-                layer['alignment_history']['grid-custom'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
-                layer['alignment_history']['manual-hint'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
-                layer['alignment_history']['manual-strict'].setdefault('snr_report', 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>')
+                layer['alignment_history']['grid-default'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['grid-custom'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['manual-hint'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['manual-strict'].setdefault('snr_report', 'SNR: --')
 
                 init_afm = [[1., 0., 0.], [0., 1., 0.]]
                 layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
@@ -1114,7 +1100,8 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr_report']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr_report']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['snr_report']
         except:
             logger.warning('No SNR Report for Layer %d' % l)
             return ''

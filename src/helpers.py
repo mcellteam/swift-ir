@@ -137,7 +137,7 @@ def count_widgets(name_or_type) -> int:
 
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
-    cfg.main_window.showZeroedPbar()
+    cfg.main_window.showZeroedPbar(set_n_processes=False)
     cfg.main_window.setPbarText('Deleting Files...')
 
     to_delete = []
@@ -165,16 +165,16 @@ def delete_recursive(dir, keep_core_dirs=False):
         to_delete.append(dir +'/thumbnails')
         to_delete.append(dir)
         to_delete.append(dir) #delete twice
-    cfg.nCompleted = 0
-    cfg.nTasks = len(to_delete)
+    cfg.nProcessDone = 0
+    cfg.nProcessSteps = len(to_delete)
     logger.info('# directories to delete: %d' % len(to_delete))
-    cfg.main_window.setPbarMax(cfg.nTasks)
+    cfg.main_window.setPbarMax(cfg.nProcessSteps)
     # logger.critical(f'To Delete: {to_delete}')
     for d in to_delete:
-        cfg.nCompleted += 1
+        cfg.nProcessDone += 1
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
         cfg.main_window.setPbarText('Deleting %s...' % os.path.basename(d))
-        cfg.main_window.updatePbar(cfg.nCompleted)
+        cfg.main_window.updatePbar(cfg.nProcessDone)
         cfg.main_window.update()
         QApplication.processEvents()
     shutil.rmtree(dir, ignore_errors=True, onerror=handleError)
@@ -970,7 +970,7 @@ def create_paged_tiff():
 #     for k in task_queue.task_dict.keys():
 #         task_item = task_queue.task_dict[k]
 #         if task_item['statusBar'] == 'completed':
-#             logger.debug('\nCompleted:')
+#             logger.debug('\nProcessDone:')
 #             logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
 #             logger.debug('   ARGS:   %s' % (str(task_item['args'])))
 #             logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))

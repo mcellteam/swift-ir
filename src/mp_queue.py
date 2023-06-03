@@ -137,8 +137,8 @@ class TaskQueue(QObject):
         logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
         print(f'use_gui = {self.use_gui} ({self.taskPrefix})')
         if (not cfg.ignore_pbar) and (self.use_gui):
-            cfg.main_window.showZeroedPbar()  # 0208+
-            cfg.nCompleted += 1
+            # cfg.main_window.showZeroedPbar()  # 0208+
+            cfg.nProcessDone += 1
             try:
                 self.parent.setPbarMax(self.n_tasks)
                 if self.pbar_text:
@@ -392,7 +392,7 @@ class TaskQueue(QObject):
             # n_success, n_queued, n_failed = 0, 0, 0
             # for task_item in self.task_dict:
             #     if task_item['statusBar'] == 'completed':
-            #         logger.debug('\nCompleted:')
+            #         logger.debug('\nProcessDone:')
             #         logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
             #         logger.debug('   ARGS:   %s' % (str(task_item['args'])))
             #         logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))

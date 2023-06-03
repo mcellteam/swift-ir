@@ -624,11 +624,11 @@ class EMViewer(AbstractEMViewer):
         w = cfg.project_tab.webengine.width()
         # h = max(cfg.main_window.globTabs.height() - 20, 520)
         if getData('state,show_ng_controls'):
-            extra_space = 48
+            extra_space = 54
         else:
-            extra_space = 0
+            extra_space = 26
 
-        h = max(cfg.project_tab.w_ng_display.height() - 20 - extra_space, 420 - extra_space)
+        h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space)
         # h = cfg.main_window.globTabs.height() - 20
         self.initZoom(w=w, h=h, adjust=1.10)
 
