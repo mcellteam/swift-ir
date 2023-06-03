@@ -1380,11 +1380,12 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
 
         if self.uiUpdateTimer.isActive():
-            logger.critical('Canceling UI Update...')
+            # logger.critical('Canceling UI Update...')
             return
         else:
             logger.critical('Updating UI...')
             self.uiUpdateTimer.start()
+            QTimer.singleShot(200, self.dataUpdateWidgets)
 
 
         caller = inspect.stack()[1].function
