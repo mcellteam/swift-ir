@@ -249,15 +249,20 @@ class align_recipe:
         #     self.layer_dict['alignment']['method_results']['snr'] = [snr]
         # else:
         # self.layer_dict['alignment']['method_results']['snr'] = list(snr)
-        self.layer_dict['alignment']['method_results']['snr'] = snr.tolist()
-        self.layer_dict['alignment']['method_results']['snr_type'] = str(type(snr))
-        self.layer_dict['alignment']['method_results']['snr_str'] = str(snr)
-        self.layer_dict['alignment']['method_results']['snr_report'] = str(snr_report)
+
 
         if self.im_sta_fn == self.im_mov_fn:
             self.layer_dict['alignment']['method_results']['snr'] = [0.0]
             self.layer_dict['alignment']['method_results']['snr_str'] = str([0.0])
             self.layer_dict['alignment']['method_results']['snr_report'] = 'SNR: --'
+            self.layer_dict['alignment']['method_results']['snr_average'] = 0.0
+        else:
+            snr_list = snr.tolist()
+            self.layer_dict['alignment']['method_results']['snr'] = snr_list
+            self.layer_dict['alignment']['method_results']['snr_type'] = str(type(snr))
+            self.layer_dict['alignment']['method_results']['snr_str'] = str(snr)
+            self.layer_dict['alignment']['method_results']['snr_report'] = str(snr_report)
+            self.layer_dict['alignment']['method_results']['snr_average'] = sum(snr_list) / len(snr_list)
 
 
         #

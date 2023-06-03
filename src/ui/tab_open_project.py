@@ -322,7 +322,7 @@ class OpenProject(QWidget):
 
     def userSelectionChanged(self):
         caller = inspect.stack()[1].function
-        # if caller == 'setScaleData':
+        # if caller == 'initTableData':
         #     return
         row = self.user_projects.table.currentIndex().row()
         try:
@@ -484,7 +484,7 @@ class OpenProject(QWidget):
 
             if cfg.data['data']['autoalign_flag']:
                 cfg.ignore_pbar = False
-                cfg.mw.showZeroedPbar(reset_n_tasks=8, cancel_processes=False)
+                cfg.mw.showZeroedPbar(set_n_processes=8)
                 autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=False)
             else:
                 autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=True)
@@ -867,7 +867,7 @@ class UserProjects(QWidget):
 
     # def userSelectionChanged(self):
     #     caller = inspect.stack()[1].function
-    #     # if caller == 'setScaleData':
+    #     # if caller == 'initTableData':
     #     #     return
     #     row = self.table.currentIndex().row()
     #     try:

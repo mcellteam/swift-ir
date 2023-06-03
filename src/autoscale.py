@@ -30,7 +30,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     if gui:
         cfg.mw.tell('Generating TIFF Scale Image Hierarchy...')
         if set_pbar:
-            cfg.mw.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
+            cfg.mw.showZeroedPbar(set_n_processes=3)
     try:
         worker = BackgroundWorker(fn=generate_scales(dm=dm, gui=gui))
         threadpool.start(worker)
@@ -49,7 +49,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
     if gui:
         cfg.mw.tell('Copy-converting TIFFs to NGFF-Compliant Zarr...')
-        cfg.mw.showZeroedPbar()
+        # cfg.mw.showZeroedPbar()
     try:
         worker = BackgroundWorker(fn=generate_scales_zarr(dm, gui=gui))
         threadpool.start(worker)
@@ -62,7 +62,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         logger.info('Generating Source Thumbnails...')
         if gui:
             cfg.mw.tell('Generating Source Thumbnails...')
-            cfg.mw.showZeroedPbar()
+            # cfg.mw.showZeroedPbar()
         try:
             thumbnailer = Thumbnailer()
             worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))

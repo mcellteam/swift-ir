@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
     def cleanupAfterCancel(self):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
         cfg.project_tab.snr_plot.initSnrPlot()
-        cfg.project_tab.project_table.setScaleData()
+        cfg.project_tab.project_table.updateTableData()
         cfg.project_tab.updateTreeWidget()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
@@ -521,11 +521,11 @@ class MainWindow(QMainWindow):
         if not cfg.data.is_aligned(s=scale):
             self.warn('Scale Must Be Aligned First');
             return
-        cfg.nTasks = 3
-        cfg.nCompleted = 0
+        cfg.nProcessSteps = 3
+        cfg.nProcessDone = 0
         cfg.CancelProcesses = False
-        self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
-        self.showZeroedPbar()
+        self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
+        self.showZeroedPbar(set_n_processes=3)
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
@@ -554,8 +554,8 @@ class MainWindow(QMainWindow):
             self.hidePbar()
             self.updateDtWidget()
             cfg.project_tab.updateTreeWidget()
-            cfg.nCompleted = 0
-            cfg.nTasks = 0
+            cfg.nProcessDone = 0
+            cfg.nProcessSteps = 0
             cfg.project_tab.initNeuroglancer()
             logger.info('<<<< regenerate')
             self.tell('**** Processes Complete ****')
@@ -576,12 +576,6 @@ class MainWindow(QMainWindow):
             ans = True
         # logger.info(f'Returning: {ans}')
         return ans
-
-    @Slot()
-    def updateProjectTable(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'SLOT: Updating Project Table [caller: {caller}]...')
-        cfg.project_tab.project_table.setScaleData()
 
     # @Slot()
     # def restore_interactivity(self):
@@ -742,7 +736,7 @@ class MainWindow(QMainWindow):
         # time point 5: = 0.0032761096954345703
         self.stopPlaybackTimer()
         self._disableGlobTabs()
-        # self.pbarLabel.setText('Task (0/%d)...' % cfg.nTasks)
+        # self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
         # if not cfg.ignore_pbar:
         #     self.showZeroedPbar()
         if cfg.data.is_aligned(s=scale):
@@ -820,11 +814,11 @@ class MainWindow(QMainWindow):
             logger.critical('set_pbar >>>>')
             cfg.ignore_pbar = False
             if self._toggleAutogenerate.isChecked():
-                # cfg.nTasks = 5
-                self.showZeroedPbar(reset_n_tasks=5, cancel_processes=False)
+                # cfg.nProcessSteps = 5
+                self.showZeroedPbar(set_n_processes=5)
             else:
-                # cfg.nTasks = 3
-                self.showZeroedPbar(reset_n_tasks=3, cancel_processes=False)
+                # cfg.nProcessSteps = 3
+                self.showZeroedPbar(set_n_processes=3)
 
 
         cfg.CancelProcesses = False
@@ -859,7 +853,7 @@ class MainWindow(QMainWindow):
 
             self.tell(f'# Scales Unaligned: {len(alignThese)}. Aligning now...')
             ntasks = 5 * len(alignThese)
-            self.showZeroedPbar(reset_n_tasks=ntasks, cancel_processes=False)
+            self.showZeroedPbar(set_n_processes=ntasks)
             for s in alignThese:
                 cfg.data.scale = s
                 # cfg.project_tab.initNeuroglancer()
@@ -876,10 +870,10 @@ class MainWindow(QMainWindow):
         start = int(self.startRangeInput.text())
         end = int(self.endRangeInput.text()) + 1
         if self._toggleAutogenerate.isChecked():
-            cfg.nTasks = 5
+            cfg.nProcessSteps = 5
         else:
-            cfg.nTasks = 3
-        cfg.nCompleted = 0
+            cfg.nProcessSteps = 3
+        cfg.nProcessDone = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
         self.tell('Re-aligning Sections #%d through #%d (%s)...' %
@@ -904,8 +898,8 @@ class MainWindow(QMainWindow):
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
-        cfg.nCompleted = 0
-        cfg.nTasks = 2
+        cfg.nProcessDone = 0
+        cfg.nProcessSteps = 2
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -935,8 +929,8 @@ class MainWindow(QMainWindow):
                   (cfg.data.zpos, cfg.data.scale_pretty()))
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
-        cfg.nCompleted = 0
-        cfg.nTasks = 5
+        cfg.nProcessDone = 0
+        cfg.nProcessSteps = 5
         self.setPbarMax(5)
         self.align(
             scale=cfg.data.scale,
@@ -970,7 +964,7 @@ class MainWindow(QMainWindow):
             cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
         
         if cfg.ignore_pbar:
-            self.showZeroedPbar()
+            self.showZeroedPbar(set_n_processes=False)
             self.setPbarText('Computing Affine...')
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -986,7 +980,7 @@ class MainWindow(QMainWindow):
         # else:     logger.info('Affine Computation Finished')
 
         # if cfg.ignore_pbar:
-        #     cfg.nCompleted +=1
+        #     cfg.nProcessDone +=1
         #     self.updatePbar()
         #     self.setPbarText('Scaling Correlation Signal Thumbnails...')
         # try:
@@ -998,13 +992,13 @@ class MainWindow(QMainWindow):
         # # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
 
         # if cfg.project_tab._tabs.currentIndex() == 1:
-        #     cfg.project_tab.project_table.setScaleData()
+        #     cfg.project_tab.project_table.initTableData()
         #
         # if not swim_only:
         #     if self._toggleAutogenerate.isChecked():
         #
         #         if cfg.ignore_pbar:
-        #             cfg.nCompleted += 1
+        #             cfg.nProcessDone += 1
         #             self.updatePbar()
         #             self.setPbarText('Generating Alignment...')
         #
@@ -1020,7 +1014,7 @@ class MainWindow(QMainWindow):
         #             logger.info('Generate Alignment Finished')
         #
         #         if cfg.ignore_pbar:
-        #             cfg.nCompleted += 1
+        #             cfg.nProcessDone += 1
         #             self.updatePbar()
         #             self.setPbarText('Generating Aligned Thumbnail...')
         #
@@ -1035,14 +1029,14 @@ class MainWindow(QMainWindow):
         #             logger.info('Generate Aligned Thumbnails Finished')
         #
         #         if cfg.ignore_pbar:
-        #             cfg.nCompleted += 1
+        #             cfg.nProcessDone += 1
         #             self.updatePbar()
         #             self.setPbarText('Aligning')
 
         self.pbarLabel.setText('')
         self.hidePbar()
-        cfg.nCompleted = 0
-        cfg.nTasks = 0
+        cfg.nProcessDone = 0
+        cfg.nProcessSteps = 0
 
     def rescale(self):
         if self._isProjectTab():
@@ -1854,6 +1848,8 @@ class MainWindow(QMainWindow):
                             self.dataUpdateWidgets()
                             self.updateCpanelDetails_i1()
                             self._showSNRcheck()
+                            # cfg.project_tab.project_table.initTableData()
+                            cfg.project_tab.project_table.updateTableData()
                             # cfg.project_tab.updateLabelsHeader()
                             cfg.project_tab.refreshTab()
         logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
@@ -2642,8 +2638,8 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if caller != 'dataUpdateWidgets':
                 skip_state = not self._skipCheckbox.isChecked()
+                layer = cfg.data.zpos
                 for s in cfg.data.scales():
-                    layer = cfg.data.zpos
                     if layer < len(cfg.data):
                         cfg.data.set_skip(skip_state, s=s, l=layer)
                     else:
@@ -2656,8 +2652,10 @@ class MainWindow(QMainWindow):
                 cfg.data.link_reference_sections()
                 # if getData('state,blink'):
                 self.dataUpdateWidgets()
-                if cfg.project_tab._tabs.currentIndex() == 1:
-                    cfg.project_tab.project_table.setScaleData()
+                # if cfg.project_tab._tabs.currentIndex() == 1:
+                    # cfg.project_tab.project_table.initTableData()
+                cfg.pt.project_table.set_row_data(row=layer)
+
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.snr_plot.initSnrPlot()
 
@@ -3755,9 +3753,9 @@ class MainWindow(QMainWindow):
         self.addAction(self.skipChangeAction)
         alignMenu.addAction(self.skipChangeAction)
 
-        self.showMatchpointsAction = QAction('Show Matchpoints', self)
-        self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
-        alignMenu.addAction(self.showMatchpointsAction)
+        # self.showMatchpointsAction = QAction('Show Matchpoints', self)
+        # self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
+        # alignMenu.addAction(self.showMatchpointsAction)
 
         mendenhallMenu = alignMenu.addMenu('Mendenhall Protocol')
 
@@ -6067,29 +6065,43 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(x)
 
     def updatePbar(self, x=None):
-        if x == None: x = cfg.nCompleted
+        if x == None: x = cfg.nProcessDone
         self.pbar.setValue(x)
         QApplication.processEvents()
 
     def setPbarText(self, text: str):
         # logger.critical('')
-        logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
+        logger.critical(f'cfg.nTasks = {cfg.nProcessSteps}, cfg.nCompleted = {cfg.nProcessDone}')
         self.pbar.setFormat('(%p%) ' + text)
-        self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
-        # logger.info('Processing (%d/%d)...' % (cfg.nCompleted, cfg.nTasks))
+        self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
+        # logger.info('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
         # self.repaint()
         QApplication.processEvents()
 
-    def showZeroedPbar(self, reset_n_tasks=None, cancel_processes=None):
+    # def showZeroedPbar(self, set_n_processes=None, cancel_processes=None):
+    def showZeroedPbar(self, set_n_processes=None, pbar_max=None):
+        '''
+        Note:
+        pbar_max is set by mp queue for all multiprocessing functions
+        '''
         caller = inspect.stack()[1].function
-        # logger.critical(f'caller = {caller}, reset_n_tasks = {reset_n_tasks}')
-        if reset_n_tasks:
+        # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
+        cfg.CancelProcesses = False #0602+
+        if set_n_processes:
             # logger.critical('Resetting # tasks...')
-            cfg.nTasks = reset_n_tasks
-            cfg.nCompleted = 0
-        if cancel_processes:
-            cfg.CancelProcesses = True
-        # logger.critical(f'cfg.nTasks = {cfg.nTasks}, cfg.nCompleted = {cfg.nCompleted}')
+            cfg.nProcessSteps = set_n_processes
+            cfg.nProcessDone = 0
+            self.pbarLabel.show()
+        else:
+            self.pbarLabel.hide()
+        # if cancel_processes:
+        #     cfg.CancelProcesses = True
+        #     self.pbar_cancel_button.hide()
+        # else:
+        #     self.pbar_cancel_button.show()
+        # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
+        if pbar_max:
+            self.pbar.setMaximum(pbar_max)
         self.pbar.setValue(0)
         self.setPbarText('Preparing Tasks...')
         self.pbar_widget.show()

@@ -125,8 +125,8 @@ DELAY_BEFORE = 0
 DELAY_AFTER = 0
 USE_DELAY = False
 
-nTasks = 0
-nCompleted = 0
+nProcessSteps = 0
+nProcessDone = 0
 CancelProcesses = False
 event = None
 ignore_pbar = False

@@ -265,7 +265,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
 
 
         if cfg.ignore_pbar:
-            cfg.nCompleted +=1
+            cfg.nProcessDone +=1
             cfg.mw.updatePbar()
             cfg.mw.setPbarText('Scaling Correlation Signal Thumbnails...')
         try:
@@ -314,7 +314,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                     logger.info('Toggle auto-generate is OFF. Returning...')
                     return
                 if cfg.ignore_pbar:
-                    cfg.nCompleted += 1
+                    cfg.nProcessDone += 1
                     cfg.mw.updatePbar()
                     cfg.mw.setPbarText('Generating Alignment...')
 
@@ -332,7 +332,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                 logger.info('Generate Alignment Finished')
 
             if cfg.ignore_pbar and use_gui:
-                cfg.nCompleted += 1
+                cfg.nProcessDone += 1
                 cfg.mw.updatePbar()
                 cfg.mw.setPbarText('Generating Aligned Thumbnail...')
 
@@ -349,7 +349,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                 logger.info('Generate Aligned Thumbnails Finished')
 
             if cfg.ignore_pbar:
-                cfg.nCompleted += 1
+                cfg.nProcessDone += 1
                 cfg.mw.updatePbar()
                 cfg.mw.setPbarText('Aligning')
 

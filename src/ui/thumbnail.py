@@ -85,20 +85,23 @@ class Thumbnail(QWidget):
 
 
 class ThumbnailFast(QLabel):
-    def __init__(self, parent, path=None, extra='', name='', s=None, l=None):
+    def __init__(self, parent, path='', extra='', name='', s=None, l=None):
         super().__init__(parent)
         self.setAlignment(Qt.AlignCenter)
         self.setScaledContents(True)
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         self.path = self.no_image_path
-        if path:
+        if os.path.exists(path):
             self.path = path
+            self.setPixmap(QPixmap(self.path))
+        else:
+            self.set_no_image()
         self.extra = extra
         self.name = name
         self.s = s
         self.l = l
 
-        self.setPixmap(QPixmap(self.path))
+        # self.setPixmap(QPixmap(self.path))
         self.border_color = '#000000'
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
@@ -596,7 +599,8 @@ class CorrSignalThumbnail(QLabel):
 
                 # qp.setPen(QPen(QColor('#a30000'), 2, Qt.SolidLine))
                 # qp.setPen(QPen(QColor('#161c20'), 2, Qt.SolidLine))
-                qp.setPen(QPen(QColor('#339933'), 2, Qt.SolidLine))
+                # qp.setPen(QPen(QColor('#339933'), 2, Qt.SolidLine))
+                qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
 
                 qp.drawLine(p1, p2)
                 qp.drawLine(p1, p3)
@@ -627,6 +631,7 @@ class CorrSignalThumbnail(QLabel):
                 # a full circle equals 5760 (16 * 360). Positive values for the angles mean
                 # counter-clockwise while negative values mean the clockwise direction. Zero
                 # degrees is at the 3 o'clock position.
+                # spanAngle = 30
                 spanAngle = 30
                 qp.drawArc(arcRect, 30*16, spanAngle*16)
                 qp.drawArc(arcRect, 30*16 + 180*16, spanAngle*16)
@@ -634,9 +639,10 @@ class CorrSignalThumbnail(QLabel):
                 qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
                 font = QFont()
-                font.setBold(True)
-                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 6)
+                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 5)
                 font.setPointSize(size)
+                # if size >= 8:
+                font.setBold(True)
                 # font.setPointSize(14)
                 qp.setFont(font)
                 # qp.setPen(QColor('#ff0000'))

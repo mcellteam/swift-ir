@@ -13,6 +13,7 @@ from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal
 from qtpy.QtGui import QPainter, QPixmap, QImage
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
+from src.ui.timer import Timer
 from src.helpers import print_exception
 
 import src.config as cfg
@@ -25,7 +26,7 @@ cfg.project_tab.project_table.updateTableDimensions(100)
 
 
 class ProjectTable(QWidget):
-    tableFinishedLoading = Signal()
+    # tableFinishedLoading = Signal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -35,12 +36,8 @@ class ProjectTable(QWidget):
         self.INITIAL_ROW_HEIGHT = 80
         self.image_col_width = self.INITIAL_ROW_HEIGHT
         self.data = None
-
         self.table = QTableWidget()
         self.table.hide()
-
-        # self.model = TableModel(data='')
-        # self.table.setModel(self.model)
         self.table.verticalHeader().hide()
         self.table.setWordWrap(True)
         self.table.setSortingEnabled(True)
@@ -61,13 +58,9 @@ class ProjectTable(QWidget):
         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
         self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
-
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
+        # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
 
-        # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
-        # self.initUI()
-
-        self.tableFinishedLoading.connect(self.onTableFinishedLoading)
 
     # def onDoubleClick(self, item=None):
     #     logger.critical('')
@@ -89,7 +82,7 @@ class ProjectTable(QWidget):
     def selection_changed(self):
         caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}')
-        if caller != 'setScaleData':
+        if caller not in ('initTableData', 'updateTableData'):
             if cfg.project_tab._tabs.currentIndex() == 1:
                 row = self.table.currentIndex().row()
                 # cfg.main_window.tell('Section #%d' % row)
@@ -104,13 +97,16 @@ class ProjectTable(QWidget):
 
 
     def set_column_headers(self):
-        if cfg.data.is_aligned():
-            labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned',
-                       # 'Q0', 'Q1', 'Q2', 'Q3',
-                       'Signal 1', 'Signal 2', 'Signal 3', 'Signal 4', 'Last\nAligned',
-                       'Scale', 'Skip?', 'Method', 'SNR Report']
-        else:
-            labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
+        labels = ['Z-index', 'Img\nName', 'SNR', 'Img', 'Reference', 'Aligned',
+                  'Match\nSignal 1', 'Match\nSignal 2', 'Match\nSignal 3', 'Match\nSignal 4', 'Last\nAligned',
+                  'Scale', 'Skip?', 'Method', 'SNR Report']
+        # if cfg.data.is_aligned():
+        #     labels = [ 'Img\nName','Index', 'SNR', 'Img', 'Reference', 'Aligned',
+        #                # 'Q0', 'Q1', 'Q2', 'Q3',
+        #                'Signal 1', 'Signal 2', 'Signal 3', 'Signal 4', 'Last\nAligned',
+        #                'Scale', 'Skip?', 'Method', 'SNR Report']
+        # else:
+        #     labels = [ 'Img\nName','Index','Img', 'Reference', 'Scale', 'Skip?', 'Method' ]
         self.table.setHorizontalHeaderLabels(labels)
         self.table.setColumnCount(len(labels))
 
@@ -118,162 +114,129 @@ class ProjectTable(QWidget):
         pass
 
 
-    def setScaleData(self):
+    def initTableData(self):
         self.table.hide()
-
         t = time.time()
+        timer = Timer()
+        timer.start()
         caller = inspect.stack()[1].function
-        logger.info(f'setScaleData [{caller}] >>>>')
+        logger.info(f'')
         cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
         # self.setUpdatesEnabled(False)
-        cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nTasks)
-        cfg.nCompleted = 0
-        cfg.nTasks = len(cfg.data)
-        cfg.main_window.setPbarMax(cfg.nTasks)
-        cfg.main_window.showZeroedPbar()
-        scale = cfg.data.scale
+        # cfg.main_window.setPbarText('Loading Project Table (0/%d)...' % cfg.nProcessSteps)
+        # cfg.mw.showZeroedPbar(set_n_processes=len(cfg.data), pbar_max=cfg.nProcessSteps)
+        cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
+        # cfg.nProcessDone = 0
+        # cfg.nProcessSteps = len(cfg.data)
+        # cfg.main_window.setPbarMax(cfg.nProcessSteps)
 
-        cur_selection = self.table.currentIndex().row()
-        cur_scroll_pos = self.table.verticalScrollBar().value()
+        # cur_selection = self.table.currentIndex().row()
+        # cur_scroll_pos = self.table.verticalScrollBar().value()
         # self.setUpdatesEnabled(False)
-        self.table.clearContents()
-        self.table.clear()
-        self.table.setRowCount(0)
+
+        # self.table.clearContents()
+        # self.table.clear()
+        # self.table.setRowCount(0)
         self.set_column_headers() #Critical
+
         try:
-            self.get_data()
-        except:
-            print_exception()
-        try:
-            if cfg.data.is_aligned_and_generated():
-                for i, row in enumerate(self.data):
-                    # logger.info('Inserting row %d' % i)
-                    self.table.insertRow(i)
-                    # snr_4x = cfg.data.snr_components(l=i)
-                    # snr_4x = cfg.data.snr_components(l=i, method='grid-default')
-                    snr_4x = cfg.data.snr_components(l=i)
-                    for j, item in enumerate(row):
-                        if j == 0:
-                            # item = '<h4>' + item + '</h4>'
-                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            # lab.setWordWrap(True)
-                            # self.table.setCellWidget(i, j, lab)
-                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j == 1:
-                            # item = '<h3>' + str(item).zfill(5) + '</h3>'
-                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            # self.table.setCellWidget(i, j, lab)
-                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j == 2:
-                            # item = '<h3>' + ('%.3f' % item).zfill(5) + '</h3>'
-                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            # self.table.setCellWidget(i, j, lab)
-                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j == 3:
-                            # tn = Thumbnail(self, path=item)
-                            tn = ThumbnailFast(self, path=item, name='reference-table', s=scale, l=i)
-                            # tn = ScaledPixmapLabel(self)
-                            tn.setPixmap(QPixmap(item))
-                            self.table.setCellWidget(i, j, tn)
-                        elif j == 4:
-                            # tn = Thumbnail(self, path=item)
-                            tn = ThumbnailFast(self, path=item, name='transforming-table', s=scale, l=i)
-                            # tn = ScaledPixmapLabel(self)
-                            tn.setPixmap(QPixmap(item))
-                            self.table.setCellWidget(i, j, tn)
-                        elif j == 5:
-                            # tn = Thumbnail(self, path=item)
-                            # tn = ThumbnailFast(self, path=item, extra=cfg.data.datetime(l=i))
-                            tn = ThumbnailFast(self, path=item)
-                            # tn = ScaledPixmapLabel(self)
-                            tn.setPixmap(QPixmap(item))
-                            self.table.setCellWidget(i, j, tn)
-                        elif j in (6, 7, 8, 9):
-                            # logger.info(f'j={j}, item={str(item)}')
-                            try:
-                                # tn = SnrThumbnail(self, path=item, snr=snr_4x[j - 6])
-                                tn = CorrSignalThumbnail(self, path=item, snr=snr_4x[j - 6])
-                                self.table.setCellWidget(i, j, tn)
-                            except:
-                                tn = CorrSignalThumbnail(self)
-                                tn.set_no_image()
-                                self.table.setCellWidget(i, j, tn)
-                        else:
-                            self.table.setItem(i, j, QTableWidgetItem(str(item)))
-                    cfg.nCompleted += 1
-                    cfg.main_window.updatePbar(cfg.nCompleted)
-                    cfg.main_window.setPbarText('Loading - %s...' %cfg.data.base_image_name(l=i))
-            else:
-                for i, row in enumerate(self.data):
-                    self.table.insertRow(i)
-                    for j, item in enumerate(row):
-                        if j == 0:
-                            # item = '<h4>' + item + '</h4>'
-                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            # lab.setWordWrap(True)
-                            # self.table.setCellWidget(i, j, lab)
-                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j == 1:
-                            # item = '<h3>' + str(item).zfill(5) + '</h3>'
-                            # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                            # self.table.setCellWidget(i, j, lab)
-                            self.table.setItem(i, j, QTableWidgetItem('\n'.join(textwrap.wrap(str(item), 20))))
-                        elif j in (2, 3):
-                            # thumbnail = Thumbnail(self, path=item)
-                            thumbnail = ThumbnailFast(self, path=item)
-                            self.table.setCellWidget(i, j, thumbnail)
-                        else:
-                            self.table.setItem(i, j, QTableWidgetItem(str(item)))
+            for row in range(0, len(cfg.data)):
+                cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
+                cfg.nProcessDone += 1
+                cfg.main_window.updatePbar(cfg.nProcessDone)
+                self.table.insertRow(row)
+                self.set_row_data(row=row)
+
         except:
             print_exception()
         finally:
+            timer.report()
             self.table.setUpdatesEnabled(True)
-            self.tableFinishedLoading.emit()
-            cfg.main_window.hidePbar()
+            # self.tableFinishedLoading.emit()
+            cfg.mw.hidePbar()
             self.setColumnWidths()
             # self.updateTableDimensions(self.INITIAL_ROW_HEIGHT)
             self.updateTableDimensions(self.row_height_slider.value())
             self.set_column_headers()
-            if cur_selection != -1:
-                self.table.selectRow(cur_selection)
-            self.table.verticalScrollBar().setValue(cur_scroll_pos)
+            # if cur_selection != -1:
+            #     self.table.selectRow(cur_selection)
+            # self.table.verticalScrollBar().setValue(cur_scroll_pos)
             # logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
             # cur_selection = self.table.currentIndex().row()
             self.table.update()
-            dt = time.time() - t
-            logger.info('Table Load Time %s' %str(dt))
+
+            timer.report()
 
             self.table.show()
 
-        logger.info(f'<<<< setScaleData [{caller}]')
+        logger.info(f'<<<< initTableData [{caller}]')
+
+    # def initDataTableNew(self):
+    #     # for i, row in enumerate(self.data):
+    #     for row in range(0,len(cfg.data)):
+    #         cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
+    #         self.table.insertRow(row)
+    #
+    #         self.set_row_data(row=row)
+    #
+    #         cfg.nProcessDone += 1
+    #         cfg.main_window.updatePbar(cfg.nProcessDone)
+
+    def updateTableData(self):
+        cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
+
+        cur_selection = self.table.currentIndex().row()
+        cur_scroll_pos = self.table.verticalScrollBar().value()
+        self.table.setUpdatesEnabled(False)
+        try:
+            self.table.clear()
+            self.set_column_headers()  # Critical
+            for row in range(0,len(cfg.data)):
+                cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
+                cfg.nProcessDone += 1
+                cfg.main_window.updatePbar(cfg.nProcessDone)
+                self.set_row_data(row=row)
+
+        except:
+            print_exception()
+        finally:
+            cfg.mw.hidePbar()
+            if cur_selection != -1:
+                self.table.selectRow(cur_selection)
+            self.table.verticalScrollBar().setValue(cur_scroll_pos)
+            cfg.nProcessDone += 1
+            cfg.main_window.updatePbar(cfg.nProcessDone)
+            self.table.setUpdatesEnabled(True)
+
+
 
 
     def setColumnWidths(self):
-        if cfg.data.is_aligned_and_generated():
-            self.table.setColumnWidth(0, 128)  # 0 index
-            self.table.setColumnWidth(1, 60)   # 1 Filename
-            self.table.setColumnWidth(2, 60)   # 2 SNR
-            self.table.setColumnWidth(3, 100)  # 3 Current
-            self.table.setColumnWidth(4, 100)  # 4 Reference
-            self.table.setColumnWidth(5, 100)  # 5 Aligned
-            self.table.setColumnWidth(6, 100)  # 6 Q0
-            self.table.setColumnWidth(7, 100)  # 7 Q1
-            self.table.setColumnWidth(8, 100)  # 8 Q2
-            self.table.setColumnWidth(9, 100) # 9 Q3
-            self.table.setColumnWidth(10, 80) # 10 Last Aligned datetime
-            self.table.setColumnWidth(11, 50) # 11 Scale
-            self.table.setColumnWidth(12, 50)  # 12 Skip
-            self.table.setColumnWidth(13, 120)  # 13 Method
-            self.table.setColumnWidth(14, 120) # 14 SNR_report
-        else:
-            self.table.setColumnWidth(0, 128)
-            self.table.setColumnWidth(1, 60)
-            self.table.setColumnWidth(2, 100)
-            self.table.setColumnWidth(3, 100)
-            self.table.setColumnWidth(4, 50)
-            self.table.setColumnWidth(5, 50)
-            self.table.setColumnWidth(6, 80)
+        # if cfg.data.is_aligned_and_generated():
+        self.table.setColumnWidth(0, 50)  # 0 index
+        self.table.setColumnWidth(1, 128)   # 1 Filename
+        self.table.setColumnWidth(2, 60)   # 2 SNR
+        self.table.setColumnWidth(3, 100)  # 3 Current
+        self.table.setColumnWidth(4, 100)  # 4 Reference
+        self.table.setColumnWidth(5, 100)  # 5 Aligned
+        self.table.setColumnWidth(6, 100)  # 6 Q0
+        self.table.setColumnWidth(7, 100)  # 7 Q1
+        self.table.setColumnWidth(8, 100)  # 8 Q2
+        self.table.setColumnWidth(9, 100) # 9 Q3
+        self.table.setColumnWidth(10, 80) # 10 Last Aligned datetime
+        self.table.setColumnWidth(11, 50) # 11 Scale
+        self.table.setColumnWidth(12, 50)  # 12 Skip
+        self.table.setColumnWidth(13, 120)  # 13 Method
+        self.table.setColumnWidth(14, 120) # 14 SNR_report
+        # else:
+        #     self.table.setColumnWidth(0, 128)
+        #     self.table.setColumnWidth(1, 60)
+        #     self.table.setColumnWidth(2, 100)
+        #     self.table.setColumnWidth(3, 100)
+        #     self.table.setColumnWidth(4, 50)
+        #     self.table.setColumnWidth(5, 50)
+        #     self.table.setColumnWidth(6, 80)
 
     def updateTableDimensions(self, h):
         # caller = inspect.stack()[1].function
@@ -286,77 +249,92 @@ class ProjectTable(QWidget):
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
 
-        if cfg.data.is_aligned_and_generated():
-            self.table.setColumnWidth(3, h)
-            self.table.setColumnWidth(4, h)
-            self.table.setColumnWidth(5, h)
-            self.table.setColumnWidth(6, h)
-            self.table.setColumnWidth(7, h)
-            self.table.setColumnWidth(8, h)
-            self.table.setColumnWidth(9, h)
-        else:
-            self.table.setColumnWidth(2, h)
-            self.table.setColumnWidth(3, h)
+        # if cfg.data.is_aligned_and_generated():
+        self.table.setColumnWidth(3, h)
+        self.table.setColumnWidth(4, h)
+        self.table.setColumnWidth(5, h)
+        self.table.setColumnWidth(6, h)
+        self.table.setColumnWidth(7, h)
+        self.table.setColumnWidth(8, h)
+        self.table.setColumnWidth(9, h)
+        # else:
+        #     self.table.setColumnWidth(2, h)
+        #     self.table.setColumnWidth(3, h)
 
         size = max(min(int(11 * (max(h, 1) / 80)), 14), 8)
         self.table.setStyleSheet(f'font-size: {size}px;')
 
 
-    def get_data(self):
-        logger.info('')
-        is_aligned = cfg.data.is_aligned_and_generated()
+    def get_row_data(self, s=None, l=None):
+        if s == None: s = cfg.data.scale
+        if l == None: l = cfg.data.zpos
+
+        rowData = []
+        dest = cfg.data.dest()
+        method = cfg.data['data']['scales'][s]['stack'][l]['current_method']
+        index = ('%d'%l).zfill(5)
+        basename = cfg.data.filename_basename(s=s, l=l)
+        snr_avg = cfg.data.snr(s=s, l=l, method=method)
+        tn_tra = cfg.data.thumbnail_tra(s=s, l=l)
+        tn_ref = cfg.data.thumbnail_ref(s=s, l=l)
+        tn_aligned = cfg.data.thumbnail_aligned(s=s, l=l)
+        fn, extension = os.path.splitext(basename)
+        sig0 = os.path.join(dest, s, 'signals', '%s_%s_0%s' % (fn, method, extension))
+        sig1 = os.path.join(dest, s, 'signals', '%s_%s_1%s' % (fn, method, extension))
+        sig2 = os.path.join(dest, s, 'signals', '%s_%s_2%s' % (fn, method, extension))
+        sig3 = os.path.join(dest, s, 'signals', '%s_%s_3%s' % (fn, method, extension))
         try:
-            try:     scale = [cfg.data.scale_pretty()] * len(cfg.data)
-            except:  scale = ['Unknown'] * len(cfg.data); print_exception()
-            try:     ref = cfg.data.thumbnails_ref()
-            except:  ref = ['Unknown'] * len(cfg.data); print_exception()
-            indexes, skips, base, method, snr_report, test, datetime = [], [], [], [], [], [], []
-            for i, l in enumerate(cfg.data.stack()):
-                indexes.append(i)
-                try:     skips.append(l['skipped'])
-                except:  skips.append('?'); print_exception()
-                try:
-                    # m = l['alignment']['method']
-                    m = l['current_method']
-
-                    convert = {'grid-default': 'Grid Default',
-                               'grid-custom': 'Grid Custom',
-                               'manual-strict': 'Manual Strict',
-                               'manual-hint': 'Manual Hint'
-                               }
-                    try:
-                        m = convert[m]
-                    except:
-                        print_exception()
-                    method.append(m)
-                except:
-                    method.append('Unknown')
-                if is_aligned:
-                    try:     snr_report.append(l['alignment']['method_results']['snr_report'])
-                    except:  snr_report.append('<No SNR Report>')
-                    try:     datetime.append(l['alignment']['method_results']['datetime'])
-                    except:  datetime.append('N/A')
-
-
-            if is_aligned:
-                self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.snr_list(),
-                                     cfg.data.thumbnails(), ref, cfg.data.thumbnails_aligned(),
-                                     cfg.data.signals_q0(), cfg.data.signals_q1(),
-                                     cfg.data.signals_q2(), cfg.data.signals_q3(), datetime,
-                                     scale, skips, method, snr_report))
-            else:
-                self.data = list(zip(cfg.data.basefilenames(), indexes, cfg.data.thumbnails(),
-                                  ref, scale, skips, method))
-            # print(str(list(zipped)))
-            # return self.data
+            last_aligned = cfg.data['data']['scales'][s]['stack'][l]['alignment']['method_results']['datetime']
         except:
-            print_exception()
+            last_aligned = 'N/A'
+        scale = cfg.data.scale_pretty(s=s)
+        skip = cfg.data.skipped(s=s, l=l)
+        method = method
+        snr_report = cfg.data.snr_report(s=s, l=l)
 
-    def onTableFinishedLoading(self):
-        logger.info('Data table finished loading.')
-        self.loadScreenLabel.hide()
-        self.table.show()
-        # self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
+        return [index, basename, snr_avg, tn_tra, tn_ref, tn_aligned, sig0, sig1, sig2, sig3, last_aligned, scale, skip, method, snr_report]
+
+
+    def set_row_data(self, row):
+        scale = cfg.data.scale
+
+        snr_4x = cfg.data.snr_components(l=row)
+        row_data = self.get_row_data(s=scale, l=row)
+        # for j, item in enumerate(row):
+        for col in range(0, len(row_data)):
+            if col == 0:
+                self.table.setItem(row, col, QTableWidgetItem('\n'.join(textwrap.wrap(str(row_data[0]), 20))))
+            elif col == 1:
+                self.table.setItem(row, col, QTableWidgetItem('\n'.join(textwrap.wrap(str(row_data[1]), 20))))
+            elif col == 2:
+                self.table.setItem(row, col, QTableWidgetItem('\n'.join(textwrap.wrap(str(row_data[2]), 20))))
+            elif col == 3:
+                tn = ThumbnailFast(self, path=row_data[3], name='reference-table', s=scale, l=row)
+                self.table.setCellWidget(row, col, tn)
+            elif col == 4:
+                tn = ThumbnailFast(self, path=row_data[4], name='transforming-table', s=scale, l=row)
+                self.table.setCellWidget(row, col, tn)
+            elif col == 5:
+                tn = ThumbnailFast(self, path=row_data[5])
+                self.table.setCellWidget(row, col, tn)
+            elif col in (6, 7, 8, 9):
+                try:
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6])
+                    self.table.setCellWidget(row, col, tn)
+                except:
+                    tn = CorrSignalThumbnail(self)
+                    tn.set_no_image()
+                    self.table.setCellWidget(row, col, tn)
+            else:
+                self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
+
+
+
+    # def onTableFinishedLoading(self):
+    #     logger.info('Data table finished loading.')
+    #     # self.loadScreenLabel.hide()
+    #     self.table.show()
+    #     # self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
 
 
     def initUI(self):
@@ -375,7 +353,7 @@ class ProjectTable(QWidget):
         self.btnReloadTable = QPushButton('Reload')
         self.btnReloadTable.setFixedHeight(18)
         self.btnReloadTable.setFixedWidth(70)
-        self.btnReloadTable.clicked.connect(self.setScaleData)
+        self.btnReloadTable.clicked.connect(self.updateTableData)
 
         self.controls = QWidget()
         self.controls.setObjectName('controls')
@@ -389,41 +367,40 @@ class ProjectTable(QWidget):
         self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
 
-        def initTable():
-            logger.info('')
-            self.loadScreenLabel.setText('<center>Loading...</center>')
-            self.setScaleData()
-            # self.loadScreenLabel.hide()
-            # self.table.show()
+        # self.initTableData()
+
+        # def initTableData():
+        #     logger.info('')
+        #     self.loadScreenLabel.setText('<center>Loading...</center>')
+        #     self.initTableData()
+        #     # self.loadScreenLabel.hide()
+        #     # self.table.show()
 
         # self.btnLoadTable = QPushButton('Load Table')
         # self.btnLoadTable.setFixedSize(120,30)
         # self.btnLoadTable.setStyleSheet('font-size: 13px; font-weight: 650;')
-        # self.btnLoadTable.clicked.connect(initTable)
+        # self.btnLoadTable.clicked.connect(initTableData)
 
         # self.loadScreenWidget = VWidget(self.btnLoadTable)
         # self.loadScreenWidget.setAutoFillBackground(True)
         # self.loadScreenWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.loadScreenWidget.setStyleSheet('background-color: #222222; color: #ede9e8;')
 
-        self.loadScreenLabel = ClickLabel('<center><u>→ Load Table ←</u></center>')
-        self.loadScreenLabel.setCursor(Qt.PointingHandCursor)
-        self.loadScreenLabel.clicked.connect(initTable)
-        self.loadScreenLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.loadScreenLabel.setStyleSheet(
-            'background-color: #222222; '
-            'color: #ede9e8; '
-            'text-align: center; '
-            'font-size: 14px;'
-            'font-weight: 650;')
+        # self.loadScreenLabel = ClickLabel('<center><u>→ Load Table ←</u></center>')
+        # self.loadScreenLabel.setCursor(Qt.PointingHandCursor)
+        # self.loadScreenLabel.clicked.connect(initTableData)
+        # self.loadScreenLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.loadScreenLabel.setStyleSheet(
+        #     'background-color: #222222; '
+        #     'color: #ede9e8; '
+        #     'text-align: center; '
+        #     'font-size: 14px;'
+        #     'font-weight: 650;')
 
         layout = VBL()
-        # layout.addWidget(self.loadScreenWidget, alignment=Qt.AlignCenter)
-        # layout.addWidget(self.loadScreenLabel, alignment=Qt.AlignCenter)
-        layout.addWidget(self.loadScreenLabel)
+        # layout.addWidget(self.loadScreenLabel)
         layout.addWidget(self.table)
         layout.addWidget(self.controls, alignment=Qt.AlignBottom)
-
         self.setLayout(layout)
 #
 #

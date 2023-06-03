@@ -155,10 +155,11 @@ class ProjectTab(QWidget):
             self.updateTreeWidget()
             # self.treeview_model.jumpToLayer()
         elif index == 3:
-            # self.snr_plot.data = cfg.data
-            self.snr_plot.data = copy.deepcopy(cfg.data)
+            # self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
-            self.initSnrViewer()
+            # self.initSnrViewer()
+            # pass
+
         logger.info('<<<< _onTabChange <<<<')
 
     # def refreshTab(self, index=None):
@@ -177,31 +178,31 @@ class ProjectTab(QWidget):
             if man_mode:
                 cfg.refViewer.pts = pts_ref
                 cfg.baseViewer.pts = pts_base
-        elif index == 1:
-            self.project_table.setScaleData()
+        # elif index == 1:
+        #     self.project_table.initTableData()
         elif index == 2:
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
         elif index == 3:
-            # self.snr_plot.data = cfg.data
-            self.snr_plot.data = copy.deepcopy(cfg.data)
+            # self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
-            self.initSnrViewer()
+            # self.initSnrViewer()
+            # pass
 
         cfg.mw.dataUpdateWidgets()
         logger.info('<<<< Refreshing')
 
-    def initSnrViewer(self):
-
-        # cfg.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-        # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-        cfg.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
-        # cfg.snrViewer.initViewerSbs(orientation='vertical')
-        # self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
-        # cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-        cfg.snrViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
-        cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)
-        # self.updateNeuroglancer()
+    # def initSnrViewer(self):
+    #
+    #     # cfg.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+    #     # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
+    #     cfg.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
+    #     # cfg.snrViewer.initViewerSbs(orientation='vertical')
+    #     # self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
+    #     # cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
+    #     cfg.snrViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+    #     cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)
+    #     # self.updateNeuroglancer()
 
     def shutdownNeuroglancer(self):
         logger.info('')
@@ -1730,7 +1731,7 @@ class ProjectTab(QWidget):
 
         self.w_section_label_header = QWidget()
         self.w_section_label_header.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
-        self.w_section_label_header.setFixedHeight(20)
+        self.w_section_label_header.setFixedHeight(16)
         self.w_section_label_header.setLayout(self.layout_ng_MA_toolbar)
 
         self.w_ng_extended_toolbar = QToolBar()
@@ -1900,7 +1901,7 @@ class ProjectTab(QWidget):
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
 
-        self.labMethod1 = QLabel('Alignment Method:')
+        self.labMethod1 = QLabel('Alignment Method:  ')
         self.labMethod1.setFixedHeight(18)
         self.labMethod1.setStyleSheet("""font-size: 9px; color: #ede9e8;""")
 
@@ -1913,10 +1914,10 @@ class ProjectTab(QWidget):
         self.tn_ref = ThumbnailFast(self, name='reference')
         self.tn_tra = ThumbnailFast(self, name='transforming')
         # self.tn_ref.setMinimumSize(QSize(160,160))
-        self.tn_ref.setMinimumSize(QSize(180,180))
+        self.tn_ref.setMinimumSize(QSize(120,120))
         # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.tn_tra.setMinimumSize(QSize(160,160))
-        self.tn_tra.setMinimumSize(QSize(180,180))
+        self.tn_tra.setMinimumSize(QSize(120,120))
         # self.tn_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
@@ -2130,7 +2131,7 @@ class ProjectTab(QWidget):
         def fn_splitterMoved():
             # if cfg.pt.hsplitter_tn_ng.sizes()[2] == 0:
             # cfg.mw.cbSignals.setChecked(self.ms_widget.isVisible())
-            cfg.mw.cbSignals.setChecked(cfg.pt.hsplitter_tn_ng.sizes()[2])
+            cfg.mw.cbSignals.setChecked(self.hsplitter_tn_ng.sizes()[2])
 
         self.hsplitter_tn_ng.splitterMoved.connect(fn_splitterMoved)
 
@@ -3193,6 +3194,8 @@ class ProjectTab(QWidget):
         self.table_container.setObjectName('table_container')
         self.table_container.setLayout(hbl)
 
+        self.project_table.initTableData()
+
     def updateTreeWidget(self):
         # time consuming - refactor?
         logger.info('Updating project raw data tree...')
@@ -3412,14 +3415,13 @@ class ProjectTab(QWidget):
         self.snr_plt_wid.setStyleSheet('background-color: #222222; font-weight: 550;')
         self._thumbnail_src = QLabel()
         self._thumbnail_aligned = QLabel()
-        self.snrWebengine = WebEngine(ID='snr')
-        setWebengineProperties(self.snrWebengine)
-        # self.snrWebengine.setMinimumWidth(140)
-        self.snrWebengine.setMinimumWidth(200)
+        # self.snrWebengine = WebEngine(ID='snr')
+        # setWebengineProperties(self.snrWebengine)
+        # self.snrWebengine.setMinimumWidth(200)
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #222222;')
         self.snrPlotSplitter.addWidget(self.snr_plt_wid)
-        self.snrPlotSplitter.addWidget(self.snrWebengine)
+        # self.snrPlotSplitter.addWidget(self.snrWebengine)
 
     def initUI_tab_widget(self):
         '''Tab Widget'''
@@ -3625,8 +3627,8 @@ class ProjectTab(QWidget):
         if tab == 0:
             if not getData('state,manual_mode'):
                 viewers.extend([cfg.emViewer])
-        elif tab == 3:
-            viewers.extend([cfg.snrViewer])
+        # elif tab == 3:
+        #     viewers.extend([cfg.snrViewer])
 
         # logger.info(f'<<<< get_viewers')
         return viewers
