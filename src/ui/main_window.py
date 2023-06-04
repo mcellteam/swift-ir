@@ -772,7 +772,8 @@ class MainWindow(QMainWindow):
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
                 # self.pbarLabel.setText('')
-                cfg.project_tab.snr_plot.initSnrPlot()
+                if cfg.project_tab._tabs.currentIndex() == 3:
+                    cfg.project_tab.snr_plot.initSnrPlot()
                 # self.updateProjectTable()  # +
                 try:
                     self.updateMenus()
@@ -6137,7 +6138,7 @@ class MainWindow(QMainWindow):
 
     def updatePbar(self, x=None):
         caller = inspect.stack()[1].function
-        logger.critical(f"caller: {caller}")
+        # logger.critical(f"caller: {caller}")
         if x == None: x = cfg.nProcessDone
         self.pbar.setValue(x)
         try:
