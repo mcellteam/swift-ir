@@ -153,6 +153,9 @@ class ThumbnailFast(QLabel):
         except:
             print_exception()
             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+        finally:
+            self.update()
+
 
     def updateStylesheet(self):
         if self.showBorder:
@@ -537,10 +540,10 @@ class CorrSignalThumbnail(QLabel):
         if self.path:
             self.setPixmap(QPixmap(self.path))
         else:
-            pass
-            # pixmap = QPixmap(16, 16)
-            # pixmap.fill(Qt.black)  # fill the map with black
-            # self.setPixmap(pixmap)
+            # pass
+            pixmap = QPixmap(16, 16)
+            pixmap.fill(QColor('#141414'))  # fill the map with black
+            self.setPixmap(pixmap)
         # pixmap = QPixmap(16, 16)
         # pixmap.fill(Qt.black)  # fill the map with black
         # self.setPixmap(pixmap)
@@ -565,7 +568,7 @@ class CorrSignalThumbnail(QLabel):
         # if self._noImage:
         #     return
 
-        logger.info('')
+        # logger.info('')
 
         if self.pixmap():
             try:
@@ -679,8 +682,11 @@ class CorrSignalThumbnail(QLabel):
             # pixmap.fill(QColor('#f3f6fb'))  # fill the map with black
             # self.setPixmap(pixmap)
         except:
-            print_exception()
-        # self.update()
+            # print_exception()
+            logger.warning('Unable to set no image...')
+            pass
+        finally:
+            self.update()
 
         # try:
         #     # self.setPixmap(QPixmap(self.no_image_path))
