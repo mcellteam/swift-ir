@@ -568,7 +568,7 @@ class MainWindow(QMainWindow):
             cfg.nProcessSteps = 0
             cfg.project_tab.initNeuroglancer()
             logger.info('<<<< regenerate')
-            self.tell('<b>**** Processes Complete ****</b>')
+            self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
         logger.info('<<<< regenerate')
 
@@ -847,7 +847,7 @@ class MainWindow(QMainWindow):
 
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
-        self.tell('<span style="color: #a30000;"><b>**** Processes Complete ****</b></span>')
+        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     def alignAllScales(self):
         if self._isProjectTab():
@@ -897,7 +897,7 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
-        self.tell('<b>**** Processes Complete ****</b>')
+        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     # def alignOne(self, stageit=False):
     def alignOne(self, quick_swim=False):
@@ -933,7 +933,7 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.tell('<b>**** Processes Complete ****</b>')
+        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     def alignGenerateOne(self):
         cfg.ignore_pbar = True
@@ -960,7 +960,7 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.tell('<b>**** Processes Complete ****</b>')
+        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
         cfg.ignore_pbar = False
 
     def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False):
@@ -4356,10 +4356,6 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 if caller == 'main':
                     logger.info(f'caller: {caller}')
-                    # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-                    # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
-                    # cfg.data.set_swim_1x1_custom_px(self._swimWindowControl.value())
-                    # setData(f'data,scales,{cfg.data.scale},')
                     try:
                         val = int(self._swimWindowControl.text())
                     except:
@@ -4378,7 +4374,9 @@ class MainWindow(QMainWindow):
 
                 cfg.pt.tn_ref.update()
                 cfg.pt.tn_tra.update()
+                self.tell(f'SWIM Window set to: {str(val)}')
         self._swimWindowControl.selectionChanged.connect(fn)
+        self._swimWindowControl.returnPressed.connect(fn)
         self._swimWindowControl.returnPressed.connect(fn)
         self._swimWindowControl.selectionChanged.connect(self._callbk_unsavedChanges)
         self._swimWindowControl.returnPressed.connect(self._callbk_unsavedChanges)
