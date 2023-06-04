@@ -456,13 +456,13 @@ QTreeView::item:selected:!active {
 QScrollBar:vertical {
     border: none;
     /*background-color: #1b1e23;*/
-    width: 10px;
+    width: 12px;
  }
 
 QScrollBar:horizontal {
     border: none;
     /*background-color: #1b1e23;*/
-    height: 10px;
+    height: 12px;
 }
 
 QLCDNumber {

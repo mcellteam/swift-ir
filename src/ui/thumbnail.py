@@ -529,7 +529,7 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y):
 
 
 class CorrSignalThumbnail(QLabel):
-    def __init__(self, parent, path='', snr='', extra=''):
+    def __init__(self, parent, path='', snr='', extra='', name=''):
         super().__init__(parent)
         self.setScaledContents(True)
         self.path = path
@@ -537,10 +537,15 @@ class CorrSignalThumbnail(QLabel):
             self.setPixmap(QPixmap(self.path))
         self.snr = snr
         self.extra = extra
+        self.name = name
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         self.setStyleSheet("""border: 0px solid #ffe135;""")
         self.setContentsMargins(0,0,0,0)
         self._noImage = 0
+        self.map_border_color = {'ms0': cfg.glob_colors[0],
+                                 'ms1': cfg.glob_colors[1],
+                                 'ms2': cfg.glob_colors[2],
+                                 'ms3': cfg.glob_colors[3]}
 
 
     def paintEvent(self, event):
@@ -606,9 +611,16 @@ class CorrSignalThumbnail(QLabel):
                 # qp.drawLine(p3, cp + QPointF(float(-val), float(val)))
                 # qp.drawLine(p4, cp + QPointF(float(val), float(val)))
 
+                # logger.critical(str(coords))
+                # logger.critical(str(p1))
+                # logger.critical(str(p2))
+                # logger.critical(str(p3))
+                # logger.critical(str(p4))
+                # logger.critical(f'pm.width() = {pm.width()}')
+                # logger.critical(f'pm.height() = {pm.height()}')
+
                 # x = 12
                 x = int((pm.width() / 10) + .5)
-
 
 
                 qp.drawLine(p1, cp + QPoint(-x, -x))
@@ -617,29 +629,24 @@ class CorrSignalThumbnail(QLabel):
                 qp.drawLine(p4, cp + QPoint(x, x))
 
 
+                if self.name in self.map_border_color:
+                    color = self.map_border_color[self.name]
 
-                # qp.setPen(QPen(QColor('#a30000'), 2, Qt.SolidLine))
-                # qp.setPen(QPen(QColor('#161c20'), 2, Qt.SolidLine))
-                # qp.setPen(QPen(QColor('#339933'), 2, Qt.SolidLine))
-                qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
+                    # color = map_border_color[self]
 
-                qp.drawLine(p1, p2)
-                qp.drawLine(p1, p3)
-                # qp.drawLine(p2, p3)
-                qp.drawLine(p4, p2)
-                qp.drawLine(p4, p3)
-                # qp.drawLine(p4, p1)
+
+                    # qp.setPen(QPen(QColor('#a30000'), 2, Qt.SolidLine))
+                    # qp.setPen(QPen(QColor('#161c20'), 2, Qt.SolidLine))
+                    # qp.setPen(QPen(QColor('#339933'), 2, Qt.SolidLine))
+                    qp.setPen(QPen(QColor(color), 2, Qt.SolidLine))
+
+                    qp.drawLine(p1, p2)
+                    qp.drawLine(p1, p3)
+                    qp.drawLine(p4, p2)
+                    qp.drawLine(p4, p3)
 
                 # qp.setPen(QPen(QColor('#a30000'), 1, Qt.SolidLine))
                 qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
-
-                # logger.critical(str(coords))
-                # logger.critical(str(p1))
-                # logger.critical(str(p2))
-                # logger.critical(str(p3))
-                # logger.critical(str(p4))
-                # logger.critical(f'pm.width() = {pm.width()}')
-                # logger.critical(f'pm.height() = {pm.height()}')
 
                 # d = float(sqrt(x ** 2 + x ** 2))
                 d = float(sqrt(x ** 2 + x ** 2)) * 2

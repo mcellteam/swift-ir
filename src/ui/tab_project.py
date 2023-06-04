@@ -15,10 +15,11 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
     QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
-    QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem
+    QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
+    QShortcut
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
-    QDoubleValidator, QIntValidator
+    QDoubleValidator, QIntValidator, QKeySequence
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
@@ -108,6 +109,29 @@ class ProjectTab(QWidget):
         self.blinkTimer.timeout.connect(self.onBlinkTimer)
 
         self.blinkCur = 0
+
+        # self.initShortcuts()
+
+
+    # def display_shortcuts(self):
+    #     for action in self.findChildren(QAction) :
+    #         print(type(action), action.toolTip(), [x.toString() for x in action.shortcuts()])
+    #
+    # def initShortcuts(self):
+    #     logger.info('')
+    #     events = (
+    #         (QKeySequence.MoveToPreviousChar, cfg.mw.layer_left),
+    #         (QKeySequence.MoveToNextChar, cfg.mw.layer_right),
+    #         (QKeySequence.MoveToPreviousLine, cfg.mw.incrementZoomIn),
+    #         (QKeySequence.MoveToNextLine, cfg.mw.incrementZoomOut),
+    #         (QKeySequence("Ctrl+M"), cfg.mw.enterExitManAlignMode),
+    #         # (QKeySequence.MoveToPreviousChar, self.scale_down),
+    #         # (QKeySequence.MoveToNextChar, self.scale_up),
+    #         # (Qt.Key_K, self._callbk_skipChanged),
+    #         # (Qt.Key_N, self._callbk_showHideNotes)
+    #     )
+    #     for event, action in events:
+    #         QShortcut(event, self, action)
 
 
     # def mousePressEvent(self, event):
@@ -1962,12 +1986,10 @@ class ProjectTab(QWidget):
 
 
         ########################
-        self.tn_ms0 = CorrSignalThumbnail(self)
-        self.tn_ms1 = CorrSignalThumbnail(self)
-        self.tn_ms2 = CorrSignalThumbnail(self)
-        self.tn_ms3 = CorrSignalThumbnail(self)
-
-
+        self.tn_ms0 = CorrSignalThumbnail(self, name='ms0')
+        self.tn_ms1 = CorrSignalThumbnail(self, name='ms1')
+        self.tn_ms2 = CorrSignalThumbnail(self, name='ms2')
+        self.tn_ms3 = CorrSignalThumbnail(self, name='ms3')
 
         # path = os.path.join(get_appdir(), 'resources', 'x_reticle.png')
         #
@@ -2077,10 +2099,10 @@ class ProjectTab(QWidget):
         self.ms_widget.setItem(0, 1, QTableWidgetItem())
         self.ms_widget.setItem(1, 0, QTableWidgetItem())
         self.ms_widget.setItem(1, 1, QTableWidgetItem())
-        self.ms_widget.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
-        self.ms_widget.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
-        self.ms_widget.item(1, 0).setBackground(QColor(cfg.glob_colors[2]))
-        self.ms_widget.item(1, 1).setBackground(QColor(cfg.glob_colors[3]))
+        # self.ms_widget.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
+        # self.ms_widget.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
+        # self.ms_widget.item(1, 0).setBackground(QColor(cfg.glob_colors[2]))
+        # self.ms_widget.item(1, 1).setBackground(QColor(cfg.glob_colors[3]))
         self.ms_widget.verticalHeader().setVisible(False)
         self.ms_widget.horizontalHeader().setVisible(False)
         self.ms_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -2098,9 +2120,6 @@ class ProjectTab(QWidget):
         # h_header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
         h_header.setSectionResizeMode(1, QHeaderView.Stretch)
-
-
-
 
         ############
         # self.ngCombinedHwidget = HWidget(HWidget(self.w_ng_display, self.ms_widget),  self.MA_splitter)

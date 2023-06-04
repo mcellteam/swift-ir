@@ -804,7 +804,7 @@ class UserProjects(QWidget):
         self.counter1 = 0
         self.counter2 = 0
         # self.counter3 = 0
-        self.setFocusPolicy(Qt.StrongFocus)
+        # self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
         # self.table.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
