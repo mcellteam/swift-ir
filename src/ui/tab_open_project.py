@@ -484,7 +484,7 @@ class OpenProject(QWidget):
 
             if cfg.data['data']['autoalign_flag']:
                 cfg.ignore_pbar = False
-                cfg.mw.showZeroedPbar(set_n_processes=8)
+                cfg.mw.showZeroedPbar(set_n_processes=7)
                 autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=False)
             else:
                 autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=True)

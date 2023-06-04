@@ -11,8 +11,8 @@ from functools import cache
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider, QSizePolicy
-from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSizeF
-from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen
+from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSizeF, Signal
+from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen, QMouseEvent
 from src.helpers import absFilePaths
 from src.helpers import print_exception, get_appdir
 from src.funcs_image import ImageSize
@@ -85,6 +85,9 @@ class Thumbnail(QWidget):
 
 
 class ThumbnailFast(QLabel):
+    clicked = Signal(QMouseEvent)
+    left_click = Signal(float, float)
+
     def __init__(self, parent, path='', extra='', name='', s=None, l=None):
         super().__init__(parent)
         self.setAlignment(Qt.AlignCenter)
@@ -106,6 +109,24 @@ class ThumbnailFast(QLabel):
         self.showBorder = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self._noImage = 0
+
+    def mousePressEvent(self, e):
+        x, y, = (
+            e.x(),
+            e.y(),
+        )
+        print(f"{x} , {y}")
+        # if self.pixmap:
+        #     r = self.pixmap().rect()
+        #     x0, y0 = r.x(), r.y()
+            # x1, y1 = x0 + r.width(), y0 + r.height()
+            # if x >= x0 and x < x1 and y >= y0 and y < y1:
+            #     x_relative = (x - x0) / (x1 - x0)
+            #     y_relative = (y - y0) / (y1 - y0)
+            #     self.left_click.emit(x_relative, y_relative)
+            #     print(f"{x_relative} , {x_relative}")
+
+        super().mousePressEvent(e)
 
     def showPixmap(self):
         self._noImage = 0
@@ -148,8 +169,8 @@ class ThumbnailFast(QLabel):
                 # if originalRatio != currentRatio:
                 qp = QPainter(self)
                 # pm = self.pixmap().scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio)
+                pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio)
 
                 if self._noImage:
                     # self.set_no_image()
