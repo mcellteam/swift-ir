@@ -541,16 +541,16 @@ class CorrSignalThumbnail(QLabel):
             # pixmap = QPixmap(16, 16)
             # pixmap.fill(Qt.black)  # fill the map with black
             # self.setPixmap(pixmap)
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(Qt.black)  # fill the map with black
-        self.setPixmap(pixmap)
+        # pixmap = QPixmap(16, 16)
+        # pixmap.fill(Qt.black)  # fill the map with black
+        # self.setPixmap(pixmap)
 
 
         self.snr = snr
         self.extra = extra
         self.name = name
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
-        self.setStyleSheet("""border: 0px solid #ffe135;""")
+        # self.setStyleSheet("""border: 0px solid #ffe135;""")
         self.setContentsMargins(0,0,0,0)
         self._noImage = 0
         self.map_border_color = {'ms0': cfg.glob_colors[0],

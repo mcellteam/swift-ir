@@ -304,7 +304,6 @@ class TaskQueue(QObject):
 
                     if (not cfg.ignore_pbar) and self.use_gui:
                         try:
-
                             self.parent.updatePbar(n_tasks - realtime)
                             if self.taskPrefix and self.taskNameList:
                                 try:

@@ -357,7 +357,8 @@ class MainWindow(QMainWindow):
             # logger.critical(f'cfg.dataById = {str(cfg.dataById)}')
             logger.critical(f'cfg.data == cfg.dataById[{id(cfg.pt)}]? {cfg.data == cfg.dataById[id(cfg.pt)]}')
 
-    def updateCorrSignalsDrawer(self):
+    def updateCorrSignalsDrawer(self, z=None):
+        if z == None: z = cfg.data.zpos
 
         # caller = inspect.stack()[1].function
         logger.info('Updating correlation signals...')
@@ -371,9 +372,9 @@ class MainWindow(QMainWindow):
         # else:
         #     cfg.pt.ms_widget.show()
 
-        thumbs = cfg.data.get_signals_filenames()
+        thumbs = cfg.data.get_signals_filenames(l=z)
         n = len(thumbs)
-        snr_vals = cfg.data.snr_components()
+        snr_vals = cfg.data.snr_components(l=z)
         # logger.info(f'snr_vals = {snr_vals}')
         colors = cfg.glob_colors
         count = 0
@@ -386,13 +387,12 @@ class MainWindow(QMainWindow):
                     cfg.pt.msList[i].set_no_image()
             # return
 
-
         # logger.critical('thumbs: %s' % str(thumbs))
         # logger.critical('snr_vals: %s' % str(snr_vals))
-
-        if cfg.data.current_method == 'grid-custom':
+        method = cfg.data.get_current_method(l=z)
+        if method == 'grid-custom':
             regions = cfg.data.grid_custom_regions
-            names = cfg.data.get_grid_custom_filenames()
+            names = cfg.data.get_grid_custom_filenames(l=z)
             # logger.info('names: %s' % str(names))
             for i in range(4):
                 if regions[i]:
@@ -415,7 +415,7 @@ class MainWindow(QMainWindow):
                         logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
         # elif cfg.data.current_method == 'manual-hint':
         #     cfg.data.snr_components()
-        elif cfg.data.current_method == 'manual-strict':
+        elif method == 'manual-strict':
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
@@ -6136,8 +6136,18 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(x)
 
     def updatePbar(self, x=None):
+        caller = inspect.stack()[1].function
+        logger.critical(f"caller: {caller}")
         if x == None: x = cfg.nProcessDone
         self.pbar.setValue(x)
+        try:
+            if caller == "collect_results":
+                if "Transforms" in self.pbar.text():
+                    if self._isProjectTab():
+                        if cfg.pt.ms_widget.isVisible():
+                            self.updateCorrSignalsDrawer(z=x - 1)
+        except:
+            print_exception()
         QApplication.processEvents()
 
     def setPbarText(self, text: str):
