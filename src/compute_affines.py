@@ -264,20 +264,21 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         write_run_to_file(dm)
 
 
-        if cfg.ignore_pbar:
-            cfg.nProcessDone +=1
-            cfg.mw.updatePbar()
-            cfg.mw.setPbarText('Scaling Correlation Signal Thumbnails...')
-        try:
-            # if cfg.USE_EXTRA_THREADING and use_gui:
-            #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
-            #     cfg.mw.threadpool.start(cfg.mw.worker)
-            # else:
-            cfg.thumb.reduce_signals(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
-        except:
-            print_exception()
-            cfg.mw.warn('There Was a Problem Generating Corr Spot Thumbnails')
-        # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
+        # if cfg.ignore_pbar:
+        #     cfg.nProcessDone +=1
+        #     cfg.mw.updatePbar()
+        #     cfg.mw.setPbarText('Scaling Correlation Signal Thumbnails...')
+        # try:
+        #     # if cfg.USE_EXTRA_THREADING and use_gui:
+        #     #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
+        #     #     cfg.mw.threadpool.start(cfg.mw.worker)
+        #     # else:
+        #     cfg.thumb.reduce_signals(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
+        # except:
+        #     print_exception()
+        #     cfg.mw.warn('There Was a Problem Generating Corr Spot Thumbnails')
+
+
 
         # logger.info('Collating Correlation Signal Images...')
         # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')

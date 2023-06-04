@@ -801,7 +801,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedSize(QSize(44, 38))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnQuickSWIM.clicked.connect(cfg.main_window.alignOne)
+        self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
         hbl = HBL()
         hbl.setSpacing(0)
         hbl.setContentsMargins(2, 2, 2, 2)

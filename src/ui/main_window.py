@@ -761,9 +761,10 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
+                self.enableAllTabs() #0603+
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
-                self.pbarLabel.setText('')
+                # self.pbarLabel.setText('')
                 cfg.project_tab.snr_plot.initSnrPlot()
                 # self.updateProjectTable()  # +
                 try:
@@ -773,10 +774,7 @@ class MainWindow(QMainWindow):
                 self.present_snr_results(start=start, end=end)
                 self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
                 self.updateDtWidget()
-                cfg.project_tab.updateTreeWidget()
-                # cfg.project_tab.updateLabelsHeader()
-                # cfg.project_tab.updateProjectLabels()
-                # self.updateProjectTable()  # +
+                cfg.project_tab.updateTreeWidget() #0603-
                 self._bbToggle.setChecked(cfg.data.has_bb())
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
@@ -825,10 +823,10 @@ class MainWindow(QMainWindow):
             cfg.ignore_pbar = False
             if self._toggleAutogenerate.isChecked():
                 # cfg.nProcessSteps = 5
-                self.showZeroedPbar(set_n_processes=5)
+                self.showZeroedPbar(set_n_processes=4)
             else:
                 # cfg.nProcessSteps = 3
-                self.showZeroedPbar(set_n_processes=3)
+                self.showZeroedPbar(set_n_processes=2)
 
 
         cfg.CancelProcesses = False
@@ -862,7 +860,7 @@ class MainWindow(QMainWindow):
                 #     alignThese.app
 
             self.tell(f'# Scales Unaligned: {len(alignThese)}. Aligning now...')
-            ntasks = 5 * len(alignThese)
+            ntasks = 4 * len(alignThese)
             self.showZeroedPbar(set_n_processes=ntasks)
             for s in alignThese:
                 cfg.data.scale = s
@@ -880,9 +878,9 @@ class MainWindow(QMainWindow):
         start = int(self.startRangeInput.text())
         end = int(self.endRangeInput.text()) + 1
         if self._toggleAutogenerate.isChecked():
-            cfg.nProcessSteps = 5
+            self.showZeroedPbar(set_n_processes=4)
         else:
-            cfg.nProcessSteps = 3
+            self.showZeroedPbar(set_n_processes=2)
         cfg.nProcessDone = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
@@ -902,7 +900,7 @@ class MainWindow(QMainWindow):
         self.tell('<b>**** Processes Complete ****</b>')
 
     # def alignOne(self, stageit=False):
-    def alignOne(self):
+    def alignOne(self, quick_swim=False):
         logger.critical('Aligning One...')
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
@@ -921,12 +919,17 @@ class MainWindow(QMainWindow):
             align_one=True,
             swim_only=True,
         )
-        self.updateCorrSignalsDrawer()
-        self.onAlignmentEnd(start=start, end=end) #0601+ why was this uncommented?
         self._working = False
-        self.enableAllTabs()
+
         # self.updateCorrSignalsDrawer()
-        cfg.project_tab.initNeuroglancer()
+        if quick_swim:
+            self.updateCorrSignalsDrawer()
+            self.updateEnabledButtons()
+            self.updateCpanelDetails()
+        else:
+            self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
+            cfg.project_tab.initNeuroglancer()
+
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
@@ -1383,9 +1386,10 @@ class MainWindow(QMainWindow):
 
     def everySecond(self):
         if self._isProjectTab():
-            logger.info('')
-            if not self._working:
-                self.dataUpdateWidgets()
+            if cfg.pt._tabs.currentIndex() == 0:
+                logger.info('')
+                if not self._working:
+                    self.dataUpdateWidgets()
 
 
 
@@ -1398,10 +1402,10 @@ class MainWindow(QMainWindow):
 
         if not silently:
             if self.uiUpdateTimer.isActive():
-                # logger.info('Canceling UI Update...')
+                logger.info('Delaying UI Update...')
                 return
             else:
-                # logger.critical('Updating UI...')
+                logger.critical('Updating UI...')
                 self.uiUpdateTimer.start()
                 # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
                 # QTimer.singleShot(300, self.dataUpdateWidgets)
