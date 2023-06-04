@@ -57,6 +57,16 @@ class ProjectTable(QWidget):
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
 
+#         self.setStyleSheet("""
+# QHeaderView{
+# background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(20, 158, 217, 255), stop:1 rgba(36, 158, 217, 255));
+#
+# border:none;
+# border-top-color:#161c20;
+# color:#ede9e8;
+# font: 75 12pt "Calibri";
+# }""")
+
 
     # def onDoubleClick(self, item=None):
     #     logger.critical('')
@@ -260,9 +270,33 @@ class ProjectTable(QWidget):
             elif col == 5:
                 tn = ThumbnailFast(self, path=row_data[5])
                 self.table.setCellWidget(row, col, tn)
-            elif col in (6, 7, 8, 9):
+            elif col == 6:
                 try:
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6])
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms0')
+                    self.table.setCellWidget(row, col, tn)
+                except:
+                    tn = CorrSignalThumbnail(self)
+                    tn.set_no_image()
+                    self.table.setCellWidget(row, col, tn)
+            elif col == 7:
+                try:
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms1')
+                    self.table.setCellWidget(row, col, tn)
+                except:
+                    tn = CorrSignalThumbnail(self)
+                    tn.set_no_image()
+                    self.table.setCellWidget(row, col, tn)
+            elif col == 8:
+                try:
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms2')
+                    self.table.setCellWidget(row, col, tn)
+                except:
+                    tn = CorrSignalThumbnail(self)
+                    tn.set_no_image()
+                    self.table.setCellWidget(row, col, tn)
+            elif col == 9:
+                try:
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms3')
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self)
