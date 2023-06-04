@@ -1480,7 +1480,7 @@ class MainWindow(QMainWindow):
             delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
             if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
                 if self.uiUpdateTimer.isActive():
-                    logger.critical('Delaying UI Update (uiUpdateTimer IS ACTIVE)...')
+                    logger.info('Delaying UI Update...')
                     self.uiUpdateTimer.start()
                     return
                 else:
