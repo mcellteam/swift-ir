@@ -283,7 +283,8 @@ class MainWindow(QMainWindow):
 
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
-        self.uiUpdateTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
+        # self.uiUpdateTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
+        self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
         # self.uiUpdateTimer.setInterval(250)
         self.uiUpdateTimer.setInterval(360)
 
@@ -1400,7 +1401,8 @@ class MainWindow(QMainWindow):
 
 
 
-    def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
+    # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
+    def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
         logger.info('')
 
@@ -1436,7 +1438,8 @@ class MainWindow(QMainWindow):
 
             cfg.project_tab._overlayRect.hide()
             cfg.project_tab._overlayLab.hide()
-            logger.critical(f'sender: {self.sender()}')
+            # logger.critical(f'sender: {self.sender()}')
+            # logger.critical(f'sender().objectName(): {self.sender().objectName()}')
 
             # if 'viewer_em' in str(self.sender()):
             #     if not silently:
@@ -1461,16 +1464,21 @@ class MainWindow(QMainWindow):
             #         return
 
             cur = cfg.data.zpos
-            self._btn_prevSection.setEnabled(cur > 0)
-            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-            try:    self._sectionSlider.setValue(cur)
-            except: logger.warning('Section Slider Widget Failed to Update')
+
             try:    self._jumpToLineedit.setText(str(cur))
             except: logger.warning('Current Layer Widget Failed to Update')
+            try:    self._sectionSlider.setValue(cur)
+            except: logger.warning('Section Slider Widget Failed to Update')
             try:    self._skipCheckbox.setChecked(not cfg.data.skipped())
             except: logger.warning('Skip Toggle Widget Failed to Update')
+            self._btn_prevSection.setEnabled(cur > 0)
+            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
 
-            if 'viewer_em' in str(self.sender()):
+            if cfg.pt.ms_widget.isVisible():
+                self.updateCorrSignalsDrawer()
+
+            delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
+            if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
                 if self.uiUpdateTimer.isActive():
                     logger.critical('Delaying UI Update (uiUpdateTimer IS ACTIVE)...')
                     self.uiUpdateTimer.start()
@@ -1480,10 +1488,10 @@ class MainWindow(QMainWindow):
                     self.uiUpdateTimer.start()
 
 
-            if self._working == True:
-                logger.warning(f"Can't update GUI now - working (caller: {caller})...")
-                self.warn("Can't update GUI now - working...")
-                return
+            # if self._working == True:
+            #     logger.warning(f"Can't update GUI now - working (caller: {caller})...")
+            #     self.warn("Can't update GUI now - working...")
+            #     return
 
             # if isinstance(ng_layer, int):
             #     if type(ng_layer) != bool:
@@ -1507,8 +1515,8 @@ class MainWindow(QMainWindow):
 
             # logger.info('Updating the UI...')
 
-            if cfg.pt.ms_widget.isVisible():
-                self.updateCorrSignalsDrawer()
+            # if cfg.pt.ms_widget.isVisible():
+            #     self.updateCorrSignalsDrawer()
 
             # timer.report() #1
 
@@ -4428,7 +4436,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Go To Previous Section.'
         self._btn_prevSection = QPushButton()
-        self._btn_prevSection = QPushButton()
+        self._btn_prevSection.setObjectName('z-index-left-button')
         self._btn_prevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_prevSection.setToolTip(tip)
         self._btn_prevSection.clicked.connect(self.layer_left)
@@ -4439,6 +4447,7 @@ class MainWindow(QMainWindow):
 
         tip = 'Go To Next Section.'
         self._btn_nextSection = QPushButton()
+        self._btn_nextSection.setObjectName('z-index-right-button')
         self._btn_nextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_nextSection.setToolTip(tip)
         self._btn_nextSection.clicked.connect(self.layer_right)
@@ -4482,6 +4491,7 @@ class MainWindow(QMainWindow):
         self._scaleSetWidget.layout.setAlignment(Qt.AlignCenter)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
+        self._sectionSlider.setObjectName('z-index-slider')
         # self._sectionSlider.setFixedWidth(76)
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)

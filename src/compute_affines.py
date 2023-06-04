@@ -99,9 +99,12 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         #     # remove_aligned(al_substack) #0903 Moved into conditional
         #     dm.remove_aligned(scale, start, end)
 
-        signals_raw_dir = os.path.join(dm.dest(), scale, 'signals_raw')
-        if not os.path.exists(signals_raw_dir):
-            os.mkdir(signals_raw_dir)
+        # signals_raw_dir = os.path.join(dm.dest(), scale, 'signals_raw')
+        # if not os.path.exists(signals_raw_dir):
+        #     os.mkdir(signals_raw_dir)
+        signals_dir = os.path.join(dm.dest(), scale, 'signals')
+        if not os.path.exists(signals_dir):
+            os.mkdir(signals_dir)
 
         logger.info('continuing 3...')
 

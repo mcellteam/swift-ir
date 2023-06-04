@@ -188,7 +188,8 @@ class ProjectTab(QWidget):
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
-        logger.info('Refreshing Tab...')
+        caller = inspect.stack()[1].function
+        logger.info(f'Refreshing Tab (caller: {caller})...')
 
         index = self._tabs.currentIndex()
         man_mode = getData('state,manual_mode')
