@@ -2369,7 +2369,7 @@ class MainWindow(QMainWindow):
 
         # webengine = QWebEngineView()
         webengine = WebEngine(ID=ID)
-        webengine.setFocusPolicy(Qt.StrongFocus)
+        # webengine.setFocusPolicy(Qt.StrongFocus)
         webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
         webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
@@ -2383,7 +2383,7 @@ class MainWindow(QMainWindow):
 
     def url_resource(self, url, title):
         webengine = QWebEngineView()
-        webengine.setFocusPolicy(Qt.StrongFocus)
+        # webengine.setFocusPolicy(Qt.StrongFocus)
         webengine.setUrl(QUrl(url))
         webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
@@ -2510,6 +2510,7 @@ class MainWindow(QMainWindow):
             (QKeySequence.MoveToNextChar, self.layer_right),
             (QKeySequence.MoveToPreviousLine, self.incrementZoomIn),
             (QKeySequence.MoveToNextLine, self.incrementZoomOut),
+            # (QKeySequence("Ctrl+M"), self.enterExitManAlignMode),
             # (QKeySequence.MoveToPreviousChar, self.scale_down),
             # (QKeySequence.MoveToNextChar, self.scale_up),
             # (Qt.Key_K, self._callbk_skipChanged),
@@ -2517,6 +2518,10 @@ class MainWindow(QMainWindow):
         )
         for event, action in events:
             QShortcut(event, self, action)
+
+    def display_shortcuts(self):
+        for action in self.findChildren(QAction) :
+            print(type(action), action.toolTip(), [x.toString() for x in action.shortcuts()])
 
     def reload_remote(self):
         logger.info("Reloading Remote Neuroglancer Client")
@@ -3664,6 +3669,7 @@ class MainWindow(QMainWindow):
         self.saveAction = QAction('&Save Project', self)
         self.saveAction.triggered.connect(self.save)
         self.saveAction.setShortcut('Ctrl+S')
+        self.saveAction.setShortcutContext(Qt.ApplicationShortcut)
         # self.addAction(self.saveAction)
         fileMenu.addAction(self.saveAction)
 
@@ -3678,22 +3684,26 @@ class MainWindow(QMainWindow):
         self.refreshAction = QAction('&Refresh', self)
         self.refreshAction.triggered.connect(self.refreshTab)
         self.refreshAction.setShortcut('Ctrl+R')
+        self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
         self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
         self.showPythonAction = QAction('Show &Python', self)
         self.showPythonAction.triggered.connect(lambda: self.cbPython.setChecked(not self.cbPython.isChecked()))
         self.showPythonAction.setShortcut('Ctrl+P')
+        self.showPythonAction.setShortcutContext(Qt.ApplicationShortcut)
         fileMenu.addAction(self.showPythonAction)
 
         self.showMonitorAction = QAction('Show Process &Monitor', self)
         self.showMonitorAction.triggered.connect(lambda: self.cbMonitor.setChecked(not self.cbMonitor.isChecked()))
         self.showMonitorAction.setShortcut('Ctrl+H')
+        self.showMonitorAction.setShortcutContext(Qt.ApplicationShortcut)
         fileMenu.addAction(self.showMonitorAction)
 
         self.showMatchSignalsAction = QAction('Show Match S&ignals', self)
         self.showMatchSignalsAction.triggered.connect(lambda: self.cbSignals.setChecked(not self.cbSignals.isChecked()))
         self.showMatchSignalsAction.setShortcut('Ctrl+I')
+        self.showMatchSignalsAction.setShortcutContext(Qt.ApplicationShortcut)
         fileMenu.addAction(self.showMatchSignalsAction)
 
 
@@ -3701,6 +3711,7 @@ class MainWindow(QMainWindow):
         self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
         self.showNotesAction.setShortcut('Ctrl+Z')
+        self.showNotesAction.setShortcutContext(Qt.ApplicationShortcut)
         fileMenu.addAction(self.showNotesAction)
 
         def fn():
@@ -3713,12 +3724,14 @@ class MainWindow(QMainWindow):
         self.closeTabAction = QAction(f"Close Tab {hotkey('W')}", self)
         self.closeTabAction.triggered.connect(fn)
         self.closeTabAction.setShortcut('Ctrl+W')
+        self.closeTabAction.setShortcutContext(Qt.ApplicationShortcut)
         self.addAction(self.closeTabAction)
         fileMenu.addAction(self.closeTabAction)
 
         self.exitAppAction = QAction(f"&Quit {hotkey('Q')}", self)
         self.exitAppAction.triggered.connect(self.exit_app)
         self.exitAppAction.setShortcut('Ctrl+Q')
+        self.exitAppAction.setShortcutContext(Qt.ApplicationShortcut)
         self.addAction(self.exitAppAction)
         fileMenu.addAction(self.exitAppAction)
 
@@ -3777,6 +3790,7 @@ class MainWindow(QMainWindow):
         self.alignMatchPointAction = QAction(f"Align Manually {hotkey('M')}", self)
         self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
         self.alignMatchPointAction.setShortcut('Ctrl+M')
+        self.alignMatchPointAction.setShortcutContext(Qt.ApplicationShortcut)
         alignMenu.addAction(self.alignMatchPointAction)
         # self.addAction(self.alignMatchPointAction)
 
