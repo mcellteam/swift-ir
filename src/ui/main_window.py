@@ -6142,20 +6142,30 @@ class MainWindow(QMainWindow):
         if x == None: x = cfg.nProcessDone
         self.pbar.setValue(x)
         try:
-            if caller == "collect_results":
-                if "Transforms" in self.pbar.text():
-                    if self._isProjectTab():
+            if self._isProjectTab():
+                if caller == "collect_results":
+                    if "Transforms" in self.pbar.text():
                         if cfg.pt.ms_widget.isVisible():
+                            # if (x == len(cfg.data)) or (x == len(cfg.data) - 1):
+                            #     logger.critical(f"\n\nx = {x}\n")
+                            #     # self.updateCorrSignalsDrawer(z=cfg.data.zpos)
+                            #     cfg.pt.tn_ms0.set_no_image()
+                            #     cfg.pt.tn_ms1.set_no_image()
+                            #     cfg.pt.tn_ms2.set_no_image()
+                            #     cfg.pt.tn_ms3.set_no_image()
+                            # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
         except:
             print_exception()
+
         QApplication.processEvents()
 
     def setPbarText(self, text: str):
         # logger.critical('')
         logger.critical(f'cfg.nTasks = {cfg.nProcessSteps}, cfg.nCompleted = {cfg.nProcessDone}')
         self.pbar.setFormat('(%p%) ' + text)
-        self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
+        # self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
+        self.pbarLabel.setText('(Task %d/%d)' % (cfg.nProcessDone, cfg.nProcessSteps))
         # logger.info('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
         # self.repaint()
         QApplication.processEvents()
