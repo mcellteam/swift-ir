@@ -761,7 +761,7 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
-                self.enableAllTabs() #0603+
+                self.enableAllTabs() #0603+ #Critical
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
                 # self.pbarLabel.setText('')
@@ -925,6 +925,7 @@ class MainWindow(QMainWindow):
         if quick_swim:
             self.updateCorrSignalsDrawer()
             self.updateEnabledButtons()
+            self.enableAllTabs()
             self.updateCpanelDetails()
         else:
             self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
