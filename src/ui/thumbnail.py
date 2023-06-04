@@ -529,12 +529,23 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y):
 
 
 class CorrSignalThumbnail(QLabel):
+    # def __init__(self, parent, path='', snr='', extra='', name=''):
     def __init__(self, parent, path='', snr='', extra='', name=''):
         super().__init__(parent)
         self.setScaledContents(True)
         self.path = path
         if self.path:
             self.setPixmap(QPixmap(self.path))
+        else:
+            pass
+            # pixmap = QPixmap(16, 16)
+            # pixmap.fill(Qt.black)  # fill the map with black
+            # self.setPixmap(pixmap)
+        pixmap = QPixmap(16, 16)
+        pixmap.fill(Qt.black)  # fill the map with black
+        self.setPixmap(pixmap)
+
+
         self.snr = snr
         self.extra = extra
         self.name = name
@@ -547,10 +558,14 @@ class CorrSignalThumbnail(QLabel):
                                  'ms2': cfg.glob_colors[2],
                                  'ms3': cfg.glob_colors[3]}
 
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
 
     def paintEvent(self, event):
         # if self._noImage:
         #     return
+
+        logger.info('')
 
         if self.pixmap():
             try:
@@ -559,132 +574,76 @@ class CorrSignalThumbnail(QLabel):
                 # if originalRatio != currentRatio:
 
                 qp = QPainter(self)
-
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-                # logger.info(f'pm.width() = {pm.width()}, pm.height() = {pm.height()}')
-
-                # if self._noImage:
-                #     return
-                if self._noImage or self.extra == 'reticle':
-                    # self.set_no_image()
-                    self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                    self.r.moveCenter(self.rect().center())
-                    qp.drawPixmap(self.r, pm)
-                    return
-
-                # if (pm.width() == 0) or (pm.height() == 0):
-                # pm.fill()
-                self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                # rect.moveBottomLeft(self.rect().bottomLeft())
+                self.r = QRect(0, 0, pm.width(), pm.height())
                 self.r.moveCenter(self.rect().center())
-
                 qp.drawPixmap(self.r, pm)
+                # if (pm.width() == 0) or (pm.height() == 0):
+
                 coords = self.r.getCoords()
-                # coords = self.r.getRect()
-                cp = QPointF(self.r.center())  # center point
 
-                # siz = pm.width() / 4
-                # logger.info(f'siz = {siz}')
-
-                # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
-                # qp.setPen(QPen(QColor('#a30000'), 1, Qt.DashLine))
-                qp.setPen(QPen(QColor('#339933'), 1, Qt.DashLine))
-
-
-                # 14:15:11 [thumbnail.paintEvent:575] PyQt5.QtCore.QPointF(2.0, 11.0)
-                # 14:15:11 [thumbnail.paintEvent:576] PyQt5.QtCore.QPointF(180.0, 11.0)
-                # 14:15:11 [thumbnail.paintEvent:577] PyQt5.QtCore.QPointF(2.0, 189.0)
-                # 14:15:11 [thumbnail.paintEvent:578] PyQt5.QtCore.QPointF(180.0, 189.0)
-                # p1 = QPointF(coords[0], coords[1])
-                # p2 = QPointF(coords[2], coords[1])
-                # p3 = QPointF(coords[0], coords[3])
-                # p4 = QPointF(coords[2], coords[3])
                 p1 = QPoint(coords[0], coords[1])
                 p2 = QPoint(coords[2], coords[1])
                 p3 = QPoint(coords[0], coords[3])
                 p4 = QPoint(coords[2], coords[3])
 
-                # val = float(convert_rotation(45) * siz/2)
-                # qp.drawLine(p1, cp + QPoint(float(-val), float(-val)))
-                # qp.drawLine(p2, cp + QPointF(float(val), float(-val)))
-                # qp.drawLine(p3, cp + QPointF(float(-val), float(val)))
-                # qp.drawLine(p4, cp + QPointF(float(val), float(val)))
-
-                # logger.critical(str(coords))
-                # logger.critical(str(p1))
-                # logger.critical(str(p2))
-                # logger.critical(str(p3))
-                # logger.critical(str(p4))
-                # logger.critical(f'pm.width() = {pm.width()}')
-                # logger.critical(f'pm.height() = {pm.height()}')
-
-                # x = 12
-                x = int((pm.width() / 10) + .5)
-
-
-                qp.drawLine(p1, cp + QPoint(-x, -x))
-                qp.drawLine(p2, cp + QPoint(x, -x))
-                qp.drawLine(p3, cp + QPoint(-x, x))
-                qp.drawLine(p4, cp + QPoint(x, x))
-
-
                 if self.name in self.map_border_color:
-                    color = self.map_border_color[self.name]
+                    qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
+                    qp.drawLines(p1,p2 , p1,p3,  p4,p2 , p4,p3)
 
-                    # color = map_border_color[self]
+                if self._noImage or self.extra == 'reticle':
+                    self.pixmap().fill(QColor('#141414'))
+                    font = QFont()
+                    size = max(min(int(11 * (max(pm.height(), 1) / 80)), 16), 5)
+                    font.setPointSize(size)
+                    # font.setBold(True)
+                    qp.setFont(font)
+                    qp.setPen(QColor('#555555'))
+                    # qp.drawText(QRectF(0, 0, pm.width(), pm.height()), Qt.AlignCenter, "No Signal")
+                    qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "No Signal")
+                else:
 
+                    cp = QPointF(self.r.center())  # center point
 
-                    # qp.setPen(QPen(QColor('#a30000'), 2, Qt.SolidLine))
-                    # qp.setPen(QPen(QColor('#161c20'), 2, Qt.SolidLine))
-                    # qp.setPen(QPen(QColor('#339933'), 2, Qt.SolidLine))
-                    qp.setPen(QPen(QColor(color), 2, Qt.SolidLine))
+                    # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
+                    qp.setPen(QPen(QColor('#339933'), 1, Qt.DashLine))
 
-                    qp.drawLine(p1, p2)
-                    qp.drawLine(p1, p3)
-                    qp.drawLine(p4, p2)
-                    qp.drawLine(p4, p3)
+                    # x = 12
+                    x = int((pm.width() / 10) + .5)
 
-                # qp.setPen(QPen(QColor('#a30000'), 1, Qt.SolidLine))
-                qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
+                    qp.drawLines(p1, cp + QPoint(-x, -x),
+                                 p2, cp + QPoint(x, -x),
+                                 p3, cp + QPoint(-x, x),
+                                 p4, cp + QPoint(x, x))
 
-                # d = float(sqrt(x ** 2 + x ** 2))
-                d = float(sqrt(x ** 2 + x ** 2)) * 2
+                    qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
 
-                # arcRect = QRectF(cp + QPoint(int(-siz/2 + .5), int(-siz/2 + .5)), cp + QPointF(int(siz/2 + .5), int(siz/2 + .5)))
-                arcRect = QRectF(cp + QPointF(-d, -d), cp + QPointF(d, d))
-                # arcRect = QRectF(cp + QPointF(float(-siz/2), float(-siz/2)), cp + QPointF(float(siz/2), float(siz/2)))
-                # qp.drawArc(arcRect, 0, 90*16)
-                # The startAngle and spanAngle must be specified in 1/16th of a degree, i.e.
-                # a full circle equals 5760 (16 * 360). Positive values for the angles mean
-                # counter-clockwise while negative values mean the clockwise direction. Zero
-                # degrees is at the 3 o'clock position.
-                # spanAngle = 30
-                spanAngle = 30
-                qp.drawArc(arcRect, 30*16, spanAngle*16)
-                qp.drawArc(arcRect, 30*16 + 180*16, spanAngle*16)
-                qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
-                qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
+                    d = float(sqrt(x ** 2 + x ** 2)) * 2
 
-                font = QFont()
-                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 5)
-                font.setPointSize(size)
-                # if size >= 8:
-                font.setBold(True)
-                # font.setPointSize(14)
-                qp.setFont(font)
-                # qp.setPen(QColor('#ff0000'))
-                # qp.setPen(QColor('#a30000'))
-                qp.setPen(QColor('#339933'))
+                    # arcRect = QRectF(cp + QPoint(int(-siz/2 + .5), int(-siz/2 + .5)), cp + QPointF(int(siz/2 + .5), int(siz/2 + .5)))
+                    arcRect = QRectF(cp + QPointF(-d, -d), cp + QPointF(d, d))
+                    spanAngle = 30
+                    qp.drawArc(arcRect, 30*16, spanAngle*16)
+                    qp.drawArc(arcRect, 30*16 + 180*16, spanAngle*16)
+                    qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
+                    qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
-                if self.snr:
-                    # loc = QPoint(0, self.rect().height() - 4)
-                    # loc = QPoint(16, self.rect().height() - 6)
-                    loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
-                    if self.extra:
-                        qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
-                    else:
-                        qp.drawText(loc, '%.1f' %self.snr)
+                    font = QFont()
+                    size = max(min(int(11 * (max(pm.height(), 1) / 60)), 16), 5)
+                    font.setPointSize(size)
+                    font.setBold(True)
+                    qp.setFont(font)
+                    qp.setPen(QColor('#339933'))
+
+                    if self.snr:
+                        # loc = QPoint(0, self.rect().height() - 4)
+                        # loc = QPoint(16, self.rect().height() - 6)
+                        loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
+                        if self.extra:
+                            qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
+                        else:
+                            qp.drawText(loc, '%.1f' %self.snr)
                 return
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
@@ -711,11 +670,24 @@ class CorrSignalThumbnail(QLabel):
         self.snr = None
         self._noImage = 1
         try:
-            self.setPixmap(QPixmap(self.no_image_path))
-            self.update()
+            self.pixmap().fill(QColor('#141414'))
+            # self.pixmap().fill(QColor('#ffe135'))
+
+            # # self.pixmap().fill()
+            # pixmap = QPixmap(16, 16)
+            # # pixmap = QPixmap()
+            # pixmap.fill(QColor('#f3f6fb'))  # fill the map with black
+            # self.setPixmap(pixmap)
         except:
             print_exception()
-            logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+        # self.update()
+
+        # try:
+        #     # self.setPixmap(QPixmap(self.no_image_path))
+        #     # self.update()
+        # except:
+        #     print_exception()
+        #     logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
 
 
 def convert_rotation(degrees):

@@ -1,6 +1,6 @@
 
 QMainWindow {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     background-color: #ede9e8;
     font-size: 11px;
 }
@@ -22,14 +22,14 @@ QMainWindow::separator:hover {
 }
 
 QToolTip {
-   font-family: Tahoma, sans-serif;
+   font-family: Calibri, sans-serif;
    /*background-color: #339933;*/
    color: #161c20;
    border: 1px solid #ede9e8;
 }
 
 QDoubleSpinBox {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     font-size: 10px;
@@ -44,7 +44,7 @@ QDoubleSpinBox:focus {
 }
 
 QSpinBox {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     font-size: 10px;
@@ -60,7 +60,7 @@ QSpinBox:focus {
 
 
 QComboBox {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     color: #141414;
     background-color: #f3f6fb;
     border: 1px solid #c7c7c7;
@@ -76,7 +76,7 @@ QComboBox:focus {
 }
 
 QLineEdit {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     color: #161c20;
     background-color: #f3f6fb;
     border: 1px solid #c7c7c7;
@@ -93,13 +93,13 @@ QLineEdit:focus {
 }
 
 QAction {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     color: #161c20;
     font-size: 10px;
 }
 
 QLabel {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     color: #161c20;
     font-size: 10px;
 }
@@ -159,7 +159,7 @@ QProgressBar::chunk {
 
 
 QDockWidget {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     font-size: 10px;
     color: #ede9e8;
     border: 0px solid #ede9e8;
@@ -167,7 +167,7 @@ QDockWidget {
 
 
 QDockWidget::title {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     font-weight: 600;
     font-size: 10px;
     text-align: left;
@@ -180,7 +180,7 @@ QDockWidget::title {
 
 
 QDockWidget {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
     font-weight: 600;
     color: #ede9e8;
     border: 0px solid #ede9e8;
@@ -235,7 +235,7 @@ QTabWidget::pane {
 }
 
 QMenu {
-    font-family: Tahoma, sans-serif;
+    font-family: Calibri, sans-serif;
 	border-width: 1px;
 	border-color: #1b1e23;
 	border-style: outset;

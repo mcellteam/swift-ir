@@ -53,7 +53,6 @@ class ExitAppDialog(QDialog):
                 color: #ede9e8;
                 font-size: 11px;
                 font-weight: 600;
-                font-family: Tahoma, sans-serif;
         }""")
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.buttonGroup = QButtonGroup()
@@ -120,7 +119,6 @@ class SaveExitAppDialog(QDialog):
             color: #ede9e8;
             font-size: 11px;
             font-weight: 600;
-            font-family: Tahoma, sans-serif;
             border-color: #339933;
         """)
 

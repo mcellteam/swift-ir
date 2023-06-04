@@ -535,11 +535,11 @@ class ProjectTab(QWidget):
         # MA Stage Buffer Widget
 
         self.MA_refViewerTitle = QLabel('Reference Image (Left)')
-        self.MA_refViewerTitle.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_refViewerTitle.setStyleSheet('font-size: 9px;font-weight: 600px;')
         self.MA_refViewerTitle.setMaximumHeight(14)
 
         self.MA_baseViewerTitle = QLabel('Transforming Image (Right)')
-        self.MA_baseViewerTitle.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_baseViewerTitle.setStyleSheet('font-size: 9px; font-weight: 600px;')
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
@@ -547,10 +547,10 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
-        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif; ')
+        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px;')
 
         self.MA_refNextColorTxt = QLabel('Next Color: ')
-        self.MA_refNextColorTxt.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_refNextColorTxt.setStyleSheet('font-size: 9px; font-weight: 600px;')
         self.MA_refNextColorLab = QLabel()
         self.MA_refNextColorLab.setFixedSize(16, 16)
 
@@ -560,9 +560,9 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
-        self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px;')
         self.MA_baseNextColorTxt = QLabel('Next Color: ')
-        self.MA_baseNextColorTxt.setStyleSheet('font-size: 9px; font-family: Tahoma, sans-serif; font-weight: 600px;')
+        self.MA_baseNextColorTxt.setStyleSheet('font-size: 9px; font-weight: 600px;')
         self.MA_baseNextColorLab = QLabel()
         self.MA_baseNextColorLab.setFixedSize(16, 16)
 
@@ -618,7 +618,7 @@ class ProjectTab(QWidget):
         # mainToggle.stateChanged.connect(secondaryToggle.setChecked)
 
         lab = QLabel('Saved Method:')
-        lab.setStyleSheet('font-size: 8px; font-family: Tahoma, sans-serif;')
+        lab.setStyleSheet('font-size: 8px;')
         vw = VWidget(lab, self.automatic_label)
         vw.layout.setSpacing(0)
 
@@ -653,7 +653,7 @@ class ProjectTab(QWidget):
         self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnClearMA.setFixedSize(QSize(40, 18))
         self.btnClearMA.clicked.connect(fn)
-        self.btnClearMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btnClearMA.setStyleSheet('font-size: 10px;')
 
         # self.btnResetMA.clicked.connect(self.initNeuroglancer)
 
@@ -693,7 +693,7 @@ class ProjectTab(QWidget):
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnResetAllMA.setFixedSize(QSize(113, 18))
         self.btnResetAllMA.clicked.connect(fn)
-        self.btnResetAllMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btnResetAllMA.setStyleSheet('font-size: 10px;')
 
         def fn():
             cfg.main_window.hud.post('Aligning...')
@@ -710,13 +710,13 @@ class ProjectTab(QWidget):
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnRealignMA.setFixedSize(QSize(107, 18))
         self.btnRealignMA.clicked.connect(fn)
-        self.btnRealignMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btnRealignMA.setStyleSheet('font-size: 10px;')
 
         self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnExitMA.setFixedSize(QSize(54, 18))
         self.btnExitMA.clicked.connect(cfg.main_window.exit_man_mode)
-        self.btnExitMA.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btnExitMA.setStyleSheet('font-size: 10px;')
 
         def fn():
             pass
@@ -777,7 +777,7 @@ class ProjectTab(QWidget):
             self.MA_stackedWidget.setCurrentIndex(4)
 
         self.btn_view_logs = QPushButton('Logs')
-        self.btn_view_logs.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btn_view_logs.setStyleSheet('font-size: 10px;')
         self.btn_view_logs.setFixedSize(QSize(28, 18))
         self.btn_view_logs.clicked.connect(fn)
 
@@ -793,11 +793,11 @@ class ProjectTab(QWidget):
                 self.btn_view_targ_karg.setText('Hide Match Regions')
 
         self.btn_view_targ_karg.clicked.connect(btn_view_targ_karg_fn)
-        self.btn_view_targ_karg.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btn_view_targ_karg.setStyleSheet('font-size: 10px;')
         self.btn_view_targ_karg.setFixedSize(QSize(110, 18))
 
         # sec_label = QLabel('Section:')
-        # sec_label.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        # sec_label.setStyleSheet('font-size: 11px;')
         # w_change_section = HWidget(sec_label, self.btnPrevSection, self.btnNextSection)
         # w_change_section.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
@@ -850,12 +850,11 @@ class ProjectTab(QWidget):
                     ExpandingWidget(self))
             ), alignment=Qt.AlignCenter)
         self.MA_controls = QWidget()
-        self.MA_controls.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.MA_controls.setStyleSheet('font-size: 10px;')
         self.MA_controls.setLayout(hbl)
         # self.MA_controls.setStyleSheet("""
         # QPushButton {
         #     font-size: 12px;
-        #     font-family: Tahoma, sans-serif;
         #     color: #f3f6fb;
         #     background-color: #1b1e23;
         #     border-width: 1px;
@@ -909,7 +908,7 @@ class ProjectTab(QWidget):
         # self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
 
         self.btnTranslate = QPushButton('Move')
-        self.btnTranslate.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self.btnTranslate.setStyleSheet('font-size: 10px;')
         self.btnTranslate.setFixedSize(QSize(40, 18))
         self.btnTranslate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnTranslate.clicked.connect(self.onTranslate)
@@ -1646,7 +1645,7 @@ class ProjectTab(QWidget):
 
         # TOOLBARS
 
-        ngFont = QFont('Tahoma')
+        ngFont = QFont('Calibri')
         ngFont.setBold(True)
         pal = QPalette()
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
@@ -2067,12 +2066,13 @@ class ProjectTab(QWidget):
         #     """color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px;""")
 
         self.ms_widget = QTableWidget()
+        self.ms_widget.setAutoFillBackground(True)
         # self.ms_widget.setMinimumWidth(200)
         self.ms_widget.setMinimumWidth(160)
         # self.ms_widget.setMaximumWidth(400)
         self.ms_widget.setContentsMargins(0,0,0,0)
-        # self.ms_widget.setStyleSheet(
-        #     """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
+        self.ms_widget.setStyleSheet(
+            """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
         self.ms_widget.horizontalHeader().setHighlightSections(False)
         self.ms_widget.verticalHeader().setHighlightSections(False)
         self.ms_widget.setFocusPolicy(Qt.NoFocus)
@@ -2632,21 +2632,6 @@ class ProjectTab(QWidget):
     #     logger.critical('Copying FROM %s' % str(file))
     #     logger.critical('Copying TO %s' % str(out))
     #     shutil.copyfile(file, out)
-
-    # def set_method_label_text(self):
-    #     method = cfg.data.method()
-    #     if method == 'Auto-SWIM':
-    #         self.automatic_label.setText('<i>Auto SWIM Alignment</i>')
-    #         self.automatic_label.setStyleSheet(
-    #             'color: #06470c; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
-    #     elif method == 'Manual-Hint':
-    #         self.automatic_label.setText('<i>Manual Alignment (Hint)</i>')
-    #         self.automatic_label.setStyleSheet(
-    #             'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
-    #     elif method == 'Manual-Strict':
-    #         self.automatic_label.setText('<i>Manual Alignment (Strict)</i>')
-    #         self.automatic_label.setStyleSheet(
-    #             'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif; font-weight: 600;')
 
     def validate_MA_points(self):
         # if len(cfg.refViewer.pts.keys()) >= 3:
@@ -3514,7 +3499,7 @@ class ProjectTab(QWidget):
             # cfg.project_tab.initNeuroglancer()
 
         self._btn_resetBrightnessAndContrast = QPushButton('Reset')
-        self._btn_resetBrightnessAndContrast.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
+        self._btn_resetBrightnessAndContrast.setStyleSheet('font-size: 10px;')
         self._btn_resetBrightnessAndContrast.setFixedSize(QSize(40, 18))
         self._btn_resetBrightnessAndContrast.clicked.connect(resetBrightessAndContrast)
 

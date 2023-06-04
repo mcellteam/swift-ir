@@ -165,7 +165,8 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(self.settings.value("geometry"))
 
 
-        font = QFont("Tahoma")
+        # font = QFont("Tahoma")
+        font = QFont("Calibri")
         QApplication.setFont(font)
 
 
@@ -204,6 +205,8 @@ class MainWindow(QMainWindow):
             time.sleep(cfg.DELAY_AFTER)
 
     def refreshTab(self):
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
 
         if not self._working:
             logger.critical('Refreshing...')
@@ -280,12 +283,15 @@ class MainWindow(QMainWindow):
 
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
-        self.uiUpdateTimer.setInterval(250)
+        self.uiUpdateTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
+        # self.uiUpdateTimer.setInterval(250)
+        self.uiUpdateTimer.setInterval(360)
 
-        self.uiUpdateRegularTimer = QTimer()
-        self.uiUpdateRegularTimer.setInterval(1000)
-        self.uiUpdateRegularTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
-        self.uiUpdateRegularTimer.start()
+        # self.uiUpdateRegularTimer = QTimer()
+        # # self.uiUpdateRegularTimer.setInterval(1000)
+        # self.uiUpdateRegularTimer.setInterval(5000)
+        # self.uiUpdateRegularTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
+        # self.uiUpdateRegularTimer.start()
 
         self._unsaved_changes = False
         self._working = False
@@ -353,7 +359,7 @@ class MainWindow(QMainWindow):
     def updateCorrSignalsDrawer(self):
 
         # caller = inspect.stack()[1].function
-        # logger.info('>>>> updateCorrSignalsDrawer >>>>')
+        logger.info('Updating correlation signals...')
 
         if not self._isProjectTab():
             return
@@ -1396,20 +1402,11 @@ class MainWindow(QMainWindow):
 
     def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
         '''Reads Project Data to Update MainWindow.'''
+        logger.info('')
 
         if not self._isProjectTab():
-            # logger.warning('No Current Project Tab (!)')
+            logger.warning('No Current Project Tab!')
             return
-
-        if not silently:
-            if self.uiUpdateTimer.isActive():
-                logger.info('Delaying UI Update...')
-                return
-            else:
-                logger.critical('Updating UI...')
-                self.uiUpdateTimer.start()
-                # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
-                # QTimer.singleShot(300, self.dataUpdateWidgets)
 
 
         caller = inspect.stack()[1].function
@@ -1432,28 +1429,86 @@ class MainWindow(QMainWindow):
         # elif cfg.data.zpos != ng_layer:
         #     self.count_calls['dataUpdateWidgets'][caller]['diff_count'] += 1
 
-        cfg.project_tab._overlayRect.hide()
-        cfg.project_tab._overlayLab.hide()
 
         # timer.report() #0
 
         if self._isProjectTab():
 
+            cfg.project_tab._overlayRect.hide()
+            cfg.project_tab._overlayLab.hide()
+            logger.critical(f'sender: {self.sender()}')
+
+            # if 'viewer_em' in str(self.sender()):
+            #     if not silently:
+            #         # if cfg.pt.ms_widget.isVisible():
+            #         #     self.updateCorrSignalsDrawer()
+            #         if self.uiUpdateTimer.isActive():
+            #             logger.info('Delaying UI Update...')
+            #             return
+            #         else:
+            #             logger.critical('Updating UI...')
+            #             self.uiUpdateTimer.start()
+            #             # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
+            #             # QTimer.singleShot(300, self.dataUpdateWidgets)
+
+            # if 'viewer_em' in str(self.sender()):
+            #     if not self.uiUpdateTimer.isActive():
+            #         logger.critical('Updating UI...')
+            #         pass
+            #     else:
+            #         logger.info('Delaying UI Update...')
+            #         self.uiUpdateTimer.start()
+            #         return
+
+            cur = cfg.data.zpos
+            self._btn_prevSection.setEnabled(cur > 0)
+            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+            try:    self._sectionSlider.setValue(cur)
+            except: logger.warning('Section Slider Widget Failed to Update')
+            try:    self._jumpToLineedit.setText(str(cur))
+            except: logger.warning('Current Layer Widget Failed to Update')
+            try:    self._skipCheckbox.setChecked(not cfg.data.skipped())
+            except: logger.warning('Skip Toggle Widget Failed to Update')
+
+            if 'viewer_em' in str(self.sender()):
+                if self.uiUpdateTimer.isActive():
+                    logger.critical('Delaying UI Update (uiUpdateTimer IS ACTIVE)...')
+                    self.uiUpdateTimer.start()
+                    return
+                else:
+                    logger.critical('Updating UI...')
+                    self.uiUpdateTimer.start()
+
+
             if self._working == True:
                 logger.warning(f"Can't update GUI now - working (caller: {caller})...")
                 self.warn("Can't update GUI now - working...")
                 return
-            if isinstance(ng_layer, int):
-                if type(ng_layer) != bool:
-                    try:
-                        if 0 <= ng_layer < len(cfg.data):
-                            logger.info(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
-                            cfg.data.zpos = ng_layer
-                            # self._sectionSlider.setValue(ng_layer)
-                    except:
-                        print_exception()
+
+            # if isinstance(ng_layer, int):
+            #     if type(ng_layer) != bool:
+            #         try:
+            #             if 0 <= ng_layer < len(cfg.data):
+            #                 logger.info(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
+            #                 cfg.data.zpos = ng_layer
+            #                 # self._sectionSlider.setValue(ng_layer)
+            #         except:
+            #             print_exception()
+
+            # cur = cfg.data.zpos
+            # self._btn_prevSection.setEnabled(cur > 0)
+            # self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+            # try:    self._sectionSlider.setValue(cur)
+            # except: logger.warning('Section Slider Widget Failed to Update')
+            # try:    self._jumpToLineedit.setText(str(cur))
+            # except: logger.warning('Current Layer Widget Failed to Update')
+            # try:    self._skipCheckbox.setChecked(not cfg.data.skipped())
+            # except: logger.warning('Skip Toggle Widget Failed to Update')
 
             # logger.info('Updating the UI...')
+
+            if cfg.pt.ms_widget.isVisible():
+                self.updateCorrSignalsDrawer()
 
             # timer.report() #1
 
@@ -1467,7 +1522,6 @@ class MainWindow(QMainWindow):
 
             if cfg.pt.tn_widget.isVisible():
                 os.path.isdir(cfg.data.thumbnail_ref())
-
                 cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
                 cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
                 cfg.pt.labMethod2.setText(cfg.data.method_pretty())
@@ -1482,49 +1536,13 @@ class MainWindow(QMainWindow):
                 cfg.pt.tn_ref_lab.setText(f'Reference Section')
 
 
-
-            # else:
-            #     cfg.project_tab._overlayRect.hide()
-            #     cfg.project_tab._overlayLab.hide()
-            # elif ng_layer == 0:
-            #     cfg.project_tab._overlayLab.setText('       No Reference\n\n')
-            #     cfg.project_tab._overlayLab.show()
-
-
             img_siz = cfg.data.image_size()
             self.statusBar.showMessage(cfg.data.scale_pretty() + ', ' +
                                        'x'.join(map(str, img_siz)) + ', ' +
                                        cfg.data.name_base())
 
-
-            # timer.report()  # 3
-
-            if cfg.pt.ms_widget.isVisible():
-                self.updateCorrSignalsDrawer()
-
-            # timer.report()  # 4
-
-            cur = cfg.data.zpos
             if self.notes.isVisible():
                 self.updateNotes()
-
-            self._btn_prevSection.setEnabled(cur > 0)
-            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-
-            try:
-                self._sectionSlider.setValue(cur)
-            except:
-                logger.warning('Section Slider Widget Failed to Update')
-            try:
-                self._jumpToLineedit.setText(str(cur))
-            except:
-                logger.warning('Current Layer Widget Failed to Update')
-            try:
-                self._skipCheckbox.setChecked(not cfg.data.skipped())
-            except:
-                logger.warning('Skip Toggle Widget Failed to Update')
-
-            # timer.report() #5
 
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
@@ -2286,7 +2304,6 @@ class MainWindow(QMainWindow):
                 color: #ede9e8;
                 font-size: 11px;
                 font-weight: 600;
-                font-family: Tahoma, sans-serif;
                 border-color: #339933;
                 border-width: 2px;
         }
@@ -2370,7 +2387,7 @@ class MainWindow(QMainWindow):
 
         # webengine = QWebEngineView()
         webengine = WebEngine(ID=ID)
-        # webengine.setFocusPolicy(Qt.StrongFocus)
+        webengine.setFocusPolicy(Qt.StrongFocus)
         webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
         webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
@@ -3237,9 +3254,9 @@ class MainWindow(QMainWindow):
         # self.fullScreenButton.setText(('Full Screen', 'Exit Full Screen')[self.isFullScreen()])
 
         if self._isProjectTab():
-            cfg.project_tab.initNeuroglancer()
             QApplication.processEvents()
-            self.refreshTab()
+            cfg.project_tab.initNeuroglancer()
+
 
     def _disableGlobTabs(self):
         indexes = list(range(0, self.globTabs.count()))
@@ -4786,7 +4803,6 @@ class MainWindow(QMainWindow):
             }
             QLabel {
                 font-size: 10px;
-                font-family: Tahoma, sans-serif;
                 color: #161c20;
                 /*font-weight: 600;*/
             }
@@ -5507,8 +5523,7 @@ class MainWindow(QMainWindow):
         # self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#f3f6fb'))
         self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#380282'))
         self._btn_show_hide_shader.setIconSize(QSize(12, 12))
-        self._btn_show_hide_shader.setStyleSheet(
-            'color: #380282; font-size: 11px; font-family: Tahoma, sans-serif;')
+        self._btn_show_hide_shader.setStyleSheet('color: #380282; font-size: 11px;')
 
         self.detailsTitle = QLabel('Correlation Signals')
         self.detailsTitle.setFixedHeight(13)
