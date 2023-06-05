@@ -205,7 +205,7 @@ class MainWindow(QMainWindow):
         if cfg.data.zpos != z:
             cfg.data.zpos = z
             self.dataUpdateWidgets()
-            # self.zposChanged.emit()
+            self.zposChanged.emit()
         else:
             logger.critical(f'Zpos is the same! sender: {self.sender()}. Canceling...')
 
@@ -269,9 +269,6 @@ class MainWindow(QMainWindow):
             elif self._getTabType() == 'OpenProject':
                 configure_project_paths()
                 self._getTabObject().user_projects.set_data()
-
-
-
         else:
             self.warn('The application is busy')
             logger.warning('The application is busy')
@@ -1344,10 +1341,10 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.initNeuroglancer()
                     cfg.refViewer.set_layer()
                     cfg.baseViewer.set_layer()
-                    cfg.emViewer.set_layer(cfg.data.zpos)
+                    cfg.stageViewer.set_layer(cfg.data.zpos)
                 else:
                     cfg.emViewer.set_layer(cfg.data.zpos)
-                self.dataUpdateWidgets()  # Refactor... this leads to being called twice in some circumstances
+
             else:
                 self.warn(f'Invalid Index Request: {requested}')
 
@@ -1362,10 +1359,9 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.initNeuroglancer()
                     cfg.refViewer.set_layer()
                     cfg.baseViewer.set_layer()
-                    cfg.emViewer.set_layer(cfg.data.zpos)
+                    cfg.stageViewer.set_layer(cfg.data.zpos)
                 else:
                     cfg.emViewer.set_layer(cfg.data.zpos)
-                self.dataUpdateWidgets()  # Refactor... this leads to being called twice in some circumstances
             else:
                 self.warn(f'Invalid Index Request: {requested}')
 
@@ -1857,17 +1853,6 @@ class MainWindow(QMainWindow):
         self.tell(f'All Threads      : \n{threads}')
 
     @Slot()
-    def jump_to(self, requested) -> None:
-        logger.info('')
-        if self._isProjectTab():
-            if requested not in range(len(cfg.data)):
-                logger.warning('Requested layer is not a valid layer')
-                return
-            cfg.mw.setZpos(requested)
-            cfg.project_tab.updateNeuroglancer()  # 0214+ intentionally putting this before dataUpdateWidgets (!)
-            self.dataUpdateWidgets()
-
-    @Slot()
     def jump_to_manual(self, requested) -> None:
         logger.info('')
         if self._isProjectTab():
@@ -1876,7 +1861,6 @@ class MainWindow(QMainWindow):
                 return
             cfg.mw.setZpos(requested)
             # cfg.project_tab.updateNeuroglancer() #0214+ intentionally putting this before dataUpdateWidgets (!)
-            self.dataUpdateWidgets()
             self.enter_man_mode()
 
     @Slot()
@@ -1912,9 +1896,6 @@ class MainWindow(QMainWindow):
 
             # if getData('state,manual_mode'):
             #     cfg.project_tab.initNeuroglancer()
-
-            self.dataUpdateWidgets() #0601+ for corr signals to update
-
         try:
             self._jumpToLineedit.setText(str(requested))
         except:
@@ -4230,7 +4211,22 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(tw)
         testMenu.addAction(action)
 
+
+        '''Help Menu'''
         helpMenu = self.menu.addMenu('Help')
+
+
+        helpPrintExportInstructions = helpMenu.addMenu('Print Export Instructions')
+
+        action = QAction('Export Zarr Command', self)
+        action.triggered.connect(self.printExportInstructionsTIFF)
+        helpPrintExportInstructions.addAction(action)
+
+        action = QAction('Export TIFFs Command', self)
+        action.triggered.connect(self.printExportInstructionsZarr)
+        helpPrintExportInstructions.addAction(action)
+
+
 
         menu = helpMenu.addMenu('Keyboard Bindings')
         textbrowser = QTextBrowser(self)
@@ -4331,6 +4327,25 @@ class MainWindow(QMainWindow):
     #         # cfg.data.set_swim_window_global(float(self._swimWindowControl.value()) / 100.)
     #         cfg.data.set_swim_1x1_custom_px(self._swimWindowControl.value())
 
+    def printExportInstructionsTIFF(self):
+        work = os.getenv('WORK')
+        user = os.getenv('USER')
+        tiffs = os.path.join(cfg.data.dest(),'scale_1','img_src')
+        self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another location on the filesystem:\n\n'
+                      f'    rsync -atvr {tiffs} {user}@ls6.tacc.utexas.edu:{work}/data')
+
+
+    def printExportInstructionsZarr(self):
+        work = os.getenv('WORK')
+        user = os.getenv('USER')
+        zarr = os.path.join(cfg.data.dest(),'img_aligned.zarr','s1')
+        self.hud.post(
+            f'Use the follow command to copy-export full resolution Zarr to another location on the filesystem:\n\n'
+            f'    rsync -atvr {zarr} {user}@ls6.tacc.utexas.edu:{work}/data\n\n'
+            f'Note: AlignEM-SWIFT supports the opening and re-opening of arbitrary Zarr files in Neuroglancer')
+
+
+
     def _valueChangedWhitening(self):
         # logger.info('')
         caller = inspect.stack()[1].function
@@ -4354,6 +4369,8 @@ class MainWindow(QMainWindow):
                 val = index - 1
                 cfg.data.default_poly_order = val
                 self.tell('Corrective Polynomial Order is set to %d' % val)
+
+
 
     def _toggledAutogenerate(self) -> None:
         # logger.info('')

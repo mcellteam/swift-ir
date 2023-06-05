@@ -199,6 +199,7 @@ class ProjectTab(QWidget):
             pts_base = cfg.baseViewer.pts
 
         if index == 0:
+            self.shutdownNeuroglancer()
             self.initNeuroglancer()
             if man_mode:
                 cfg.refViewer.pts = pts_ref
