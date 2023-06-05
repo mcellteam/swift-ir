@@ -1948,10 +1948,10 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
 
-        self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
-        self.sideSliders.setFixedWidth(16)
-        self.sideSliders.layout.setSpacing(0)
-        self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+        # self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
+        # self.sideSliders.setFixedWidth(16)
+        # self.sideSliders.layout.setSpacing(0)
+        # self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
 
         self.labMethod1 = QLabel('Alignment Method:  ')
@@ -2192,7 +2192,7 @@ class ProjectTab(QWidget):
         # )
         self.ng_browser_container_outer = HWidget(
             self.hsplitter_tn_ng,
-            self.sideSliders,
+            self.zoomSliderAndLabel,
         )
         self.ng_browser_container_outer.layout.setStretch(0,0)
         self.ng_browser_container_outer.layout.setStretch(2,3)
