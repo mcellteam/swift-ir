@@ -58,10 +58,6 @@ class ProjectTable(QWidget):
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
         self.table.hide()
 
-        self.btn_splash_load_table = QPushButton()
-        self.btn_splash_load_table.clicked.connect(self.initTableData)
-        self.btn_splash_load_table.setStyleSheet("""background-color: #222222; color: #ede9e8; font-size: 16px""")
-
 
 #         self.setStyleSheet("""
 # QHeaderView{
@@ -131,12 +127,14 @@ class ProjectTable(QWidget):
         # self.table.clear()
         # self.table.setRowCount(0)
         self.set_column_headers() #Critical
-
+        cnt = 0
+        cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=cfg.data.count)
         try:
             for row in range(0, len(cfg.data)):
                 cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
-                cfg.nProcessDone += 1
-                cfg.main_window.updatePbar(cfg.nProcessDone)
+                cnt += 1
+                self.setPbarMax(cfg.data.count)
+                cfg.main_window.updatePbar(cnt)
                 self.table.insertRow(row)
                 self.set_row_data(row=row)
 
@@ -144,6 +142,7 @@ class ProjectTable(QWidget):
             print_exception()
         finally:
             timer.report()
+            self.btn_splash_load_table.hide()
             self.table.setUpdatesEnabled(True)
             cfg.mw.hidePbar()
             self.setColumnWidths()
@@ -156,13 +155,11 @@ class ProjectTable(QWidget):
             # logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
             # cur_selection = self.table.currentIndex().row()
 
-            logger.info('Data table finished loading.')
-            self.btn_splash_load_table.hide()
-            self.table.show()
 
             self.table.update()
             timer.report()
             self.table.show()
+            logger.info('Data table finished loading.')
 
         logger.info(f'<<<< initTableData [{caller}]')
 
@@ -344,6 +341,10 @@ class ProjectTable(QWidget):
         hbl.addStretch()
         self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
+
+        self.btn_splash_load_table = QPushButton()
+        self.btn_splash_load_table.clicked.connect(self.initTableData)
+        self.btn_splash_load_table.setStyleSheet("""font-size: 16px; font-color: #161c20;""")
 
         layout = VBL()
         layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)
