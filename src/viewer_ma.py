@@ -545,6 +545,13 @@ class MAViewer(neuroglancer.Viewer):
 
     # @functools.cache
     def drawSWIMwindow(self):
+        if self.role == 'ref':
+            if cfg.pt.sw_neuroglancer.currentIndex() != 0:
+                return
+        if self.role == 'base':
+            if cfg.pt.sw_neuroglancer.currentIndex() != 1:
+                return
+
         if self._dontDraw:
             return
 
