@@ -391,7 +391,6 @@ class SnrPlot(QWidget):
                 logger.info('Position Clicked: %d' % pos_click)
                 cfg.mw.setZpos(int(pos_click))
                 self.updateLayerLinePos()
-                cfg.main_window.dataUpdateWidgets()
             except:
                 print_exception()
 

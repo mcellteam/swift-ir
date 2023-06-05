@@ -94,7 +94,6 @@ class ProjectTable(QWidget):
                 # cfg.main_window.tell('Section #%d' % row)
                 # cfg.data.zpos = row
                 cfg.mw.setZpos(row)
-                cfg.main_window.dataUpdateWidgets()
         selection = self.get_selection()
         if selection:
             r_min = min(selection)
