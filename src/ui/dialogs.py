@@ -1063,8 +1063,6 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_config.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_config.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_config.addRow('Bounding Box:', self.bounding_rectangle_checkbox)
-        self.gb_config.setLayout(self.fl_sconfig)
-
 
 
         hbl = QHBoxLayout()
