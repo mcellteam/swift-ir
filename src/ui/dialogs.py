@@ -166,7 +166,7 @@ class QFileDialogPreview(QFileDialog):
         # box.addWidget(self.imageDimensionsLabel)
         self.extra_layout = QVBoxLayout()
         self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
-        self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
+        self.extra_layout.addWidget(self.cb_cal_grid, alignment=Qt.AlignRight)
         self.layout().addLayout(box, 1, 3, 1, 1)
         self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
         self.currentChanged.connect(self.onChange)
