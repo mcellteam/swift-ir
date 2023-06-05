@@ -155,11 +155,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # if not getData('state,auto_update_ui'):
         #     return
 
-        # if not self.cs_scale:
-        #     if self.state.cross_section_scale:
-        #         if self.state.cross_section_scale > .0001:
-        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-        #             self.cs_scale = self.state.cross_section_scale
+        if not self.cs_scale:
+            if self.state.cross_section_scale:
+                if self.state.cross_section_scale > .0001:
+                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+                    self.cs_scale = self.state.cross_section_scale
 
         try:
             # print('requested layer: %s' % str(self.state.position[0]))
@@ -169,32 +169,22 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 #ConfirmedOkay
                 # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
                 if request_layer == self._layer:
-                    logger.debug(f'{self.type} state changed, but z-index did not change. '
-                                 f'The callback to update UI was surpressed.')
+                    logger.debug('[%s] State Changed, But Layer Is The Same - '
+                                 'Suppressing The stateChanged Callback Signal' %self.type)
                 else:
                     self._layer = request_layer
-                    cfg.data.zpos = request_layer
-                    # cfg.mw.setZpos(request_layer)
+                    logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     self.signals.stateChanged.emit(request_layer)
-                    # self.signals.stateChanged.emit(request_layer)
-                    # if getData('state,auto_update_ui'):
-                    #     logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
-                    #     self.signals.stateChanged.emit(request_layer)
 
             zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
+                    logger.info(f'[{self.type}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
                     self.signals.zoomChanged.emit(zoom)
                 self._crossSectionScale = zoom
         except:
             print_exception()
             logger.error(f'[{self.type}] ERROR on_state_change')
-
-        if not self.cs_scale:
-            if self.state.cross_section_scale:
-                if self.state.cross_section_scale > .0001:
-                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-                    self.cs_scale = self.state.cross_section_scale
 
 
     def url(self):

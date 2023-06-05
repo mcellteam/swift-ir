@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
     updateTable = Signal()
     cancelMultiprocessing = Signal()
     zposChanged = Signal()
-    swimWindowChanged = Signal()
+    # swimWindowChanged = Signal()
 
 
     def __init__(self, data=None):
@@ -4547,7 +4547,9 @@ class MainWindow(QMainWindow):
                     logger.critical(f"val = {val}...........")
                     # cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
                     cfg.data.set_auto_swim_windows_to_default(factor=val / cfg.data.image_size()[0])
-                    self.swimWindowChanged.emit()
+                    # self.swimWindowChanged.emit()
+                    cfg.refViewer.drawSWIMwindow()
+                    cfg.baseViewer.drawSWIMwindow()
 
                 cfg.pt.tn_ref.update()
                 cfg.pt.tn_tra.update()

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProjectTable(QWidget):
-    # tableFinishedLoading = Signal()
+    onTableFinishedLoading = Signal()
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -56,6 +56,12 @@ class ProjectTable(QWidget):
         self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
+        self.table.hide()
+
+        self.btn_splash_load_table = QPushButton()
+        self.btn_splash_load_table.clicked.connect(self.initTableData)
+        self.btn_splash_load_table.setStyleSheet("""background-color: #222222; color: #ede9e8; font-size: 16px""")
+
 
 #         self.setStyleSheet("""
 # QHeaderView{
@@ -149,10 +155,13 @@ class ProjectTable(QWidget):
             # self.table.verticalScrollBar().setValue(cur_scroll_pos)
             # logger.info(f'cur_selection={cur_selection}, cur_scroll_pos={cur_scroll_pos}')
             # cur_selection = self.table.currentIndex().row()
+
+            logger.info('Data table finished loading.')
+            self.btn_splash_load_table.hide()
+            self.table.show()
+
             self.table.update()
-
             timer.report()
-
             self.table.show()
 
         logger.info(f'<<<< initTableData [{caller}]')
@@ -306,15 +315,6 @@ class ProjectTable(QWidget):
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
 
-
-
-    # def onTableFinishedLoading(self):
-    #     logger.info('Data table finished loading.')
-    #     # self.loadScreenLabel.hide()
-    #     self.table.show()
-    #     # self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
-
-
     def initUI(self):
         logger.info('')
 
@@ -346,6 +346,7 @@ class ProjectTable(QWidget):
         self.controls.setLayout(hbl)
 
         layout = VBL()
+        layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)
         layout.addWidget(self.table)
         layout.addWidget(self.controls, alignment=Qt.AlignBottom)
         self.setLayout(layout)
