@@ -357,7 +357,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def initZoom(self, w, h, adjust=1.20):
-        QApplication.processEvents()
+        # QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._settingZoom = True
         # logger.critical(f'initZoom... w={w}, h={h}')
@@ -596,7 +596,7 @@ class EMViewer(AbstractEMViewer):
             # cfg.project_tab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             cfg.project_tab.webengine.show()
             cfg.project_tab.w_ng_display.show()
-            QApplication.processEvents()
+            # QApplication.processEvents()
             # w = cfg.project_tab.webengine.width()
             # h = cfg.main_window.globTabs.height() - 22
 
@@ -625,16 +625,11 @@ class EMViewer(AbstractEMViewer):
             # s.viewer_size = [100,100]
 
         self._layer = math.floor(self.state.position[0])
-        # self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
         self.set_brightness()
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        QApplication.processEvents()
-        # w_ng_display
         w = cfg.project_tab.webengine.width()
         # h = max(cfg.main_window.globTabs.height() - 20, 520)
         if getData('state,show_ng_controls'):
@@ -707,7 +702,7 @@ class EMViewer(AbstractEMViewer):
 
         self.set_brightness()
         self.set_contrast()
-        QApplication.processEvents()
+        # QApplication.processEvents()
         # self.initZoom()
 
 
