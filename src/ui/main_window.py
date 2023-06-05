@@ -6371,6 +6371,7 @@ class MainWindow(QMainWindow):
 
 
     def keyPressEvent(self, e):
+        logger.info('str(e) was pressed!')
         if e.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
@@ -6380,7 +6381,16 @@ class MainWindow(QMainWindow):
             else:
                 self.showMaximized()
 
-
+        if e.key() == Qt.Key_Slash:
+            logger.info('Qt.Key_Slash was pressed')
+            if self._isProjectTab():
+                if getData('state,manual_mode'):
+                    newcur = 1 - cfg.data['state']['stackwidget_ng_toggle']
+                    cfg.data['state']['stackwidget_ng_toggle'] = newcur
+                    if newcur == 1:
+                        cfg.pt.rb_transforming.setChecked(True)
+                    else:
+                        cfg.pt.rb_reference.setChecked(True)
 
 
 class DockWidget(QDockWidget):

@@ -485,21 +485,21 @@ class ProjectTab(QWidget):
         # vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.zoomSliderAndLabel.addWidget(vlab)
 
-        self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        self.ZdisplaySlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.ZdisplaySlider.setMaximum(20)
-        self.ZdisplaySlider.setMinimum(1)
-        self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
-        self.ZdisplaySlider.setValue(1.0)
+        # self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.ZdisplaySlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.ZdisplaySlider.setMaximum(20)
+        # self.ZdisplaySlider.setMinimum(1)
+        # self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
+        # self.ZdisplaySlider.setValue(1.0)
 
-        self.ZdisplaySliderAndLabel = VWidget()
-        self.ZdisplaySliderAndLabel.layout.setSpacing(0)
-        self.ZdisplaySliderAndLabel.setFixedWidth(16)
-        self.ZdisplaySliderAndLabel.setMaximumHeight(100)
-        self.ZdisplaySliderAndLabel.addWidget(self.ZdisplaySlider)
-        vlab = VerticalLabel('Z-Mag:')
+        # self.ZdisplaySliderAndLabel = VWidget()
+        # self.ZdisplaySliderAndLabel.layout.setSpacing(0)
+        # self.ZdisplaySliderAndLabel.setFixedWidth(16)
+        # self.ZdisplaySliderAndLabel.setMaximumHeight(100)
+        # self.ZdisplaySliderAndLabel.addWidget(self.ZdisplaySlider)
+        # vlab = VerticalLabel('Z-Mag:')
         # vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        self.ZdisplaySliderAndLabel.addWidget(vlab)
+        # self.ZdisplaySliderAndLabel.addWidget(vlab)
 
         self.MA_webengine_ref = WebEngine(ID='ref')
         self.MA_webengine_base = WebEngine(ID='base')
@@ -1655,7 +1655,8 @@ class ProjectTab(QWidget):
                     print_exception()
             self.sw_neuroglancer.setCurrentIndex(newcur)
             # active.drawSWIMwindow()
-        self.bg_ref_tra.buttonClicked.connect(fn)
+        # self.bg_ref_tra.buttonClicked.connect(fn)
+        self.bg_ref_tra.buttonToggled.connect(fn)
 
         self.MA_gl.addWidget(self.sw_neuroglancer, 0, 0, 4, 4)
         # self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
@@ -3165,31 +3166,31 @@ class ProjectTab(QWidget):
         except:
             print_exception()
 
-    def onSliderZmag(self):
-        caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
-        try:
-            # for viewer in cfg.main_window.get_viewers():
-            val = self.ZdisplaySlider.value()
-            if getData('state,manual_mode'):
-                state = copy.deepcopy(cfg.refViewer.state)
-                state.relative_display_scales = {'z': val}
-                cfg.refViewer.set_state(state)
-                state = copy.deepcopy(cfg.baseViewer.state)
-                state.relative_display_scales = {'z': val}
-                cfg.baseViewer.set_state(state)
-                state = copy.deepcopy(cfg.stageViewer.state)
-                state.relative_display_scales = {'z': val}
-                cfg.baseViewer.set_state(state)
-
-            else:
-                # logger.info('val = %d' % val)
-                state = copy.deepcopy(cfg.emViewer.state)
-                state.relative_display_scales = {'z': val}
-                cfg.emViewer.set_state(state)
-            cfg.main_window.update()
-        except:
-            print_exception()
+    # def onSliderZmag(self):
+    #     caller = inspect.stack()[1].function
+    #     logger.info('caller: %s' % caller)
+    #     try:
+    #         # for viewer in cfg.main_window.get_viewers():
+    #         val = self.ZdisplaySlider.value()
+    #         if getData('state,manual_mode'):
+    #             state = copy.deepcopy(cfg.refViewer.state)
+    #             state.relative_display_scales = {'z': val}
+    #             cfg.refViewer.set_state(state)
+    #             state = copy.deepcopy(cfg.baseViewer.state)
+    #             state.relative_display_scales = {'z': val}
+    #             cfg.baseViewer.set_state(state)
+    #             state = copy.deepcopy(cfg.stageViewer.state)
+    #             state.relative_display_scales = {'z': val}
+    #             cfg.baseViewer.set_state(state)
+    #
+    #         else:
+    #             # logger.info('val = %d' % val)
+    #             state = copy.deepcopy(cfg.emViewer.state)
+    #             state.relative_display_scales = {'z': val}
+    #             cfg.emViewer.set_state(state)
+    #         cfg.main_window.update()
+    #     except:
+    #         print_exception()
 
     def resetSliderZmag(self):
         caller = inspect.stack()[1].function

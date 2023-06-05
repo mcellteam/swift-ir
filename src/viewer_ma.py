@@ -252,9 +252,8 @@ class MAViewer(neuroglancer.Viewer):
             # s.layers['ann'].annotations = list(self.pts.values())
 
         self.actions.add('add_manpoint', self.add_matchpoint)
-
-
         self.actions.add('swim', self.swim)
+        # self.actions.add('swim', self.blinkCallback)
 
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
@@ -276,6 +275,10 @@ class MAViewer(neuroglancer.Viewer):
         # QApplication.processEvents()
         self.initZoom()
         # self.drawSWIMwindow()
+
+    # def blickCallback(self):
+    #     logger.info('')
+    #     pass
 
     @Slot()
     def on_state_changed_any(self):
