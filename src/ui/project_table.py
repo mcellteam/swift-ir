@@ -341,9 +341,9 @@ class ProjectTable(QWidget):
         self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
 
-        self.btn_splash_load_table = QPushButton()
+        self.btn_splash_load_table = QPushButton('Load Table')
         self.btn_splash_load_table.clicked.connect(self.initTableData)
-        self.btn_splash_load_table.setStyleSheet("""font-size: 16px; color: #161c20; background-color: #339933;""")
+        self.btn_splash_load_table.setStyleSheet("""font-size: 18px; font-weight: 600; color: #161c20;""")
 
         layout = VBL()
         layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)
