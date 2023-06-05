@@ -389,7 +389,7 @@ class SnrPlot(QWidget):
                 # logger.info('clicked plot 0x{:x}, event: {}'.format(id(self), mouseClickEvent))
                 pos_click = int(mouseClickEvent.pos()[0])
                 logger.info('Position Clicked: %d' % pos_click)
-                cfg.data.zpos = int(pos_click)
+                cfg.mw.setZpos(int(pos_click))
                 self.updateLayerLinePos()
                 cfg.main_window.dataUpdateWidgets()
             except:
@@ -420,7 +420,7 @@ class SnrPlot(QWidget):
             pt.setBrush(pg.mkBrush('#ffffff'))
             pt.setPen(clickedPen)
             self.last_snr_click = pt
-            cfg.data.zpos = index
+            cfg.mw.setZpos(index)
             cfg.main_window.dataUpdateWidgets()
             self.updateLayerLinePos()
 

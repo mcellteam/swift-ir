@@ -2,7 +2,11 @@
 
 '''WARNING: Because this web server permits cross-origin requests, it exposes any
 data in the directory that is served to any web page running on a machine that
-can connect to the web server'''
+can connect to the web server
+
+with cfg.refViewer.txn() as s:
+    print(s.layers['SWIM'].annotations)
+'''
 
 import os
 import copy
@@ -21,7 +25,7 @@ import zarr
 import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, QUrl
+from qtpy.QtCore import QObject, Signal, Slot, QUrl
 from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
@@ -42,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 class WorkerSignals(QObject):
     result = Signal(str)
-    stateChanged = Signal()
+    stateChanged = Signal(int)
     stateChangedAny = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
@@ -59,7 +63,7 @@ class MAViewer(neuroglancer.Viewer):
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
-        self._settingZoom = True
+        # self._settingZoom = True
         self._layer = cfg.data.zpos
         self.cs_scale = None
         self.pts = OrderedDict()
@@ -67,12 +71,15 @@ class MAViewer(neuroglancer.Viewer):
         self._crossSectionScale = 1
         self._mpCount = 0
         self._zmag_set = 0
-        self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(self.on_state_changed)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         # self.shared_state.add_changed_callback(self.on_state_changed_any)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         # self.signals.ptsChanged.connect(self.drawSWIMwindow)
         self.type = 'MAViewer'
+        self._inSync = 0
+        self._noUpdate = False
 
         logger.info('viewer constructed!')
 
@@ -82,6 +89,7 @@ class MAViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.scale)), )
 
         # self.restoreManAlignPts()
+        self._dontDraw = 0
         self.initViewer()
 
 
@@ -99,7 +107,17 @@ class MAViewer(neuroglancer.Viewer):
     def __repr__(self):
         return copy.deepcopy(self.state)
 
+    def z(self):
+        # return int(math.floor(self.state.position[0]))
+        return int(self.state.voxel_coordinates[0])
 
+
+    def print_layers(self):
+        logger.info(f"# layers: {len(self.state.layers['SWIM'].annotations)}")
+        logger.info(f"annotations = {self.state.layers['SWIM'].annotations}")
+        # with self.txn() as s:
+        #     logger.info(f"# layers: {len(self.state.layers['SWIM'].annotations)}")
+        #     logger.info(s.layers['SWIM'].annotations)
 
 
     def n_annotations(self):
@@ -130,21 +148,44 @@ class MAViewer(neuroglancer.Viewer):
 
     def set_zoom(self, val):
         caller = inspect.stack()[1].function
-        logger.critical(f'Setting zoom to {caller}')
-        self._settingZoom = True
+        logger.info(f'Setting zoom to {caller}')
+        self._noUpdate = True
         # state = copy.deepcopy(self.state)
         # state.crossSectionScale = val
         # self.set_state(state)
         with self.txn() as s:
             s.crossSectionScale = val
 
-        self._settingZoom = False
+        self._noUpdate = False
 
 
-    def set_layer(self, index):
-        state = copy.deepcopy(self.state)
-        state.position[0] = index
-        self.set_state(state)
+    # def set_layer(self, index=None):
+    def set_layer(self, zpos):
+        # if self.type != 'EMViewerStage':
+        logger.critical('>>>> set_layer >>>>')
+        # if index == None:
+        if self.role == 'ref':
+            if self.index != cfg.data.get_ref_index():
+                with self.txn() as s:
+                    vc = s.voxel_coordinates
+                    vc[0] = self.index
+                self.drawSWIMwindow()
+
+        elif self.role == 'base':
+            if self.index != cfg.data.zpos:
+                with self.txn() as s:
+                    vc = s.voxel_coordinates
+                    vc[0] = self.index
+                self.drawSWIMwindow()
+
+        # else:
+        #     self.index = index
+
+        # logger.info('')
+        # state = copy.deepcopy(self.state)
+        # state.position[0] = index
+        # self.set_state(state)
+
 
 
     def invalidateAlignedLayers(self):
@@ -159,13 +200,12 @@ class MAViewer(neuroglancer.Viewer):
 
         if obey_zpos:
             if self.role == 'ref':
-                self.index = max(cfg.data.zpos - 1, 0)
                 self.index = cfg.data.get_ref_index()
             elif self.role == 'base':
                 self.index = cfg.data.zpos #
 
 
-        # self.clear_layers()
+        self.clear_layers()
         self.restoreManAlignPts()
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
@@ -183,7 +223,13 @@ class MAViewer(neuroglancer.Viewer):
 
         # logger.critical('Creating Local Volume for %d' %self.index)
 
-        self.get_lv_slice()
+        self.LV = ng.LocalVolume(
+            volume_type='image',
+            # data=self.store[self.index:self.index + 1, :, :],
+            data=self.store[:, :, :],
+            dimensions=self.coordinate_space,
+            voxel_offset=[0, 0, 0]
+        )
 
         with self.txn() as s:
             s.layout.type = 'yz'
@@ -191,7 +237,7 @@ class MAViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
             s.show_scale_bar = False
             s.show_axis_lines = False
-            s.show_default_annotations = getOpt('neuroglancer,SHOW_YELLOW_FRAME')
+            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
@@ -200,7 +246,8 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionBackgroundColor = '#222222'
             # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
-            s.position = [0.5, y / 2, x / 2]
+            # s.position = [0.5, y / 2, x / 2]
+            s.voxel_coordinates = [self.index, y / 2, x / 2]
             # s.position = [0.1, y / 2, x / 2]
             # s.layers['ann'].annotations = list(self.pts.values())
 
@@ -212,8 +259,11 @@ class MAViewer(neuroglancer.Viewer):
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             s.input_event_bindings.viewer['keys'] = 'swim'
-            s.show_ui_controls = False
+            # s.show_ui_controls = False
+            s.show_ui_controls = True
             s.show_panel_borders = False
+
+        self._layer = math.floor(self.state.position[0])
 
         self.drawSWIMwindow()
 
@@ -221,57 +271,139 @@ class MAViewer(neuroglancer.Viewer):
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
             self.webengine.setFocus()
 
-        self.set_brightness()
-        self.set_contrast()
-        # self.set_zmag()
-        QApplication.processEvents()
+        # self.set_brightness()
+        # self.set_contrast()
+        # QApplication.processEvents()
         self.initZoom()
-        # self._set_zmag()
+        # self.drawSWIMwindow()
 
-    def get_lv_slice(self):
-        self.LV = ng.LocalVolume(
-            volume_type='image',
-            data=self.store[self.index:self.index+1, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[0, 0, 0]
-        )
-        return self.LV
-
-
+    @Slot()
     def on_state_changed_any(self):
-        caller = inspect.stack()[1].function
-
-        # if not self.cs_scale:
-        #     if self.state.crossSectionScale < .001:
-        #         self.cs_scale = self.state.crossSectionScale
-
-        # if self._zmag_set < 10:
-        #     self._zmag_set += 1
-        # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-
-        # logger.info(f'on_state_changed_any zpos={cfg.data.zpos} [{self.type} {self.role}] [{caller}] >>>>')
-        self.signals.stateChangedAny.emit()
-
-
-    def on_state_changed(self):
-        if self._settingZoom:
+        if self._noUpdate:
             return
-        # caller = inspect.stack()[1].function
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        calname = str(calframe[1][3])
-        # if calname == '<lambda>':
+        caller = inspect.stack()[1].function
+        # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+
+        if not self.cs_scale:
+            if self.state.cross_section_scale < .001:
+                self.cs_scale = self.state.cross_section_scale
+        if self._zmag_set < 10:
+            self._zmag_set += 1
+        # self.signals.stateChangedAny.emit()
+
+    @Slot()
+    def on_state_changed(self):
+        if self._noUpdate:
+            return
+        caller = inspect.stack()[1].function
+        request_layer = int(self.state.position[0])
+
+        if self.role == 'ref':
+            if request_layer != cfg.data.get_ref_index():
+                with self.txn() as s:
+                    logger.info('Sorry!')
+                    vc = s.voxel_coordinates
+                    vc[0] = cfg.data.get_ref_index()
+            # if not cfg.pt.MA_webengine_ref.isVisible():
+            #     logger.warning('MA_webengine_ref is NOT visible... canceling state changed callback...')
+            return
+        if self.role == 'base':
+            if not cfg.pt.MA_webengine_base.isVisible():
+                # logger.warning('MA_webengine_base is NOT visible... canceling state changed callback...')
+                return
+
+
+
+        if cfg.data.zpos == request_layer:
+            # logger.critical('Nothing changed. Returning.')
+            return
+        else:
+            cfg.data.zpos = request_layer
+            # cfg.mw.setZpos(request_layer)
+            self.signals.stateChanged.emit(request_layer)
+
+
+
+        # cfg.data['state']['MA_focus'] = self.role
+        # cfg.data['state']['focus_widget'] = QApplication.focusWidget()
+        # if caller == '_dispatch_changed_callbacks':
+        #     logger.critical('Caller was _dispatch_changed_callbacks, canceling UI update.')
         #     return
 
+        # if self._inSync:
+        #     self._inSync = 0
+        #     logger.critical('This object initiated the state change callback, canceling UI update.')
+        #     return
 
-        # self.signals.stateChanged.emit()
+        # if cfg.data.zpos == self.z():
+        #     logger.critical('cfg.data.zpos EQUALS self.z(). Canceling UI update.')
+
+
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 2)
+        # calname = str(calframe[1][3])
+        # logger.info(f'curframe: {str(curframe)}')
+        # logger.info(f'calframe: {str(calframe)}')
+        # logger.info(f'calname: {str(calname)}')
+
+
+        # if caller == '<lambda>':
+        #     return
+
+        # if isinstance(self.state.position, np.ndarray):
+        #     request_layer = int(self.state.position[0])
+        #     # ConfirmedOkay
+        #     # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
+        #     if request_layer == self._layer:
+        #         logger.debug(f'{self.type} state changed, but z-index did not change. '
+        #                      f'The callback to update UI was surpressed.')
+        #     else:
+        #         self._layer = request_layer
+        #         cfg.data.zpos = request_layer
+        #         # cfg.mw.setZpos(request_layer)
+        #         self.signals.stateChanged.emit(request_layer)
+
+        # try:
+        #     # print('requested layer: %s' % str(self.state.position[0]))
+        #     # get_loc = floor(self.state.position[0])
+        #     if isinstance(self.state.position, np.ndarray):
+        #         request_layer = int(self.state.position[0])
+        #         if cfg.data.zpos != request_layer:
+        #             logger.critical(f'  request_layer = {request_layer} // self._layer = {self._layer} // cfg.data.zpos = {cfg.data.zpos}')
         #
-        # zoom = self.state.cross_section_scale
-        # if zoom:
-        #     # if zoom != self._crossSectionScale:
-        #     #     logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-        #     #     self.signals.zoomChanged.emit(zoom)
-        #     self._crossSectionScale = zoom
+        #             # cfg.data.zpos = request_layer
+        #             cfg.mw.setZpos(request_layer)
+        #             self.signals.stateChanged.emit(request_layer)
+        # except:
+        #     print_exception()
+
+        # logger.info('  > continuing past <lambda> check...')
+        # logger.info(f'self.state.position[0]          = {self.state.position[0]}')
+        # logger.info(f'self.state.voxel_coordinates[0] = {self.state.voxel_coordinates[0]}')
+
+        # if isinstance(self.state.position, np.ndarray):
+        #     # request_layer = int(self.state.position[0])
+        #     request_layer = int(self.state.position[0])
+        #     logger.critical(f'request_layer: {request_layer}')
+        #     logger.critical(f'self._layer: {self._layer}')
+        #     # ConfirmedOkay
+        #     # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
+        #     if request_layer == self._layer:
+        #         logger.info(f'{self.type}:{self.role} state changed, but z-index did not change. '
+        #                     f'The callback to update UI was surpressed.')
+        #     else:
+        #         self._layer = request_layer
+        #         cfg.mw.setZpos(request_layer)
+        #         # self._inSync = 1 #Critical!
+
+                # self.signals.stateChanged.emit()
+
+        zoom = self.state.cross_section_scale
+        if zoom:
+            if zoom != self._crossSectionScale:
+                logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+                self.signals.zoomChanged.emit(zoom)
+            self._crossSectionScale = zoom
 
 
     def pt2ann(self, points: list):
@@ -346,8 +478,10 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
         _, y, x = s.mouse_voxel_coordinates
-        z = 0.5
         # z = 0.1
+        # z = 0.5
+        z = self.index
+
         props = [self.colors[len(self.pts)],
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
@@ -394,6 +528,10 @@ class MAViewer(neuroglancer.Viewer):
 
     def undrawSWIMwindows(self):
         caller = inspect.stack()[1].function
+        logger.info(f"Undrawing SWIM windows (caller: {caller})...")
+
+        # with cfg.refViewer.txn() as s:
+        #     print(s.layers['SWIM'].annotations)
         try:
             with self.txn() as s:
                 if s.layers['SWIM']:
@@ -403,17 +541,24 @@ class MAViewer(neuroglancer.Viewer):
         except:
             logger.warning('Something went wrong while undrawing SWIM windows')
             print_exception()
-        pass
 
 
     # @functools.cache
     def drawSWIMwindow(self):
+        if self._dontDraw:
+            return
+
+        self._noUpdate = True
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
 
         self.undrawSWIMwindows()
+        logger.critical(f'Drawing SWIM window (caller: {caller})...')
         marker_size = 1
 
+        if self.role == 'ref':
+            self.index = cfg.data.get_ref_index()
+        elif self.role == 'base':
+            self.index = cfg.data.zpos  #
 
         # if cfg.data.current_method == 'manual-hint':
         #     self.draw_point_annotations()
@@ -421,7 +566,7 @@ class MAViewer(neuroglancer.Viewer):
         #
 
         if cfg.data.current_method == 'grid-custom':
-            logger.info('Drawing SWIM Window Annotations for Custom Grid Alignment...')
+            logger.info('Type: Custom Grid Alignment...')
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
@@ -469,7 +614,7 @@ class MAViewer(neuroglancer.Viewer):
                 )
 
         elif cfg.data.current_method == 'grid-default':
-            logger.info('Drawing SWIM Window Annotations for Default Grid Alignment...')
+            logger.info('Type: Default Grid Alignment...')
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
@@ -525,7 +670,7 @@ class MAViewer(neuroglancer.Viewer):
                     )
 
         else:
-            logger.info('Drawing SWIM Window Annotations for Manual Alignment...')
+            logger.info('Type: Match Region...')
             pts = list(self.pts.items())
             try:
                 assert len(pts) == len(cfg.data.manpoints()[self.role])
@@ -533,7 +678,6 @@ class MAViewer(neuroglancer.Viewer):
                 logger.warning(f'len(pts) = {len(pts)}, len(cfg.data.manpoints()[self.role]) = {len(cfg.data.manpoints()[self.role])}')
             annotations = []
             if cfg.data.current_method == 'manual-strict':
-                self.undrawSWIMwindows()
                 ww_x = 16
                 ww_y = 16
             else:
@@ -572,19 +716,20 @@ class MAViewer(neuroglancer.Viewer):
                     }
                 ''',
             )
+        self._noUpdate = False
+        QApplication.processEvents()
 
-
-    @cache
+    # @cache
     def makeRect(self, prefix, coords, ww_x, ww_y, color, marker_size):
         segments = []
         x = coords[0]
         y = coords[1]
         hw = int(ww_x / 2) # Half-width
         hh = int(ww_y / 2) # Half-height
-        A = (.5, y + hh, x - hw)
-        B = (.5, y + hh, x + hw)
-        C = (.5, y - hh, x + hw)
-        D = (.5, y - hh, x - hw)
+        A = (self.index, y + hh, x - hw)
+        B = (self.index, y + hh, x + hw)
+        C = (self.index, y - hh, x + hw)
+        D = (self.index, y - hh, x - hw)
         segments.append(ng.LineAnnotation(id=prefix + '_L1', pointA=A, pointB=B, props=[color, marker_size]))
         segments.append(ng.LineAnnotation(id=prefix + '_L2', pointA=B, pointB=C, props=[color, marker_size]))
         segments.append(ng.LineAnnotation(id=prefix + '_L3', pointA=C, pointB=D, props=[color, marker_size]))
@@ -599,7 +744,10 @@ class MAViewer(neuroglancer.Viewer):
         # self.pts = {}
         self.pts = OrderedDict()
 
+        # pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
+        # pts_data = cfg.data.getmpFlat(l=self.index)[self.role]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
+        logger.info(f'getting pts data for {cfg.data.zpos}')
 
         for i, p in enumerate(pts_data):
             props = [self.colors[i],
@@ -607,8 +755,7 @@ class MAViewer(neuroglancer.Viewer):
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
             self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
 
-
-
+        # logger.critical(f'pts:\n{self.pts}')
 
         # json_str = self.state.layers.to_json()
         # logger.critical('--------------')
@@ -660,7 +807,7 @@ class MAViewer(neuroglancer.Viewer):
                 print_exception()
 
     def initZoom(self):
-        adjust = 1.08
+        adjust = 1.20
         if self.cs_scale:
             logger.critical(f'Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
             with self.txn() as s:

@@ -32,7 +32,7 @@ import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QPoint, QRectF, \
-    QPropertyAnimation, QSettings, QObject, QThread
+    QPropertyAnimation, QSettings, QObject, QThread, QFileInfo
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion
 from qtpy.QtWebEngineWidgets import *
@@ -43,7 +43,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox, QFrame, \
-    QSizeGrip, QTabBar, QAbstractItemView, QStyledItemDelegate
+    QSizeGrip, QTabBar, QAbstractItemView, QStyledItemDelegate, qApp
 
 import src.config as cfg
 import src.shaders
@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
     # alignmentFinished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
-    sectionChanged = Signal()
+    zposChanged = Signal()
     swimWindowChanged = Signal()
 
 
@@ -108,6 +108,13 @@ class MainWindow(QMainWindow):
         self.window_title = 'AlignEM-SWiFT'
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
+
+        self.settings = QSettings("cnl", "alignem")
+        if self.settings.value("windowState") == None:
+            self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
+        else:
+            self.restoreState(self.settings.value("windowState"))
+            self.restoreGeometry(self.settings.value("geometry"))
 
         self.menu = self.menuBar()
         # self.menu = QMenu()
@@ -157,17 +164,52 @@ class MainWindow(QMainWindow):
         # if not self.settings.value("windowState") == None:
         #     self.restoreState(self.settings.value("windowState"))
 
-        self.settings = QSettings("cnl", "alignem")
-        if self.settings.value("windowState") == None:
-            self.initSizeAndPos(cfg.WIDTH, cfg.HEIGHT)
-        else:
-            self.restoreState(self.settings.value("windowState"))
-            self.restoreGeometry(self.settings.value("geometry"))
+
 
 
         # font = QFont("Tahoma")
         font = QFont("Calibri")
         QApplication.setFont(font)
+
+
+
+        # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
+        # self.zposChanged.connect(self.dataUpdateWidgets)
+
+    def restore_tabs(self, settings):
+        '''self.restore_tabs(self.settings)'''
+        finfo = QFileInfo(settings.fileName())
+
+        if finfo.exists() and finfo.isFile():
+            for w in qApp.allWidgets():
+                mo = w.metaObject()
+                if w.objectName() != "":
+                    for i in range(mo.propertyCount()):
+                        name = mo.property(i).name()
+                        val = settings.value("{}/{}".format(w.objectName(), name), w.property(name))
+                        w.setProperty(name, val)
+
+    def save_tabs(self, settings):
+        '''self.save_tabs(self.settings)'''
+        for w in qApp.allWidgets():
+            mo = w.metaObject()
+            if w.objectName() != "":
+                for i in range(mo.propertyCount()):
+                    name = mo.property(i).name()
+                    settings.setValue("{}/{}".format(w.objectName(), name), w.property(name))
+
+
+    @Slot(name='my-zpos-signal-name')
+    def setZpos(self, z:int):
+        logger.critical('')
+        if cfg.data.zpos != z:
+            cfg.data.zpos = z
+            self.dataUpdateWidgets()
+            # self.zposChanged.emit()
+        else:
+            logger.critical(f'Zpos is the same! sender: {self.sender()}. Canceling...')
+
+
 
 
 
@@ -447,10 +489,17 @@ class MainWindow(QMainWindow):
         # logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
     def callbackDwVisibilityChanged(self):
+        logger.info('')
         QApplication.processEvents()
         self.cbPython.setChecked(self.dw_python.isVisible())
         self.cbMonitor.setChecked(self.dw_monitor.isVisible())
         self.cbNotes.setChecked(self.dw_notes.isVisible())
+
+        # self.pythonConsole.resize(QSize(int(self.width()/2), 90))
+        # self.pythonConsole.update()
+        # self.hud.resize(QSize(int(self.width()/2), 90))
+        # self.hud.update()
+
 
     def callbackToolwindows(self):
         QApplication.processEvents()
@@ -1290,13 +1339,14 @@ class MainWindow(QMainWindow):
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
             if requested >= 0:
-                cfg.data.zpos = requested
+                cfg.mw.setZpos(requested)
                 if getData('state,manual_mode'):
-                    # cfg.project_tab.MA_layer_left()
-                    # self.initAllViewers()
-                    cfg.project_tab.initNeuroglancer()
+                    # cfg.project_tab.initNeuroglancer()
+                    cfg.refViewer.set_layer()
+                    cfg.baseViewer.set_layer()
+                    cfg.emViewer.set_layer(cfg.data.zpos)
                 else:
-                    cfg.emViewer.set_layer(requested)
+                    cfg.emViewer.set_layer(cfg.data.zpos)
                 self.dataUpdateWidgets()  # Refactor... this leads to being called twice in some circumstances
             else:
                 self.warn(f'Invalid Index Request: {requested}')
@@ -1307,13 +1357,14 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
-                cfg.data.zpos = requested
+                cfg.mw.setZpos(requested)
                 if getData('state,manual_mode'):
-                    # cfg.project_tab.MA_layer_right()
-                    # self.initAllViewers()
-                    cfg.project_tab.initNeuroglancer()
+                    # cfg.project_tab.initNeuroglancer()
+                    cfg.refViewer.set_layer()
+                    cfg.baseViewer.set_layer()
+                    cfg.emViewer.set_layer(cfg.data.zpos)
                 else:
-                    cfg.emViewer.set_layer(requested)
+                    cfg.emViewer.set_layer(cfg.data.zpos)
                 self.dataUpdateWidgets()  # Refactor... this leads to being called twice in some circumstances
             else:
                 self.warn(f'Invalid Index Request: {requested}')
@@ -1403,16 +1454,19 @@ class MainWindow(QMainWindow):
 
 
     # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
+    @Slot(name='my-dataUpdateWidgets-name')
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.critical(f'\n\n>>>> dataUpdateWidgets [caller: {caller}] >>>>')
+        logger.info(f'sender: {self.sender()}')
 
         if not self._isProjectTab():
             logger.warning('No Current Project Tab!')
             return
 
 
-        caller = inspect.stack()[1].function
+
         # cfg.project_tab._overlayLab.hide()
         # logger.info('')
 
@@ -1478,15 +1532,19 @@ class MainWindow(QMainWindow):
             if cfg.pt.ms_widget.isVisible():
                 self.updateCorrSignalsDrawer()
 
-            delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
-            if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
-                if self.uiUpdateTimer.isActive():
-                    logger.info('Delaying UI Update...')
-                    self.uiUpdateTimer.start()
-                    return
-                else:
-                    logger.critical('Updating UI...')
-                    self.uiUpdateTimer.start()
+            try:
+                delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
+                # if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
+                if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
+                    if self.uiUpdateTimer.isActive():
+                        logger.info('Delaying UI Update...')
+                        self.uiUpdateTimer.start()
+                        return
+                    else:
+                        logger.critical('Updating UI...')
+                        self.uiUpdateTimer.start()
+            except:
+                print_exception()
 
 
             # if self._working == True:
@@ -1555,6 +1613,17 @@ class MainWindow(QMainWindow):
 
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
+                setData('state,stackwidget_ng_toggle', 1)
+                cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+                if cfg.pt.MA_webengine_ref.isVisible():
+                    cfg.refViewer.drawSWIMwindow()
+                elif cfg.pt.MA_webengine_base.isVisible():
+                    cfg.baseViewer.drawSWIMwindow()
+                # cfg.refViewer.drawSWIMwindow()
+                # cfg.baseViewer.drawSWIMwindow()
+
+                # cfg.refViewer.set_layer()
+                # cfg.baseViewer.set_layer()
 
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.table.selectRow(cur)
@@ -1637,6 +1706,7 @@ class MainWindow(QMainWindow):
             self._btn_alignOne.setText('Re-Align #%d' % cfg.data.zpos)
         # timer.stop() #7
         # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
+
 
     def updateNotes(self):
         # caller = inspect.stack()[1].function
@@ -1793,7 +1863,7 @@ class MainWindow(QMainWindow):
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
-            cfg.data.zpos = requested
+            cfg.mw.setZpos(requested)
             cfg.project_tab.updateNeuroglancer()  # 0214+ intentionally putting this before dataUpdateWidgets (!)
             self.dataUpdateWidgets()
 
@@ -1804,7 +1874,7 @@ class MainWindow(QMainWindow):
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
-            cfg.data.zpos = requested
+            cfg.mw.setZpos(requested)
             # cfg.project_tab.updateNeuroglancer() #0214+ intentionally putting this before dataUpdateWidgets (!)
             self.dataUpdateWidgets()
             self.enter_man_mode()
@@ -1816,7 +1886,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             requested = int(self._jumpToLineedit.text())
             if requested in range(len(cfg.data)):
-                cfg.data.zpos = requested
+                cfg.mw.setZpos(requested)
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.table.selectRow(requested)
                 self._sectionSlider.setValue(requested)
@@ -1835,13 +1905,13 @@ class MainWindow(QMainWindow):
         requested = self._sectionSlider.value()
         if self._isProjectTab():
             logger.info('Jumping To Section #%d' % requested)
-            cfg.data.zpos = requested
+            cfg.mw.setZpos(requested)
 
             for viewer in cfg.project_tab.get_viewers():
                 viewer.set_layer(cfg.data.zpos)
 
-            if getData('state,manual_mode'):
-                cfg.project_tab.initNeuroglancer()
+            # if getData('state,manual_mode'):
+            #     cfg.project_tab.initNeuroglancer()
 
             self.dataUpdateWidgets() #0601+ for corr signals to update
 
@@ -2122,6 +2192,7 @@ class MainWindow(QMainWindow):
         self.sa_cpanel.show()
         cfg.project_tab.showSecondaryNgTools()
 
+        self.updateCorrSignalsDrawer()
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
         # QApplication.processEvents()
@@ -2270,6 +2341,8 @@ class MainWindow(QMainWindow):
 
         self.exit_app()
         QMainWindow.closeEvent(self, event)
+
+
 
 
     def cancelExitProcedure(self):
@@ -2699,9 +2772,9 @@ class MainWindow(QMainWindow):
         '''Callback Function for Skip Image Toggle'''
         caller = inspect.stack()[1].function
         # if caller == 'main':
-        logger.critical('')
         if self._isProjectTab():
             if caller != 'dataUpdateWidgets':
+                # logger.critical('')
                 skip_state = not self._skipCheckbox.isChecked()
                 layer = cfg.data.zpos
                 for s in cfg.data.scales():
@@ -2746,6 +2819,13 @@ class MainWindow(QMainWindow):
                 else:
                     self.exit_man_mode()
 
+    def onMAsyncTimer(self):
+        logger.critical("")
+        logger.critical(f"cfg.data.zpos         = {cfg.data.zpos}")
+        logger.critical(f"cfg.refViewer.index   = {cfg.refViewer.index}")
+        logger.critical(f"cfg.baseViewer.index  = {cfg.baseViewer.index}")
+
+
     def enter_man_mode(self):
         if self._isProjectTab():
             if cfg.data.is_aligned_and_generated():
@@ -2767,6 +2847,15 @@ class MainWindow(QMainWindow):
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                 self._changeScaleCombo.setEnabled(False)
+                setData('state,stackwidget_ng_toggle', 1)
+                cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+
+                # self.MAsyncTimer = QTimer()
+                # self.MAsyncTimer.setInterval(500)
+                # self.MAsyncTimer.timeout.connect(self.onMAsyncTimer)
+                # self.MAsyncTimer.start()
+                # self.uiUpdateTimer.setInterval(250)
+
                 cfg.project_tab.onEnterManualMode()
                 self.hud.done()
 
@@ -2776,8 +2865,8 @@ class MainWindow(QMainWindow):
     def exit_man_mode(self):
 
         if self._isProjectTab():
-            logger.critical('exit_man_mode >>>>')
-            self.tell('Exiting Manual Align Mode...')
+            logger.critical('Exiting manual alignment mode...')
+            self.tell('Exiting manual alignment mode...')
 
             # try:
             #     cfg.refViewer = None
@@ -2785,6 +2874,8 @@ class MainWindow(QMainWindow):
             #     cfg.stageViewer = None
             # except:
             #     print_exception()
+
+            # self.MAsyncTimer.stop()
 
             # cfg.project_tab.w_section_label_header.hide()
             cfg.project_tab.w_ng_extended_toolbar.show()
@@ -2836,6 +2927,7 @@ class MainWindow(QMainWindow):
             cfg.emViewer.set_layer(cfg.data.zpos)
 
             check_project_status()
+            self.hud.done()
             logger.info('\n\n<<<< Exit Manual Alignment Mode\n')
 
     def clear_match_points(self):
@@ -3340,6 +3432,27 @@ class MainWindow(QMainWindow):
     def isManual(self):
         return getData('state,manual_mode')
 
+
+    def addGlobTab(self, tab_widget, name):
+        logger.info('Adding Global Tab...')
+        cfg.tabsById[id(tab_widget)] = {}
+        cfg.tabsById[id(tab_widget)]['name'] = name
+        cfg.tabsById[id(tab_widget)]['type'] = type(tab_widget)
+        cfg.tabsById[id(tab_widget)]['widget'] = tab_widget
+        # index = self.globTabs.addTab(tab_widget, name)
+        # self.globTabs.setCurrentIndex(index)
+        self.globTabs.setCurrentIndex(self.globTabs.addTab(tab_widget, name))
+
+
+    def getTabIndexById(self, ID):
+        for i in range(self.globTabs.count()):
+            if ID == id(self.globTabs.widget(i)):
+                return i
+        logger.warning(f'Tab {ID} not found.')
+        return 0
+
+
+
     def _onGlobTabChange(self):
 
         # if self._dontReinit == True:
@@ -3444,7 +3557,7 @@ class MainWindow(QMainWindow):
             try:
                 if not getData('state,manual_mode'):
                     cfg.project_tab.showSecondaryNgTools()
-                elif getData('state,manual_mode'):
+                else:
                     cfg.project_tab.hideSecondaryNgTools()
             except:
                 print_exception()
@@ -3562,8 +3675,10 @@ class MainWindow(QMainWindow):
                 menu.addAction(action)
 
             if self._isProjectTab():
-                txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
-                addTensorMenuInfo(label='Tensor Metadata', body=txt)
+                try:
+                    addTensorMenuInfo(label='Tensor Metadata', body=json.dumps(cfg.tensor.spec().to_json(), indent=2))
+                except:
+                    print_exception()
                 # if cfg.unal_tensor:
                 #     # logger.info('Adding Raw Series tensor to menu...')
                 #     txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
@@ -3574,10 +3689,14 @@ class MainWindow(QMainWindow):
                 #         txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
                 #         addTensorMenuInfo(label='Aligned Series', body=txt)
             if self._isZarrTab():
-                txt = json.dumps(cfg.tensor.spec().to_json(), indent=2)
-                addTensorMenuInfo(label='Zarr Series', body=txt)
-
-            self.updateNgMenuStateWidgets()
+                try:
+                    addTensorMenuInfo(label='Zarr Series', body=json.dumps(cfg.tensor.spec().to_json(), indent=2))
+                except:
+                    print_exception()
+            try:
+                self.updateNgMenuStateWidgets()
+            except:
+                print_exception()
         else:
             self.clearNgStateMenus()
 
@@ -3743,7 +3862,7 @@ class MainWindow(QMainWindow):
 
         def fn():
             if self.globTabs.count() > 0:
-                if cfg.mw._getTabType() == 'OpenProject':
+                if cfg.mw._getTabType() != 'OpenProject':
                     self.globTabs.removeTab(self.globTabs.currentIndex())
             else:
                 self.exit_app()
@@ -5297,12 +5416,12 @@ class MainWindow(QMainWindow):
         self.hud = HeadupDisplay(self.app)
         self.hud.set_theme_dark()
         # self.hud.set_theme_overlay()
-        self.hud.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.hud.setObjectName('HUD')
         # self.hud.set_theme_default()
         # self.dw_monitor = QDockWidget('Head-up Display (Process Monitor)', self)
         # self.dw_monitor = QDockWidget('Head-up Display (Process Monitor)', self)
         self.dw_monitor = DockWidget('HUD', self)
+        self.dw_monitor.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
         self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetVerticalTitleBar)
         self.dw_monitor.setObjectName('Dock Widget HUD')
@@ -5674,9 +5793,6 @@ class MainWindow(QMainWindow):
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
         self.pythonConsole = PythonConsole()
-        # self.pythonConsole.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        # self.pythonConsole.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.pythonConsole.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.pythonConsole.resize(QSize(600,600))
 
         self.pythonConsole.setStyleSheet("""
@@ -5697,6 +5813,11 @@ class MainWindow(QMainWindow):
             font-weight: 600;
         }""")
         self.dw_python.setWidget(self.pythonConsole)
+        def fn():
+            width = int(cfg.main_window.width() / 2)
+            self.pythonConsole.resize(QSize(width, 90))
+            self.pythonConsole.update()
+        self.dw_python.visibilityChanged.connect(fn)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_python)
         self.dw_python.hide()
 
@@ -5954,12 +6075,15 @@ class MainWindow(QMainWindow):
             self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
             if cfg.data.is_aligned():
                 self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
-                if cfg.data.zpos == 0:
+                if cfg.data.zpos <= cfg.data.first_unskipped():
                     self.secSNR.setText('--')
                 else:
-                    self.secSNR.setText(
-                        '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
-                            cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
+                    try:
+                        self.secSNR.setText(
+                            '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
+                                cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
+                    except:
+                        print_exception()
             else:
                 self.secAlignedImageSize.setText('--')
                 self.secSNR.setText('--')
@@ -6155,6 +6279,13 @@ class MainWindow(QMainWindow):
                             #     cfg.pt.tn_ms3.set_no_image()
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
+                    # elif "Copy-converting" in self.pbar.text():
+                    #     # if cfg.pt._tabs.currentIndex() == 0:
+                    #     if x%10 == 10:
+                    #         logger.info(f'Displaying NG alignment at z={x}')
+                    #         cfg.emViewer.initViewerAligned(z=x)
+                    #         # cfg.emViewer.
+
         except:
             print_exception()
 

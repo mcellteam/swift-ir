@@ -15,6 +15,7 @@ LOG_LEVEL = 1
 # datamodel = None
 data = None
 dataById = {}
+tabsById = {}
 main_window = None
 mw = None
 project_tab = None

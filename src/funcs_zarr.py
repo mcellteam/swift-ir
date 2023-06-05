@@ -55,12 +55,13 @@ def get_zarr_tensor(zarr_path):
     '''
     logger.info('Getting Zarr tensor at %s' %zarr_path)
     node = platform.node()
-    if '.tacc.utexas.edu' in node:
-        # Lonestar6: 256 GB (3200 MT/s) DDR4
-        # total_bytes_limit = 200_000_000_000
-        total_bytes_limit = 250_000_000_000 # just under 256 GB
-    else:
-        total_bytes_limit = 6_000_000_000
+    total_bytes_limit = 250_000_000_000  # just under 256 GB
+    # if '.tacc.utexas.edu' in node:
+    #     # Lonestar6: 256 GB (3200 MT/s) DDR4
+    #     # total_bytes_limit = 200_000_000_000
+    #     total_bytes_limit = 250_000_000_000 # just under 256 GB
+    # else:
+    #     total_bytes_limit = 6_000_000_000
     # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
     arr = ts.open({
         'dtype': 'uint8',

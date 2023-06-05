@@ -20,8 +20,6 @@ import numpy as np
 
 sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
 sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
-# sys.path.append('../')
-# from src import *
 from src.data_model import DataModel
 from src.funcs_image import SetStackCafm
 from src.generate_aligned import generate_aligned
@@ -71,7 +69,6 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
             TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
             # dm = cfg.data
 
-        logger.info('continuing 1...')
 
         if end == None:
             end = dm.count
@@ -79,13 +76,6 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
-
-        logger.info('continuing 2...')
-
-        logger.critical(f'dm acquired: {dm.dest()}')
-        # if ng.is_server_running():
-        #     logger.info('Stopping Neuroglancer...')
-        #     ng.server.stop()
 
         rename_switch = False
         alignment_dict = dm['data']['scales'][scale]['stack']
@@ -99,14 +89,10 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         #     # remove_aligned(al_substack) #0903 Moved into conditional
         #     dm.remove_aligned(scale, start, end)
 
-        # signals_raw_dir = os.path.join(dm.dest(), scale, 'signals_raw')
-        # if not os.path.exists(signals_raw_dir):
-        #     os.mkdir(signals_raw_dir)
         signals_dir = os.path.join(dm.dest(), scale, 'signals')
         if not os.path.exists(signals_dir):
             os.mkdir(signals_dir)
 
-        logger.info('continuing 3...')
 
         dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
         if rename_switch:
@@ -126,7 +112,6 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         with open(temp_file, 'w') as f:
             f.write(dm.to_json())
 
-        logger.info('continuing 4...')
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
 
@@ -185,11 +170,6 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
         index_arg = 3
         for k in task_queue.task_dict.keys():
             t = task_queue.task_dict[k]
-            # logger.critical(
-            #     f"arg 0 = {str(t['args'][0])}\n"
-            #     f"arg 1 = {str(t['args'][1])}\n"
-            #     f"arg 2 = {str(t['args'][2])}\n"
-            #     f"arg 3 = {str(t['args'][3])}")
             task_dict[int(t['args'][index_arg])] = t
 
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
@@ -245,20 +225,6 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
                     al_stack_old[layer_index]['skipped'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-        # cfg.mw.test()
-
-        logger.info(f'Use GUI: {use_gui}')
-
-        # dm = updated_model
-
-        # if use_gui:
-        #     cfg.data = updated_model #0809-
-            # cfg.data = cfg.dataById[id(cfg.pt)] = updated_model
-            # cfg.data = updated_model
-            # cfg.data = dm
-            # cfg.dataById[id(cfg.pt)] = dm
-
-        # cfg.mw.test()
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
@@ -325,7 +291,7 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
             try:
                 # if cfg.USE_EXTRA_THREADING and use_gui:
                 #     cfg.mw.worker = BackgroundWorker(fn=generate_aligned(
-                #         dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
+                #         dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
                 #     cfg.mw.threadpool.start(cfg.mw.worker)
                 # else:
                 generate_aligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)

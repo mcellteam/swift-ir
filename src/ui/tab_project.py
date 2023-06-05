@@ -17,7 +17,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
     QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
     QShortcut
-from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, QEvent, QThread, QTimer, QEventLoop, QPoint
+from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, Slot, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator, QKeySequence
 from qtpy.QtWebEngineWidgets import *
@@ -269,10 +269,21 @@ class ProjectTab(QWidget):
             # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
 
             # cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-            # cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis #WasOn
+
+            # cfg.refViewer.signals.stateChanged.connect(cfg.baseViewer.set_layer)
+            # cfg.baseViewer.signals.stateChanged.connect(cfg.refViewer.set_layer)
+
+            cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis #WasOn
+
+            # cfg.mw.zposChanged.connect(cfg.refViewer.set_layer)
+            # cfg.mw.zposChanged.connect(cfg.baseViewer.set_layer)
+
+            # cfg.refViewer.signals.stateChanged.connect(lambda: logger.critical(f'Signal Emitted! {self.sender()}'))
+            # cfg.baseViewer.signals.stateChanged.connect(lambda: logger.critical(f'Signal Emitted! {self.sender()}'))
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
-            # cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
+            cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
 
             cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag)  # Not responsible
             cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag)  # Not responsible
@@ -352,12 +363,10 @@ class ProjectTab(QWidget):
         self._overlayRect = QWidget()
         self._overlayRect.setObjectName('_overlayRect')
         self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
-        self._overlayRect.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayRect.hide()
         self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('Test Label')
-        # self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 22px;""")
-        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 22px;""")
+        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; """)
         self._overlayLab.hide()
 
         self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
@@ -383,21 +392,6 @@ class ProjectTab(QWidget):
         border-radius: 2px;
         """
 
-        # self.detailsSection = QLabel()
-        # self.detailsSection.setWindowFlags(Qt.FramelessWindowHint)
-        # self.detailsSection.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.detailsSection.setWordWrap(True)
-        # self.detailsSection.setStyleSheet(style)
-        # self.detailsSection.hide()
-
-        # self.detailsAFM = QLabel()
-        # self.detailsAFM.setWindowFlags(Qt.FramelessWindowHint)
-        # self.detailsAFM.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.detailsAFM.setMaximumHeight(100)
-        # self.detailsAFM.setWordWrap(True)
-        # self.detailsAFM.setStyleSheet(style)
-        # self.detailsAFM.hide()
-
         self.detailsSNR = QLabel()
         self.detailsSNR.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsSNR.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -406,14 +400,14 @@ class ProjectTab(QWidget):
         self.detailsSNR.setStyleSheet(style)
         self.detailsSNR.hide()
 
-        self.detailsDetailsWidget = QWidget()
-        self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.detailsDetailsWidget.setWindowFlags(Qt.FramelessWindowHint)
-        self.detailsDetailsWidget.show()
-        hbl = HBL()
-        # hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        self.detailsDetailsWidget.setLayout(hbl)
+        # self.detailsDetailsWidget = QWidget()
+        # self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.detailsDetailsWidget.setWindowFlags(Qt.FramelessWindowHint)
+        # self.detailsDetailsWidget.show()
+        # hbl = HBL()
+        # # hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        # hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        # self.detailsDetailsWidget.setLayout(hbl)
 
         self.spreadW = QWidget()
         self.spreadW.setWindowFlags(Qt.FramelessWindowHint)
@@ -440,8 +434,8 @@ class ProjectTab(QWidget):
                              alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.addWidget(self.spreadW, 1, 4, 1, 1,
                              alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        self.ng_gl.addWidget(self.detailsDetailsWidget, 2, 0, 1, 4,
-                             alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        # self.ng_gl.addWidget(self.detailsDetailsWidget, 2, 0, 1, 4,
+        #                      alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         self.ng_gl.setRowStretch(0, 1)
         self.ng_gl.setRowStretch(1, 1)
         self.ng_gl.setRowStretch(2, 100)
@@ -513,8 +507,8 @@ class ProjectTab(QWidget):
         # setWebengineProperties(self.MA_webengine_ref)
         # setWebengineProperties(self.MA_webengine_base)
         # setWebengineProperties(self.MA_webengine_stage)
-        # self.MA_webengine_ref.inFocus.triggered.connect(self.focusedViewerChanged)
-        # self.MA_webengine_base.inFocus.triggered.connect(self.focusedViewerChanged)
+        # self.MA_webengine_ref.focusInEvent.connect(self.focusedViewerChanged)
+        # self.MA_webengine_base.focusInEvent.connect(self.focusedViewerChanged)
         self.MA_webengine_ref.setMinimumWidth(100)
         self.MA_webengine_base.setMinimumWidth(100)
         # self.MA_webengine_ref.setMouseTracking(True)
@@ -1265,10 +1259,10 @@ class ProjectTab(QWidget):
                     cfg.data.current_method = 'manual-hint'
                     self.rb_MA_hint.setChecked(True)
             if cur_index == 3:
-                self.MA_stackedWidget.setCurrentIndex(3)
+                # self.MA_stackedWidget.setCurrentIndex(3)
                 self.setTargKargPixmaps()
-            elif cur_index == 4:
-                self.MA_stackedWidget.setCurrentIndex(4)
+            # elif cur_index == 4:
+            #     self.MA_stackedWidget.setCurrentIndex(4)
             cfg.mw.updateCorrSignalsDrawer()
             cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
@@ -1622,17 +1616,51 @@ class ProjectTab(QWidget):
 
         # self.MA_gl_overlay = QWidget()
         self.MA_gl_overlay = QLabel()
+        self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.MA_gl_overlay.setAlignment(Qt.AlignCenter)
-        # .setStyleSheet("""color: #FF0000; font-size: 22px;""")
-        self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 22px; background-color: rgba(0, 0, 0, 1.0);""")
+        self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5);""")
         # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.MA_gl_overlay.hide()
 
-        self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
-        self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
+        self.sw_neuroglancer = QStackedWidget()
+        self.sw_neuroglancer.addWidget(self.MA_webengine_ref)
+        self.sw_neuroglancer.addWidget(self.MA_webengine_base)
+        self.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
+        # self.sw_neuroglancer.setCurrentIndex(0)
+
+        self.bg_ref_tra = QButtonGroup(self)
+        self.bg_ref_tra.setExclusive(True)
+        self.rb_transforming = QRadioButton('Transforming Section')
+        # self.rb_transforming.setChecked(cfg.data['state']['stackwidget_ng_toggle'])
+        setData('state,stackwidget_ng_toggle',1)
+        self.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+        self.rb_transforming.setStyleSheet("font-size: 10px;")
+        self.rb_reference = QRadioButton('Reference Section')
+        self.rb_reference.setStyleSheet("font-size: 10px;")
+        self.bg_ref_tra.addButton(self.rb_transforming)
+        self.bg_ref_tra.addButton(self.rb_reference)
+
+        def fn():
+            newcur = (0, 1)[self.rb_transforming.isChecked()]
+            cfg.data['state']['stackwidget_ng_toggle'] = newcur
+            active = (cfg.refViewer, cfg.baseViewer)[newcur]
+            inactive = (cfg.refViewer, cfg.baseViewer)[1 - newcur]
+            with active.txn() as s:
+                s.voxel_coordinates[1] = inactive.state.voxel_coordinates[1]
+                s.voxel_coordinates[2] = inactive.state.voxel_coordinates[2]
+                try:
+                    s.cross_section_scale = inactive.state.cross_section_scale
+                except:
+                    print_exception()
+            self.sw_neuroglancer.setCurrentIndex(newcur)
+            # active.drawSWIMwindow()
+        self.bg_ref_tra.buttonClicked.connect(fn)
+
+        self.MA_gl.addWidget(self.sw_neuroglancer, 0, 0, 4, 4)
+        # self.MA_gl.addWidget(self.MA_webengine_ref, 0, 0, 4, 2)
+        # self.MA_gl.addWidget(self.MA_webengine_base, 0, 2, 4, 2)
         self.MA_gl.addWidget(self.MA_gl_overlay, 0, 0, 4, 4)
         self.MA_gl.addWidget(self.msg_MAinstruct, 3, 0, 1, 4, alignment=Qt.AlignCenter | Qt.AlignBottom)
-        # self.MA_gl.addWidget(self.msg_MAinstruct, 3, 0, 1, 4, alignment=Qt.AlignCenter)
         # self.MA_ng_widget.setCursor(QCursor(QPixmap('src/resources/cursor_circle.png')))
         self.MA_ng_widget.setLayout(self.MA_gl)
 
@@ -1737,10 +1765,7 @@ class ProjectTab(QWidget):
             border: 1px solid #339933;
             color: #f3f6fb;
 
-        }
-        
-        
-        
+        } 
         """
 
         self.lab_filename = QLabel('Filename')
@@ -1751,7 +1776,10 @@ class ProjectTab(QWidget):
 
 
         self.layout_ng_MA_toolbar.addWidget(self.lab_filename)
+        self.layout_ng_MA_toolbar.addWidget(QLabel('          '))
+        self.layout_ng_MA_toolbar.addWidget(HWidget(self.rb_transforming, self.rb_reference))
         self.layout_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+
 
         self.w_section_label_header = QWidget()
         self.w_section_label_header.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -2634,15 +2662,17 @@ class ProjectTab(QWidget):
     #     logger.critical('Copying TO %s' % str(out))
     #     shutil.copyfile(file, out)
 
+
     def validate_MA_points(self):
         # if len(cfg.refViewer.pts.keys()) >= 3:
         if cfg.refViewer.pts.keys() == cfg.baseViewer.pts.keys():
             return True
         return False
 
+
+    @Slot()
     def dataUpdateMA(self):
         self.dataUpdateMA_calls += 1
-
 
         #0526 set skipped overlay
 
@@ -2653,9 +2683,13 @@ class ProjectTab(QWidget):
             if cfg.data.skipped():
                 self.MA_gl_overlay.setText('X EXCLUDED - %s' % cfg.data.name_base())
                 self.MA_gl_overlay.show()
-
+            elif not cfg.data.has_reference():
+                self.MA_gl_overlay.setText('This Section Has No Reference')
+                self.MA_gl_overlay.show()
             else:
                 self.MA_gl_overlay.hide()
+                self.MA_gl_overlay.setText('')
+
 
             # self.btnResetMA.setEnabled(bool(len(cfg.refViewer.pts) + len(cfg.baseViewer.pts)))
             self.btnPrevSection.setEnabled(cfg.data.zpos > 0)
@@ -2797,65 +2831,65 @@ class ProjectTab(QWidget):
         self.MA_baseNextColorLab.setStyleSheet(
             f'''background-color: {cfg.baseViewer.getNextUnusedColor()}''')
 
-    def update_MA_ref_state(self):
-        caller = inspect.stack()[1].function
-        # curframe = inspect.currentframe()
-        # calframe = inspect.getouterframes(curframe, 2)
-        # calname = str(calframe[1][3])
-        # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-        if caller != 'on_state_change':
-            if self.MA_webengine_ref.isVisible():
-                if cfg.baseViewer.state.cross_section_scale:
-                    # if cfg.baseViewer.state.cross_section_scale < 10_000:
-                    #     if cfg.baseViewer.state.cross_section_scale != 1.0:
-                    pos = cfg.baseViewer.state.position
-                    zoom = cfg.baseViewer.state.cross_section_scale
-                    if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-                        state = copy.deepcopy(cfg.refViewer.state)
-                        if isinstance(pos, np.ndarray):
-                            state.position = cfg.baseViewer.state.position
-                        if isinstance(zoom, float):
-                            # if cfg.baseViewer.state.cross_section_scale < 10_000:
-                            if cfg.baseViewer.state.cross_section_scale < 100:
-                                # if cfg.baseViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
-                                # if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
-                                if cfg.baseViewer.state.cross_section_scale != 1.0:
-                                    logger.info(f'Updating ref viewer state. OLD cs_scale: {state.cross_section_scale}')
-                                    logger.info(
-                                        f'Updating ref viewer state. NEW cs_scale: {cfg.baseViewer.state.cross_section_scale}')
-                                    state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
-                        cfg.refViewer.set_state(state)
+    # def update_MA_ref_state(self):
+    #     caller = inspect.stack()[1].function
+    #     # curframe = inspect.currentframe()
+    #     # calframe = inspect.getouterframes(curframe, 2)
+    #     # calname = str(calframe[1][3])
+    #     # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+    #     if caller != 'on_state_change':
+    #         if self.MA_webengine_ref.isVisible():
+    #             if cfg.baseViewer.state.cross_section_scale:
+    #                 # if cfg.baseViewer.state.cross_section_scale < 10_000:
+    #                 #     if cfg.baseViewer.state.cross_section_scale != 1.0:
+    #                 pos = cfg.baseViewer.state.position
+    #                 zoom = cfg.baseViewer.state.cross_section_scale
+    #                 if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
+    #                     state = copy.deepcopy(cfg.refViewer.state)
+    #                     if isinstance(pos, np.ndarray):
+    #                         state.position = cfg.baseViewer.state.position
+    #                     if isinstance(zoom, float):
+    #                         # if cfg.baseViewer.state.cross_section_scale < 10_000:
+    #                         if cfg.baseViewer.state.cross_section_scale < 100:
+    #                             # if cfg.baseViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
+    #                             # if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
+    #                             if cfg.baseViewer.state.cross_section_scale != 1.0:
+    #                                 logger.info(f'Updating ref viewer state. OLD cs_scale: {state.cross_section_scale}')
+    #                                 logger.info(
+    #                                     f'Updating ref viewer state. NEW cs_scale: {cfg.baseViewer.state.cross_section_scale}')
+    #                                 state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
+    #                     cfg.refViewer.set_state(state)
 
-    def update_MA_base_state(self):
-        caller = inspect.stack()[1].function
-        # curframe = inspect.currentframe()
-        # calframe = inspect.getouterframes(curframe, 2)
-        # calname = str(calframe[1][3])
-        # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-        if caller != 'on_state_change':
-            if self.MA_webengine_base.isVisible():
-                if cfg.refViewer.state.cross_section_scale:
-                    # if cfg.refViewer.state.cross_section_scale < 10_000:
-                    #     if cfg.refViewer.state.cross_section_scale != 1.0:
-                    pos = cfg.refViewer.state.position
-                    zoom = cfg.refViewer.state.cross_section_scale
-
-                    if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-                        state = copy.deepcopy(cfg.baseViewer.state)
-                        if isinstance(pos, np.ndarray):
-                            state.position = cfg.refViewer.state.position
-                        if isinstance(zoom, float):
-                            # if cfg.refViewer.state.cross_section_scale < 10_000:
-                            if cfg.refViewer.state.cross_section_scale < 100:
-                                # if cfg.refViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
-                                # if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
-                                if cfg.refViewer.state.cross_section_scale != 1.0:
-                                    logger.info(
-                                        f'Updating base viewer state. OLD cs_scale: {state.cross_section_scale}')
-                                    logger.info(
-                                        f'Updating base viewer state. NEW cs_scale: {cfg.refViewer.state.cross_section_scale}')
-                                    state.cross_section_scale = cfg.refViewer.state.cross_section_scale
-                        cfg.baseViewer.set_state(state)
+    # def update_MA_base_state(self):
+    #     caller = inspect.stack()[1].function
+    #     # curframe = inspect.currentframe()
+    #     # calframe = inspect.getouterframes(curframe, 2)
+    #     # calname = str(calframe[1][3])
+    #     # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
+    #     if caller != 'on_state_change':
+    #         if self.MA_webengine_base.isVisible():
+    #             if cfg.refViewer.state.cross_section_scale:
+    #                 # if cfg.refViewer.state.cross_section_scale < 10_000:
+    #                 #     if cfg.refViewer.state.cross_section_scale != 1.0:
+    #                 pos = cfg.refViewer.state.position
+    #                 zoom = cfg.refViewer.state.cross_section_scale
+    #
+    #                 if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
+    #                     state = copy.deepcopy(cfg.baseViewer.state)
+    #                     if isinstance(pos, np.ndarray):
+    #                         state.position = cfg.refViewer.state.position
+    #                     if isinstance(zoom, float):
+    #                         # if cfg.refViewer.state.cross_section_scale < 10_000:
+    #                         if cfg.refViewer.state.cross_section_scale < 100:
+    #                             # if cfg.refViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
+    #                             # if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
+    #                             if cfg.refViewer.state.cross_section_scale != 1.0:
+    #                                 logger.info(
+    #                                     f'Updating base viewer state. OLD cs_scale: {state.cross_section_scale}')
+    #                                 logger.info(
+    #                                     f'Updating base viewer state. NEW cs_scale: {cfg.refViewer.state.cross_section_scale}')
+    #                                 state.cross_section_scale = cfg.refViewer.state.cross_section_scale
+    #                     cfg.baseViewer.set_state(state)
 
     def deleteMpRef(self):
         # todo .currentItem().background().color().name() is no longer viable
@@ -3052,6 +3086,7 @@ class ProjectTab(QWidget):
                 zoom = cfg.emViewer.zoom()
                 # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
                 self.zoomSlider.setValue(1 / zoom)
+                # self.zoomSlider.setValue(zoom)
                 self._allow_zoom_change = True
 
     def onZoomSlider(self):
@@ -3616,8 +3651,10 @@ class ProjectTab(QWidget):
         logger.critical(f'focused: {focused}')
 
         if self.focusedViewer == 'ref':
-            pass
+            logger.critical('ref viewer is now in focus!')
+            # pass
         elif self.focusedViewer == 'base':
+            logger.critical('base viewer is now in focus!')
             pass
 
     def get_viewers(self):
