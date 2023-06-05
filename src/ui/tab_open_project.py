@@ -601,6 +601,11 @@ class OpenProject(QWidget):
             return 1
 
         files_sorted = natural_sort(filenames)
+
+        if cfg.data['data']['has_cal_grid']:
+            files_sorted = files_sorted[1:]
+            cfg.data['data']['cal_grid_path'] = files_sorted[0]
+
         cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
         cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
         logger.info(f'Selected Images: \n{files_sorted}')

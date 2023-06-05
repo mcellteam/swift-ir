@@ -17,6 +17,7 @@ import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
 from src.funcs_image import ImageSize
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
+from src.ui.thumbnail import Thumbnail, ThumbnailFast
 
 logger = logging.getLogger(__name__)
 
@@ -154,11 +155,17 @@ class QFileDialogPreview(QFileDialog):
             background-color: #ede9e8;
             padding: 2px;
         """)
+        self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
+        self.cb_cal_grid.setChecked(False)
+
+
+
         box = QVBoxLayout()
         box.addWidget(self.mpPreview)
         box.addStretch()
         # box.addWidget(self.imageDimensionsLabel)
         self.extra_layout = QVBoxLayout()
+        self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
         self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
         self.layout().addLayout(box, 1, 3, 1, 1)
         self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
@@ -169,6 +176,7 @@ class QFileDialogPreview(QFileDialog):
         self._filesSelected = None
 
     def onChange(self, path):
+        # logger.info('')
         pixmap = QPixmap(path)
         if(pixmap.isNull()):
             self.mpPreview.setText('Preview')
@@ -181,6 +189,8 @@ class QFileDialogPreview(QFileDialog):
             logger.info(f'Selected File: {path}')
             img_siz = ImageSize(path)
             self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
+
+        cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
 
     def onFileSelected(self, file):
         self._fileSelected = file
@@ -796,6 +806,10 @@ class NewConfigureProjectDialog(QDialog):
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
                                               int(self.chunk_y_lineedit.text()),
                                               int(self.chunk_x_lineedit.text()))
+
+
+            # if cfg.data['data']['has_cal_grid']:
+
             for scale in cfg.data.scales():
                 scale_val = get_scale_val(scale)
                 res_x = int(self.res_x_lineedit.text()) * scale_val
@@ -1049,11 +1063,17 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_config.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_config.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_config.addRow('Bounding Box:', self.bounding_rectangle_checkbox)
-        self.gb_config.setLayout(self.fl_config)
+        self.gb_config.setLayout(self.fl_sconfig)
+
+
 
         hbl = QHBoxLayout()
         hbl.addWidget(self.gb_config, alignment=Qt.AlignHCenter | Qt.AlignTop)
         hbl.addWidget(self.gb_storage_options, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        if cfg.data['data']['has_cal_grid']:
+            path = cfg.data['data']['cal_grid_path']
+            tn = ThumbnailFast(self, path)
+            hbl.addWidget(tn, alignment=Qt.AlignHCenter | Qt.AlignTop)
         hbl.addWidget(ExpandingWidget(self))
 
         w = QWidget()
