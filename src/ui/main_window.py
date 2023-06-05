@@ -961,7 +961,7 @@ class MainWindow(QMainWindow):
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
         cfg.nProcessDone = 0
-        cfg.nProcessSteps = 2
+        cfg.nProcessSteps = 1
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -998,8 +998,8 @@ class MainWindow(QMainWindow):
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
         cfg.nProcessDone = 0
-        cfg.nProcessSteps = 5
-        self.setPbarMax(5)
+        cfg.nProcessSteps = 4
+        self.setPbarMax(4)
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -6329,7 +6329,7 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
         cfg.CancelProcesses = False #0602+
-        if set_n_processes:
+        if set_n_processes and (set_n_processes > 1):
             # logger.critical('Resetting # tasks...')
             cfg.nProcessSteps = set_n_processes
             cfg.nProcessDone = 0

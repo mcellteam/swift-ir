@@ -3235,7 +3235,7 @@ class ProjectTab(QWidget):
         self.table_container.setObjectName('table_container')
         self.table_container.setLayout(hbl)
 
-        self.project_table.initTableData()
+        # self.project_table.initTableData()
 
     def updateTreeWidget(self):
         # time consuming - refactor?
