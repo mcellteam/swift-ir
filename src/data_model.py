@@ -541,6 +541,18 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]['reference']
 
+    def has_reference(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        r = self._data['data']['scales'][s]['stack'][l]['reference']
+        f = self._data['data']['scales'][s]['stack'][l]['filename']
+        if r == '':
+            return False
+        if r == f:
+            return False
+        return True
+
+
     def filename_basename(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
@@ -705,7 +717,7 @@ class DataModel:
 
 
     def set_defaults(self):
-        logger.critical(f'Setting Defaults caller: {inspect.stack()[1].function} >>>>')
+        logger.critical(f'Setting Defaults [caller: {inspect.stack()[1].function}] >>>>')
         import src.config as cfg
 
         initial_zpos = int(len(self)/2)
@@ -751,9 +763,12 @@ class DataModel:
             self._data['state'].setdefault('show_ng_controls',True)
             print_exception()
 
-        logger.critical(str(self._data['state']))
+        # logger.critical(str(self._data['state']))
 
-        self._data['state'].setdefault('auto_update_ui', True)
+        # self._data['state'].setdefault('auto_update_ui', True)
+        # self._data['state'].setdefault('MA_focus', None) #0 = L, 1 = R
+        # self._data['state'].setdefault('focus_widget', None)
+        self._data['state']['stackwidget_ng_toggle'] = 1
         self._data['state']['tool_windows'].setdefault('python',False)
         self._data['state']['tool_windows'].setdefault('notes',False)
         self._data['state']['tool_windows'].setdefault('hud',False)
@@ -1311,8 +1326,10 @@ class DataModel:
         if l == None: l = self.zpos
         try:
             mps = self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
-            ref = [(0.5, x[0], x[1]) for x in mps['ref']]
-            base = [(0.5, x[0], x[1]) for x in mps['base']]
+            # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
+            # base = [(0.5, x[0], x[1]) for x in mps['base']]
+            ref = [(l, x[0], x[1]) for x in mps['ref']]
+            base = [(l, x[0], x[1]) for x in mps['base']]
             return {'ref': ref, 'base': base}
         except:
             print_exception()

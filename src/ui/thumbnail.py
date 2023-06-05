@@ -602,7 +602,7 @@ class CorrSignalThumbnail(QLabel):
                     font.setPointSize(size)
                     # font.setBold(True)
                     qp.setFont(font)
-                    qp.setPen(QColor('#555555'))
+                    qp.setPen(QColor('#777777'))
                     # qp.drawText(QRectF(0, 0, pm.width(), pm.height()), Qt.AlignCenter, "No Signal")
                     qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "No Signal")
                 else:
@@ -684,7 +684,6 @@ class CorrSignalThumbnail(QLabel):
         except:
             # print_exception()
             logger.warning('Unable to set no image...')
-            pass
         finally:
             self.update()
 

@@ -87,8 +87,9 @@ class HeadupDisplay(QWidget):
         if overlay:
             self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.textedit.setReadOnly(True)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.textedit.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.handler = h = QtHandler(self.update_status)
         fs = '%(asctime)s [%(levelname)s] %(message)s'
@@ -100,7 +101,7 @@ class HeadupDisplay(QWidget):
         layout.addWidget(te)
         self.start_thread()
         self.theme = None
-        self.layout().setAlignment(Qt.AlignBottom)
+        # self.layout().setAlignment(Qt.AlignBottom)
 
         self.messages = []
 
@@ -259,8 +260,18 @@ class HeadupDisplay(QWidget):
     #         width = int(cfg.WIDTH / 2)
     #     return QSize(width, 90)
 
+    # def sizeHint(self):
+    #     return QSize(int(cfg.mw.width() / 2), 90)
+
     def sizeHint(self):
-        return QSize(int(cfg.mw.width() / 2), 90)
+        if cfg.main_window:
+            width = int(cfg.main_window.width() / 2)
+        else:
+            width = int(cfg.WIDTH / 2)
+        return QSize(width, 90)
+
+
+
 
 
 

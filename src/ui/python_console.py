@@ -29,7 +29,8 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client = self._kernel_manager.client()
         self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
 
         # if not is_tacc():
@@ -91,10 +92,26 @@ class PythonConsole(RichJupyterWidget):
     #         width = int(cfg.WIDTH / 2)
     #     return QSize(width, 90)
 
-    def sizeHint(self):
-        # return QSize(int(cfg.WIDTH / 2), 90)
+    # def sizeHint(self):
+    #     # return QSize(int(cfg.WIDTH / 2), 90)
+    #
+    #     return QSize(int(cfg.mw.width() / 2), 90)
 
-        return QSize(int(cfg.mw.width() / 2), 90)
+
+    # def sizeHint(self):
+    #     if cfg.main_window:
+    #         width = int(cfg.main_window.width() / 2)
+    #     else:
+    #         width = int(cfg.WIDTH / 2)
+    #     return QSize(width, 90)
+
+    def sizeHint(self):
+        if cfg.main_window:
+            width = int(cfg.main_window.width() / 2)
+        else:
+            width = int(cfg.WIDTH / 2)
+        return QSize(width, 90)
+
 
 
 if __name__ == '__main__':

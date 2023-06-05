@@ -339,10 +339,10 @@ class OpenProject(QWidget):
 
     def new_project(self, mendenhall=False):
         logger.info('\n\nStarting A New Project...\n')
-        cfg.main_window.tell('Starting A New Project...')
+        cfg.mw.tell('Starting A New Project...')
         self.hideMainUI()
-        cfg.main_window.stopPlaybackTimer()
-        cfg.main_window.tell('New Project Path:')
+        cfg.mw.stopPlaybackTimer()
+        cfg.mw.tell('New Project Path:')
 
         '''Step 1/3'''
         self.name_dialog = QFileDialog()
@@ -353,7 +353,7 @@ class OpenProject(QWidget):
         caption = "search",
 
         self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
-        cfg.main_window.set_status('New Project (Step: 1/3) - Name & Location')
+        cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
         self.name_dialog.setNameFilter("Text Files (*.swiftir)")
         self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
         self.name_dialog.setViewMode(QFileDialog.Detail)
@@ -401,7 +401,7 @@ class OpenProject(QWidget):
         # urls = self.name_dialog.sidebarUrls()
         # logger.info(f'urls: {urls}')
 
-        cfg.main_window.set_status('Awaiting User Input...')
+        cfg.mw.set_status('Awaiting User Input...')
         if self.name_dialog.exec() == QFileDialog.Accepted:
             logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
             filename = self.name_dialog.selectedFiles()[0]
@@ -414,30 +414,30 @@ class OpenProject(QWidget):
 
         if filename in ['', None]:
             logger.info('New Project Canceled.')
-            cfg.main_window.warn("New Project Canceled.")
+            cfg.mw.warn("New Project Canceled.")
             self.showMainUI()
             return
         if not filename.endswith('.swiftir'):
             filename += ".swiftir"
         if os.path.exists(filename):
             logger.warning("The file '%s' already exists." % filename)
-            cfg.main_window.warn("The file '%s' already exists." % filename)
+            cfg.mw.warn("The file '%s' already exists." % filename)
             path_proj = os.path.splitext(filename)[0]
-            cfg.main_window.tell(f"Removing Extant Project Directory '{path_proj}'...")
+            cfg.mw.tell(f"Removing Extant Project Directory '{path_proj}'...")
             logger.info(f"Removing Extant Project Directory '{path_proj}'...")
             shutil.rmtree(path_proj, ignore_errors=True)
-            cfg.main_window.tell(f"Removing Extant Project File '{path_proj}'...")
+            cfg.mw.tell(f"Removing Extant Project File '{path_proj}'...")
             logger.info(f"Removing Extant Project File '{path_proj}'...")
             os.remove(filename)
 
 
         path, extension = os.path.splitext(filename)
         # cfg.data = DataModel(name=path, mendenhall=mendenhall)
-        cfg.data = DataModel(name=path)
-        cfg.data.set_defaults()
+        cfg.data = dm = DataModel(name=path)
+        # cfg.data.set_defaults()
 
-        cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
-        cfg.dataById[id(cfg.project_tab)] = cfg.data
+        # cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
+        # cfg.dataById[id(cfg.project_tab)] = cfg.data
 
         self.new_project_lab2.setText(path)
 
@@ -449,84 +449,74 @@ class OpenProject(QWidget):
             '''Step 2/3...'''
             result = self.import_multiple_images(path)
             if result == 1:
-                cfg.main_window.warn('No images were imported - canceling new project')
+                cfg.mw.warn('No images were imported - canceling new project')
                 self.showMainUI()
                 return
+            # cfg.data = dm
 
-            # configure_project_paths()
-            # self.user_projects.set_data()
-
-            cfg.data.set_defaults() #Todo debug this later... why twice
-            # recipe_dialog = ScaleProjectDialog(parent=self)
+            cfg.data.set_defaults()
 
             '''Step 3/3'''
             self.new_project_lab1.setText('New Project (Step: 3/3) - Global Configuration')
-            cfg.main_window.set_status('New Project (Step: 3/3) - Global Configuration')
+            cfg.mw.set_status('New Project (Step: 3/3) - Global Configuration')
+            logger.info('Showing new configure project dialog')
             dialog = NewConfigureProjectDialog(parent=self)
             dialog.setWindowFlags(Qt.FramelessWindowHint)
-            # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
-            # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20;""")
             self.vbl_main.addWidget(dialog)
+            # cfg.data = dm
 
             result = dialog.exec()
+            self.showMainUI()
             # logger.info(f'result = {result}, type = {type(result)}')
 
             if result:
                 logger.info('Save File Path: %s' % path)
             else:
-                self.showMainUI()
+                # self.showMainUI()
                 dialog.close()
                 return 1
 
-            self.showMainUI()
-            cfg.data.set_defaults()
-            initLogFiles(cfg.data)
+            cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
+            ID = id(cfg.project_tab)
+            logger.critical(f'New Tab ID: {ID}')
+            cfg.dataById[id(cfg.project_tab)] = dm
 
-            if cfg.data['data']['autoalign_flag']:
-                cfg.ignore_pbar = False
-                cfg.mw.showZeroedPbar(set_n_processes=7)
-                autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=False)
-            else:
-                autoscale(dm=cfg.data, make_thumbnails=True, set_pbar=True)
-            # cfg.mw.autoscale_()
-            # cfg.main_window._autosave(silently=True)
-
-            # cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path) + '.swiftir')
-
-            # cfg.main_window._setLastTab()
-            # cfg.data.zpos = int(len(cfg.data) / 2)
-            # cfg.main_window.onStartProject()
-            # QApplication.processEvents()
-
-            logger.critical(f"cfg.data['data']['autoalign_flag'] = {cfg.data['data']['autoalign_flag']}")
-
-            if cfg.data['data']['autoalign_flag']:
-                cfg.mw.tell('Aligning coarsest scale...')
-                cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
-
-            QApplication.processEvents()
-
-            cfg.main_window._autosave(silently=True)
-            cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(path))
-            cfg.main_window._setLastTab()
-            cfg.data.zpos = int(len(cfg.data) / 2)
-            cfg.main_window.onStartProject()
-            QApplication.processEvents()
-
-
-            # self.onStartProject(mendenhall=True)
-            # turn OFF onStartProject for Mendenhall
+            # self.showMainUI()
+            dm.set_defaults()
+            initLogFiles(dm)
+            # cfg.mw._disableGlobTabs()
+            try:
+                if dm['data']['autoalign_flag']:
+                    cfg.mw.tell(
+                        f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
+                    cfg.ignore_pbar = False
+                    cfg.mw.showZeroedPbar(set_n_processes=7)
+                    autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
+                    cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
+                else:
+                    autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
+            except:
+                print_exception()
+            finally:
+                # cfg.mw.enableAllTabs()
+                # QApplication.processEvents()
+                cfg.mw._autosave(silently=True)
+                cfg.data = dm
+                cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
+                cfg.mw.setZpos(int(len(dm) / 2))
+                cfg.mw.onStartProject()
+                # QApplication.processEvents()
 
         logger.info(f'Appending {filename} to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
-        cfg.main_window._autosave()
+        cfg.mw._autosave()
 
 
     def import_multiple_images(self, path):
         ''' Import images into data '''
-        cfg.main_window.tell('Import Images:')
+        cfg.mw.tell('Import Images:')
 
         '''Step 2/3'''
         '''Dialog for importing images. Returns list of filenames.'''
@@ -546,7 +536,7 @@ class OpenProject(QWidget):
         self.vbl_main.addWidget(dialog)
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
         self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
-        cfg.main_window.set_status('New Project (Step: 2/3) - Import TIFF Images')
+        cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
         dialog.setNameFilter('Images (*.tif *.tiff)')
         dialog.setFileMode(QFileDialog.ExistingFiles)
@@ -594,34 +584,32 @@ class OpenProject(QWidget):
         delegate.mapping = places
         sidebar.setItemDelegate(delegate)
 
-
-
-        cfg.main_window.set_status('Awaiting User Input...')
+        cfg.mw.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
         if dialog.exec_() == QDialog.Accepted:
             filenames = dialog.selectedFiles()
         else:
             logger.warning('Import images dialog did not return a valid file list')
-            cfg.main_window.warn('Import images dialog did not return a valid file list')
+            cfg.mw.warn('Import images dialog did not return a valid file list')
             self.showMainUI()
             return 1
 
         if filenames == 1:
             logger.warning('New Project Canceled')
-            cfg.main_window.warn('No Project Canceled')
+            cfg.mw.warn('No Project Canceled')
             self.showMainUI()
             return 1
 
         files_sorted = natural_sort(filenames)
         cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
-        cfg.main_window.tell(f'Importing {len(files_sorted)} Images...')
+        cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
         logger.info(f'Selected Images: \n{files_sorted}')
 
         # for f in files_sorted:
         #     cfg.data.append_image(f)
         cfg.data.append_images(files_sorted)
 
-        cfg.main_window.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
+        cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
         # cfg.data.link_reference_sections()
 
 
@@ -651,8 +639,8 @@ class OpenProject(QWidget):
             print_exception()
             return
         tab = ZarrTab(self, path=path)
-        cfg.main_window.globTabs.addTab(tab, os.path.basename(path))
-        cfg.main_window._setLastTab()
+        cfg.mw.addGlobTab(tab, os.path.basename(path))
+        cfg.mw._setLastTab()
 
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
@@ -663,11 +651,9 @@ class OpenProject(QWidget):
             return
         elif validate_project_selection(path):
 
-            isOpen = cfg.main_window.isProjectOpen(path)
-            # logger.info(f'isOpen = {isOpen}')
-            # logger.info('path = %s' % path)
-            if isOpen:
-                cfg.main_window.globTabs.setCurrentIndex(cfg.main_window.getProjectIndex(path))
+            if cfg.mw.isProjectOpen(path):
+                cfg.mw.globTabs.setCurrentIndex(cfg.mw.getProjectIndex(path))
+                cfg.mw.warn(f'Project {os.path.basename(path)} is already open.')
                 return
 
             # filename = self.selected_file
@@ -677,9 +663,9 @@ class OpenProject(QWidget):
                 with open(filename, 'r') as f:
                     cfg.data = DataModel(data=json.load(f))
                 cfg.data.set_defaults()
-                cfg.main_window._autosave()
+                cfg.mw._autosave()
             except:
-                cfg.main_window.warn(f'No Such File Found: {filename}')
+                cfg.mw.warn(f'No Such File Found: {filename}')
                 logger.warning(f'No Such File Found: {filename}')
                 print_exception()
                 return
@@ -689,12 +675,12 @@ class OpenProject(QWidget):
             cfg.data.set_paths_absolute(filename=filename)
             cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
             cfg.dataById[id(cfg.project_tab)] = cfg.data
-            cfg.main_window.onStartProject()
-            cfg.main_window.globTabs.addTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
-            cfg.main_window._setLastTab()
-            # cfg.main_window.hud.done()
+            cfg.mw.onStartProject()
+            cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
+            cfg.mw._setLastTab()
+            # cfg.mw.hud.done()
         else:
-            cfg.main_window.warn("Invalid Path")
+            cfg.mw.warn("Invalid Path")
 
 
     def delete_project(self):
@@ -705,7 +691,7 @@ class OpenProject(QWidget):
         if not validate_project_selection(project_file):
             logger.warning('Invalid Project For Deletion (!)\n%s' % project)
             return
-        cfg.main_window.warn("Delete this project? %s" % project)
+        cfg.mw.warn("Delete this project? %s" % project)
         txt = "Are you sure you want to PERMANENTLY DELETE " \
               "the following project?\n\n" \
               "Project: %s" % project
@@ -719,48 +705,48 @@ class OpenProject(QWidget):
         msgbox.setDefaultButton(QMessageBox.Cancel)
         reply = msgbox.exec_()
         if reply == QMessageBox.Cancel:
-            cfg.main_window.tell('Canceling Delete Project Permanently Instruction...')
+            cfg.mw.tell('Canceling Delete Project Permanently Instruction...')
             logger.warning('Canceling Delete Project Permanently Instruction...')
             return
         if reply == QMessageBox.Ok:
             logger.info('Deleting Project File %s...' % project_file)
-            cfg.main_window.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
+            cfg.mw.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
             logger.warning('Executing Delete Project Permanently Instruction...')
 
         logger.info(f'Deleting Project File: {project_file}...')
-        cfg.main_window.warn(f'Deleting Project File: {project_file}...')
+        cfg.mw.warn(f'Deleting Project File: {project_file}...')
         try:
             os.remove(project_file)
         except:
             print_exception()
         # else:
-        #     cfg.main_window.hud.done()
+        #     cfg.mw.hud.done()
 
         logger.info('Deleting Project Directory %s...' % project)
-        cfg.main_window.warn('Deleting Project Directory %s...' % project)
+        cfg.mw.warn('Deleting Project Directory %s...' % project)
         try:
 
             delete_recursive(dir=project)
             # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
             # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
-            cfg.main_window.warn('An Error Was Encountered During Deletion of the Project Directory')
+            cfg.mw.warn('An Error Was Encountered During Deletion of the Project Directory')
             print_exception()
         else:
-            cfg.main_window.hud.done()
+            cfg.mw.hud.done()
 
-        cfg.main_window.tell('Wrapping up...')
+        cfg.mw.tell('Wrapping up...')
         configure_project_paths()
-        if cfg.main_window.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
+        if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
             try:
-                cfg.main_window.globTabs.currentWidget().user_projects.set_data()
+                cfg.mw.globTabs.currentWidget().user_projects.set_data()
             except:
                 logger.warning('There was a problem updating the project list')
                 print_exception()
 
         self.selectionReadout.setText('')
 
-        cfg.main_window.tell('Deletion Complete!')
+        cfg.mw.tell('Deletion Complete!')
         logger.info('Deletion Complete')
 
     # def keyPressEvent(self, event):
@@ -788,7 +774,7 @@ class OpenProject(QWidget):
 #         print(event.key())
 #         if event.key() == Qt.Key_Delete:
 #             # self.parent.parent.delete_project()
-#             cfg.main_window._getTabObject().delete_project()
+#             cfg.mw._getTabObject().delete_project()
 #         else:
 #             super().keyPressEvent(event)
 
@@ -879,7 +865,7 @@ class UserProjects(QWidget):
     #         return
     #     logger.info(f'path: {path}')
     #     cfg.selected_file = path
-    #     cfg.main_window.setSelectionPathText(path)
+    #     cfg.mw.setSelectionPathText(path)
     #     # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
 
 

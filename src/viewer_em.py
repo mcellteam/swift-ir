@@ -20,13 +20,32 @@ import zarr
 import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, QUrl, QTimer
+from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
 from qtpy.QtWidgets import QApplication, QSizePolicy
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, obj_to_string, print_exception
 from src.shaders import ann_shader
 import src.config as cfg
+
+
+import argparse
+import asyncio
+import atexit
+import concurrent
+import shutil
+import tempfile
+import threading
+
+import neuroglancer
+import neuroglancer.cli
+import neuroglancer.random_token
+import neuroglancer.write_annotations
+import numpy as np
+import tornado.httpserver
+import tornado.netutil
+import tornado.platform
+import tornado.web
 
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
@@ -61,7 +80,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._layer = cfg.data.zpos
         self.scale = cfg.data.scale
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self._blockZoom = False
+        self._settingZoom = False
         self.type = 'AbstractEMViewer'
         # logger.info('viewer constructed!')
         caller = inspect.stack()[1].function
@@ -108,35 +127,30 @@ class AbstractEMViewer(neuroglancer.Viewer):
     #     pass
 
     def diableZoom(self):
-        self._blockZoom = True
+        self._settingZoom = True
         logger.info('Zoom disabled.')
 
     def enableZoom(self):
-        self._blockZoom = False
+        self._settingZoom = False
         logger.info('Zoom enabled.')
 
-
+    @Slot()
     def on_state_changed_any(self):
-        # logger.critical(f'zpos={cfg.data.zpos}')
-        # logger.info(f'on_state_changed_any [{self.type}] >>>>')
-        # if self._zmag_set < 10:
-        #     self._zmag_set += 1
-        # logger.critical(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+        # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+        if self._zmag_set < 10:
+            self._zmag_set += 1
         self.signals.stateChangedAny.emit()
 
-
+    @Slot()
     def on_state_changed(self):
 
         if self._blinking:
             return
-        if self._blockZoom:
+        if self._settingZoom:
             return
         caller = inspect.stack()[1].function
-        # curframe = inspect.currentframe()
-        # calframe = inspect.getouterframes(curframe, 2)
-        # calname = str(calframe[1][3])
-        if caller == '<lambda>':
-            return
+        # if caller == '<lambda>':
+        #     return
 
         # if not getData('state,auto_update_ui'):
         #     return
@@ -155,12 +169,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 #ConfirmedOkay
                 # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
                 if request_layer == self._layer:
-                    logger.debug('[%s] State Changed, But Layer Is The Same - '
-                                 'Suppressing The stateChanged Callback Signal' %self.type)
+                    logger.debug(f'{self.type} state changed, but z-index did not change. '
+                                 f'The callback to update UI was surpressed.')
                 else:
                     self._layer = request_layer
                     cfg.data.zpos = request_layer
+                    # cfg.mw.setZpos(request_layer)
                     self.signals.stateChanged.emit(request_layer)
+                    # self.signals.stateChanged.emit(request_layer)
                     # if getData('state,auto_update_ui'):
                     #     logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     #     self.signals.stateChanged.emit(request_layer)
@@ -168,9 +184,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
-                    if getData('state,auto_update_ui'):
-                        logger.info(f'[{self.type}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                        self.signals.zoomChanged.emit(zoom)
+                    self.signals.zoomChanged.emit(zoom)
                 self._crossSectionScale = zoom
         except:
             print_exception()
@@ -186,8 +200,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def url(self):
         return self.get_viewer_url()
 
-    def get_loc(self):
-        return math.floor(self.state.position[0])
 
     def blink(self):
         self._blinking = 1
@@ -251,24 +263,20 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def set_zoom(self, val):
         if self.type != 'EMViewerStage':  # Critical!
-            self._blockZoom = True
+            self._settingZoom = True
             with self.txn() as s:
                 s.crossSectionScale = val
-            self._blockZoom = False
+            self._settingZoom = False
 
     def set_layer(self, index):
-        if self.type != 'EMViewerStage': #Critical!
-            logger.info('')
-            # state = copy.deepcopy(self.state)
-            # state.position[0] = index
-            # self.set_state(state)
-            with self.txn() as s:
-                vc = s.voxel_coordinates
-                vc[0] = index
-
-            # self.volume_manager.update(json_str)
-
-
+        # if self.type != 'EMViewerStage': #Critical!
+        #     logger.info('')
+        # state = copy.deepcopy(self.state)
+        # state.position[0] = index
+        # self.set_state(state)
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            vc[0] = index
 
 
     def set_brightness(self, val=None):
@@ -351,7 +359,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def initZoom(self, w, h, adjust=1.20):
         QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
-        # self._blockZoom = True
+        # self._settingZoom = True
         # logger.critical(f'initZoom... w={w}, h={h}')
         # logger.critical(f'initZoom... w_ng_display w={cfg.project_tab.w_ng_display.width()}, w_ng_display h={cfg.project_tab.w_ng_display.height()}')
 
@@ -375,7 +383,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         cs_scale = max(scale_h, scale_w)
         return cs_scale
 
-        # self._blockZoom = False
+        # self._settingZoom = False
 
 
     def get_tensors(self):
@@ -390,9 +398,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
             if cfg.data.is_aligned_and_generated():
                 path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+                cfg.tensor = cfg.al_tensor = get_zarr_tensor(path).result()
             else:
                 path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-            cfg.tensor = get_zarr_tensor(path).result()
+                cfg.tensor = cfg.unal_tensor = get_zarr_tensor(path).result()
+
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
             cfg.mw.warn('Failed to acquire Tensorstore view')
@@ -412,7 +422,8 @@ class EMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.shared_state.add_changed_callback(self.on_state_changed) #Critical for Corr Sig thumbs to update properly
+        # self.shared_state.add_changed_callback(self.on_state_changed) #Critical for Corr Sig thumbs to update properly
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         # self.shared_state.add_changed_callback(self.on_state_changed_any)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
@@ -613,7 +624,7 @@ class EMViewer(AbstractEMViewer):
             s.show_panel_borders = False
             # s.viewer_size = [100,100]
 
-        self._layer = self.get_loc()
+        self._layer = math.floor(self.state.position[0])
         # self.shared_state.add_changed_callback(self.on_state_changed) #0215+ why was this OFF?
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
@@ -634,6 +645,71 @@ class EMViewer(AbstractEMViewer):
         h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space)
         # h = cfg.main_window.globTabs.height() - 20
         self.initZoom(w=w, h=h, adjust=1.10)
+
+
+    def initViewerAligned(self, z=None):
+        if z == None: z = cfg.data.zpos
+        caller = inspect.stack()[1].function
+        if cfg.data.skipped(l=z):
+            return
+
+        # sf = cfg.data.scale_val(s=cfg.data.scale)
+        # path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'zarr_staged', '%d'%z)
+
+        if not os.path.exists(path):
+            cfg.main_window.warn('Data Store Not Found: %s' % path)
+            logger.warning('Data Store Not Found: %s' % path); return
+
+        try:
+            self.store = get_zarr_tensor(path).result()
+        except Exception as e:
+            cfg.main_window.warn('Unable to Load Data Store at %s' % path)
+            raise e
+
+        # logger.critical('Creating Local Volume for %d' %self.index)
+
+        self.LV = ng.LocalVolume(
+            volume_type='image',
+            # data=self.store[z:z+1, :, :],
+            data=self.store[:, :, :],
+            dimensions=self.coordinate_space,
+            voxel_offset=[0, 0, 0]
+        )
+
+        with self.txn() as s:
+            s.layout.type = 'yz'
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            s.show_scale_bar = False
+            s.show_axis_lines = False
+            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+            # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
+            s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
+            if getData('state,neutral_contrast'):
+                s.crossSectionBackgroundColor = '#808080'
+            else:
+                s.crossSectionBackgroundColor = '#222222'
+            _, y, x = self.store.shape
+            s.position = [0.5, y / 2, x / 2]
+            # s.position = [0.1, y / 2, x / 2]
+            # s.layers['ann'].annotations = list(self.pts.values())
+
+
+        with self.config_state.txn() as s:
+            s.show_ui_controls = False
+            s.show_panel_borders = False
+
+
+        if self.webengine:
+            self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            self.webengine.setFocus()
+
+        self.set_brightness()
+        self.set_contrast()
+        QApplication.processEvents()
+        # self.initZoom()
+
 
 
 class EMViewerStage(AbstractEMViewer):
@@ -691,7 +767,8 @@ class EMViewerStage(AbstractEMViewer):
             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             # s.showSlices=False
             # s.position = [0, tensor_y / 2, tensor_x / 2]
-            s.position = [0.5, tensor_y / 2, tensor_x / 2]
+            # s.position = [0.5, tensor_y / 2, tensor_x / 2]
+            s.voxel_coordinates = [0, tensor_y / 2, tensor_x / 2]
             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
 
         with self.config_state.txn() as s:

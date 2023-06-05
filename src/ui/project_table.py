@@ -92,7 +92,8 @@ class ProjectTable(QWidget):
             if cfg.project_tab._tabs.currentIndex() == 1:
                 row = self.table.currentIndex().row()
                 # cfg.main_window.tell('Section #%d' % row)
-                cfg.data.zpos = row
+                # cfg.data.zpos = row
+                cfg.mw.setZpos(row)
                 cfg.main_window.dataUpdateWidgets()
         selection = self.get_selection()
         if selection:
