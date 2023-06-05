@@ -2124,13 +2124,6 @@ class MainWindow(QMainWindow):
 
         QApplication.processEvents()
 
-        # dt = 0.0009050369262695312
-
-        # self.combo_mode.setCurrentIndex(1)
-        self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
-
-        # dt = 0.001238107681274414
-
         self.updateDtWidget()  # <.001s
 
         # cfg.data.set_defaults()  # 0.5357 -> 0.5438, ~.0081s
@@ -2824,7 +2817,6 @@ class MainWindow(QMainWindow):
                 self.updateManualAlignModeButton()
                 self.updateCorrSignalsDrawer()
                 # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
-                self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                 self._changeScaleCombo.setEnabled(False)
@@ -2871,7 +2863,6 @@ class MainWindow(QMainWindow):
                 setData('state,mode', 'stack-xy')
                 setData('state,ng_layout', 'xy')
 
-                self.combo_mode.setCurrentIndex(0)
             elif prev_mode == 'stack-4panel':
                 setData('state,mode', 'stack-4panel')
                 setData('state,ng_layout', '4panel')
@@ -2880,7 +2871,6 @@ class MainWindow(QMainWindow):
                 setData('state,mode', 'comparison')
                 setData('state,ng_layout', 'xy')
 
-            self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
 
             # cfg.project_tab.cpanel.show()
 
@@ -3028,53 +3018,52 @@ class MainWindow(QMainWindow):
         elif key == 'manual_align':
             return 'Manual Align Mode'
 
-    def prettyToModeKey(self, key):
-        if key == 'Stack View (xy plane)':
-            return 'stack-xy'
-        elif key == 'Stack View (4 panel)':
-            return 'stack-4panel'
-        # elif key == 'Comparison View':
-        #     return 'comparison'
-        elif key == 'Manual Align Mode':
-            return 'manual_align'
+    # def prettyToModeKey(self, key):
+    #     if key == 'Stack View (xy plane)':
+    #         return 'stack-xy'
+    #     elif key == 'Stack View (4 panel)':
+    #         return 'stack-4panel'
+    #     # elif key == 'Comparison View':
+    #     #     return 'comparison'
+    #     elif key == 'Manual Align Mode':
+    #         return 'manual_align'
 
-    def onComboModeChange(self):
-        caller = inspect.stack()[1].function
-
-        if self._isProjectTab():
-            # if cfg.project_tab._tabs.currentIndex() == 0:
-            if caller == 'main':
-                logger.info('')
-                # index = self.combo_mode.currentIndex()
-                curText = self.combo_mode.currentText()
-                if curText == 'Manual Align Mode':
-                    if not cfg.data.is_aligned():
-                        self.warn('Align the series first and then use Manual Alignment.')
-                        self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
-                        return
-                requested_key = self.prettyToModeKey(curText)
-                logger.info(f'Requested key: {requested_key}')
-                if getData('state,mode') == 'manual_align':
-                    if requested_key != 'manual_align':
-                        self.exit_man_mode()
-                setData('state,previous_mode', getData('state,mode'))
-                setData('state,mode', requested_key)
-                if requested_key == 'stack-4panel':
-                    setData('state,ng_layout', '4panel')
-                elif requested_key == 'stack-xy':
-                    setData('state,ng_layout', 'xy')
-                elif requested_key == 'comparison':
-                    setData('state,ng_layout', 'xy')
-                elif requested_key == 'manual_align':
-                    setData('state,ng_layout', 'xy')
-                    self.enter_man_mode()
-                self.dataUpdateWidgets()
-                cfg.project_tab.comboNgLayout.setCurrentText(getData('state,ng_layout'))
-                cfg.project_tab.initNeuroglancer()
-
-            # cfg.project_tab.updateCursor()
-        else:
-            self.combo_mode.setCurrentText(self.modeKeyToPretty('comparison'))
+    # def onComboModeChange(self):
+    #     caller = inspect.stack()[1].function
+    #
+    #     if self._isProjectTab():
+    #         # if cfg.project_tab._tabs.currentIndex() == 0:
+    #         if caller == 'main':
+    #             logger.info('')
+    #             curText = self.combo_mode.currentText()
+    #             if curText == 'Manual Align Mode':
+    #                 if not cfg.data.is_aligned():
+    #                     self.warn('Align the series first and then use Manual Alignment.')
+    #                     self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
+    #                     return
+    #             requested_key = self.prettyToModeKey(curText)
+    #             logger.info(f'Requested key: {requested_key}')
+    #             if getData('state,mode') == 'manual_align':
+    #                 if requested_key != 'manual_align':
+    #                     self.exit_man_mode()
+    #             setData('state,previous_mode', getData('state,mode'))
+    #             setData('state,mode', requested_key)
+    #             if requested_key == 'stack-4panel':
+    #                 setData('state,ng_layout', '4panel')
+    #             elif requested_key == 'stack-xy':
+    #                 setData('state,ng_layout', 'xy')
+    #             elif requested_key == 'comparison':
+    #                 setData('state,ng_layout', 'xy')
+    #             elif requested_key == 'manual_align':
+    #                 setData('state,ng_layout', 'xy')
+    #                 self.enter_man_mode()
+    #             self.dataUpdateWidgets()
+    #             cfg.project_tab.comboNgLayout.setCurrentText(getData('state,ng_layout'))
+    #             cfg.project_tab.initNeuroglancer()
+    #
+    #         # cfg.project_tab.updateCursor()
+    #     else:
+    #         self.combo_mode.setCurrentText(self.modeKeyToPretty('comparison'))
 
     def initToolbar(self):
         logger.info('')
@@ -3498,8 +3487,6 @@ class MainWindow(QMainWindow):
             self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
-            # items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
-            # self.combo_mode.addItems(items)
 
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
@@ -3514,7 +3501,6 @@ class MainWindow(QMainWindow):
             #         margin: 0px;
             #         padding: 0px;
             #         """)
-            self.combo_mode.setCurrentText(self.modeKeyToPretty(getData('state,mode')))
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
 
@@ -4712,25 +4698,11 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
         # hbl.addWidget(self._changeScaleCombo, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.combo_mode = QComboBox(self)
-        self.combo_mode.setStyleSheet('font-size: 10px;')
-        # self.combo_mode.setStyleSheet('font-size: 11px; font-weight: 600; color: #1b1e23;')
-        self.combo_mode.setFixedSize(QSize(148, 16))
-        self.combo_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View', 'Manual Align Mode']
-        # items = ['Stack View (4 panel)', 'Stack View (xy plane)', 'Comparison View']
-        items = ['Stack View (4 panel)', 'Stack View (xy plane)']
-        self.combo_mode.addItems(items)
-        self.combo_mode.currentTextChanged.connect(self.onComboModeChange)
-
-
-
         # self.navControls = QWidget()
         self.fl_nav = QFormLayout()
         self.fl_nav.setVerticalSpacing(2)
         self.fl_nav.setHorizontalSpacing(2)
         self.fl_nav.setContentsMargins(2, 0, 2, 0)
-        # self.fl_nav.addRow('View:', HWidget(self.combo_mode, ExpandingWidget(self)))
         # self.fl_nav.addRow('Scale: ', HWidget(self._changeScaleCombo, self._scaleSetWidget, ExpandingWidget(self)))
         # self.fl_nav.addRow('Section:', HWidget(self._jumpToLineedit, self._sectionSliderWidget, self.spinbox_fps))
         # # self.fl_nav.addRow('Include:', HWidget(self._skipCheckbox, self._sectionChangeWidget))
