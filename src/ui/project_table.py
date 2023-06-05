@@ -343,7 +343,7 @@ class ProjectTable(QWidget):
 
         self.btn_splash_load_table = QPushButton()
         self.btn_splash_load_table.clicked.connect(self.initTableData)
-        self.btn_splash_load_table.setStyleSheet("""font-size: 16px; font-color: #161c20;""")
+        self.btn_splash_load_table.setStyleSheet("""font-size: 16px; color: #161c20;""")
 
         layout = VBL()
         layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)
