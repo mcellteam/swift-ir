@@ -133,7 +133,6 @@ class ProjectTable(QWidget):
             for row in range(0, len(cfg.data)):
                 cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
                 cnt += 1
-                self.setPbarMax(cfg.data.count)
                 cfg.main_window.updatePbar(cnt)
                 self.table.insertRow(row)
                 self.set_row_data(row=row)
