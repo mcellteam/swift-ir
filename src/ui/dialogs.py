@@ -190,12 +190,14 @@ class QFileDialogPreview(QFileDialog):
     def onFileSelected(self, file):
         self._fileSelected = file
         cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
+
     def onFilesSelected(self, files):
         self._filesSelected = files
         cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
 
     def getFileSelected(self):
         return self._fileSelected
+
     def getFilesSelected(self):
         return self._filesSelected
 
