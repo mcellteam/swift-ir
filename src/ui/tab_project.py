@@ -284,7 +284,7 @@ class ProjectTab(QWidget):
             # cfg.baseViewer.signals.stateChanged.connect(lambda: logger.critical(f'Signal Emitted! {self.sender()}'))
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
-            cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
+            # cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
 
             cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag)  # Not responsible
             cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag)  # Not responsible
@@ -485,21 +485,21 @@ class ProjectTab(QWidget):
         # vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.zoomSliderAndLabel.addWidget(vlab)
 
-        # self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        # self.ZdisplaySlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.ZdisplaySlider.setMaximum(20)
-        # self.ZdisplaySlider.setMinimum(1)
-        # self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
-        # self.ZdisplaySlider.setValue(1.0)
+        self.ZdisplaySlider = DoubleSlider(Qt.Orientation.Vertical, self)
+        self.ZdisplaySlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.ZdisplaySlider.setMaximum(20)
+        self.ZdisplaySlider.setMinimum(1)
+        self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
+        self.ZdisplaySlider.setValue(1.0)
 
-        # self.ZdisplaySliderAndLabel = VWidget()
-        # self.ZdisplaySliderAndLabel.layout.setSpacing(0)
-        # self.ZdisplaySliderAndLabel.setFixedWidth(16)
-        # self.ZdisplaySliderAndLabel.setMaximumHeight(100)
-        # self.ZdisplaySliderAndLabel.addWidget(self.ZdisplaySlider)
-        # vlab = VerticalLabel('Z-Mag:')
-        # vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
-        # self.ZdisplaySliderAndLabel.addWidget(vlab)
+        self.ZdisplaySliderAndLabel = VWidget()
+        self.ZdisplaySliderAndLabel.layout.setSpacing(0)
+        self.ZdisplaySliderAndLabel.setFixedWidth(16)
+        self.ZdisplaySliderAndLabel.setMaximumHeight(100)
+        self.ZdisplaySliderAndLabel.addWidget(self.ZdisplaySlider)
+        vlab = VerticalLabel('Z-Mag:')
+        vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
+        self.ZdisplaySliderAndLabel.addWidget(vlab)
 
         self.MA_webengine_ref = WebEngine(ID='ref')
         self.MA_webengine_base = WebEngine(ID='base')
@@ -1949,10 +1949,10 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
 
-        # self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
-        # self.sideSliders.setFixedWidth(16)
-        # self.sideSliders.layout.setSpacing(0)
-        # self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+        self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
+        self.sideSliders.setFixedWidth(16)
+        self.sideSliders.layout.setSpacing(0)
+        self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
 
         self.labMethod1 = QLabel('Alignment Method:  ')
@@ -2193,7 +2193,7 @@ class ProjectTab(QWidget):
         # )
         self.ng_browser_container_outer = HWidget(
             self.hsplitter_tn_ng,
-            self.zoomSliderAndLabel,
+            self.sideSliders,
         )
         self.ng_browser_container_outer.layout.setStretch(0,0)
         self.ng_browser_container_outer.layout.setStretch(2,3)
@@ -3166,31 +3166,31 @@ class ProjectTab(QWidget):
         except:
             print_exception()
 
-    # def onSliderZmag(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.info('caller: %s' % caller)
-    #     try:
-    #         # for viewer in cfg.main_window.get_viewers():
-    #         val = self.ZdisplaySlider.value()
-    #         if getData('state,manual_mode'):
-    #             state = copy.deepcopy(cfg.refViewer.state)
-    #             state.relative_display_scales = {'z': val}
-    #             cfg.refViewer.set_state(state)
-    #             state = copy.deepcopy(cfg.baseViewer.state)
-    #             state.relative_display_scales = {'z': val}
-    #             cfg.baseViewer.set_state(state)
-    #             state = copy.deepcopy(cfg.stageViewer.state)
-    #             state.relative_display_scales = {'z': val}
-    #             cfg.baseViewer.set_state(state)
-    #
-    #         else:
-    #             # logger.info('val = %d' % val)
-    #             state = copy.deepcopy(cfg.emViewer.state)
-    #             state.relative_display_scales = {'z': val}
-    #             cfg.emViewer.set_state(state)
-    #         cfg.main_window.update()
-    #     except:
-    #         print_exception()
+    def onSliderZmag(self):
+        caller = inspect.stack()[1].function
+        logger.info('caller: %s' % caller)
+        try:
+            # for viewer in cfg.main_window.get_viewers():
+            val = self.ZdisplaySlider.value()
+            if getData('state,manual_mode'):
+                state = copy.deepcopy(cfg.refViewer.state)
+                state.relative_display_scales = {'z': val}
+                cfg.refViewer.set_state(state)
+                state = copy.deepcopy(cfg.baseViewer.state)
+                state.relative_display_scales = {'z': val}
+                cfg.baseViewer.set_state(state)
+                state = copy.deepcopy(cfg.stageViewer.state)
+                state.relative_display_scales = {'z': val}
+                cfg.baseViewer.set_state(state)
+
+            else:
+                # logger.info('val = %d' % val)
+                state = copy.deepcopy(cfg.emViewer.state)
+                state.relative_display_scales = {'z': val}
+                cfg.emViewer.set_state(state)
+            cfg.main_window.update()
+        except:
+            print_exception()
 
     def resetSliderZmag(self):
         caller = inspect.stack()[1].function
