@@ -2163,13 +2163,14 @@ class DataModel:
         # self.set_default_data()  # 0712 #0802 #original
         for s in self.scales():
             skip_list = self.skips_indices()
-            # first_unskipped = self.first_unskipped()
+            first_unskipped = self.first_unskipped()
+            logger.info(f'first_unskipped: {first_unskipped}')
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
                 if layer_index in skip_list:
                     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
-                elif layer_index <= self.first_unskipped():
-                    self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
+                # elif layer_index <= first_unskipped:
+                #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
                 else:
                     j = layer_index - 1  # Find nearest previous non-skipped l
                     while (j in skip_list) and (j >= 0):
@@ -2179,6 +2180,8 @@ class DataModel:
                         ref = os.path.join(self.dest(), s, 'img_src', ref)
                         # base_layer['images']['ref']['filename'] = ref
                         base_layer['reference'] = ref
+            self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
+
 
 
     def upgrade_data_model(self):
