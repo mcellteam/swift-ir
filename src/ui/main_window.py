@@ -489,9 +489,12 @@ class MainWindow(QMainWindow):
     def callbackDwVisibilityChanged(self):
         logger.info('')
         QApplication.processEvents()
-        self.cbPython.setChecked(self.dw_python.isVisible())
-        self.cbMonitor.setChecked(self.dw_monitor.isVisible())
-        self.cbNotes.setChecked(self.dw_notes.isVisible())
+        cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
+        cfg.data['state']['tool_windows']['hud'] = self.dw_monitor.isVisible()
+        cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
+        self.cbPython.setChecked(cfg.data['state']['tool_windows']['python'])
+        self.cbMonitor.setChecked(cfg.data['state']['tool_windows']['hud'])
+        self.cbNotes.setChecked(cfg.data['state']['tool_windows']['notes'])
 
         # self.pythonConsole.resize(QSize(int(self.width()/2), 90))
         # self.pythonConsole.update()
@@ -1339,9 +1342,10 @@ class MainWindow(QMainWindow):
             if requested >= 0:
                 cfg.mw.setZpos(requested)
                 if getData('state,manual_mode'):
-                    # cfg.project_tab.initNeuroglancer()
-                    cfg.refViewer.set_layer()
-                    cfg.baseViewer.set_layer()
+                    if getData('state,stackwidget_ng_toggle'):
+                        cfg.baseViewer.set_layer()
+                    else:
+                        self.warn('Z-index may not be changed when viewing a reference.')
                     cfg.stageViewer.set_layer(cfg.data.zpos)
                 else:
                     cfg.emViewer.set_layer(cfg.data.zpos)
@@ -1357,9 +1361,10 @@ class MainWindow(QMainWindow):
             if requested < len(cfg.data):
                 cfg.mw.setZpos(requested)
                 if getData('state,manual_mode'):
-                    # cfg.project_tab.initNeuroglancer()
-                    cfg.refViewer.set_layer()
-                    cfg.baseViewer.set_layer()
+                    if getData('state,stackwidget_ng_toggle'):
+                        cfg.baseViewer.set_layer()
+                    else:
+                        self.warn('Z-index may not be changed when viewing a reference.')
                     cfg.stageViewer.set_layer(cfg.data.zpos)
                 else:
                     cfg.emViewer.set_layer(cfg.data.zpos)
@@ -4856,7 +4861,7 @@ class MainWindow(QMainWindow):
         self._bbToggle.setEnabled(False)
 
         tip = """Regenerate output based on the current Corrective Bias and Bounding Box presets."""
-        self._btn_regenerate = QPushButton('Regenerate All')
+        self._btn_regenerate = QPushButton('Regenerate All Output')
         # self._btn_regenerate.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_regenerate.setEnabled(False)
         self._btn_regenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
