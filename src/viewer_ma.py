@@ -298,6 +298,11 @@ class MAViewer(neuroglancer.Viewer):
     def on_state_changed(self):
         if self._noUpdate:
             return
+
+        caller = inspect.stack()[1].function
+        logger.info(f'on_state_changed (caller: {caller})')
+        if caller == '<lambda>':
+            return
         caller = inspect.stack()[1].function
         request_layer = int(self.state.position[0])
 
