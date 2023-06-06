@@ -9,9 +9,11 @@ import sys
 import logging
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtWidgets import QSlider
+from qtpy.QtCore import Signal
 from src.helpers import print_exception
 
 logger = logging.getLogger(__name__)
+
 
 class DoubleSlider(QSlider):
 
@@ -83,6 +85,39 @@ class DoubleSlider(QSlider):
     def maximum(self):
         return self._max_value
 
+
+
+# class DoubleSlider(QSlider):
+#
+#     # create our our signal that we can connect to if necessary
+#     doubleValueChanged = Signal(float)
+#
+#     def __init__(self, decimals=3, *args, **kargs):
+#         super(DoubleSlider, self).__init__( *args, **kargs)
+#         self._multi = 10 ** decimals
+#         self.valueChanged.connect(self.emitDoubleValueChanged)
+#
+#     def emitDoubleValueChanged(self):
+#         value = float(super(DoubleSlider, self).value())/self._multi
+#         self.doubleValueChanged.emit(value)
+#
+#     def value(self):
+#         return float(super(DoubleSlider, self).value()) / self._multi
+#
+#     def setMinimum(self, value):
+#         return super(DoubleSlider, self).setMinimum(value * self._multi)
+#
+#     def setMaximum(self, value):
+#         return super(DoubleSlider, self).setMaximum(value * self._multi)
+#
+#     def setSingleStep(self, value):
+#         return super(DoubleSlider, self).setSingleStep(value * self._multi)
+#
+#     def singleStep(self):
+#         return float(super(DoubleSlider, self).singleStep()) / self._multi
+#
+#     def setValue(self, value):
+#         super(DoubleSlider, self).setValue(int(value * self._multi))
 
 '''Source:
 https://stackoverflow.com/questions/47342158/porting-range-slider-widget-to-pyqt5'''
@@ -371,6 +406,54 @@ class RangeSlider(QtWidgets.QWidget, Ui_Form):
         _unlockWidth(self._tail)
         _unlockWidth(self._head)
         _unlockWidth(self._handle)
+
+
+
+
+
+
+
+
+
+
+class DoubleSlider(QSlider):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Set integer max and min. These stay constant.
+        super().setMinimum(0)
+        self._max_int = 10000
+        super().setMaximum(self._max_int)
+
+        # The "actual" min and max values seen by user
+        self._min_value = 0.0
+        self._max_value = 100.0
+
+    @property
+    def _value_range(self):
+        return self._max_value - self._min_value
+
+    def setMinimum(self, value):
+        self.setRange(value, self._max_value)
+
+    def setMaximum(self, value):
+        self.setRange(self._min_value, value)
+
+    def setRange(self, minimum, maximum):
+        old_value = self.value()
+        self._min_value = minimum
+        self._max_value = maximum
+        self.setValue(old_value)  # Put slider in correct position
+
+    def value(self):
+        return float(super().value()) / self._max_int * self._value_range
+
+    def setValue(self, value):
+        super().setValue(int(value / self._value_range * self._max_int))
+
+    def proportion(self):
+        return (self.value() - self._min_value) / self._value_range
 
 if __name__ == '__main__':
 

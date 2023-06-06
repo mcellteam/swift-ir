@@ -455,7 +455,8 @@ class ProjectTab(QWidget):
         # self.zoomSlider.setInvertedAppearance(True)
         self.zoomSlider.setMaximum(4)
         # self.zoomSlider.setMinimum(0.1)
-        self.zoomSlider.setMinimum(0.02)
+        # self.zoomSlider.setMinimum(0.02)
+        self.zoomSlider.setMinimum(0)
 
         # self.zoomSlider.sliderMoved.connect(self.onZoomSlider) #Original #0314
         self.zoomSlider.valueChanged.connect(self.onZoomSlider)
@@ -3087,8 +3088,11 @@ class ProjectTab(QWidget):
                 # caller = inspect.stack()[1].function
                 zoom = cfg.emViewer.zoom()
                 # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
-                self.zoomSlider.setValue(1 / zoom)
-                # self.zoomSlider.setValue(zoom)
+                val = 1/zoom
+                if val in range(-2147483648, 2147483647):
+
+                    self.zoomSlider.setValue(val)
+                    # self.zoomSlider.setValue(zoom)
                 self._allow_zoom_change = True
 
     def onZoomSlider(self):
@@ -3564,8 +3568,10 @@ class ProjectTab(QWidget):
         self.brightnessSlider.setFixedWidth(200)
         self.brightnessSlider.setMouseTracking(False)
         self.brightnessSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.brightnessSlider.setMinimum(-1.0)
-        self.brightnessSlider.setMaximum(1.0)
+        # self.brightnessSlider.setMinimum(-1.0)
+        # self.brightnessSlider.setMaximum(1.0)
+        self.brightnessSlider.setMinimum(-1)
+        self.brightnessSlider.setMaximum(1)
         self.brightnessSlider.setValue(0)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         self.brightnessSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
@@ -3590,8 +3596,10 @@ class ProjectTab(QWidget):
         self.contrastSlider.setFixedWidth(200)
         self.contrastSlider.setMouseTracking(False)
         self.contrastSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.contrastSlider.setMinimum(-1.0)
-        self.contrastSlider.setMaximum(1.0)
+        # self.contrastSlider.setMinimum(-1.0)
+        # self.contrastSlider.setMaximum(1.0)
+        self.contrastSlider.setMinimum(-1)
+        self.contrastSlider.setMaximum(1)
         self.contrastSlider.setValue(0)
         # self.contrastSlider.setSingleStep(.02)
         # self.contrastSlider.setSingleStep(0.01)
