@@ -456,7 +456,8 @@ class ProjectTab(QWidget):
         self.zoomSlider.setMaximum(4)
         # self.zoomSlider.setMinimum(0.1)
         # self.zoomSlider.setMinimum(0.02)
-        self.zoomSlider.setMinimum(0)
+        # self.zoomSlider.setMinimum(0)
+        self.zoomSlider.setMinimum(1)
 
         # self.zoomSlider.sliderMoved.connect(self.onZoomSlider) #Original #0314
         self.zoomSlider.valueChanged.connect(self.onZoomSlider)
