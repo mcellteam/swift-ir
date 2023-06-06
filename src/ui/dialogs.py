@@ -173,8 +173,10 @@ def FileDialog(directory='', forOpen=True, fmt='', isFolder=False):
 class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
-        self.setOption(QFileDialog.DontUseNativeDialog, True)
+        # self.setOption(QFileDialog.DontUseNativeDialog, True)
         self.setFileMode(QFileDialog.DirectoryOnly)
+        # options = cfg.mw.Options(cfg.mw.DontUseNativeDialog | cfg.mw.ShowDirsOnly)
+        self.setOptions(QFileDialog.DontUseNativeDialog | QFileDialog.ShowDirsOnly)
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
         # self.mpPreview.setFixedSize(360, 360)
@@ -206,6 +208,7 @@ class QFileDialogPreview(QFileDialog):
         self.filesSelected.connect(self.onFilesSelected)
         self._fileSelected = None
         self._filesSelected = None
+
 
     def onChange(self, path):
         # logger.info('')
