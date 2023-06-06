@@ -4807,7 +4807,7 @@ class MainWindow(QMainWindow):
 
         tip = """Align and generate current sections from the current through the end of the image stack"""
         self._btn_alignForward = QPushButton('Align Forward')
-        # self._btn_alignOne.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
+        self._btn_alignOne.setStyleSheet("font-size: 9px;")
         self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignForward.setEnabled(False)
         self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)

@@ -588,18 +588,18 @@ class OpenProject(QWidget):
         cfg.mw.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
 
-        dir_name = dialog.getExistingDirectory(self, "Select a Directory")
-        filenames = glob(dir_name)
+        # dir_name = dialog.getExistingDirectory(self, "Select a Directory")
+        # filenames = glob(dir_name)
 
-        # if dialog.exec_() == QDialog.Accepted:
-        #     # filenames = dialog.selectedFiles()
-        #     dir_name = dialog.getExistingDirectory(self, "Select a Directory")
-        #     filenames = glob(dir_name)
-        # else:
-        #     logger.warning('Import images dialog did not return a valid file list')
-        #     cfg.mw.warn('Import images dialog did not return a valid file list')
-        #     self.showMainUI()
-        #     return 1
+        if dialog.exec_() == QDialog.Accepted:
+            # filenames = dialog.selectedFiles()
+            dir_name = dialog.getExistingDirectory(self, "Select a Directory")
+            filenames = glob(dir_name)
+        else:
+            logger.warning('Import images dialog did not return a valid file list')
+            cfg.mw.warn('Import images dialog did not return a valid file list')
+            self.showMainUI()
+            return 1
 
         if filenames == 1:
             logger.warning('New Project Canceled')
