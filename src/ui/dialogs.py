@@ -141,13 +141,12 @@ class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
         self.setOption(QFileDialog.DontUseNativeDialog, True)
+        self.setFileMode(QFileDialog.DirectoryOnly)
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
         # self.mpPreview.setFixedSize(360, 360)
         self.mpPreview.setMinimumSize(256, 256)
-        self.mpPreview.setFileMode(QFileDialog.DirectoryOnly)
         self.mpPreview.setAlignment(Qt.AlignCenter)
-        self.mpPreview.setObjectName("labelPreview")
         self.imageDimensionsLabel = QLabel('')
         self.imageDimensionsLabel.setStyleSheet("""
             font-size: 13px; 

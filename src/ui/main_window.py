@@ -488,7 +488,7 @@ class MainWindow(QMainWindow):
 
     def callbackDwVisibilityChanged(self):
         logger.info('')
-        QApplication.processEvents()
+        # QApplication.processEvents()
         cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
         cfg.data['state']['tool_windows']['hud'] = self.dw_monitor.isVisible()
         cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
