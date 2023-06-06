@@ -521,60 +521,38 @@ class OpenProject(QWidget):
 
         '''Step 2/3'''
         '''Dialog for importing images. Returns list of filenames.'''
-        # cfg.mw.importDirDialog = QFileDialogPreview()
+        cfg.mw.importDirDialog = QFileDialogPreview()
         # cfg.mw.importDirDialog = FileDialog()
         cfg.mw.importDirDialog = QFileDialog(None, caption='Data Log File Dir')
         cfg.mw.importDirDialog.setOption(QFileDialog.DontUseNativeDialog, True)
-        cfg.mw.importDirDialog.setDirectory("/corral/projects/NeuroNex-3DEM/projects")
+
         cfg.mw.importDirDialog.setFileMode(QFileDialog.ExistingFiles)
-        cfg.mw.importDirDialog.setOption(QFileDialog.ShowDirsOnly, True)
+        # cfg.mw.importDirDialog.setOption(QFileDialog.ShowDirsOnly, True)
         cfg.mw.importDirDialog.setLabelText(QFileDialog.Accept, "Select")
 
-        # cfg.mw.importDirDialog.setWindowFlags(Qt.FramelessWindowHint)
-        # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
-        # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
-        # dialog.setStyleSheet("""
-        # QPushButton {
-        #     font-size: 10px;
-        #     font-family: Tahoma, sans-serif;
-        # }
-        # """)
 
+        # cfg.mw.importDirDialog.setWindowFlags(Qt.FramelessWindowHint)
         # self.layout.addWidget(dialog)
         # self.vbl_projects.addWidget(dialog)
         self.vbl_main.addWidget(cfg.mw.importDirDialog)
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
-        self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
+        self.new_project_lab1.setText('New Project (Step: 2/3) - Import Directory with TIFF Images')
         cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setNameFilter('Images (*.tif *.tiff)')
         # dialog.setFileMode(QFileDialog.ExistingFiles)
-        cfg.mw.importDirDialog.setModal(True)
+        # cfg.mw.importDirDialog.setModal(True)
         urls = cfg.mw.importDirDialog.sidebarUrls()
 
-
-        if '.tacc.utexas.edu' in platform.node():
-            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile('/corral-repl/projects/NeuroNex-3DEM/projects/'))
-
-        else:
-            urls.append(QUrl.fromLocalFile(QDir.homePath()))
-            urls.append(QUrl.fromLocalFile('/tmp'))
-            if os.path.exists('/Volumes'):
-                urls.append(QUrl.fromLocalFile('/Volumes'))
-            if is_joel():
-                if os.path.exists('/Volumes/3dem_data'):
-                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-        self.name_dialog.setSidebarUrls(urls)
-
         if is_tacc():
+            cfg.mw.importDirDialog.setDirectory("/corral/projects/NeuroNex-3DEM/projects")
             urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
             # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
         else:
+            urls.append(QUrl.fromLocalFile(QDir.homePath()))
+            urls.append(QUrl.fromLocalFile('/tmp'))
             if os.path.exists('/Volumes'):
                 urls.append(QUrl.fromLocalFile('/Volumes'))
             if is_joel():
@@ -600,8 +578,10 @@ class OpenProject(QWidget):
         # filenames = glob(dir_name)
 
         if cfg.mw.importDirDialog.exec_() == QFileDialog.Accepted:
-            logdir = cfg.mw.importDirDialog.selectedFiles()
-            print(logdir)
+            cfg.mw.files = cfg.mw.importDirDialog.selectedFiles()
+            cfg.mw.dir = cfg.mw.importDirDialog.directory()
+            print('dir: ' + cfg.mw.dir)
+            print(cfg.mw.files)
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
