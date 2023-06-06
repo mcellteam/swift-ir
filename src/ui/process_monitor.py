@@ -176,6 +176,8 @@ class HeadupDisplay(QWidget):
         last_line = txt.split('[INFO]')[-1].lstrip()
         if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
             return
+        if last_line[-3:] != '...':
+            return
 
         # if cfg.project_tab:
         #     cfg.project_tab.hud_overlay.textedit.undo()
