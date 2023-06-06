@@ -522,8 +522,15 @@ class OpenProject(QWidget):
         '''Step 2/3'''
         '''Dialog for importing images. Returns list of filenames.'''
         # cfg.mw.importDirDialog = QFileDialogPreview()
-        cfg.mw.importDirDialog = FileDialog()
-        cfg.mw.importDirDialog.setWindowFlags(Qt.FramelessWindowHint)
+        # cfg.mw.importDirDialog = FileDialog()
+        cfg.mw.importDirDialog = QFileDialog(None, caption='Data Log File Dir')
+        cfg.mw.importDirDialog.setOption(QFileDialog.DontUseNativeDialog, True)
+        cfg.mw.importDirDialog.setDirectory("/corral/projects/NeuroNex-3DEM/projects")
+        cfg.mw.importDirDialog.setFileMode(QFileDialog.ExistingFiles)
+        cfg.mw.importDirDialog.setOption(QFileDialog.ShowDirsOnly, True)
+        cfg.mw.importDirDialog.setLabelText(QFileDialog.Accept, "Select")
+
+        # cfg.mw.importDirDialog.setWindowFlags(Qt.FramelessWindowHint)
         # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
         # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
         # dialog.setStyleSheet("""
@@ -592,15 +599,24 @@ class OpenProject(QWidget):
         # dir_name = dialog.getExistingDirectory(self, "Select a Directory")
         # filenames = glob(dir_name)
 
-        if cfg.mw.importDirDialog.exec_() == QDialog.Accepted:
-            # filenames = dialog.selectedFiles()
-            dir_name = cfg.mw.importDirDialog.getExistingDirectory(self, "Select a Directory")
-            filenames = glob(dir_name)
+        if cfg.mw.importDirDialog.exec_() == QFileDialog.Accepted:
+            logdir = cfg.mw.importDirDialog.selectedFiles()
+            print(logdir)
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
             self.showMainUI()
             return 1
+
+        # if cfg.mw.importDirDialog.exec_() == QDialog.Accepted:
+        #     # filenames = dialog.selectedFiles()
+        #     dir_name = cfg.mw.importDirDialog.getExistingDirectory(self, "Select a Directory")
+        #     filenames = glob(dir_name)
+        # else:
+        #     logger.warning('Import images dialog did not return a valid file list')
+        #     cfg.mw.warn('Import images dialog did not return a valid file list')
+        #     self.showMainUI()
+        #     return 1
 
         if filenames == 1:
             logger.warning('New Project Canceled')
