@@ -539,8 +539,8 @@ class OpenProject(QWidget):
         self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
         cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
-        dialog.setNameFilter('Images (*.tif *.tiff)')
-        dialog.setFileMode(QFileDialog.ExistingFiles)
+        # dialog.setNameFilter('Images (*.tif *.tiff)')
+        # dialog.setFileMode(QFileDialog.ExistingFiles)
         dialog.setModal(True)
         urls = dialog.sidebarUrls()
 
@@ -589,8 +589,8 @@ class OpenProject(QWidget):
         logger.info('Awaiting user input...')
         if dialog.exec_() == QDialog.Accepted:
             # filenames = dialog.selectedFiles()
-            folderpath = QFileDialog.getExistingDirectory('Select Folder')
-            filenames = glob(folderpath)
+            dir_name = QFileDialog.getExistingDirectory(self, "Select a Directory")
+            filenames = glob(dir_name)
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
