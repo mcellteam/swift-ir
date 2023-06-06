@@ -3,7 +3,7 @@ import src.config as cfg
 
 data_template = \
     {
-        "version": 0.50,
+        "version": None,
         "created": '',
         "system": {
             "node": None,

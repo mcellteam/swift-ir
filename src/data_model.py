@@ -25,6 +25,10 @@ import numpy as np
 from src.data_structs import data_template, layer_template
 from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt
 from src.funcs_image import ComputeBoundingRect, ImageSize
+try:
+    import src.config as cfg
+except:
+    pass
 
 __all__ = ['DataModel']
 
@@ -70,6 +74,7 @@ class DataModel:
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
+        self._data['version'] = cfg.VERSION
 
         # self.zpos = self._data['data']['z_position']
 
