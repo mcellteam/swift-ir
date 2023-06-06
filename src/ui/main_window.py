@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         # self.initMenu()
         self.initWidgetSpacing()
         self.initStyle()
-        self.initShortcuts()
+        # self.initShortcuts()
 
         self.initLaunchTab()
 
@@ -2575,21 +2575,21 @@ class MainWindow(QMainWindow):
                 cfg.emViewer.set_zoom(new_cs_scale)
             cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
 
-    def initShortcuts(self):
-        logger.info('')
-        events = (
-            (QKeySequence.MoveToPreviousChar, self.layer_left),
-            (QKeySequence.MoveToNextChar, self.layer_right),
-            (QKeySequence.MoveToPreviousLine, self.incrementZoomIn),
-            (QKeySequence.MoveToNextLine, self.incrementZoomOut),
-            # (QKeySequence("Ctrl+M"), self.enterExitManAlignMode),
-            # (QKeySequence.MoveToPreviousChar, self.scale_down),
-            # (QKeySequence.MoveToNextChar, self.scale_up),
-            # (Qt.Key_K, self._callbk_skipChanged),
-            # (Qt.Key_N, self._callbk_showHideNotes)
-        )
-        for event, action in events:
-            QShortcut(event, self, action)
+    # def initShortcuts(self):
+    #     logger.info('')
+    #     events = (
+    #         # (QKeySequence.MoveToPreviousChar, self.layer_left),
+    #         # (QKeySequence.MoveToNextChar, self.layer_right),
+    #         # (QKeySequence.MoveToPreviousLine, self.incrementZoomIn),
+    #         # (QKeySequence.MoveToNextLine, self.incrementZoomOut),
+    #         # (QKeySequence("Ctrl+M"), self.enterExitManAlignMode),
+    #         # (QKeySequence.MoveToPreviousChar, self.scale_down),
+    #         # (QKeySequence.MoveToNextChar, self.scale_up),
+    #         # (Qt.Key_K, self._callbk_skipChanged),
+    #         # (Qt.Key_N, self._callbk_showHideNotes)
+    #     )
+    #     for event, action in events:
+    #         QShortcut(event, self, action)
 
     def display_shortcuts(self):
         for action in self.findChildren(QAction) :
@@ -3848,7 +3848,34 @@ class MainWindow(QMainWindow):
 
         viewMenu = self.menu.addMenu("View")
 
-        self.ngShowAxisLinesAction = QAction(self)
+
+        self.layerLeftAction = QAction('Decrement Z-index', self)
+        self.layerLeftAction.triggered.connect(self.layer_left)
+        self.layerLeftAction.setShortcut(QKeySequence('left'), self)
+        self.layerLeftAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.layerLeftAction)
+
+        self.layerRightAction = QAction('Increment Z-index', self)
+        self.layerRightAction.triggered.connect(self.layer_right)
+        self.layerRightAction.setShortcut(QKeySequence('right'), self)
+        self.layerRightAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.layerRightAction)
+
+        self.zoomInAction = QAction('Zoom In', self)
+        self.zoomInAction.triggered.connect(self.zoomInAction)
+        self.zoomInAction.setShortcut(QKeySequence('up'), self)
+        self.zoomInAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.zoomInAction)
+
+        self.zoomOutAction = QAction('Zoom Out', self)
+        self.zoomOutAction.triggered.connect(self.zoomOutAction)
+        self.zoomOutAction.setShortcut(QKeySequence('down'), self)
+        self.zoomOutAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.zoomOutAction)
+
+
+        # self.ngShowAxisLinesAction = QAction(self)
+
 
 
         # self.ngShowScaleBarAction = QAction(self)
