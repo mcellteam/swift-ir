@@ -605,6 +605,10 @@ class OpenProject(QWidget):
         if cfg.data['data']['has_cal_grid']:
             files_sorted = files_sorted[1:]
             cfg.data['data']['cal_grid_path'] = files_sorted[0]
+        try:
+            shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
+        except:
+            print_exception()
 
         cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
         cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
