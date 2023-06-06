@@ -135,53 +135,18 @@ class SaveExitAppDialog(QDialog):
         self.layout.addWidget(self.buttonBox, alignment=Qt.AlignCenter)
         self.setLayout(self.layout)
 
-def FileDialog(directory='', forOpen=True, fmt='', isFolder=False):
-    options = QFileDialog.Options()
-    options |= QFileDialog.DontUseNativeDialog
-    options |= QFileDialog.DontUseCustomDirectoryIcons
-    dialog = QFileDialog()
-    dialog.setOptions(options)
 
-    dialog.setFilter(dialog.filter() | QDir.Hidden)
-
-    # ARE WE TALKING ABOUT FILES OR FOLDERS
-    if isFolder:
-        dialog.setFileMode(QFileDialog.DirectoryOnly)
-    else:
-        dialog.setFileMode(QFileDialog.AnyFile)
-    # OPENING OR SAVING
-    dialog.setAcceptMode(QFileDialog.AcceptOpen) if forOpen else dialog.setAcceptMode(QFileDialog.AcceptSave)
-
-    # SET FORMAT, IF SPECIFIED
-    if fmt != '' and isFolder is False:
-        dialog.setDefaultSuffix(fmt)
-        dialog.setNameFilters([f'{fmt} (*.{fmt})'])
-
-    # SET THE STARTING DIRECTORY
-    if directory != '':
-        dialog.setDirectory(str(directory))
-    else:
-        dialog.setDirectory(str(os.getenv('SCRATCH')))
-
-
-    if dialog.exec_() == QDialog.Accepted:
-        path = dialog.selectedFiles()[0]  # returns a list
-        return path
-    else:
-        return ''
 
 class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
-        # self.setOption(QFileDialog.DontUseNativeDialog, True)
-        self.setFileMode(QFileDialog.DirectoryOnly)
-        # options = cfg.mw.Options(cfg.mw.DontUseNativeDialog | cfg.mw.ShowDirsOnly)
-        self.setOptions(QFileDialog.DontUseNativeDialog | QFileDialog.ShowDirsOnly)
+        self.setOption(QFileDialog.DontUseNativeDialog, True)
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
         # self.mpPreview.setFixedSize(360, 360)
         self.mpPreview.setMinimumSize(256, 256)
         self.mpPreview.setAlignment(Qt.AlignCenter)
+        self.mpPreview.setObjectName("labelPreview")
         self.imageDimensionsLabel = QLabel('')
         self.imageDimensionsLabel.setStyleSheet("""
             font-size: 13px; 
@@ -192,6 +157,9 @@ class QFileDialogPreview(QFileDialog):
         """)
         self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
         self.cb_cal_grid.setChecked(False)
+
+
+
         box = QVBoxLayout()
         box.addWidget(self.mpPreview)
         box.addStretch()
@@ -203,12 +171,9 @@ class QFileDialogPreview(QFileDialog):
         self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
         self.currentChanged.connect(self.onChange)
         self.fileSelected.connect(self.onFileSelected)
-        self.directoryEntered.connect(lambda: print('directory entered'))
-        self.directoryUrlEntered.connect(lambda: print('directory URL entered'))
         self.filesSelected.connect(self.onFilesSelected)
         self._fileSelected = None
         self._filesSelected = None
-
 
     def onChange(self, path):
         # logger.info('')
@@ -225,17 +190,17 @@ class QFileDialogPreview(QFileDialog):
             img_siz = ImageSize(path)
             self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
 
+
+
     def onFileSelected(self, file):
         self._fileSelected = file
         cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
-
     def onFilesSelected(self, files):
         self._filesSelected = files
         cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
 
     def getFileSelected(self):
         return self._fileSelected
-
     def getFilesSelected(self):
         return self._filesSelected
 

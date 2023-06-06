@@ -7,7 +7,6 @@ import inspect
 import logging
 import platform
 import textwrap
-from glob import glob
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
@@ -25,7 +24,7 @@ from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFil
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
-from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog, FileDialog
+from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
 from src.ui.tab_project import VerticalLabel
 import src.config as cfg
@@ -442,7 +441,7 @@ class OpenProject(QWidget):
 
         self.new_project_lab2.setText(path)
 
-        makedirs_exist_ok(path, exist_ok=True) #0606+
+        # makedirs_exist_ok(path, exist_ok=True)
 
         if mendenhall:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
@@ -521,35 +520,36 @@ class OpenProject(QWidget):
 
         '''Step 2/3'''
         '''Dialog for importing images. Returns list of filenames.'''
-        cfg.mw.importDirDialog = QFileDialogPreview()
-        # cfg.mw.importDirDialog = FileDialog()
-        cfg.mw.importDirDialog = QFileDialog(None, caption='Data Log File Dir')
-        cfg.mw.importDirDialog.setOption(QFileDialog.DontUseNativeDialog, True)
+        dialog = QFileDialogPreview()
+        dialog.setWindowFlags(Qt.FramelessWindowHint)
+        # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
+        # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
+        # dialog.setStyleSheet("""
+        # QPushButton {
+        #     font-size: 10px;
+        #     font-family: Tahoma, sans-serif;
+        # }
+        # """)
 
-        cfg.mw.importDirDialog.setFileMode(QFileDialog.ExistingFiles)
-        # cfg.mw.importDirDialog.setOption(QFileDialog.ShowDirsOnly, True)
-        cfg.mw.importDirDialog.setLabelText(QFileDialog.Accept, "Select")
-
-
-        # cfg.mw.importDirDialog.setWindowFlags(Qt.FramelessWindowHint)
         # self.layout.addWidget(dialog)
         # self.vbl_projects.addWidget(dialog)
-        self.vbl_main.addWidget(cfg.mw.importDirDialog)
+        self.vbl_main.addWidget(dialog)
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
-        self.new_project_lab1.setText('New Project (Step: 2/3) - Import Directory with TIFF Images')
+        self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
         cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
-        # dialog.setNameFilter('Images (*.tif *.tiff)')
-        # dialog.setFileMode(QFileDialog.ExistingFiles)
-        # cfg.mw.importDirDialog.setModal(True)
-        urls = cfg.mw.importDirDialog.sidebarUrls()
+        dialog.setNameFilter('Images (*.tif *.tiff)')
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setModal(True)
+        urls = dialog.sidebarUrls()
 
-        if is_tacc():
-            cfg.mw.importDirDialog.setDirectory("/corral/projects/NeuroNex-3DEM/projects")
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+
+        if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile('/corral-repl/projects/NeuroNex-3DEM/projects/'))
+
         else:
             urls.append(QUrl.fromLocalFile(QDir.homePath()))
             urls.append(QUrl.fromLocalFile('/tmp'))
@@ -558,8 +558,21 @@ class OpenProject(QWidget):
             if is_joel():
                 if os.path.exists('/Volumes/3dem_data'):
                     urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+        self.name_dialog.setSidebarUrls(urls)
 
-        cfg.mw.importDirDialog.setSidebarUrls(urls)
+        if is_tacc():
+            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+        else:
+            if os.path.exists('/Volumes'):
+                urls.append(QUrl.fromLocalFile('/Volumes'))
+            if is_joel():
+                if os.path.exists('/Volumes/3dem_data'):
+                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+
+        dialog.setSidebarUrls(urls)
 
         places = {
             QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
@@ -573,30 +586,13 @@ class OpenProject(QWidget):
 
         cfg.mw.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
-
-        # dir_name = dialog.getExistingDirectory(self, "Select a Directory")
-        # filenames = glob(dir_name)
-
-        if cfg.mw.importDirDialog.exec_() == QFileDialog.Accepted:
-            cfg.mw.files = cfg.mw.importDirDialog.selectedFiles()
-            cfg.mw.dir = cfg.mw.importDirDialog.directory()
-            print('dir: ' + cfg.mw.dir)
-            print(cfg.mw.files)
+        if dialog.exec_() == QDialog.Accepted:
+            filenames = dialog.selectedFiles()
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
             self.showMainUI()
             return 1
-
-        # if cfg.mw.importDirDialog.exec_() == QDialog.Accepted:
-        #     # filenames = dialog.selectedFiles()
-        #     dir_name = cfg.mw.importDirDialog.getExistingDirectory(self, "Select a Directory")
-        #     filenames = glob(dir_name)
-        # else:
-        #     logger.warning('Import images dialog did not return a valid file list')
-        #     cfg.mw.warn('Import images dialog did not return a valid file list')
-        #     self.showMainUI()
-        #     return 1
 
         if filenames == 1:
             logger.warning('New Project Canceled')
@@ -618,8 +614,6 @@ class OpenProject(QWidget):
         # cfg.data.link_reference_sections()
 
         logger.critical(f'destination: {cfg.data.dest()}')
-
-
 
         if cfg.data['data']['has_cal_grid']:
             files_sorted = files_sorted[1:]
