@@ -3862,13 +3862,13 @@ class MainWindow(QMainWindow):
         viewMenu.addAction(self.layerRightAction)
 
         self.zoomInAction = QAction('Zoom In', self)
-        self.zoomInAction.triggered.connect(self.zoomInAction)
+        self.zoomInAction.triggered.connect(self.incrementZoomIn)
         self.zoomInAction.setShortcut(QKeySequence('up'))
         self.zoomInAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomInAction)
 
         self.zoomOutAction = QAction('Zoom Out', self)
-        self.zoomOutAction.triggered.connect(self.zoomOutAction)
+        self.zoomOutAction.triggered.connect(self.incrementZoomOut)
         self.zoomOutAction.setShortcut(QKeySequence('down'))
         self.zoomOutAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomOutAction)
