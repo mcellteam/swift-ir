@@ -7,6 +7,7 @@ import inspect
 import logging
 import platform
 import textwrap
+from glob import glob
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
@@ -587,7 +588,9 @@ class OpenProject(QWidget):
         cfg.mw.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
         if dialog.exec_() == QDialog.Accepted:
-            filenames = dialog.selectedFiles()
+            # filenames = dialog.selectedFiles()
+            folderpath = QFileDialog.getExistingDirectory('Select Folder')
+            filenames = glob(folderpath)
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')

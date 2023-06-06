@@ -245,7 +245,7 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
         # write_metadata_zarr_multiscale() # thon3 al   write single multiscale zarr for all aligned s
     except:
         print_exception()
-        cfg.main_window.warn('Zarr Preallocation Encountered A Problem')
+        logger.warning('Zarr Preallocation Encountered A Problem')
     else:
         # cfg.main_window.hud.done()
         logger.info(output_text)
