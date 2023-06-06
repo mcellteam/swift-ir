@@ -3851,25 +3851,25 @@ class MainWindow(QMainWindow):
 
         self.layerLeftAction = QAction('Decrement Z-index', self)
         self.layerLeftAction.triggered.connect(self.layer_left)
-        self.layerLeftAction.setShortcut(QKeySequence('left'), self)
+        self.layerLeftAction.setShortcut(QKeySequence('left'))
         self.layerLeftAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.layerLeftAction)
 
         self.layerRightAction = QAction('Increment Z-index', self)
         self.layerRightAction.triggered.connect(self.layer_right)
-        self.layerRightAction.setShortcut(QKeySequence('right'), self)
+        self.layerRightAction.setShortcut(QKeySequence('right'))
         self.layerRightAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.layerRightAction)
 
         self.zoomInAction = QAction('Zoom In', self)
         self.zoomInAction.triggered.connect(self.zoomInAction)
-        self.zoomInAction.setShortcut(QKeySequence('up'), self)
+        self.zoomInAction.setShortcut(QKeySequence('up'))
         self.zoomInAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomInAction)
 
         self.zoomOutAction = QAction('Zoom Out', self)
         self.zoomOutAction.triggered.connect(self.zoomOutAction)
-        self.zoomOutAction.setShortcut(QKeySequence('down'), self)
+        self.zoomOutAction.setShortcut(QKeySequence('down'))
         self.zoomOutAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomOutAction)
 
