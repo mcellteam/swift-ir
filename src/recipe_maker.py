@@ -292,39 +292,39 @@ class align_recipe:
             self.layer_dict['alignment']['mir_out'] = {}
             self.layer_dict['alignment']['mir_err'] = {}
             self.layer_dict['alignment']['swim_ww_arg'] = {}
-            self.layer_dict['alignment']['crop_str_mir'] = {}
+            # self.layer_dict['alignment']['crop_str_mir'] = {}
             for i,ing in enumerate(self.ingredients):
                 try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = {}
-                except: print_exception(self.pd)
+                except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['ww'] = ing.ww
-                except: print_exception(self.pd)
+                except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 # if self.cur_method == 'manual-hint':
                 try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
-                except: print_exception(self.pd)
+                except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
-                except: print_exception(self.pd)
+                except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 if self.cur_method in ('grid-default', 'grid-custom'):
                     # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cx'] = str(ing.cx)
                     # except: print_exception(self.pd)
                     # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cy'] = str(ing.cy)
                     # except: print_exception(self.pd)
                     try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
                     try: self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     # try: self.layer_dict['alignment']['dx']['ingredient_%d' % i] = ing.dx
                     # except: print_exception(self.pd)
                     # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = ing.dy
@@ -332,13 +332,13 @@ class align_recipe:
                     # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['swim_drift'] = ing.swim_drift
                     # except: print_exception(self.pd)
                     try: self.layer_dict['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['swim_ww_arg']['ingredient_%d' % i] = ing.swim_ww_arg
-                    except: print_exception(self.pd)
-                    try: self.layer_dict['alignment']['crop_str_mir']['ingredient_%d' % i] = ing.crop_str_mir
-                    except: print_exception(self.pd)
+                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
+                    # try: self.layer_dict['alignment']['crop_str_mir']['ingredient_%d' % i] = ing.crop_str_mir
+                    # except: print_exception(self.pd)
 
 
         # cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out']
@@ -786,10 +786,10 @@ def convert_rotation(degrees):
     deg2rad = 2*np.pi/360.
     return np.sin(deg2rad*degrees)
 
-def print_exception(dest):
+def print_exception(dest, extra='None'):
     tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
-    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
+    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}\nAdditional Details: {extra}"
     print(txt)
 
     lf = os.path.join(dest, 'logs', 'exceptions.log')

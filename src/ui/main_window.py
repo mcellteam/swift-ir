@@ -6282,7 +6282,7 @@ class MainWindow(QMainWindow):
 
     def setPbarText(self, text: str):
         # logger.critical('')
-        logger.critical(f'cfg.nTasks = {cfg.nProcessSteps}, cfg.nCompleted = {cfg.nProcessDone}')
+        # logger.critical(f'cfg.nTasks = {cfg.nProcessSteps}, cfg.nCompleted = {cfg.nProcessDone}')
         self.pbar.setFormat('(%p%) ' + text)
         # self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
         self.pbarLabel.setText('(Task %d/%d)' % (cfg.nProcessDone, cfg.nProcessSteps))
