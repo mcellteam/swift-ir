@@ -2583,7 +2583,7 @@ class ProjectTab(QWidget):
             # self.initNeuroglancer()
             cfg.main_window.layer_left()
             # self.updateNeuroglancer()
-            # cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
+            # cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengnitnene_ref)
             # cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
             # cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
 
