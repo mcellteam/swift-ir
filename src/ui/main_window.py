@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.app = QApplication.instance()
         self.setObjectName('mainwindow')
-        self.window_title = 'AlignEM-SWiFT'
+        self.window_title = 'AlignEM-SWIFT NG'
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
 

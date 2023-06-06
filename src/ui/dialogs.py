@@ -157,9 +157,6 @@ class QFileDialogPreview(QFileDialog):
         """)
         self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
         self.cb_cal_grid.setChecked(False)
-
-
-
         box = QVBoxLayout()
         box.addWidget(self.mpPreview)
         box.addStretch()
@@ -189,8 +186,6 @@ class QFileDialogPreview(QFileDialog):
             logger.info(f'Selected File: {path}')
             img_siz = ImageSize(path)
             self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
-
-
 
     def onFileSelected(self, file):
         self._fileSelected = file

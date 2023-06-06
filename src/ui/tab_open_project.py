@@ -587,9 +587,10 @@ class OpenProject(QWidget):
 
         cfg.mw.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
+
         if dialog.exec_() == QDialog.Accepted:
             # filenames = dialog.selectedFiles()
-            dir_name = QFileDialog.getExistingDirectory(self, "Select a Directory")
+            dir_name = dialog.getExistingDirectory(self, "Select a Directory")
             filenames = glob(dir_name)
         else:
             logger.warning('Import images dialog did not return a valid file list')
@@ -617,6 +618,8 @@ class OpenProject(QWidget):
         # cfg.data.link_reference_sections()
 
         logger.critical(f'destination: {cfg.data.dest()}')
+
+
 
         if cfg.data['data']['has_cal_grid']:
             files_sorted = files_sorted[1:]
