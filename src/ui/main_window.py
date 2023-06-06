@@ -957,6 +957,32 @@ class MainWindow(QMainWindow):
         cfg.project_tab.initNeuroglancer()
         self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
+    def alignForward(self):
+        cfg.ignore_pbar = False
+        start = cfg.data.zpos
+        end = cfg.data.count
+        if self._toggleAutogenerate.isChecked():
+            self.showZeroedPbar(set_n_processes=4)
+        else:
+            self.showZeroedPbar(set_n_processes=2)
+        cfg.nProcessDone = 0
+        cfg.CancelProcesses = False
+        # cfg.event = multiprocessing.Event()
+        self.tell('Re-aligning Sections #%d through #%d (%s)...' %
+                  (start, end, cfg.data.scale_pretty()))
+        self.align(
+            scale=cfg.data.scale,
+            start=start,
+            end=end,
+            renew_od=False,
+            reallocate_zarr=False,
+            # stageit=False,
+            stageit=True,
+        )
+        self.onAlignmentEnd(start=start, end=end)
+        cfg.project_tab.initNeuroglancer()
+        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
+
     # def alignOne(self, stageit=False):
     def alignOne(self, quick_swim=False):
         logger.critical('Aligning One...')
@@ -1182,6 +1208,7 @@ class MainWindow(QMainWindow):
     def enableAllButtons(self):
         self._btn_alignAll.setEnabled(True)
         self._btn_alignOne.setEnabled(True)
+        self._btn_alignForward.setEnabled(True)
         self._btn_alignRange.setEnabled(True)
         self._btn_regenerate.setEnabled(True)
         self._scaleDownButton.setEnabled(True)
@@ -1270,6 +1297,7 @@ class MainWindow(QMainWindow):
                 # self._btn_alignAll.setText('Align All')
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
+                self._btn_alignForward.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
                 self._btn_regenerate.setEnabled(True)
                 self._btn_manualAlign.setEnabled(True)
@@ -1279,6 +1307,7 @@ class MainWindow(QMainWindow):
             elif cfg.data.is_alignable():
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(False)
+                self._btn_alignForward.setEnabled(False)
                 self._btn_alignRange.setEnabled(False)
                 self._btn_regenerate.setEnabled(False)
                 self._btn_manualAlign.setEnabled(False)
@@ -1287,6 +1316,7 @@ class MainWindow(QMainWindow):
             else:
                 self._btn_alignAll.setEnabled(False)
                 self._btn_alignOne.setEnabled(False)
+                self._btn_alignForward.setEnabled(False)
                 self._btn_alignRange.setEnabled(False)
                 self._btn_regenerate.setEnabled(False)
                 self._btn_manualAlign.setEnabled(False)
@@ -1298,6 +1328,7 @@ class MainWindow(QMainWindow):
                 if cfg.data.is_aligned():
                     self._btn_alignAll.setEnabled(True)
                     self._btn_alignOne.setEnabled(True)
+                    self._btn_alignForward.setEnabled(True)
                     self._btn_alignRange.setEnabled(True)
                     self._btn_regenerate.setEnabled(True)
                     self._btn_manualAlign.setEnabled(True)
@@ -1306,6 +1337,7 @@ class MainWindow(QMainWindow):
                 else:
                     self._btn_alignAll.setEnabled(True)
                     self._btn_alignOne.setEnabled(False)
+                    self._btn_alignForward.setEnabled(False)
                     self._btn_alignRange.setEnabled(False)
                     self._btn_regenerate.setEnabled(False)
                     self._btn_manualAlign.setEnabled(False)
@@ -1327,6 +1359,7 @@ class MainWindow(QMainWindow):
             self._scaleDownButton.setEnabled(False)
             self._btn_alignAll.setEnabled(False)
             self._btn_alignOne.setEnabled(False)
+            self._btn_alignForward.setEnabled(False)
             self._btn_alignRange.setEnabled(False)
             self._btn_regenerate.setEnabled(False)
             self._btn_manualAlign.setEnabled(False)
@@ -1706,6 +1739,7 @@ class MainWindow(QMainWindow):
 
             # self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
             self._btn_alignOne.setText('Re-Align #%d' % cfg.data.zpos)
+            self._btn_alignForward.setText('Align Forward (#%d - #%d)' % (cfg.data.zpos, cfg.data.count))
         # timer.stop() #7
         # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
 
@@ -4769,6 +4803,16 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.clicked.connect(self.alignOne)
         self._btn_alignOne.setFixedSize(long_button_size)
 
+
+        tip = """Align and generate current sections from the current through the end of the image stack"""
+        self._btn_alignForward = QPushButton('Align Forward')
+        # self._btn_alignOne.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
+        self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._btn_alignForward.setEnabled(False)
+        self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._btn_alignForward.clicked.connect(self.alignForwad)
+        self._btn_alignForward.setFixedSize(long_button_size)
+
         tip = """The range of sections to align for the align range button"""
         self.sectionRangeSlider = RangeSlider()
         self.sectionRangeSlider.setMinimumWidth(100)
@@ -4884,7 +4928,8 @@ class MainWindow(QMainWindow):
         self.fl_cpButtonsLeft.setVerticalSpacing(2)
         self.fl_cpButtonsLeft.setContentsMargins(2, 2, 2, 2)
         self.fl_cpButtonsLeft.addWidget(self._btn_alignAll)
-        self.fl_cpButtonsLeft.addWidget(self._btn_alignOne)
+        # self.fl_cpButtonsLeft.addWidget(self._btn_alignOne)
+        self.fl_cpButtonsLeft.addWidget(self._btn_alignForward)
         self.fl_cpButtonsLeft.addWidget(HWidget(self._btn_manualAlign))
         self.cpButtonsLeft = QWidget()
         self.cpButtonsLeft.setAutoFillBackground(True)
