@@ -351,7 +351,8 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]
 
-    def get_ref_index(self):
+    def get_ref_index(self, l=None):
+        if l == None: l = self.zpos
         reference = self._data['data']['scales'][self.scale]['stack'][self.zpos]['reference']
         return self.get_index(reference)
 
