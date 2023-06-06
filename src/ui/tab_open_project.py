@@ -441,7 +441,7 @@ class OpenProject(QWidget):
 
         self.new_project_lab2.setText(path)
 
-        # makedirs_exist_ok(path, exist_ok=True)
+        makedirs_exist_ok(path, exist_ok=True) #0606+
 
         if mendenhall:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
@@ -602,14 +602,6 @@ class OpenProject(QWidget):
 
         files_sorted = natural_sort(filenames)
 
-        if cfg.data['data']['has_cal_grid']:
-            files_sorted = files_sorted[1:]
-            cfg.data['data']['cal_grid_path'] = files_sorted[0]
-        try:
-            shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
-        except:
-            print_exception()
-
         cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
         cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
         logger.info(f'Selected Images: \n{files_sorted}')
@@ -620,6 +612,16 @@ class OpenProject(QWidget):
 
         cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
         # cfg.data.link_reference_sections()
+
+        logger.critical(f'destination: {cfg.data.dest()}')
+
+        if cfg.data['data']['has_cal_grid']:
+            files_sorted = files_sorted[1:]
+            cfg.data['data']['cal_grid_path'] = files_sorted[0]
+        try:
+            shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
+        except:
+            print_exception()
 
 
 
