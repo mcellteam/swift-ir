@@ -150,8 +150,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             return
         caller = inspect.stack()[1].function
         logger.info(f'on_state_changed (caller: {caller})')
-        if caller == '<lambda>':
-            return
+        # if caller == '<lambda>':
+        #     return
 
         # if not getData('state,auto_update_ui'):
         #     return
