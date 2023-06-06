@@ -190,12 +190,14 @@ class QFileDialogPreview(QFileDialog):
             img_siz = ImageSize(path)
             self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
 
-        cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
+
 
     def onFileSelected(self, file):
         self._fileSelected = file
+        cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
     def onFilesSelected(self, files):
         self._filesSelected = files
+        cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
 
     def getFileSelected(self):
         return self._fileSelected
