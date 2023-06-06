@@ -796,13 +796,16 @@ def make_absolute(file_path, proj_path):
 
 
 def initLogFiles(dm):
-    logpath = os.path.join(dm.dest(), 'logs')
-    os.makedirs(logpath, exist_ok=True)
-    open(os.path.join(logpath, 'exceptions.log'), 'a+').close()
-    open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
-    open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
-    open(os.path.join(logpath, 'swim.log'), 'a').close()
-    open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
+    try:
+        logpath = os.path.join(dm.dest(), 'logs')
+        os.makedirs(logpath, exist_ok=True)
+        open(os.path.join(logpath, 'exceptions.log'), 'a+').close()
+        open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
+        open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
+        open(os.path.join(logpath, 'swim.log'), 'a').close()
+        open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
+    except:
+        print_exception()
 
 
 def create_project_structure_directories(destination, scales, gui=True) -> None:
