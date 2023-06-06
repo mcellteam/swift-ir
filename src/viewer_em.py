@@ -149,8 +149,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self._settingZoom:
             return
         caller = inspect.stack()[1].function
-        # if caller == '<lambda>':
-        #     return
+        logger.info(f'on_state_changed (caller: {caller})')
+        if caller == '<lambda>':
+            return
 
         # if not getData('state,auto_update_ui'):
         #     return
