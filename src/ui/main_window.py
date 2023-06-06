@@ -201,7 +201,8 @@ class MainWindow(QMainWindow):
 
     @Slot(name='my-zpos-signal-name')
     def setZpos(self, z:int):
-        logger.critical('')
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
         if cfg.data.zpos != z:
             cfg.data.zpos = z
             self.dataUpdateWidgets()
@@ -1454,7 +1455,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\n>>>> dataUpdateWidgets [caller: {caller}] >>>>')
+        logger.critical(f'\n\n    dataUpdateWidgets [caller: {caller}] >>>>')
         logger.info(f'sender: {self.sender()}')
 
         if not self._isProjectTab():
@@ -1880,7 +1881,7 @@ class MainWindow(QMainWindow):
 
     def jump_to_slider(self):
         caller = inspect.stack()[1].function
-        # logger.critical(f'>>>> jump_to_slider (caller: {caller}) >>>>')
+        logger.critical(f'>>>> jump_to_slider (caller: {caller}) >>>>')
         # logger.info('')
         #0601 this seems to work as intended with no time lag
         if caller in ('dataUpdateWidgets'):
@@ -2180,6 +2181,7 @@ class MainWindow(QMainWindow):
         check_project_status()
         # self.dw_monitor.show()
         self.hud.done()
+        self.cbMonitor.setChecked(True)
         # dt = 1.1060302257537842
 
     def saveUserPreferences(self):
