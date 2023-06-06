@@ -25,7 +25,7 @@ from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFil
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
-from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
+from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog, FileDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
 from src.ui.tab_project import VerticalLabel
 import src.config as cfg
@@ -521,8 +521,9 @@ class OpenProject(QWidget):
 
         '''Step 2/3'''
         '''Dialog for importing images. Returns list of filenames.'''
-        dialog = QFileDialogPreview()
-        dialog.setWindowFlags(Qt.FramelessWindowHint)
+        # cfg.mw.importDirDialog = QFileDialogPreview()
+        cfg.mw.importDirDialog = FileDialog()
+        cfg.mw.importDirDialog.setWindowFlags(Qt.FramelessWindowHint)
         # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
         # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
         # dialog.setStyleSheet("""
@@ -534,15 +535,15 @@ class OpenProject(QWidget):
 
         # self.layout.addWidget(dialog)
         # self.vbl_projects.addWidget(dialog)
-        self.vbl_main.addWidget(dialog)
+        self.vbl_main.addWidget(cfg.mw.importDirDialog)
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
         self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
         cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
         # dialog.setNameFilter('Images (*.tif *.tiff)')
         # dialog.setFileMode(QFileDialog.ExistingFiles)
-        dialog.setModal(True)
-        urls = dialog.sidebarUrls()
+        cfg.mw.importDirDialog.setModal(True)
+        urls = cfg.mw.importDirDialog.sidebarUrls()
 
 
         if '.tacc.utexas.edu' in platform.node():
@@ -573,7 +574,7 @@ class OpenProject(QWidget):
                 if os.path.exists('/Volumes/3dem_data'):
                     urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
 
-        dialog.setSidebarUrls(urls)
+        cfg.mw.importDirDialog.setSidebarUrls(urls)
 
         places = {
             QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
@@ -591,9 +592,9 @@ class OpenProject(QWidget):
         # dir_name = dialog.getExistingDirectory(self, "Select a Directory")
         # filenames = glob(dir_name)
 
-        if dialog.exec_() == QDialog.Accepted:
+        if cfg.mw.importDirDialog.exec_() == QDialog.Accepted:
             # filenames = dialog.selectedFiles()
-            dir_name = dialog.getExistingDirectory(self, "Select a Directory")
+            dir_name = cfg.mw.importDirDialog.getExistingDirectory(self, "Select a Directory")
             filenames = glob(dir_name)
         else:
             logger.warning('Import images dialog did not return a valid file list')
