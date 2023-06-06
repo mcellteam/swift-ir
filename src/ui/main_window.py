@@ -1366,6 +1366,7 @@ class MainWindow(QMainWindow):
             self.startRangeInput.setEnabled(False)
             self.endRangeInput.setEnabled(False)
 
+
     def layer_left(self):
         caller = inspect.stack()[1].function
         logger.info(f'>>>> layer_left [{caller}] >>>>')
@@ -4810,7 +4811,7 @@ class MainWindow(QMainWindow):
         self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignForward.setEnabled(False)
         self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignForward.clicked.connect(self.alignForwad)
+        self._btn_alignForward.clicked.connect(self.alignForward)
         self._btn_alignForward.setFixedSize(long_button_size)
 
         tip = """The range of sections to align for the align range button"""
