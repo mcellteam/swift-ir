@@ -160,9 +160,21 @@ class MAViewer(neuroglancer.Viewer):
 
 
     # def set_layer(self, index=None):
-    def set_layer(self, zpos):
+    def set_layer(self, zpos=None):
         # if self.type != 'EMViewerStage':
         logger.critical('>>>> set_layer >>>>')
+
+        if self.role == 'ref':
+            if zpos:
+                self.index=cfg.data.get_ref_index(l=zpos)
+            else:
+                self.index = cfg.data.get_ref_index()
+        else:
+            if zpos:
+                self.index=zpos
+            else:
+                self.index=cfg.data.zpos
+
         # if index == None:
         if self.role == 'ref':
             if self.index != cfg.data.get_ref_index():
