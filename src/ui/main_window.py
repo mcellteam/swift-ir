@@ -2172,18 +2172,14 @@ class MainWindow(QMainWindow):
         # QApplication.processEvents()
         # self.refreshTab()
 
-        self.hud.done()
+
         QApplication.processEvents()
         cfg.project_tab.initNeuroglancer()
         # QApplication.processEvents()
         # cfg.project_tab.initNeuroglancer()
         check_project_status()
         # self.dw_monitor.show()
-
-
-
-
-
+        self.hud.done()
         # dt = 1.1060302257537842
 
     def saveUserPreferences(self):
@@ -6008,7 +6004,7 @@ class MainWindow(QMainWindow):
         usages:
         cpanelTabWidget tab change
         '''
-        logger.info('')
+        # logger.info('')
         if self.cpanelTabWidget.currentIndex() == 0:
             self.updateCpanelDetails_i1()
         if self.cpanelTabWidget.currentIndex() == 1:
