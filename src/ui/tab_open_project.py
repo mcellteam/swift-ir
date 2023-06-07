@@ -364,7 +364,7 @@ class OpenProject(QWidget):
 
         urls = self.name_dialog.sidebarUrls()
 
-        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
 
         if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
@@ -534,7 +534,7 @@ class OpenProject(QWidget):
 
         # urls = self.name_dialog.sidebarUrls()
         #
-        # corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+        # corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
         #
         # if '.tacc.utexas.edu' in platform.node():
         #     urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
@@ -753,7 +753,7 @@ class OpenProject(QWidget):
 
 
 def getSideBarPlaces():
-    corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+    corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
     places = {
         QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
         QUrl.fromLocalFile(os.getenv('WORK')): 'Work (' + str(os.getenv('WORK')) + ')',
