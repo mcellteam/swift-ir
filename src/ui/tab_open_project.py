@@ -365,25 +365,25 @@ class OpenProject(QWidget):
         self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
 
 
-        urls = self.name_dialog.sidebarUrls()
-
-        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
-
-        if '.tacc.utexas.edu' in platform.node():
-            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile(corral_dir))
-
-        else:
-            urls.append(QUrl.fromLocalFile(QDir.homePath()))
-            urls.append(QUrl.fromLocalFile('/tmp'))
-            if os.path.exists('/Volumes'):
-                urls.append(QUrl.fromLocalFile('/Volumes'))
-            if is_joel():
-                if os.path.exists('/Volumes/3dem_data'):
-                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-        self.name_dialog.setSidebarUrls(urls)
+        # urls = self.name_dialog.sidebarUrls()
+        #
+        # corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+        #
+        # if '.tacc.utexas.edu' in platform.node():
+        #     urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        #     urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        #     urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+        #     urls.append(QUrl.fromLocalFile(corral_dir))
+        #
+        # else:
+        #     urls.append(QUrl.fromLocalFile(QDir.homePath()))
+        #     urls.append(QUrl.fromLocalFile('/tmp'))
+        #     if os.path.exists('/Volumes'):
+        #         urls.append(QUrl.fromLocalFile('/Volumes'))
+        #     if is_joel():
+        #         if os.path.exists('/Volumes/3dem_data'):
+        #             urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+        # self.name_dialog.setSidebarUrls(urls)
 
 
         # places = {
@@ -391,6 +391,7 @@ class OpenProject(QWidget):
         #     QUrl.fromLocalFile(os.getenv('WORK')): "WORK",
         #     QUrl.fromLocalFile(os.getenv('SCRATCH')): "SCRATCH",
         # }
+        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
         places = {
             QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
             QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
@@ -546,41 +547,24 @@ class OpenProject(QWidget):
         dialog.setModal(True)
         urls = dialog.sidebarUrls()
 
-
-        if '.tacc.utexas.edu' in platform.node():
-            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile('/corral-repl/projects/NeuroNex-3DEM/projects/'))
-
-        else:
-            urls.append(QUrl.fromLocalFile(QDir.homePath()))
-            urls.append(QUrl.fromLocalFile('/tmp'))
-            if os.path.exists('/Volumes'):
-                urls.append(QUrl.fromLocalFile('/Volumes'))
-            if is_joel():
-                if os.path.exists('/Volumes/3dem_data'):
-                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-        self.name_dialog.setSidebarUrls(urls)
-
-        if is_tacc():
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
-        else:
-            if os.path.exists('/Volumes'):
-                urls.append(QUrl.fromLocalFile('/Volumes'))
-            if is_joel():
-                if os.path.exists('/Volumes/3dem_data'):
-                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+        # if is_tacc():
+        #     urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+        #     urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        #     urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        #     # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+        # else:
+        if os.path.exists('/Volumes'):
+            urls.append(QUrl.fromLocalFile('/Volumes'))
+        if is_joel():
+            if os.path.exists('/Volumes/3dem_data'):
+                urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
 
         dialog.setSidebarUrls(urls)
 
         places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
-            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
-            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
+            QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
+            QUrl.fromLocalFile(os.getenv('WORK')):  'Work (' + str(os.getenv('WORK')) + ')',
+            QUrl.fromLocalFile(os.getenv('SCRATCH')):  'Scratch (' + str(os.getenv('SCRATCH')) + ')',
         }
         sidebar = self.name_dialog.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
@@ -1009,8 +993,6 @@ class UserProjects(QWidget):
 
 UrlRole = Qt.UserRole + 1
 EnabledRole = Qt.UserRole + 2
-
-
 class StyledItemDelegate(QStyledItemDelegate):
     mapping = dict()
 
