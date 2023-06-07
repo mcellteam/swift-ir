@@ -141,10 +141,10 @@ class FileBrowser(QWidget):
             self.buttonSetRoot_corral_images.setFixedSize(QSize(90,16))
             self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images)
 
-            self.buttonSetRoot_corral_images = QPushButton('Corral')
-            self.buttonSetRoot_corral_images.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_images.setFixedSize(QSize(90,16))
-            self.buttonSetRoot_corral_images.clicked.connect(self.set_corral_root)
+            self.buttonSetRoot_corral_root = QPushButton('Corral')
+            self.buttonSetRoot_corral_root.setStyleSheet('font-size: 9px;')
+            self.buttonSetRoot_corral_root.setFixedSize(QSize(90,16))
+            self.buttonSetRoot_corral_root.clicked.connect(self.set_corral_root)
 
         self.buttonCreateProject = QPushButton('Create Project')
         self.buttonCreateProject.setStyleSheet('font-size: 9px;')
@@ -164,7 +164,7 @@ class FileBrowser(QWidget):
         if is_tacc():
             hbl.addWidget(self.buttonSetRoot_corral_images)
             hbl.addWidget(self.buttonSetRoot_corral_projects)
-            hbl.addWidget(self.setRoot_corral_images)
+            hbl.addWidget(self.buttonSetRoot_corral_root)
 
 
 
