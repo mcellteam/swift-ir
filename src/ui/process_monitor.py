@@ -170,10 +170,12 @@ class HeadupDisplay(QWidget):
 
 
     def done(self):
-        logger.info('')
-        # caller = inspect.stack()[1].function
+        caller = inspect.stack()[1].function
         txt = self.textedit.toPlainText()
         last_line = txt.split('[INFO]')[-1].lstrip()
+        # print(f"\nlast_line: {last_line}\nany? {any(x in last_line for x in ['[WARNING]', '[ERROR]'])}\nlast 3: {last_line[-3:]}\n")
+
+
         if any(x in last_line for x in ['[WARNING]', '[ERROR]']):
             return
         if last_line[-3:] != '...':
@@ -185,7 +187,7 @@ class HeadupDisplay(QWidget):
         #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
 
         self.textedit.undo()
-        self.post(last_line + 'done.')
+        self.post(last_line + f'done ({caller})')
         # self.post(last_line + 'done(%s).' % caller)
         self.textedit.moveCursor(QTextCursor.End)
         self.update()
