@@ -423,28 +423,27 @@ class OpenProject(QWidget):
             # self._buttonDelete.hide()
 
     def userSelectionChanged(self):
-        logger.info(f'caller:{inspect.stack()[1].function}')
+        logger.info(f'>>>> userSelectionChanged >>>>')
         caller = inspect.stack()[1].function
         # if caller == 'initTableData':
         #     return
         row = self.user_projects.table.currentIndex().row()
+        logger.info(f'row: {str(row)}')
         try:
-            path = self.user_projects.table.item(row, 1).text()
+            self.selected_file = self.user_projects.table.item(row, 1).text()
+            logger.info(f'selected:\n{self.selected_file}')
+            self.setSelectionPathText(self.selected_file)
+            self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
+            self.cbCalGrid.setVisible(validate_tiff_folder(self.selected_file))
+            self.validity_label.setVisible(validate_tiff_folder(self.selected_file))
+
+            self.validate_path()
         except:
             # path = ''
             # logger.warning(f'No file path at project_table.currentIndex().row()! '
             #                f'caller: {caller} - Returning...')
-            return
-        # logger.info(f'path: {path}')
-        self.selected_file = path
-        logger.info(f'selected: {self.selected_file}')
-        self.setSelectionPathText(path)
+            print_exception()
 
-        self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
-        self.cbCalGrid.setVisible(validate_tiff_folder(path))
-        self.validity_label.setVisible(validate_tiff_folder(path))
-
-        self.validate_path()
 
 
     '''New Project From TIFFs (1/3)'''
@@ -976,7 +975,7 @@ class UserProjects(QWidget):
         # self.table = TableWidget(self)
 
         # self.table.setShowGrid(False)
-        self.table.setSortingEnabled(False)
+        self.table.setSortingEnabled(True)
         self.table.setWordWrap(True)
         self.table.horizontalHeader().setHighlightSections(False)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -1197,8 +1196,6 @@ class UserProjects(QWidget):
             except: thumbnail_last.append('No Thumbnail')
             try:    location.append(p)
             except: location.append('Unknown')
-            try:    location.append(p)
-            except: location.append('Unknown')
 
             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
             if extra_toplevel_paths:
@@ -1251,18 +1248,20 @@ class Thumbnail(QWidget):
 
 
 def validate_tiff_folder(path) -> bool:
-    logger.info(f'caller:{inspect.stack()[1].function}')
-    path, extension = os.path.splitext(path)
-    contents = glob(os.path.join(path, '*'))
-    n_files = len(contents)
-    tif_files = glob(os.path.join(path, '*.tif'))
-    tiff_files = glob(os.path.join(path, '*.tiff'))
-    n_valid_files = len(tif_files) + len(tiff_files)
-    n_invalid_files = n_files - n_valid_files
-    # print(f'n_files: {n_files}')
-    # print(f'# valid files: {n_valid_files}')
-    # print(f'# invalid files: {n_invalid_files}')
-    return (n_valid_files > 0) and (n_invalid_files == 0)
+    # logger.info(f'caller:{inspect.stack()[1].function}')
+    # path, extension = os.path.splitext(path)
+    # contents = glob(os.path.join(path, '*'))
+    # n_files = len(contents)
+    # tif_files = glob(os.path.join(path, '*.tif'))
+    # tiff_files = glob(os.path.join(path, '*.tiff'))
+    # n_valid_files = len(tif_files) + len(tiff_files)
+    # n_invalid_files = n_files - n_valid_files
+    # # print(f'n_files: {n_files}')
+    # # print(f'# valid files: {n_valid_files}')
+    # # print(f'# invalid files: {n_invalid_files}')
+    # return (n_valid_files > 0) and (n_invalid_files == 0)
+
+    return (len(glob(os.path.join(path, '*.tiff'))) > 0) or (len(glob(os.path.join(path, '*.tif'))) > 0)
 
 
 def validate_project_selection(path) -> bool:
