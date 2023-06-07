@@ -344,25 +344,22 @@ class OpenProject(QWidget):
         self.hideMainUI()
         cfg.mw.stopPlaybackTimer()
         cfg.mw.tell('New Project Path:')
+        self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
+        cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
 
         '''Step 1/3'''
         self.name_dialog = QFileDialog()
+        self.vbl_main.addWidget(self.name_dialog)
         self.name_dialog.setContentsMargins(0,0,0,0)
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        self.vbl_main.addWidget(self.name_dialog)
         self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
-        caption = "search",
 
-        self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
-        cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
         self.name_dialog.setNameFilter("Text Files (*.swiftir)")
         self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
         self.name_dialog.setViewMode(QFileDialog.Detail)
         self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
         self.name_dialog.setModal(True)
-
-        # dialog.setOptions(dialog.DontUseNativeDialog)
-        self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
+        # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
 
 
         urls = self.name_dialog.sidebarUrls()
@@ -406,6 +403,9 @@ class OpenProject(QWidget):
             self.showMainUI()
             self.name_dialog.close()
             return 1
+
+
+
 
         if filename in ['', None]:
             logger.info('New Project Canceled.')
