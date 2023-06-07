@@ -531,7 +531,8 @@ class OpenProject(QWidget):
             self.NEW_PROJECT_PATH = filename
 
         path,_ = os.path.splitext(self.NEW_PROJECT_PATH)
-        self.NEW_PROJECT_PATH = path + '.swiftir'
+        # self.NEW_PROJECT_PATH = path + '.swiftir'
+        self.NEW_PROJECT_PATH = path
 
         # cfg.data = DataModel(name=path, mendenhall=mendenhall)
         cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
