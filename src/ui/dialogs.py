@@ -10,8 +10,9 @@ import qtawesome as qta
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
     QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
     QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy, QDial, QFormLayout, QGroupBox, QButtonGroup, \
-    QStyle, QSpinBox
-from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize, QObject
+    QStyle, QSpinBox, QListView, QStyledItemDelegate
+from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize, QObject, \
+    QUrl
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
@@ -136,6 +137,21 @@ class SaveExitAppDialog(QDialog):
         self.setLayout(self.layout)
 
 
+UrlRole = Qt.UserRole + 1
+EnabledRole = Qt.UserRole + 2
+class StyledItemDelegate(QStyledItemDelegate):
+    mapping = dict()
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        url = index.data(UrlRole)
+        text = self.mapping.get(url)
+        if isinstance(text, str):
+            option.text = text
+        is_enabled = index.data(EnabledRole)
+        if is_enabled is not None and not is_enabled:
+            option.state &= ~QStyle.State_Enabled
+
 
 class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
@@ -157,6 +173,19 @@ class QFileDialogPreview(QFileDialog):
         """)
         self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
         self.cb_cal_grid.setChecked(False)
+
+        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+
+        places = {
+            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
+            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
+            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
+            QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
+        }
+        sidebar = self.findChild(QListView, "sidebar")
+        delegate = StyledItemDelegate(sidebar)
+        delegate.mapping = places
+        sidebar.setItemDelegate(delegate)
 
 
 
@@ -785,6 +814,7 @@ class NewConfigureProjectDialog(QDialog):
         self.reject()
         # self.close()
         # return 1
+
 
     def onScaleAndAlign(self):
         cfg.data['data']['autoalign_flag'] = True
