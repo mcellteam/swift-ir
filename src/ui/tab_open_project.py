@@ -201,11 +201,31 @@ class OpenProject(QWidget):
 
         self.selectionReadout = QLineEdit()
 
+
+        self.lab_path_exists = QLabel('Path Exists')
+        self.lab_path_exists.setAlignment(Qt.AlignRight)
+        self.lab_path_exists.setObjectName('validity_label')
+        self.lab_path_exists.setFixedHeight(16)
+
         self.lab_project_name = QLabel(' New Project Path: ')
         self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
         self.lab_project_name.setFixedHeight(18)
         self.le_project_name = QLineEdit()
+        def fn():
+            self._buttonProjectFromTiffFolder2.setEnabled(os.path.exists(self.le_project_name.text()))
+            self.lab_path_exists.setVisible(os.path.exists(self.le_project_name.text()))
+
+        self.le_project_name.textChanged.connect(fn)
         self.le_project_name.setFixedHeight(22)
+
+
+
+        self.le_project_name_w_overlay = QWidget()
+        gl = QGridLayout()
+        gl.setContentsMargins(0,0,0,0)
+        gl.addWidget(self.le_project_name,0,0)
+        gl.addWidget(HWidget(ExpandingWidget(self), self.lab_path_exists, QLabel(' ')),0,0)
+        self.le_project_name_w_overlay.setLayout(gl)
 
         # def fn_le_textChanged(path):
         #     logger.info('')
@@ -221,11 +241,12 @@ class OpenProject(QWidget):
         self._buttonProjectFromTiffFolder2 = QPushButton('Create')
         self._buttonProjectFromTiffFolder2.setFixedSize(button_size)
         self._buttonProjectFromTiffFolder2.setStyleSheet("font-size: 10px;")
-        self.le_project_name_w = HWidget(QLabel('  '),self.lab_project_name, QLabel('  '), self.le_project_name, QLabel('    '),
+        self.le_project_name_w = HWidget(QLabel('  '),self.lab_project_name, QLabel('  '), self.le_project_name_w_overlay, QLabel('    '),
                                          self._buttonProjectFromTiffFolder2, QLabel('    '),
                                          self._buttonCancelProjectFromTiffFolder, QLabel('    '))
         self.le_project_name_w.setFixedHeight(24)
         self.le_project_name_w.hide()
+
 
 
         self._buttonProjectFromTiffFolder2.clicked.connect(self.skipToConfig)
