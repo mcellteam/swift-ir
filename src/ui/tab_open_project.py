@@ -221,6 +221,7 @@ class OpenProject(QWidget):
 
 
         self.le_project_name_w_overlay = QWidget()
+        self.le_project_name_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.addWidget(self.le_project_name,0,0)
@@ -285,6 +286,7 @@ class OpenProject(QWidget):
         # self.selectionReadout.setMinimumWidth(700)
 
         self.selectionReadout_w_overlay = QWidget()
+        self.selectionReadout_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.addWidget(self.selectionReadout,0,0)
