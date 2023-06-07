@@ -415,6 +415,9 @@ class OpenProject(QWidget):
 
         self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
         self.cbCalGrid.setVisible(validate_tiff_folder(path))
+        self.validity_label.setVisible(validate_tiff_folder(path))
+
+        self.validate_path()
 
 
     '''New Project From TIFFs (1/3)'''
