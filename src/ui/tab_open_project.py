@@ -225,7 +225,9 @@ class OpenProject(QWidget):
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.addWidget(self.le_project_name,0,0)
-        gl.addWidget(HWidget(ExpandingWidget(self), self.lab_path_exists, QLabel(' ')),0,0)
+        hw = HWidget(ExpandingWidget(self), self.lab_path_exists, QLabel(' '))
+        hw.setAttribute(Qt.WA_TransparentForMouseEvents)
+        gl.addWidget(hw,0,0)
         self.le_project_name_w_overlay.setLayout(gl)
 
         # def fn_le_textChanged(path):
@@ -290,7 +292,9 @@ class OpenProject(QWidget):
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.addWidget(self.selectionReadout,0,0)
-        gl.addWidget(HWidget(ExpandingWidget(self), self.validity_label, QLabel(' ')),0,0)
+        hw = HWidget(ExpandingWidget(self), self.validity_label, QLabel(' '))
+        hw.setAttribute(Qt.WA_TransparentForMouseEvents)
+        gl.addWidget(hw,0,0)
         self.selectionReadout_w_overlay.setLayout(gl)
 
 
