@@ -775,7 +775,7 @@ class NewConfigureProjectDialog(QDialog):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.setModal(True)
-        self.setWindowFlags(Qt.Widget)
+        # self.setWindowFlags(Qt.Widget)
         self.initUI()
 
 
@@ -852,6 +852,7 @@ class NewConfigureProjectDialog(QDialog):
             self.accept()
 
     def initUI(self):
+        logger.critical('')
 
         # self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
         # def fn_align_coarsest():
@@ -1037,7 +1038,9 @@ class NewConfigureProjectDialog(QDialog):
         self.chunk_shape_widget = QWidget()
         self.chunk_shape_widget.setLayout(self.chunk_shape_layout)
 
-        self.gb_storage_options = QGroupBox('Storage')
+        cfg.mw.gb_storage_options = QGroupBox('Storage')
+        cfg.mw.gb_storage_options.setFixedWidth(400)
+        cfg.mw.gb_storage_options.setFixedHeight(320)
         self.fl_storage_options = QFormLayout()
         self.fl_storage_options.addRow('Compression Level (1-9):', self.clevel_input)
         self.fl_storage_options.addRow('Compression Option:', self.cname_combobox)
@@ -1048,9 +1051,11 @@ class NewConfigureProjectDialog(QDialog):
         lab = QLabel(txt)
         lab.setStyleSheet("""font-size: 10px; color: #161c20;""")
         self.fl_storage_options.addWidget(lab)
-        self.gb_storage_options.setLayout(self.fl_storage_options)
+        cfg.mw.gb_storage_options.setLayout(self.fl_storage_options)
 
-        self.gb_config = QGroupBox('Main')
+        cfg.mw.gb_config = QGroupBox('Main')
+        cfg.mw.gb_config.setFixedWidth(400)
+        cfg.mw.gb_config.setFixedHeight(320)
         self.fl_config = QFormLayout()
         # self.fl_config.setVerticalSpacing(4)
         # self.fl_config.setHorizontalSpacing(6)
@@ -1064,22 +1069,25 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_config.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_config.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         self.fl_config.addRow('Bounding Box:', self.bounding_rectangle_checkbox)
+        cfg.mw.gb_config.setLayout(self.fl_config)
 
 
         hbl = QHBoxLayout()
-        hbl.addWidget(self.gb_config, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        hbl.addWidget(self.gb_storage_options, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        # hbl.addWidget(cfg.mw.gb_config, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        # hbl.addWidget(cfg.mw.gb_storage_options, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        hbl.addWidget(cfg.mw.gb_config, alignment=Qt.AlignLeft | Qt.AlignTop)
+        hbl.addWidget(cfg.mw.gb_storage_options, alignment=Qt.AlignLeft | Qt.AlignTop)
         # if cfg.data['data']['has_cal_grid']:
         #     path = cfg.data['data']['cal_grid_path']
         #     tn = ThumbnailFast(self, path)
         #     hbl.addWidget(tn, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        hbl.addWidget(ExpandingWidget(self))
+        # hbl.addWidget(ExpandingWidget(self))
 
         w = QWidget()
         w.setLayout(hbl)
-        # w = HWidget(ExpandingWidget(self), self.gb_config, self.gb_storage_options, ExpandingWidget(self))
-        # w.layout.setAlignment(Qt.AlignTop)
-        vbl = VBL(w, self.w_buttons, ExpandingWidget(self))
+        # vbl = VBL(w, self.w_buttons, ExpandingWidget(self))
+        vbl = VBL(w, self.w_buttons)
+        vbl.setAlignment(Qt.AlignTop)
         self.setLayout(vbl)
 
 

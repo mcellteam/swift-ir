@@ -7,12 +7,12 @@ from qtpy.QtCore import Slot, Qt, QSize, QDir
 from src.helpers import is_joel, is_tacc
 import src.config as cfg
 
-__all__ = ['FileBrowser']
+__all__ = ['FileBrowserTacc']
 
 logger = logging.getLogger(__name__)
 
 
-class FileBrowser(QWidget):
+class FileBrowserTacc(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.treeview = QTreeView()
@@ -26,8 +26,7 @@ class FileBrowser(QWidget):
         self.fileSystemModel.setFilter(QDir.AllEntries | QDir.Hidden)
         self.treeview.setModel(self.fileSystemModel)
         # root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
-        root = self.fileSystemModel.setRootPath('/Users/joelyancey/glanceem_swift/test_images')
-        # root = self.fileSystemModel.setRootPath('/')
+        root = self.fileSystemModel.setRootPath('/')
         self.treeview.setRootIndex(root)
 
         self.path_scratch = os.getenv('SCRATCH')
@@ -56,16 +55,6 @@ class FileBrowser(QWidget):
 
     def setRootSpecial(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_special))
-        except: cfg.main_window.warn('Directory cannot be accessed')
-
-    def setRoot_corral_projects(self):
-        corral_projects_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_projects_dir))
-        except: cfg.main_window.warn('Directory cannot be accessed')
-
-    def setRoot_corral_images(self):
-        corral_images_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_images_dir))
         except: cfg.main_window.warn('Directory cannot be accessed')
 
 
@@ -122,18 +111,6 @@ class FileBrowser(QWidget):
         self.buttonSetRootSpecial.setStyleSheet('font-size: 9px;')
         self.buttonSetRootSpecial.setFixedSize(button_size)
         self.buttonSetRootSpecial.clicked.connect(self.setRootSpecial)
-
-
-        if is_tacc():
-            self.buttonSetRoot_corral_projects = QPushButton('Projects_AlignEM')
-            self.buttonSetRoot_corral_projects.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_projects.setFixedSize(button_size)
-            self.buttonSetRoot_corral_projects.clicked.connect(self.setRoot_corral_projects())
-
-            self.buttonSetRoot_corral_images = QPushButton('EM_Series')
-            self.buttonSetRoot_corral_images.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_images.setFixedSize(button_size)
-            self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images())
 
         self.buttonCreateProject = QPushButton('Create Project')
         self.buttonCreateProject.setStyleSheet('font-size: 9px;')
@@ -200,8 +177,6 @@ class FileBrowser(QWidget):
         except:
             logger.warning('No Path Selected.')
 
-
-
     def _showHideFb(self):
         if self.treeview.isHidden():
             self.treeview.show()
@@ -217,6 +192,6 @@ class FileBrowser(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    main = FileBrowser()
+    main = FileBrowserTacc()
     main.show()
     sys.exit(app.exec_())

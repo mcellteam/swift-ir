@@ -741,6 +741,7 @@ class DataModel:
         # self._data['state'].setdefault('previous_mode', 'stack-xy')
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
         self._data['state']['previous_mode'] = 'stack-xy'
+        self._data['state']['has_cal_grid'] = False
         self._data['state'].setdefault('ng_layout', 'xy')
         self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})
