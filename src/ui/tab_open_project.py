@@ -529,6 +529,28 @@ class OpenProject(QWidget):
 
         dialog.setSidebarUrls(urls)
 
+
+
+        # urls = self.name_dialog.sidebarUrls()
+        #
+        # corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+        #
+        # if '.tacc.utexas.edu' in platform.node():
+        #     urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+        #     urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+        #     urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+        #     urls.append(QUrl.fromLocalFile(corral_dir))
+        #
+        # else:
+        #     urls.append(QUrl.fromLocalFile(QDir.homePath()))
+        #     urls.append(QUrl.fromLocalFile('/tmp'))
+        #     if os.path.exists('/Volumes'):
+        #         urls.append(QUrl.fromLocalFile('/Volumes'))
+        #     if is_joel():
+        #         if os.path.exists('/Volumes/3dem_data'):
+        #             urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+        # self.name_dialog.setSidebarUrls(urls)
+
         places = getSideBarPlaces()
 
         sidebar = self.findChild(QListView, "sidebar")
@@ -743,7 +765,7 @@ def getSideBarPlaces():
         if os.path.exists('/Volumes/3dem_data'):
             places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
 
-    return places
+    return placesZ
 
 # class TableWidget(QTableWidget):
 #     def __init__(self, parent=None):
