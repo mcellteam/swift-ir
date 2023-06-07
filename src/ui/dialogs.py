@@ -137,22 +137,6 @@ class SaveExitAppDialog(QDialog):
         self.setLayout(self.layout)
 
 
-UrlRole = Qt.UserRole + 1
-EnabledRole = Qt.UserRole + 2
-class StyledItemDelegate(QStyledItemDelegate):
-    mapping = dict()
-
-    def initStyleOption(self, option, index):
-        super().initStyleOption(option, index)
-        url = index.data(UrlRole)
-        text = self.mapping.get(url)
-        if isinstance(text, str):
-            option.text = text
-        is_enabled = index.data(EnabledRole)
-        if is_enabled is not None and not is_enabled:
-            option.state &= ~QStyle.State_Enabled
-
-
 class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
@@ -173,21 +157,6 @@ class QFileDialogPreview(QFileDialog):
         """)
         self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
         self.cb_cal_grid.setChecked(False)
-
-        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
-
-        places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
-            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
-            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
-            QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
-        }
-        sidebar = self.findChild(QListView, "sidebar")
-        delegate = StyledItemDelegate(sidebar)
-        delegate.mapping = places
-        sidebar.setItemDelegate(delegate)
-
-
 
         box = QVBoxLayout()
         box.addWidget(self.mpPreview)
