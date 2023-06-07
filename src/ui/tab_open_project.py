@@ -381,6 +381,7 @@ class OpenProject(QWidget):
         elif validate_tiff_folder(path):
             self._buttonProjectFromTiffFolder1.setEnabled(True)
             self.cbCalGrid.show()
+            self.validity_label.hide()
 
         elif path == '':
             self.validity_label.hide()
