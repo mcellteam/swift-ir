@@ -361,18 +361,19 @@ class OpenProject(QWidget):
         self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
         self.name_dialog.setModal(True)
 
-
         # dialog.setOptions(dialog.DontUseNativeDialog)
         self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
 
 
         urls = self.name_dialog.sidebarUrls()
 
+        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+
         if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile('/corral-repl/projects/NeuroNex-3DEM/projects/'))
+            urls.append(QUrl.fromLocalFile(corral_dir))
 
         else:
             urls.append(QUrl.fromLocalFile(QDir.homePath()))
@@ -394,6 +395,7 @@ class OpenProject(QWidget):
             QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
             QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
             QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
+            QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
         }
         sidebar = self.name_dialog.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
