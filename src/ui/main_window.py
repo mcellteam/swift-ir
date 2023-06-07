@@ -202,13 +202,13 @@ class MainWindow(QMainWindow):
     @Slot(name='my-zpos-signal-name')
     def setZpos(self, z:int):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        logger.info(f'caller: {caller}')
         if cfg.data.zpos != z:
             cfg.data.zpos = z
             self.dataUpdateWidgets()
             self.zposChanged.emit()
         else:
-            logger.critical(f'Zpos is the same! sender: {self.sender()}. Canceling...')
+            logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
 
 
 
@@ -401,7 +401,7 @@ class MainWindow(QMainWindow):
         if z == None: z = cfg.data.zpos
 
         # caller = inspect.stack()[1].function
-        logger.info('Updating correlation signals...')
+        logger.info('')
 
         if not self._isProjectTab():
             return
@@ -1494,7 +1494,7 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\n    dataUpdateWidgets [caller: {caller}] >>>>')
+        logger.critical(f'\n\nUpdating UI [caller: {caller}]...')
         logger.info(f'sender: {self.sender()}')
 
         if not self._isProjectTab():
@@ -1921,8 +1921,7 @@ class MainWindow(QMainWindow):
 
     def jump_to_slider(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'>>>> jump_to_slider (caller: {caller}) >>>>')
-        # logger.info('')
+        logger.info('')
         #0601 this seems to work as intended with no time lag
         if caller in ('dataUpdateWidgets'):
             return
@@ -2171,7 +2170,6 @@ class MainWindow(QMainWindow):
 
         t_ng = time.time()
         # cfg.project_tab.initNeuroglancer()  # dt = 0.543 -> dt = 0.587 = 0.044 ~ 1/20 second
-        logger.info(f't(initialize neuroglancer): {time.time() - t_ng}')
         self.update()
 
         # cfg.project_tab.updateTreeWidget()  # TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
@@ -2180,9 +2178,6 @@ class MainWindow(QMainWindow):
         self.dataUpdateWidgets()  # 0.5878 -> 0.5887 ~.001s
 
         # self._changeScaleCombo.setCurrentText(cfg.data.scale)
-
-
-        logger.info('Setting FPS spinbox value...')
         # self.spinbox_fps.setValue(czfg.DEFAULT_PLAYBACK_SPEED)
         self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
@@ -3442,13 +3437,10 @@ class MainWindow(QMainWindow):
 
 
     def addGlobTab(self, tab_widget, name):
-        logger.info('Adding Global Tab...')
         cfg.tabsById[id(tab_widget)] = {}
         cfg.tabsById[id(tab_widget)]['name'] = name
         cfg.tabsById[id(tab_widget)]['type'] = type(tab_widget)
         cfg.tabsById[id(tab_widget)]['widget'] = tab_widget
-        # index = self.globTabs.addTab(tab_widget, name)
-        # self.globTabs.setCurrentIndex(index)
         self.globTabs.setCurrentIndex(self.globTabs.addTab(tab_widget, name))
 
 
@@ -3468,7 +3460,7 @@ class MainWindow(QMainWindow):
         #     return
 
         caller = inspect.stack()[1].function
-        logger.info('>>>> _onGlobTabChange [{caller}] >>>>')
+        logger.info(f'_onGlobTabChange [{caller}]')
         # if caller not in ('onStartProject', '_setLastTab'): #0524-
         #     self.shutdownNeuroglancer()  # 0329+
 
@@ -3567,7 +3559,6 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
 
-            logger.info('Setting global viewer reference...')
             cfg.emViewer = cfg.project_tab.viewer
             # cfg.project_tab.initNeuroglancer()
 

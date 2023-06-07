@@ -43,7 +43,6 @@ if __name__ == '__main__':
     dm.set_source_path(os.path.dirname(test_images[0]))  # Critical!
     print('scales: ' + str(dm.scales()))
 
-    print('setting defaults...')
     dm.set_scales_from_string('1 2 4')
     dm.set_method_options()
     dm.set_use_bounding_rect(False)

@@ -81,13 +81,19 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
 
 
-def print_exception():
+def print_exception(extra=None):
     tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
+    if extra:
+        txt += f'\nExtra: {str(extra)}'
     logger.warning(txt)
 
     if cfg.data:
-        lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
+        log_path = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
+        if not os.path.exists(log_path):
+            logger.warning('exceptions.log did not exist!')
+            open(log_path, 'a').close()
+        lf = os.path.join(log_path)
         with open(lf, 'a+') as f:
             f.write('\n' + txt)

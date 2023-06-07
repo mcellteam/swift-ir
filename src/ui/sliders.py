@@ -450,7 +450,14 @@ class DoubleSlider(QSlider):
         return float(super().value()) / self._max_int * self._value_range
 
     def setValue(self, value):
-        super().setValue(int(value / self._value_range * self._max_int))
+        if value not in range(int(self._min_value), int(self._max_value)):
+            return
+        try:
+            super().setValue(int(value / self._value_range * self._max_int))
+        except:
+            print_exception()
+            logger.warning(f'value: {value} ; self._value_range: {str(self._value_range)} ; self._max_int: {str(self._max_int)}')
+            logger.warning(f'current value: {self.value()}')
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
