@@ -218,8 +218,6 @@ class OpenProject(QWidget):
         # self.le_project_name.textEdited.connect(fn)
         self.le_project_name.setFixedHeight(20)
 
-
-
         self.le_project_name_w_overlay = QWidget()
         self.le_project_name_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         gl = QGridLayout()
@@ -250,10 +248,7 @@ class OpenProject(QWidget):
         self.le_project_name_w.setFixedHeight(20)
         self.le_project_name_w.hide()
 
-
-
         self._buttonProjectFromTiffFolder2.clicked.connect(self.skipToConfig)
-
 
         # self.selectionReadout.setStyleSheet("""
         # QLineEdit {
