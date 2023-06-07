@@ -556,6 +556,8 @@ class OpenProject(QWidget):
         # self.NEW_PROJECT_PATH = path + '.swiftir'
         self.NEW_PROJECT_PATH = path
 
+        makedirs_exist_ok(path, exist_ok=True)
+
         # cfg.data = DataModel(name=path, mendenhall=mendenhall)
         cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
         # cfg.data.set_defaults()
@@ -570,7 +572,7 @@ class OpenProject(QWidget):
 
 
 
-        # makedirs_exist_ok(path, exist_ok=True)
+
 
         if mendenhall:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
