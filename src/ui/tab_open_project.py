@@ -386,18 +386,19 @@ class OpenProject(QWidget):
         # self.name_dialog.setSidebarUrls(urls)
 
 
-        # places = {
-        #     QUrl.fromLocalFile(os.getenv('HOME')): "HOME",
-        #     QUrl.fromLocalFile(os.getenv('WORK')): "WORK",
-        #     QUrl.fromLocalFile(os.getenv('SCRATCH')): "SCRATCH",
-        # }
         corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
         places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): '$HOME (' + str(os.getenv('HOME')) + ')',
-            QUrl.fromLocalFile(os.getenv('WORK')):  '$WORK (' + str(os.getenv('WORK')) + ')',
-            QUrl.fromLocalFile(os.getenv('SCRATCH')):  '$SCRATCH (' + str(os.getenv('SCRATCH')) + ')',
+            QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
+            QUrl.fromLocalFile(os.getenv('WORK')):  'Work (' + str(os.getenv('WORK')) + ')',
+            QUrl.fromLocalFile(os.getenv('SCRATCH')):  'Scratch (' + str(os.getenv('SCRATCH')) + ')',
             QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
         }
+        if os.path.exists('/Volumes'):
+            places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
+        if is_joel():
+            if os.path.exists('/Volumes/3dem_data'):
+                places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
+
         sidebar = self.name_dialog.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
         delegate.mapping = places
@@ -526,17 +527,7 @@ class OpenProject(QWidget):
         '''Dialog for importing images. Returns list of filenames.'''
         dialog = QFileDialogPreview()
         dialog.setWindowFlags(Qt.FramelessWindowHint)
-        # dialog.setStyleSheet("""background-color: #ede9e8; color: #161c20;""")
-        # dialog.setStyleSheet("""background-color: #f3f6fb; color: #161c20; """)
-        # dialog.setStyleSheet("""
-        # QPushButton {
-        #     font-size: 10px;
-        #     font-family: Tahoma, sans-serif;
-        # }
-        # """)
 
-        # self.layout.addWidget(dialog)
-        # self.vbl_projects.addWidget(dialog)
         self.vbl_main.addWidget(dialog)
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
         self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
@@ -547,29 +538,27 @@ class OpenProject(QWidget):
         dialog.setModal(True)
         urls = dialog.sidebarUrls()
 
-        # if is_tacc():
-        #     urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-        #     urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        #     urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-        #     # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
-        # else:
-        if os.path.exists('/Volumes'):
-            urls.append(QUrl.fromLocalFile('/Volumes'))
-        if is_joel():
-            if os.path.exists('/Volumes/3dem_data'):
-                urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-
         dialog.setSidebarUrls(urls)
+
+        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
 
         places = {
             QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
             QUrl.fromLocalFile(os.getenv('WORK')):  'Work (' + str(os.getenv('WORK')) + ')',
             QUrl.fromLocalFile(os.getenv('SCRATCH')):  'Scratch (' + str(os.getenv('SCRATCH')) + ')',
+            QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
         }
-        sidebar = self.name_dialog.findChild(QListView, "sidebar")
+        if os.path.exists('/Volumes'):
+            places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
+        if is_joel():
+            if os.path.exists('/Volumes/3dem_data'):
+                places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
+
+        sidebar = self.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
         delegate.mapping = places
         sidebar.setItemDelegate(delegate)
+
 
         cfg.mw.set_status('Awaiting User Input...')
         logger.info('Awaiting user input...')
