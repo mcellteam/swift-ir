@@ -213,10 +213,12 @@ class OpenProject(QWidget):
         self.le_project_name = QLineEdit()
         self.le_project_name.setReadOnly(False)
         def fn():
+            logger.info('')
             self._buttonProjectFromTiffFolder2.setEnabled(os.path.exists(self.le_project_name.text()))
             self.lab_path_exists.setVisible(os.path.exists(self.le_project_name.text()))
 
         self.le_project_name.textChanged.connect(fn)
+        self.le_project_name.textEdited.connect(fn)
         self.le_project_name.setFixedHeight(22)
 
 
