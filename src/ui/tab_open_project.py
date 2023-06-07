@@ -56,6 +56,7 @@ class OpenProject(QWidget):
         # p = self.palette()
         # p.setColor(self.backgroundRole(), QColor('#ede9e8'))
         # self.USE_CAL_GRID = False
+        self.selected_file = ''
 
     def initUI(self):
         # User Projects Widget
@@ -425,7 +426,10 @@ class OpenProject(QWidget):
         row = self.user_projects.table.currentIndex().row()
         logger.info(f'row: {str(row)}')
         try:
-            self.selected_file = self.user_projects.table.item(row, 1).text()
+            try:
+                self.selected_file = self.user_projects.table.item(row, 1).text()
+            except:
+                print_exception()
             logger.info(f'selected:\n{self.selected_file}')
             self.setSelectionPathText(self.selected_file)
             self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
