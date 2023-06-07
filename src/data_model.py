@@ -723,7 +723,7 @@ class DataModel:
 
 
     def set_defaults(self):
-        logger.critical(f'Setting Defaults [caller: {inspect.stack()[1].function}] >>>>')
+        logger.critical(f'Setting Defaults [caller: {inspect.stack()[1].function}]')
         import src.config as cfg
 
         initial_zpos = int(len(self)/2)
@@ -810,7 +810,6 @@ class DataModel:
         #uicontrol float contrast slider(min=-1, max=1, step=0.01)
         void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
         ''')
-        logger.critical('<<<< Setting Defaults')
 
         for s in self.scales():
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))

@@ -331,7 +331,7 @@ def append_project_path(path):
 
 def configure_project_paths():
     caller = inspect.stack()[1].function
-    logger.critical(f'caller: {caller}')
+    logger.info('')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
     if not os.path.exists(userprojectspath):
         open(userprojectspath, 'a').close()
@@ -799,7 +799,7 @@ def initLogFiles(dm):
     try:
         logpath = os.path.join(dm.dest(), 'logs')
         os.makedirs(logpath, exist_ok=True)
-        open(os.path.join(logpath, 'exceptions.log'), 'a+').close()
+        open(os.path.join(logpath, 'exceptions.log'), 'a').close()
         open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
         open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
         open(os.path.join(logpath, 'swim.log'), 'a').close()

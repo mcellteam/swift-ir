@@ -69,13 +69,20 @@ class ProjectTab(QWidget):
 
         self.setAutoFillBackground(True)
         # self.webengine.setMouseTracking(True)
-        # self.webengine.setFocusPolicy(Qt.StrongFocus)
+
+        '''primary tab widgets'''
+        self.ng_browser_container_outer = HWidget()
+        self.table_container = QWidget()
+        self._wdg_treeview = QWidget()
+        self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
+
         self.initShader()
-        self.initUI_Neuroglancer()
+        # self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
         self.initUI_plot()
-        self.initUI_tab_widget()
+        self.initUI_Neuroglancer()
+        self.initTabs()
         self._tabs.currentChanged.connect(self._onTabChange)
         self.manAlignBufferRef = []
         self.manAlignBufferBase = []
@@ -88,9 +95,6 @@ class ProjectTab(QWidget):
         self.MA_base_zoom = None
         self._allow_zoom_change = True
 
-        self.update_MA_widgets_calls = 0
-        self.dataUpdateMA_calls = 0
-
         h = self.MA_webengine_ref.geometry().height()
         self.MA_stageSplitter.setSizes([int(.7 * h), int(.3 * h)])
 
@@ -99,9 +103,6 @@ class ProjectTab(QWidget):
         self.Q3.setAutoFillBackground(True)
         self.Q4.setAutoFillBackground(True)
 
-        # with open('src/style/buttonstyle.qss', 'r') as f:
-        #     self.buttonstyle = f.read()
-
         self.oldPos = None
 
         self.blinkTimer = QTimer(self)
@@ -109,8 +110,6 @@ class ProjectTab(QWidget):
         self.blinkTimer.timeout.connect(self.onBlinkTimer)
 
         self.blinkCur = 0
-
-        # self.initShortcuts()
 
 
     # def display_shortcuts(self):
@@ -241,6 +240,7 @@ class ProjectTab(QWidget):
             time.sleep(cfg.DELAY_AFTER)
 
     def initNeuroglancer(self):
+        logger.info('')
         QApplication.processEvents()
         cfg.mw.tell('Initializing Neuroglancer...')
         logger.info(f'\n\n  Initializing Neuroglancer [{inspect.stack()[1].function}]...\n')
@@ -297,7 +297,6 @@ class ProjectTab(QWidget):
             self.dataUpdateMA()
         else:
             # if caller != '_onGlobTabChange':
-            logger.info('Initializing...')
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgetsThreaded)
@@ -491,8 +490,8 @@ class ProjectTab(QWidget):
         self.ZdisplaySlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.ZdisplaySlider.setMaximum(20)
         self.ZdisplaySlider.setMinimum(1)
-        self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
         self.ZdisplaySlider.setValue(1.0)
+        self.ZdisplaySlider.valueChanged.connect(self.onSliderZmag)
 
         self.ZdisplaySliderAndLabel = VWidget()
         self.ZdisplaySliderAndLabel.layout.setSpacing(0)
@@ -1601,8 +1600,6 @@ class ProjectTab(QWidget):
         # vbl.addWidget(self.MA_stackedWidget)
         # self.MA_stackedWidget_gb.setLayout(vbl)
 
-
-
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
@@ -1669,7 +1666,6 @@ class ProjectTab(QWidget):
         self.MA_ng_widget.setLayout(self.MA_gl)
 
         self.MA_splitter = HSplitter(self.MA_ng_widget, self.MA_stageSplitter)
-        # self.MA_splitter.setSizes([int(.80 * cfg.WIDTH), int(.20 * cfg.WIDTH)])
         self.MA_splitter.setSizes([int(.80 * cfg.WIDTH), int(.20 * cfg.WIDTH)])
         self.MA_splitter.setCollapsible(0, False)
         self.MA_splitter.setCollapsible(1, False)
@@ -2187,16 +2183,8 @@ class ProjectTab(QWidget):
 
         self.hsplitter_tn_ng.splitterMoved.connect(fn_splitterMoved)
 
-        # self.ng_browser_container_outer = HWidget(
-        #     self.tn_widget,
-        #     self.hsplitter_tn_ng,
-        #     self.sideSliders,
-        #     self.ms_widget
-        # )
-        self.ng_browser_container_outer = HWidget(
-            self.hsplitter_tn_ng,
-            self.sideSliders,
-        )
+        self.ng_browser_container_outer.addWidget(self.hsplitter_tn_ng)
+        self.ng_browser_container_outer.addWidget(self.sideSliders)
         self.ng_browser_container_outer.layout.setStretch(0,0)
         self.ng_browser_container_outer.layout.setStretch(2,3)
         self.ng_browser_container_outer.layout.setStretch(3,0)
@@ -2676,12 +2664,11 @@ class ProjectTab(QWidget):
 
     @Slot()
     def dataUpdateMA(self):
-        self.dataUpdateMA_calls += 1
+        logger.info('')
 
         #0526 set skipped overlay
 
         caller = inspect.stack()[1].function
-        # logger.critical(f'>>>> dataUpdateMA caller: {caller} ; call #{self.dataUpdateMA_calls} ; cfg.data.current_method={cfg.data.current_method} >>>>')
         if getData('state,manual_mode'):
 
             if cfg.data.skipped():
@@ -2787,7 +2774,6 @@ class ProjectTab(QWidget):
         self.btnRealignMA.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
 
     def update_MA_list_widgets(self):
-        self.update_MA_widgets_calls += 1
         self.setUpdatesEnabled(False)
         self.update_MA_list_base()
         self.update_MA_list_ref()
@@ -3093,8 +3079,11 @@ class ProjectTab(QWidget):
                 # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
                 # val =
                 # if val in range(-2147483648, 2147483647):
-
-                self.zoomSlider.setValue(1/zoom)
+                try:
+                    self.zoomSlider.setValue(1/zoom)
+                except:
+                    print_exception()
+                    logger.warning(f"zoom = {zoom}")
                 # self.zoomSlider.setValue(zoom)
                 self._allow_zoom_change = True
 
@@ -3174,6 +3163,7 @@ class ProjectTab(QWidget):
             print_exception()
 
     def onSliderZmag(self):
+
         caller = inspect.stack()[1].function
         logger.info('caller: %s' % caller)
         try:
@@ -3239,8 +3229,6 @@ class ProjectTab(QWidget):
         hbl = HBL()
         hbl.addWidget(self.label_overview)
         hbl.addLayout(vbl)
-        self.table_container = QWidget()
-        self.table_container.setObjectName('table_container')
         self.table_container.setLayout(hbl)
 
         # self.project_table.initTableData()
@@ -3269,7 +3257,8 @@ class ProjectTab(QWidget):
         self.treeview_model.signals.dataModelChanged.connect(self.load_data_from_treeview)
         self.treeview.setModel(self.treeview_model)
         self.treeview.setAlternatingRowColors(True)
-        self._wdg_treeview = QWidget()
+
+
         self._wdg_treeview.setContentsMargins(0, 0, 0, 0)
         # self._wdg_treeview.setObjectName('_wdg_treeview')
         self.btnCollapseAll = QPushButton('Collapse All')
@@ -3467,12 +3456,11 @@ class ProjectTab(QWidget):
         # self.snrWebengine = WebEngine(ID='snr')
         # setWebengineProperties(self.snrWebengine)
         # self.snrWebengine.setMinimumWidth(200)
-        self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
         self.snrPlotSplitter.setStyleSheet('background-color: #222222;')
         self.snrPlotSplitter.addWidget(self.snr_plt_wid)
         # self.snrPlotSplitter.addWidget(self.snrWebengine)
 
-    def initUI_tab_widget(self):
+    def initTabs(self):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
@@ -3483,10 +3471,8 @@ class ProjectTab(QWidget):
             width: 100px;
             font-size: 9px;
             font-weight: 600;
-
             border: 1px solid #ede9e8;
             background-color: #dadada;
-
         }
         QTabBar::tab:selected
         {
