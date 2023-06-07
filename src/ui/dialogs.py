@@ -1077,11 +1077,12 @@ class NewConfigureProjectDialog(QDialog):
         # hbl.addWidget(cfg.mw.gb_storage_options, alignment=Qt.AlignHCenter | Qt.AlignTop)
         hbl.addWidget(cfg.mw.gb_config, alignment=Qt.AlignLeft | Qt.AlignTop)
         hbl.addWidget(cfg.mw.gb_storage_options, alignment=Qt.AlignLeft | Qt.AlignTop)
+        hbl.addWidget(ExpandingWidget(self))
         # if cfg.data['data']['has_cal_grid']:
         #     path = cfg.data['data']['cal_grid_path']
         #     tn = ThumbnailFast(self, path)
         #     hbl.addWidget(tn, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        # hbl.addWidget(ExpandingWidget(self))
+
 
         w = QWidget()
         w.setLayout(hbl)
