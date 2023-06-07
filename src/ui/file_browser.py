@@ -69,6 +69,11 @@ class FileBrowser(QWidget):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_images_dir))
         except: cfg.main_window.warn('Directory cannot be accessed')
 
+    def set_corral_root(self):
+        dir = '/corral-repl'
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(dir))
+        except: cfg.main_window.warn('Directory cannot be accessed')
+
 
     def initUI(self):
         with open('src/style/controls.qss', 'r') as f:
@@ -128,13 +133,18 @@ class FileBrowser(QWidget):
         if is_tacc():
             self.buttonSetRoot_corral_projects = QPushButton('Projects_AlignEM')
             self.buttonSetRoot_corral_projects.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_projects.setFixedSize(QSize(70,16))
+            self.buttonSetRoot_corral_projects.setFixedSize(QSize(90,16))
             self.buttonSetRoot_corral_projects.clicked.connect(self.setRoot_corral_projects)
 
             self.buttonSetRoot_corral_images = QPushButton('EM_Series')
             self.buttonSetRoot_corral_images.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_images.setFixedSize(QSize(70,16))
+            self.buttonSetRoot_corral_images.setFixedSize(QSize(90,16))
             self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images)
+
+            self.buttonSetRoot_corral_images = QPushButton('Corral')
+            self.buttonSetRoot_corral_images.setStyleSheet('font-size: 9px;')
+            self.buttonSetRoot_corral_images.setFixedSize(QSize(90,16))
+            self.buttonSetRoot_corral_images.clicked.connect(self.set_corral_root)
 
         self.buttonCreateProject = QPushButton('Create Project')
         self.buttonCreateProject.setStyleSheet('font-size: 9px;')
@@ -152,7 +162,11 @@ class FileBrowser(QWidget):
         if self.path_work:
             hbl.addWidget(self.buttonSetRootWork)
         if is_tacc():
+            hbl.addWidget(self.buttonSetRoot_corral_images)
             hbl.addWidget(self.buttonSetRoot_corral_projects)
+            hbl.addWidget(self.setRoot_corral_images)
+
+
 
         if is_joel():
             if os.path.exists(self.path_special):
