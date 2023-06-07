@@ -7,7 +7,8 @@ import inspect
 import logging
 import platform
 import textwrap
-
+from glob import glob
+from pathlib import Path
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
@@ -17,11 +18,13 @@ from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint
 from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
 
 from src.ui.file_browser import FileBrowser
+from src.ui.file_browser_tacc import FileBrowserTacc
 from src.funcs_image import ImageSize
 from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
-    create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles, is_tacc, is_joel, hotkey
+    create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles, is_tacc, is_joel, hotkey, \
+    get_appdir
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_zarr import ZarrTab
@@ -41,6 +44,7 @@ class OpenProject(QWidget):
         super().__init__(**kwargs)
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
+        # self.filebrowsertacc = FileBrowserTacc(parent=self)
         def fn():
             self.selectionReadout.setText(self.filebrowser.getSelectionPath())
         self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
@@ -51,6 +55,7 @@ class OpenProject(QWidget):
         # self.row_height_slider.setValue(getOpt('state,open_project_tab,row_height'))
         # p = self.palette()
         # p.setColor(self.backgroundRole(), QColor('#ede9e8'))
+        # self.USE_CAL_GRID = False
 
     def initUI(self):
         # User Projects Widget
@@ -136,7 +141,7 @@ class OpenProject(QWidget):
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
-        button_size = QSize(110,18)
+        button_size = QSize(102,22)
 
         # self._buttonOpen = QPushButton(f"Open Project")
         self._buttonOpen = QPushButton(f"Open Project {hotkey('O')}")
@@ -146,6 +151,31 @@ class OpenProject(QWidget):
         self._buttonOpen.clicked.connect(self.open_project_selected)
         self._buttonOpen.setFixedSize(button_size)
         # self._buttonOpen.hide()
+
+        self._buttonProjectFromTiffFolder1 = QPushButton(f"Initialize Project\nFrom Folder of TIFFs")
+        # self._buttonProjectFromTiffFolder1.setShortcut()
+        self._buttonProjectFromTiffFolder1.setStyleSheet('font-size: 8px;')
+        self._buttonProjectFromTiffFolder1.setEnabled(False)
+        self._buttonProjectFromTiffFolder1.clicked.connect(self.createProjectFromTiffFolder)
+        self._buttonProjectFromTiffFolder1.setFixedSize(button_size)
+
+        self._buttonCancelProjectFromTiffFolder = QPushButton(f"Cancel")
+        # self._buttonProjectFromTiffFolder1.setShortcut()
+        self._buttonCancelProjectFromTiffFolder.setStyleSheet('font-size: 10px;')
+        def fn():
+            self.le_project_name_w.hide()
+        self._buttonCancelProjectFromTiffFolder.clicked.connect(fn)
+        self._buttonCancelProjectFromTiffFolder.setFixedSize(button_size)
+
+        self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
+        # def setCalGridData():
+        #     try:
+        #         cfg.data['data']['has_cal_grid'] = self.cbCalGrid.isChecked()
+        #     except:
+        #         print_exception()
+        # self.cbCalGrid.stateChanged.connect(fn)
+        self.cbCalGrid.setChecked(False)
+        self.cbCalGrid.hide()
 
         # self._buttonDelete = QPushButton(f"Delete Project")
         self._buttonDelete = QPushButton(f"Delete Project {hotkey('D')}")
@@ -170,6 +200,36 @@ class OpenProject(QWidget):
         # # self._buttonNew.setStyleSheet(w)
 
         self.selectionReadout = QLineEdit()
+
+        self.lab_project_name = QLabel(' New Project Path: ')
+        self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
+        self.lab_project_name.setFixedHeight(18)
+        self.le_project_name = QLineEdit()
+        self.le_project_name.setFixedHeight(22)
+
+        # def fn_le_textChanged(path):
+        #     logger.info('')
+        #     self._buttonProjectFromTiffFolder2.setEnabled(not os.path.exists(path))
+        # self.le_project_name.textChanged.connect(lambda: fn_le_textChanged(self.le_project_name.text()))
+
+        def enter_pressed():
+            logger.info('')
+            if self._buttonProjectFromTiffFolder2.isEnabled():
+                self.skipToConfig()
+
+        self.le_project_name.returnPressed.connect(enter_pressed)
+        self._buttonProjectFromTiffFolder2 = QPushButton('Create')
+        self._buttonProjectFromTiffFolder2.setFixedSize(button_size)
+        self._buttonProjectFromTiffFolder2.setStyleSheet("font-size: 10px;")
+        self.le_project_name_w = HWidget(QLabel('  '),self.lab_project_name, QLabel('  '), self.le_project_name, QLabel('    '),
+                                         self._buttonProjectFromTiffFolder2, QLabel('    '),
+                                         self._buttonCancelProjectFromTiffFolder, QLabel('    '))
+        self.le_project_name_w.setFixedHeight(24)
+        self.le_project_name_w.hide()
+
+
+        self._buttonProjectFromTiffFolder2.clicked.connect(self.skipToConfig)
+
 
         # self.selectionReadout.setStyleSheet("""
         # QLineEdit {
@@ -219,6 +279,8 @@ class OpenProject(QWidget):
         # hbl.addWidget(self.validity_label)
         hbl.addWidget(self._buttonOpen)
         hbl.addWidget(self._buttonDelete)
+        hbl.addWidget(self._buttonProjectFromTiffFolder1)
+        hbl.addWidget(self.cbCalGrid)
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hbl.addSpacerItem(self.spacer_item_docs)
 
@@ -241,7 +303,7 @@ class OpenProject(QWidget):
         #     border-style: solid;
         #     padding: 1px;
         #     border-radius: 4px;
-        #     outline: none;
+        #     outline: none;w
         # }
         #
         # QPushButton:disabled {
@@ -268,11 +330,13 @@ class OpenProject(QWidget):
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
-        self._splitter.setSizes([700, 300])
+        # self._splitter.addWidget(self.filebrowsertacc)
+        self._splitter.setSizes([700, 300, 300])
 
         self.vbl_main = VBL()
         self.vbl_main.addWidget(self._splitter)
         self.vbl_main.addWidget(self._actions_widget)
+        self.vbl_main.addWidget(self.le_project_name_w)
         self.vbl_main.addWidget(self.new_project_header)
         # self.vbl_main.addWidget(<temp widgets>)
 
@@ -286,7 +350,7 @@ class OpenProject(QWidget):
 
         self.setLayout(self.vbl_main)
 
-        # self.setStyleSheet(style)
+    # self.setStyleSheet(style)
 
     def hideMainUI(self):
         self._splitter.hide()
@@ -301,33 +365,43 @@ class OpenProject(QWidget):
         self.new_project_header.hide()
 
     def validate_path(self):
-        # logger.info(f'caller:{inspect.stack()[1].function}')
+        logger.info(f'caller:{inspect.stack()[1].function}')
         path = self.selectionReadout.text()
         # logger.info(f'Validating path : {path}')
-        if validate_project_selection(path) or validate_zarr_selection(path) or path == '':
-            if validate_zarr_selection(path):
-                self._buttonOpen.setText(f"Open Zarr {hotkey('O')}")
-                # logger.info(f'The requested Zarr is valid')
-            else:
-                self._buttonOpen.setText(f"Open Project {hotkey('O')}")
-                # logger.info(f'The requested project is valid')
+        if validate_project_selection(path):
+            self._buttonOpen.setText(f"Open Project {hotkey('O')}")
+            logger.info(f'The path selected is a valid AlignEM-SWIFT project')
             self.validity_label.hide()
             # self._buttonOpen.setEnabled(True)
-            self._buttonOpen.show()
+
+        elif validate_zarr_selection(path):
+            self._buttonOpen.setText(f"Open Zarr {hotkey('O')}")
+            self.validity_label.hide()
+
+        elif validate_tiff_folder(path):
+            self._buttonProjectFromTiffFolder1.setEnabled(True)
+            self.cbCalGrid.show()
+
+        elif path == '':
+            self.validity_label.hide()
+
         else:
             self.validity_label.show()
+            self._buttonProjectFromTiffFolder1.setEnabled(False)
+            self.cbCalGrid.hide()
             # self._buttonOpen.setEnabled(False)
             # self._buttonDelete.setEnabled(False)
             # self._buttonOpen.hide()
             # self._buttonDelete.hide()
 
     def userSelectionChanged(self):
+        logger.info(f'caller:{inspect.stack()[1].function}')
         caller = inspect.stack()[1].function
         # if caller == 'initTableData':
         #     return
         row = self.user_projects.table.currentIndex().row()
         try:
-            path = self.user_projects.table.item(row, 9).text()
+            path = self.user_projects.table.item(row, 1).text()
         except:
             # path = ''
             # logger.warning(f'No file path at project_table.currentIndex().row()! '
@@ -335,119 +409,171 @@ class OpenProject(QWidget):
             return
         # logger.info(f'path: {path}')
         self.selected_file = path
+        logger.info(f'selected: {self.selected_file}')
         self.setSelectionPathText(path)
 
+        self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
+        self.cbCalGrid.setVisible(validate_tiff_folder(path))
 
-    def new_project(self, mendenhall=False):
+
+    '''New Project From TIFFs (1/3)'''
+    def createProjectFromTiffFolder(self):
+        logger.info(f'caller:{inspect.stack()[1].function}')
+        cur_path = self.selectionReadout.text()
+        if validate_tiff_folder(cur_path):
+            # if cfg.data['data']['has_cal_grid']:
+            self.le_project_name_w.show()
+            pathlib = Path(cur_path)
+            path_par = str(pathlib.parent.absolute())
+            self.le_project_name.setText(os.path.join(path_par,'myproject.swiftir'))
+            self.NEW_PROJECT_IMAGES = natural_sort(glob(os.path.join(cur_path, '*.tif')) + glob(os.path.join(cur_path, '*.tiff')))
+
+    '''New Project From TIFFs (2/3)'''
+    def skipToConfig(self):
+        logger.critical('')
+        self.NEW_PROJECT_PATH = self.le_project_name.text()
+        # self.USE_CAL_GRID = self.cbCalGrid.isChecked()
+        self.new_project(skip_to_config=True)
+        self.le_project_name_w.hide()
+        self.le_project_name.setText('')
+
+
+    def new_project(self, mendenhall=False, skip_to_config=False):
         logger.info('\n\nStarting A New Project...\n')
         cfg.mw.tell('Starting A New Project...')
-        self.hideMainUI()
-        cfg.mw.stopPlaybackTimer()
-        cfg.mw.tell('New Project Path:')
-        self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
-        cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
 
-        '''Step 1/3'''
-        self.name_dialog = QFileDialog()
-        self.vbl_main.addWidget(self.name_dialog)
-        self.name_dialog.setContentsMargins(0,0,0,0)
-        self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
+        if not skip_to_config:
+            self.hideMainUI()
+            cfg.mw.stopPlaybackTimer()
+            cfg.mw.tell('New Project Path:')
+            self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
+            cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
 
-        self.name_dialog.setNameFilter("Text Files (*.swiftir)")
-        self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
-        self.name_dialog.setViewMode(QFileDialog.Detail)
-        self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
-        self.name_dialog.setModal(True)
-        # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
+            '''Step 1/3'''
+            self.name_dialog = QFileDialog()
+            self.vbl_main.addWidget(self.name_dialog)
+            self.name_dialog.setContentsMargins(0,0,0,0)
+            self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
+            self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
 
-
-        urls = self.name_dialog.sidebarUrls()
-
-        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
-
-        if '.tacc.utexas.edu' in platform.node():
-            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-            urls.append(QUrl.fromLocalFile(corral_dir))
-
-        else:
-            urls.append(QUrl.fromLocalFile(QDir.homePath()))
-            urls.append(QUrl.fromLocalFile('/tmp'))
-            if os.path.exists('/Volumes'):
-                urls.append(QUrl.fromLocalFile('/Volumes'))
-            if is_joel():
-                if os.path.exists('/Volumes/3dem_data'):
-                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-        self.name_dialog.setSidebarUrls(urls)
+            self.name_dialog.setNameFilter("Text Files (*.swiftir)")
+            self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
+            self.name_dialog.setViewMode(QFileDialog.Detail)
+            self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
+            self.name_dialog.setModal(True)
+            # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
 
 
-        places = getSideBarPlaces()
-        logger.info(str(places))
+            urls = self.name_dialog.sidebarUrls()
 
-        sidebar = self.name_dialog.findChild(QListView, "sidebar")
-        delegate = StyledItemDelegate(sidebar)
-        delegate.mapping = places
-        sidebar.setItemDelegate(delegate)
-        # urls = self.name_dialog.sidebarUrls()
-        # logger.info(f'urls: {urls}')
+            corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
 
-        cfg.mw.set_status('Awaiting User Input...')
-        if self.name_dialog.exec() == QFileDialog.Accepted:
-            logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
-            filename = self.name_dialog.selectedFiles()[0]
-            self.new_project_lab2.setText(filename)
-            self.name_dialog.close()
-        else:
-            self.showMainUI()
-            self.name_dialog.close()
-            return 1
+            if '.tacc.utexas.edu' in platform.node():
+                urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+                urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+                urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+                urls.append(QUrl.fromLocalFile(corral_dir))
 
+            else:
+                urls.append(QUrl.fromLocalFile(QDir.homePath()))
+                urls.append(QUrl.fromLocalFile('/tmp'))
+                if os.path.exists('/Volumes'):
+                    urls.append(QUrl.fromLocalFile('/Volumes'))
+                if is_joel():
+                    if os.path.exists('/Volumes/3dem_data'):
+                        urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+            self.name_dialog.setSidebarUrls(urls)
 
 
+            places = getSideBarPlacesProjectName()
+            logger.info(str(places))
 
-        if filename in ['', None]:
-            logger.info('New Project Canceled.')
-            cfg.mw.warn("New Project Canceled.")
-            self.showMainUI()
-            return
-        if not filename.endswith('.swiftir'):
-            filename += ".swiftir"
-        if os.path.exists(filename):
-            logger.warning("The file '%s' already exists." % filename)
-            cfg.mw.warn("The file '%s' already exists." % filename)
-            path_proj = os.path.splitext(filename)[0]
-            cfg.mw.tell(f"Removing Extant Project Directory '{path_proj}'...")
-            logger.info(f"Removing Extant Project Directory '{path_proj}'...")
-            shutil.rmtree(path_proj, ignore_errors=True)
-            cfg.mw.tell(f"Removing Extant Project File '{path_proj}'...")
-            logger.info(f"Removing Extant Project File '{path_proj}'...")
-            os.remove(filename)
+            sidebar = self.name_dialog.findChild(QListView, "sidebar")
+            delegate = StyledItemDelegate(sidebar)
+            delegate.mapping = places
+            sidebar.setItemDelegate(delegate)
+            # urls = self.name_dialog.sidebarUrls()
+            # logger.info(f'urls: {urls}')
 
+            cfg.mw.set_status('Awaiting User Input...')
+            if self.name_dialog.exec() == QFileDialog.Accepted:
+                logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
+                filename = self.name_dialog.selectedFiles()[0]
+                self.new_project_lab2.setText(filename)
+                self.name_dialog.close()
+            else:
+                self.showMainUI()
+                self.name_dialog.close()
+                return 1
 
-        path, extension = os.path.splitext(filename)
+            if filename in ['', None]:
+                logger.info('New Project Canceled.')
+                cfg.mw.warn("New Project Canceled.")
+                self.showMainUI()
+                return
+            if not filename.endswith('.swiftir'):
+                filename += ".swiftir"
+            if os.path.exists(filename):
+                logger.warning("The file '%s' already exists." % filename)
+                cfg.mw.warn("The file '%s' already exists." % filename)
+                path_proj = os.path.splitext(filename)[0]
+                cfg.mw.tell(f"Removing Extant Project Directory '{path_proj}'...")
+                logger.info(f"Removing Extant Project Directory '{path_proj}'...")
+                shutil.rmtree(path_proj, ignore_errors=True)
+                cfg.mw.tell(f"Removing Extant Project File '{path_proj}'...")
+                logger.info(f"Removing Extant Project File '{path_proj}'...")
+                os.remove(filename)
+
+            self.NEW_PROJECT_PATH = filename
+
+        path,_ = os.path.splitext(self.NEW_PROJECT_PATH)
+        self.NEW_PROJECT_PATH = path + '.swiftir'
+
         # cfg.data = DataModel(name=path, mendenhall=mendenhall)
-        cfg.data = dm = DataModel(name=path)
+        cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
         # cfg.data.set_defaults()
+
+        if skip_to_config:
+            cfg.data['data']['has_cal_grid'] = self.cbCalGrid.isChecked()
+
 
         # cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
         # cfg.dataById[id(cfg.project_tab)] = cfg.data
-
         self.new_project_lab2.setText(path)
+
 
         # makedirs_exist_ok(path, exist_ok=True)
 
         if mendenhall:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
         else:
-            '''Step 2/3...'''
-            result = self.import_multiple_images(path)
-            if result == 1:
-                cfg.mw.warn('No images were imported - canceling new project')
-                self.showMainUI()
-                return
-            # cfg.data = dm
+
+            if not skip_to_config:
+                '''Step 2/3...'''
+                result = self.import_multiple_images(path)
+                if result == 1:
+                    cfg.mw.warn('No images were imported - canceling new project')
+                    self.showMainUI()
+                    return
+
+
+            self.NEW_PROJECT_IMAGES = natural_sort(self.NEW_PROJECT_IMAGES)
+
+            if cfg.data['data']['has_cal_grid']:
+                self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
+                cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
+                try:
+                    shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
+                except:
+                    print_exception()
+
+
+            cfg.data.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
+            cfg.mw.tell(f'Importing {len(self.NEW_PROJECT_IMAGES)} Images...')
+            logger.info(f'Selected Images: \n{self.NEW_PROJECT_IMAGES}')
+            cfg.data.append_images(self.NEW_PROJECT_IMAGES)
+
+            cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
 
             cfg.data.set_defaults()
 
@@ -459,7 +585,6 @@ class OpenProject(QWidget):
             dialog.setWindowFlags(Qt.FramelessWindowHint)
             self.vbl_main.addWidget(dialog)
             # cfg.data = dm
-
             result = dialog.exec()
             self.showMainUI()
             # logger.info(f'result = {result}, type = {type(result)}')
@@ -552,7 +677,7 @@ class OpenProject(QWidget):
         #             urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
         # self.name_dialog.setSidebarUrls(urls)
 
-        places = getSideBarPlaces()
+        places = getSideBarPlacesImportImages()
 
         sidebar = self.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
@@ -576,36 +701,28 @@ class OpenProject(QWidget):
             self.showMainUI()
             return 1
 
-        files_sorted = natural_sort(filenames)
+        self.NEW_PROJECT_IMAGES = natural_sort(filenames)
 
-        cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
-        cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
-        logger.info(f'Selected Images: \n{files_sorted}')
-
-        # for f in files_sorted:
-        #     cfg.data.append_image(f)
-        cfg.data.append_images(files_sorted)
-
-        cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
+        # files_sorted = natural_sort(filenames)
+        # cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
+        # cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
+        # logger.info(f'Selected Images: \n{files_sorted}')
+        # cfg.data.append_images(files_sorted)
         # cfg.data.link_reference_sections()
 
         logger.critical(f'destination: {cfg.data.dest()}')
 
-        if cfg.data['data']['has_cal_grid']:
-            files_sorted = files_sorted[1:]
-            cfg.data['data']['cal_grid_path'] = files_sorted[0]
-            try:
-                shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
-            except:
-                print_exception()
-
 
 
     def setSelectionPathText(self, path):
+        logger.info('')
         self.selectionReadout.setText(path)
         # logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
 
-        if validate_project_selection(path) or validate_zarr_selection(path):
+        self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
+        self.cbCalGrid.setVisible(validate_tiff_folder(path))
+
+        if validate_project_selection(path) or validate_zarr_selection(path) or validate_tiff_folder(path):
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
             self._buttonDelete.setEnabled(True)
@@ -613,6 +730,9 @@ class OpenProject(QWidget):
             self.validity_label.show()
             self._buttonOpen.setEnabled(False)
             self._buttonDelete.setEnabled(False)
+
+        if validate_tiff_folder(path):
+            pass
 
 
     def open_zarr_selected(self):
@@ -750,15 +870,33 @@ class OpenProject(QWidget):
         # else:
         #     super().keyPressEvent(event)
 
+def getSideBarPlacesProjectName():
+    corral_projects_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
+    corral_images_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
 
-
-def getSideBarPlaces():
-    corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
     places = {
         QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
         QUrl.fromLocalFile(os.getenv('WORK')): 'Work (' + str(os.getenv('WORK')) + ')',
         QUrl.fromLocalFile(os.getenv('SCRATCH')): 'Scratch (' + str(os.getenv('SCRATCH')) + ')',
-        QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
+        QUrl.fromLocalFile(corral_projects_dir): 'Projects_AlignEM',
+    }
+    if os.path.exists('/Volumes'):
+        places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
+    if is_joel():
+        if os.path.exists('/Volumes/3dem_data'):
+            places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
+
+    return places
+
+def getSideBarPlacesImportImages():
+    corral_projects_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
+    corral_images_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
+
+    places = {
+        QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
+        QUrl.fromLocalFile(os.getenv('WORK')): 'Work (' + str(os.getenv('WORK')) + ')',
+        QUrl.fromLocalFile(os.getenv('SCRATCH')): 'Scratch (' + str(os.getenv('SCRATCH')) + ')',
+        QUrl.fromLocalFile(corral_images_dir): 'EM_Series',
     }
     if os.path.exists('/Volumes'):
         places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
@@ -789,7 +927,7 @@ class UserProjects(QWidget):
 
         # self.initial_row_height = 64
         # self.ROW_HEIGHT = 64
-        self.ROW_HEIGHT = 42
+        self.ROW_HEIGHT = 80
 
         self.counter1 = 0
         self.counter2 = 0
@@ -797,7 +935,6 @@ class UserProjects(QWidget):
         # self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
-        # self.table.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # self.table.setAlternatingRowColors(True)
         # self.table = TableWidget(self)
@@ -814,7 +951,10 @@ class UserProjects(QWidget):
         self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
-        self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
+        # self.table.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
+        # self.table.horizontalHeader().setDefaultAlignment(Qt.AlignCenter | Qt.Alignment(Qt.TextWordWrap))
+        self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
+        self.table.horizontalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setStyleSheet("QHeaderView {font-size: 10pt; color: #222222; font-weight: 600;}")
         def countCurrentItemChangedCalls(): self.counter2 += 1
         self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
@@ -835,7 +975,7 @@ class UserProjects(QWidget):
         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
 
-        self.table.setColumnCount(10)
+        self.table.setColumnCount(12)
         self.set_headers()
 
         self.layout = QVBoxLayout()
@@ -844,15 +984,17 @@ class UserProjects(QWidget):
         # self.layout.addWidget(controls)
         self.setLayout(self.layout)
         self.set_data()
-        self.updateRowHeight(self.ROW_HEIGHT)
+        # self.updateRowHeight(self.ROW_HEIGHT)
         # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
 
 
     def updateRowHeight(self, h):
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, h)
-        self.table.setColumnWidth(1, h)
         self.table.setColumnWidth(2, h)
+        self.table.setColumnWidth(3, h)
+        self.table.setColumnWidth(4, h)
+        # self.table.setColumnWidth(10, h)
 
 
     # def userSelectionChanged(self):
@@ -876,15 +1018,18 @@ class UserProjects(QWidget):
     def set_headers(self):
         self.table.setHorizontalHeaderLabels([
             "Name",
+            "Location",
             "First\nSection",
             "Last\nSection",
+            "Cal\nGrid",
             "Created",
             "Last\nOpened",
             "#\nImgs",
             "Image\nSize (px)",
             "Disk Space\n(Bytes)",
             "Disk Space\n(Gigabytes)",
-            "Location"])
+            "Tags"
+        ])
 
         header = self.table.horizontalHeader()
         # header.setFrameStyle(QFrame.Box | QFrame.Plain)
@@ -896,52 +1041,78 @@ class UserProjects(QWidget):
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
         # self.set_column_headers()
+
+        font0 = QFont()
+        font0.setPointSize(9)
+
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             self.table.insertRow(i)
+            # for j, item in enumerate(row):
             for j, item in enumerate(row):
+
+                logger.info(f'\nj = {j} item = {item}')
                 if j == 0:
+                    # print(f'')
                     # item = "<span style='font-size: 10px;'>" + item + "</span>"
                     # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
                     # # lab = QLabel("&nbsp;<span style='font-size: 11px; font-weight: 600;'>" + str(item) + "</span>")
                     # lab.setWordWrap(True)
                     # self.table.setCellWidget(i, j, lab)
-                    item = QTableWidgetItem(str(item))
+                    # it = QTableWidgetItem()
+                    # item.setText(str(item))
+                    twi = QTableWidgetItem(str(item))
+                    # twi = QTableWidgetItem(('\n'.join(textwrap.wrap(item, width=12)).replace("_", " ")))
+                    # item.setTextAlignment(Qt.AlignJustify)
                     font = QFont()
                     font.setPointSize(9)
                     font.setBold(True)
-                    item.setFont(font)
-                    self.table.setItem(i, j, item)
-                elif j in (1, 2):
+                    twi.setFont(font)
+                    # self.table.setItem(i, j, item)
+                    self.table.setItem(i, j, twi)
+                if j == 1:
+                    twi = QTableWidgetItem(str(item))
+                    twi.setFont(font0)
+                    self.table.setItem(i, j, twi)
+                elif j in (2, 3, 4):
                     thumbnail = Thumbnail(self, path=item)
                     self.table.setCellWidget(i, j, thumbnail)
+                elif j in (5,6):
+                    # item = QTableWidgetItem(('\n'.join(textwrap.wrap(item, width=12)).replace("_", " ")))
+                    twi = QTableWidgetItem(item.replace("_", " "))
+                    twi.setTextAlignment(Qt.AlignCenter)
+                    twi.setFont(font0)
+                    self.table.setItem(i, j, twi)
+                elif j == 7:
+                    twi = QTableWidgetItem(str(item))
+                    twi.setFont(font0)
+                    twi.setTextAlignment(Qt.AlignCenter)
+                    self.table.setItem(i, j, twi)
+                # elif j == 10:
+                #     thumbnail = Thumbnail(self, path=item)
+                #     self.table.setCellWidget(i, j, thumbnail)
+
                 else:
-                    # table_item = QTableWidgetItem(str(item))
-
-                    # self.table.setItem(i, j, table_item)
-                    # item = str(item)
-                    # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                    # lab = QLabel("&nbsp;<span style='font-size: 10px;'>" + str(item) + "</span>")
-                    # lab.setWordWrap(True)
-                    # self.table.setCellWidget(i, j, lab)
-                    item = QTableWidgetItem(str(item))
-                    font = QFont()
-                    font.setPointSize(9)
-                    item.setFont(font)
-                    self.table.setItem(i, j, item)
-        self.table.setColumnWidth(0, 128)
-        self.table.setColumnWidth(1, 80)
-        self.table.setColumnWidth(2, 80)
-        self.table.setColumnWidth(3, 70)
-        self.table.setColumnWidth(4, 70)
-        self.table.setColumnWidth(5, 40)
-        self.table.setColumnWidth(6, 60)
-        self.table.setColumnWidth(7, 80)
-        self.table.setColumnWidth(8, 80)
-        self.table.setColumnWidth(9, 120)
-        # self.row_height_slider.setValue(self.initial_row_height)
-        self.updateRowHeight(self.ROW_HEIGHT) #0508-
-
+                    twi = QTableWidgetItem(str(item))
+                    twi.setFont(font0)
+                    self.table.setItem(i, j, twi)
+        self.table.setColumnWidth(0, 70)
+        self.table.setColumnWidth(1, 100)
+        self.table.setColumnWidth(2, self.ROW_HEIGHT) # <first thumbnail>
+        self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
+        self.table.setColumnWidth(4, self.ROW_HEIGHT) # <last thumbnail>
+        self.table.setColumnWidth(5, 70)
+        self.table.setColumnWidth(6, 70)
+        self.table.setColumnWidth(7, 50)
+        self.table.setColumnWidth(8, 70)
+        self.table.setColumnWidth(9, 70)
+        self.table.setColumnWidth(10, 70)
+        # self.table.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
+        self.table.setColumnWidth(11, 70) # <extra thumbnail>
+        # self.table.setColumnWidth(10, 100)
+        # self.updateRowHeight(self.ROW_HEIGHT) #0508-
+        for section in range(self.table.verticalHeader().count()):
+            self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
 
 
     def get_data(self):
@@ -950,9 +1121,10 @@ class UserProjects(QWidget):
         logger.info('Loading known projects into table view...')
         self.project_paths = get_project_list()
         projects, thumbnail_first, thumbnail_last, created, modified, \
-        n_sections, img_dimensions, bytes, gigabytes, location = \
-            [], [], [], [], [], [], [], [], [], []
+        n_sections, location, img_dimensions, bytes, gigabytes, extra = \
+            [], [], [], [], [], [], [], [], [], [], []
         for p in self.project_paths:
+
             try:
                 with open(p, 'r') as f:
                     dm = DataModel(data=json.load(f), quietly=True)
@@ -969,6 +1141,8 @@ class UserProjects(QWidget):
             try:    projects.append(os.path.basename(p))
             except: projects.append('Unknown')
             project_dir = os.path.splitext(p)[0]
+            thumb_path = os.path.join(project_dir, 'thumbnails')
+            absolute_content_paths = list_paths_absolute(thumb_path)
             try:
                 if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
                     logger.info('Getting project size...')
@@ -981,17 +1155,29 @@ class UserProjects(QWidget):
             except:
                 bytes.append('Unknown')
                 gigabytes.append('Unknown')
-            thumb_path = os.path.join(project_dir, 'thumbnails')
-            try:    thumbnail_first.append(list_paths_absolute(thumb_path)[0])
+            try:    thumbnail_first.append(absolute_content_paths[0])
             except: thumbnail_first.append('No Thumbnail')
-            try:    thumbnail_last.append(list_paths_absolute(thumb_path)[-1])
+            try:    thumbnail_last.append(absolute_content_paths[-1])
             except: thumbnail_last.append('No Thumbnail')
-            # logger.info('Getting project location...')
             try:    location.append(p)
             except: location.append('Unknown')
+            try:    location.append(p)
+            except: location.append('Unknown')
+
+            extra_toplevel_paths = glob(f'{project_dir}/*.tif')
+            if extra_toplevel_paths:
+                extra.append(extra_toplevel_paths[0])
+            else:
+                extra.append('')
+            extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
+
+            # logger.info('Getting project location...')
+
         # logger.info('<<<< get_data <<<<')
-        return zip(projects, thumbnail_first, thumbnail_last, created, modified,
-                   n_sections, img_dimensions, bytes, gigabytes, location)
+        # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
+        #            n_sections, img_dimensions, bytes, gigabytes, extra)
+        return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,
+                   n_sections, img_dimensions, bytes, gigabytes)
 
 
 
@@ -1028,7 +1214,23 @@ class Thumbnail(QWidget):
         self.setLayout(self.layout)
 
 
+def validate_tiff_folder(path) -> bool:
+    logger.info(f'caller:{inspect.stack()[1].function}')
+    path, extension = os.path.splitext(path)
+    contents = glob(os.path.join(path, '*'))
+    n_files = len(contents)
+    tif_files = glob(os.path.join(path, '*.tif'))
+    tiff_files = glob(os.path.join(path, '*.tiff'))
+    n_valid_files = len(tif_files) + len(tiff_files)
+    n_invalid_files = n_files - n_valid_files
+    # print(f'n_files: {n_files}')
+    # print(f'# valid files: {n_valid_files}')
+    # print(f'# invalid files: {n_invalid_files}')
+    return (n_valid_files > 0) and (n_invalid_files == 0)
+
+
 def validate_project_selection(path) -> bool:
+    logger.info(f'caller:{inspect.stack()[1].function}')
     # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     path, extension = os.path.splitext(path)
@@ -1039,6 +1241,7 @@ def validate_project_selection(path) -> bool:
         return True
 
 def validate_zarr_selection(path) -> bool:
+    logger.info(f'caller:{inspect.stack()[1].function}')
     # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     if os.path.isdir(path):
