@@ -386,18 +386,7 @@ class OpenProject(QWidget):
         # self.name_dialog.setSidebarUrls(urls)
 
 
-        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
-        places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
-            QUrl.fromLocalFile(os.getenv('WORK')):  'Work (' + str(os.getenv('WORK')) + ')',
-            QUrl.fromLocalFile(os.getenv('SCRATCH')):  'Scratch (' + str(os.getenv('SCRATCH')) + ')',
-            QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
-        }
-        if os.path.exists('/Volumes'):
-            places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
-        if is_joel():
-            if os.path.exists('/Volumes/3dem_data'):
-                places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
+        places = getSideBarPlaces()
 
         sidebar = self.name_dialog.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
@@ -540,19 +529,7 @@ class OpenProject(QWidget):
 
         dialog.setSidebarUrls(urls)
 
-        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
-
-        places = {
-            QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
-            QUrl.fromLocalFile(os.getenv('WORK')):  'Work (' + str(os.getenv('WORK')) + ')',
-            QUrl.fromLocalFile(os.getenv('SCRATCH')):  'Scratch (' + str(os.getenv('SCRATCH')) + ')',
-            QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
-        }
-        if os.path.exists('/Volumes'):
-            places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
-        if is_joel():
-            if os.path.exists('/Volumes/3dem_data'):
-                places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
+        places = getSideBarPlaces()
 
         sidebar = self.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
@@ -750,6 +727,23 @@ class OpenProject(QWidget):
         # else:
         #     super().keyPressEvent(event)
 
+
+
+def getSideBarPlaces():
+    corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/'
+    places = {
+        QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
+        QUrl.fromLocalFile(os.getenv('WORK')): 'Work (' + str(os.getenv('WORK')) + ')',
+        QUrl.fromLocalFile(os.getenv('SCRATCH')): 'Scratch (' + str(os.getenv('SCRATCH')) + ')',
+        QUrl.fromLocalFile(corral_dir): 'NeuroNex Shared',
+    }
+    if os.path.exists('/Volumes'):
+        places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
+    if is_joel():
+        if os.path.exists('/Volumes/3dem_data'):
+            places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
+
+    return places
 
 # class TableWidget(QTableWidget):
 #     def __init__(self, parent=None):
