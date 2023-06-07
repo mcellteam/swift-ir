@@ -669,7 +669,11 @@ class EMViewerSnr(AbstractEMViewer):
         logger.info(f'Initializing {self.type} [{caller}]...')
 
         self.coordinate_space = self.getCoordinateSpace()
-        self.get_tensors()
+        try:
+            self.get_tensors()
+        except:
+            print_exception()
+            return
 
         cfg.refLV = ng.LocalVolume(
             volume_type='image',
