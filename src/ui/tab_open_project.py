@@ -62,7 +62,7 @@ class OpenProject(QWidget):
         self.userProjectsWidget = QWidget()
         # lab = QLabel('Saved AlignEM-SWiFT Projects:')
         lab = QLabel('Project Management')
-        # lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
+        lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
 
 
         self.row_height_slider = Slider(self)
@@ -125,19 +125,16 @@ class OpenProject(QWidget):
         # self.vbl_projects.addWidget(self.new_project_header)
         self.userProjectsWidget.setLayout(self.vbl_projects)
 
+
+
+
         # User Files Widget
         self.userFilesWidget = QWidget()
-        lab = QLabel('<h3>Open (Project or Zarr):</h3>')
+        lab = QLabel('Open Project or,\nOpen Zarr or,\nInitialize alignment project from folder of TIFF images')
+        lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
-
-        w = QWidget()
-        w.setContentsMargins(0, 0, 0, 0)
-        hbl = QHBoxLayout()
-        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
-        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignRight)
-
+        vbl.addWidget(HWidget(lab))
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
@@ -219,7 +216,7 @@ class OpenProject(QWidget):
 
         self.le_project_name.textChanged.connect(fn)
         # self.le_project_name.textEdited.connect(fn)
-        self.le_project_name.setFixedHeight(22)
+        self.le_project_name.setFixedHeight(20)
 
 
 
@@ -250,7 +247,7 @@ class OpenProject(QWidget):
         self.le_project_name_w = HWidget(QLabel('  '),self.lab_project_name, QLabel('  '), self.le_project_name_w_overlay, QLabel('    '),
                                          self._buttonProjectFromTiffFolder2, QLabel('    '),
                                          self._buttonCancelProjectFromTiffFolder, QLabel('    '))
-        self.le_project_name_w.setFixedHeight(24)
+        self.le_project_name_w.setFixedHeight(20)
         self.le_project_name_w.hide()
 
 
@@ -380,7 +377,7 @@ class OpenProject(QWidget):
 
         self.setLayout(self.vbl_main)
 
-    # self.setStyleSheet(style)
+
 
     def hideMainUI(self):
         self._splitter.hide()
