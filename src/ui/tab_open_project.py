@@ -1086,7 +1086,7 @@ class UserProjects(QWidget):
             # for j, item in enumerate(row):
             for j, item in enumerate(row):
 
-                logger.info(f'\nj = {j} item = {item}')
+                # logger.info(f'\nj = {j} item = {item}')
                 if j == 0:
                     # print(f'')
                     # item = "<span style='font-size: 10px;'>" + item + "</span>"
