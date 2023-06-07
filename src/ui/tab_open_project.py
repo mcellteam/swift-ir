@@ -547,6 +547,7 @@ class OpenProject(QWidget):
         self.new_project_lab2.setText(path)
 
 
+
         # makedirs_exist_ok(path, exist_ok=True)
 
         if mendenhall:
@@ -581,6 +582,8 @@ class OpenProject(QWidget):
             cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
 
             cfg.data.set_defaults()
+
+            self.le_project_name_w.hide()
 
             '''Step 3/3'''
             self.new_project_lab1.setText('New Project (Step: 3/3) - Global Configuration')
