@@ -2,9 +2,10 @@
 
 import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
-    QPushButton, QSizePolicy, QAbstractItemView
+    QPushButton, QSizePolicy, QAbstractItemView, QLineEdit
 from qtpy.QtCore import Slot, Qt, QSize, QDir
 from src.helpers import is_joel, is_tacc
+from src.ui.layouts import HWidget, VWidget
 import src.config as cfg
 
 __all__ = ['FileBrowser']
@@ -80,11 +81,11 @@ class FileBrowser(QWidget):
         self._btn_showFileBrowser.clicked.connect(self._showHideFb)
 
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(4, 2, 4, 2)
+        hbl.setContentsMargins(2,2,2,2)
         hbl.addWidget(self._btn_showFileBrowser, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addStretch()
         self.controls = QWidget()
-        self.controls.setFixedHeight(24)
+        self.controls.setFixedHeight(18)
         self.controls.setLayout(hbl)
         self.controls.hide()
 
@@ -141,35 +142,66 @@ class FileBrowser(QWidget):
         self.buttonCreateProject.clicked.connect(self.createProjectFromFolder)
 
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 0, 0, 0)
+        hbl.setContentsMargins(2,2,2,2)
         if not is_tacc():
             hbl.addWidget(self.buttonSetRootRoot)
         if not is_tacc():
             hbl.addWidget(self.buttonSetRootHome)
-        if self.path_scratch: hbl.addWidget(self.buttonSetRootScratch)
-        if self.path_work: hbl.addWidget(self.buttonSetRootWork)
+        if self.path_scratch:
+            hbl.addWidget(self.buttonSetRootScratch)
+        if self.path_work:
+            hbl.addWidget(self.buttonSetRootWork)
+        if is_tacc():
+            hbl.addWidget(self.buttonSetRoot_corral_projects)
 
         if is_joel():
             if os.path.exists(self.path_special):
                 hbl.addWidget(self.buttonSetRootSpecial)
 
         self.controlsNavigation = QWidget()
-        self.controlsNavigation.setFixedHeight(24)
+        self.controlsNavigation.setFixedHeight(18)
         self.controlsNavigation.setLayout(hbl)
         self.controlsNavigation.hide()
+
+        self.le_navigate_to = QLineEdit()
+        self.le_navigate_to.setStyleSheet('font-size: 8px;')
+        self.le_navigate_to.setFixedHeight(20)
+        self.le_navigate_to.setReadOnly(False)
+        # if is_tacc():
+        #     self.le_navigate_to.setPlaceholderText('/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series')
+        # else:
+        #     self.le_navigate_to.setPlaceholderText(os.path.expanduser('~'))
+        self.le_navigate_to.setPlaceholderText('<enter path>')
+
+        self.btn_go = QPushButton('Go')
+        self.btn_go.setStyleSheet('font-size: 9px;')
+        self.btn_go.setFixedSize(QSize(36,16))
+        self.btn_go.clicked.connect(lambda: self.navigateTo(self.le_navigate_to.text()))
+
+        self.nav_widget = HWidget(self.le_navigate_to, self.btn_go)
+        self.nav_widget.layout.setContentsMargins(2,2,2,2)
+        self.nav_widget.layout.setSpacing(4)
+        self.nav_widget.setFixedHeight(22)
 
         vbl = QVBoxLayout(self)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.treeview)
-        vbl.addWidget(self.controls, alignment=Qt.AlignmentFlag.AlignLeft)
+        vbl.addWidget(self.nav_widget)
         vbl.addWidget(self.controlsNavigation, alignment=Qt.AlignmentFlag.AlignLeft)
-        # vbl.setStretch(1,0)
+        vbl.addWidget(self.controls, alignment=Qt.AlignmentFlag.AlignLeft)
         self.setLayout(vbl)
 
     # def selectionChanged(self):
     #     cfg.selected_file = self.getSelectionPath()
     #     logger.info(f'Project Selection Changed! {cfg.selected_file}')
     #     # cfg.tab.setSelectionPathText(cfg.selected_file)
+
+
+    def navigateTo(self, path):
+        logger.info(f'Navigating to: {path}')
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(path))
+        except: cfg.main_window.warn('Directory cannot be accessed')
+        pass
 
 
     def createProjectFromFolder(self):
