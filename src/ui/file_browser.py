@@ -128,12 +128,12 @@ class FileBrowser(QWidget):
         if is_tacc():
             self.buttonSetRoot_corral_projects = QPushButton('Projects_AlignEM')
             self.buttonSetRoot_corral_projects.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_projects.setFixedSize(button_size)
+            self.buttonSetRoot_corral_projects.setFixedSize(QSize(70,16))
             self.buttonSetRoot_corral_projects.clicked.connect(self.setRoot_corral_projects)
 
             self.buttonSetRoot_corral_images = QPushButton('EM_Series')
             self.buttonSetRoot_corral_images.setStyleSheet('font-size: 9px;')
-            self.buttonSetRoot_corral_images.setFixedSize(button_size)
+            self.buttonSetRoot_corral_images.setFixedSize(QSize(70,16))
             self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images)
 
         self.buttonCreateProject = QPushButton('Create Project')
