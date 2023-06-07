@@ -211,6 +211,7 @@ class OpenProject(QWidget):
         self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
         self.lab_project_name.setFixedHeight(18)
         self.le_project_name = QLineEdit()
+        self.le_project_name.setReadOnly(False)
         def fn():
             self._buttonProjectFromTiffFolder2.setEnabled(os.path.exists(self.le_project_name.text()))
             self.lab_path_exists.setVisible(os.path.exists(self.le_project_name.text()))
@@ -454,6 +455,7 @@ class OpenProject(QWidget):
         if validate_tiff_folder(cur_path):
             # if cfg.data['data']['has_cal_grid']:
             self.le_project_name_w.show()
+            self.le_project_name.setFocus()
             pathlib = Path(cur_path)
             path_par = str(pathlib.parent.absolute())
             self.le_project_name.setText(os.path.join(path_par,'myproject.swiftir'))
