@@ -25,8 +25,8 @@ class FileBrowser(QWidget):
         self.fileSystemModel.setReadOnly(False)
         self.fileSystemModel.setFilter(QDir.AllEntries | QDir.Hidden)
         self.treeview.setModel(self.fileSystemModel)
-        # root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
-        root = self.fileSystemModel.setRootPath('/Users/joelyancey/glanceem_swift/test_images')
+        root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
+        # root = self.fileSystemModel.setRootPath('/Users/joelyancey/glanceem_swift/test_images')
         # root = self.fileSystemModel.setRootPath('/')
         self.treeview.setRootIndex(root)
 
