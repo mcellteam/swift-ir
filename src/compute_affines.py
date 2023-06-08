@@ -22,7 +22,7 @@ sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0])
 sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
 from src.data_model import DataModel
 from src.funcs_image import SetStackCafm
-from src.generate_aligned import generate_aligned
+from src.generate_aligned import GenerateAligned
 from src.thumbnailer import Thumbnailer
 from src.mp_queue import TaskQueue
 from src.data_model import DataModel
@@ -30,17 +30,17 @@ from src.background_worker import BackgroundWorker
 import src.config as cfg
 
 
-__all__ = ['compute_affines']
+__all__ = ['ComputeAffines']
 
 logger = logging.getLogger(__name__)
 
-def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False, dm=None):
+def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False, dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     caller = inspect.stack()[1].function
     scale_val = get_scale_val(scale)
     # logger.info(f'use_gui = {use_gui}')
 
-    logger.info(f'>>>> compute_affines [{caller}] >>>>')
+    logger.info(f'>>>> ComputeAffines [{caller}] >>>>')
 
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
@@ -290,11 +290,11 @@ def compute_affines(scale, path, start=0, end=None, use_gui=True, renew_od=False
 
             try:
                 # if cfg.USE_EXTRA_THREADING and use_gui:
-                #     cfg.mw.worker = BackgroundWorker(fn=generate_aligned(
+                #     cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
                 #         dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
                 #     cfg.mw.threadpool.start(cfg.mw.worker)
                 # else:
-                generate_aligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
+                GenerateAligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
 
             except:
                 print_exception()
@@ -488,7 +488,7 @@ if __name__ == '__main__':
         scale = 'scale_4'
     start = args.start
     end = args.end
-    dm = compute_affines(scale=scale, path=path, start=start, end=end, use_gui=False, bounding_box=args.bounding_box)
+    dm = ComputeAffines(scale=scale, path=path, start=start, end=end, use_gui=False, bounding_box=args.bounding_box)
     save2file(dm=dm, name=dm.dest())
 
 

@@ -5,6 +5,11 @@ __all__ = []
 
 from src.data_model import DataModel
 
+from . import funcs_zarr
+from .funcs_zarr import *
+__all__.extend(funcs_zarr.__all__)
+__all__.append('funcs_zarr')
+
 from . import ui
 from .ui import *
 __all__.extend(ui.__all__)
@@ -41,9 +46,9 @@ __all__.extend(funcs_image.__all__)
 # from .funcs_zarr import *
 # __all__.extend(funcs_zarr.__all__)
 
-from . import funcs_zarr
-from .funcs_zarr import *
-__all__.extend(funcs_zarr.__all__)
+# from . import funcs_zarr
+# from .funcs_zarr import *
+# __all__.extend(funcs_zarr.__all__)
 # __all__.append('funcs_zarr')
 
 from . import mp_queue
@@ -56,6 +61,10 @@ __all__.extend(thumbnailer.__all__)
 
 from . import save_bias_analysis
 from .save_bias_analysis import *
+
+from . import generate_aligned
+from .generate_aligned import *
+__all__.extend(generate_aligned.__all__)
 
 
 
