@@ -130,6 +130,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def on_state_changed_any(self):
         if self._blinkState:
             return
+        if getData('state,blink'):
+            return
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
         if self._zmag_set < 10:
             self._zmag_set += 1
@@ -139,6 +141,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def on_state_changed(self):
 
         if self._blinking:
+            return
+        if getData('state,blink'):
             return
         if self._settingZoom:
             return

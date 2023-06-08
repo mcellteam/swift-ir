@@ -1493,6 +1493,8 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
         # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
+        # if getData('state,blink'):
+        #     return
 
         # if cfg.emViewer:
         #     cfg.emViewer.
