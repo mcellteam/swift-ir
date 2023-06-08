@@ -36,16 +36,8 @@ import concurrent
 import shutil
 import tempfile
 import threading
-
-import neuroglancer
-import neuroglancer.cli
-import neuroglancer.random_token
 import neuroglancer.write_annotations
 import numpy as np
-import tornado.httpserver
-import tornado.netutil
-import tornado.platform
-import tornado.web
 
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
@@ -173,6 +165,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     logger.debug('[%s] State Changed, But Layer Is The Same - '
                                  'Suppressing The stateChanged Callback Signal' %self.type)
                 else:
+                    cfg.data.zpos = request_layer
                     self._layer = request_layer
                     logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     self.signals.stateChanged.emit(request_layer)
