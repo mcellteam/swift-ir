@@ -321,7 +321,7 @@ class MainWindow(QMainWindow):
         self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
         # self.uiUpdateTimer.setInterval(250)
         # self.uiUpdateTimer.setInterval(450)
-        self.uiUpdateTimer.setInterval(250)
+        self.uiUpdateTimer.setInterval(350)
 
         # self.uiUpdateRegularTimer = QTimer()
         # # self.uiUpdateRegularTimer.setInterval(1000)
@@ -399,7 +399,7 @@ class MainWindow(QMainWindow):
         if not self._isProjectTab():
             return
 
-        logger.info('')
+        # logger.info('')
 
         # if not cfg.data.is_aligned():
         #     cfg.pt.ms_widget.hide()
@@ -1491,11 +1491,8 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
 
         # caller = inspect.stack()[1].function
-
-        if DEV:
-            logger.info(f'{caller_name()}')
-
-
+        # if DEV:
+        #     logger.info(f'{caller_name()}')
         # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
         # if getData('state,blink'):
         #     return
