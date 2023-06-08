@@ -1639,6 +1639,8 @@ class ProjectTab(QWidget):
         self.rb_reference.setStyleSheet("font-size: 10px;")
         self.bg_ref_tra.addButton(self.rb_transforming)
         self.bg_ref_tra.addButton(self.rb_reference)
+        self.rb_transforming.hide()
+        self.rb_reference.hide()
 
         def fn():
             newcur = (0, 1)[self.rb_transforming.isChecked()]

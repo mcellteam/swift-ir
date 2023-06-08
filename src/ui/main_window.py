@@ -1492,43 +1492,35 @@ class MainWindow(QMainWindow):
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\nUpdating UI [caller: {caller}]...')
-        logger.info(f'sender: {self.sender()}')
+        # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
 
         if not self._isProjectTab():
             logger.warning('No Current Project Tab!')
             return
 
-
-
         # cfg.project_tab._overlayLab.hide()
         # logger.info('')
 
         # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
-
-        # self.count_calls.setdefault('dataUpdateWidgets', {})
-        # self.count_calls['dataUpdateWidgets'].setdefault(caller, {})
-        # self.count_calls['dataUpdateWidgets'][caller].setdefault('total_count',0)
-        # self.count_calls['dataUpdateWidgets'][caller].setdefault('same_count',0)
-        # self.count_calls['dataUpdateWidgets'][caller].setdefault('diff_count',0)
-        # self.count_calls['dataUpdateWidgets'][caller].setdefault('none_count',0)
-        # self.count_calls['dataUpdateWidgets'][caller]['total_count'] += 1
+        # self.count_calls.setdefault('dupw', {})
+        # self.count_calls[].setdefault(caller, {})
+        # self.count_calls['dupw'][caller].setdefault('total_count',0)
+        # self.count_calls['dupw'][caller].setdefault('same_count',0)
+        # self.count_calls['dupw'][caller].setdefault('diff_count',0)
+        # self.count_calls['dupw'][caller].setdefault('none_count',0)
+        # self.count_calls['dupw'][caller]['total_count'] += 1
         # if ng_layer == None:
-        #     self.count_calls['dataUpdateWidgets'][caller]['none_count'] += 1
+        #     self.count_calls['dupw'][caller]['none_count'] += 1
         # elif cfg.data.zpos == ng_layer:
-        #     self.count_calls['dataUpdateWidgets'][caller]['same_count'] += 1
+        #     self.count_calls['dupw'][caller]['same_count'] += 1
         # elif cfg.data.zpos != ng_layer:
-        #     self.count_calls['dataUpdateWidgets'][caller]['diff_count'] += 1
+        #     self.count_calls['dupw'][caller]['diff_count'] += 1
 
 
         # timer.report() #0
 
         if self._isProjectTab():
 
-            cfg.project_tab._overlayRect.hide()
-            cfg.project_tab._overlayLab.hide()
-            # logger.critical(f'sender: {self.sender()}')
-            # logger.critical(f'sender().objectName(): {self.sender().objectName()}')
 
             # if 'viewer_em' in str(self.sender()):
             #     if not silently:
@@ -1543,14 +1535,17 @@ class MainWindow(QMainWindow):
             #             # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
             #             # QTimer.singleShot(300, self.dataUpdateWidgets)
 
-            # if 'viewer_em' in str(self.sender()):
-            #     if not self.uiUpdateTimer.isActive():
-            #         logger.critical('Updating UI...')
-            #         pass
-            #     else:
-            #         logger.info('Delaying UI Update...')
-            #         self.uiUpdateTimer.start()
-            #         return
+            #GoodMechanism
+            if 'viewer_em.WorkerSignals' in str(self.sender()):
+                if self.uiUpdateTimer.isActive():
+                    logger.warning('Delaying UI Update [viewer_em.WorkerSignals]...')
+                    self.uiUpdateTimer.start()
+                    return
+                else:
+                    logger.critical('Updating UI on Timeout [viewer_em.WorkerSignals]...')
+
+            cfg.project_tab._overlayRect.hide()
+            cfg.project_tab._overlayLab.hide()
 
             cur = cfg.data.zpos
 
@@ -1563,22 +1558,21 @@ class MainWindow(QMainWindow):
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
 
-            if cfg.pt.ms_widget.isVisible():
-                self.updateCorrSignalsDrawer()
+            # try:
+            #     delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
+            #     # if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
+            #     if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
+            #         if self.uiUpdateTimer.isActive():
+            #             logger.info('Delaying UI Update...')
+            #             self.uiUpdateTimer.start()
+            #             return
+            #         else:
+            #             logger.critical('Updating UI...')
+            #             self.uiUpdateTimer.start()
+            # except:
+            #     print_exception()
 
-            try:
-                delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
-                # if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
-                if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
-                    if self.uiUpdateTimer.isActive():
-                        logger.info('Delaying UI Update...')
-                        self.uiUpdateTimer.start()
-                        return
-                    else:
-                        logger.critical('Updating UI...')
-                        self.uiUpdateTimer.start()
-            except:
-                print_exception()
+
 
 
             # if self._working == True:
@@ -1596,30 +1590,16 @@ class MainWindow(QMainWindow):
             #         except:
             #             print_exception()
 
-            # cur = cfg.data.zpos
-            # self._btn_prevSection.setEnabled(cur > 0)
-            # self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-            # try:    self._sectionSlider.setValue(cur)
-            # except: logger.warning('Section Slider Widget Failed to Update')
-            # try:    self._jumpToLineedit.setText(str(cur))
-            # except: logger.warning('Current Layer Widget Failed to Update')
-            # try:    self._skipCheckbox.setChecked(not cfg.data.skipped())
-            # except: logger.warning('Skip Toggle Widget Failed to Update')
-
-            # logger.info('Updating the UI...')
-
-            # if cfg.pt.ms_widget.isVisible():
-            #     self.updateCorrSignalsDrawer()
-
-            # timer.report() #1
-
             if cfg.data.skipped():
                 # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
                 cfg.project_tab._overlayLab.setText('X EXCLUDED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
                 cfg.project_tab._overlayRect.show()
 
-            # timer.report() #2
+
+            if cfg.pt.ms_widget.isVisible():
+                self.updateCorrSignalsDrawer()
+
 
             if cfg.pt.tn_widget.isVisible():
                 os.path.isdir(cfg.data.thumbnail_ref())
@@ -2665,7 +2645,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/issues'))
         self.addGlobTab(browser, 'Issue Tracker')
         self.cpanel.hide()
-                self.sa_cpanel.hide()
+        self.sa_cpanel.hide()
 
 
     def tab_workbench(self):
@@ -2857,6 +2837,8 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.w_section_label_header.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
                 cfg.pt.tn_widget.hide()
+                cfg.pt.self.rb_transforming.show()
+                cfg.pt.self.rb_reference.show()
 
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
@@ -2903,6 +2885,8 @@ class MainWindow(QMainWindow):
             cfg.pt.tn_widget.show()
             cfg.pt.tn_ref.update()
             cfg.pt.tn_tra.update()
+            cfg.pt.self.rb_transforming.hide()
+            cfg.pt.self.rb_reference.hide()
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
