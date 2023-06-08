@@ -2647,8 +2647,8 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.addGlobTab(browser, 'WebGL Test')
+        self.cpanel.hide()
         self.sa_cpanel.hide()
-
 
     def tab_google(self):
         logger.info('Opening Google tab...')
@@ -2656,15 +2656,16 @@ class MainWindow(QMainWindow):
         browser.setObjectName('web_browser')
         browser.setUrl(QUrl('https://www.google.com'))
         self.addGlobTab(browser, 'Google')
+        self.cpanel.hide()
         self.sa_cpanel.hide()
-
 
     def tab_report_bug(self):
         logger.info('Opening GitHub issue tracker tab...')
         cfg.bugreport = browser = WebBrowser(self)
         browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/issues'))
         self.addGlobTab(browser, 'Issue Tracker')
-        self.sa_cpanel.hide()
+        self.cpanel.hide()
+                self.sa_cpanel.hide()
 
 
     def tab_workbench(self):
@@ -2672,8 +2673,8 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl('https://3dem.org/workbench/'))
         self.addGlobTab(browser, '3DEM Workbench')
+        self.cpanel.hide()
         self.sa_cpanel.hide()
-
 
     def gpu_config(self):
         logger.info('Opening GPU Config...')
@@ -2681,8 +2682,9 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('chrome://gpu'))
         self.globTabs.addTab(browser, 'GPU Configuration')
         self._setLastTab()
-        # self.cpanel.hide()
+        self.cpanel.hide()
         self.sa_cpanel.hide()
+
 
     def chromium_debug(self):
         logger.info('Opening Chromium Debugger...')
@@ -2690,8 +2692,9 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('http://127.0.0.1:9000'))
         self.globTabs.addTab(browser, 'Debug Chromium')
         self._setLastTab()
-        # self.cpanel.hide()
+        self.cpanel.hide()
         self.sa_cpanel.hide()
+
 
     def get_ng_state(self):
         if cfg.project_tab:
@@ -3250,7 +3253,6 @@ class MainWindow(QMainWindow):
         self.workbenchButton.setFixedHeight(16)
         self.workbenchButton.setIconSize(QSize(16, 16))
         self.workbenchButton.clicked.connect(self.tab_workbench)
-
 
 
         self.navWidget = HWidget(QLabel(' '), self.exitButton, self.minimizeButton, self.fullScreenButton,
