@@ -581,10 +581,6 @@ class OpenProject(QWidget):
         # cfg.dataById[id(cfg.project_tab)] = cfg.data
         self.new_project_lab2.setText(path)
 
-
-
-
-
         if mendenhall:
             create_project_structure_directories(cfg.data.dest(), ['scale_1'])
         else:
@@ -648,6 +644,18 @@ class OpenProject(QWidget):
             dm.set_defaults()
             initLogFiles(dm)
             # cfg.mw._disableGlobTabs()
+
+            # self.user_projects.table.rowCount()
+
+            twi = QTableWidgetItem('Initializing\nProject...')
+            font = QFont()
+            font.setPointSize(11)
+            font.setBold(True)
+            twi.setFont(font)
+            # self.table.setItem(i, j, item)
+            rc = self.user_projects.table.rowCount()
+            self.user_projects.table.insertRow(rc)
+            self.user_projects.table.setItem(rc, 0, twi)
             try:
                 if dm['data']['autoalign_flag']:
                     cfg.mw.tell(
@@ -675,6 +683,8 @@ class OpenProject(QWidget):
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
         cfg.mw._autosave()
+        self.user_projects.table.set_data()
+
 
 
     def import_multiple_images(self, path):
