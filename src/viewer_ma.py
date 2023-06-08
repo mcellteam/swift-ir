@@ -29,7 +29,7 @@ from qtpy.QtCore import QObject, Signal, Slot, QUrl
 from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, print_exception
+from src.helpers import getOpt, getData, setData, print_exception, is_joel, caller_name
 from src.shaders import ann_shader
 from src.ui.timer import Timer
 import src.config as cfg
@@ -42,6 +42,8 @@ __all__ = ['MAViewer']
 logger = logging.getLogger(__name__)
 
 # t = Timer()
+
+DEV = is_joel()
 
 
 class WorkerSignals(QObject):
@@ -162,7 +164,7 @@ class MAViewer(neuroglancer.Viewer):
     # def set_layer(self, index=None):
     def set_layer(self, zpos=None):
         # if self.type != 'EMViewerStage':
-        logger.critical('>>>> set_layer >>>>')
+        logger.critical(f'{self.type}:{self.role} set_layer >>>>')
 
         prev_index = self.index
 
@@ -302,7 +304,7 @@ class MAViewer(neuroglancer.Viewer):
             return
         caller = inspect.stack()[1].function
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-        logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale}, self.state.cross_section_scale = {self.state.cross_section_scale}')
+        logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale:.2g}, self.state.cross_section_scale = {self.state.cross_section_scale:.2g}')
 
         if not self.cs_scale:
             if self.state.cross_section_scale < .001:
@@ -315,12 +317,12 @@ class MAViewer(neuroglancer.Viewer):
     def on_state_changed(self):
         if self._noUpdate:
             return
+        # if caller == '<lambda>':
+        #     return
+        if DEV:
+            caller = caller_name()
+            logger.info(f'[{caller}]')
 
-        caller = inspect.stack()[1].function
-        logger.info(f'on_state_changed (caller: {caller})')
-        if caller == '<lambda>':
-            return
-        caller = inspect.stack()[1].function
         request_layer = int(self.state.position[0])
 
         if self.role == 'ref':
@@ -337,17 +339,13 @@ class MAViewer(neuroglancer.Viewer):
                 # logger.warning('MA_webengine_base is NOT visible... canceling state changed callback...')
                 return
 
-
-
         if cfg.data.zpos == request_layer:
-            # logger.critical('Nothing changed. Returning.')
+            logger.critical('Nothing changed. Returning.')
             return
         else:
             cfg.data.zpos = request_layer
             # cfg.mw.setZpos(request_layer)
             self.signals.stateChanged.emit(request_layer)
-
-
 
         # cfg.data['state']['MA_focus'] = self.role
         # cfg.data['state']['focus_widget'] = QApplication.focusWidget()
