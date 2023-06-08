@@ -122,11 +122,10 @@ class WebBrowser(QWidget):
         # buttonWolframAlpha.setFixedSize(QSize(90, 20))
 
         self.urlBar = QLineEdit()
-        self.urlBar.setFixedHeight(18)
+        self.urlBar.setFixedHeight(20)
         self.urlBar.setStyleSheet("font-size: 10px; color: #161c20;")
         # self.urlBar.setMinimumWidth(400)
         # self.urlBar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.urlBar.resize(20,600)
         self.urlBar.setMinimumWidth(600)
         self.urlBar.returnPressed.connect(self.navigateToUrl)
 
@@ -134,7 +133,7 @@ class WebBrowser(QWidget):
         self.httpsicon.setPixmap(QPixmap(os.path.join('icons', 'lock-nossl.png')))
 
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(0, 2, 0, 0)
+        hbl.setContentsMargins(0, 0, 0, 0)
         hbl.addWidget(QLabel(' '))
         hbl.addWidget(buttonBrowserBack, alignment=Qt.AlignmentFlag.AlignRight)
         hbl.addWidget(buttonBrowserForward, alignment=Qt.AlignmentFlag.AlignLeft)
