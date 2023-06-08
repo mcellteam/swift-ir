@@ -1925,7 +1925,8 @@ class ProjectTab(QWidget):
         self.blinkLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
         self.blinkToggle = ToggleSwitch()
-        self.blinkToggle.stateChanged.connect(self.blinkChanged)
+        # self.blinkToggle.stateChanged.connect(self.blinkChanged)
+        self.blinkToggle.stateChanged.connect(cfg.mw.turnBlinkOnOff)
 
         # self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
         # self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -2209,29 +2210,29 @@ class ProjectTab(QWidget):
 
     def onBlinkTimer(self):
         logger.info('')
-
-        if cfg.emViewer:
-            cfg.emViewer.blink()
-
-            # self.blinkCur = 1 - self.blinkCur
-            # if self.blinkCur:
-            #     ref_index = cfg.data.get_index(cfg.data.reference())
-            #     logger.info(f'ref_index = {ref_index}')
-            #     cfg.emViewer.set_layer(ref_index)
-            # else:
-            #     cfg.emViewer.set_layer(cfg.data.zpos)
-
-    def stopBlinkTimer(self):
-        setData('state,blink', False)
-        self.blinkTimer.stop()
-
-
-    def blinkChanged(self):
-        setData('state,blink', self.blinkToggle.isChecked())
         if getData('state,blink'):
-            self.blinkTimer.start()
-        else:
-            self.blinkTimer.stop()
+            if cfg.emViewer:
+                cfg.emViewer.blink()
+
+                # self.blinkCur = 1 - self.blinkCur
+                # if self.blinkCur:
+                #     ref_index = cfg.data.get_index(cfg.data.reference())
+                #     logger.info(f'ref_index = {ref_index}')
+                #     cfg.emViewer.set_layer(ref_index)
+                # else:
+                #     cfg.emViewer.set_layer(cfg.data.zpos)
+
+    # def stopBlinkTimer(self):
+    #     setData('state,blink', False)
+    #     self.blinkTimer.stop()
+    #
+    #
+    # def blinkChanged(self):
+    #     setData('state,blink', self.blinkToggle.isChecked())
+    #     if getData('state,blink'):
+    #         self.blinkTimer.start()
+    #     else:
+    #         self.blinkTimer.stop()
 
     # def uiUpdateToggleChanged(self):
     #     setData('state,auto_update_ui', self.uiUpdateToggle.isChecked())
