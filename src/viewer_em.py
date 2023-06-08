@@ -24,7 +24,7 @@ from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
 from qtpy.QtWidgets import QApplication, QSizePolicy
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, obj_to_string, print_exception
+from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, caller_name
 from src.shaders import ann_shader
 import src.config as cfg
 
@@ -48,6 +48,8 @@ __all__ = ['EMViewer', 'EMViewerStage', 'EMViewerSnr', 'EMViewerMendenhall']
 logger = logging.getLogger(__name__)
 # handler = logging.StreamHandler(stream=sys.stdout)
 # logger.addHandler(handler)
+
+DEV = is_joel()
 
 class WorkerSignals(QObject):
     result = Signal(str)
@@ -77,7 +79,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info('viewer constructed!')
         caller = inspect.stack()[1].function
         self._zmag_set = 0
-        self._blinking = 0
+        # self._blinking = 0
         self._blinkState = 0
 
         self.uiTimer = QTimer()
@@ -128,8 +130,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed_any(self):
-        if self._blinkState:
-            return
+
         if getData('state,blink'):
             return
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
@@ -140,20 +141,24 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
 
-        if self._blinking:
-            return
+        # if self._blinking:
+        #     return
         if getData('state,blink'):
             return
         if self._settingZoom:
             return
-        caller = inspect.stack()[1].function
-        logger.info(f'on_state_changed (caller: {caller})')
+        # logger.info(f'[caller: {caller}]')
         # if caller == '<lambda>':
         #     return
+
+        if DEV:
+            caller = logger.info(caller_name())
+
 
         # if not getData('state,auto_update_ui'):
         #     return
 
+        #CriticalMechanism
         if not self.cs_scale:
             if self.state.cross_section_scale:
                 if self.state.cross_section_scale > .0001:
@@ -173,18 +178,20 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 else:
                     cfg.data.zpos = request_layer
                     self._layer = request_layer
-                    logger.info(f'[{self.type}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
+                    if DEV:
+                        logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     self.signals.stateChanged.emit(request_layer)
 
             zoom = self.state.cross_section_scale
             if zoom:
                 if zoom != self._crossSectionScale:
-                    logger.info(f'[{self.type}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+                    if DEV:
+                        logger.info(f'[{caller}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
                     self.signals.zoomChanged.emit(zoom)
                 self._crossSectionScale = zoom
         except:
             print_exception()
-            logger.error(f'[{self.type}] ERROR on_state_change')
+            logger.error(f'[caller: {caller}] ERROR on_state_change')
 
 
     def url(self):
@@ -193,7 +200,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def blink(self):
         logger.info(f'self._blinkState = {self._blinkState}')
-        self._blinking = 1
+        # self._blinking = 1
         # if self._blinkState:
         #     self.set_layer(self._layer)
         # else:
@@ -203,7 +210,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         else:
             self.set_layer(cfg.data.zpos - cfg.data.get_ref_index_offset())
         self._blinkState = 1 - self._blinkState
-        self._blinking = 0
+        # self._blinking = 0
 
 
 
@@ -794,9 +801,6 @@ class EMViewerMendenhall(AbstractEMViewer):
             s.system_memory_limit = -1
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
-
-
 
 
         # dt = time.time() - t0

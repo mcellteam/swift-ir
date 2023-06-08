@@ -42,7 +42,8 @@ __all__ = ['run_checks','is_tacc','is_linux','is_mac','create_paged_tiff', 'chec
            'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',
            'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
-           'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'initLogFiles', 'hotkey'
+           'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'initLogFiles', 'hotkey',
+           'caller_name'
            ]
 
 logger = logging.getLogger(__name__)
@@ -406,11 +407,14 @@ def is_mac() -> bool:
 
 def is_joel() -> bool:
     '''Checks if the program is running on macOS. Returns a boolean.'''
-    system = platform.system()
-    if 'Joels-' in platform.node():
-        return True
-    else:
-        return False
+
+    # if 'Joels-' in platform.node():
+    #     return True
+    # else:
+    #     return False
+
+    return (getpass.getuser() == 'joelyancey')
+
 
 
 def get_bindir() -> str:
@@ -981,6 +985,44 @@ def create_paged_tiff():
     Out[29]: (34, 4096, 4096)
     '''
 
+
+def caller_name(skip=2):
+    """Get a name of a caller in the format module.class.method
+
+       `skip` specifies how many levels of stack to skip while getting caller
+       name. skip=1 means "who calls me", skip=2 "who calls my caller" etc.
+
+       An empty string is returned if skipped levels exceed stack height
+
+       source: https://stackoverflow.com/questions/2654113/how-to-get-the-callers-method-name-in-the-called-method
+    """
+    stack = inspect.stack()
+    start = 0 + skip
+    if len(stack) < start + 1:
+        return ''
+    parentframe = stack[start][0]
+
+    name = []
+    module = inspect.getmodule(parentframe)
+    # `modname` can be None when frame is executed directly in console
+    # TODO(techtonik): consider using __main__
+    if module:
+        name.append(module.__name__)
+    # detect classname
+    if 'self' in parentframe.f_locals:
+        # I don't know any way to detect call from the object method
+        # XXX: there seems to be no way to detect static method call - it will
+        #      be just a function call
+        name.append(parentframe.f_locals['self'].__class__.__name__)
+    codename = parentframe.f_code.co_name
+    if codename != '<module>':  # top level usually
+        name.append(codename)  # function or a method
+
+    ## Avoid circular refs and frame leaks
+    #  https://docs.python.org/2.7/library/inspect.html#the-interpreter-stack
+    del parentframe, stack
+
+    return ".".join(name)
 
 # def show_mp_queue_results(task_queue, dt):
 #

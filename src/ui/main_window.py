@@ -61,7 +61,7 @@ from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exce
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML, \
-    check_project_status
+    check_project_status, caller_name, is_joel
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -88,6 +88,8 @@ from src.ui.python_console import PythonConsole
 __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
+
+DEV = is_joel()
 
 # logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
 
@@ -164,14 +166,9 @@ class MainWindow(QMainWindow):
         # if not self.settings.value("windowState") == None:
         #     self.restoreState(self.settings.value("windowState"))
 
-
-
-
         # font = QFont("Tahoma")
         font = QFont("Calibri")
         QApplication.setFont(font)
-
-
 
         # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
         # self.zposChanged.connect(self.dataUpdateWidgets)
@@ -323,7 +320,8 @@ class MainWindow(QMainWindow):
         # self.uiUpdateTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
         self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
         # self.uiUpdateTimer.setInterval(250)
-        self.uiUpdateTimer.setInterval(360)
+        # self.uiUpdateTimer.setInterval(450)
+        self.uiUpdateTimer.setInterval(250)
 
         # self.uiUpdateRegularTimer = QTimer()
         # # self.uiUpdateRegularTimer.setInterval(1000)
@@ -1488,10 +1486,16 @@ class MainWindow(QMainWindow):
 
 
     # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
-    @Slot(name='my-dataUpdateWidgets-name')
+    @Slot(name='dataUpdateWidgets-slot-name')
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        caller = inspect.stack()[1].function
+
+        # caller = inspect.stack()[1].function
+
+        if DEV:
+            logger.info(f'{caller_name()}')
+
+
         # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
         # if getData('state,blink'):
         #     return
@@ -1540,13 +1544,15 @@ class MainWindow(QMainWindow):
             #             # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
             #             # QTimer.singleShot(300, self.dataUpdateWidgets)
 
-            #GoodMechanism
+            #CriticalMechanism
             if 'viewer_em.WorkerSignals' in str(self.sender()):
+                timerActive = self.uiUpdateTimer.isActive()
+                # logger.critical(f"uiUpdateTimer active? {timerActive}")
                 if self.uiUpdateTimer.isActive():
                     logger.warning('Delaying UI Update [viewer_em.WorkerSignals]...')
-                    self.uiUpdateTimer.start()
                     return
                 else:
+                    self.uiUpdateTimer.start()
                     logger.critical('Updating UI on Timeout [viewer_em.WorkerSignals]...')
 
             cfg.project_tab._overlayRect.hide()
