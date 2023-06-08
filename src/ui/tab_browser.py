@@ -122,7 +122,7 @@ class WebBrowser(QWidget):
         # buttonWolframAlpha.setFixedSize(QSize(90, 20))
 
         self.urlBar = QLineEdit()
-        self.urlBar.setFixedHeight(20)
+        self.urlBar.setFixedHeight(18)
         self.urlBar.setStyleSheet("font-size: 10px; color: #161c20;")
         # self.urlBar.setMinimumWidth(400)
         # self.urlBar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -158,7 +158,7 @@ class WebBrowser(QWidget):
         hbl.addWidget(QLabel(' '))
 
         browser_controls_widget = QWidget()
-        browser_controls_widget.setFixedHeight(20)
+        browser_controls_widget.setFixedHeight(22)
         browser_controls_widget.setLayout(hbl)
 
         self.layout = QVBoxLayout()
