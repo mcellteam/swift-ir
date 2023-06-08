@@ -270,8 +270,8 @@ class MAViewer(neuroglancer.Viewer):
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             s.input_event_bindings.viewer['keys'] = 'swim'
-            # s.show_ui_controls = False
-            s.show_ui_controls = True
+            s.show_ui_controls = False
+            # s.show_ui_controls = True
             s.show_panel_borders = False
 
         self._layer = math.floor(self.state.position[0])
