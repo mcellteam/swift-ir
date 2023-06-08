@@ -200,15 +200,19 @@ class OpenProject(QWidget):
         self.selectionReadout = QLineEdit()
 
 
-        self.lab_path_exists = QLabel('Path Exists')
+        self.lab_path_exists = cfg.lab_path_exists = QLabel('Path Exists')
+        self.lab_path_exists.setFixedWidth(80)
+        self.lab_path_exists.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.lab_path_exists.setAlignment(Qt.AlignRight)
         self.lab_path_exists.setObjectName('validity_label')
         self.lab_path_exists.setFixedHeight(16)
+        self.lab_path_exists.setAlignment(Qt.AlignRight)
 
         self.lab_project_name = QLabel(' New Project Path: ')
         self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
         self.lab_project_name.setFixedHeight(18)
         self.le_project_name = QLineEdit()
+        self.le_project_name = cfg.le_project_name = QLineEdit()
         self.le_project_name.setReadOnly(False)
         def fn():
             logger.info('')
@@ -218,15 +222,18 @@ class OpenProject(QWidget):
         self.le_project_name.textChanged.connect(fn)
         # self.le_project_name.textEdited.connect(fn)
         self.le_project_name.setFixedHeight(20)
+        self.le_project_name.setMinimumWidth(400)
 
         self.le_project_name_w_overlay = QWidget()
-        self.le_project_name_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        ew = ExpandingWidget(self)
+        ew.setAttribute(Qt.WA_TransparentForMouseEvents)
+        hw = HWidget(ew, self.lab_project_name, QLabel(' '))
+        hw.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.le_project_name_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.addWidget(self.le_project_name,0,0)
-        hw = HWidget(ExpandingWidget(self), self.lab_path_exists, QLabel(' '))
-        hw.setAttribute(Qt.WA_TransparentForMouseEvents)
-        gl.addWidget(hw,0,0)
+        gl.addWidget(self.lab_path_exists,0,0)
         self.le_project_name_w_overlay.setLayout(gl)
 
         # def fn_le_textChanged(path):

@@ -9,6 +9,8 @@ https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/i
 
 import os, re, sys, stat, copy, json, time, signal, logging, inspect
 import platform, traceback, shutil, statistics, tracemalloc
+from os.path import expanduser
+import getpass
 from time import time
 from datetime import datetime
 from typing import Dict, List, Tuple, Any, Union, Sequence
@@ -725,7 +727,7 @@ class TimeoutException(Exception): pass
 
 
 def print_exception():
-    tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
+    tstamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     exi = sys.exc_info()
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
     logger.warning(txt)
@@ -736,6 +738,21 @@ def print_exception():
         file.touch(exist_ok=True)
         with open(lf, 'a+') as f:
             f.write('\n' + txt)
+
+    if is_tacc():
+        node = platform.node()
+        user = getpass.getuser()
+        fn = f"{node}_{user}.log"
+        txt = f"----------------------------------------\n" \
+              f"Time        : {tstamp}\n" \
+              f"Node        : {platform.node()}\n" \
+              f"User        : {user}\n" \
+              f"Exception   : \n" \
+              f"{txt}"
+        location = "/work/08507/joely/ls6/log_db"
+        with open(os.path.join(location, fn), 'a+') as f:
+            f.write(location)
+
 
 
 

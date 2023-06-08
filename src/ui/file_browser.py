@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.treeview = QTreeView()
+        self.treeview = cfg.treeview = QTreeView()
         self.treeview.setStyleSheet('border-width: 0px;')
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
