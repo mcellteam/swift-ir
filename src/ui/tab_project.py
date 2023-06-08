@@ -818,7 +818,8 @@ class ProjectTab(QWidget):
 
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
-        self.btnQuickSWIM = QPushButton('Quick\n&SWIM')
+        self.btnQuickSWIM = QPushButton('Regenerate\n&Match Signals')
+        self.btnQuickSWIM.setStyleSheet("font-size: 8px")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedSize(QSize(44, 38))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
