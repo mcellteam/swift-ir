@@ -44,7 +44,7 @@ __all__.extend(funcs_image.__all__)
 from . import funcs_zarr
 from .funcs_zarr import *
 __all__.extend(funcs_zarr.__all__)
-__all__.append('funcs_zarr')
+# __all__.append('funcs_zarr')
 
 from . import mp_queue
 from .mp_queue import *

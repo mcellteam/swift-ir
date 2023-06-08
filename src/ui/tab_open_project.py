@@ -705,7 +705,6 @@ class OpenProject(QWidget):
         dialog.setFileMode(QFileDialog.ExistingFiles)
         dialog.setModal(True)
         urls = dialog.sidebarUrls()
-
         dialog.setSidebarUrls(urls)
 
 
