@@ -466,7 +466,7 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3'
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
 
 
-generate_scales task (example)
+GenerateScales task (example)
 task = ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src//lib/bin_darwin/iscale2', 
         '+4', 
         'of=/Users/joelyancey/glanceem_swift/test_projects/test16/scale_4/img_src/R34CA1-BS12.117.tif', 

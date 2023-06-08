@@ -48,14 +48,14 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
 import src.config as cfg
 import src.shaders
 from src.background_worker import BackgroundWorker
-from src.compute_affines import compute_affines
+from src.compute_affines import ComputeAffines
 from src.config import ICON_COLOR
 from src.data_model import DataModel
 from src.funcs_zarr import tiffs2MultiTiff
-from src.generate_aligned import generate_aligned
-from src.generate_scales import generate_scales
+from src.generate_aligned import GenerateAligned
+from src.generate_scales import GenerateScales
 from src.thumbnailer import Thumbnailer
-from src.generate_scales_zarr import generate_scales_zarr
+from src.generate_scales_zarr import GenerateScalesZarr
 from src.autoscale import autoscale
 from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
@@ -445,7 +445,6 @@ class MainWindow(QMainWindow):
                         cfg.pt.msList[i].set_data(path=names[i], snr=snr)
                         cfg.pt.msList[i].update()
 
-
                         count += 1
                     except:
                         print_exception()
@@ -456,6 +455,7 @@ class MainWindow(QMainWindow):
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
+                    cfg.pt.msList[i].update()
         else:
             for i in range(4):
                 if i < n:
@@ -595,11 +595,11 @@ class MainWindow(QMainWindow):
         self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_aligned(
+                self.worker = BackgroundWorker(fn=GenerateAligned(
                     cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True))
                 self.threadpool.start(self.worker)
             else:
-                generate_aligned(cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True)
+                GenerateAligned(cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True)
         except:
             print_exception()
 
@@ -1065,11 +1065,11 @@ class MainWindow(QMainWindow):
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
-                    fn=compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od,
-                                       reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data))
+                    fn=ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od,
+                                      reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data))
                 self.threadpool.start(self.worker)
             else:
-                compute_affines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data)
+                ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data)
         except:
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
@@ -1100,10 +1100,10 @@ class MainWindow(QMainWindow):
         #
         #         try:
         #             if cfg.USE_EXTRA_THREADING:
-        #                 self.worker = BackgroundWorker(fn=generate_aligned(
+        #                 self.worker = BackgroundWorker(fn=GenerateAligned(
         #                     scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
         #                 self.threadpool.start(self.worker)
-        #             else: generate_aligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
+        #             else: GenerateAligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
         #         except:
         #             print_exception()
         #         finally:
@@ -1181,10 +1181,10 @@ class MainWindow(QMainWindow):
         out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=generate_scales_zarr())
+                self.worker = BackgroundWorker(fn=GenerateScalesZarr())
                 self.threadpool.start(self.worker)
             else:
-                generate_scales_zarr()
+                GenerateScalesZarr()
         except:
             print_exception()
             logger.error('Zarr Export Encountered an Exception')
@@ -1629,10 +1629,12 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.dataUpdateMA()
                 setData('state,stackwidget_ng_toggle', 1)
                 cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
-                if cfg.pt.MA_webengine_ref.isVisible():
-                    cfg.refViewer.drawSWIMwindow()
-                elif cfg.pt.MA_webengine_base.isVisible():
-                    cfg.baseViewer.drawSWIMwindow()
+                cfg.baseViewer.set_layer()
+                cfg.stageViewer.set_layer()
+                # if cfg.pt.MA_webengine_ref.isVisible():
+                #     cfg.refViewer.drawSWIMwindow()
+                # elif cfg.pt.MA_webengine_base.isVisible():
+                cfg.baseViewer.drawSWIMwindow()
                 # cfg.refViewer.drawSWIMwindow()
                 # cfg.baseViewer.drawSWIMwindow()
 

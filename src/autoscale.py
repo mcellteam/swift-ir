@@ -5,8 +5,8 @@ import sys
 import logging
 import traceback
 from datetime import datetime
-from generate_scales import generate_scales
-from generate_scales_zarr import generate_scales_zarr
+from generate_scales import GenerateScales
+from generate_scales_zarr import GenerateScalesZarr
 from background_worker import BackgroundWorker
 from data_model import DataModel
 from thumbnailer import Thumbnailer
@@ -32,7 +32,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         if set_pbar:
             cfg.mw.showZeroedPbar(set_n_processes=3)
     try:
-        worker = BackgroundWorker(fn=generate_scales(dm=dm, gui=gui))
+        worker = BackgroundWorker(fn=GenerateScales(dm=dm, gui=gui))
         threadpool.start(worker)
     except:
         print_exception()
@@ -51,7 +51,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         cfg.mw.tell('Copy-converting TIFFs to NGFF-Compliant Zarr...')
         # cfg.mw.showZeroedPbar()
     try:
-        worker = BackgroundWorker(fn=generate_scales_zarr(dm, gui=gui))
+        worker = BackgroundWorker(fn=GenerateScalesZarr(dm, gui=gui))
         threadpool.start(worker)
     except:
         print_exception()

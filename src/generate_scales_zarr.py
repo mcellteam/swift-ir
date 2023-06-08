@@ -12,13 +12,13 @@ from src.helpers import get_scale_val, get_img_filenames, print_exception, renew
     reorder_tasks
 from src.funcs_zarr import preallocate_zarr
 
-__all__ = ['generate_scales_zarr']
+__all__ = ['GenerateScalesZarr']
 
 logger = logging.getLogger(__name__)
 
 Z_STRIDE = 1
 
-def generate_scales_zarr(dm, gui=True):
+def GenerateScalesZarr(dm, gui=True):
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.scales()))
 
     pbar_text = 'Generating Zarr Scale Arrays (%d Cores)...' % cpus
@@ -101,4 +101,4 @@ if __name__ == '__main__':
     ap.add_argument('-s', '--src', type=str, help='Path containing scaled tiff subdirectories')
     ap.add_argument('-o', '--out', type=str, help='Path for Zarr output')
     args = ap.parse_args()
-    generate_scales_zarr(src=args.src, out=args.out)
+    GenerateScalesZarr(src=args.src, out=args.out)

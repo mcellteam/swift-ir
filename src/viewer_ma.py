@@ -164,6 +164,8 @@ class MAViewer(neuroglancer.Viewer):
         # if self.type != 'EMViewerStage':
         logger.critical('>>>> set_layer >>>>')
 
+        prev_index = self.index
+
         if self.role == 'ref':
             if zpos:
                 self.index=cfg.data.get_ref_index(l=zpos)
@@ -189,6 +191,8 @@ class MAViewer(neuroglancer.Viewer):
                     vc = s.voxel_coordinates
                     vc[0] = self.index
                 self.drawSWIMwindow()
+
+        logger.critical(f'{self.type}:{self.role} , {prev_index} , {self.index}')
 
         # else:
         #     self.index = index
@@ -298,6 +302,7 @@ class MAViewer(neuroglancer.Viewer):
             return
         caller = inspect.stack()[1].function
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
+        logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale}, self.state.cross_section_scale = {self.state.cross_section_scale}')
 
         if not self.cs_scale:
             if self.state.cross_section_scale < .001:

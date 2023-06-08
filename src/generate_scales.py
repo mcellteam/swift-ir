@@ -11,12 +11,12 @@ from src.helpers import print_exception, get_scale_val, create_project_structure
     get_bindir
 from src.mp_queue import TaskQueue
 
-__all__ = ['generate_scales']
+__all__ = ['GenerateScales']
 
 logger = logging.getLogger(__name__)
 
 
-def generate_scales(dm, gui=True):
+def GenerateScales(dm, gui=True):
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     pbar_text = 'Generating Scale Image Hierarchy (%d Cores)...' % cpus
     if cfg.CancelProcesses:
@@ -72,7 +72,7 @@ def generate_scales(dm, gui=True):
                 task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if i in [0, 1, 2]:
-                        logger.info('generate_scales/iscale2 TQ Params (Example ID %d):\n%s' %
+                        logger.info('GenerateScales/iscale2 TQ Params (Example ID %d):\n%s' %
                                     (i, '\n'.join(map(str,[iscale2_c, scale_arg, of_arg, if_arg]))))
                 # if cfg.CODE_MODE == 'python':
                 #     task_queue.add_task(cmd=sys.executable,
@@ -87,7 +87,7 @@ def generate_scales(dm, gui=True):
         logger.info(f'dt      : {dt}')
         # cfg.results = results
         # cfg.dt = dt
-        logger.info('<<<< generate_scales <<<<')
+        logger.info('<<<< GenerateScales <<<<')
 
 
 

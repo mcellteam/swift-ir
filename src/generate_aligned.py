@@ -18,13 +18,13 @@ from src.funcs_zarr import preallocate_zarr
 from src.background_worker import BackgroundWorker
 
 
-__all__ = ['generate_aligned']
+__all__ = ['GenerateAligned']
 
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
-    logger.info('>>>> generate_aligned >>>>')
+def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
+    logger.info('>>>> GenerateAligned >>>>')
 
     scale_val = get_scale_val(scale)
 

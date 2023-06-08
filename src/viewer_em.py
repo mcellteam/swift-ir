@@ -252,7 +252,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 s.crossSectionScale = val
             self._settingZoom = False
 
-    def set_layer(self, index):
+    def set_layer(self, index=None):
+        if index == None:
+            index = cfg.data.zpos
         # if self.type != 'EMViewerStage': #Critical!
         #     logger.info('')
         # state = copy.deepcopy(self.state)
