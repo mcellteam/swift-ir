@@ -3,7 +3,7 @@
 import os
 import logging
 import qtawesome as qta
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout,QLabel, QPushButton, QLineEdit
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout,QLabel, QPushButton, QLineEdit, QSizePolicy
 from qtpy.QtCore import Qt, QSize, QUrl
 from qtpy.QtGui import QPixmap
 from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
@@ -25,6 +25,7 @@ class WebBrowser(QWidget):
         super().__init__(parent)
 
         self.browser = QWebEngineView()
+        self.browser.setZoomFactor(0.8)
         self.browser.loadFinished.connect(self.updateTabLabel)
         self.browser.urlChanged.connect(self.updateUrlBar)
         self.page = WebEnginePage()
@@ -62,20 +63,20 @@ class WebBrowser(QWidget):
         buttonBrowserBack.setStatusTip('Go Back')
         buttonBrowserBack.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserBack.clicked.connect(browser_backward)
-        buttonBrowserBack.setFixedSize(QSize(20, 20))
+        buttonBrowserBack.setFixedSize(QSize(18, 18))
         buttonBrowserBack.setIcon(qta.icon('fa.arrow-left', color=cfg.ICON_COLOR))
 
         buttonBrowserForward = QPushButton()
         buttonBrowserForward.setStatusTip('Go Forward')
         buttonBrowserForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserForward.clicked.connect(browser_forward)
-        buttonBrowserForward.setFixedSize(QSize(20, 20))
+        buttonBrowserForward.setFixedSize(QSize(18, 18))
         buttonBrowserForward.setIcon(qta.icon('fa.arrow-right', color=cfg.ICON_COLOR))
 
         buttonBrowserRefresh = QPushButton()
         buttonBrowserRefresh.setStatusTip('Refresh')
         buttonBrowserRefresh.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
-        buttonBrowserRefresh.setFixedSize(QSize(20, 20))
+        buttonBrowserRefresh.setFixedSize(QSize(18, 18))
         buttonBrowserRefresh.clicked.connect(browser_reload)
 
         # buttonBrowserViewSource = QPushButton()
@@ -90,28 +91,28 @@ class WebBrowser(QWidget):
         buttonBrowserCopy.setStatusTip('Copy Text')
         buttonBrowserCopy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserCopy.clicked.connect(browser_copy)
-        buttonBrowserCopy.setFixedSize(QSize(40, 20))
+        buttonBrowserCopy.setFixedSize(QSize(40, 18))
 
         buttonBrowserPaste = QPushButton('Paste')
         buttonBrowserPaste.setStyleSheet('font-size: 10px;')
         buttonBrowserPaste.setStatusTip('Paste Text')
         buttonBrowserPaste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserPaste.clicked.connect(browser_paste)
-        buttonBrowserPaste.setFixedSize(QSize(40, 20))
+        buttonBrowserPaste.setFixedSize(QSize(40, 18))
 
         button3demCommunity = QPushButton('3DEM Community Data')
         button3demCommunity.setStyleSheet('font-size: 9px;')
         button3demCommunity.setStatusTip('Vist the 3DEM Community Workbench')
         button3demCommunity.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button3demCommunity.clicked.connect(browser_3dem_community)
-        button3demCommunity.setFixedSize(QSize(110, 20))
+        button3demCommunity.setFixedSize(QSize(110, 18))
 
         buttonDocumentation = QPushButton('AlignEM-SWiFT Docs')
         buttonDocumentation.setStyleSheet('font-size: 9px;')
         buttonDocumentation.setStatusTip('View AlignEM-SWiFT Documentation')
         buttonDocumentation.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonDocumentation.clicked.connect(browser_documentation)
-        buttonDocumentation.setFixedSize(QSize(110, 20))
+        buttonDocumentation.setFixedSize(QSize(110, 18))
 
         # buttonWolframAlpha = QPushButton('WolframAlpha')
         # buttonWolframAlpha.setStyleSheet('font-size: 9px;')
@@ -121,7 +122,12 @@ class WebBrowser(QWidget):
         # buttonWolframAlpha.setFixedSize(QSize(90, 20))
 
         self.urlBar = QLineEdit()
-        self.urlBar.setMinimumWidth(400)
+        self.urlBar.setFixedHeight(20)
+        self.urlBar.setStyleSheet("font-size: 10px; color: #161c20;")
+        # self.urlBar.setMinimumWidth(400)
+        # self.urlBar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.urlBar.resize(20,600)
+        self.urlBar.setMinimumWidth(600)
         self.urlBar.returnPressed.connect(self.navigateToUrl)
 
         self.httpsicon = QLabel()  # Yes, really!
@@ -142,15 +148,17 @@ class WebBrowser(QWidget):
         hbl.addWidget(buttonBrowserPaste, alignment=Qt.AlignmentFlag.AlignLeft)
         hbl.addWidget(QLabel('   |   '))
         hbl.addWidget(button3demCommunity, alignment=Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(QLabel(' '))
-        hbl.addWidget(buttonDocumentation, alignment=Qt.AlignmentFlag.AlignRight)
-        hbl.addWidget(QLabel(' '))
+
+        # hbl.addWidget(buttonDocumentation, alignment=Qt.AlignmentFlag.AlignRight)
+        # hbl.addWidget(QLabel(' '))
         # hbl.addWidget(buttonWolframAlpha, alignment=Qt.AlignmentFlag.AlignRight)
         # hbl.addWidget(QLabel(' '))
-        hbl.addWidget(self.urlBar, alignment=Qt.AlignmentFlag.AlignCenter)
+        # hbl.addWidget(self.urlBar, alignment=Qt.AlignmentFlag.AlignCenter)
+        hbl.addWidget(self.urlBar)
+        hbl.addWidget(QLabel(' '))
 
         browser_controls_widget = QWidget()
-        browser_controls_widget.setFixedHeight(22)
+        browser_controls_widget.setFixedHeight(20)
         browser_controls_widget.setLayout(hbl)
 
         self.layout = QVBoxLayout()

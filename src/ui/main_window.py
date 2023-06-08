@@ -179,7 +179,6 @@ class MainWindow(QMainWindow):
     def restore_tabs(self, settings):
         '''self.restore_tabs(self.settings)'''
         finfo = QFileInfo(settings.fileName())
-
         if finfo.exists() and finfo.isFile():
             for w in qApp.allWidgets():
                 mo = w.metaObject()
@@ -188,6 +187,7 @@ class MainWindow(QMainWindow):
                         name = mo.property(i).name()
                         val = settings.value("{}/{}".format(w.objectName(), name), w.property(name))
                         w.setProperty(name, val)
+
 
     def save_tabs(self, settings):
         '''self.save_tabs(self.settings)'''
@@ -209,9 +209,6 @@ class MainWindow(QMainWindow):
             self.zposChanged.emit()
         else:
             logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
-
-
-
 
 
     def initSizeAndPos(self, width, height):
@@ -487,7 +484,8 @@ class MainWindow(QMainWindow):
         # logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
     def callbackDwVisibilityChanged(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         # QApplication.processEvents()
         cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
         cfg.data['state']['tool_windows']['hud'] = self.dw_monitor.isVisible()
@@ -2646,22 +2644,36 @@ class MainWindow(QMainWindow):
     def webgl2_test(self):
         '''https://www.khronos.org/files/webgl20-reference-guide.pdf'''
         logger.info('Opening WebGL Test...')
-        self.browser = WebBrowser(self)
-        self.browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
-        self.globTabs.addTab(self.browser, 'WebGL Test')
-        self._setLastTab()
-        # self.cpanel.hide()
+        browser = WebBrowser(self)
+        browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.addGlobTab(browser, 'WebGL Test')
         self.sa_cpanel.hide()
 
-    def google(self):
-        logger.info('Opening Google Tab...')
-        self.browser = WebBrowser(self)
-        self.browser.setObjectName('web_browser')
-        self.browser.setUrl(QUrl('https://www.google.com'))
-        self.globTabs.addTab(self.browser, 'Google')
-        self._setLastTab()
-        # self.cpanel.hide()
+
+    def tab_google(self):
+        logger.info('Opening Google tab...')
+        browser = WebBrowser(self)
+        browser.setObjectName('web_browser')
+        browser.setUrl(QUrl('https://www.google.com'))
+        self.addGlobTab(browser, 'Google')
         self.sa_cpanel.hide()
+
+
+    def tab_report_bug(self):
+        logger.info('Opening GitHub issue tracker tab...')
+        cfg.bugreport = browser = WebBrowser(self)
+        browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/issues'))
+        self.addGlobTab(browser, 'Issue Tracker')
+        self.sa_cpanel.hide()
+
+
+    def tab_workbench(self):
+        logger.info('Opening 3DEM Workbench tab...')
+        browser = WebBrowser(self)
+        browser.setUrl(QUrl('https://3dem.org/workbench/'))
+        self.addGlobTab(browser, '3DEM Workbench')
+        self.sa_cpanel.hide()
+
 
     def gpu_config(self):
         logger.info('Opening GPU Config...')
@@ -3227,10 +3239,22 @@ class MainWindow(QMainWindow):
         self.glossaryButton.clicked.connect(fn_glossary)
 
 
+        self.bugreportButton = QPushButton('Report Bug')
+        self.bugreportButton.setFont(f)
+        self.bugreportButton.setFixedHeight(16)
+        self.bugreportButton.setIconSize(QSize(16, 16))
+        self.bugreportButton.clicked.connect(self.tab_report_bug)
+
+        self.workbenchButton = QPushButton('3DEM Workbench')
+        self.workbenchButton.setFont(f)
+        self.workbenchButton.setFixedHeight(16)
+        self.workbenchButton.setIconSize(QSize(16, 16))
+        self.workbenchButton.clicked.connect(self.tab_workbench)
+
 
 
         self.navWidget = HWidget(QLabel(' '), self.exitButton, self.minimizeButton, self.fullScreenButton,
-                                 self.refreshButton, self.faqButton, self.gettingStartedButton, self.glossaryButton, ExpandingWidget(self))
+                                 self.refreshButton, self.faqButton, self.gettingStartedButton, self.glossaryButton, self.bugreportButton, ExpandingWidget(self))
         self.navWidget.setFixedHeight(18)
         # self.navWidget.setC
 
@@ -4349,11 +4373,11 @@ class MainWindow(QMainWindow):
         researchGroupMenu.addAction(action)
 
         # self.googleAction = QAction('Google', self)
-        # self.googleAction.triggered.connect(self.google)
+        # self.googleAction.triggered.connect(self.tab_google)
         # helpMenu.addAction(self.googleAction)
 
         action = QAction('Google', self)
-        action.triggered.connect(self.google)
+        action.triggered.connect(self.tab_google)
         helpMenu.addAction(action)
 
     # @Slot()
@@ -5869,11 +5893,11 @@ class MainWindow(QMainWindow):
             font-weight: 600;
         }""")
         self.dw_python.setWidget(self.pythonConsole)
-        def fn():
-            width = int(cfg.main_window.width() / 2)
-            self.pythonConsole.resize(QSize(width, 90))
-            self.pythonConsole.update()
-        self.dw_python.visibilityChanged.connect(fn)
+        # def fn():
+        #     width = int(cfg.main_window.width() / 2)
+        #     self.pythonConsole.resize(QSize(width, 90))
+        #     self.pythonConsole.update()
+        # self.dw_python.visibilityChanged.connect(fn)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_python)
         self.dw_python.hide()
 
@@ -6001,26 +6025,8 @@ class MainWindow(QMainWindow):
         }
         """)
         self.sa_cpanel.setFixedHeight(104)
-        # self.sa_cpanel.setFixedHeight(90)
-        # self.sa_cpanel.setWidget(HWidget(self.cpanel))
         self.sa_cpanel.setWidget(self.cpanel)
 
-
-        self.dw_cpanel = DockWidget('Controls', self)
-        self.dw_cpanel.setFeatures(self.dw_cpanel.DockWidgetClosable | self.dw_cpanel.DockWidgetVerticalTitleBar)
-        self.dw_cpanel.setFeatures(self.dw_cpanel.DockWidgetVerticalTitleBar)
-        self.dw_cpanel.setObjectName('Dock Widget HUD')
-        self.dw_cpanel.setStyleSheet("""
-        QDockWidget {color: #ede9e8;}
-        QDockWidget::title {
-                    background-color: #161c20;
-                    color: #ede9e8;
-                    font-weight: 600;
-                    text-align: left;
-                }""")
-        self.dw_cpanel.setWidget(self.sa_cpanel)
-        self.dw_cpanel.hide()
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_cpanel)
         self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
         # self.globTabsAndCpanel.layout.setSpacing(0)
         # self.globTabsAndCpanel.setAutoFillBackground(True)
