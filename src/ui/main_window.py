@@ -398,10 +398,10 @@ class MainWindow(QMainWindow):
         if z == None: z = cfg.data.zpos
 
         # caller = inspect.stack()[1].function
-        logger.info('')
-
         if not self._isProjectTab():
             return
+
+        logger.info('')
 
         # if not cfg.data.is_aligned():
         #     cfg.pt.ms_widget.hide()
@@ -1494,6 +1494,9 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
 
+        # if cfg.emViewer:
+        #     cfg.emViewer.
+
         if not self._isProjectTab():
             logger.warning('No Current Project Tab!')
             return
@@ -1901,10 +1904,11 @@ class MainWindow(QMainWindow):
 
     def jump_to_slider(self):
         caller = inspect.stack()[1].function
-        logger.info('')
+
         #0601 this seems to work as intended with no time lag
         if caller in ('dataUpdateWidgets'):
             return
+        logger.info('')
         # if caller in ('main', 'onTimer','jump'):
         requested = self._sectionSlider.value()
         if self._isProjectTab():
@@ -3771,7 +3775,14 @@ class MainWindow(QMainWindow):
 
     def turnBlinkOnOff(self):
         if self._isProjectTab():
-            cfg.pt.blinkToggle.setChecked(not cfg.pt.blinkToggle.isChecked())
+            setData('state,blink', not getData('state,blink'))
+            logger.info(f"blink toggle: {getData('state,blink')}")
+            # self.tell(f"Blink : {('OFF','ON')[getData('state,blink')]}")
+            cfg.pt.blinkToggle.setChecked(getData('state,blink'))
+            if getData('state,blink'):
+                cfg.pt.blinkTimer.start()
+            else:
+                cfg.pt.blinkTimer.stop()
 
 
     def initMenu(self):
@@ -6432,7 +6443,7 @@ class MainWindow(QMainWindow):
 
 
     def keyPressEvent(self, e):
-        logger.info('str(e) was pressed!')
+        logger.info(f'{str(e)} was pressed!')
         if e.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()

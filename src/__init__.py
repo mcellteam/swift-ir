@@ -5,16 +5,10 @@ __all__ = []
 
 from src.data_model import DataModel
 
-from . import funcs_zarr
-from .funcs_zarr import *
-__all__.extend(funcs_zarr.__all__)
-__all__.append('funcs_zarr')
-
 from . import ui
 from .ui import *
 __all__.extend(ui.__all__)
 __all__.append('ui')
-
 
 from . import utils
 from .utils import *
@@ -46,10 +40,10 @@ __all__.extend(funcs_image.__all__)
 # from .funcs_zarr import *
 # __all__.extend(funcs_zarr.__all__)
 
-# from . import funcs_zarr
-# from .funcs_zarr import *
-# __all__.extend(funcs_zarr.__all__)
-# __all__.append('funcs_zarr')
+from . import funcs_zarr
+from .funcs_zarr import *
+__all__.extend(funcs_zarr.__all__)
+__all__.append('funcs_zarr')
 
 from . import mp_queue
 from .mp_queue import *

@@ -202,6 +202,7 @@ def main():
     if args.profile:
         cfg.PROFILING_MODE = True
 
+
     if is_tacc():
         try:
             bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
