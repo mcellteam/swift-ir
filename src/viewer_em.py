@@ -273,6 +273,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_layer(self, index=None):
         if index == None:
             index = cfg.data.zpos
+        if DEV:
+            logger.critical(caller_name())
         # if self.type != 'EMViewerStage': #Critical!
         #     logger.info('')
         # state = copy.deepcopy(self.state)

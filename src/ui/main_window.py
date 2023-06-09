@@ -202,6 +202,11 @@ class MainWindow(QMainWindow):
         logger.info(f'caller: {caller}')
         if cfg.data.zpos != z:
             cfg.data.zpos = z
+            if getData('state,manual_mode'):
+                cfg.pt.rb_transforming.setChecked(True)
+                cfg.baseViewer.set_layer()
+            else:
+                cfg.emViewer.set_layer()
             self.dataUpdateWidgets()
             self.zposChanged.emit()
         else:
@@ -1364,13 +1369,13 @@ class MainWindow(QMainWindow):
 
 
     def layer_left(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'>>>> layer_left [{caller}] >>>>')
+
         if self._isProjectTab():
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
             if requested >= 0:
-                cfg.mw.setZpos(requested)
+                # cfg.mw.setZpos(requested)
+                cfg.data.zpos = requested
                 if getData('state,manual_mode'):
                     setData('state,stackwidget_ng_toggle', 1)
                     cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
@@ -1383,12 +1388,12 @@ class MainWindow(QMainWindow):
                 self.warn(f'Invalid Index Request: {requested}')
 
     def layer_right(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'>>>> layer_right [{caller}] >>>>')
+
         if self._isProjectTab():
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
-                cfg.mw.setZpos(requested)
+                # cfg.mw.setZpos(requested)
+                cfg.data.zpos = requested
                 if getData('state,manual_mode'):
                     setData('state,stackwidget_ng_toggle', 1)
                     cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
@@ -1897,7 +1902,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             requested = int(self._jumpToLineedit.text())
             if requested in range(len(cfg.data)):
-                cfg.mw.setZpos(requested)
+                self.setZpos(requested)
                 if cfg.project_tab._tabs.currentIndex() == 1:
                     cfg.project_tab.project_table.table.selectRow(requested)
                 self._sectionSlider.setValue(requested)
@@ -1916,13 +1921,18 @@ class MainWindow(QMainWindow):
         requested = self._sectionSlider.value()
         if self._isProjectTab():
             logger.info('Jumping To Section #%d' % requested)
-            cfg.mw.setZpos(requested)
+            self.setZpos(requested)
 
-            for viewer in cfg.project_tab.get_viewers():
-                viewer.set_layer(cfg.data.zpos)
+
 
             # if getData('state,manual_mode'):
-            #     cfg.project_tab.initNeuroglancer()
+            #     cfg.pt.rb_transforming.setChecked(True)
+            #     cfg.baseViewer.set_layer()
+            # else:
+            #     cfg.emViewer.set_layer()
+            # self.dataUpdateWidgets()
+
+
         try:
             self._jumpToLineedit.setText(str(requested))
         except:
@@ -2840,6 +2850,9 @@ class MainWindow(QMainWindow):
     def enter_man_mode(self):
         if self._isProjectTab():
             if cfg.data.is_aligned_and_generated():
+
+                del cfg.emViewer
+
                 logger.info('\n\nEnter Manual Alignment Mode >>>>\n')
                 self.tell('Entering Manual Align Mode...')
 
