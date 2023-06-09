@@ -1638,7 +1638,7 @@ class MainWindow(QMainWindow):
                 setData('state,stackwidget_ng_toggle', 1)
                 cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
                 cfg.baseViewer.set_layer()
-                cfg.stageViewer.set_layer()
+                cfg.stageViewer.set_layer(cfg.data.zpos)
                 # if cfg.pt.MA_webengine_ref.isVisible():
                 #     cfg.refViewer.drawSWIMwindow()
                 # elif cfg.pt.MA_webengine_base.isVisible():
@@ -6448,7 +6448,7 @@ class MainWindow(QMainWindow):
 
 
     def keyPressEvent(self, e):
-        logger.info(f'{str(e)} was pressed!')
+        logger.info(f'{e.key()} was pressed!')
         if e.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
