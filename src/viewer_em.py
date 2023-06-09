@@ -278,9 +278,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # state = copy.deepcopy(self.state)
         # state.position[0] = index
         # self.set_state(state)
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            vc[0] = index
+        try:
+            with self.txn() as s:
+                vc = s.voxel_coordinates
+                vc[0] = index
+        except:
+            print_exception()
 
 
     def set_brightness(self, val=None):
