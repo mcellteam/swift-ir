@@ -23,7 +23,7 @@ from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalet
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
-    get_appdir
+    get_appdir, caller_name, is_joel
 from src.viewer_em import EMViewer, EMViewerStage, EMViewerSnr
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
@@ -43,7 +43,7 @@ __all__ = ['ProjectTab']
 logger = logging.getLogger(__name__)
 
 
-
+DEV = is_joel()
 
 class ProjectTab(QWidget):
 
@@ -268,6 +268,9 @@ class ProjectTab(QWidget):
             # cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis #WasOn
 
+
+            cfg.baseViewer.signals.zposChanged.connect(cfg.stageViewer.set_layer) #WatchThis #WasOn
+
             # cfg.mw.zposChanged.connect(cfg.refViewer.set_layer)
             # cfg.mw.zposChanged.connect(cfg.baseViewer.set_layer)
 
@@ -280,6 +283,7 @@ class ProjectTab(QWidget):
             cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag)  # Not responsible
             cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag)  # Not responsible
             cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer._set_zmag)  # Not responsible
+
 
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
@@ -351,18 +355,19 @@ class ProjectTab(QWidget):
         self.w_ng_display.setObjectName('w_ng_display')
         self.ng_gl = QGridLayout()
         self.ng_gl.addWidget(self.webengine, 0, 0, 5, 5)
-        self._overlayRect = QWidget()
-        self._overlayRect.setObjectName('_overlayRect')
-        self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
-        self._overlayRect.hide()
-        self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
-        self._overlayLab = QLabel('Test Label')
-        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; """)
+        # self._overlayRect = QWidget()
+        # self._overlayRect.setObjectName('_overlayRect')
+        # self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
+        # self._overlayRect.hide()
+        # self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
+        self._overlayLab = QLabel('<label>')
+        self._overlayLab.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5); """)
         self._overlayLab.hide()
 
-        self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
-        self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.hud_overlay.set_theme_overlay()
+        # self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
+        # self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        # self.hud_overlay.set_theme_overlay()
 
         # self.joystick = Joystick()
 
@@ -2659,6 +2664,7 @@ class ProjectTab(QWidget):
 
     @Slot()
     def dataUpdateMA(self):
+
         logger.info('')
 
         #0526 set skipped overlay

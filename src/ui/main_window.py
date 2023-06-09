@@ -200,17 +200,18 @@ class MainWindow(QMainWindow):
     def setZpos(self, z:int):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        if cfg.data.zpos != z:
-            cfg.data.zpos = z
-            if getData('state,manual_mode'):
-                cfg.pt.rb_transforming.setChecked(True)
-                cfg.baseViewer.set_layer()
-            else:
-                cfg.emViewer.set_layer()
-            self.dataUpdateWidgets()
-            self.zposChanged.emit()
+        # if cfg.data.zpos != z:
+        cfg.data.zpos = z
+        if getData('state,manual_mode'):
+            cfg.pt.rb_transforming.setChecked(True)
+            cfg.baseViewer.set_layer(cfg.data.zpos)
+            cfg.stageViewer.set_layer(cfg.data.zpos)
         else:
-            logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
+            cfg.emViewer.set_layer(cfg.data.zpos)
+        self.dataUpdateWidgets()
+        self.zposChanged.emit()
+        # else:
+        #     logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
 
 
     def initSizeAndPos(self, width, height):
@@ -1374,35 +1375,37 @@ class MainWindow(QMainWindow):
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
             if requested >= 0:
-                # cfg.mw.setZpos(requested)
-                cfg.data.zpos = requested
-                if getData('state,manual_mode'):
-                    setData('state,stackwidget_ng_toggle', 1)
-                    cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
-                    cfg.baseViewer.set_layer(cfg.data.zpos)
-                    cfg.stageViewer.set_layer(cfg.data.zpos)
-                else:
-                    cfg.emViewer.set_layer(cfg.data.zpos)
+                cfg.mw.setZpos(requested)
+                # cfg.data.zpos = requested
+                # if getData('state,manual_mode'):
+                #     setData('state,stackwidget_ng_toggle', 1)
+                #     cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
+                #     cfg.baseViewer.set_layer(cfg.data.zpos)
+                #     cfg.stageViewer.set_layer(cfg.data.zpos)
+                # else:
+                #     cfg.emViewer.set_layer(cfg.data.zpos)
 
             else:
-                self.warn(f'Invalid Index Request: {requested}')
+                # self.warn(f'Invalid Index Request: {requested}')
+               pass
 
     def layer_right(self):
 
         if self._isProjectTab():
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
-                # cfg.mw.setZpos(requested)
-                cfg.data.zpos = requested
-                if getData('state,manual_mode'):
-                    setData('state,stackwidget_ng_toggle', 1)
-                    cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
-                    cfg.baseViewer.set_layer(cfg.data.zpos)
-                    cfg.stageViewer.set_layer(cfg.data.zpos)
-                else:
-                    cfg.emViewer.set_layer(cfg.data.zpos)
+                cfg.mw.setZpos(requested)
+                # cfg.data.zpos = requested
+                # if getData('state,manual_mode'):
+                #     setData('state,stackwidget_ng_toggle', 1)
+                #     cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
+                #     cfg.baseViewer.set_layer(cfg.data.zpos)
+                #     cfg.stageViewer.set_layer(cfg.data.zpos)
+                # else:
+                #     cfg.emViewer.set_layer(cfg.data.zpos)
             else:
-                self.warn(f'Invalid Index Request: {requested}')
+                # self.warn(f'Invalid Index Request: {requested}')
+                pass
 
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
@@ -1494,8 +1497,8 @@ class MainWindow(QMainWindow):
         '''Reads Project Data to Update MainWindow.'''
 
         # caller = inspect.stack()[1].function
-        # if DEV:
-        #     logger.info(f'{caller_name()}')
+        if DEV:
+            logger.info(f'{caller_name()}')
         # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
         # if getData('state,blink'):
         #     return
@@ -1555,7 +1558,7 @@ class MainWindow(QMainWindow):
                     self.uiUpdateTimer.start()
                     logger.critical('Updating UI on Timeout [viewer_em.WorkerSignals]...')
 
-            cfg.project_tab._overlayRect.hide()
+            # cfg.project_tab._overlayRect.hide()
             cfg.project_tab._overlayLab.hide()
 
             cur = cfg.data.zpos
@@ -1605,7 +1608,7 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
                 cfg.project_tab._overlayLab.setText('X EXCLUDED - %s' % cfg.data.name_base())
                 cfg.project_tab._overlayLab.show()
-                cfg.project_tab._overlayRect.show()
+                # cfg.project_tab._overlayRect.show()
 
 
             if cfg.pt.ms_widget.isVisible():
@@ -1638,19 +1641,19 @@ class MainWindow(QMainWindow):
 
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
-                # setData('state,stackwidget_ng_toggle', 1)
-                # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
-                cfg.baseViewer.set_layer()
-                cfg.stageViewer.set_layer(cfg.data.zpos)
-                # if cfg.pt.MA_webengine_ref.isVisible():
-                #     cfg.refViewer.drawSWIMwindow()
-                # elif cfg.pt.MA_webengine_base.isVisible():
-                cfg.baseViewer.drawSWIMwindow()
-                # cfg.refViewer.drawSWIMwindow()
-                # cfg.baseViewer.drawSWIMwindow()
-
-                # cfg.refViewer.set_layer()
-                # cfg.baseViewer.set_layer()
+            #     # setData('state,stackwidget_ng_toggle', 1)
+            #     # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+            #     cfg.baseViewer.set_layer()
+            #     cfg.stageViewer.set_layer(cfg.data.zpos)
+            #     # if cfg.pt.MA_webengine_ref.isVisible():
+            #     #     cfg.refViewer.drawSWIMwindow()
+            #     # elif cfg.pt.MA_webengine_base.isVisible():
+            #     cfg.baseViewer.drawSWIMwindow()
+            #     # cfg.refViewer.drawSWIMwindow()
+            #     # cfg.baseViewer.drawSWIMwindow()
+            #
+            #     # cfg.refViewer.set_layer()
+            #     # cfg.baseViewer.set_layer()
 
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.table.selectRow(cur)
