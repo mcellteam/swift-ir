@@ -54,7 +54,7 @@ class WorkerSignals(QObject):
     mpUpdate = Signal()
     ptsChanged = Signal()
     swimAction = Signal()
-    zposChanged = Signal()
+    zposChanged = Signal(int)
 
 
 class MAViewer(neuroglancer.Viewer):
@@ -356,6 +356,7 @@ class MAViewer(neuroglancer.Viewer):
         # cfg.mw.setZpos(request_layer)
         logger.critical('Emitting z-index changed!')
         self.signals.stateChanged.emit(request_layer)
+        self.signals.zposChanged.emit(request_layer)
 
         # if isinstance(self.state.position, np.ndarray):
         #     request_layer = int(self.state.position[0])
@@ -799,6 +800,7 @@ class MAViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def set_zmag(self, val=10):
+        self._blockStateChanged = True
         logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} to {val} [{self.role}]')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
@@ -811,9 +813,11 @@ class MAViewer(neuroglancer.Viewer):
             print_exception()
         else:
             logger.info('Successfully set Z-mag!')
+        self._blockStateChanged = False
 
 
     def _set_zmag(self):
+        self._blockStateChanged = True
         if self._zmag_set < 8:
             self._zmag_set += 1
             try:
@@ -821,6 +825,7 @@ class MAViewer(neuroglancer.Viewer):
                     s.relativeDisplayScales = {"z": 10}
             except:
                 print_exception()
+        self._blockStateChanged = False
 
     def initZoom(self):
         adjust = 1.20

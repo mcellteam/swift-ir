@@ -81,6 +81,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._zmag_set = 0
         # self._blinking = 0
         self._blinkState = 0
+        self._blockStateChanged = False
 
         #todo use this to prevent signal surplus from sending to MainWindow
         self.uiTimer = QTimer()
@@ -144,10 +145,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         # if self._blinking:
         #     return
+        if self._blockStateChanged:
+            return
         if getData('state,blink'):
             return
         if self._settingZoom:
             return
+
         # logger.info(f'[caller: {caller}]')
         # if caller == '<lambda>':
         #     return
@@ -265,10 +269,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def set_zoom(self, val):
         if self.type != 'EMViewerStage':  # Critical!
-            self._settingZoom = True
+            self._blockStateChanged = True
             with self.txn() as s:
                 s.crossSectionScale = val
-            self._settingZoom = False
+            self._blockStateChanged = False
 
     def set_layer(self, index=None):
         if index == None:
@@ -309,6 +313,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def _set_zmag(self):
+        self._blockStateChanged = True
         if self._zmag_set < 8:
             self._zmag_set += 1
             try:
@@ -316,6 +321,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     s.relativeDisplayScales = {"z": 10}
             except:
                 print_exception()
+        self._blockStateChanged = False
 
     def set_zmag(self, val=10):
         # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
