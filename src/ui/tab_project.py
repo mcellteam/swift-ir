@@ -60,15 +60,15 @@ class ProjectTab(QWidget):
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
+        self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.webengine.loadFinished.connect(lambda: logger.info('Web engine load finished!'))
-        setWebengineProperties(self.webengine)
-        self.webengine.setStyleSheet('background-color: #222222;')
-
+        # setWebengineProperties(self.webengine)
+        # self.webengine.setStyleSheet('background-color: #222222;')
+        self.webengine.setMouseTracking(True)
+        self.webengine.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.focusedViewer = None
-
         self.setAutoFillBackground(True)
-        # self.webengine.setMouseTracking(True)
 
         '''primary tab widgets'''
         self.ng_browser_container_outer = HWidget()
@@ -217,17 +217,6 @@ class ProjectTab(QWidget):
         cfg.mw.dataUpdateWidgets()
         logger.info('<<<< Refreshing')
 
-    # def initSnrViewer(self):
-    #
-    #     # cfg.snrViewer = self.viewer =  cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-    #     # cfg.snrViewer = cfg.emViewer = EMViewerSnr(webengine=self.snrWebengine)
-    #     cfg.snrViewer = EMViewerSnr(webengine=self.snrWebengine)
-    #     # cfg.snrViewer.initViewerSbs(orientation='vertical')
-    #     # self.snrWebengine.setUrl(QUrl(cfg.snrViewer.url()))
-    #     # cfg.snrViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-    #     cfg.snrViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
-    #     cfg.snrViewer.signals.stateChangedAny.connect(cfg.snrViewer._set_zmag)
-    #     # self.updateNeuroglancer()
 
     def shutdownNeuroglancer(self):
         logger.info('')
@@ -513,13 +502,16 @@ class ProjectTab(QWidget):
         # self.MA_webengine_base.focusInEvent.connect(self.focusedViewerChanged)
         self.MA_webengine_ref.setMinimumWidth(100)
         self.MA_webengine_base.setMinimumWidth(100)
-        # self.MA_webengine_ref.setMouseTracking(True)
-        # self.MA_webengine_base.setMouseTracking(True)
-        # self.MA_webengine_stage.setMouseTracking(True)
+        self.MA_webengine_ref.setMouseTracking(True)
+        self.MA_webengine_base.setMouseTracking(True)
+        self.MA_webengine_stage.setMouseTracking(True)
+        self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+
         '''Mouse move events will occur only when a mouse button is pressed down, 
         unless mouse tracking has been enabled with setMouseTracking() .'''
-
-        self.MA_webengine_base.setFocus()
 
         # NO CHANGE----------------------
         # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
@@ -819,7 +811,7 @@ class ProjectTab(QWidget):
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
         self.btnQuickSWIM = QPushButton('Regenerate\nMatch\n&Signals')
-        self.btnQuickSWIM.setStyleSheet("font-size: 8px")
+        self.btnQuickSWIM.setStyleSheet("font-size: 8px; font-weight: 600;")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedSize(QSize(64, 38))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -900,10 +892,6 @@ class ProjectTab(QWidget):
         vbl.setSpacing(0)
         # vbl.addWidget(self.stageDetails)
         self.gb_stageInfoText.setLayout(vbl)
-
-        # self.MA_webengine_widget = VWidget()
-        # self.MA_webengine_widget.addWidget(self.MA_webengine_stage)
-        # self.MA_webengine_widget.addWidget(self.cb_showYellowFrame)
 
         self.btnTranslate = QPushButton('Move')
         self.btnTranslate.setStyleSheet('font-size: 10px;')
@@ -1602,11 +1590,7 @@ class ProjectTab(QWidget):
         # self.MA_stackedWidget_gb.setLayout(vbl)
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
-        # self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
         self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
-        # self.MA_stageSplitter.addWidget(VWidget(self.radioboxes_method, self.MA_tabs, self.gb_actionsMA))
-        # self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget, self.gb_actionsMA))
-        # self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget_gb, self.MA_controls))
         self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)

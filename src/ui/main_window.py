@@ -1372,10 +1372,9 @@ class MainWindow(QMainWindow):
             if requested >= 0:
                 cfg.mw.setZpos(requested)
                 if getData('state,manual_mode'):
-                    if getData('state,stackwidget_ng_toggle'):
-                        cfg.baseViewer.set_layer()
-                    else:
-                        self.warn('Z-index may not be changed when viewing a reference.')
+                    setData('state,stackwidget_ng_toggle', 1)
+                    cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
+                    cfg.baseViewer.set_layer(cfg.data.zpos)
                     cfg.stageViewer.set_layer(cfg.data.zpos)
                 else:
                     cfg.emViewer.set_layer(cfg.data.zpos)
@@ -1391,10 +1390,9 @@ class MainWindow(QMainWindow):
             if requested < len(cfg.data):
                 cfg.mw.setZpos(requested)
                 if getData('state,manual_mode'):
-                    if getData('state,stackwidget_ng_toggle'):
-                        cfg.baseViewer.set_layer()
-                    else:
-                        self.warn('Z-index may not be changed when viewing a reference.')
+                    setData('state,stackwidget_ng_toggle', 1)
+                    cfg.pt.sw_neuroglancer.setCurrentIndex(cfg.data['state']['stackwidget_ng_toggle'])
+                    cfg.baseViewer.set_layer(cfg.data.zpos)
                     cfg.stageViewer.set_layer(cfg.data.zpos)
                 else:
                     cfg.emViewer.set_layer(cfg.data.zpos)
@@ -1635,8 +1633,8 @@ class MainWindow(QMainWindow):
 
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
-                setData('state,stackwidget_ng_toggle', 1)
-                cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+                # setData('state,stackwidget_ng_toggle', 1)
+                # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
                 cfg.baseViewer.set_layer()
                 cfg.stageViewer.set_layer(cfg.data.zpos)
                 # if cfg.pt.MA_webengine_ref.isVisible():
