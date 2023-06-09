@@ -163,7 +163,8 @@ class MAViewer(neuroglancer.Viewer):
     # def set_layer(self, index=None):
     def set_layer(self, zpos=None):
         # if self.type != 'EMViewerStage':
-        logger.critical(f'{self.type}:{self.role} set_layer >>>>')
+        if DEV:
+            logger.critical(f'{self.type}:{self.role} {caller_name()}')
 
         prev_index = self.index
 
@@ -275,8 +276,8 @@ class MAViewer(neuroglancer.Viewer):
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             s.input_event_bindings.viewer['keys'] = 'swim'
-            # s.show_ui_controls = False
-            s.show_ui_controls = True
+            s.show_ui_controls = False
+            # s.show_ui_controls = True
             s.show_panel_borders = False
 
         self._layer = math.floor(self.state.position[0])
@@ -318,12 +319,6 @@ class MAViewer(neuroglancer.Viewer):
     def on_state_changed(self):
         if self._noUpdate:
             return
-        # if caller == '<lambda>':
-        #     return
-        if DEV:
-            caller = caller_name()
-            logger.info(f'[{caller}]')
-
 
         if not self.cs_scale:
             if self.state.cross_section_scale:
@@ -334,8 +329,11 @@ class MAViewer(neuroglancer.Viewer):
         request_layer = int(self.state.position[0])
 
         if cfg.data.zpos == request_layer:
-            logger.critical('No Section change. Returning.')
             return
+
+        if DEV:
+            caller = caller_name()
+            logger.info(f'[{caller}]')
 
         # if self.role == 'ref':
         #     if request_layer != cfg.data.get_ref_index():
@@ -355,10 +353,6 @@ class MAViewer(neuroglancer.Viewer):
         cfg.data.zpos = request_layer
         # cfg.mw.setZpos(request_layer)
         self.signals.stateChanged.emit(request_layer)
-
-
-        # if caller == '<lambda>':
-        #     return
 
         # if isinstance(self.state.position, np.ndarray):
         #     request_layer = int(self.state.position[0])
@@ -538,7 +532,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def undrawSWIMwindows(self):
         caller = inspect.stack()[1].function
-        logger.info(f"Undrawing SWIM windows (caller: {caller})...")
+        logger.info(f"Undrawing SWIM windows...")
 
         # with cfg.refViewer.txn() as s:
         #     print(s.layers['SWIM'].annotations)
@@ -569,7 +563,6 @@ class MAViewer(neuroglancer.Viewer):
         caller = inspect.stack()[1].function
 
         self.undrawSWIMwindows()
-        logger.critical(f'Drawing SWIM window (caller: {caller})...')
         marker_size = 1
 
         if self.role == 'ref':
@@ -581,6 +574,8 @@ class MAViewer(neuroglancer.Viewer):
         #     self.draw_point_annotations()
         #     return
         #
+
+        logger.critical(f'Drawing SWIM window (caller: {caller}) index={self.index}')
 
         if cfg.data.current_method == 'grid-custom':
             logger.info('Type: Custom Grid Alignment...')
@@ -631,7 +626,7 @@ class MAViewer(neuroglancer.Viewer):
                 )
 
         elif cfg.data.current_method == 'grid-default':
-            logger.info('Type: Default Grid Alignment...')
+            # logger.info('Type: Default Grid Alignment...')
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
