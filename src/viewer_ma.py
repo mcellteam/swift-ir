@@ -60,8 +60,7 @@ class MAViewer(neuroglancer.Viewer):
     def __init__(self, role=None, webengine=None):
         super().__init__()
         self.index = None
-        if role:
-            self.role = role
+        self.role = role
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
@@ -276,8 +275,8 @@ class MAViewer(neuroglancer.Viewer):
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             s.input_event_bindings.viewer['keys'] = 'swim'
-            s.show_ui_controls = False
-            # s.show_ui_controls = True
+            # s.show_ui_controls = False
+            s.show_ui_controls = True
             s.show_panel_borders = False
 
         self._layer = math.floor(self.state.position[0])
@@ -304,14 +303,16 @@ class MAViewer(neuroglancer.Viewer):
             return
         caller = inspect.stack()[1].function
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-        logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale:.2g}, self.state.cross_section_scale = {self.state.cross_section_scale:.2g}')
+        # logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale}, self.state.cross_section_scale = {self.state.cross_section_scale}')
 
-        if not self.cs_scale:
-            if self.state.cross_section_scale < .001:
-                self.cs_scale = self.state.cross_section_scale
+        # if not self.cs_scale:
+        #     if self.state.cross_section_scale < .001:
+        #         self.cs_scale = self.state.cross_section_scale
+
+        # This part is identical to emViewer
         if self._zmag_set < 10:
             self._zmag_set += 1
-        # self.signals.stateChangedAny.emit()
+        self.signals.stateChangedAny.emit()
 
     @Slot()
     def on_state_changed(self):
@@ -323,51 +324,37 @@ class MAViewer(neuroglancer.Viewer):
             caller = caller_name()
             logger.info(f'[{caller}]')
 
+
+        if not self.cs_scale:
+            if self.state.cross_section_scale:
+                if self.state.cross_section_scale > .0001:
+                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+                    self.cs_scale = self.state.cross_section_scale
+
         request_layer = int(self.state.position[0])
 
-        if self.role == 'ref':
-            if request_layer != cfg.data.get_ref_index():
-                with self.txn() as s:
-                    logger.info('Sorry!')
-                    vc = s.voxel_coordinates
-                    vc[0] = cfg.data.get_ref_index()
-            # if not cfg.pt.MA_webengine_ref.isVisible():
-            #     logger.warning('MA_webengine_ref is NOT visible... canceling state changed callback...')
-            return
-        if self.role == 'base':
-            if not cfg.pt.MA_webengine_base.isVisible():
-                # logger.warning('MA_webengine_base is NOT visible... canceling state changed callback...')
-                return
-
         if cfg.data.zpos == request_layer:
-            logger.critical('Nothing changed. Returning.')
+            logger.critical('No Section change. Returning.')
             return
-        else:
-            cfg.data.zpos = request_layer
-            # cfg.mw.setZpos(request_layer)
-            self.signals.stateChanged.emit(request_layer)
 
-        # cfg.data['state']['MA_focus'] = self.role
-        # cfg.data['state']['focus_widget'] = QApplication.focusWidget()
-        # if caller == '_dispatch_changed_callbacks':
-        #     logger.critical('Caller was _dispatch_changed_callbacks, canceling UI update.')
+        # if self.role == 'ref':
+        #     if request_layer != cfg.data.get_ref_index():
+        #         with self.txn() as s:
+        #             # logger.info('Sorry!')
+        #             vc = s.voxel_coordinates
+        #             vc[0] = cfg.data.get_ref_index()
+        #     # if not cfg.pt.MA_webengine_ref.isVisible():
+        #     #     logger.warning('MA_webengine_ref is NOT visible... canceling state changed callback...')
         #     return
-
-        # if self._inSync:
-        #     self._inSync = 0
-        #     logger.critical('This object initiated the state change callback, canceling UI update.')
-        #     return
-
-        # if cfg.data.zpos == self.z():
-        #     logger.critical('cfg.data.zpos EQUALS self.z(). Canceling UI update.')
+        # if self.role == 'base':
+        #     if not cfg.pt.MA_webengine_base.isVisible():
+        #         # logger.warning('MA_webengine_base is NOT visible... canceling state changed callback...')
+        #         return
 
 
-        # curframe = inspect.currentframe()
-        # calframe = inspect.getouterframes(curframe, 2)
-        # calname = str(calframe[1][3])
-        # logger.info(f'curframe: {str(curframe)}')
-        # logger.info(f'calframe: {str(calframe)}')
-        # logger.info(f'calname: {str(calname)}')
+        cfg.data.zpos = request_layer
+        # cfg.mw.setZpos(request_layer)
+        self.signals.stateChanged.emit(request_layer)
 
 
         # if caller == '<lambda>':
@@ -756,10 +743,13 @@ class MAViewer(neuroglancer.Viewer):
         y = coords[1]
         hw = int(ww_x / 2) # Half-width
         hh = int(ww_y / 2) # Half-height
+
         A = (self.index, y + hh, x - hw)
         B = (self.index, y + hh, x + hw)
         C = (self.index, y - hh, x + hw)
         D = (self.index, y - hh, x - hw)
+
+
         segments.append(ng.LineAnnotation(id=prefix + '_L1', pointA=A, pointB=B, props=[color, marker_size]))
         segments.append(ng.LineAnnotation(id=prefix + '_L2', pointA=B, pointB=C, props=[color, marker_size]))
         segments.append(ng.LineAnnotation(id=prefix + '_L3', pointA=C, pointB=D, props=[color, marker_size]))
@@ -826,9 +816,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def _set_zmag(self):
-
         if self._zmag_set < 8:
-            # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} [{self.role}]')
             self._zmag_set += 1
             try:
                 with self.txn() as s:

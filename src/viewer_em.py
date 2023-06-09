@@ -82,6 +82,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # self._blinking = 0
         self._blinkState = 0
 
+        #todo use this to prevent signal surplus from sending to MainWindow
         self.uiTimer = QTimer()
         self.uiTimer.setSingleShot(True)
         self.uiTimer.setInterval(300)
@@ -305,9 +306,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def _set_zmag(self):
         if self._zmag_set < 8:
             self._zmag_set += 1
-            # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
             try:
-                # logger.critical(f'Setting Z-mag on {self.type}')
                 with self.txn() as s:
                     s.relativeDisplayScales = {"z": 10}
             except:
@@ -394,11 +393,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # del cfg.unal_tensor
         # del cfg.al_tensor
         cfg.mw.hud.post('Opening dataset asynchronously using Tensorstore...')
-        sf = cfg.data.scale_val(s=cfg.data.scale)
         cfg.tensor = None
         try:
             # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
-
+            sf = cfg.data.scale_val(s=cfg.data.scale)
             if cfg.data.is_aligned_and_generated():
                 path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
                 cfg.tensor = cfg.al_tensor = get_zarr_tensor(path).result()
@@ -561,7 +559,7 @@ class EMViewer(AbstractEMViewer):
             else:
                 s.crossSectionBackgroundColor = '#222222'
             _, y, x = self.store.shape
-            s.position = [0.5, y / 2, x / 2]
+            # s.position = [0.5, y / 2, x / 2]
             # s.position = [0.1, y / 2, x / 2]
             # s.layers['ann'].annotations = list(self.pts.values())
 
@@ -598,23 +596,30 @@ class EMViewerStage(AbstractEMViewer):
 
         self.coordinate_space = self.getCoordinateSpace()
 
+        self.get_tensors()
+        sf = cfg.data.scale_val(s=cfg.data.scale)
+        path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+
         self.index = cfg.data.zpos
-        dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
-        # self.store = cfg.tensor = cfg.al_tensor = get_zarr_tensor(dir_staged).result()
-        self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
+        # dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
+        # self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
+
+        tensor = get_zarr_tensor(path).result()
         self.LV = ng.LocalVolume(
             volume_type='image',
-            data=self.store,
+            # data=self.store,
+            data=tensor[:,:,:],
             # data=self.store[self.index:self.index+1, :, :],
             # dimensions=self.coordinate_space,
             # dimensions=[1,1,1],
-            dimensions=self.getCoordinateSpacePlanar(),
+            # dimensions=self.getCoordinateSpacePlanar(),
+            dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0]
         )
         # _, tensor_y, tensor_x = cfg.tensor.shape
-        _, tensor_y, tensor_x = self.store.shape
+        _, tensor_y, tensor_x = tensor.shape
 
-        logger.info(f'Tensor Shape: {self.store.shape}')
+        logger.info(f'Tensor Shape: {tensor.shape}')
 
         sf = cfg.data.scale_val(s=cfg.data.scale)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
@@ -638,7 +643,7 @@ class EMViewerStage(AbstractEMViewer):
             # s.showSlices=False
             # s.position = [0, tensor_y / 2, tensor_x / 2]
             # s.position = [0.5, tensor_y / 2, tensor_x / 2]
-            s.voxel_coordinates = [0, tensor_y / 2, tensor_x / 2]
+            # s.voxel_coordinates = [0, tensor_y / 2, tensor_x / 2] #Prev
             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
 
         with self.config_state.txn() as s:
