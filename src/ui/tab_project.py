@@ -263,7 +263,9 @@ class ProjectTab(QWidget):
             # cfg.refViewer.signals.stateChanged.connect(cfg.baseViewer.set_layer)
             # cfg.baseViewer.signals.stateChanged.connect(cfg.refViewer.set_layer)
 
-            cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            cfg.refViewer.signals.stateChangedAny.connect(lambda: self.rb_transforming.setChecked(True))
+
+            # cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis #WasOn
 
             # cfg.mw.zposChanged.connect(cfg.refViewer.set_layer)
@@ -1210,11 +1212,13 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
         self.method_rb0 = QRadioButton('Default Grid')
+        self.method_rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         tip = """Similar to the Default Grid method, but the user is able to avoid image defects 
         by adjusting the grid shape and location and adding or removing quadrants of the grid. 
         An affine transformation requires at least 3 regions (quadrants)."""
         self.method_rb1 = QRadioButton('Custom Grid')
+        self.method_rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.method_rb1.setStyleSheet("font-size: 10px;")
         self.method_rb1.setToolTip(tip)
 
@@ -1223,6 +1227,7 @@ class ProjectTab(QWidget):
         Note: An affine transformation requires at least 3 correspondence regions."""
         # self.method_rb2 = QRadioButton('Correspondence Points')
         self.method_rb2 = QRadioButton('Match Regions')
+        self.method_rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.method_rb2.setStyleSheet("font-size: 10px;")
         self.method_rb2.setToolTip(tip)
 
@@ -1616,11 +1621,13 @@ class ProjectTab(QWidget):
         self.bg_ref_tra = QButtonGroup(self)
         self.bg_ref_tra.setExclusive(True)
         self.rb_transforming = QRadioButton('Transforming Section')
+        self.rb_transforming.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.rb_transforming.setChecked(cfg.data['state']['stackwidget_ng_toggle'])
         setData('state,stackwidget_ng_toggle',1)
         self.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
         self.rb_transforming.setStyleSheet("font-size: 10px;")
         self.rb_reference = QRadioButton('Reference Section')
+        self.rb_reference.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb_reference.setStyleSheet("font-size: 10px;")
         self.bg_ref_tra.addButton(self.rb_transforming)
         self.bg_ref_tra.addButton(self.rb_reference)

@@ -54,6 +54,7 @@ class WorkerSignals(QObject):
     mpUpdate = Signal()
     ptsChanged = Signal()
     swimAction = Signal()
+    zposChanged = Signal()
 
 
 class MAViewer(neuroglancer.Viewer):
@@ -80,7 +81,7 @@ class MAViewer(neuroglancer.Viewer):
         # self.signals.ptsChanged.connect(self.drawSWIMwindow)
         self.type = 'MAViewer'
         self._inSync = 0
-        self._noUpdate = False
+        self._blockStateChanged = False
 
         logger.info('viewer constructed!')
 
@@ -150,19 +151,20 @@ class MAViewer(neuroglancer.Viewer):
     def set_zoom(self, val):
         caller = inspect.stack()[1].function
         logger.info(f'Setting zoom to {caller}')
-        self._noUpdate = True
+        self._blockStateChanged = True
         # state = copy.deepcopy(self.state)
         # state.crossSectionScale = val
         # self.set_state(state)
         with self.txn() as s:
             s.crossSectionScale = val
 
-        self._noUpdate = False
+        self._blockStateChanged = False
 
 
     # def set_layer(self, index=None):
     def set_layer(self, zpos=None):
         # if self.type != 'EMViewerStage':
+        self._blockStateChanged = True
         if DEV:
             logger.critical(f'{self.type}:{self.role} {caller_name()}')
 
@@ -180,21 +182,21 @@ class MAViewer(neuroglancer.Viewer):
                 self.index=cfg.data.zpos
 
         # if index == None:
-        if self.role == 'ref':
-            if self.index != cfg.data.get_ref_index():
-                with self.txn() as s:
-                    vc = s.voxel_coordinates
-                    vc[0] = self.index
-                self.drawSWIMwindow()
+        # if self.role == 'ref':
+        #     if self.index != cfg.data.get_ref_index():
+        #         with self.txn() as s:
+        #             vc = s.voxel_coordinates
+        #             vc[0] = self.index
+        #         self.drawSWIMwindow()
 
-        elif self.role == 'base':
-            if self.index != cfg.data.zpos:
-                with self.txn() as s:
-                    vc = s.voxel_coordinates
-                    vc[0] = self.index
-                self.drawSWIMwindow()
+        # if self.index != cfg.data.zpos:
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            vc[0] = self.index
+        self.drawSWIMwindow()
 
-        logger.critical(f'{self.type}:{self.role} , {prev_index} , {self.index}')
+        logger.critical(f'{self.type}:{self.role}  {prev_index} -> {self.index}')
+        self._blockStateChanged = False
 
         # else:
         #     self.index = index
@@ -216,11 +218,11 @@ class MAViewer(neuroglancer.Viewer):
         if cfg.data.skipped():
             return
 
-        if obey_zpos:
-            if self.role == 'ref':
-                self.index = cfg.data.get_ref_index()
-            elif self.role == 'base':
-                self.index = cfg.data.zpos #
+        # if obey_zpos:
+        #     if self.role == 'ref':
+        #         self.index = cfg.data.get_ref_index()
+        #     elif self.role == 'base':
+        #         self.index = cfg.data.zpos #
 
 
         self.clear_layers()
@@ -265,8 +267,8 @@ class MAViewer(neuroglancer.Viewer):
             # s.cross_section_scale = 1 #bug # cant do this
             _, y, x = self.store.shape
             # s.position = [0.5, y / 2, x / 2]
-            s.voxel_coordinates = [self.index, y / 2, x / 2]
-            # s.position = [0.1, y / 2, x / 2]
+            # s.voxel_coordinates = [self.index, y / 2, x / 2]
+            s.voxel_coordinates = [cfg.data.zpos, y / 2, x / 2]
             # s.layers['ann'].annotations = list(self.pts.values())
 
         self.actions.add('add_manpoint', self.add_matchpoint)
@@ -300,7 +302,7 @@ class MAViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed_any(self):
-        if self._noUpdate:
+        if self._blockStateChanged:
             return
         caller = inspect.stack()[1].function
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
@@ -317,7 +319,7 @@ class MAViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed(self):
-        if self._noUpdate:
+        if self._blockStateChanged:
             return
 
         if not self.cs_scale:
@@ -352,6 +354,7 @@ class MAViewer(neuroglancer.Viewer):
 
         cfg.data.zpos = request_layer
         # cfg.mw.setZpos(request_layer)
+        logger.critical('Emitting z-index changed!')
         self.signals.stateChanged.emit(request_layer)
 
         # if isinstance(self.state.position, np.ndarray):
@@ -559,7 +562,7 @@ class MAViewer(neuroglancer.Viewer):
         if self._dontDraw:
             return
 
-        self._noUpdate = True
+        self._blockStateChanged = True
         caller = inspect.stack()[1].function
 
         self.undrawSWIMwindows()
@@ -728,7 +731,7 @@ class MAViewer(neuroglancer.Viewer):
                     }
                 ''',
             )
-        self._noUpdate = False
+        self._blockStateChanged = False
         QApplication.processEvents()
 
     # @cache
