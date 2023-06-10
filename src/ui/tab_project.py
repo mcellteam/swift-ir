@@ -538,12 +538,11 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
-        self.MA_ptsListWidget_ref.setStyleSheet('background-color: #dadada;')
+        self.MA_ptsListWidget_ref.setStyleSheet('background-color: #dadada; font-size: 10px;')
         self.MA_ptsListWidget_ref.setMaximumHeight(54)
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
-        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px;')
 
         self.MA_refNextColorTxt = QLabel('Next Color: ')
         self.MA_refNextColorTxt.setStyleSheet('font-size: 9px; font-weight: 600px;')
@@ -551,13 +550,12 @@ class ProjectTab(QWidget):
         self.MA_refNextColorLab.setFixedSize(16, 16)
 
         self.MA_ptsListWidget_base = QListWidget()
-        self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada;')
+        self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
         self.MA_ptsListWidget_base.setMaximumHeight(54)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
-        self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px;')
         self.MA_baseNextColorTxt = QLabel('Next Color: ')
         self.MA_baseNextColorTxt.setStyleSheet('font-size: 9px; font-weight: 600px;')
         self.MA_baseNextColorLab = QLabel()
@@ -1637,10 +1635,12 @@ class ProjectTab(QWidget):
         self.rb_reference.setStyleSheet("font-size: 10px;")
         self.bg_ref_tra.addButton(self.rb_transforming)
         self.bg_ref_tra.addButton(self.rb_reference)
-        self.rb_transforming.hide()
-        self.rb_reference.hide()
+        self.ma_radioboxes = HWidget(QLabel('          '), HWidget(self.rb_transforming, QLabel('  '), self.rb_reference), ExpandingWidget(self))
+        self.ma_radioboxes.layout.setSpacing(4)
+        self.ma_radioboxes.hide()
 
         def fn():
+
             newcur = (0, 1)[self.rb_transforming.isChecked()]
             cfg.data['state']['stackwidget_ng_toggle'] = newcur
             active = (cfg.refViewer, cfg.baseViewer)[newcur]
@@ -1653,7 +1653,13 @@ class ProjectTab(QWidget):
                 except:
                     print_exception()
             self.sw_neuroglancer.setCurrentIndex(newcur)
+            if self.rb_transforming.isChecked():
+                self.setRbTransforming()
+            elif self.rb_reference.isChecked():
+                self.setRbReference()
             # active.drawSWIMwindow()
+            cfg.refViewer.drawSWIMwindow()
+            cfg.baseViewer.drawSWIMwindow()
         # self.bg_ref_tra.buttonClicked.connect(fn)
         self.bg_ref_tra.buttonToggled.connect(fn)
 
@@ -1776,9 +1782,7 @@ class ProjectTab(QWidget):
 
 
         self.layout_ng_MA_toolbar.addWidget(self.lab_filename)
-        self.layout_ng_MA_toolbar.addWidget(QLabel('          '))
-        self.layout_ng_MA_toolbar.addWidget(HWidget(self.rb_transforming, self.rb_reference))
-        self.layout_ng_MA_toolbar.addWidget(ExpandingWidget(self))
+        self.layout_ng_MA_toolbar.addWidget(self.ma_radioboxes)
 
 
         self.w_section_label_header = QWidget()
@@ -2204,6 +2208,17 @@ class ProjectTab(QWidget):
         # self.restoreState(cfg.mw.settings.value("hsplitter_tn_ngSizes"))
 
 
+    def setRbTransforming(self):
+        self.rb_transforming.setChecked(True)
+        self.rb_transforming.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+        self.rb_reference.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+
+    def setRbReference(self):
+        self.rb_reference.setChecked(True)
+        self.rb_transforming.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+        self.rb_reference.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+
+
 
     def onBlinkTimer(self):
         logger.info('')
@@ -2608,7 +2623,6 @@ class ProjectTab(QWidget):
 
     def updateCursor(self):
         QApplication.restoreOverrideCursor()
-        self.msg_MAinstruct.hide()
         # self.msg_MAinstruct.setText("Toggle 'Mode' to select manual correspondence points")
 
         if getData('state,manual_mode'):
@@ -2617,7 +2631,6 @@ class ProjectTab(QWidget):
                 pixmap = QPixmap('src/resources/cursor_circle.png')
                 cursor = QCursor(pixmap.scaled(QSize(20, 20), Qt.KeepAspectRatio, Qt.SmoothTransformation))
                 QApplication.setOverrideCursor(cursor)
-                self.msg_MAinstruct.show()
 
     # def isManualReady(self):
     #     return self.tgl_alignMethod.isChecked()
@@ -2781,6 +2794,7 @@ class ProjectTab(QWidget):
         self.setUpdatesEnabled(False)
         self.update_MA_list_base()
         self.update_MA_list_ref()
+        self.update_MA_list_count_labels()
         self.setUpdatesEnabled(True)
 
     def update_MA_list_ref(self):
@@ -2788,6 +2802,7 @@ class ProjectTab(QWidget):
         # cfg.refViewer.pts = {}
         self.MA_ptsListWidget_ref.clear()
         self.MA_ptsListWidget_ref.update()
+
         n = 0
         for i, key in enumerate(cfg.refViewer.pts.keys()):
             p = cfg.refViewer.pts[key]
@@ -2801,8 +2816,8 @@ class ProjectTab(QWidget):
             item.setFont(font)
             self.MA_ptsListWidget_ref.addItem(item)
             n += 1
-        self.MA_refNextColorLab.setStyleSheet(
-            f'''background-color: {cfg.refViewer.getNextUnusedColor()}''')
+
+
 
     def update_MA_list_base(self):
         logger.info('')
@@ -2822,8 +2837,24 @@ class ProjectTab(QWidget):
             item.setFont(font)
             self.MA_ptsListWidget_base.addItem(item)
             n += 1
-        self.MA_baseNextColorLab.setStyleSheet(
-            f'''background-color: {cfg.baseViewer.getNextUnusedColor()}''')
+
+    def update_MA_list_count_labels(self):
+        if len(cfg.data.manpoints()['base']) <= 2:
+            self.MA_baseNextColorLab.setStyleSheet(f'''background-color: {cfg.baseViewer.getNextUnusedColor()}''')
+            self.MA_baseNextColorLab.show()
+        else:
+            self.MA_baseNextColorLab.hide()
+            self.MA_baseNextColorTxt.setText('Complete!')
+
+        if len(cfg.data.manpoints()['ref']) <= 2:
+            self.MA_refNextColorLab.setStyleSheet(f'''background-color: {cfg.refViewer.getNextUnusedColor()}''')
+            self.MA_refNextColorLab.show()
+        else:
+            self.MA_refNextColorLab.hide()
+            self.MA_refNextColorTxt.setText('Complete!')
+
+
+
 
     # def update_MA_ref_state(self):
     #     caller = inspect.stack()[1].function
@@ -3112,7 +3143,7 @@ class ProjectTab(QWidget):
                 # state.cross_section_scale = val * val
                 # state.cross_section_scale = 1 / (val * val)
                 # cfg.refViewer.set_state(state)
-                if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
+                if abs(cfg.baseViewer.state.cross_section_scale - val) > .0001:
                     # logger.info('Setting Neuroglancer Zoom to %g...' %val)
                     cfg.refViewer.set_zoom(val)
                     cfg.baseViewer.set_zoom(val)
