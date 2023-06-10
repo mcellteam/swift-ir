@@ -1564,6 +1564,12 @@ class ProjectTab(QWidget):
         self.btn_settings_apply_everywhere.clicked.connect(fn)
         self.btn_settings_apply_everywhere.setFixedSize(QSize(140, 18))
 
+
+        self.settings_back_btn = QPushButton('Back')
+        self.settings_back_btn.setFixedSize(QSize(40, 18))
+        self.settings_back_btn.clicked.connect(self.updateMethodSelectWidget)
+
+
         self.fl_settings = QFormLayout()
         self.fl_settings.setVerticalSpacing(4)
         self.fl_settings.setHorizontalSpacing(6)
@@ -1576,9 +1582,16 @@ class ProjectTab(QWidget):
         # self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
         self.fl_settings.addWidget(self.btn_settings_apply_everywhere)
 
+        self._settings_widget = QWidget()
+        self._settings_widget.setStyleSheet("font-size: 9px;")
+        self._settings_widget.setLayout(self.fl_settings)
+
         self.settings_widget = QWidget()
-        self.settings_widget.setStyleSheet("font-size: 9px;")
-        self.settings_widget.setLayout(self.fl_settings)
+        self.settings_widget.setContentsMargins(0,0,0,0)
+        vbl = VBL()
+        vbl.addWidget(self._settings_widget)
+        vbl.addWidget(self.settings_back_btn, alignment=Qt.AlignLeft)
+        self.settings_widget.setLayout(vbl)
 
         '''MA STACKED WIDGET'''
         self.MA_stackedWidget = QStackedWidget()
