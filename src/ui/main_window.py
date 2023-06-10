@@ -466,6 +466,10 @@ class MainWindow(QMainWindow):
                     except:
                         print_exception()
                         logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
+                else:
+                    cfg.pt.msList[i].set_no_image()
+                    cfg.pt.msList[i].update()
+
         # elif cfg.data.current_method == 'manual-hint':
         #     cfg.data.snr_components()
         elif method == 'manual-strict':
