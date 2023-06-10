@@ -1636,9 +1636,11 @@ class DataModel:
 
             if (WW_X <= img_w) and (WW_Y <= img_h):
                 for s in self.scales():
-                    scale_factor = get_scale_val(s) / self.scale_val()
+                    # scale_factor = get_scale_val(s) / self.scale_val()
+                    scale_factor =  self.scale_val() / get_scale_val(s)
                     ww_x = WW_X * scale_factor
                     ww_y = WW_Y * scale_factor
+                    # logger.critical(f"\n\ngrid-custom-px for {s} to {str([ww_x, ww_y])}\n")
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-px'] = [ww_x, ww_y]
                     if (self.swim_2x2_custom_px()[0] * 2) > ww_x:
                         self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = \
@@ -1661,12 +1663,15 @@ class DataModel:
             WW_X = pixels
             WW_Y = (pixels / img_w) * img_h
             for s in self.scales():
-                scale_factor = get_scale_val(s) / self.scale_val()
+                # scale_factor = get_scale_val(s) / self.scale_val()
+                scale_factor = self.scale_val() / get_scale_val(s)
                 ww_x = WW_X * scale_factor
                 ww_y = WW_Y * scale_factor
                 if (2 * ww_x) <= self.swim_1x1_custom_px()[0]:
+                    # logger.critical(f"\n\nSetting grid-custom-2x2-px for {s} to {str([ww_x, ww_y])}\n")
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = [ww_x, ww_y]
                 else:
+                    # logger.critical(f"\n\nSetting grid-custom-2x2-px for {s} to {str([self.swim_1x1_custom_px()[0] / 2, self.swim_1x1_custom_px()[1] / 2])}\n")
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = \
                         [self.swim_1x1_custom_px()[0] / 2, self.swim_1x1_custom_px()[1] / 2]
 
