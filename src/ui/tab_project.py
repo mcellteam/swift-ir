@@ -230,17 +230,14 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self):
         logger.info('')
-        QApplication.processEvents()
-        cfg.mw.tell('Initializing Neuroglancer...')
+        # QApplication.processEvents()
+        # cfg.mw.tell('Initializing Neuroglancer')
         logger.info(f'\n\n  Initializing Neuroglancer [{inspect.stack()[1].function}]...\n')
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):
-            # cfg.main_window.comboboxNgLayout.setCurrentText('xy')
-            # self.shutdownNeuroglancer()
             self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
             self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
             self.MA_webengine_stage.setUrl(QUrl("http://localhost:8888/"))
-
             cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
             cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
@@ -248,12 +245,15 @@ class ProjectTab(QWidget):
             # cfg.main_window.swimWindowChanged.connect(cfg.refViewer.drawSWIMwindow)
             # cfg.main_window.swimWindowChanged.connect(cfg.baseViewer.drawSWIMwindow)
 
-            cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            # cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
+            cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+            cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
 
             cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
+            cfg.refViewer.signals.ptsChanged.connect(cfg.refViewer.drawSWIMwindow)
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
+
             cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
+            cfg.baseViewer.signals.ptsChanged.connect(cfg.baseViewer.drawSWIMwindow)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
             # cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
             # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
@@ -263,13 +263,11 @@ class ProjectTab(QWidget):
             # cfg.refViewer.signals.stateChanged.connect(cfg.baseViewer.set_layer)
             # cfg.baseViewer.signals.stateChanged.connect(cfg.refViewer.set_layer)
 
-            cfg.refViewer.signals.stateChangedAny.connect(lambda: self.rb_transforming.setChecked(True))
+            # cfg.refViewer.signals.stateChangedAny.connect(lambda: self.rb_transforming.setChecked(True))
 
             # cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
-            cfg.baseViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets) #WatchThis #WasOn
-
-
-            cfg.baseViewer.signals.zposChanged.connect(cfg.stageViewer.set_layer) #WatchThis #WasOn
+            cfg.baseViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
+            cfg.baseViewer.signals.zposChanged.connect(lambda: cfg.mw.setZpos(update_viewers=False, force_update_stage=True))
 
             # cfg.mw.zposChanged.connect(cfg.refViewer.set_layer)
             # cfg.mw.zposChanged.connect(cfg.baseViewer.set_layer)
@@ -280,9 +278,9 @@ class ProjectTab(QWidget):
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
             # cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
 
-            cfg.baseViewer.signals.stateChangedAny.connect(cfg.baseViewer._set_zmag)  # Not responsible
-            cfg.refViewer.signals.stateChangedAny.connect(cfg.refViewer._set_zmag)  # Not responsible
-            cfg.stageViewer.signals.stateChangedAny.connect(cfg.stageViewer._set_zmag)  # Not responsible
+            cfg.baseViewer.signals.stateChanged.connect(cfg.baseViewer._set_zmag)  # Not responsible
+            cfg.refViewer.signals.stateChanged.connect(cfg.refViewer._set_zmag)  # Not responsible
+            cfg.stageViewer.signals.stateChanged.connect(cfg.stageViewer._set_zmag)  # Not responsible
 
 
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
@@ -293,16 +291,17 @@ class ProjectTab(QWidget):
         else:
             # if caller != '_onGlobTabChange':
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-            cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
+            cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgetsThreaded)
             # cfg.emViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets, Qt.QueuedConnection)
-            cfg.emViewer.signals.stateChangedAny.connect(cfg.emViewer._set_zmag)
+            cfg.emViewer.signals.stateChanged.connect(cfg.emViewer._set_zmag)
             # cfg.emViewer.shared_state.add_changed_callback(cfg.emViewer._set_zmag) #0424(?)
             cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
 
         cfg.mw.hud.done()
+        QApplication.processEvents()
 
         # self.updateProjectLabels()
 
@@ -514,7 +513,7 @@ class ProjectTab(QWidget):
         self.MA_webengine_stage.setMouseTracking(True)
         self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
 
         '''Mouse move events will occur only when a mouse button is pressed down, 
@@ -539,6 +538,7 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.setStyleSheet('background-color: #dadada;')
         self.MA_ptsListWidget_ref.setMaximumHeight(54)
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -551,6 +551,7 @@ class ProjectTab(QWidget):
         self.MA_refNextColorLab.setFixedSize(16, 16)
 
         self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada;')
         self.MA_ptsListWidget_base.setMaximumHeight(54)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
@@ -2671,6 +2672,8 @@ class ProjectTab(QWidget):
 
         caller = inspect.stack()[1].function
         if getData('state,manual_mode'):
+
+            logger.info(f'cfg.data.skipped() = {cfg.data.skipped()} , cfg.data.has_reference() = {cfg.data.has_reference()}')
 
             if cfg.data.skipped():
                 self.MA_gl_overlay.setText('X EXCLUDED - %s' % cfg.data.name_base())

@@ -53,8 +53,8 @@ DEV = is_joel()
 
 class WorkerSignals(QObject):
     result = Signal(str)
-    stateChanged = Signal(int)
-    stateChangedAny = Signal()
+    stateChanged = Signal()
+    zposChanged = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
 
@@ -138,7 +138,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
         if self._zmag_set < 10:
             self._zmag_set += 1
-        self.signals.stateChangedAny.emit()
+        self.signals.stateChanged.emit()
 
     @Slot()
     def on_state_changed(self):
@@ -151,6 +151,17 @@ class AbstractEMViewer(neuroglancer.Viewer):
             return
         if self._settingZoom:
             return
+
+        txt = '\n'
+        txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
+        txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
+        txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
+        txt += f'  _layer             = {self._layer}\n'
+        txt += f'  request_layer      = {int(self.state.position[0])}\n'
+        txt += f'  voxel coords       = {self.state.voxel_coordinates}\n'
+        txt += f'  position           = {str(self.position)}\n'
+        logger.info(txt)
+
 
         # logger.info(f'[caller: {caller}]')
         # if caller == '<lambda>':
@@ -185,7 +196,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     self._layer = request_layer
                     if DEV:
                         logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
-                    self.signals.stateChanged.emit(request_layer)
+                    # self.signals.zposChanged.emit(request_layer)
+                    self.signals.zposChanged.emit()
 
             zoom = self.state.cross_section_scale
             if zoom:
@@ -275,6 +287,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self._blockStateChanged = False
 
     def set_layer(self, index=None):
+        self._blockStateChanged = True
         if index == None:
             index = cfg.data.zpos
         if DEV:
@@ -290,6 +303,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 vc[0] = index
         except:
             print_exception()
+        self._blockStateChanged = False
 
 
     def set_brightness(self, val=None):
@@ -403,7 +417,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # del cfg.tensor
         # del cfg.unal_tensor
         # del cfg.al_tensor
-        cfg.mw.hud.post('Opening dataset asynchronously using Tensorstore...')
+        cfg.mw.hud.post('Loading Zarr asynchronously using Tensorstore...')
         cfg.tensor = None
         try:
             # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
@@ -446,6 +460,7 @@ class EMViewer(AbstractEMViewer):
     def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
         logger.critical(f'Initializing Neuroglancer Viewer (caller: {caller})....')
+        self._blockStateChanged = False
 
         if not nglayout:
             requested = getData('state,ng_layout')
@@ -767,7 +782,7 @@ class EMViewerSnr(AbstractEMViewer):
             # s.show_panel_borders = False
             s.show_panel_borders = False
 
-        self._layer = math.floor(self.state.position[0])
+        # self._layer = math.floor(self.state.position[0])
         self._crossSectionScale = self.state.cross_section_scale
         self.initial_cs_scale = self.state.cross_section_scale
 
