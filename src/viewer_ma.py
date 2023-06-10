@@ -341,7 +341,10 @@ class MAViewer(neuroglancer.Viewer):
                         txt += '    ids : '
                         txt += ', '.join(ids)
                         txt += '\n'
-                        txt += '    Example: ' + str(cfg.baseViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
+                        try:
+                            txt += '    Example: ' + str(cfg.baseViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
+                        except:
+                            pass
 
         return txt
 
@@ -376,10 +379,31 @@ class MAViewer(neuroglancer.Viewer):
                     logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
                     self.cs_scale = self.state.cross_section_scale
 
+        zoom = self.state.cross_section_scale
+        if zoom:
+            if zoom != self._crossSectionScale:
+                logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+                self.signals.zoomChanged.emit(zoom)
+            self._crossSectionScale = zoom
+
+        request_layer = int(math.floor(self.state.voxel_coordinates[0]))
+
+        logger.critical(f"request_layer            = {request_layer}")
+        logger.critical(f"self.index               = {self.index}")
+        logger.critical(f"self.index               = {cfg.data.zpos}")
+        logger.critical(f"cfg.data.get_ref_index() = {cfg.data.get_ref_index()}")
+
+        if self.role == 'ref':
+            if int(math.floor(self.state.voxel_coordinates[0])) != self.index:
+                cfg.pt.setRbTransforming()
+            return
+
 
         # request_layer = int(self.state.position[0])
         # request_layer = int(self.state.position[0])
-        request_layer = int(math.floor(self.state.voxel_coordinates[0]))
+
+
+
 
 
 
@@ -409,9 +433,9 @@ class MAViewer(neuroglancer.Viewer):
         #         # logger.warning('MA_webengine_base is NOT visible... canceling state changed callback...')
         #         return
 
-        self.drawSWIMwindow()
+        # self.drawSWIMwindow()
 
-        # cfg.data.zpos = request_layer
+        cfg.data.zpos = self.index
         # cfg.mw.setZpos(request_layer)
         logger.critical('Emitting z-index changed!')
         # self.signals.zposChanged.emit(request_layer)
@@ -465,12 +489,7 @@ class MAViewer(neuroglancer.Viewer):
 
                 # self.signals.stateChanged.emit()
 
-        zoom = self.state.cross_section_scale
-        if zoom:
-            if zoom != self._crossSectionScale:
-                logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                self.signals.zoomChanged.emit(zoom)
-            self._crossSectionScale = zoom
+
 
 
     def pt2ann(self, points: list):
@@ -535,9 +554,22 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
 
-        logger.info('Adding Manual Points to Buffer...')
+
         # if not cfg.project_tab.isManualReady():
         #     return
+
+
+        if self.role == 'ref':
+            if len(cfg.data.manpoints()['ref']) >= 3:
+                cfg.mw.warn('Three points have already been selected for the reference section!')
+                return
+        elif self.role == 'base':
+            if len(cfg.data.manpoints()['base']) >= 3:
+                cfg.mw.warn('Three points have already been selected for the transforming section!')
+                return
+
+
+        logger.info('Adding Manual Points to Buffer...')
 
         coords = np.array(s.mouse_voxel_coordinates)
         logger.info('Coordinates: %s' %str(coords))
@@ -612,22 +644,21 @@ class MAViewer(neuroglancer.Viewer):
             print_exception()
 
 
+
     # @functools.cache
     def drawSWIMwindow(self):
 
-        self._blockStateChanged = True
-
-        if self.role == 'ref':
-            if cfg.pt.sw_neuroglancer.currentIndex() != 0:
-                return
-        if self.role == 'base':
-            if cfg.pt.sw_neuroglancer.currentIndex() != 1:
-                return
-
-
-
         if self._dontDraw:
             return
+
+
+        # if self.role == 'ref':
+        #     if cfg.pt.sw_neuroglancer.currentIndex() != 0:
+        #         return
+        # if self.role == 'base':
+        #     if cfg.pt.sw_neuroglancer.currentIndex() != 1:
+        #         return
+
 
 
         self._blockStateChanged = True
@@ -802,7 +833,7 @@ class MAViewer(neuroglancer.Viewer):
                 ''',
             )
         self._blockStateChanged = False
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     # @cache
     def makeRect(self, prefix, coords, ww_x, ww_y, color, marker_size):

@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
 
         if getData('state,manual_mode'):
             if not cfg.pt.rb_transforming.isChecked():
-                cfg.pt.rb_transforming.setChecked(True)
+                cfg.pt.setRbTransforming()
 
         if update_viewers:
             if getData('state,manual_mode'):
@@ -1868,17 +1868,16 @@ class MainWindow(QMainWindow):
         # logger.info(f'caller: {caller}')
         try:
             if self._isProjectTab() or self._isZarrTab():
-                if cfg.project_tab:
-                    self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                    self._sectionSlider.setRange(0, len(cfg.data) - 1)
-                    self._sectionSlider.setValue(cfg.data.zpos)
-                    self.sectionRangeSlider.setMin(0)
-                    self.sectionRangeSlider.setMax(len(cfg.data) - 1)
-                    self.sectionRangeSlider.setStart(0)
-                    self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
+                self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                self._sectionSlider.setRange(0, len(cfg.data) - 1)
+                self._sectionSlider.setValue(cfg.data.zpos)
+                self.sectionRangeSlider.setMin(0)
+                self.sectionRangeSlider.setMax(len(cfg.data) - 1)
+                self.sectionRangeSlider.setStart(0)
+                self.sectionRangeSlider.setEnd(len(cfg.data) - 1)
 
-                    self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                    self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
                 # if cfg.zarr_tab:
                 #     if not cfg.tensor:
                 #         logger.warning('No tensor!')
@@ -2597,6 +2596,9 @@ class MainWindow(QMainWindow):
         self._isPlayingBack = 0
 
     def incrementZoomOut(self):
+        if ('QTextEdit' or 'QLineEdit') in str(cfg.mw.focusWidget()):
+            return
+
         # logger.info('')
         if self._isProjectTab():
             if getData('state,manual_mode'):
@@ -2612,6 +2614,9 @@ class MainWindow(QMainWindow):
 
     def incrementZoomIn(self):
         # logger.info('')
+        if ('QTextEdit' or 'QLineEdit') in str(cfg.mw.focusWidget()):
+            return
+
         if self._isProjectTab():
             if getData('state,manual_mode'):
                 new_cs_scale = cfg.refViewer.zoom() * 0.9
@@ -2875,8 +2880,7 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.w_section_label_header.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
                 cfg.pt.tn_widget.hide()
-                cfg.pt.rb_transforming.show()
-                cfg.pt.rb_reference.show()
+                cfg.pt.ma_radioboxes.show()
 
                 setData('state,previous_mode', getData('state,mode'))
                 setData('state,mode', 'manual_align')
@@ -2890,7 +2894,7 @@ class MainWindow(QMainWindow):
                 self._changeScaleCombo.setEnabled(False)
                 setData('state,stackwidget_ng_toggle', 1)
                 # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
-                cfg.pt.rb_transforming.setChecked(True)
+                cfg.pt.setRbTransforming()
 
                 # self.MAsyncTimer = QTimer()
                 # self.MAsyncTimer.setInterval(500)
@@ -2924,8 +2928,7 @@ class MainWindow(QMainWindow):
             cfg.pt.tn_widget.show()
             cfg.pt.tn_ref.update()
             cfg.pt.tn_tra.update()
-            cfg.pt.rb_transforming.hide()
-            cfg.pt.rb_reference.hide()
+            cfg.pt.ma_radioboxes.hide()
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
             self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
@@ -6508,11 +6511,11 @@ class MainWindow(QMainWindow):
                     #     cfg.pt.rb_transforming.setChecked(True)f
                     # else:
                     #     cfg.pt.rb_reference.setChecked(True)
-                    cfg.data['state']['stackwidget_ng_toggle'] = (0, 1)[cfg.data['state']['stackwidget_ng_toggle'] == 1]
+                    cfg.data['state']['stackwidget_ng_toggle'] = (1, 0)[cfg.data['state']['stackwidget_ng_toggle'] == 1]
                     if cfg.data['state']['stackwidget_ng_toggle']:
-                        cfg.pt.rb_transforming.setChecked(True)
+                        cfg.pt.setRbTransforming()
                     else:
-                        cfg.pt.rb_reference.setChecked(True)
+                        cfg.pt.setRbReference()
 
         self.keyPressed.emit(event)
 
