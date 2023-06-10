@@ -152,17 +152,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self._settingZoom:
             return
 
-        txt = '\n'
-        txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
-        txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
-        txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
-        txt += f'  _layer             = {self._layer}\n'
-        txt += f'  request_layer      = {int(self.state.position[0])}\n'
-        txt += f'  voxel coords       = {self.state.voxel_coordinates}\n'
-        txt += f'  position           = {str(self.position)}\n'
-        logger.info(txt)
-
-
         # logger.info(f'[caller: {caller}]')
         # if caller == '<lambda>':
         #     return
