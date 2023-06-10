@@ -388,10 +388,6 @@ class MAViewer(neuroglancer.Viewer):
 
         request_layer = int(math.floor(self.state.voxel_coordinates[0]))
 
-        logger.critical(f"request_layer            = {request_layer}")
-        logger.critical(f"self.index               = {self.index}")
-        logger.critical(f"self.index               = {cfg.data.zpos}")
-        logger.critical(f"cfg.data.get_ref_index() = {cfg.data.get_ref_index()}")
 
         if self.role == 'ref':
             if int(math.floor(self.state.voxel_coordinates[0])) != self.index:
@@ -403,11 +399,8 @@ class MAViewer(neuroglancer.Viewer):
         # request_layer = int(self.state.position[0])
 
 
-
-
-
-
-        print(self.info())
+        if DEV:
+            caller = logger.info(caller_name())
 
 
         if cfg.data.zpos == request_layer:
