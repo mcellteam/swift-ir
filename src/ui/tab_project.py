@@ -2805,6 +2805,7 @@ class ProjectTab(QWidget):
 
     def update_MA_list_widgets(self):
         self.setUpdatesEnabled(False)
+        self.updateEnabledButtonsMA() #0610+
         self.update_MA_list_base()
         self.update_MA_list_ref()
         self.update_MA_list_count_labels()
