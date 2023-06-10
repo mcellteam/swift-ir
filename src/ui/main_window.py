@@ -95,12 +95,14 @@ DEV = is_joel()
 
 class MainWindow(QMainWindow):
     resized = Signal()
-    keyPressed = Signal(int)
+    # keyPressed = Signal(int)
+    keyPressed = Signal(QEvent)
     # alignmentFinished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
     zposChanged = Signal()
     # swimWindowChanged = Signal()
+
 
 
     def __init__(self, data=None):
@@ -197,17 +199,28 @@ class MainWindow(QMainWindow):
 
 
     @Slot(name='my-zpos-signal-name')
-    def setZpos(self, z:int):
+    def setZpos(self, z=None, update_viewers=True, force_update_stage=False):
+
+        if z == None:
+            z = cfg.data.zpos
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         # if cfg.data.zpos != z:
         cfg.data.zpos = z
+
         if getData('state,manual_mode'):
-            cfg.pt.rb_transforming.setChecked(True)
-            cfg.baseViewer.set_layer(cfg.data.zpos)
+            if not cfg.pt.rb_transforming.isChecked():
+                cfg.pt.rb_transforming.setChecked(True)
+
+        if update_viewers:
+            if getData('state,manual_mode'):
+                cfg.baseViewer.set_layer(cfg.data.zpos)
+                cfg.stageViewer.set_layer(cfg.data.zpos)
+            else:
+                cfg.emViewer.set_layer(cfg.data.zpos)
+        if force_update_stage:
             cfg.stageViewer.set_layer(cfg.data.zpos)
-        else:
-            cfg.emViewer.set_layer(cfg.data.zpos)
+
         self.dataUpdateWidgets()
         self.zposChanged.emit()
         # else:
@@ -2857,7 +2870,7 @@ class MainWindow(QMainWindow):
                 del cfg.emViewer
 
                 logger.info('\n\nEnter Manual Alignment Mode >>>>\n')
-                self.tell('Entering Manual Align Mode...')
+                self.tell('Entering manual align mode')
 
                 # cfg.project_tab.w_section_label_header.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
@@ -2876,7 +2889,8 @@ class MainWindow(QMainWindow):
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                 self._changeScaleCombo.setEnabled(False)
                 setData('state,stackwidget_ng_toggle', 1)
-                cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+                # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+                cfg.pt.rb_transforming.setChecked(True)
 
                 # self.MAsyncTimer = QTimer()
                 # self.MAsyncTimer.setInterval(500)
@@ -2894,7 +2908,7 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             logger.critical('Exiting manual alignment mode...')
-            self.tell('Exiting manual alignment mode...')
+            self.tell('Exiting manual align mode')
 
             # try:
             #     cfg.refViewer = None
@@ -3129,6 +3143,7 @@ class MainWindow(QMainWindow):
             button_gradient_style = f.read()
 
         self.exitButton = QPushButton()
+        self.exitButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.exitButton.setFixedSize(QSize(15,15))
         # self.exitButton.setIconSize(QSize(12,12))
         self.exitButton.setFixedSize(QSize(16, 16))
@@ -3140,6 +3155,7 @@ class MainWindow(QMainWindow):
         # self.exitButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; border: none;')
 
         self.minimizeButton = QPushButton()
+        self.minimizeButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.minimizeButton.setFixedSize(QSize(15,15))
         # self.minimizeButton.setIconSize(QSize(12,12))
         self.minimizeButton.setFixedSize(QSize(16, 16))
@@ -3150,6 +3166,7 @@ class MainWindow(QMainWindow):
         # self.minimizeButton.setStyleSheet(button_gradient_style)
 
         self.fullScreenButton = QPushButton('Full Screen')
+        self.fullScreenButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         f = QFont()
         f.setBold(True)
         f.setPixelSize(10)
@@ -3181,6 +3198,7 @@ class MainWindow(QMainWindow):
         # self.fullScreenButton.setStyleSheet(button_gradient_style)
 
         self.refreshButton = QPushButton(' Refresh')
+        self.refreshButton .setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.refreshButton.setFont(f)
         # self.refreshButton.setStyleSheet('font-size: 10px; font-family: Tahoma, sans-serif;')
         self.refreshButton.setToolTip(f"Refresh View {hotkey('R')}")
@@ -3190,6 +3208,7 @@ class MainWindow(QMainWindow):
         self.refreshButton.clicked.connect(self.refreshTab)
 
         self.faqButton = QPushButton(' FAQ')
+        self.faqButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         def fn_view_faq():
             search = self.lookForTabID(search='faq')
             if search:
@@ -3209,6 +3228,7 @@ class MainWindow(QMainWindow):
         self.faqButton.clicked.connect(fn_view_faq)
 
         self.gettingStartedButton = QPushButton('Getting Started')
+        self.gettingStartedButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # def fn_view_faq():
         #     logger.info('Showing FAQ...')
         #     search = self.lookForTabID(search='FAQ')
@@ -3252,12 +3272,14 @@ class MainWindow(QMainWindow):
 
 
         self.bugreportButton = QPushButton('Report Bug')
+        self.bugreportButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bugreportButton.setFont(f)
         self.bugreportButton.setFixedHeight(16)
         self.bugreportButton.setIconSize(QSize(16, 16))
         self.bugreportButton.clicked.connect(self.tab_report_bug)
 
         self.workbenchButton = QPushButton('3DEM Workbench')
+        self.workbenchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.workbenchButton.setFont(f)
         self.workbenchButton.setFixedHeight(16)
         self.workbenchButton.setIconSize(QSize(16, 16))
@@ -5891,6 +5913,7 @@ class MainWindow(QMainWindow):
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
         self.pythonConsole = PythonConsole()
+        self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         # self.pythonConsole.resize(QSize(600,600))
 
         self.pythonConsole.setStyleSheet("""
@@ -6461,28 +6484,45 @@ class MainWindow(QMainWindow):
                 return self.children()[i]
 
 
-    def keyPressEvent(self, e):
-        logger.info(f'{e.key()} was pressed!')
-        if e.key() == Qt.Key_Escape:
+
+
+    def keyPressEvent(self, event):
+        super(MainWindow, self).keyPressEvent(event)
+        logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
+        if event.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
-        if e.key() == Qt.Key_F11:
+        if event.key() == Qt.Key_F11:
             if self.isMaximized():
                 self.showNormal()
             else:
                 self.showMaximized()
 
-        if e.key() == Qt.Key_Slash:
+        if event.key() == Qt.Key_Slash:
             logger.info('Qt.Key_Slash was pressed')
             if self._isProjectTab():
                 if getData('state,manual_mode'):
-                    newcur = 1 - cfg.data['state']['stackwidget_ng_toggle']
-                    cfg.data['state']['stackwidget_ng_toggle'] = newcur
-                    if newcur == 1:
+                    # newcur = 1 - cfg.data['state']['stackwidget_ng_toggle']
+                    # cfg.data['state']['stackwidget_ng_toggle'] = newcur
+                    # if newcur == 1:
+                    #     cfg.pt.rb_transforming.setChecked(True)f
+                    # else:
+                    #     cfg.pt.rb_reference.setChecked(True)
+                    cfg.data['state']['stackwidget_ng_toggle'] = (0, 1)[cfg.data['state']['stackwidget_ng_toggle'] == 1]
+                    if cfg.data['state']['stackwidget_ng_toggle']:
                         cfg.pt.rb_transforming.setChecked(True)
                     else:
                         cfg.pt.rb_reference.setChecked(True)
 
+        self.keyPressed.emit(event)
+
+    def on_key(self, event):
+        print('event received @ MainWindow')
+        if event.key() == Qt.Key_Space:
+            logger.info('Space key was pressed')
+
+        if event.key() == Qt.Key_M:
+            logger.info('M key was pressed')
 
 class DockWidget(QDockWidget):
     hasFocus = Signal([QDockWidget])
