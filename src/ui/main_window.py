@@ -3655,9 +3655,6 @@ class MainWindow(QMainWindow):
 
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
-
-            self.cpanel.show()
-            self.sa_cpanel.show()
             # self.statusBar.setStyleSheet("""
             #         font-size: 10px;
             #         font-weight: 600;
@@ -3705,6 +3702,9 @@ class MainWindow(QMainWindow):
 
             if getData('state,manual_mode'):
                 self._changeScaleCombo.setEnabled(False)
+
+            self.cpanel.show()
+            self.sa_cpanel.show()
 
         elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
