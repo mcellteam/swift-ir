@@ -3412,7 +3412,7 @@ class MainWindow(QMainWindow):
             setData('state,tool_windows,signals', state)
             if self._isProjectTab():
                 new_size = (0, 200)[state]
-                cfg.pt.ms_widget.setVisible(state)
+                cfg.pt.tn_widget.setVisible(state)
                 sizes = cfg.pt.hsplitter_tn_ng.sizes()
                 sizes[0] = new_size
                 cfg.pt.hsplitter_tn_ng.setSizes(sizes)
