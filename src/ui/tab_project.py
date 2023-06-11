@@ -308,10 +308,9 @@ class ProjectTab(QWidget):
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
 
-
-        self.zoomSlider.setValue(10)
-        cfg.mw.hud.done()
         QApplication.processEvents()
+        self.setZmag(10)
+        cfg.mw.hud.done()
 
         # self.updateProjectLabels()
 
