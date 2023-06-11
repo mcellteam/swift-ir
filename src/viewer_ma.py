@@ -89,6 +89,7 @@ class MAViewer(neuroglancer.Viewer):
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
             scales=list(cfg.data.resolution(s=cfg.data.scale)), )
+            # scales=[1,1,1] )
 
         # self.restoreManAlignPts()
         self._dontDraw = 0
@@ -174,7 +175,7 @@ class MAViewer(neuroglancer.Viewer):
             if zpos:
                 self.index=cfg.data.get_ref_index(l=zpos)
             else:
-                self.index = cfg.data.get_ref_index()
+                self.index=cfg.data.get_ref_index()
         else:
             if zpos:
                 self.index=zpos
@@ -192,7 +193,7 @@ class MAViewer(neuroglancer.Viewer):
         # if self.index != cfg.data.zpos:
         with self.txn() as s:
             vc = s.voxel_coordinates
-            vc[0] = self.index
+            vc[0] = self.index + 0.5
         self.drawSWIMwindow()
 
         logger.critical(f'{self.type}:{self.role}  {prev_index} -> {self.index}')
@@ -210,6 +211,11 @@ class MAViewer(neuroglancer.Viewer):
 
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
+
+
+    def post_message(self, msg):
+        with self.config_state.txn() as cs:
+            cs.status_messages['message'] = msg
 
 
     def initViewer(self, obey_zpos=True):
@@ -259,7 +265,7 @@ class MAViewer(neuroglancer.Viewer):
             s.show_scale_bar = False
             s.show_axis_lines = False
             s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
-            s.position=[self.index, self.store.shape[1]/2, self.store.shape[2]/2]
+            # s.position=[self.index, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
@@ -269,7 +275,7 @@ class MAViewer(neuroglancer.Viewer):
             _, y, x = self.store.shape
             # s.position = [0.5, y / 2, x / 2]
             # s.voxel_coordinates = [self.index, y / 2, x / 2]
-            s.voxel_coordinates = [self.index, y / 2, x / 2]
+            s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             # s.layers['ann'].annotations = list(self.pts.values())
 
         self.actions.add('add_manpoint', self.add_matchpoint)
@@ -282,6 +288,7 @@ class MAViewer(neuroglancer.Viewer):
             s.show_ui_controls = False
             # s.show_ui_controls = True
             s.show_panel_borders = False
+
 
 
         self.drawSWIMwindow()
@@ -309,6 +316,9 @@ class MAViewer(neuroglancer.Viewer):
         if DEV:
             n_layers = None
             txt = '\n\n'
+            txt +=         f'  type/role          = {self.type}/{self.role}'
+            try:    txt += f'  caller             = {caller_name()}\n'
+            except: txt += f'  caller             =\n'
             try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
             except: txt += f'  _blockStateChanged =\n'
             try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
@@ -319,8 +329,10 @@ class MAViewer(neuroglancer.Viewer):
             except: txt += f'  request_layer      =\n'
             try:    txt += f'  new request_layer  = {int(self.state.voxel_coordinates[0])}\n'
             except: txt += f'  new request_layer  =\n'
-            try:    txt += f'  voxel coords       = {self.state.voxel_coordinates}\n'
-            except: txt += f'  voxel coords       =\n'
+            try:    txt += f'  state.voxel_coords = {self.state.voxel_coordinates}\n'
+            except: txt += f'  state.voxel_coords =\n'
+            try:    txt += f'  state.position     = {self.state.position}\n'
+            except: txt += f'  state.position     =\n'
             txt += '\n'
             try:
                 n_layers = len(cfg.baseViewer.state.to_json()['layers'])
@@ -350,6 +362,8 @@ class MAViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed_any(self):
+
+        self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         if self._blockStateChanged:
             return
         caller = inspect.stack()[1].function
@@ -369,7 +383,6 @@ class MAViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
 
-
         if self._blockStateChanged:
             return
 
@@ -386,25 +399,34 @@ class MAViewer(neuroglancer.Viewer):
                 self.signals.zoomChanged.emit(zoom)
             self._crossSectionScale = zoom
 
-        request_layer = int(math.floor(self.state.voxel_coordinates[0]))
+        # request_layer = int(math.floor(self.state.voxel_coordinates[0]))
+        request_layer = int(self.state.voxel_coordinates[0])
+        # request_layer = int(self.state.position[0])
 
 
-        if self.role == 'ref':
-            if int(math.floor(self.state.voxel_coordinates[0])) != self.index:
-                cfg.pt.setRbTransforming()
-            return
+        # if self.role == 'ref':
+        #     # if int(math.floor(self.state.voxel_coordinates[0])) != self.index:
+        #     if request_layer != self.index:
+        #         cfg.pt.setRbTransforming()
+        #     return
 
 
         # request_layer = int(self.state.position[0])
         # request_layer = int(self.state.position[0])
 
+        # logger.critical(f"\n\n\n{self.role}\n  cfg.data.zpos={cfg.data.zpos}\n  request_layer={request_layer}\n  cfg.data.get_ref_index()={cfg.data.get_ref_index()}\n\n")
+
+        if self.role == 'base':
+            if request_layer == cfg.data.zpos:
+                return
+        elif self.role == 'ref':
+            if request_layer == cfg.data.get_ref_index():
+                return
 
         if DEV:
-            caller = logger.info(caller_name())
+            logger.critical(self.info())
 
 
-        if cfg.data.zpos == request_layer:
-            return
 
         if DEV:
             caller = caller_name()
@@ -430,7 +452,7 @@ class MAViewer(neuroglancer.Viewer):
 
         cfg.data.zpos = self.index
         # cfg.mw.setZpos(request_layer)
-        logger.critical('Emitting z-index changed!')
+        logger.critical(f'{self.role}: Emitting z-index changed!')
         # self.signals.zposChanged.emit(request_layer)
         self.signals.zposChanged.emit()
 
@@ -622,7 +644,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def undrawSWIMwindows(self):
         caller = inspect.stack()[1].function
-        logger.info(f"Undrawing SWIM windows...")
+        logger.info(f"[{self.role}, caller: {caller_name()}] Undrawing SWIM windows...")
 
         # with cfg.refViewer.txn() as s:
         #     print(s.layers['SWIM'].annotations)
@@ -655,9 +677,9 @@ class MAViewer(neuroglancer.Viewer):
 
 
         self._blockStateChanged = True
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
 
-        self.undrawSWIMwindows()
+        self.undrawSWIMwindows() #todo try without this!
         marker_size = 1
 
         if self.role == 'ref':
@@ -665,14 +687,14 @@ class MAViewer(neuroglancer.Viewer):
         elif self.role == 'base':
             self.index = cfg.data.zpos  #
 
-        logger.critical(f'index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
+        if DEV:
+            logger.critical(f'[{self.role}, caller: {caller_name()}] index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
 
         # if cfg.data.current_method == 'manual-hint':
         #     self.draw_point_annotations()
         #     return
         #
 
-        logger.critical(f'Drawing SWIM window (caller: {caller}) index={self.index}')
 
         if cfg.data.current_method == 'grid-custom':
             logger.info('Type: Custom Grid Alignment...')
@@ -714,6 +736,7 @@ class MAViewer(neuroglancer.Viewer):
                 annotations.extend(
                     self.makeRect(
                         prefix=str(i),
+                        z_index=self.index,
                         coords=pt,
                         ww_x=ww_2x2[0] - 4,
                         ww_y=ww_2x2[1] - 4,
@@ -768,6 +791,7 @@ class MAViewer(neuroglancer.Viewer):
                     annotations.extend(
                         self.makeRect(
                             prefix=str(i),
+                            z_index=self.index,
                             coords=pt,
                             # ww_x=ww_2x2[0],
                             # ww_y=ww_2x2[1],
@@ -799,6 +823,7 @@ class MAViewer(neuroglancer.Viewer):
                 annotations.extend(
                     self.makeRect(
                         prefix=str(i),
+                        z_index=self.index,
                         coords=(coords[2], coords[1]),
                         ww_x=ww_x,
                         ww_y=ww_y,
@@ -829,17 +854,17 @@ class MAViewer(neuroglancer.Viewer):
         # QApplication.processEvents()
 
     # @cache
-    def makeRect(self, prefix, coords, ww_x, ww_y, color, marker_size):
+    def makeRect(self, prefix, z_index, coords, ww_x, ww_y, color, marker_size):
         segments = []
         x = coords[0]
         y = coords[1]
         hw = int(ww_x / 2) # Half-width
         hh = int(ww_y / 2) # Half-height
 
-        A = (self.index, y + hh, x - hw)
-        B = (self.index, y + hh, x + hw)
-        C = (self.index, y - hh, x + hw)
-        D = (self.index, y - hh, x - hw)
+        A = (z_index + 0.5, y + hh, x - hw)
+        B = (z_index + 0.5, y + hh, x + hw)
+        C = (z_index + 0.5, y - hh, x + hw)
+        D = (z_index + 0.5, y - hh, x - hw)
 
 
         segments.append(ng.LineAnnotation(id=prefix + '_L1', pointA=A, pointB=B, props=[color, marker_size]))
@@ -928,8 +953,12 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionScale = self.cs_scale
         else:
             _, tensor_y, tensor_x = cfg.tensor.shape
-            widget_w = cfg.project_tab.MA_webengine_ref.geometry().width()
-            widget_h = cfg.project_tab.MA_webengine_ref.geometry().height()
+            if self.role == 'ref':
+                widget_w = cfg.project_tab.MA_webengine_ref.geometry().width()
+                widget_h = cfg.project_tab.MA_webengine_ref.geometry().height()
+            else:
+                widget_w = cfg.project_tab.MA_webengine_base.geometry().width()
+                widget_h = cfg.project_tab.MA_webengine_base.geometry().height()
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)

@@ -781,6 +781,7 @@ class DataModel:
         self._data['state']['tool_windows'].setdefault('hud',False)
         # self._data['state']['tool_windows'].setdefault('flicker',False)
         self._data['state']['tool_windows'].setdefault('signals',True)
+        self._data['state']['tool_windows'].setdefault('raw_thumbnails',True)
         self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
@@ -1083,7 +1084,11 @@ class DataModel:
             return []
         try:
             # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            if type(components) == list:
+                return components
+            else:
+                return [components]
             # return self.method_results(s=s, l=l)['snr']
         except:
             # print_exception()

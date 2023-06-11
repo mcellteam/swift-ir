@@ -197,8 +197,6 @@ class OpenProject(QWidget):
         # self._buttonNew.setFixedSize(64, 20)
         # # self._buttonNew.setStyleSheet(w)
 
-        self.selectionReadout = QLineEdit()
-
 
         self.lab_path_exists = cfg.lab_path_exists = QLabel('Path Exists')
         self.lab_path_exists.setFixedWidth(80)
@@ -283,6 +281,9 @@ class OpenProject(QWidget):
               'N-dimensional arrays</i></span>'
         self.validity_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
 
+
+        self.selectionReadout = QLineEdit()
+        self.selectionReadout.setReadOnly(False)
         self.selectionReadout.textChanged.connect(self.validate_path)
         self.selectionReadout.returnPressed.connect(self.open_project_selected)
         # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
@@ -291,7 +292,7 @@ class OpenProject(QWidget):
         # self.selectionReadout.setMinimumWidth(700)
 
         self.selectionReadout_w_overlay = QWidget()
-        self.selectionReadout_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.selectionReadout_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.addWidget(self.selectionReadout,0,0)
@@ -647,15 +648,24 @@ class OpenProject(QWidget):
 
             # self.user_projects.table.rowCount()
 
-            twi = QTableWidgetItem('Initializing\nProject...')
             font = QFont()
             font.setPointSize(11)
             font.setBold(True)
-            twi.setFont(font)
+
             # self.table.setItem(i, j, item)
             rc = self.user_projects.table.rowCount()
             self.user_projects.table.insertRow(rc)
+            self.user_projects.table.setRowHeight(rc, self.row_height_slider.value())
+
+            twi = QTableWidgetItem('Initializing\nProject...')
+            twi.setFont(font)
             self.user_projects.table.setItem(rc, 0, twi)
+
+            font0 = QFont()
+            font0.setPointSize(10)
+            twi = QTableWidgetItem(cfg.data.dest())
+            twi.setFont(font0)
+            self.user_projects.table.setItem(rc, 1, twi)
             try:
                 if dm['data']['autoalign_flag']:
                     cfg.mw.tell(
@@ -1095,7 +1105,7 @@ class UserProjects(QWidget):
         # self.set_column_headers()
 
         font0 = QFont()
-        font0.setPointSize(9)
+        font0.setPointSize(10)
 
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
@@ -1140,6 +1150,7 @@ class UserProjects(QWidget):
                     twi.setFont(font0)
                     twi.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(i, j, twi)
+
                 # elif j == 10:
                 #     thumbnail = Thumbnail(self, path=item)
                 #     self.table.setCellWidget(i, j, thumbnail)
@@ -1165,6 +1176,7 @@ class UserProjects(QWidget):
         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
+
 
 
     def get_data(self):

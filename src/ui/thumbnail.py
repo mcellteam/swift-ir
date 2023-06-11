@@ -62,6 +62,8 @@ class SnrThumbnail(QWidget):
         except:
             print_exception()
             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+        finally:
+            self.update()
 
     # def sizeHint(self):
     #     return QSize(200, 200)
@@ -667,6 +669,8 @@ class CorrSignalThumbnail(QLabel):
         except:
             print_exception()
             logger.warning(f'WARNING path={self.path}, label={self.snr}')
+        finally:
+            self.update()
 
     def set_no_image(self):
         # logger.critical('')
