@@ -358,7 +358,7 @@ class ProjectTab(QWidget):
         # self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
 
         # self.lab_main_instructions = QLabel("'r' - refresh viewer. 'm' - enter manual align mode")
-        self.lab_main_instructions = QLabel("'m' - enter manual align mode")
+        self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode")
         self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px;")
         self.lab_main_instructions.setFixedHeight(16)
 
@@ -385,6 +385,7 @@ class ProjectTab(QWidget):
         # self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('<label>')
         self._overlayLab.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._overlayLab.setAlignment(Qt.AlignCenter)
         self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5); """)
         self._overlayLab.hide()
 
@@ -396,7 +397,7 @@ class ProjectTab(QWidget):
 
         # self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5, alignment=Qt.AlignLeft | Qt.AlignBottom)
         # self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5, alignment=Qt.AlignHCenter | Qt.AlignBottom)
-        self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5, alignment=Qt.AlignCenter)
+        self.ng_gl.addWidget(self._overlayLab, 0, 0, 5, 5)
         self.ng_gl.setContentsMargins(0, 0, 0, 0)
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.ngVertLab.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
@@ -1308,8 +1309,11 @@ class ProjectTab(QWidget):
             #     self.MA_stackedWidget.setCurrentIndex(4)
             cfg.mw.updateCorrSignalsDrawer()
             QApplication.processEvents()
-            cfg.baseViewer.drawSWIMwindow()
-            cfg.refViewer.drawSWIMwindow()
+            if self.rb_reference.isChecked():
+                cfg.refViewer.drawSWIMwindow()
+            else:
+                cfg.baseViewer.drawSWIMwindow()
+
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
             # cfg.main_window.dataUpdateWidgets()
 
@@ -2508,8 +2512,10 @@ class ProjectTab(QWidget):
         #     cfg.baseViewer.drawSWIMwindow()
 
         #0611
-        cfg.refViewer.drawSWIMwindow()
-        cfg.baseViewer.drawSWIMwindow()
+        if self.rb_reference.isChecked():
+            cfg.refViewer.drawSWIMwindow()
+        else:
+            cfg.baseViewer.drawSWIMwindow()
 
     # def updateMethodSelectWidget(self):
     #     caller = inspect.stack()[1].function
