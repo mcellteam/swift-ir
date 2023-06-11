@@ -358,7 +358,9 @@ class DataModel:
 
     def get_ref_index(self, l=None):
         if l == None: l = self.zpos
-        reference = self._data['data']['scales'][self.scale]['stack'][self.zpos]['reference']
+        if self.skipped(s=self.scale, l=l):
+            return self.get_index(self._data['data']['scales'][self.scale]['stack'][l]['filename']) #Todo refactor this but not sure how
+        reference = self._data['data']['scales'][self.scale]['stack'][l]['reference']
         return self.get_index(reference)
 
     # @cache

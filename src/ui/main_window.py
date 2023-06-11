@@ -2943,7 +2943,7 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.stopPlaybackTimer()
                 self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
-                self._changeScaleCombo.setEnabled(False)
+                # self._changeScaleCombo.setEnabled(False)
                 setData('state,stackwidget_ng_toggle', 1)
                 # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
                 cfg.pt.setRbTransforming()
@@ -3002,7 +3002,7 @@ class MainWindow(QMainWindow):
             setData('state,manual_mode', False)
             self.updateManualAlignModeButton()
             self.alignMatchPointAction.setText(f"Align Manually {hotkey('M')} ")
-            self._changeScaleCombo.setEnabled(True)
+            # self._changeScaleCombo.setEnabled(True)
             self.dataUpdateWidgets()
             self.updateCorrSignalsDrawer()  # Caution - Likely Redundant!
             QApplication.restoreOverrideCursor()
@@ -3633,7 +3633,7 @@ class MainWindow(QMainWindow):
         self._jumpToLineedit.clear()
         self._sectionSlider.setValue(0)
         self._sectionSlider.setRange(0, 0)
-        self._changeScaleCombo.setEnabled(True)  # needed for disable on MA
+        # self._changeScaleCombo.setEnabled(True)  # needed for disable on MA
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
 
@@ -3704,8 +3704,8 @@ class MainWindow(QMainWindow):
             #     print_exception()
             #     logger.warning('Cant deactivate signalsAction QAction')
 
-            if getData('state,manual_mode'):
-                self._changeScaleCombo.setEnabled(False)
+            # if getData('state,manual_mode'):
+            #     self._changeScaleCombo.setEnabled(False)
 
             self.cpanel.show()
             self.sa_cpanel.show()
@@ -4126,8 +4126,8 @@ class MainWindow(QMainWindow):
         # self.addAction(self.alignMatchPointAction)
 
         self.skipChangeAction = QAction('Toggle Include', self)
-        self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
-        self.skipChangeAction.setShortcut('Ctrl+K')
+        # self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
+        # self.skipChangeAction.setShortcut('Ctrl+K')
         self.addAction(self.skipChangeAction)
         alignMenu.addAction(self.skipChangeAction)
 
@@ -6645,19 +6645,22 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key_R:
             self.refreshTab()
 
-        if event.key() == Qt.Key_M:
+        elif event.key() == Qt.Key_M:
             self.enterExitManAlignMode()
         # r = 82
         # m = 77
-
+        # k = 75
+        elif event.key() == Qt.Key_K:
+            self.skip_change_shortcut()
 
         # left arrow key = 16777234
-        if event.key() == 16777234:
+        elif event.key() == 16777234:
             self.layer_left()
 
         # right arrow key = 16777236
         elif event.key() == 16777236:
             self.layer_right()
+
 
 
 
