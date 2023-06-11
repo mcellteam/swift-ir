@@ -251,7 +251,7 @@ class MainWindow(QMainWindow):
     def cleanupAfterCancel(self):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
         cfg.project_tab.snr_plot.initSnrPlot()
-        cfg.project_tab.project_table.updateTableData()
+        # cfg.project_tab.project_table.updateTableData() #0611-
         cfg.project_tab.updateTreeWidget()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
@@ -2055,7 +2055,7 @@ class MainWindow(QMainWindow):
                             self.updateCpanelDetails_i1()
                             self._showSNRcheck()
                             # cfg.project_tab.project_table.initTableData()
-                            cfg.project_tab.project_table.updateTableData()
+                            # cfg.project_tab.project_table.updateTableData()
                             # cfg.project_tab.updateLabelsHeader()
                             cfg.project_tab.refreshTab()
         logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
