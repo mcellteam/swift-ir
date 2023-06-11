@@ -2030,10 +2030,12 @@ class MainWindow(QMainWindow):
         if caller in ('main', 'scale_down', 'scale_up'):
 
             if getData('state,manual_mode'):
-                self.reload_scales_combobox()
-                logger.warning('Exit manual alignment mode before changing scales')
-                self.warn('Exit manual alignment mode before changing scales!')
-                return
+                # self.reload_scales_combobox()
+                # logger.warning('Exit manual alignment mode before changing scales')
+                # self.warn('Exit manual alignment mode before changing scales!')
+                self.exit_man_mode()
+
+                # return
 
             if not self._working:
                 if self._scales_combobox_switch:
