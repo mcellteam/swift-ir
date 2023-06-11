@@ -172,6 +172,8 @@ class MainWindow(QMainWindow):
         font = QFont("Calibri")
         QApplication.setFont(font)
 
+        self.setFocusPolicy(Qt.StrongFocus)
+
         # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
         # self.zposChanged.connect(self.dataUpdateWidgets)
 
@@ -199,7 +201,7 @@ class MainWindow(QMainWindow):
 
 
     @Slot(name='my-zpos-signal-name')
-    def setZpos(self, z=None, update_viewers=True, force_update_stage=False):
+    def setZpos(self, z=None, on_state_change=False):
 
         if z == None:
             z = cfg.data.zpos
@@ -208,18 +210,28 @@ class MainWindow(QMainWindow):
         # if cfg.data.zpos != z:
         cfg.data.zpos = z
 
-        if getData('state,manual_mode'):
-            if not cfg.pt.rb_transforming.isChecked():
-                cfg.pt.setRbTransforming()
+        if not cfg.pt.rb_transforming.isChecked():
+            cfg.pt.setRbTransforming()
 
-        if update_viewers:
-            if getData('state,manual_mode'):
-                cfg.baseViewer.set_layer(cfg.data.zpos)
-                cfg.stageViewer.set_layer(cfg.data.zpos)
-            else:
-                cfg.emViewer.set_layer(cfg.data.zpos)
-        if force_update_stage:
+        if getData('state,manual_mode'):
+            cfg.baseViewer.set_layer(cfg.data.zpos)
+            cfg.refViewer.set_layer(cfg.data.get_ref_index()) #0611+
             cfg.stageViewer.set_layer(cfg.data.zpos)
+        else:
+            cfg.emViewer.set_layer(cfg.data.zpos)
+
+        # if on_state_change:
+        #     if getData('state,manual_mode'):
+        #         if not cfg.pt.rb_transforming.isChecked():
+        #             cfg.pt.setRbTransforming()
+        #         cfg.baseViewer.set_layer(cfg.data.zpos)
+        #         cfg.stageViewer.set_layer(cfg.data.zpos)
+        # else:
+        #     if getData('state,manual_mode'):
+        #         cfg.baseViewer.set_layer(cfg.data.zpos)
+        #         cfg.stageViewer.set_layer(cfg.data.zpos)
+        #     else:
+        #         cfg.emViewer.set_layer(cfg.data.zpos)
 
         self.dataUpdateWidgets()
         self.zposChanged.emit()
@@ -334,6 +346,13 @@ class MainWindow(QMainWindow):
     def initPrivateMembers(self):
         logger.info('')
 
+        if DEV:
+            self.printFocusTimer = QTimer()
+            self.printFocusTimer.setSingleShot(False)
+            self.printFocusTimer.setInterval(1000)
+            self.printFocusTimer.timeout.connect(lambda: print(f'focus widget: {self.focusWidget()}'))
+            self.printFocusTimer.start()
+
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
         # self.uiUpdateTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
@@ -439,7 +458,9 @@ class MainWindow(QMainWindow):
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
-            # return
+
+            return #0610+
+
 
         # logger.critical('thumbs: %s' % str(thumbs))
         # logger.critical('snr_vals: %s' % str(snr_vals))
@@ -460,7 +481,7 @@ class MainWindow(QMainWindow):
                             continue
 
                         cfg.pt.msList[i].set_data(path=names[i], snr=snr)
-                        cfg.pt.msList[i].update()
+                        # cfg.pt.msList[i].update()
 
                         count += 1
                     except:
@@ -468,7 +489,7 @@ class MainWindow(QMainWindow):
                         logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
                 else:
                     cfg.pt.msList[i].set_no_image()
-                    cfg.pt.msList[i].update()
+                    # cfg.pt.msList[i].update()
 
         # elif cfg.data.current_method == 'manual-hint':
         #     cfg.data.snr_components()
@@ -476,7 +497,7 @@ class MainWindow(QMainWindow):
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
-                    cfg.pt.msList[i].update()
+                    # cfg.pt.msList[i].update()
         else:
             for i in range(4):
                 if i < n:
@@ -496,11 +517,11 @@ class MainWindow(QMainWindow):
                         print_exception()
                         cfg.pt.msList[i].set_no_image()
                         logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
-                    finally:
-                        cfg.pt.msList[i].update()
+                    # finally:
+                    #     cfg.pt.msList[i].update()
                 else:
                     cfg.pt.msList[i].set_no_image()
-                    cfg.pt.msList[i].update()
+                    # cfg.pt.msList[i].update()
 
         # logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
@@ -544,6 +565,17 @@ class MainWindow(QMainWindow):
         self.cbMonitor.setToolTip((tip1, tip2)[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['hud'] = state
+
+    # def setdw_thumbnails(self, state):
+    #     self.dw_thumbnails.setVisible(state)
+    #     self.showThumbnailsAction.setText(('Show Raw Thumbnails', 'Hide Raw Thumbnails')[state])
+    #     self.dw_thumbnails.setVisible(self.cbThumbnails.isChecked())
+    #     tip1 = '\n'.join(f"Show Raw Thumbnails Tool Window ({hotkey('T')})")
+    #     tip2 = '\n'.join(f"Hide Raw Thumbnails Tool Window ({hotkey('T')})")
+    #     self.cbThumbnails.setToolTip((tip1, tip2)[state])
+    #     if self._isProjectTab():
+    #         cfg.data['state']['tool_windows']['raw_thumbnails'] = state
+
 
     def setdw_notes(self, state):
         self.dw_notes.setVisible(state)
@@ -1290,6 +1322,7 @@ class MainWindow(QMainWindow):
             self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
             self._changeScaleCombo.setEnabled(True)
 
+            self.cbThumbnails.setChecked(getData('state,tool_windows,raw_thumbnails'))
             self.cbSignals.setChecked(getData('state,tool_windows,signals'))
             self.cbMonitor.setChecked(getData('state,tool_windows,hud'))
             self.cbNotes.setChecked(getData('state,tool_windows,notes'))
@@ -1527,6 +1560,9 @@ class MainWindow(QMainWindow):
             logger.warning('No Current Project Tab!')
             return
 
+
+
+
         # cfg.project_tab._overlayLab.hide()
         # logger.info('')
 
@@ -1755,6 +1791,8 @@ class MainWindow(QMainWindow):
         # timer.stop() #7
         # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
 
+        self.setFocus()
+
 
     def updateNotes(self):
         # caller = inspect.stack()[1].function
@@ -1910,7 +1948,7 @@ class MainWindow(QMainWindow):
             if requested not in range(len(cfg.data)):
                 logger.warning('Requested layer is not a valid layer')
                 return
-            cfg.mw.setZpos(requested)
+            self.setZpos(requested)
             # cfg.project_tab.updateNeuroglancer() #0214+ intentionally putting this before dataUpdateWidgets (!)
             self.enter_man_mode()
 
@@ -2856,14 +2894,16 @@ class MainWindow(QMainWindow):
         logger.info(f'caller: {caller}')
         if cfg.data:
             if self._isProjectTab():
+                if not cfg.data.is_aligned_and_generated():
+                    logger.warning('Cannot enter manual alignment mode until the series is aligned.')
+                    self.warn('Align the series first and then use Manual Alignment.')
+                    return
                 if not getData('state,manual_mode'):
-                    if not cfg.data.is_aligned_and_generated():
-                        logger.warning('Cannot enter manual alignment mode until the series is aligned.')
-                        self.warn('Align the series first and then use Manual Alignment.')
-                        return
                     self.enter_man_mode()
                 else:
                     self.exit_man_mode()
+
+                self.setFocus()
 
     def onMAsyncTimer(self):
         logger.critical("")
@@ -2883,7 +2923,6 @@ class MainWindow(QMainWindow):
 
                 # cfg.project_tab.w_section_label_header.show()
                 cfg.project_tab.w_ng_extended_toolbar.hide()
-                cfg.pt.tn_widget.hide()
                 cfg.pt.ma_radioboxes.show()
 
                 setData('state,previous_mode', getData('state,mode'))
@@ -2929,7 +2968,6 @@ class MainWindow(QMainWindow):
 
             # cfg.project_tab.w_section_label_header.hide()
             cfg.project_tab.w_ng_extended_toolbar.show()
-            cfg.pt.tn_widget.show()
             cfg.pt.tn_ref.update()
             cfg.pt.tn_tra.update()
             cfg.pt.ma_radioboxes.hide()
@@ -3363,6 +3401,28 @@ class MainWindow(QMainWindow):
         # self.cbMonitor.setIcon(qta.icon("mdi.monitor", color='#161c20'))
         self.cbMonitor.stateChanged.connect(lambda: self.setdw_monitor(self.cbMonitor.isChecked()))
 
+
+        def toggleThumbnailsVisibility():
+            state = self.cbThumbnails.isChecked()
+            setData('state,tool_windows,signals', state)
+            if self._isProjectTab():
+                new_size = (0, 200)[state]
+                cfg.pt.ms_widget.setVisible(state)
+                sizes = cfg.pt.hsplitter_tn_ng.sizes()
+                sizes[0] = new_size
+                cfg.pt.hsplitter_tn_ng.setSizes(sizes)
+                self.showRawThumbnailsAction.setText(('Show Match Signals', 'Hide Match Signals')[state])
+                tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
+                tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
+                self.cbThumbnails.setToolTip((tip1, tip2)[state])
+
+        tip = f"Show Raw Thumbnails {hotkey('T')}"
+        self.cbThumbnails = QCheckBox(f"Raw Thumbnails {hotkey('T')}")
+        self.cbThumbnails.stateChanged.connect(toggleThumbnailsVisibility)
+        self.cbThumbnails.setToolTip(tip)
+        self.cbThumbnails.setIconSize(QSize(14, 14))
+        self.cbThumbnails.stateChanged.connect(toggleThumbnailsVisibility)
+
         def toggleSignalVisibility():
             state = self.cbSignals.isChecked()
             setData('state,tool_windows,signals', state)
@@ -3392,15 +3452,21 @@ class MainWindow(QMainWindow):
         self._detachNgButton.setToolTip('Detach Neuroglancer (open in a separate window)')
 
         self.toolbar.addWidget(ExpandingWidget(self))
+        self.toolbar.addWidget(self.cbThumbnails)
+        self.toolbar.addWidget(self.cbSignals)
         self.toolbar.addWidget(self.cbMonitor)
         self.toolbar.addWidget(self.cbPython)
         self.toolbar.addWidget(self.cbNotes)
-        self.toolbar.addWidget(self.cbSignals)
 
-        self.cbNotes.setFixedSize(QSize(96, 16))
-        self.cbPython.setFixedSize(QSize(148, 16))  # tacc
-        self.cbMonitor.setFixedSize(152, 16)  # tacc
-        self.cbSignals.setFixedSize(152, 16)  # tacc
+
+        # self.cbSignals.setFixedSize(QSize(146, 16))  # tacc
+        # self.cbThumbnails.setFixedSize(QSize(130, 16))
+        # self.cbMonitor.setFixedSize(QSize(148, 16))  # tacc
+        # self.cbPython.setFixedSize(QSize(148, 16))  # tacc
+        # self.cbNotes.setFixedSize(QSize(96, 16))
+
+
+
 
         self.toolbar.layout().setSpacing(4)
         self.toolbar.layout().setAlignment(Qt.AlignRight)
@@ -3647,6 +3713,7 @@ class MainWindow(QMainWindow):
         self.reload_scales_combobox()
         self.updateEnabledButtons()
         self.updateNotes()
+        self.setFocus()
 
     def _onGlobTabClose(self, index):
         if not self._working:
@@ -3843,7 +3910,11 @@ class MainWindow(QMainWindow):
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setStyleSheet("font-size: 10px;")
-        self.menu.setNativeMenuBar(True)  # Fix for non-native menubar on macOS
+
+        # Fix for non-native menubar on macOS
+        self.menu.setNativeMenuBar(False)
+        # self.menu.setNativeMenuBar(True)
+
 
         fileMenu = self.menu.addMenu('File')
 
@@ -3901,25 +3972,6 @@ class MainWindow(QMainWindow):
         self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
-        self.showPythonAction = QAction('Show &Python', self)
-        self.showPythonAction.triggered.connect(lambda: self.cbPython.setChecked(not self.cbPython.isChecked()))
-        self.showPythonAction.setShortcut('Ctrl+P')
-        self.showPythonAction.setShortcutContext(Qt.ApplicationShortcut)
-        fileMenu.addAction(self.showPythonAction)
-
-        self.showMonitorAction = QAction('Show Process &Monitor', self)
-        self.showMonitorAction.triggered.connect(lambda: self.cbMonitor.setChecked(not self.cbMonitor.isChecked()))
-        self.showMonitorAction.setShortcut('Ctrl+H')
-        self.showMonitorAction.setShortcutContext(Qt.ApplicationShortcut)
-        fileMenu.addAction(self.showMonitorAction)
-
-        self.showMatchSignalsAction = QAction('Show Match S&ignals', self)
-        self.showMatchSignalsAction.triggered.connect(lambda: self.cbSignals.setChecked(not self.cbSignals.isChecked()))
-        self.showMatchSignalsAction.setShortcut('Ctrl+I')
-        self.showMatchSignalsAction.setShortcutContext(Qt.ApplicationShortcut)
-        fileMenu.addAction(self.showMatchSignalsAction)
-
-
         # self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
@@ -3950,17 +4002,41 @@ class MainWindow(QMainWindow):
 
         viewMenu = self.menu.addMenu("View")
 
+        self.showPythonAction = QAction('Show &Python', self)
+        self.showPythonAction.triggered.connect(lambda: self.cbPython.setChecked(not self.cbPython.isChecked()))
+        self.showPythonAction.setShortcut('Ctrl+P')
+        self.showPythonAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.showPythonAction)
+
+        self.showMonitorAction = QAction('Show Process &Monitor', self)
+        self.showMonitorAction.triggered.connect(lambda: self.cbMonitor.setChecked(not self.cbMonitor.isChecked()))
+        self.showMonitorAction.setShortcut('Ctrl+H')
+        self.showMonitorAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.showMonitorAction)
+
+        self.showRawThumbnailsAction = QAction('Show Raw &Thumbnails', self)
+        self.showRawThumbnailsAction.triggered.connect(lambda: self.cbThumbnails.setChecked(not self.cbThumbnails.isChecked()))
+        self.showRawThumbnailsAction.setShortcut('Ctrl+T')
+        self.showRawThumbnailsAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.showRawThumbnailsAction)
+
+        self.showMatchSignalsAction = QAction('Show Match S&ignals', self)
+        self.showMatchSignalsAction.triggered.connect(lambda: self.cbSignals.setChecked(not self.cbSignals.isChecked()))
+        self.showMatchSignalsAction.setShortcut('Ctrl+I')
+        self.showMatchSignalsAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.showMatchSignalsAction)
+
 
         self.layerLeftAction = QAction('Decrement Z-index', self)
         self.layerLeftAction.triggered.connect(self.layer_left)
-        self.layerLeftAction.setShortcut(QKeySequence('left'))
-        self.layerLeftAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.layerLeftAction.setShortcut(QKeySequence('left'))
+        # self.layerLeftAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.layerLeftAction)
 
         self.layerRightAction = QAction('Increment Z-index', self)
         self.layerRightAction.triggered.connect(self.layer_right)
-        self.layerRightAction.setShortcut(QKeySequence('right'))
-        self.layerRightAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.layerRightAction.setShortcut(QKeySequence('right'))
+        # self.layerRightAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.layerRightAction)
 
         self.zoomInAction = QAction('Zoom In', self)
@@ -4029,8 +4105,8 @@ class MainWindow(QMainWindow):
 
         self.alignMatchPointAction = QAction(f"Align Manually {hotkey('M')}", self)
         self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
-        self.alignMatchPointAction.setShortcut('Ctrl+M')
-        self.alignMatchPointAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.alignMatchPointAction.setShortcut('Ctrl+M')
+        # self.alignMatchPointAction.setShortcutContext(Qt.ApplicationShortcut)
         alignMenu.addAction(self.alignMatchPointAction)
         # self.addAction(self.alignMatchPointAction)
 
@@ -4661,6 +4737,10 @@ class MainWindow(QMainWindow):
                     # cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
                     cfg.data.set_auto_swim_windows_to_default(factor=val / cfg.data.image_size()[0])
                     # self.swimWindowChanged.emit()
+
+                    if getData('state,manual_mode'):
+                        cfg.baseViewer.drawSWIMwindow()
+                        cfg.refViewer.drawSWIMwindow()
 
                 cfg.pt.tn_ref.update()
                 cfg.pt.tn_tra.update()
@@ -6075,7 +6155,13 @@ class MainWindow(QMainWindow):
         self.sa_cpanel.setFixedHeight(104)
         self.sa_cpanel.setWidget(self.cpanel)
 
+        self.tb.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.sa_cpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pbar_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
         self.globTabsAndCpanel = VWidget(self.tb, self.globTabs, self.sa_cpanel, self.pbar_widget)
+        self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.globTabsAndCpanel.layout.setSpacing(0)
         # self.globTabsAndCpanel.setAutoFillBackground(True)
         # self.globTabsAndCpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -6495,7 +6581,25 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         super(MainWindow, self).keyPressEvent(event)
+
+        if DEV:
+            logger.critical(f'caller: {caller_name()}')
         logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
+        # if ((event.key() == 77) and (event.nativeModifiers() == 1048840)) \
+        #         or ((event.key() == 16777249) and (event.nativeModifiers() == 264)):
+        #     self.enterExitManAlignMode()
+        #     return
+        if (event.key() == 77) and (event.nativeModifiers() == 1048840):
+            self.enterExitManAlignMode()
+            return
+        # if (event.key() == 16777249) and (event.nativeModifiers() == 264):
+        #     self.enterExitManAlignMode()
+        #     return
+        # M Key: event.key(): 77 <class 'int'>
+        # Command key modifier: event.nativeModifiers(): 1048840 <class 'int'>
+
+
+
         if event.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
@@ -6523,13 +6627,35 @@ class MainWindow(QMainWindow):
 
         self.keyPressed.emit(event)
 
+        if event.key() == Qt.Key_R:
+            self.refreshTab()
+
+        if event.key() == Qt.Key_M:
+            self.enterExitManAlignMode()
+        # r = 82
+        # m = 77
+
+
+        # left arrow key = 16777234
+        if event.key() == 16777234:
+            self.layer_left()
+
+        # right arrow key = 16777236
+        elif event.key() == 16777236:
+            self.layer_right()
+
+
+
+
+
+
     def on_key(self, event):
         print('event received @ MainWindow')
         if event.key() == Qt.Key_Space:
             logger.info('Space key was pressed')
 
-        if event.key() == Qt.Key_M:
-            logger.info('M key was pressed')
+        # if event.key() == Qt.Key_M:
+        #     logger.info('M key was pressed')
 
 class DockWidget(QDockWidget):
     hasFocus = Signal([QDockWidget])

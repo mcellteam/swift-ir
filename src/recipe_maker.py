@@ -257,7 +257,11 @@ class align_recipe:
             self.layer_dict['alignment']['method_results']['snr_report'] = 'SNR: --'
             self.layer_dict['alignment']['method_results']['snr_average'] = 0.0
         else:
-            snr_list = snr.tolist()
+            try:
+                snr_list = snr.tolist()
+            except:
+                print_exception(extra=f'SNR is {str(snr_list)} has type {type(snr_list)}')
+                snr_list = snr
             self.layer_dict['alignment']['method_results']['snr'] = snr_list
             self.layer_dict['alignment']['method_results']['snr_type'] = str(type(snr))
             self.layer_dict['alignment']['method_results']['snr_str'] = str(snr)

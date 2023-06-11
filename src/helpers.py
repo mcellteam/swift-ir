@@ -94,8 +94,8 @@ def check_project_status():
 
     if glob_problem_flag:
         cfg.mw.warn(f"  To fix the Match alignment issues with sections {str(problem_indices)}, do one of the following:\n "
-                    f"    1) add more match selections (at least 3 are necessary) to each or,"
-                    f"    2) change the alignment method for each to Grid Default or Grid Custom or,"
+                    f"    1) add more match selections (at least 3 are necessary) to each or,\n"
+                    f"    2) change the alignment method for each to Grid Default or Grid Custom or,\n"
                     f"    3) exclude each of these sections")
 
 
