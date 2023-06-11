@@ -60,6 +60,18 @@ def run_checks():
         assert(cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
 
 
+def run_command(cmd, arg_list=None, cmd_input=None):
+    logger.info("\n================== Run Command ==================")
+    cmd_arg_list = [cmd]
+    if arg_list != None:
+        cmd_arg_list = [a for a in arg_list]
+        cmd_arg_list.insert(0, cmd)
+    # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
+    cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+    return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
+
+
 def check_project_status():
     iter = cfg.data.get_iter()
     glob_problem_flag = 0

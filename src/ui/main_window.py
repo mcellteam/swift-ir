@@ -61,7 +61,7 @@ from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exce
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML, \
-    check_project_status, caller_name, is_joel
+    check_project_status, caller_name, is_joel, is_tacc
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -2423,6 +2423,11 @@ class MainWindow(QMainWindow):
     def exitResponse(self, response):
         logger.info(f'User Response: {response}')
 
+    def restart_app(self):
+
+
+        pass
+
     def exit_app(self):
 
         logger.info('sender : ' + str(self.sender()))
@@ -3999,6 +4004,12 @@ class MainWindow(QMainWindow):
         self.exitAppAction.setShortcutContext(Qt.ApplicationShortcut)
         self.addAction(self.exitAppAction)
         fileMenu.addAction(self.exitAppAction)
+
+        if is_tacc():
+            self.restartAppAction = QAction(f"Restart Application (Experimental!)", self)
+            self.restartAppAction.triggered.connect(self.restart_app)
+            self.addAction(self.restartAppAction)
+            fileMenu.addAction(self.restartAppAction)
 
         viewMenu = self.menu.addMenu("View")
 
