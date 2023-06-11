@@ -4656,7 +4656,7 @@ class MainWindow(QMainWindow):
         # normal_button_size = QSize(68, 28)
         normal_button_size = QSize(76, 30)
         # long_button_size = QSize(138, 13)
-        long_button_size = QSize(140, 16)
+        long_button_size = QSize(146, 16)
         left = Qt.AlignmentFlag.AlignLeft
         right = Qt.AlignmentFlag.AlignRight
 
