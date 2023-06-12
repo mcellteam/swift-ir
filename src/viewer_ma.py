@@ -167,13 +167,13 @@ class MAViewer(neuroglancer.Viewer):
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
         if DEV:
-            logger.critical(f'{self.type}:{self.role} {caller_name()}')
+            logger.critical(f'{self.type}:{self.role} {caller_name()} argument: {zpos}')
 
         prev_index = self.index
 
         if self.role == 'ref':
             if zpos:
-                self.index=cfg.data.get_ref_index(l=zpos)
+                self.index=zpos
             else:
                 self.index=cfg.data.get_ref_index()
         else:
@@ -194,9 +194,20 @@ class MAViewer(neuroglancer.Viewer):
         with self.txn() as s:
             vc = s.voxel_coordinates
             vc[0] = self.index + 0.5
+            logger.critical(f's.voxel_coordinates = {s.voxel_coordinates}')
+
+        logger.critical(f'{self.type}:{self.role}  self.index {prev_index} -> {self.index}')
+        logger.critical(f'self.state.voxel_coordinates[0] = {self.state.voxel_coordinates[0]}')
+
+
+        # state = copy.deepcopy(self.state)
+        # state.position[0] = self.index
+        # self.set_state(state)
+
         self.drawSWIMwindow()
 
-        logger.critical(f'{self.type}:{self.role}  {prev_index} -> {self.index}')
+
+
         self._blockStateChanged = False
 
         # else:
@@ -316,10 +327,10 @@ class MAViewer(neuroglancer.Viewer):
         if DEV:
             n_layers = None
             txt = '\n\n'
-            txt +=         f'  type/role          = {self.type}/{self.role}\n'
-            txt +=         f'  current method     = {cfg.data.current_method}\n'
             try:    txt += f'  caller             = {caller_name()}\n'
             except: txt += f'  caller             =\n'
+            txt +=         f'  type/role          = {self.type}/{self.role}\n'
+            txt +=         f'  current method     = {cfg.data.current_method}\n'
             try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
             except: txt += f'  _blockStateChanged =\n'
             try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
@@ -384,27 +395,43 @@ class MAViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
 
+
         if self._blockStateChanged:
             return
 
-        self._blockStateChanged = True
-        if not self.cs_scale:
-            if self.state.cross_section_scale:
-                if self.state.cross_section_scale > .0001:
-                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-                    self.cs_scale = self.state.cross_section_scale
+        if self.role == 'base':
+            if cfg.data['state']['stackwidget_ng_toggle'] != 1:
+                return
 
-        zoom = self.state.cross_section_scale
-        if zoom:
-            if zoom != self._crossSectionScale:
-                logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                self.signals.zoomChanged.emit(zoom)
-            self._crossSectionScale = zoom
-        self._blockStateChanged = False
+        elif self.role == 'ref':
+            if cfg.data['state']['stackwidget_ng_toggle'] != 0:
+                return
 
-        request_layer = int(math.floor(self.state.voxel_coordinates[0]))
+        # self._blockStateChanged = True
+        # if not self.cs_scale:
+        #     if self.state.cross_section_scale:
+        #         if self.state.cross_section_scale > .0001:
+        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+        #             self.cs_scale = self.state.cross_section_scale
+        #
+        # zoom = self.state.cross_section_scale
+        # if zoom:
+        #     if zoom != self._crossSectionScale:
+        #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
+        #         self.signals.zoomChanged.emit(zoom)
+        #     self._crossSectionScale = zoom
+        #
+        # self._blockStateChanged = False
+
+        # request_layer = int(math.floor(self.state.voxel_coordinates[0]))
         # request_layer = int(self.state.voxel_coordinates[0])
-        # request_layer = int(self.state.position[0])
+
+
+
+        request_layer = int(self.state.position[0])
+
+        if DEV:
+            logger.critical(self.info())
 
 
         # if self.role == 'ref':
@@ -414,7 +441,7 @@ class MAViewer(neuroglancer.Viewer):
         #     return
 
         if self.role == 'ref':
-            if request_layer == cfg.data.get_ref_index():
+            if request_layer == self.index:
                 return
             else:
                 self.signals.zposChanged.emit()
@@ -436,8 +463,7 @@ class MAViewer(neuroglancer.Viewer):
         #     if request_layer == cfg.data.get_ref_index():
         #         return
 
-        if DEV:
-            logger.critical(self.info())
+
 
 
 
