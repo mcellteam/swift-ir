@@ -820,8 +820,6 @@ class DataModel:
             scale = self._data['data']['scales'][s]
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('has_bounding_rect', cfg.DEFAULT_BOUNDING_BOX) #0512+
-            # scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
-            # scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
             self._data['data']['benchmarks']['scales'].setdefault(s, {})
             self._data['data']['benchmarks']['scales'][s].setdefault('t_align', 0.0)

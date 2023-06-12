@@ -5084,7 +5084,7 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.currentIndexChanged.connect(self._callbk_unsavedChanges)
         self._polyBiasCombo.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
-        self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
+        # self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._polyBiasCombo.setFixedSize(QSize(70, 16))
         self._polyBiasCombo.setEnabled(False)
