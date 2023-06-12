@@ -167,7 +167,7 @@ class MAViewer(neuroglancer.Viewer):
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
         if DEV:
-            logger.critical(f'{self.type}:{self.role} {caller_name()} argument: {zpos}')
+            logger.warning(f'[{self.role}] caller: {caller_name()}')
 
         prev_index = self.index
 
@@ -194,11 +194,9 @@ class MAViewer(neuroglancer.Viewer):
         with self.txn() as s:
             vc = s.voxel_coordinates
             vc[0] = self.index + 0.5
-            logger.critical(f's.voxel_coordinates = {s.voxel_coordinates}')
 
-        logger.critical(f'{self.type}:{self.role}  self.index {prev_index} -> {self.index}')
-        logger.critical(f'self.state.voxel_coordinates[0] = {self.state.voxel_coordinates[0]}')
-
+        if DEV:
+            logger.critical(f'{self.type}:{self.role}  self.index {prev_index} -> {self.index}')
 
         # state = copy.deepcopy(self.state)
         # state.position[0] = self.index
@@ -399,6 +397,8 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
+
+
         if self.role == 'base':
             if cfg.data['state']['stackwidget_ng_toggle'] != 1:
                 return
@@ -406,6 +406,8 @@ class MAViewer(neuroglancer.Viewer):
         elif self.role == 'ref':
             if cfg.data['state']['stackwidget_ng_toggle'] != 0:
                 return
+
+        self._blockStateChanged = True
 
         # self._blockStateChanged = True
         # if not self.cs_scale:
@@ -426,8 +428,6 @@ class MAViewer(neuroglancer.Viewer):
         # request_layer = int(math.floor(self.state.voxel_coordinates[0]))
         # request_layer = int(self.state.voxel_coordinates[0])
 
-
-
         request_layer = int(self.state.position[0])
 
         if DEV:
@@ -442,13 +442,16 @@ class MAViewer(neuroglancer.Viewer):
 
         if self.role == 'ref':
             if request_layer == self.index:
+                self._blockStateChanged = False
                 return
             else:
                 self.signals.zposChanged.emit()
+                self._blockStateChanged = False
                 return
 
 
         if self.index == request_layer:
+            self._blockStateChanged = False
             return
 
         # request_layer = int(self.state.position[0])
@@ -538,6 +541,9 @@ class MAViewer(neuroglancer.Viewer):
         #         # self._inSync = 1 #Critical!
 
                 # self.signals.stateChanged.emit()
+
+        self._blockStateChanged = False
+
 
 
 
@@ -678,8 +684,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def undrawSWIMwindows(self):
-        caller = inspect.stack()[1].function
-        logger.info(f"[{self.role}, caller: {caller_name()}] Undrawing SWIM windows...")
+        # caller = inspect.stack()[1].function
+        # logger.info(f"[{self.role}] caller: {caller_name()}] Undrawing SWIM windows...")
 
         # with cfg.refViewer.txn() as s:
         #     print(s.layers['SWIM'].annotations)
@@ -687,7 +693,6 @@ class MAViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 if s.layers['SWIM']:
                     if 'annotations' in s.layers['SWIM'].to_json().keys():
-                        # logger.info(f'Undrawing SWIM windows...')
                         s.layers['SWIM'].annotations = None
         except:
             logger.warning('Something went wrong while undrawing SWIM windows')
@@ -715,15 +720,21 @@ class MAViewer(neuroglancer.Viewer):
         # caller = inspect.stack()[1].function
 
         self.undrawSWIMwindows() #todo try without this!
+
+        if cfg.data.zpos == cfg.data.first_unskipped():
+            return
+
+
+
         marker_size = 1
 
-        if self.role == 'ref':
-            self.index = cfg.data.get_ref_index()
-        elif self.role == 'base':
-            self.index = cfg.data.zpos  #
+        # if self.role == 'ref':
+        #     self.index = cfg.data.get_ref_index()
+        # elif self.role == 'base':
+        #     self.index = cfg.data.zpos  #
 
         if DEV:
-            logger.critical(f'[{self.role}, caller: {caller_name()}] index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
+            logger.critical(f'[{self.role}] caller: {caller_name()} index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
 
         # if cfg.data.current_method == 'manual-hint':
         #     self.draw_point_annotations()
@@ -981,7 +992,7 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
     def initZoom(self):
-        adjust = 1.20
+        adjust = 1.12
         if self.cs_scale:
             logger.critical(f'Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
             with self.txn() as s:

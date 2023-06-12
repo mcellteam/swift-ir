@@ -2691,9 +2691,15 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             if getData('state,manual_mode'):
-                new_cs_scale = cfg.refViewer.zoom() * 0.9
-                logger.info(f'new_cs_scale: {new_cs_scale}')
-                cfg.baseViewer.set_zoom(new_cs_scale)
+                if cfg.data['state']['stackwidget_ng_toggle']:
+                    new_cs_scale = cfg.baseViewer.zoom() * 0.9
+                    logger.info(f'new_cs_scale: {new_cs_scale}')
+                    cfg.baseViewer.set_zoom(new_cs_scale)
+                else:
+                    new_cs_scale = cfg.refViewer.zoom() * 0.9
+                    logger.info(f'new_cs_scale: {new_cs_scale}')
+                    cfg.refViewer.set_zoom(new_cs_scale)
+
             else:
                 new_cs_scale = cfg.emViewer.zoom() * 0.9
                 logger.info(f'new_cs_scale: {new_cs_scale}')
