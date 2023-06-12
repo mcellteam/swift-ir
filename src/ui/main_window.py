@@ -2451,7 +2451,10 @@ class MainWindow(QMainWindow):
         logger.info(f'User Response: {response}')
 
     def restart_app(self):
-        run_command('source', arg_list='tacc_bootstrap')
+        self.tell('Attempting to restart AlignEM-SWIFT...')
+        path = os.path.join(os.getenv('WORK'), 'swift-ir', 'tacc_bootstrap')
+        logger.info(f'Attempting to restart AlignEM-SWIFT with {path}...')
+        run_command('source', arg_list=path)
         self.shutdownInstructions()
 
 
@@ -6707,6 +6710,15 @@ class MainWindow(QMainWindow):
                 self.incrementZoomOut()
 
 
+
+
+        # # left arrow key = 16777234
+        # elif event.key() == 16777234:
+        #     self.layer_left()
+        #
+        # # right arrow key = 16777236
+        # elif event.key() == 16777236:
+        #     self.layer_right()
 
 
         # left arrow key = 16777234
