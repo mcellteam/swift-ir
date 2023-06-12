@@ -177,6 +177,18 @@ class MainWindow(QMainWindow):
         # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
         # self.zposChanged.connect(self.dataUpdateWidgets)
 
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.WindowActivate:
+            print("widget window has gained focus")
+        elif event.type() == QEvent.WindowDeactivate:
+            print("widget window has lost focus")
+        elif event.type() == QEvent.FocusIn:
+            print("widget has gained keyboard focus")
+        elif event.type() == QEvent.FocusOut:
+            print("widget has lost keyboard focus")
+
+
+
     def restore_tabs(self, settings):
         '''self.restore_tabs(self.settings)'''
         finfo = QFileInfo(settings.fileName())
@@ -346,12 +358,21 @@ class MainWindow(QMainWindow):
     def initPrivateMembers(self):
         logger.info('')
 
-        if DEV:
-            self.printFocusTimer = QTimer()
-            self.printFocusTimer.setSingleShot(False)
-            self.printFocusTimer.setInterval(1000)
-            self.printFocusTimer.timeout.connect(lambda: print(f'focus widget: {self.focusWidget()}'))
-            self.printFocusTimer.start()
+        # if DEV:
+        self.printFocusTimer = QTimer()
+        self.printFocusTimer.setSingleShot(False)
+        self.printFocusTimer.setInterval(500)
+        def fn():
+            # if DEV:
+            #     print(f'focus widget  : {self.focusWidget()}')
+            #     print(f'object name   : {self.focusWidget().objectName()}')
+            #     print(f'object type   : {type(self.focusWidget())}')
+            #     print(f'object id     : {id(self.focusWidget())}')
+            #     print(f'object parent : {self.focusWidget().parent()}')
+            if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
+                self.setFocus()
+        self.printFocusTimer.timeout.connect(fn)
+        self.printFocusTimer.start()
 
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
@@ -6598,8 +6619,8 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).keyPressEvent(event)
 
         if DEV:
-            logger.critical(f'caller: {caller_name()}')
-        logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
+            logger.info(f'caller: {caller_name()}')
+            logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
         # if ((event.key() == 77) and (event.nativeModifiers() == 1048840)) \
         #         or ((event.key() == 16777249) and (event.nativeModifiers() == 264)):
         #     self.enterExitManAlignMode()

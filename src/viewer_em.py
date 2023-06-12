@@ -330,6 +330,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+        self._blockStateChanged = True
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': val}
@@ -339,6 +340,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print_exception()
         else:
             logger.info('Successfully set Z-mag!')
+        self._blockStateChanged = False
 
 
     def updateScaleBar(self):

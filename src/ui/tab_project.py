@@ -60,18 +60,18 @@ class ProjectTab(QWidget):
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
-        # self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.webengine.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.webengine.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
         self.webengine.loadFinished.connect(lambda: logger.info('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
         self.webengine.setMouseTracking(True)
-        self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.focusedViewer = None
         self.setAutoFillBackground(True)
 
         '''primary tab widgets'''
         self.ng_browser_container_outer = HWidget()
+        self.ng_browser_container_outer.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.table_container = QWidget()
         self._wdg_treeview = QWidget()
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
@@ -363,6 +363,7 @@ class ProjectTab(QWidget):
         self.lab_main_instructions.setFixedHeight(16)
 
         self.webengine_w_instructions = QWidget()
+        self.webengine_w_instructions.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.webengine_w_instructions.setAutoFillBackground(True)
         self.webengine_w_instructions.setContentsMargins(0,0,0,0)
         vbl = VBL(self.webengine, self.lab_main_instructions)
@@ -384,6 +385,7 @@ class ProjectTab(QWidget):
         # self._overlayRect.hide()
         # self.ng_gl.addWidget(self._overlayRect, 0, 0, 5, 5)
         self._overlayLab = QLabel('<label>')
+        self._overlayLab.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._overlayLab.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayLab.setAlignment(Qt.AlignCenter)
         self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5); """)
@@ -536,12 +538,12 @@ class ProjectTab(QWidget):
         self.MA_webengine_ref.setMouseTracking(True)
         self.MA_webengine_base.setMouseTracking(True)
         self.MA_webengine_stage.setMouseTracking(True)
-        # self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
-        self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
-        self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        # self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        # self.MA_webengine_stage.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
 
 
         '''Mouse move events will occur only when a mouse button is pressed down, 
@@ -1287,7 +1289,7 @@ class ProjectTab(QWidget):
         self.method_bg.addButton(self.method_rb2)
 
         def method_bg_fn():
-            logger.info('')
+            logger.critical(f'\n\n\n\n\n BEFORE:{cfg.data.current_method} \n\n\n\n\n')
             cur_index = self.MA_stackedWidget.currentIndex()
             if self.method_rb0.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(0)
@@ -1308,13 +1310,17 @@ class ProjectTab(QWidget):
             # elif cur_index == 4:
             #     self.MA_stackedWidget.setCurrentIndex(4)
             cfg.mw.updateCorrSignalsDrawer()
-            QApplication.processEvents()
-            if self.rb_reference.isChecked():
-                cfg.refViewer.drawSWIMwindow()
-            else:
-                cfg.baseViewer.drawSWIMwindow()
+            # QApplication.processEvents()
+            # if cfg.data['state']['stackwidget_ng_toggle']:
+            #     cfg.baseViewer.drawSWIMwindow()
+            # else:
+            #     cfg.refViewer.drawSWIMwindow()
+            cfg.baseViewer.drawSWIMwindow()
+            cfg.refViewer.drawSWIMwindow()
 
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
+
+            logger.critical(f'\n\n\n\n\n AFTER:{cfg.data.current_method} \n\n\n\n\n')
             # cfg.main_window.dataUpdateWidgets()
 
         self.method_bg.buttonClicked.connect(method_bg_fn)
@@ -1671,6 +1677,7 @@ class ProjectTab(QWidget):
 
         # self.MA_gl_overlay = QWidget()
         self.MA_gl_overlay = QLabel()
+        self.MA_gl_overlay.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.MA_gl_overlay.setAlignment(Qt.AlignCenter)
         self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5);""")
@@ -1728,6 +1735,7 @@ class ProjectTab(QWidget):
             #     logger.critical(f'self.rb_referenceisChecked()? {self.rb_reference.isChecked()}')
 
             active = (cfg.refViewer, cfg.baseViewer)[newcur]
+            active._blockStateChanged = True
             inactive = (cfg.refViewer, cfg.baseViewer)[1 - newcur]
             with active.txn() as s:
                 s.voxel_coordinates[1] = inactive.state.voxel_coordinates[1]
@@ -1736,20 +1744,20 @@ class ProjectTab(QWidget):
                     s.cross_section_scale = inactive.state.cross_section_scale
                 except:
                     print_exception()
+            active._blockStateChanged = False
             self.sw_neuroglancer.setCurrentIndex(newcur)
             if self.rb_transforming.isChecked():
                 self.rb_transforming.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
                 self.rb_reference.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
             elif self.rb_reference.isChecked():
-                self.rb_reference.setChecked(True)
                 self.rb_transforming.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
                 self.rb_reference.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
 
-            if self.rb_reference.isChecked():
-                cfg.refViewer.drawSWIMwindow()
-            else:
-                cfg.baseViewer.drawSWIMwindow()
 
+            if cfg.data['state']['stackwidget_ng_toggle']:
+                cfg.baseViewer.drawSWIMwindow()
+            else:
+                cfg.refViewer.drawSWIMwindow()
 
             # active.drawSWIMwindow()
             # cfg.refViewer.drawSWIMwindow()
@@ -2543,7 +2551,8 @@ class ProjectTab(QWidget):
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
         cur_index = self.MA_stackedWidget.currentIndex()
-        # logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
+        logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
+        logger.critical(f'cfg.data.current_method = {cfg.data.current_method}')
 
         if cfg.data.current_method == 'grid-default':
             self.method_rb0.setChecked(True)
@@ -3349,13 +3358,25 @@ class ProjectTab(QWidget):
 
     def setZmag(self, val):
         logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val}...')
-        try:
-            state = copy.deepcopy(cfg.emViewer.state)
-            state.relative_display_scales = {'z': val}
-            cfg.emViewer.set_state(state)
-            cfg.main_window.update()
-        except:
-            print_exception()
+        if getData('state,manual_mode'):
+            try:
+                cfg.refViewer.set_zmag(10)
+            except:
+                print_exception()
+            try:
+                cfg.baseViewer.set_zmag(10)
+            except:
+                print_exception()
+            try:
+                cfg.stageViewer.set_zmag(10)
+            except:
+                print_exception()
+
+        else:
+            try:
+                cfg.emViewer.set_zmag(10)
+            except:
+                print_exception()
 
     def onSliderZmag(self):
 
@@ -3966,6 +3987,9 @@ class WebEngine(QWebEngineView):
         QWebEngineView.__init__(self)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+
+
+        # self.widget_id = id(self.children()[2])
         # self.inFocus = Signal(str)
         # self.installEventFilter(self)
 
