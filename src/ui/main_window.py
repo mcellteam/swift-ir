@@ -25,6 +25,7 @@ import psutil
 import resource
 import datetime
 import multiprocessing
+import subprocess
 from collections import OrderedDict
 import numpy as np
 # from guppy import hpy; h=hpy()
@@ -2455,7 +2456,8 @@ class MainWindow(QMainWindow):
         path = os.path.join(os.getenv('WORK'), 'swift-ir', 'tacc_bootstrap')
         logger.info(f'Attempting to restart AlignEM-SWIFT with {path}...')
         # run_command('source', arg_list=[path])
-        run_command('/usr/src/ofa_kernel-5.6/source', arg_list=[path])
+        # run_command('/usr/src/ofa_kernel-5.6/source', arg_list=[path])
+        subprocess.run(["source", path])
         self.shutdownInstructions()
 
 
