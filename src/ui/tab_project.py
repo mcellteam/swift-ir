@@ -991,6 +991,9 @@ class ProjectTab(QWidget):
                 else:
                     cfg.baseViewer.drawSWIMwindow()
 
+                self.tn_ref.update()
+                self.tn_base.update()
+
                 # cfg.refViewer.drawSWIMwindow()
                 # cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
@@ -1053,6 +1056,9 @@ class ProjectTab(QWidget):
                 # cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
 
+                self.tn_ref.update()
+                self.tn_base.update()
+
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_SWIM_window.setMinimum(64)
         self.slider_AS_SWIM_window.setToolTip(tip)
@@ -1087,6 +1093,9 @@ class ProjectTab(QWidget):
                 # cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
 
+                self.tn_ref.update()
+                self.tn_base.update()
+
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_2x2_SWIM_window.setToolTip(tip)
         self.slider_AS_2x2_SWIM_window.valueChanged.connect(fn)
@@ -1095,6 +1104,8 @@ class ProjectTab(QWidget):
         def fn():
             cfg.data.set_swim_2x2_custom_px(int(self.AS_2x2_SWIM_window_le.text()))
             self.dataUpdateMA()
+
+
 
         self.AS_2x2_SWIM_window_le = QLineEdit()
         self.AS_2x2_SWIM_window_le.returnPressed.connect(fn)
@@ -2934,6 +2945,9 @@ class ProjectTab(QWidget):
 
             if self.MA_stackedWidget.currentIndex() == 4:
                 self.refreshLogs()
+
+            self.tn_ref.update()
+            self.tn_base.update()
 
         # logger.critical('<<<< dataUpdateMA <<<<')
 
