@@ -1744,7 +1744,15 @@ class ProjectTab(QWidget):
                     s.cross_section_scale = inactive.state.cross_section_scale
                 except:
                     print_exception()
+
+            if self.rb_reference.isChecked():
+                # cfg.refViewer.set_layer(cfg.data.get_ref_index())
+                cfg.refViewer.set_layer()
+
             active._blockStateChanged = False
+
+
+
             self.sw_neuroglancer.setCurrentIndex(newcur)
             if self.rb_transforming.isChecked():
                 self.rb_transforming.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
