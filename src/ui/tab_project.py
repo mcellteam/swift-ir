@@ -992,7 +992,7 @@ class ProjectTab(QWidget):
                     cfg.baseViewer.drawSWIMwindow()
 
                 self.tn_ref.update()
-                self.tn_base.update()
+                self.tn_tra.update()
 
                 # cfg.refViewer.drawSWIMwindow()
                 # cfg.baseViewer.drawSWIMwindow()
@@ -1057,7 +1057,7 @@ class ProjectTab(QWidget):
                 cfg.main_window._callbk_unsavedChanges()
 
                 self.tn_ref.update()
-                self.tn_base.update()
+                self.tn_tra.update()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_SWIM_window.setMinimum(64)
@@ -1094,7 +1094,7 @@ class ProjectTab(QWidget):
                 cfg.main_window._callbk_unsavedChanges()
 
                 self.tn_ref.update()
-                self.tn_base.update()
+                self.tn_tra.update()
 
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_2x2_SWIM_window.setToolTip(tip)
@@ -1779,7 +1779,7 @@ class ProjectTab(QWidget):
                 cfg.refViewer.drawSWIMwindow()
 
             self.tn_ref.update()
-            self.tn_base.update()
+            self.tn_tra.update()
 
             # active.drawSWIMwindow()
             # cfg.refViewer.drawSWIMwindow()
@@ -2947,7 +2947,8 @@ class ProjectTab(QWidget):
                 self.refreshLogs()
 
             self.tn_ref.update()
-            self.tn_base.update()
+            self.tn_tra.update()
+
 
         # logger.critical('<<<< dataUpdateMA <<<<')
 
