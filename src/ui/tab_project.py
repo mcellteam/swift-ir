@@ -2547,6 +2547,9 @@ class ProjectTab(QWidget):
         else:
             cfg.baseViewer.drawSWIMwindow()
 
+        self.tn_ref.update()
+        self.tn_tra.update()
+
     # def updateMethodSelectWidget(self):
     #     caller = inspect.stack()[1].function
     #     logger.info(f'caller: {caller}')
