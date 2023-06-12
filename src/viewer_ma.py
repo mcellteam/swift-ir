@@ -316,7 +316,8 @@ class MAViewer(neuroglancer.Viewer):
         if DEV:
             n_layers = None
             txt = '\n\n'
-            txt +=         f'  type/role          = {self.type}/{self.role}'
+            txt +=         f'  type/role          = {self.type}/{self.role}\n'
+            txt +=         f'  current method     = {cfg.data.current_method}\n'
             try:    txt += f'  caller             = {caller_name()}\n'
             except: txt += f'  caller             =\n'
             try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
@@ -386,6 +387,7 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
+        self._blockStateChanged = True
         if not self.cs_scale:
             if self.state.cross_section_scale:
                 if self.state.cross_section_scale > .0001:
@@ -398,9 +400,10 @@ class MAViewer(neuroglancer.Viewer):
                 logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
                 self.signals.zoomChanged.emit(zoom)
             self._crossSectionScale = zoom
+        self._blockStateChanged = False
 
-        # request_layer = int(math.floor(self.state.voxel_coordinates[0]))
-        request_layer = int(self.state.voxel_coordinates[0])
+        request_layer = int(math.floor(self.state.voxel_coordinates[0]))
+        # request_layer = int(self.state.voxel_coordinates[0])
         # request_layer = int(self.state.position[0])
 
 
@@ -410,27 +413,33 @@ class MAViewer(neuroglancer.Viewer):
         #         cfg.pt.setRbTransforming()
         #     return
 
+        if self.role == 'ref':
+            if request_layer == cfg.data.get_ref_index():
+                return
+            else:
+                self.signals.zposChanged.emit()
+                return
+
+
+        if self.index == request_layer:
+            return
 
         # request_layer = int(self.state.position[0])
         # request_layer = int(self.state.position[0])
 
         # logger.critical(f"\n\n\n{self.role}\n  cfg.data.zpos={cfg.data.zpos}\n  request_layer={request_layer}\n  cfg.data.get_ref_index()={cfg.data.get_ref_index()}\n\n")
 
-        if self.role == 'base':
-            if request_layer == cfg.data.zpos:
-                return
-        elif self.role == 'ref':
-            if request_layer == cfg.data.get_ref_index():
-                return
+        # if self.role == 'base':
+        #     if request_layer == cfg.data.zpos:
+        #         return
+        # elif self.role == 'ref':
+        #     if request_layer == cfg.data.get_ref_index():
+        #         return
 
         if DEV:
             logger.critical(self.info())
 
 
-
-        if DEV:
-            caller = caller_name()
-            logger.info(f'[{caller}]')
 
         self.index = request_layer
 
