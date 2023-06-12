@@ -4048,8 +4048,8 @@ class MainWindow(QMainWindow):
 
         self.showPythonAction = QAction('Show &Python', self)
         self.showPythonAction.triggered.connect(lambda: self.cbPython.setChecked(not self.cbPython.isChecked()))
-        self.showPythonAction.setShortcut('Ctrl+P')
-        self.showPythonAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.showPythonAction.setShortcut('Ctrl+P')
+        # self.showPythonAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.showPythonAction)
 
         self.showMonitorAction = QAction('Show Process &Monitor', self)
@@ -4085,14 +4085,14 @@ class MainWindow(QMainWindow):
 
         self.zoomInAction = QAction('Zoom In', self)
         self.zoomInAction.triggered.connect(self.incrementZoomIn)
-        self.zoomInAction.setShortcut(QKeySequence('up'))
-        self.zoomInAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.zoomInAction.setShortcut(QKeySequence('up'))
+        # self.zoomInAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomInAction)
 
         self.zoomOutAction = QAction('Zoom Out', self)
         self.zoomOutAction.triggered.connect(self.incrementZoomOut)
-        self.zoomOutAction.setShortcut(QKeySequence('down'))
-        self.zoomOutAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.zoomOutAction.setShortcut(QKeySequence('down'))
+        # self.zoomOutAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomOutAction)
 
 
@@ -6697,6 +6697,17 @@ class MainWindow(QMainWindow):
 
         elif event.key() == Qt.Key_I:
             self.cbSignals.setChecked(not self.cbSignals.isChecked())
+
+        elif event.key() == Qt.Key_Up:
+            if self._isProjectTab():
+                self.incrementZoomIn()
+
+        elif event.key() == Qt.Key_Down:
+            if self._isProjectTab():
+                self.incrementZoomOut()
+
+
+
 
         # left arrow key = 16777234
         elif event.key() == 16777234:
