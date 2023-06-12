@@ -26,6 +26,8 @@ import psutil
 from functools import reduce
 import operator
 import neuroglancer as ng
+import subprocess as sp
+
 
 from qtpy.QtWidgets import QApplication
 
