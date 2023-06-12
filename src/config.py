@@ -49,7 +49,7 @@ WIDTH, HEIGHT = 1280, 700
 
 '''Default Alignment Params'''
 
-DEFAULT_POLY_ORDER            = int(0)
+# DEFAULT_POLY_ORDER            = int(0)
 DEFAULT_NULL_BIAS             = bool(False)
 DEFAULT_BOUNDING_BOX          = bool(False)
 DEFAULT_INITIAL_ROTATION      = float(0.0000)
