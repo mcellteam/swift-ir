@@ -3441,9 +3441,9 @@ class MainWindow(QMainWindow):
 
 
         def toggleThumbnailsVisibility():
-            state = self.cbThumbnails.isChecked()
-            setData('state,tool_windows,signals', state)
             if self._isProjectTab():
+                state = self.cbThumbnails.isChecked()
+                setData('state,tool_windows,signals', state)
                 new_size = (0, 200)[state]
                 cfg.pt.tn_widget.setVisible(state)
                 sizes = cfg.pt.hsplitter_tn_ng.sizes()
@@ -3462,9 +3462,9 @@ class MainWindow(QMainWindow):
         self.cbThumbnails.stateChanged.connect(toggleThumbnailsVisibility)
 
         def toggleSignalVisibility():
-            state = self.cbSignals.isChecked()
-            setData('state,tool_windows,signals', state)
             if self._isProjectTab():
+                state = self.cbSignals.isChecked()
+                setData('state,tool_windows,signals', state)
                 new_size = (0,400)[state]
                 cfg.pt.ms_widget.setVisible(state)
                 sizes = cfg.pt.hsplitter_tn_ng.sizes()
@@ -4005,16 +4005,16 @@ class MainWindow(QMainWindow):
 
         self.refreshAction = QAction('&Refresh', self)
         self.refreshAction.triggered.connect(self.refreshTab)
-        self.refreshAction.setShortcut('Ctrl+R')
-        self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.refreshAction.setShortcut('Ctrl+R')
+        # self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
         self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
         # self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction = QAction('Show &Notes', self)
         self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
-        self.showNotesAction.setShortcut('Ctrl+Z')
-        self.showNotesAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.showNotesAction.setShortcut('Ctrl+Z')
+        # self.showNotesAction.setShortcutContext(Qt.ApplicationShortcut)
         fileMenu.addAction(self.showNotesAction)
 
         def fn():
@@ -4054,20 +4054,20 @@ class MainWindow(QMainWindow):
 
         self.showMonitorAction = QAction('Show Process &Monitor', self)
         self.showMonitorAction.triggered.connect(lambda: self.cbMonitor.setChecked(not self.cbMonitor.isChecked()))
-        self.showMonitorAction.setShortcut('Ctrl+H')
-        self.showMonitorAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.showMonitorAction.setShortcut('Ctrl+H')
+        # self.showMonitorAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.showMonitorAction)
 
         self.showRawThumbnailsAction = QAction('Show Raw &Thumbnails', self)
         self.showRawThumbnailsAction.triggered.connect(lambda: self.cbThumbnails.setChecked(not self.cbThumbnails.isChecked()))
-        self.showRawThumbnailsAction.setShortcut('Ctrl+T')
-        self.showRawThumbnailsAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.showRawThumbnailsAction.setShortcut('Ctrl+T')
+        # self.showRawThumbnailsAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.showRawThumbnailsAction)
 
         self.showMatchSignalsAction = QAction('Show Match S&ignals', self)
         self.showMatchSignalsAction.triggered.connect(lambda: self.cbSignals.setChecked(not self.cbSignals.isChecked()))
-        self.showMatchSignalsAction.setShortcut('Ctrl+I')
-        self.showMatchSignalsAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.showMatchSignalsAction.setShortcut('Ctrl+I')
+        # self.showMatchSignalsAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.showMatchSignalsAction)
 
 
@@ -6685,6 +6685,18 @@ class MainWindow(QMainWindow):
 
         elif event.key() == Qt.Key_P:
             self.cbPython.setChecked(not self.cbPython.isChecked())
+
+        elif event.key() == Qt.Key_H:
+            self.cbMonitor.setChecked(not self.cbMonitor.isChecked())
+
+        elif event.key() == Qt.Key_Z:
+            self.cbNotes.setChecked(not self.cbNotes.isChecked())
+
+        elif event.key() == Qt.Key_T:
+            self.cbThumbnails.setChecked(not self.cbThumbnails.isChecked())
+
+        elif event.key() == Qt.Key_I:
+            self.cbSignals.setChecked(not self.cbSignals.isChecked())
 
         # left arrow key = 16777234
         elif event.key() == 16777234:
