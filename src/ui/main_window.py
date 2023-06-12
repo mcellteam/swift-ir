@@ -61,7 +61,7 @@ from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exce
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML, \
-    check_project_status, caller_name, is_joel, is_tacc
+    check_project_status, caller_name, is_joel, is_tacc, run_command
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -2451,9 +2451,9 @@ class MainWindow(QMainWindow):
         logger.info(f'User Response: {response}')
 
     def restart_app(self):
+        run_command('source', arg_list='tacc_bootstrap')
+        self.shutdownInstructions()
 
-
-        pass
 
     def exit_app(self):
 
@@ -2526,20 +2526,20 @@ class MainWindow(QMainWindow):
                 print_exception()
                 self.warn(f'Having trouble shutting down threadpool')
             finally:
-                time.sleep(.4)
+                time.sleep(.3)
 
         # if cfg.DEV_MODE:
         self.tell('Shutting Down Python Console Kernel...')
         logger.info('Shutting Down Python Console Kernel...')
-        # try:
-        #
-        #     self.pythonConsole.kernel_client.stop_channels()
-        #     self.pythonConsole.kernel_manager.shutdown_kernel()
-        # except:
-        #     print_exception()
-        #     self.warn('Having trouble shutting down Python console kernel')
-        # finally:
-        #     time.sleep(.4)
+        try:
+
+            self.pythonConsole.kernel_client.stop_channels()
+            self.pythonConsole.kernel_manager.shutdown_kernel()
+        except:
+            print_exception()
+            self.warn('Having trouble shutting down Python console kernel')
+        finally:
+            time.sleep(.3)
 
         self.tell('Graceful, Goodbye!')
         logger.info('Exiting...')
