@@ -547,20 +547,21 @@ class MainWindow(QMainWindow):
         # logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
     def callbackDwVisibilityChanged(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        # QApplication.processEvents()
-        cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
-        cfg.data['state']['tool_windows']['hud'] = self.dw_monitor.isVisible()
-        cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
-        self.cbPython.setChecked(cfg.data['state']['tool_windows']['python'])
-        self.cbMonitor.setChecked(cfg.data['state']['tool_windows']['hud'])
-        self.cbNotes.setChecked(cfg.data['state']['tool_windows']['notes'])
+        if self._isProjectTab():
+            # caller = inspect.stack()[1].function
+            # logger.info(f'caller: {caller}')
+            # QApplication.processEvents()
+            cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
+            cfg.data['state']['tool_windows']['hud'] = self.dw_monitor.isVisible()
+            cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
+            self.cbPython.setChecked(cfg.data['state']['tool_windows']['python'])
+            self.cbMonitor.setChecked(cfg.data['state']['tool_windows']['hud'])
+            self.cbNotes.setChecked(cfg.data['state']['tool_windows']['notes'])
 
-        # self.pythonConsole.resize(QSize(int(self.width()/2), 90))
-        # self.pythonConsole.update()
-        # self.hud.resize(QSize(int(self.width()/2), 90))
-        # self.hud.update()
+            # self.pythonConsole.resize(QSize(int(self.width()/2), 90))
+            # self.pythonConsole.update()
+            # self.hud.resize(QSize(int(self.width()/2), 90))
+            # self.hud.update()
 
 
     def callbackToolwindows(self):
