@@ -397,8 +397,6 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
-
-
         if self.role == 'base':
             if cfg.data['state']['stackwidget_ng_toggle'] != 1:
                 return
