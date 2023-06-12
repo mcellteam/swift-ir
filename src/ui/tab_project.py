@@ -169,8 +169,8 @@ class ProjectTab(QWidget):
                 self.refreshTab()
             else:
                 cfg.emViewer.set_layer(cfg.data.zpos)
-            cfg.pt.tn_ref.update() #Ensure
-            cfg.pt.tn_tra.update() #Ensure
+            self.tn_ref.update() #Ensure
+            self.tn_tra.update() #Ensure
 
         elif index == 1:
             pass
@@ -1766,6 +1766,9 @@ class ProjectTab(QWidget):
                 cfg.baseViewer.drawSWIMwindow()
             else:
                 cfg.refViewer.drawSWIMwindow()
+
+            self.tn_ref.update()
+            self.tn_base.update()
 
             # active.drawSWIMwindow()
             # cfg.refViewer.drawSWIMwindow()
