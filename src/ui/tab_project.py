@@ -1000,6 +1000,7 @@ class ProjectTab(QWidget):
 
         # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
         self.slider_MA_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_MA_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider_MA_SWIM_window.setMinimum(64)
         self.slider_MA_SWIM_window.setToolTip(tip)
         self.slider_MA_SWIM_window.valueChanged.connect(fn)
@@ -1012,6 +1013,11 @@ class ProjectTab(QWidget):
             logger.info('caller: %s' % caller)
             cfg.data.set_manual_swim_window_px(int(self.MA_SWIM_window_le.text()))
             self.dataUpdateMA()
+            if self.rb_reference.isChecked():
+                cfg.refViewer.drawSWIMwindow()
+            else:
+                cfg.baseViewer.drawSWIMwindow()
+
 
         self.MA_SWIM_window_le.returnPressed.connect(fn)
         self.MA_SWIM_window_le.setFixedHeight(18)
@@ -1060,6 +1066,7 @@ class ProjectTab(QWidget):
                 self.tn_tra.update()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_AS_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider_AS_SWIM_window.setMinimum(64)
         self.slider_AS_SWIM_window.setToolTip(tip)
         self.slider_AS_SWIM_window.valueChanged.connect(fn)
@@ -1097,6 +1104,7 @@ class ProjectTab(QWidget):
                 self.tn_tra.update()
 
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider_AS_2x2_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider_AS_2x2_SWIM_window.setToolTip(tip)
         self.slider_AS_2x2_SWIM_window.valueChanged.connect(fn)
         self.slider_AS_2x2_SWIM_window.setMaximumWidth(100)
@@ -1121,6 +1129,7 @@ class ProjectTab(QWidget):
                 cfg.data.set_whitening(float(self.spinbox_whitening.value()))  # Refactor
 
         self.spinbox_whitening = QDoubleSpinBox(self)
+        self.spinbox_whitening.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinbox_whitening.setFixedWidth(80)
         self.spinbox_whitening.setToolTip(tip)
         # self.spinbox_whitening.setFixedHeight(26)
@@ -1141,6 +1150,7 @@ class ProjectTab(QWidget):
                 logger.info(f'SWIM iterations for section #{cfg.data.zpos} is set to {val}')
 
         self.spinbox_swim_iters = QSpinBox(self)
+        self.spinbox_swim_iters.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinbox_swim_iters.setToolTip('# of SWIM iterations/refinements (default: 3)')
         self.spinbox_swim_iters.setFixedWidth(80)
         self.spinbox_swim_iters.valueChanged.connect(fn)

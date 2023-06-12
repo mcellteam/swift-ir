@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         self.menu = self.menuBar()
         # self.menu = QMenu()
         cfg.thumb = Thumbnailer()
-        # self.installEventFilter(self)
+        self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
         self.initImageAllocations()
         self.initPrivateMembers()
@@ -178,14 +178,15 @@ class MainWindow(QMainWindow):
         # self.zposChanged.connect(self.dataUpdateWidgets)
 
     def eventFilter(self, object, event):
-        if event.type() == QEvent.WindowActivate:
-            print("widget window has gained focus")
-        elif event.type() == QEvent.WindowDeactivate:
-            print("widget window has lost focus")
-        elif event.type() == QEvent.FocusIn:
-            print("widget has gained keyboard focus")
-        elif event.type() == QEvent.FocusOut:
-            print("widget has lost keyboard focus")
+        if DEV:
+            if event.type() == QEvent.WindowActivate:
+                logger.critical("widget window has gained focus")
+            elif event.type() == QEvent.WindowDeactivate:
+                logger.critical("widget window has lost focus")
+            elif event.type() == QEvent.FocusIn:
+                logger.critical("widget has gained keyboard focus")
+            elif event.type() == QEvent.FocusOut:
+                logger.critical("widget has lost keyboard focus")
 
 
 
@@ -363,12 +364,12 @@ class MainWindow(QMainWindow):
         self.printFocusTimer.setSingleShot(False)
         self.printFocusTimer.setInterval(500)
         def fn():
-            # if DEV:
-            #     print(f'focus widget  : {self.focusWidget()}')
-            #     print(f'object name   : {self.focusWidget().objectName()}')
-            #     print(f'object type   : {type(self.focusWidget())}')
-            #     print(f'object id     : {id(self.focusWidget())}')
-            #     print(f'object parent : {self.focusWidget().parent()}')
+            if DEV:
+                print(f'focus widget  : {self.focusWidget()}')
+                print(f'object name   : {self.focusWidget().objectName()}')
+                print(f'object type   : {type(self.focusWidget())}')
+                print(f'object id     : {id(self.focusWidget())}')
+                print(f'object parent : {self.focusWidget().parent()}')
             if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
                 self.setFocus()
         self.printFocusTimer.timeout.connect(fn)
