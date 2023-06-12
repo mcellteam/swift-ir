@@ -6679,8 +6679,12 @@ class MainWindow(QMainWindow):
         # r = 82
         # m = 77
         # k = 75
+        # p = 80
         elif event.key() == Qt.Key_K:
             self.skip_change_shortcut()
+
+        elif event.key() == Qt.Key_P:
+            self.cbPython.setChecked(not self.cbPython.isChecked())
 
         # left arrow key = 16777234
         elif event.key() == 16777234:
