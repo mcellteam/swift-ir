@@ -928,6 +928,7 @@ class DataModel:
         except:
             print_exception()
 
+
     def isRefinement(self):
         return  self._data['data']['scales'][self.scale]['isRefinement']
 
@@ -2066,6 +2067,11 @@ class DataModel:
         cur_scale_index = scales_list.index(cur_scale_key)
         next_coarsest_scale_key = scales_list[cur_scale_index + 1]
         return next_coarsest_scale_key
+
+
+    def finer_scales(self, s=None):
+        pass
+
 
 
 

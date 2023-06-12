@@ -221,55 +221,44 @@ class align_recipe:
         #     self.afm = self.ingredients[0].afm
         self.afm = self.init_afm
 
-        # Execute each ingredient in recipe
-        for i, ingredient in enumerate(self.ingredients):
-            scratchlogger.critical(f'----------------\n'
-                                   f'Ingredient #: {i} of {len(self.ingredients)}\n'
-                                   f'  AFM (before): {self.afm}\n'
-                                   f'----------------')
-            ingredient.afm = self.afm
-            try:
-                self.afm = ingredient.execute_ingredient()
-            except:
-                print_exception(self.pd)
-
-        scratchlogger.critical(f'Final AFM = {self.afm}')
-
-        time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        snr = self.ingredients[-1].snr
-        snr_report = self.ingredients[-1].snr_report
-        afm = self.ingredients[-1].afm
-
-        scratchlogger.critical(f'<<<< 1 >>>>')
-
-        # Retrieve alignment result
-        self.layer_dict.setdefault('alignment_history', {})
-        self.layer_dict['alignment_history'].setdefault(self.cur_method, [])
-        # if type(snr) == float:
-        #     self.layer_dict['alignment']['method_results']['snr'] = [snr]
-        # else:
-        # self.layer_dict['alignment']['method_results']['snr'] = list(snr)
-
-
         if self.im_sta_fn == self.im_mov_fn:
-            self.layer_dict['alignment']['method_results']['snr'] = [0.0]
-            self.layer_dict['alignment']['method_results']['snr_str'] = str([0.0])
-            self.layer_dict['alignment']['method_results']['snr_report'] = 'SNR: --'
-            self.layer_dict['alignment']['method_results']['snr_average'] = 0.0
+            '''handle case where reference is itself'''
+            snr = np.array([0.0])
+            snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+                snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
+            afm = self.init_afm
         else:
             try:
-                snr_list = snr.tolist()
+                # Execute each ingredient in recipe
+                for i, ingredient in enumerate(self.ingredients):
+                    ingredient.afm = self.afm
+                    try:
+                        self.afm = ingredient.execute_ingredient()
+                    except:
+                        print_exception(self.pd, extra=f'Error on ingredient {i} of {len(self.ingredients)}')
+                snr = self.ingredients[-1].snr
+                snr_report = self.ingredients[-1].snr_report
+                afm = self.ingredients[-1].afm
             except:
-                print_exception(extra=f'SNR is {str(snr_list)} has type {type(snr_list)}')
-                snr_list = snr
-            self.layer_dict['alignment']['method_results']['snr'] = snr_list
-            self.layer_dict['alignment']['method_results']['snr_type'] = str(type(snr))
-            self.layer_dict['alignment']['method_results']['snr_str'] = str(snr)
-            self.layer_dict['alignment']['method_results']['snr_report'] = str(snr_report)
-            self.layer_dict['alignment']['method_results']['snr_average'] = sum(snr_list) / len(snr_list)
+                snr = np.array([0.0])
+                snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+                    snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
+                afm = self.init_afm
 
 
-        #
+        time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Retrieve alignment results
+        try:
+            snr_list = snr.tolist()
+        except:
+            snr_list = list(snr)
+        self.layer_dict['alignment']['method_results']['snr'] = snr_list
+        self.layer_dict['alignment']['method_results']['snr_type'] = str(type(snr))
+        self.layer_dict['alignment']['method_results']['snr_str'] = str(snr)
+        self.layer_dict['alignment']['method_results']['snr_report'] = str(snr_report)
+        self.layer_dict['alignment']['method_results']['snr_average'] = sum(snr_list) / len(snr_list)
+
         self.layer_dict['alignment']['method_results']['affine_matrix'] = afm.tolist()
         self.layer_dict['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
         self.layer_dict['alignment']['method_results']['datetime'] = time
@@ -283,10 +272,10 @@ class align_recipe:
         self.layer_dict['alignment']['method_results']['siz']= self.siz
         if self.cur_method == 'grid-custom':
             self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
-        # self.layer_dict['alignment_history'][self.cur_method].append(self.layer_dict['alignment']['method_results'])
+
+        self.layer_dict.setdefault('alignment_history', {})
+        self.layer_dict['alignment_history'].setdefault(self.cur_method, [])
         self.layer_dict['alignment_history'][self.cur_method] = self.layer_dict['alignment']['method_results']
-
-
         if self.dev_mode:
             self.layer_dict['alignment']['swim_args'] = {}
             self.layer_dict['alignment']['swim_out'] = {}
@@ -484,6 +473,7 @@ class align_ingredient:
 
     def run_swim(self):
         scratchlogger.critical(f'run_swim [{self.ID}] >>>>')
+
 
         # cx = int(self.recipe.siz[0] / 2.0)
         # cy = int(self.recipe.siz[1] / 2.0)
