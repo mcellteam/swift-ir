@@ -27,6 +27,7 @@ from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFil
     get_appdir
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
+from src.ui.timer import Timer
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
@@ -1186,6 +1187,7 @@ class UserProjects(QWidget):
 
 
     def get_data(self):
+        timer = Timer()
         logger.info('>>>> get_data >>>>')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
@@ -1207,20 +1209,23 @@ class UserProjects(QWidget):
                 logger.error('Table view failed to load data model: %s' % p)
 
             logger.info(f'  DataModel Loaded')
-
+            timer.report()
             try:    created.append(dm.created)
             except: created.append('Unknown')
+            timer.report(extra='modified...')
             try:    modified.append(dm.modified)
             except: modified.append('Unknown')
+            timer.report(extra='n_sections...')
             try:    n_sections.append(len(dm))
             except: n_sections.append('Unknown')
+            timer.report(extra='img_dimensions...')
             try:    img_dimensions.append(dm.full_scale_size())
             except: img_dimensions.append('Unknown')
+            timer.report(extra='basename...')
             try:    projects.append(os.path.basename(p))
             except: projects.append('Unknown')
+            timer.report(extra='sizes...')
             project_dir = os.path.splitext(p)[0]
-            thumb_path = os.path.join(project_dir, 'thumbnails')
-            absolute_content_paths = list_paths_absolute(thumb_path)
             try:
                 if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
                     logger.info('Getting project size...')
@@ -1233,19 +1238,25 @@ class UserProjects(QWidget):
             except:
                 bytes.append('Unknown')
                 gigabytes.append('Unknown')
+            timer.report(extra='thumbnails...')
+            thumb_path = os.path.join(project_dir, 'thumbnails')
+            absolute_content_paths = list_paths_absolute(thumb_path)
             try:    thumbnail_first.append(absolute_content_paths[0])
             except: thumbnail_first.append('No Thumbnail')
+            timer.report()
             try:    thumbnail_last.append(absolute_content_paths[-1])
             except: thumbnail_last.append('No Thumbnail')
+            timer.report(extra='location...')
             try:    location.append(p)
             except: location.append('Unknown')
-
+            timer.report(extra='extra (cal grid)...')
             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
             if extra_toplevel_paths:
                 extra.append(extra_toplevel_paths[0])
             else:
                 extra.append('')
             extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
+            timer.report()
 
             logger.info(f'<<<< {p} <<<<')
 
