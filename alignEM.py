@@ -172,7 +172,7 @@ def main():
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--debug_mp', action='store_true', help='Set python multiprocessing debug level to DEBUG')
-    parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
+    parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (0-4)')
     # parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')

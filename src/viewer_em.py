@@ -281,13 +281,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._blockStateChanged = True
         if index == None:
             index = cfg.data.zpos
-        if DEV:
-            logger.critical(caller_name())
-        # if self.type != 'EMViewerStage': #Critical!
-        #     logger.info('')
-        # state = copy.deepcopy(self.state)
-        # state.position[0] = index
-        # self.set_state(state)
         try:
             with self.txn() as s:
                 vc = s.voxel_coordinates
@@ -452,7 +445,7 @@ class EMViewer(AbstractEMViewer):
 
     def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
-        logger.critical(f'Initializing Neuroglancer Viewer (caller: {caller})....')
+        logger.info(f'\n\nInitializing Neuroglancer Viewer...\n')
         self._blockStateChanged = False
 
         if not nglayout:

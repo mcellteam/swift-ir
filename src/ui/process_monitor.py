@@ -43,6 +43,7 @@ class HudWorker(QObject):
         while not QThread.currentThread().isInterruptionRequested():
             delay = 0.5 + random.random() * 2
             time.sleep(delay)
+            # level = logging.INFO
             level = logging.INFO
             logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
             i += 1

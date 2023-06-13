@@ -153,7 +153,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 if use_gui:
                     if cfg.PRINT_EXAMPLE_ARGS:
                         if zpos in range(start, start + 3):
-                            logger.info("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
+                            print("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
 
         # task_queue.work_q.join()
         # cfg.mw.hud.post('Computing Alignment Using SWIM...')

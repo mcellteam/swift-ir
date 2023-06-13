@@ -72,7 +72,7 @@ def GenerateScales(dm, gui=True):
                 task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if i in [0, 1, 2]:
-                        logger.info('GenerateScales/iscale2 TQ Params (Example ID %d):\n%s' %
+                        print('GenerateScales/iscale2 TQ Params (Example ID %d):\n%s' %
                                     (i, '\n'.join(map(str,[iscale2_c, scale_arg, of_arg, if_arg]))))
                 # if cfg.CODE_MODE == 'python':
                 #     task_queue.add_task(cmd=sys.executable,
