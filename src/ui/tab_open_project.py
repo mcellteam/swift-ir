@@ -9,6 +9,7 @@ import platform
 import textwrap
 from glob import glob
 from pathlib import Path
+import multiprocessing as mp
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
@@ -496,6 +497,7 @@ class OpenProject(QWidget):
             self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
             self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
 
+            logger.info('Setting name filter...')
             self.name_dialog.setNameFilter("Text Files (*.swiftir)")
             self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
             self.name_dialog.setViewMode(QFileDialog.Detail)
