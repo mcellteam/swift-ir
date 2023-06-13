@@ -1203,7 +1203,11 @@ class UserProjects(QWidget):
                 with open(p, 'r') as f:
                     dm = DataModel(data=json.load(f), quietly=True)
             except:
+                print_exception()
                 logger.error('Table view failed to load data model: %s' % p)
+
+            logger.info(f'  DataModel Loaded')
+
             try:    created.append(dm.created)
             except: created.append('Unknown')
             try:    modified.append(dm.modified)

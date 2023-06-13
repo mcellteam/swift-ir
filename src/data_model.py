@@ -64,6 +64,7 @@ class DataModel:
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, quietly=False, mendenhall=False):
         # self._current_version = 0.50
+        logger.info('>>>> __init__ >>>>')
         if data:
             self._data = data  # Load project data from file
         else:
@@ -78,6 +79,7 @@ class DataModel:
         self._data['version'] = cfg.VERSION
 
         # self.zpos = self._data['data']['z_position']
+        logger.info('<<<< __init__ <<<<')
 
 
     def __call__(self):
@@ -1734,6 +1736,7 @@ class DataModel:
                 self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
+        logger.info('')
         import src.config as cfg
         if s_list == None:
             s_list = self.finer_scales()
