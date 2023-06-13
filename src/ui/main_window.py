@@ -110,8 +110,13 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.app = QApplication.instance()
         self.setObjectName('mainwindow')
+        try:
+            self.branch = run_command('git', arg_list=['rev-parse', '--abbrev-ref', 'HEAD'])['out'].rstrip()
+        except:
+            print_exception()
+            self.branch = ''
         tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        self.window_title = 'AlignEM-SWIFT NG (%s)' % tstamp
+        self.window_title = 'AlignEM-SWIFT | branch: %s (%s)' % (self.branch, tstamp)
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
 
@@ -175,6 +180,8 @@ class MainWindow(QMainWindow):
         QApplication.setFont(font)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+
 
         # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
         # self.zposChanged.connect(self.dataUpdateWidgets)
