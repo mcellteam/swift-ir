@@ -234,7 +234,7 @@ class Thumbnailer:
             task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
             task_queue.add_task(task)
             if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
-                logger.info('\nTQ Params:\n  %s\n  %s\n  %s\n  %s' % task)
+                print('\nTQ Params:\n  %s\n  %s\n  %s\n  %s' % task)
 
         dt = task_queue.collect_results()
 

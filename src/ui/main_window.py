@@ -6282,7 +6282,7 @@ class MainWindow(QMainWindow):
 
 
     def setControlPanelData(self):
-        logger.critical('Setting control panel data...')
+        logger.info('Setting control panel data')
 
         self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
         self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
@@ -6691,10 +6691,9 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         super(MainWindow, self).keyPressEvent(event)
-
-        if DEV:
-            logger.info(f'caller: {caller_name()}')
-            logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
+        # if DEV:
+        #     logger.info(f'caller: {caller_name()}')
+        logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
         # if ((event.key() == 77) and (event.nativeModifiers() == 1048840)) \
         #         or ((event.key() == 16777249) and (event.nativeModifiers() == 264)):
         #     self.enterExitManAlignMode()

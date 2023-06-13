@@ -1745,6 +1745,8 @@ class ProjectTab(QWidget):
 
         def fn_radiobox():
 
+
+
             newcur = (0, 1)[self.rb_transforming.isChecked()]
 
             cfg.data['state']['stackwidget_ng_toggle'] = newcur
@@ -1787,6 +1789,9 @@ class ProjectTab(QWidget):
                 cfg.baseViewer.drawSWIMwindow()
             else:
                 cfg.refViewer.drawSWIMwindow()
+
+
+            self.dataUpdateMA() #0613+ #attempt fix for 'MA_gl_overlay' not hiding after slash press followed by layer change
 
             self.tn_ref.update()
             self.tn_tra.update()
@@ -2367,9 +2372,6 @@ class ProjectTab(QWidget):
         self.ng_browser_container_outer.layout.setSpacing(0)
 
         self.update()
-        logger.critical(f'mw width: {cfg.mw.width()}')
-        logger.critical(f'splitter sizes: {self.hsplitter_tn_ng.sizes()}')
-        logger.critical(f'sum splitter sizes: {sum(self.hsplitter_tn_ng.sizes())}')
 
         w = cfg.mw.width()
         # self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])

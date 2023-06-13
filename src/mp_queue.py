@@ -135,7 +135,6 @@ class TaskQueue(QObject):
 
         # cfg.main_window.shutdownNeuroglancer()
         logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
-        print(f'use_gui = {self.use_gui} ({self.taskPrefix})')
         if (not cfg.ignore_pbar) and (self.use_gui):
             # cfg.main_window.showZeroedPbar()  # 0208+
             cfg.nProcessDone += 1
@@ -333,7 +332,7 @@ class TaskQueue(QObject):
                     else:
                         self.task_dict[task_id]['statusBar'] = 'task_error'
                         retry_list.append(task_id)
-                        logger.info(f'\n_________TaskQueue.collect_results()_________\n'
+                        print(f'\n_________TaskQueue.collect_results()_________\n'
                                     f'task_id : {task_id}\n'
                                     f'outs    : {outs}\n'
                                     f'errs    : {errs}'

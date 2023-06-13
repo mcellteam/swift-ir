@@ -107,7 +107,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             task_queue.add_task(args)
             if cfg.PRINT_EXAMPLE_ARGS:
                 if ID in [0,1,2]:
-                    logger.info('Example Arguments (ID: %d):\n%s' % (ID, '  '.join(map(str,args))))
+                    print('Example Arguments (ID: %d):\n%s' % (ID, '  '.join(map(str,args))))
                 # if ID is 7:
 
         # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
@@ -184,7 +184,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 # logger.critical('stageit = %s' % str(int(stageit)))
                 if cfg.PRINT_EXAMPLE_ARGS:
                     if i in [0,1,2]:
-                        logger.info('Example Arguments (ID: %d):\n%s' % (i, '\n  '.join(map(str,args))))
+                        print('Example Arguments (ID: %d):\n%s' % (i, '\n  '.join(map(str,args))))
             logger.info('Adding Tasks To Multiprocessing Queue...')
             try:
                 dt = task_queue.collect_results()
