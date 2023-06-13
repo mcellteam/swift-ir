@@ -1194,6 +1194,8 @@ class UserProjects(QWidget):
         projects, thumbnail_first, thumbnail_last, created, modified, \
         n_sections, location, img_dimensions, bytes, gigabytes, extra = \
             [], [], [], [], [], [], [], [], [], [], []
+
+        logger.info(f'# projects: {len(self.project_paths)}')
         for p in self.project_paths:
             logger.info(f'  getting data for {p}')
 
@@ -1240,6 +1242,8 @@ class UserProjects(QWidget):
             else:
                 extra.append('')
             extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
+
+            logger.info(f'<<<< {p} <<<<')
 
             # logger.info('Getting project location...')
 
