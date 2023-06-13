@@ -1101,7 +1101,8 @@ class UserProjects(QWidget):
         self.table.setHorizontalHeader(header)
 
     def set_data(self):
-        caller = inspect.stack()[1].function
+        logger.info(">>>> set_data >>>>")
+        # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
         # self.set_column_headers()
@@ -1111,6 +1112,7 @@ class UserProjects(QWidget):
 
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
+            logger.info(f'>>>> row #{i} >>>>')
             self.table.insertRow(i)
             # for j, item in enumerate(row):
             for j, item in enumerate(row):
@@ -1176,12 +1178,15 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(11, 70) # <extra thumbnail>
         # self.table.setColumnWidth(10, 100)
         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
+
+        logger.info("<<<< set_data <<<<")
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
 
 
 
     def get_data(self):
+        logger.info('>>>> get_data >>>>')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         logger.info('Loading known projects into table view...')
@@ -1237,7 +1242,7 @@ class UserProjects(QWidget):
 
             # logger.info('Getting project location...')
 
-        # logger.info('<<<< get_data <<<<')
+        logger.info('<<<< get_data <<<<')
         # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
         #            n_sections, img_dimensions, bytes, gigabytes, extra)
         return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,
