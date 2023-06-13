@@ -310,6 +310,7 @@ class MainWindow(QMainWindow):
                 self.updateEnabledButtons()  # 0301+
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
+                self.setControlPanelData()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
@@ -317,6 +318,8 @@ class MainWindow(QMainWindow):
             elif self._getTabType() == 'OpenProject':
                 configure_project_paths()
                 self._getTabObject().user_projects.set_data()
+
+
         else:
             self.warn('The application is busy')
             logger.warning('The application is busy')
@@ -1353,7 +1356,6 @@ class MainWindow(QMainWindow):
             self._swimWindowControl.setEnabled(True)
             self.sb_whiteningControl.setEnabled(True)
             # self._ctlpanel_applyAllButton.setEnabled(True)
-            self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
             self._changeScaleCombo.setEnabled(True)
 
             self.cbThumbnails.setChecked(getData('state,tool_windows,raw_thumbnails'))
@@ -2078,6 +2080,7 @@ class MainWindow(QMainWindow):
                         cfg.data.scale = new_scale
                         self.updateEnabledButtons()
                         self.dataUpdateWidgets()
+                        self.setControlPanelData()
                         self.updateCpanelDetails_i1()
                         self._showSNRcheck()
                         cfg.project_tab.refreshTab()
@@ -2262,8 +2265,7 @@ class MainWindow(QMainWindow):
         # self.spinbox_fps.setValue(czfg.DEFAULT_PLAYBACK_SPEED)
         self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
-        try:    self._bbToggle.setChecked(cfg.data.use_bb())
-        except: logger.warning('Bounding Box Toggle Failed to Update')
+
 
         # dt = 1.1032602787017822
         self.reload_scales_combobox()  # fast
@@ -4766,7 +4768,7 @@ class MainWindow(QMainWindow):
         self._swimWindowControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._swimWindowControl.setFixedSize(QSize(50, 18))
         def fn():
-            # logger.info('')
+            logger.critical('')
             caller = inspect.stack()[1].function
             if self._isProjectTab():
                 if caller == 'main':
@@ -6226,8 +6228,10 @@ class MainWindow(QMainWindow):
 
 
     def setControlPanelData(self):
+        logger.critical('Setting control panel data...')
 
         self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
+        self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
         self.sb_whiteningControl.setValue(float(getData('data,defaults,signal-whitening')))
         self.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
 
@@ -6238,6 +6242,9 @@ class MainWindow(QMainWindow):
             self._polyBiasCombo.setCurrentText(str(poly))
 
         self._bbToggle.setChecked(bool(getData(f'data,defaults,bounding-box')))
+
+        try:    self._bbToggle.setChecked(cfg.data.use_bb())
+        except: logger.warning('Bounding Box Toggle Failed to Update')
 
     # def updateAllCpanelDetails(self):
     #     '''

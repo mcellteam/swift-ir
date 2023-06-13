@@ -2213,7 +2213,6 @@ class DataModel:
         logger.info('')
         if s_list == None:
             s_list = self.finer_scales()
-        logger.critical(f"self.finer_scales() = {str(self.finer_scales())}")
 
         for s in s_list:
             skip_list = self.skips_indices(s=s)
