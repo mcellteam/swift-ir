@@ -756,15 +756,17 @@ class MainWindow(QMainWindow):
             pos = [i for i, x in enumerate(delta_list) if x > 0]
             neg = [i for i, x in enumerate(delta_list) if x < 0]
             self.tell('Re-alignment Results:')
-            self.tell('  # Better (SNR ↑) : %s' % ' '.join(map(str, pos)))
-            self.tell('  # Worse  (SNR ↓) : %s' % ' '.join(map(str, neg)))
-            self.tell('  # Equal  (SNR =) : %s' % ' '.join(map(str, no_chg)))
+            self.tell('  # Better     (SNR ↑) : %s' % ' '.join(map(str, pos)))
+            self.tell('  # Worse      (SNR ↓) : %s' % ' '.join(map(str, neg)))
+            self.tell('  # No Change  (SNR =) : %s' % ' '.join(map(str, no_chg)))
+            self.tell('  Total Avg. SNR       : %.3f (Prev.: %.3f)' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
             if abs(diff_avg) < .001:
-                self.tell('  Δ AVG. SNR : 0.000 (NO CHANGE)')
+                self.tell('  Δ AVG. SNR           : 0.000 (NO CHANGE)')
             elif diff_avg < 0:
-                self.tell('  Δ AVG. SNR : %.3f (WORSE)' % diff_avg)
+                self.tell('  Δ AVG. SNR           : %.3f (WORSE)' % diff_avg)
             else:
-                self.tell('  Δ AVG. SNR : %.3f (BETTER)' % diff_avg)
+                self.tell('  Δ AVG. SNR           : %.3f (BETTER)' % diff_avg)
+
         except:
             logger.warning('Unable To Present SNR Results')
 
@@ -921,7 +923,7 @@ class MainWindow(QMainWindow):
                 except:
                     print_exception()
                 self.present_snr_results(start=start, end=end)
-                self.tell('New Avg. SNR: %.3f, Previous Avg. SNR: %.3f' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
+
                 self.updateDtWidget()
                 cfg.project_tab.updateTreeWidget() #0603-
                 self._bbToggle.setChecked(cfg.data.has_bb())
@@ -951,52 +953,9 @@ class MainWindow(QMainWindow):
 
             t9 = time.time()
             dt = t9 - t0
-            logger.critical(f'Time Elapsed: {dt}s')
-            self.tell(f'Time Elapsed: {dt}s')
+            logger.critical(f'  Elapsed Time         : {dt:.2f}s')
+            self.tell(f'  Elapsed Time         : {dt:.2f}s')
 
-    def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            set_pbar = True
-
-        if (not force) and (not self._isProjectTab()):
-            return
-        scale = cfg.data.scale
-        if not self.verify_alignment_readiness():
-            self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
-            return
-        self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
-        logger.critical(f'alignAll caller={caller}, set_pbar={set_pbar} >>>>')
-        if set_pbar:
-            logger.critical('set_pbar >>>>')
-            cfg.ignore_pbar = False
-            if self._toggleAutogenerate.isChecked():
-                # cfg.nProcessSteps = 5
-                self.showZeroedPbar(set_n_processes=4)
-            else:
-                # cfg.nProcessSteps = 3
-                self.showZeroedPbar(set_n_processes=2)
-
-
-        cfg.CancelProcesses = False
-        # cfg.event = multiprocessing.Event()
-        cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
-        self.align(
-            scale=cfg.data.scale,
-            start=0,
-            end=None,
-            renew_od=True,
-            reallocate_zarr=True,
-            # stageit=stageit,
-            stageit=True,
-            ignore_bb=ignore_bb
-        )
-        # if not cfg.CancelProcesses:
-        #     self.present_snr_results()
-
-        self.onAlignmentEnd(start=0, end=None)
-        cfg.project_tab.initNeuroglancer()
-        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     def alignAllScales(self):
         if self._isProjectTab():
@@ -1046,7 +1005,6 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
-        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     def alignForward(self):
         cfg.ignore_pbar = False
@@ -1072,7 +1030,6 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
-        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     # def alignOne(self, stageit=False):
     def alignOne(self, quick_swim=False):
@@ -1109,7 +1066,6 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
     def alignGenerateOne(self):
         cfg.ignore_pbar = True
@@ -1136,15 +1092,64 @@ class MainWindow(QMainWindow):
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
         cfg.ignore_pbar = False
+
+
+    def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
+        caller = inspect.stack()[1].function
+        if caller == 'main':
+            set_pbar = True
+
+        cafms_before = cfg.data.cafm_list()
+
+        if (not force) and (not self._isProjectTab()):
+            return
+        scale = cfg.data.scale
+        if not self.verify_alignment_readiness():
+            self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
+            return
+        self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
+        logger.critical(f'alignAll caller={caller}, set_pbar={set_pbar} >>>>')
+        if set_pbar:
+            logger.critical('set_pbar >>>>')
+            cfg.ignore_pbar = False
+            if self._toggleAutogenerate.isChecked():
+                # cfg.nProcessSteps = 5
+                self.showZeroedPbar(set_n_processes=4)
+            else:
+                # cfg.nProcessSteps = 3
+                self.showZeroedPbar(set_n_processes=2)
+
+        cfg.CancelProcesses = False
+        # cfg.event = multiprocessing.Event()
+        cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
+        self.align(
+            scale=cfg.data.scale,
+            start=0,
+            end=None,
+            renew_od=True,
+            reallocate_zarr=True,
+            # stageit=stageit,
+            stageit=True,
+            ignore_bb=ignore_bb
+        )
+        # if not cfg.CancelProcesses:
+        #     self.present_snr_results()
+
+        self.onAlignmentEnd(start=0, end=None)
+        cfg.project_tab.initNeuroglancer()
+
+
 
     def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False):
         # Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
-        logger.info(f'Aligning start:{start}, end: {end}, scale: {scale}...')
+        logger.info(f'Aligning start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
+        self.tell(f'Alignment start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
+
+        cafms_before = cfg.data.cafm_list()
 
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
@@ -1166,6 +1171,17 @@ class MainWindow(QMainWindow):
         except:
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
+
+
+        cafms_after = cfg.data.cafm_list()
+        indexes = []
+        for i,(b,a) in enumerate(zip(cafms_before, cafms_after)):
+            if b != a :
+                indexes.append(i)
+        if len(indexes) > 0:
+            self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
+        self.tell('<span style="color: #FFFF66;"><b>**** Process Group Complete ****</b></span>')
+
         # else:     logger.info('Affine Computation Finished')
 
         # if cfg.ignore_pbar:
@@ -1644,11 +1660,11 @@ class MainWindow(QMainWindow):
                 timerActive = self.uiUpdateTimer.isActive()
                 # logger.critical(f"uiUpdateTimer active? {timerActive}")
                 if self.uiUpdateTimer.isActive():
-                    logger.warning('Delaying UI Update [viewer_em.WorkerSignals]...')
+                    logger.info('Delaying UI Update [viewer_em.WorkerSignals]...')
                     return
                 else:
                     self.uiUpdateTimer.start()
-                    logger.critical('Updating UI on Timeout [viewer_em.WorkerSignals]...')
+                    logger.info('Updating UI on Timeout [viewer_em.WorkerSignals]...')
 
             # cfg.project_tab._overlayRect.hide()
             cfg.project_tab._overlayLab.hide()
@@ -2768,6 +2784,9 @@ class MainWindow(QMainWindow):
         self.addGlobTab(browser, 'Google')
         self.cpanel.hide()
         self.sa_cpanel.hide()
+        # cfg.mw.cbMonitor.setChecked(False)
+        # cfg.mw.cbPython.setChecked(False)
+
 
     def tab_report_bug(self):
         logger.info('Opening GitHub issue tracker tab...')
@@ -2776,6 +2795,22 @@ class MainWindow(QMainWindow):
         self.addGlobTab(browser, 'Issue Tracker')
         self.cpanel.hide()
         self.sa_cpanel.hide()
+        # cfg.mw.cbMonitor.setChecked(False)
+        # cfg.mw.cbPython.setChecked(False)
+
+
+    def tab_3dem_community_data(self):
+        path = 'https://3dem.org/workbench/data/tapis/community/data-3dem-community/'
+        browser = WebBrowser(self)
+        browser.setUrl(QUrl(path))
+        self.addGlobTab(browser, '3DEM Community Data (TACC)')
+        self.cpanel.hide()
+        self.sa_cpanel.hide()
+        # cfg.mw.cbMonitor.setChecked(False)
+        # cfg.mw.cbPython.setChecked(False)
+
+        
+
 
 
     def tab_workbench(self):
@@ -3966,6 +4001,8 @@ class MainWindow(QMainWindow):
 
         fileMenu = self.menu.addMenu('File')
 
+
+
         # self.newAction = QAction('&New Project...', self)
         # def fn():
         #     if self._isOpenProjTab():
@@ -4000,8 +4037,8 @@ class MainWindow(QMainWindow):
 
         self.saveAction = QAction('&Save Project', self)
         self.saveAction.triggered.connect(self.save)
-        self.saveAction.setShortcut('Ctrl+S')
-        self.saveAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.saveAction.setShortcut('Ctrl+S')
+        # self.saveAction.setShortcutContext(Qt.ApplicationShortcut)
         # self.addAction(self.saveAction)
         fileMenu.addAction(self.saveAction)
 
@@ -4017,15 +4054,15 @@ class MainWindow(QMainWindow):
         self.refreshAction.triggered.connect(self.refreshTab)
         # self.refreshAction.setShortcut('Ctrl+R')
         # self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.addAction(self.refreshAction)
+        # self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
-        # self.showNotesAction = QAction('Show &Notes', self)
-        self.showNotesAction = QAction('Show &Notes', self)
-        self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
-        # self.showNotesAction.setShortcut('Ctrl+Z')
-        # self.showNotesAction.setShortcutContext(Qt.ApplicationShortcut)
-        fileMenu.addAction(self.showNotesAction)
+
+        action = QAction('3DEM Community Data', self)
+        action.triggered.connect(self.tab_3dem_community_data)
+        fileMenu.addAction(action)
+
+
 
         def fn():
             if self.globTabs.count() > 0:
@@ -4079,6 +4116,14 @@ class MainWindow(QMainWindow):
         # self.showMatchSignalsAction.setShortcut('Ctrl+I')
         # self.showMatchSignalsAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.showMatchSignalsAction)
+
+
+        # self.showNotesAction = QAction('Show &Notes', self)
+        self.showNotesAction = QAction('Show &Notes', self)
+        self.showNotesAction.triggered.connect(lambda: self.cbNotes.setChecked(not self.cbNotes.isChecked()))
+        # self.showNotesAction.setShortcut('Ctrl+Z')
+        # self.showNotesAction.setShortcutContext(Qt.ApplicationShortcut)
+        viewMenu.addAction(self.showNotesAction)
 
 
         self.layerLeftAction = QAction('Decrement Z-index', self)
@@ -4146,7 +4191,8 @@ class MainWindow(QMainWindow):
 
         self.alignAllAction = QAction('Align All Current Scale', self)
         self.alignAllAction.triggered.connect(self.alignAll)
-        self.alignAllAction.setShortcut('Ctrl+A')
+        # self.alignAllAction.setShortcut('Ctrl+A')
+        # self.alignAllAction.setShortcutContext(Qt.ApplicationShortcut)
         alignMenu.addAction(self.alignAllAction)
 
         self.alignAllScalesAction = QAction('Align Scales to Full Res', self)
@@ -4556,6 +4602,9 @@ class MainWindow(QMainWindow):
         action = QAction('Google', self)
         action.triggered.connect(self.tab_google)
         helpMenu.addAction(action)
+
+
+
 
     # @Slot()
     # def widgetsUpdateData(self) -> None:
@@ -6712,6 +6761,12 @@ class MainWindow(QMainWindow):
 
         elif event.key() == Qt.Key_I:
             self.cbSignals.setChecked(not self.cbSignals.isChecked())
+
+        elif event.key() == Qt.Key_S:
+            self.save()
+
+        elif event.key() == Qt.Key_A:
+            self.alignAll()
 
         elif event.key() == Qt.Key_Up:
             if self._isProjectTab():

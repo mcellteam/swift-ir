@@ -207,7 +207,7 @@ def main():
         try:
             bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
             appendme = """alias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
-            check_str = """$WORK/swift-ir/tacc_bootstrap"""
+            check_str = """alias alignem"""
             with open(bashrc, "r") as f:
                 found = any(check_str in x for x in f)
 
@@ -217,8 +217,6 @@ def main():
                 logger.critical("Adding quick launch alias 'alignem'..")
                 with open(bashrc, "a+") as f:
                     f.write(appendme)
-
-
         except:
             print_exception()
 

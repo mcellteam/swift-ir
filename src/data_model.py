@@ -23,7 +23,8 @@ from functools import cache, cached_property
 import numpy as np
 
 from src.data_structs import data_template, layer_template
-from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt
+from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt, \
+    caller_name
 from src.funcs_image import ComputeBoundingRect, ImageSize
 try:
     import src.config as cfg
@@ -1387,58 +1388,34 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['data']['scales'][s]['stack'][l][
-                'alignment']['method_results']['affine_matrix']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['affine_matrix']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][cfg.data.current_method]['affine_matrix']
         except:
             print_exception()
-            return [[0, 0, 0], [0, 0, 0]]
+            return [[[1, 0, 0], [0, 1, 0]]]
 
-
-    def afm_(self, s=None, l=None) -> zip:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        try:
-            return zip(self._data['data']['scales'][s]['stack'][l][
-                'alignment']['method_results']['affine_matrix'][0],
-                       self._data['data']['scales'][s]['stack'][l][
-                           'alignment']['method_results']['affine_matrix'][1]
-                       )
-        except:
-            return zip([0, 0, 0], [0, 0, 0])
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['data']['scales'][s]['stack'][l][
-                'alignment']['method_results']['cumulative_afm']
+            return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][cfg.data.current_method]['cumulative_afm']
         except:
             print_exception()
-            return [[0, 0, 0], [0, 0, 0]]
+            return [[1, 0, 0], [0, 1, 0]]
 
-
-    def cafm_(self, s=None, l=None) -> zip:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        try:
-            return zip(self._data['data']['scales'][s]['stack'][l][
-                'alignment']['method_results']['cumulative_afm'][0],
-                       self._data['data']['scales'][s]['stack'][l][
-                           'alignment']['method_results']['cumulative_afm'][1]
-                       )
-        except:
-            return zip([0, 0, 0], [0, 0, 0])
 
     def afm_list(self, s=None, l=None) -> list:
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        lst = [l['alignment']['method_results']['affine_matrix'] for l in self.stack()]
+        lst = [self.afm(l=i) for i, l in enumerate(self.stack())]
         return lst
 
     def cafm_list(self, s=None, l=None) -> list:
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        lst = [l['alignment']['method_results']['cumulative_afm'] for l in self.stack()]
+        lst = [self.cafm(l=i) for i,l in enumerate(self.stack())]
         return lst
 
     def bias_data_path(self, s=None, l=None):
