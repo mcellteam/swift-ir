@@ -253,7 +253,8 @@ class DataModel:
     @current_method.setter
     def current_method(self, str):
         # self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method'] = str
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
 
 
@@ -292,7 +293,8 @@ class DataModel:
 
     @grid_custom_regions.setter
     def grid_custom_regions(self, lst):
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['grid-custom-regions'] = lst
 
     @property
@@ -670,7 +672,8 @@ class DataModel:
 
     def set_clobber(self, b, l=None, glob=False):
         if l == None: l = self.zpos
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             if glob:
                 for i in range(len(self)):
                     self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['clobber_fixed_noise'] = b
@@ -682,7 +685,8 @@ class DataModel:
 
     def set_clobber_px(self, x, l=None, glob=False):
         if l == None: l = self.zpos
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             if glob:
                 for i in range(len(self)):
                     self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['clobber_fixed_noise_px'] = x
@@ -923,8 +927,8 @@ class DataModel:
 
                 # layer['alignment']['manual_settings'].setdefault('manual_swim_window_px', man_ww)
         try:
-            self.set_auto_swim_windows_to_default()
-            self.set_manual_swim_windows_to_default()
+            self.set_auto_swim_windows_to_default(s_list=self.scales())
+            self.set_manual_swim_windows_to_default(s_list=self.scales())
         except:
             print_exception()
 
@@ -1231,9 +1235,9 @@ class DataModel:
 
     def set_all_methods_automatic(self):
         '''Sets the alignment method of all sections and all scales to Auto-SWIM.'''
-        for s in self.scales():
-            for l in range(len(self)):
-                self._data['data']['scales'][s]['stack'][l]['current_method'] = 'grid-default'
+        # for s in self.scales():
+        for l in range(len(self)):
+            self._data['data']['scales'][self.scale]['stack'][l]['current_method'] = 'grid-default'
 
         self.set_manual_swim_windows_to_default()
 
@@ -1258,7 +1262,8 @@ class DataModel:
         # cur_scale_ww = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px']
         # scale_1_ww = cur_scale_ww * fac
 
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             # set manual points in Neuroglancer coordinate system
             fac = get_scale_val(s)
             coords = []
@@ -1351,7 +1356,8 @@ class DataModel:
         if l == None: l = self.zpos
         # scale_vals = [x for x in self.scale_vals() if x >= self.scale_val()]
         # scales = [get_scale_key(x) for x in scale_vals]
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']['ref'] = []
             self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']['base'] = []
             self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir']['ref'] = []
@@ -1554,9 +1560,10 @@ class DataModel:
             logger.warning('Unable to To Return Skips List')
             return []
 
-    def skips_indices(self) -> list:
+    def skips_indices(self, s=None) -> list:
+        if s == None: s = self.scale
         try:
-            return list(list(zip(*self.skips_list()))[0])
+            return list(list(zip(*self.skips_list(s=s)))[0])
         except:
             return []
 
@@ -1593,7 +1600,8 @@ class DataModel:
 
 
     def set_swim_iterations_glob(self, val:int, ):
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             for i in range(len(self)):
                 self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['iterations'] = val
 
@@ -1641,7 +1649,8 @@ class DataModel:
             WW_Y = (pixels / img_w) * img_h
 
             if (WW_X <= img_w) and (WW_Y <= img_h):
-                for s in self.scales():
+                # for s in self.scales():
+                for s in self.finer_scales():
                     # scale_factor = get_scale_val(s) / self.scale_val()
                     scale_factor =  self.scale_val() / get_scale_val(s)
                     ww_x = WW_X * scale_factor
@@ -1658,7 +1667,7 @@ class DataModel:
         if l == None: l = self.zpos
         return tuple(self.stack(s=s)[l]['alignment']['swim_settings']['grid-custom-2x2-px'])
 
-    def set_swim_2x2_custom_px(self, pixels=None, scale=None):
+    def set_swim_2x2_custom_px(self, pixels=None):
         '''Returns the SWIM Window in pixels'''
         if (pixels % 2) == 1:
             pixels -= 1
@@ -1668,7 +1677,8 @@ class DataModel:
             img_w, img_h = self.image_size(s=self.scale)
             WW_X = pixels
             WW_Y = (pixels / img_w) * img_h
-            for s in self.scales():
+            # for s in self.scales():
+            for s in self.finer_scales():
                 # scale_factor = get_scale_val(s) / self.scale_val()
                 scale_factor = self.scale_val() / get_scale_val(s)
                 ww_x = WW_X * scale_factor
@@ -1697,15 +1707,22 @@ class DataModel:
     #         for s in self.scales():
     #             self.stack(s=s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = s1_ww / get_scale_val(s)
 
-    def set_auto_swim_windows_to_default(self, factor=None, current_only=False) -> None:
+    #Todo 0612
+    def set_auto_swim_windows_to_default(self, s_list=None, factor=None, current_only=False) -> None:
         logger.info('')
         import src.config as cfg
+
+        if s_list == None:
+            s_list = self.finer_scales()
+
+
         img_size = self.image_size(self.scales()[0])  # largest scale size
         # man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         if factor == None:
             factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         man_ww_full = img_size[0] * factor, img_size[1] * factor
-        for s in self.scales():
+        # for s in self.scales():
+        for s in s_list:
             man_ww_x = int(man_ww_full[0] / self.scale_val(s))
             man_ww_y = int(man_ww_full[1] / self.scale_val(s))
 
@@ -1734,15 +1751,20 @@ class DataModel:
             pixels -= 1
         else:
             s1_ww = pixels * self.scale_val()
-            for s in self.scales():
+            # for s in self.scales():
+            for s in self.finer_scales():
                 man_ww = s1_ww / self.scale_val(s)
                 self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
 
-    def set_manual_swim_windows_to_default(self, current_only=False) -> None:
+    def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
         import src.config as cfg
+        if s_list == None:
+            s_list = self.finer_scales()
+
         img_size = self.image_size(self.scales()[0])  # largest scale size
         man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
-        for s in self.scales():
+        # for s in self.scales():
+        for s in s_list:
             man_ww = man_ww_full / self.scale_val(s)
             logger.info(f'Manual SWIM window size for {s} to {man_ww}')
             if current_only:
@@ -1759,7 +1781,8 @@ class DataModel:
         scale_1_ww = ww * self.scale_val()
         # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
         # scales      = [get_scale_key(x) for x in scale_vals]
-        for s in self.scales():
+        # for s in self.scales():
+        for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][self.zpos][
                 'alignment']['manual_settings']['manual_swim_window_px'] = scale_1_ww / get_scale_val(s)
 
@@ -2070,14 +2093,16 @@ class DataModel:
 
 
     def finer_scales(self, s=None):
-        pass
+        if s == None: s = self.scale
+        return [get_scale_key(x) for x in self.scale_vals() if x <= self.scale_val(s=s)]
 
 
 
 
     def clear_all_skips(self):
         try:
-            for scale in self.scales():
+            # for scale in self.scales():
+            for scale in self.finer_scales():
                 scale_key = str(scale)
                 for layer in self._data['data']['scales'][scale_key]['stack']:
                     layer['skipped'] = False
@@ -2173,20 +2198,26 @@ class DataModel:
                     {'stack': new_stack}
 
 
-    def first_unskipped(self):
-        for i,section in enumerate(self.get_iter()):
+    def first_unskipped(self, s=None):
+        if s == None: s = self.scale
+        for i,section in enumerate(self.get_iter(s=s)):
             if not section['skipped']:
                 return i
 
 
-    def link_reference_sections(self):
+    def link_reference_sections(self, s_list=None):
         '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'
         Link layers, taking into accounts skipped layers'''
         # self.set_default_data()  # 0712 #0802 #original
-        for s in self.scales():
-            skip_list = self.skips_indices()
-            first_unskipped = self.first_unskipped()
-            logger.info(f'first_unskipped: {first_unskipped}')
+        # for s in self.scales():
+        logger.info('')
+        if s_list == None:
+            s_list = self.finer_scales()
+        logger.critical(f"self.finer_scales() = {str(self.finer_scales())}")
+
+        for s in s_list:
+            skip_list = self.skips_indices(s=s)
+            first_unskipped = self.first_unskipped(s=s)
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
                 if layer_index in skip_list:
@@ -2202,8 +2233,35 @@ class DataModel:
                         ref = os.path.join(self.dest(), s, 'img_src', ref)
                         # base_layer['images']['ref']['filename'] = ref
                         base_layer['reference'] = ref
+            # kludge - set reference of first_unskipped to itself
             self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
 
+
+    # def init_link_reference_sections(self):
+    #     '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'
+    #     Link layers, taking into accounts skipped layers'''
+    #     # self.set_default_data()  # 0712 #0802 #original
+    #     # for s in self.scales():
+    #     for s in self.finer_scales():
+    #         skip_list = self.skips_indices(s=s)
+    #         first_unskipped = self.first_unskipped()
+    #         logger.info(f'first_unskipped: {first_unskipped}')
+    #         for layer_index in range(len(self)):
+    #             base_layer = self._data['data']['scales'][s]['stack'][layer_index]
+    #             if layer_index in skip_list:
+    #                 self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
+    #             # elif layer_index <= first_unskipped:
+    #             #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
+    #             else:
+    #                 j = layer_index - 1  # Find nearest previous non-skipped l
+    #                 while (j in skip_list) and (j >= 0):
+    #                     j -= 1
+    #                 if (j not in skip_list) and (j >= 0):
+    #                     ref = self._data['data']['scales'][s]['stack'][j]['filename']
+    #                     ref = os.path.join(self.dest(), s, 'img_src', ref)
+    #                     # base_layer['images']['ref']['filename'] = ref
+    #                     base_layer['reference'] = ref
+    #         self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
 
 
     def upgrade_data_model(self):

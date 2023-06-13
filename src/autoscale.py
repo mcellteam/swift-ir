@@ -40,7 +40,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         if gui: cfg.mw.warn('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
 
 
-    dm.link_reference_sections() #This is necessary
+    dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
     for s in dm.scales():
