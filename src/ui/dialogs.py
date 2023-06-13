@@ -1225,7 +1225,7 @@ def show_ng_commands():
     msgBox = QMessageBox()
     msgBox.setIcon(QMessageBox.Information)
     msgBox.setText('pop up text')
-    msgBox.setWindowTitle('title')
+    # msgBox.setWindowTitle('title')
     # msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)

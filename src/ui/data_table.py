@@ -143,7 +143,7 @@ class DataTable(QMainWindow):
 
     def setupUI(self):
         '''Setup the UI'''
-        self.setWindowTitle("Demo GUI - Spinehead")
+        # self.setWindowTitle("Demo GUI - Spinehead")
         self.resize(QSize(700, 700))  # size of main window
         self.tab_widget = QTabWidget()
         self.status_bar = QStatusBar()

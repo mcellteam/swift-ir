@@ -110,7 +110,8 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.app = QApplication.instance()
         self.setObjectName('mainwindow')
-        self.window_title = 'AlignEM-SWIFT NG'
+        tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
+        self.window_title = 'AlignEM-SWIFT NG (%s)' % tstamp
         self.setWindowTitle(self.window_title)
         self.setAutoFillBackground(False)
 
@@ -2968,7 +2969,7 @@ class MainWindow(QMainWindow):
                 self.updateCorrSignalsDrawer()
                 # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
                 self.stopPlaybackTimer()
-                self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
+                # self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
                 # self._changeScaleCombo.setEnabled(False)
                 setData('state,stackwidget_ng_toggle', 1)
                 # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
@@ -3007,7 +3008,7 @@ class MainWindow(QMainWindow):
             cfg.pt.tn_tra.update()
             cfg.pt.ma_radioboxes.hide()
             cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
-            self.setWindowTitle(self.window_title)
+            # self.setWindowTitle(self.window_title)
             prev_mode = getData('state,previous_mode')
 
             if prev_mode == 'stack-xy':
