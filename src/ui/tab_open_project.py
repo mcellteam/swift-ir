@@ -693,7 +693,7 @@ class OpenProject(QWidget):
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
         cfg.mw._autosave()
-        self.user_projects.table.set_data()
+        self.user_projects.set_data()
 
 
 

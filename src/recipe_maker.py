@@ -221,7 +221,7 @@ class align_recipe:
         #     self.afm = self.ingredients[0].afm
         self.afm = self.init_afm
 
-        if self.im_sta_fn == self.im_mov_fn:
+        if (self.im_sta_fn == self.im_mov_fn) or (self.im_sta_fn == ''):
             '''handle case where reference is itself'''
             snr = np.array([0.0])
             snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (

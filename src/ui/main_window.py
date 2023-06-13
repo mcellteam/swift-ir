@@ -365,12 +365,14 @@ class MainWindow(QMainWindow):
         self.printFocusTimer.setSingleShot(False)
         self.printFocusTimer.setInterval(500)
         def fn():
-            if DEV:
-                print(f'focus widget  : {self.focusWidget()}')
-                print(f'object name   : {self.focusWidget().objectName()}')
-                print(f'object type   : {type(self.focusWidget())}')
-                print(f'object id     : {id(self.focusWidget())}')
-                print(f'object parent : {self.focusWidget().parent()}')
+            # if DEV:
+            #     print(f'focus widget  : {self.focusWidget()}')
+            #     print(f'object name   : {self.focusWidget().objectName()}')
+            #     print(f'object type   : {type(self.focusWidget())}')
+            #     print(f'object id     : {id(self.focusWidget())}')
+            #     print(f'object parent : {self.focusWidget().parent()}')
+
+            #CriticalMechanism
             if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
                 self.setFocus()
         self.printFocusTimer.timeout.connect(fn)
@@ -2036,8 +2038,6 @@ class MainWindow(QMainWindow):
                 lst = []
                 for s in cfg.data.scales():
                     siz = cfg.data.image_size(s=s)
-                    # lst.append('%s / %dx%dpx' % (cfg.data.scale_pretty(s=s), siz[0], siz[1]))
-                    # if s =
                     lst.append('%d / %d x %dpx' % (cfg.data.scale_val(s=s), siz[0], siz[1]))
                 return lst
 
@@ -2052,38 +2052,29 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info('>>>> fn_scales_combobox [caller: %s] >>>>' % caller)
         if caller in ('main', 'scale_down', 'scale_up'):
+            index = self._changeScaleCombo.currentIndex()
+            new_scale = cfg.data.scales()[index]
 
             if getData('state,manual_mode'):
                 # self.reload_scales_combobox()
                 # logger.warning('Exit manual alignment mode before changing scales')
                 # self.warn('Exit manual alignment mode before changing scales!')
-                self.exit_man_mode()
-
-                # return
-
+                if not cfg.data.is_aligned(new_scale):
+                    self.exit_man_mode()
+                    QApplication.processEvents()
             if not self._working:
                 if self._scales_combobox_switch:
                     if self._isProjectTab():
                         caller = inspect.stack()[1].function
                         logger.info('caller: %s' % caller)
-                        if caller in ('main', 'scale_up', 'scale_down'):
-                            # if getData('state,manual_mode'):
-                            #     self.exit_man_mode()
-                            # 0414-
-                            index = self._changeScaleCombo.currentIndex()
-                            cfg.data.scale = cfg.data.scales()[index]
-                            # try:
-                            #     cfg.project_tab.updateProjectLabels()
-                            # except:
-                            #     pass
-                            self.updateEnabledButtons()
-                            self.dataUpdateWidgets()
-                            self.updateCpanelDetails_i1()
-                            self._showSNRcheck()
-                            # cfg.project_tab.project_table.initTableData()
-                            # cfg.project_tab.project_table.updateTableData()
-                            # cfg.project_tab.updateLabelsHeader()
-                            cfg.project_tab.refreshTab()
+                        cfg.data.scale = new_scale
+                        self.updateEnabledButtons()
+                        self.dataUpdateWidgets()
+                        self.updateCpanelDetails_i1()
+                        self._showSNRcheck()
+                        cfg.project_tab.refreshTab()
+
+
         logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
 
     def export_afms(self):
@@ -2905,7 +2896,7 @@ class MainWindow(QMainWindow):
                 # logger.critical('')
                 skip_state = not self._skipCheckbox.isChecked()
                 layer = cfg.data.zpos
-                for s in cfg.data.scales():
+                for s in cfg.data.finer_scales():
                     if layer < len(cfg.data):
                         cfg.data.set_skip(skip_state, s=s, l=layer)
                     else:
