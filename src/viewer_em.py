@@ -133,6 +133,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed_any(self):
 
+        self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+
         if getData('state,blink'):
             return
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
@@ -289,7 +291,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         try:
             with self.txn() as s:
                 vc = s.voxel_coordinates
-                vc[0] = index
+                vc[0] = index + 0.5
         except:
             print_exception()
         self._blockStateChanged = False
@@ -497,7 +499,7 @@ class EMViewer(AbstractEMViewer):
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_scale_bar = False
             s.show_axis_lines = getData('state,show_axis_lines')
-            s.position=[cfg.data.zpos, self.store.shape[1]/2, self.store.shape[2]/2]
+            s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
