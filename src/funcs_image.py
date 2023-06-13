@@ -304,6 +304,7 @@ def BiasFuncs(layerator, poly_order=0, bias_funcs=None):
 
     # for align_idx in range(len(al_stack)):
     for i, layer in enumerate(layerator):
+
         c_afm = np.array(layer['alignment']['method_results']['cumulative_afm'])
 
         rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
@@ -426,6 +427,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 def SetStackCafm(iterator, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
     logger.critical(f'Setting Stack CAFM (iterator={str(iterator)}, scale={scale}, poly_order={poly_order})...')
+    cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
     use_poly = (poly_order != None)
     if use_poly:
         SetStackCafm(iterator, scale=scale, poly_order=None) # first initialize Cafms without bias correction
@@ -449,6 +451,7 @@ def SetStackCafm(iterator, scale, poly_order=None):
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs, poly_order=poly_order)
 
+    cfg.mw.hud.done()
     return c_afm_init,
 
 

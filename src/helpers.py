@@ -400,23 +400,17 @@ def obj_to_string(obj, extra='    '):
 
 def is_tacc() -> bool:
     '''Checks if the program is running on a computer at TACC. Returns a boolean.'''
-    node = platform.node()
-    if '.tacc.utexas.edu' in node:  return True
-    else:                           return False
+    return '.tacc.utexas.edu' in platform.node()
 
 
 def is_linux() -> bool:
     '''Checks if the program is running on a Linux OS. Returns a boolean.'''
-    system = platform.system()
-    if system == 'Linux':  return True
-    else:                  return False
+    return platform.system() == 'Linux'
 
 
 def is_mac() -> bool:
     '''Checks if the program is running on macOS. Returns a boolean.'''
-    system = platform.system()
-    if system == 'Darwin':  return True
-    else:                   return False
+    return platform.system() == 'Darwin'
 
 
 def is_joel() -> bool:

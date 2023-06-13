@@ -428,8 +428,8 @@ class MAViewer(neuroglancer.Viewer):
 
         request_layer = int(self.state.position[0])
 
-        if DEV:
-            logger.critical(self.info())
+        # if DEV:
+        #     logger.critical(self.info())
 
 
         # if self.role == 'ref':
@@ -731,8 +731,8 @@ class MAViewer(neuroglancer.Viewer):
         # elif self.role == 'base':
         #     self.index = cfg.data.zpos  #
 
-        if DEV:
-            logger.critical(f'[{self.role}] caller: {caller_name()} index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
+        # if DEV:
+        #     logger.critical(f'[{self.role}] caller: {caller_name()} index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
 
         # if cfg.data.current_method == 'manual-hint':
         #     self.draw_point_annotations()
