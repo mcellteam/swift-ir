@@ -230,6 +230,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         save2file(dm=dm,name=dm.dest())
 
+        try:
+            os.remove(temp_file)
+        except:
+            print_exception()
+
         write_run_to_file(dm)
 
 
