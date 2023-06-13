@@ -1195,6 +1195,7 @@ class UserProjects(QWidget):
         n_sections, location, img_dimensions, bytes, gigabytes, extra = \
             [], [], [], [], [], [], [], [], [], [], []
         for p in self.project_paths:
+            logger.info(f'  getting data for {p}')
 
             try:
                 with open(p, 'r') as f:
