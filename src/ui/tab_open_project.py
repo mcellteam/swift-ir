@@ -488,6 +488,7 @@ class OpenProject(QWidget):
             cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
 
             '''Step 1/3'''
+            logger.info('Creating name_dialog...')
             self.name_dialog = QFileDialog()
             self.vbl_main.addWidget(self.name_dialog)
             self.name_dialog.setContentsMargins(0,0,0,0)
@@ -501,7 +502,7 @@ class OpenProject(QWidget):
             self.name_dialog.setModal(True)
             # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
 
-
+            logger.info('Getting sidebar URLs...')
             urls = self.name_dialog.sidebarUrls()
 
             corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
@@ -520,6 +521,8 @@ class OpenProject(QWidget):
                 if is_joel():
                     if os.path.exists('/Volumes/3dem_data'):
                         urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+
+            logger.info('Settings sidebar URLs...')
             self.name_dialog.setSidebarUrls(urls)
 
 
@@ -532,7 +535,6 @@ class OpenProject(QWidget):
             sidebar.setItemDelegate(delegate)
             # urls = self.name_dialog.sidebarUrls()
             # logger.info(f'urls: {urls}')
-
             cfg.mw.set_status('Awaiting User Input...')
             if self.name_dialog.exec() == QFileDialog.Accepted:
                 logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
