@@ -318,7 +318,7 @@ def cleanup_project_list(paths: list) -> list:
 
 
 def get_project_list():
-    logger.info('')
+    logger.info('>>>> get_project_list >>>>')
     try:
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         if not os.path.exists(userprojectspath):
@@ -328,6 +328,10 @@ def get_project_list():
         return projectpaths
     except:
         print_exception()
+    finally:
+        logger.info('<<<< get_project_list <<<<')
+
+
 
 
 # file = os.path.join(os.path.expanduser('~'), '.swift_cache')
