@@ -1310,7 +1310,7 @@ class ProjectTab(QWidget):
         self.method_bg.addButton(self.method_rb2)
 
         def method_bg_fn():
-            logger.critical(f'\n\n\n\n\n BEFORE:{cfg.data.current_method} \n\n\n\n\n')
+            # logger.critical(f'\n\n\n\n\n BEFORE:{cfg.data.current_method} \n\n\n\n\n')
             cur_index = self.MA_stackedWidget.currentIndex()
             if self.method_rb0.isChecked():
                 self.MA_stackedWidget.setCurrentIndex(0)
@@ -1341,7 +1341,7 @@ class ProjectTab(QWidget):
 
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
 
-            logger.critical(f'\n\n\n\n\n AFTER:{cfg.data.current_method} \n\n\n\n\n')
+            # logger.critical(f'\n\n\n\n\n AFTER:{cfg.data.current_method} \n\n\n\n\n')
             # cfg.main_window.dataUpdateWidgets()
 
         self.method_bg.buttonClicked.connect(method_bg_fn)

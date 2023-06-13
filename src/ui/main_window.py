@@ -116,8 +116,9 @@ class MainWindow(QMainWindow):
             print_exception()
             self.branch = ''
         tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        self.window_title = 'AlignEM-SWIFT | branch: %s (%s)' % (self.branch, tstamp)
-        self.setWindowTitle(self.window_title)
+        # self.window_title = 'AlignEM-SWIFT | branch: %s (%s)' % (self.branch, tstamp)
+        # self.setWindowTitle(self.window_title)
+        self.setWindowTitle('AlignEM-SWIFT (%s)' % tstamp)
         self.setAutoFillBackground(False)
 
         self.settings = QSettings("cnl", "alignem")
@@ -1003,6 +1004,7 @@ class MainWindow(QMainWindow):
             # stageit=False,
             stageit=True,
         )
+
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
 
