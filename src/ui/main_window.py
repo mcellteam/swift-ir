@@ -298,6 +298,9 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.critical(f'caller: {caller}')
 
+        if cfg.CancelProcesses:
+            cfg.CancelProcesses = False
+            logger.warning('cfg.CancelProcesses was TRUE. Resetting its value.')
         if not self._working:
             logger.critical('Refreshing...')
             if cfg.pt.ms_widget.isVisible():
