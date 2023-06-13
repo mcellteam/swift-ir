@@ -1827,7 +1827,10 @@ class DataModel:
         logger.info(f'Aligned Image Size is {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
 
     def full_scale_size(self):
-        return ImageSize(self.path_base(s='scale_1'))
+        path = self.path_base(s='scale_1')
+        logger.info(f'path = {path}')
+
+        return ImageSize(path)
 
     # def poly_order(self, s=None) -> int:
     #     '''Returns the Polynomial Order for the Current Scale.'''
