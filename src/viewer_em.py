@@ -521,7 +521,7 @@ class EMViewer(AbstractEMViewer):
 
         h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space)
         # h = cfg.main_window.globTabs.height() - 20
-        self.initZoom(w=w, h=h, adjust=1.10)
+        self.initZoom(w=w, h=h, adjust=1.18)
 
 
 
