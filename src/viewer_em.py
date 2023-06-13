@@ -514,7 +514,7 @@ class EMViewer(AbstractEMViewer):
 
         w = cfg.project_tab.webengine.width()
         # h = max(cfg.main_window.globTabs.height() - 20, 520)
-        h = cfg.main_window.globTabs.height()
+        h = cfg.main_window.globTabs.height() - 20
         if getData('state,show_ng_controls'):
             extra_space = 54
         else:
