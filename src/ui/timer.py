@@ -18,11 +18,11 @@ class Timer:
         self._n = 0
 
 
-    def report(self):
+    def report(self, extra=''):
 
         elapsed_time = time.perf_counter() - self._start_time
         # logger.critical(f"Elapsed time (report #{self._n}): {elapsed_time:0.4f} seconds")
-        logger.critical(f"Elapsed time (report #{self._n}): {elapsed_time:0.4f} seconds")
+        logger.critical(f"Elapsed time (report #{self._n}): {elapsed_time:0.4f} seconds {extra}")
 
         self._n += 1
 
