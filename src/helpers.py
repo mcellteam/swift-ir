@@ -763,14 +763,14 @@ def register_login():
         tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         node = platform.node()
         user = getpass.getuser()
-        fn = f"{node}_{user}.log"
+
         login_txt = f"-----------------login------------------\n" \
                     f"Time        : {tstamp}\n" \
                     f"Node        : {platform.node()}\n" \
                     f"User        : {user}\n\n" \
 
+        fn = f"{node}_{user}.log"
         location = "/work/08507/joely/ls6/log_db"
-
         of = os.path.join(location, fn)
         sp.call(['chmod', '0666', of])
         with open(of, 'a+') as f:
@@ -800,8 +800,10 @@ def print_exception(extra=''):
                     f"User        : {user}\n" \
                     f"Exception   : \n" \
                     f"{txt}\n"
+        fn = f"{node}_{user}.log"
         location = "/work/08507/joely/ls6/log_db"
-        with open(os.path.join(location, fn), 'a+') as f:
+        of = os.path.join(location, fn)
+        with open(of, 'a+') as f:
             f.write(log_to_db)
 
 
