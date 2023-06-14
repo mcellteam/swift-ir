@@ -2463,14 +2463,14 @@ class MainWindow(QMainWindow):
                     with open(name, 'w') as f:
                         f.write(proj_json)
 
-                    node = platform.node()
-                    user = getpass.getuser()
-                    tstamp = datetime.datetime.now().strftime('%Y%m%d')
-                    fn = f"pf_{tstamp}_{node}_{user}_" + name
-                    location = "/work/08507/joely/ls6/log_db"
-                    of = os.path.join(location, fn)
-                    with open(of, 'w') as f:
-                        f.write(proj_json)
+                    # node = platform.node()
+                    # user = getpass.getuser()
+                    # tstamp = datetime.datetime.now().strftime('%Y%m%d')
+                    # fn = f"pf_{tstamp}_{node}_{user}_" + name
+                    # location = "/work/08507/joely/ls6/log_db"
+                    # of = os.path.join(location, fn)
+                    # with open(of, 'w') as f:
+                    #     f.write(proj_json)
 
 
                     self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
