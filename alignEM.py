@@ -76,7 +76,8 @@ from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
-from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, is_tacc, print_exception
+from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
+    is_tacc, print_exception, register_login
 import src.config as cfg
 from qtconsole import __version__ as qcv
 
@@ -204,6 +205,10 @@ def main():
 
 
     if is_tacc():
+        try:
+            register_login()
+        except:
+            print_exception()
         try:
             bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
             appendme = """alias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
