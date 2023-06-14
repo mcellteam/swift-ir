@@ -20,6 +20,7 @@ from operator import itemgetter
 from datetime import datetime
 from dataclasses import dataclass
 from functools import cache, cached_property
+from functools import reduce
 import numpy as np
 
 from src.data_structs import data_template, layer_template
@@ -732,8 +733,13 @@ class DataModel:
 
     def first_cafm_false(self):
         for l in range(len(self)):
-            if not self._data['data']['scales'][cfg.data.scale]['stack'][l]['cafm_comports']:
+            if not self.cafm_hash_comports(l=l):
+                logger.info(f'returning {l}')
                 return l
+            # if not self._data['data']['scales'][self.scale]['stack'][l]['cafm_comports']:
+            #     return l
+
+
         return None
 
 
@@ -858,6 +864,7 @@ class DataModel:
                 layer.setdefault('data_comports', True)
                 layer.setdefault('needs_propagation', False)
                 layer.setdefault('alignment_hash', '')
+                layer.setdefault('cafm_alignment_hash', None)
 
                 layer.setdefault('alignment_history', {})
                 layer['alignment_history'].setdefault('grid-default', {})
@@ -891,6 +898,14 @@ class DataModel:
                 layer['alignment_history']['grid-custom'].setdefault('affine_matrix', init_afm)
                 layer['alignment_history']['manual-hint'].setdefault('affine_matrix', init_afm)
                 layer['alignment_history']['manual-strict'].setdefault('affine_matrix', init_afm)
+
+                layer['alignment_history']['grid-default'].setdefault('cafm_hash', None)
+                layer['alignment_history']['grid-custom'].setdefault('cafm_hash', None)
+                layer['alignment_history']['manual-hint'].setdefault('cafm_hash', None)
+                layer['alignment_history']['manual-strict'].setdefault('cafm_hash', None)
+
+                # if not 'cumulative_afm' in layer['alignment_history'][cfg.data.get_current_method(l=i)]:
+                #     layer['alignment_history']['grid-default']['cumulative_afm'] =
 
                 # init_afm = [[1., 0., 0.], [0., 1., 0.]]
                 # layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
@@ -1403,34 +1418,72 @@ class DataModel:
         if l == None: l = self.zpos
         try:
             # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['affine_matrix']
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][cfg.data.current_method]['affine_matrix']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s,l=l)]['affine_matrix']
         except:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
 
+
+    def cafm_hashable(self, s=None, end=None):
+        if s == None: s = self.scale
+        if end == None: end = self.zpos
+        # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
+        return hash(str(self.cafm_list(s=s,end=end)))
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
             return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm']
-            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][cfg.data.current_method]['cumulative_afm']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['cumulative_afm']
         except:
-            print_exception()
+            print_exception(extra=f'Layer {l}')
             return [[1, 0, 0], [0, 1, 0]]
 
 
     def afm_list(self, s=None, l=None) -> list:
         if s == None: s = self.scale
-        if l == None: l = self.zpos
-        lst = [self.afm(l=i) for i, l in enumerate(self.stack())]
+        lst = [self.afm(l=i) for i, l in enumerate(self.stack(s=s))]
         return lst
 
-    def cafm_list(self, s=None, l=None) -> list:
+    def cafm_list(self, s=None, end=None) -> list:
+        if s == None: s = self.scale
+        if end == None:
+            end = len(self)
+        lst = []
+        for i in range(0,end):
+            if i < end:
+                lst.append(self.cafm(s=s, l=i))
+        return lst
+
+    def cafm_registered_hash(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        lst = [self.cafm(l=i) for i,l in enumerate(self.stack())]
-        return lst
+        # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(l=l)]['cafm_hash']
+        return self._data['data']['scales'][s]['stack'][l]['cafm_alignment_hash']
+
+
+    def cafm_current_hash(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        # return hash(str(self.cafm_list(s=s, end=l)))
+        return self.cafm_hashable(s=s, end=l)
+
+    def register_cafm_hashes(self, start, end, s=None):
+        logger.info('Registering cafm hashes...')
+        if s == None: s = self.scale
+        # for i, layer in enumerate(self.get_iter(s)):
+        for i in range(start, end):
+            # self._data['data']['scales'][s]['stack'][i]['alignment_history'][self.get_current_method(l=i)]['cafm_hash'] = \
+            #     self.cafm_current_hash(l=i)
+            self._data['data']['scales'][s]['stack'][i]['cafm_alignment_hash'] = self.cafm_current_hash(l=i)
+
+
+    def cafm_hash_comports(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self.cafm_registered_hash(s=s, l=l) == self.cafm_current_hash(s=s, l=l)
+
 
     def bias_data_path(self, s=None, l=None):
         if s == None: s = self.scale

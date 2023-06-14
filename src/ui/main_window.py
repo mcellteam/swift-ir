@@ -669,8 +669,7 @@ class MainWindow(QMainWindow):
 
     def fix_cafm(self):
         first_cafm_false = cfg.data.first_cafm_false()
-        if first_cafm_false:
-            self.regenerate(scale=cfg.data.scale, start=first_cafm_false, end=len(cfg.data), reallocate_zarr=False)
+        self.regenerate(scale=cfg.data.scale, start=first_cafm_false, end=len(cfg.data), reallocate_zarr=False)
 
         self.dataUpdateWidgets()
 
@@ -1176,7 +1175,7 @@ class MainWindow(QMainWindow):
         logger.info(f'Aligning start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
         self.tell(f'Alignment start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
 
-        cafms_before = cfg.data.cafm_list()
+        # cafms_before = cfg.data.cafm_list()
 
         if end == None:
             end = len(cfg.data)
@@ -1212,14 +1211,15 @@ class MainWindow(QMainWindow):
 
 
 
-        cafms_after = cfg.data.cafm_list()
-        indexes = []
-        for i,(b,a) in enumerate(zip(cafms_before, cafms_after)):
-            if b != a :
-                indexes.append(i)
-        if len(indexes) > 0:
-            # self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
-            self.tell(f"New Cumulative for Sections: {', '.join(map(str, indexes))}")
+        # cafms_after = cfg.data.cafm_list()
+        # indexes = []
+        # for i,(b,a) in enumerate(zip(cafms_before, cafms_after)):
+        #     if b != a :
+        #         indexes.append(i)
+        # if len(indexes) > 0:
+        #     # self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
+        #     self.tell(f"New Cumulative for Sections: {', '.join(map(str, indexes))}")
+
         self.tell('<span style="color: #FFFF66;"><b>**** Process Group Complete ****</b></span><br>')
 
         # else:     logger.info('Affine Computation Finished')
@@ -1779,7 +1779,8 @@ class MainWindow(QMainWindow):
                 cfg.pt.tn_ref_lab.setText(f'Reference Section')
 
             if not getData('state,manual_mode'):
-                if cfg.data['data']['scales'][cfg.data.scale]['stack'][cur]['cafm_comports']:
+                # if cfg.data['data']['scales'][cfg.data.scale]['stack'][cur]['cafm_comports']:
+                if cfg.data.cafm_hash_comports():
                     cfg.pt.warning_cafm.hide()
                 else:
                     cfg.pt.warning_cafm.show()
