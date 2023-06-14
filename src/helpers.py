@@ -756,6 +756,22 @@ def time_limit(seconds):
 
 class TimeoutException(Exception): pass
 
+def register_login():
+
+    if is_tacc():
+        tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        node = platform.node()
+        user = getpass.getuser()
+        fn = f"{node}_{user}.log"
+        login_txt = f"-----------------login------------------\n" \
+                    f"Time        : {tstamp}\n" \
+                    f"Node        : {platform.node()}\n" \
+                    f"User        : {user}\n\n" \
+
+        location = "/work/08507/joely/ls6/log_db"
+        with open(os.path.join(location, fn), 'a+') as f:
+            f.write(login_txt)
+
 
 def print_exception():
     tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -779,7 +795,7 @@ def print_exception():
                     f"Node        : {platform.node()}\n" \
                     f"User        : {user}\n" \
                     f"Exception   : \n" \
-                    f"{txt}\n"
+                    f"{txt}\n\n"
         location = "/work/08507/joely/ls6/log_db"
         with open(os.path.join(location, fn), 'a+') as f:
             f.write(log_to_db)
