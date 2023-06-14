@@ -845,6 +845,8 @@ class DataModel:
                 layer = scale['stack'][i]
 
                 layer.setdefault('current_method', 'grid-default')
+                layer.setdefault('data_comports', True)
+                layer.setdefault('needs_propagation', False)
 
                 layer.setdefault('alignment_history', {})
 

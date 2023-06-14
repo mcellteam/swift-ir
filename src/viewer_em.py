@@ -133,7 +133,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed_any(self):
 
-        self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
         if getData('state,blink'):
             return
@@ -514,7 +514,7 @@ class EMViewer(AbstractEMViewer):
 
         w = cfg.project_tab.webengine.width()
         # h = max(cfg.main_window.globTabs.height() - 20, 520)
-        h = cfg.main_window.globTabs.height() - 20
+        h = cfg.main_window.globTabs.height() - 24
         if getData('state,show_ng_controls'):
             extra_space = 54
         else:
@@ -522,7 +522,7 @@ class EMViewer(AbstractEMViewer):
 
         # h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space) #Prev
         # h = cfg.main_window.globTabs.height() - 20
-        self.initZoom(w=w, h=h, adjust=1.18)
+        self.initZoom(w=w, h=h, adjust=1.20)
 
 
 

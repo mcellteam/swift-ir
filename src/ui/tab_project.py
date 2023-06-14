@@ -730,7 +730,7 @@ class ProjectTab(QWidget):
             # cfg.main_window.regenerate(cfg.data.scale, start=cfg.data.zpos, end=None)
 
             cfg.main_window.alignGenerateOne()
-            self.updateEnabledButtons()
+            # self.updateEnabledButtonsMA() #0613- - why?!
 
         self.btnRealignMA = QPushButton('Align && Regenerate')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2588,8 +2588,8 @@ class ProjectTab(QWidget):
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
         cur_index = self.MA_stackedWidget.currentIndex()
-        logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
-        logger.critical(f'cfg.data.current_method = {cfg.data.current_method}')
+        # logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
+        # logger.critical(f'cfg.data.current_method = {cfg.data.current_method}')
 
         if cfg.data.current_method == 'grid-default':
             self.method_rb0.setChecked(True)

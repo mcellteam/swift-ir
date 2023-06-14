@@ -28,19 +28,24 @@ import operator
 import neuroglancer as ng
 import subprocess as sp
 
-
 from qtpy.QtWidgets import QApplication
 
-try: import src.config as cfg
-except: import config as cfg
+try:
+    import src.config as cfg
+except:
+    import config as cfg
 
-try:  import builtins
-except:  pass
+try:
+    import builtins
+except:
+    pass
 
-try: from src.utils.treeview import Treeview
-except: from utils.treeview import Treeview
+try:
+    from src.utils.treeview import Treeview
+except:
+    from utils.treeview import Treeview
 
-__all__ = ['run_checks','is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'delete_recursive',
+__all__ = ['run_checks', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',
            'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
@@ -56,10 +61,10 @@ snapshot = None
 def hotkey(letter: str):
     return "(" + ('^', '⌘')[is_mac()] + "%s)" % letter
 
-def run_checks():
 
+def run_checks():
     if not getData('state,manual_mode'):
-        assert(cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
+        assert (cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -78,7 +83,7 @@ def check_project_status():
     iter = cfg.data.get_iter()
     glob_problem_flag = 0
     problem_indices = []
-    for i,section in enumerate(iter):
+    for i, section in enumerate(iter):
         local_problem_flag = 0
 
         if section['current_method'] in ('manual-hint'):
@@ -107,10 +112,11 @@ def check_project_status():
             problem_indices.append(i)
 
     if glob_problem_flag:
-        cfg.mw.warn(f"To fix the Match alignment issues with sections {str(problem_indices)}, do one of the following:\n\n"
-                    f"        1) add more match selections (at least 3 are necessary) to each or,\n"
-                    f"        2) change the alignment method for each to Grid Default or Grid Custom or,\n"
-                    f"        3) exclude each of these sections\n")
+        cfg.mw.warn(
+            f"To fix the Match alignment issues with sections {str(problem_indices)}, do one of the following:\n\n"
+            f"        1) complete match selection by adding more matches (3 are necessary),\n"
+            f"        2) change alignment method to Grid Default or Grid Custom or,\n"
+            f"        3) exclude these sections\n")
 
 
 def getOpt(lookup):
@@ -145,7 +151,7 @@ def natural_sort(l):
 
 
 def find_allocated_widgets(filter) -> list:
-    return [k for k in map(str,QApplication.allWidgets()) if str(filter) in k]
+    return [k for k in map(str, QApplication.allWidgets()) if str(filter) in k]
 
 
 def count_widgets(name_or_type) -> int:
@@ -176,12 +182,12 @@ def delete_recursive(dir, keep_core_dirs=False):
             to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
         if os.path.exists(os.path.join(dir, s, 'img_src')):
             to_delete.append(os.path.join(dir, s, 'img_src'))
-    to_delete.extend(glob(dir +'/img_aligned.zarr/s*'))
-    to_delete.extend(glob(dir +'/img_src.zarr/s*'))
+    to_delete.extend(glob(dir + '/img_aligned.zarr/s*'))
+    to_delete.extend(glob(dir + '/img_src.zarr/s*'))
     if not keep_core_dirs:
-        to_delete.append(dir +'/thumbnails')
+        to_delete.append(dir + '/thumbnails')
         to_delete.append(dir)
-        to_delete.append(dir) #delete twice
+        to_delete.append(dir)  # delete twice
     cfg.nProcessDone = 0
     cfg.nProcessSteps = len(to_delete)
     logger.info('# directories to delete: %d' % len(to_delete))
@@ -260,9 +266,7 @@ def reset_user_preferences():
 
 
 def isNeuroglancerRunning():
-   return ng.server.is_server_running()
-
-
+    return ng.server.is_server_running()
 
 
 # def validate_project_selection() -> bool:
@@ -300,7 +304,7 @@ def validate_file(file) -> bool:
 def cleanup_project_list(paths: list) -> list:
     logger.info('')
     # logger.info(f'paths: {paths}')
-    paths = list( dict.fromkeys(paths) ) # remove duplicates
+    paths = list(dict.fromkeys(paths))  # remove duplicates
     paths = [x for x in paths if x != '']
     clean_paths = []
     for path in paths:
@@ -330,8 +334,6 @@ def get_project_list():
         print_exception()
     finally:
         logger.info('<<<< get_project_list <<<<')
-
-
 
 
 # file = os.path.join(os.path.expanduser('~'), '.swift_cache')
@@ -390,14 +392,17 @@ def check_for_binaries():
                os.path.join(bindir, 'swim')
                ]
     for f in bin_lst:
-        if os.path.isfile(f):  print(u'\u2713 FOUND: ' + f)
-        else:  logger.warning('BINARY FILE NOT FOUND, PLEASE COMPILE: ' + f)
+        if os.path.isfile(f):
+            print(u'\u2713 FOUND: ' + f)
+        else:
+            logger.warning('BINARY FILE NOT FOUND, PLEASE COMPILE: ' + f)
 
 
 def obj_to_string(obj, extra='    '):
     return str(obj.__class__) + '\n' + '\n'.join(
         (extra + (str(item) + ' = ' +
-                  (obj_to_string(obj.__dict__[item], extra + '    ') if hasattr(obj.__dict__[item], '__dict__') else str(
+                  (obj_to_string(obj.__dict__[item], extra + '    ') if hasattr(obj.__dict__[item],
+                                                                                '__dict__') else str(
                       obj.__dict__[item])))
          for item in sorted(obj.__dict__)))
 
@@ -428,15 +433,17 @@ def is_joel() -> bool:
     return (getpass.getuser() == 'joelyancey')
 
 
-
 def get_bindir() -> str:
     '''Checks operating system. Returns the operating system-dependent
     path to where SWiFT-IR binaries should exist'''
     bindir = ''
     error = 'Operating System Could Not Be Resolved'
-    if is_tacc():     bindir = 'bin_tacc'
-    elif is_mac():    bindir = 'bin_darwin'
-    elif is_linux():  bindir = 'bin_linux'
+    if is_tacc():
+        bindir = 'bin_tacc'
+    elif is_mac():
+        bindir = 'bin_darwin'
+    elif is_linux():
+        bindir = 'bin_linux'
     else:
         logger.warning(error)
         cfg.main_window.hud.post(error, logging.ERROR)
@@ -449,7 +456,7 @@ def get_appdir() -> str:
 
 
 def absFilePaths(d):
-    for dirpath,_,filenames in os.walk(d):
+    for dirpath, _, filenames in os.walk(d):
         for f in filenames:
             yield os.path.abspath(os.path.join(dirpath, f))
 
@@ -467,7 +474,7 @@ def handleError(func, path, exc_info):
 
 
 def get_paths_absolute(directory):
-    for dirpath,_,filenames in os.walk(directory):
+    for dirpath, _, filenames in os.walk(directory):
         for f in filenames:
             yield os.path.abspath(os.path.join(dirpath, f))
 
@@ -524,14 +531,14 @@ def timer(func):
         t2 = time()
         # print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
         function = f'Function {func.__name__!r}'.ljust(35, ' ')
-        result = f'executed in {(t2-t1):.4f}s'
+        result = f'executed in {(t2 - t1):.4f}s'
         print(function + result)
         return result
 
     return wrap_func
 
 
-def get_bytes(start_path = '.'):
+def get_bytes(start_path='.'):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
@@ -547,29 +554,29 @@ def make_affine_widget_HTML(afm, cafm, fs1=9, fs2=8):
     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='10' cellpadding='4' border='0'>"\
-    text = f"<table table-layout='fixed' style='border-bottom: 1pt solid #161c20;' cellspacing='2' cellpadding='1'>"\
-           f"  <tr>"\
-           f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Affine'.rjust(9)}</td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>"\
-           f"  </tr>"\
-           f"  <tr>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>"\
-           f"  </tr>"\
-           f"  <tr>"\
-           f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Cumulative Affine'.rjust(9)}</td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>"\
-           f"  </tr>"\
-           f"  <tr>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>"\
-           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>"\
-           f"  </tr>"\
+    text = f"<table table-layout='fixed' style='border-bottom: 1pt solid #161c20;' cellspacing='2' cellpadding='1'>" \
+           f"  <tr>" \
+           f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Affine'.rjust(9)}</td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][0], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][1], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[0][2], 3)).center(8)}</pre></center></td>" \
+           f"  </tr>" \
+           f"  <tr>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][0], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][1], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(afm[1][2], 3)).center(8)}</pre></center></td>" \
+           f"  </tr>" \
+           f"  <tr>" \
+           f"    <td rowspan=2 style='font-size: {fs1}px;'>{'Cumulative Affine'.rjust(9)}</td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][0], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][1], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[0][2], 3)).center(8)}</pre></center></td>" \
+           f"  </tr>" \
+           f"  <tr>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][0], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][1], 3)).center(8)}</pre></center></td>" \
+           f"    <td style='color: #161c20; width:30px; font-size: {fs2}px;'><center><pre>{str(round(cafm[1][2], 3)).center(8)}</pre></center></td>" \
+           f"  </tr>" \
            f"</table>"
     return text
 
@@ -595,21 +602,27 @@ def track(func):
             mem_before, mem_after, mem_after - mem_before,
             elapsed_time))
         return result
+
     return wrapper
 
 
-def renew_directory(directory:str, gui=True) -> None:
+def renew_directory(directory: str, gui=True) -> None:
     '''Remove and re-create a directory, if it exists.'''
     if os.path.exists(directory):
         d = os.path.basename(directory)
         if gui:
             cfg.main_window.hud.post("Overwriting Directory '%s'..." % directory)
-        try:     shutil.rmtree(directory, ignore_errors=True)
-        except:  print_exception()
-        try:     os.makedirs(directory, exist_ok=True)
-        except:  print_exception()
+        try:
+            shutil.rmtree(directory, ignore_errors=True)
+        except:
+            print_exception()
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except:
+            print_exception()
         if gui:
             cfg.main_window.hud.done()
+
 
 # def kill_task_queue(task_queue):
 #     '''End task queue multiprocessing tasks and delete a task queue object'''
@@ -695,7 +708,7 @@ def exist_aligned_zarr(scale: str) -> bool:
             result = False
         else:
             result = True
-        logger.critical('Returning Result %r for scale %s'  % (result, scale))
+        logger.critical('Returning Result %r for scale %s' % (result, scale))
         return result
     else:
         logger.warning(f'called by {caller} but there is no cfg.data!')
@@ -714,8 +727,8 @@ def are_aligned_images_generated(dir, scale) -> bool:
 
 
 def reorder_tasks(task_list, z_stride) -> list:
-    tasks=[]
-    for x in range(0, z_stride): #chunk z_dim
+    tasks = []
+    for x in range(0, z_stride):  # chunk z_dim
         tasks.extend(task_list[x::z_stride])
         # append_list = task_list[x::z_stride]
         # for t in append_list:
@@ -732,12 +745,14 @@ def imgToNumpy(img):
 def time_limit(seconds):
     def signal_handler(signum, frame):
         raise TimeoutException("Timed out!")
+
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(seconds)
     try:
         yield
     finally:
         signal.alarm(0)
+
 
 class TimeoutException(Exception): pass
 
@@ -759,18 +774,15 @@ def print_exception():
         node = platform.node()
         user = getpass.getuser()
         fn = f"{node}_{user}.log"
-        txt = f"----------------------------------------\n" \
-              f"Time        : {tstamp}\n" \
-              f"Node        : {platform.node()}\n" \
-              f"User        : {user}\n" \
-              f"Exception   : \n" \
-              f"{txt}"
+        log_to_db = f"----------------------------------------\n" \
+                    f"Time        : {tstamp}\n" \
+                    f"Node        : {platform.node()}\n" \
+                    f"User        : {user}\n" \
+                    f"Exception   : \n" \
+                    f"{txt}\n"
         location = "/work/08507/joely/ls6/log_db"
         with open(os.path.join(location, fn), 'a+') as f:
-            f.write(location)
-
-
-
+            f.write(log_to_db)
 
 
 def get_img_filenames(path) -> list[str]:
@@ -848,12 +860,12 @@ def create_project_structure_directories(destination, scales, gui=True) -> None:
     for scale in scales:
         if gui:
             cfg.mw.hud('Creating directories for %s...' % scale)
-        subdir_path    = os.path.join(destination, scale)
-        src_path       = os.path.join(subdir_path, 'img_src')
-        aligned_path   = os.path.join(subdir_path, 'img_aligned')
+        subdir_path = os.path.join(destination, scale)
+        src_path = os.path.join(subdir_path, 'img_src')
+        aligned_path = os.path.join(subdir_path, 'img_aligned')
         bias_data_path = os.path.join(subdir_path, 'bias_data')
-        history_path   = os.path.join(subdir_path, 'history')
-        tmp_path       = os.path.join(subdir_path, 'tmp')
+        history_path = os.path.join(subdir_path, 'history')
+        tmp_path = os.path.join(subdir_path, 'tmp')
 
         try:
             os.makedirs(subdir_path, exist_ok=True)
@@ -884,12 +896,12 @@ def module_debug() -> None:
     modulenames = set(sys.modules) & set(globals())
     allmodules = [sys.modules[name] for name in modulenames]
     logger.info('========================================================' +
-          '_____________________MODULE DEBUG_______________________' +
-          'script       : ' + str(logger.info(sys.argv[0])) + 'running in   :' +
-          str(os.path.dirname(os.path.realpath(__file__))) + 'sys.pathc    : ' + str(sys.path) +
-          'module names : ' + str(modulenames) + 'allmodules   : ' + str(allmodules) +
-          'In module products sys.path[0] = ' + str(sys.path[0]) + '__package__ = ' +
-          str(__package__) + '========================================================')
+                '_____________________MODULE DEBUG_______________________' +
+                'script       : ' + str(logger.info(sys.argv[0])) + 'running in   :' +
+                str(os.path.dirname(os.path.realpath(__file__))) + 'sys.pathc    : ' + str(sys.path) +
+                'module names : ' + str(modulenames) + 'allmodules   : ' + str(allmodules) +
+                'In module products sys.path[0] = ' + str(sys.path[0]) + '__package__ = ' +
+                str(__package__) + '========================================================')
 
     # Courtesy of https://github.com/wimglenn
     import sys
@@ -913,7 +925,8 @@ def print_scratch(msg):
 def makedirs_exist_ok(path_to_build, exist_ok=False):
     # Needed for old python which doesn't have the exist_ok option!!!
     logger.info("Making directories for path %s" % path_to_build)
-    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+    parts = path_to_build.split(
+        os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
     full = ""
     if len(parts[0]) == 0:
         # This happens with an absolute PosixPath
@@ -970,6 +983,7 @@ def update_skip_annotations():
     # for item in add_list:
     #     interface.print_debug(80, "Added skipped to " + str(item))
 
+
 class SwiftirException:
     def __init__(self, project_file, message):
         self.project_file = project_file
@@ -979,10 +993,8 @@ class SwiftirException:
         return self.message
 
 
-
 ZARR_AXES_3D = ["z", "y", "x"]
 DEFAULT_ZARR_STORE = zarr.NestedDirectoryStore
-
 
 
 def create_paged_tiff():
@@ -1202,9 +1214,6 @@ def caller_name(skip=2):
 #     # return view_match_crop.get_value()
 
 
-
-
-
 # def print_dat_files() -> None:
 #     '''Prints the .dat files for the current s, if they exist .'''
 #     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale, 'bias_data')
@@ -1246,4 +1255,3 @@ def caller_name(skip=2):
 #         except:
 #             logger.info('Is this s aligned? No .dat files were found at this s.')
 #             pass
-
