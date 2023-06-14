@@ -1311,10 +1311,11 @@ class DataModel:
             # self._data['data']['scales'][s]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px'] \
             #     = scale_1_ww / fac
 
-            if role == 'base':
-                if l+1 in range(0,len(self)):
-                    self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints']['ref'] = coords
-                    self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints_mir']['ref'] = mir_coords
+            #
+            # if role == 'base':
+            #     if l+1 in range(0,len(self)):
+            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints']['ref'] = coords
+            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints_mir']['ref'] = mir_coords
 
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
@@ -1714,6 +1715,10 @@ class DataModel:
 
     def set_swim_2x2_custom_px(self, pixels=None):
         '''Returns the SWIM Window in pixels'''
+        logger.critical(">>>> set_swim_2x2_custom_px >>>>")
+        logger.critical(f"pixels arg: {pixels}")
+        logger.critical(f"BEFORE: {str(self.stack(s=self.scale)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'])}")
+
         if (pixels % 2) == 1:
             pixels -= 1
         if pixels == None:
@@ -1735,6 +1740,9 @@ class DataModel:
                     # logger.critical(f"\n\nSetting grid-custom-2x2-px for {s} to {str([self.swim_1x1_custom_px()[0] / 2, self.swim_1x1_custom_px()[1] / 2])}\n")
                     self.stack(s=s)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'] = \
                         [self.swim_1x1_custom_px()[0] / 2, self.swim_1x1_custom_px()[1] / 2]
+
+        logger.critical(f"AFTER: {str(self.stack(s=self.scale)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'])}")
+        logger.critical("<<<< set_swim_2x2_custom_px <<<<")
 
     # def set_swim_window(self, perc=None) -> None:
     #     '''Sets the SWIM Window for the Current Layer.'''

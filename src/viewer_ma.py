@@ -705,6 +705,8 @@ class MAViewer(neuroglancer.Viewer):
 
     # @functools.cache
     def drawSWIMwindow(self):
+        if DEV:
+            logger.info(f'caller: {caller_name()}')
 
         if self._dontDraw:
             return
