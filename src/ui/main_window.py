@@ -1656,9 +1656,6 @@ class MainWindow(QMainWindow):
             logger.warning('No Current Project Tab!')
             return
 
-
-
-
         # cfg.project_tab._overlayLab.hide()
         # logger.info('')
 
@@ -1736,8 +1733,6 @@ class MainWindow(QMainWindow):
             #     print_exception()
 
 
-
-
             # if self._working == True:
             #     logger.warning(f"Can't update GUI now - working (caller: {caller})...")
             #     self.warn("Can't update GUI now - working...")
@@ -1780,37 +1775,35 @@ class MainWindow(QMainWindow):
             except:
                 cfg.pt.tn_ref_lab.setText(f'Reference Section')
 
-            if not getData('state,manual_mode'):
-                # if cfg.data['data']['scales'][cfg.data.scale]['stack'][cur]['cafm_comports']:
-                if cfg.data.cafm_hash_comports():
-                    cfg.pt.warning_cafm.hide()
-                else:
-                    cfg.pt.warning_cafm.show()
-
 
             img_siz = cfg.data.image_size()
             self.statusBar.showMessage(cfg.data.scale_pretty() + ', ' +
                                        'x'.join(map(str, img_siz)) + ', ' +
                                        cfg.data.name_base())
 
-            if self.notes.isVisible():
-                self.updateNotes()
-
             if getData('state,manual_mode'):
                 cfg.project_tab.dataUpdateMA()
-            #     # setData('state,stackwidget_ng_toggle', 1)
-            #     # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
-            #     cfg.baseViewer.set_layer()
-            #     cfg.stageViewer.set_layer(cfg.data.zpos)
-            #     # if cfg.pt.MA_webengine_ref.isVisible():
-            #     #     cfg.refViewer.drawSWIMwindow()
-            #     # elif cfg.pt.MA_webengine_base.isVisible():
-            #     cfg.baseViewer.drawSWIMwindow()
-            #     # cfg.refViewer.drawSWIMwindow()
-            #     # cfg.baseViewer.drawSWIMwindow()
-            #
-            #     # cfg.refViewer.set_layer()
-            #     # cfg.baseViewer.set_layer()
+                #     # setData('state,stackwidget_ng_toggle', 1)
+                #     # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
+                #     cfg.baseViewer.set_layer()
+                #     cfg.stageViewer.set_layer(cfg.data.zpos)
+                #     # if cfg.pt.MA_webengine_ref.isVisible():
+                #     #     cfg.refViewer.drawSWIMwindow()
+                #     # elif cfg.pt.MA_webengine_base.isVisible():
+                #     cfg.baseViewer.drawSWIMwindow()
+                #     # cfg.refViewer.drawSWIMwindow()
+                #     # cfg.baseViewer.drawSWIMwindow()
+                #
+                #     # cfg.refViewer.set_layer()
+                #     # cfg.baseViewer.set_layer()
+            else:
+                if cfg.data.cafm_hash_comports():
+                    cfg.pt.warning_cafm.hide()
+                else:
+                    cfg.pt.warning_cafm.show()
+
+            if self.notes.isVisible():
+                self.updateNotes()
 
             if cfg.project_tab._tabs.currentIndex() == 1:
                 cfg.project_tab.project_table.table.selectRow(cur)
@@ -2133,13 +2126,17 @@ class MainWindow(QMainWindow):
             index = self._changeScaleCombo.currentIndex()
             new_scale = cfg.data.scales()[index]
 
-            if getData('state,manual_mode'):
-                # self.reload_scales_combobox()
-                # logger.warning('Exit manual alignment mode before changing scales')
-                # self.warn('Exit manual alignment mode before changing scales!')
-                if not cfg.data.is_aligned(new_scale):
+            if not cfg.data.is_aligned(new_scale):
+                cfg.pt.warning_cafm.hide()
+
+                if getData('state,manual_mode'):
+                    # self.reload_scales_combobox()
+                    # logger.warning('Exit manual alignment mode before changing scales')
+                    # self.warn('Exit manual alignment mode before changing scales!')
                     self.exit_man_mode()
                     QApplication.processEvents()
+
+
             if not self._working:
                 if self._scales_combobox_switch:
                     if self._isProjectTab():

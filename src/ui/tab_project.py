@@ -994,9 +994,6 @@ class ProjectTab(QWidget):
 
                 self.tn_ref.update()
                 self.tn_tra.update()
-
-                # cfg.refViewer.drawSWIMwindow()
-                # cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
 
         # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
@@ -1018,6 +1015,8 @@ class ProjectTab(QWidget):
                 cfg.refViewer.drawSWIMwindow()
             else:
                 cfg.baseViewer.drawSWIMwindow()
+            self.tn_ref.update()
+            self.tn_tra.update()
 
 
         self.MA_SWIM_window_le.returnPressed.connect(fn)
@@ -1040,31 +1039,47 @@ class ProjectTab(QWidget):
 
         tip = "Full window width for automatic alignment (px)"
 
+        # def fn():
+        #     caller = inspect.stack()[1].function
+        #     if caller == 'main':
+        #
+        #         val = int(self.slider_AS_SWIM_window.value())
+        #         if (val % 2) == 1:
+        #             self.slider_AS_SWIM_window.setValue(val - 1)
+        #             return
+        #         cfg.data.set_swim_1x1_custom_px(val)
+        #         self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
+        #
+        #         self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
+        #         self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
+        #
+        #         if self.rb_reference.isChecked():
+        #             cfg.refViewer.drawSWIMwindow()
+        #         else:
+        #             cfg.baseViewer.drawSWIMwindow()
+        #
+        #         self.tn_ref.update()
+        #         self.tn_tra.update()
+        #         cfg.main_window._callbk_unsavedChanges()
+
         def fn():
             caller = inspect.stack()[1].function
             if caller == 'main':
 
                 val = int(self.slider_AS_SWIM_window.value())
                 if (val % 2) == 1:
-                    self.slider_AS_SWIM_window.setValue(val - 1)
-                    return
+                    val -= 1
                 cfg.data.set_swim_1x1_custom_px(val)
-                self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
-
-                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
-                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
-
+                self.AS_SWIM_window_le.setText(str(val))
+                self.AS_2x2_SWIM_window_le.setText(str(val))
+                self.slider_AS_2x2_SWIM_window.setValue(val)
                 if self.rb_reference.isChecked():
                     cfg.refViewer.drawSWIMwindow()
                 else:
                     cfg.baseViewer.drawSWIMwindow()
-
-                # cfg.refViewer.drawSWIMwindow()
-                # cfg.baseViewer.drawSWIMwindow()
-                cfg.main_window._callbk_unsavedChanges()
-
                 self.tn_ref.update()
                 self.tn_tra.update()
+                cfg.main_window._callbk_unsavedChanges()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1076,6 +1091,8 @@ class ProjectTab(QWidget):
         def fn():
             cfg.data.set_swim_1x1_custom_px(int(self.AS_SWIM_window_le.text()))
             self.dataUpdateMA()
+            self.tn_ref.update()
+            self.tn_tra.update()
 
         self.AS_SWIM_window_le = QLineEdit()
         self.AS_SWIM_window_le.returnPressed.connect(fn)
@@ -1083,26 +1100,47 @@ class ProjectTab(QWidget):
 
         tip = "2x2 window width for automatic alignment (px)"
 
+        # def fn():
+        #     caller = inspect.stack()[1].function
+        #     if caller == 'main':
+        #         val = int(self.slider_AS_2x2_SWIM_window.value())
+        #         if (val % 2) == 1:
+        #             self.slider_AS_2x2_SWIM_window.setValue(val - 1)
+        #             return
+        #         cfg.data.set_swim_2x2_custom_px(val)
+        #         self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
+        #         self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
+        #         if self.rb_reference.isChecked():
+        #             cfg.refViewer.drawSWIMwindow()
+        #         else:
+        #             cfg.baseViewer.drawSWIMwindow()
+        #         # cfg.refViewer.drawSWIMwindow()
+        #         # cfg.baseViewer.drawSWIMwindow()
+        #         cfg.main_window._callbk_unsavedChanges()
+        #
+        #         self.tn_ref.update()
+        #         self.tn_tra.update()
+
         def fn():
             caller = inspect.stack()[1].function
             if caller == 'main':
                 val = int(self.slider_AS_2x2_SWIM_window.value())
                 if (val % 2) == 1:
-                    self.slider_AS_2x2_SWIM_window.setValue(val - 1)
-                    return
+                    val -= 1
+                    # self.slider_AS_2x2_SWIM_window.setValue(val - 1)
+                    # return
+
                 cfg.data.set_swim_2x2_custom_px(val)
-                self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
-                self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
+                self.slider_AS_2x2_SWIM_window.setValue(val)
+                self.AS_2x2_SWIM_window_le.setText(str(val))
                 if self.rb_reference.isChecked():
                     cfg.refViewer.drawSWIMwindow()
                 else:
                     cfg.baseViewer.drawSWIMwindow()
-                # cfg.refViewer.drawSWIMwindow()
-                # cfg.baseViewer.drawSWIMwindow()
-                cfg.main_window._callbk_unsavedChanges()
 
                 self.tn_ref.update()
                 self.tn_tra.update()
+                cfg.main_window._callbk_unsavedChanges()
 
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_2x2_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1113,8 +1151,8 @@ class ProjectTab(QWidget):
         def fn():
             cfg.data.set_swim_2x2_custom_px(int(self.AS_2x2_SWIM_window_le.text()))
             self.dataUpdateMA()
-
-
+            self.tn_ref.update()
+            self.tn_tra.update()
 
         self.AS_2x2_SWIM_window_le = QLineEdit()
         self.AS_2x2_SWIM_window_le.returnPressed.connect(fn)
