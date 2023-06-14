@@ -405,7 +405,7 @@ class OpenProject(QWidget):
             self._buttonOpen.setText(f"Open Project {hotkey('O')}")
             logger.info(f'The path selected is a valid AlignEM-SWIFT project')
             self.validity_label.hide()
-            # self._buttonOpen.setEnabled(True)
+            self._buttonOpen.setEnabled(True)
 
         elif validate_zarr_selection(path):
             self._buttonOpen.setText(f"Open Zarr {hotkey('O')}")
