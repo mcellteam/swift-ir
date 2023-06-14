@@ -1218,7 +1218,8 @@ class MainWindow(QMainWindow):
             if b != a :
                 indexes.append(i)
         if len(indexes) > 0:
-            self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
+            # self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
+            self.tell(f"New Cumulative for Sections: {', '.join(map(str, indexes))}")
         self.tell('<span style="color: #FFFF66;"><b>**** Process Group Complete ****</b></span><br>')
 
         # else:     logger.info('Affine Computation Finished')
