@@ -389,7 +389,7 @@ class ProjectTab(QWidget):
         self._overlayLab.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._overlayLab.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayLab.setAlignment(Qt.AlignCenter)
-        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5); """)
+        self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 16px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5); """)
         self._overlayLab.hide()
 
         # self.hud_overlay = HeadupDisplay(cfg.main_window.app, overlay=True)
@@ -1702,7 +1702,7 @@ class ProjectTab(QWidget):
         self.MA_gl_overlay.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.MA_gl_overlay.setAlignment(Qt.AlignCenter)
-        self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 20px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5);""")
+        self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 16px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5);""")
         # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.MA_gl_overlay.hide()
 
@@ -2892,7 +2892,8 @@ class ProjectTab(QWidget):
             logger.info(f'cfg.data.skipped() = {cfg.data.skipped()} , cfg.data.has_reference() = {cfg.data.has_reference()}')
 
             if cfg.data.skipped():
-                self.MA_gl_overlay.setText('X EXCLUDED - %s' % cfg.data.name_base())
+                txt = '\n'.join(textwrap.wrap('X EXCLUDED - %s' % cfg.data.name_base(), width=35))
+                self.MA_gl_overlay._overlayLab.setText(txt)
                 self.MA_gl_overlay.show()
             elif not cfg.data.has_reference():
                 self.MA_gl_overlay.setText('This Section Has No Reference')

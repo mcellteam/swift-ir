@@ -1755,7 +1755,8 @@ class MainWindow(QMainWindow):
 
             if cfg.data.skipped():
                 # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                cfg.project_tab._overlayLab.setText('X EXCLUDED - %s' % cfg.data.name_base())
+                txt = '\n'.join(textwrap.wrap('X EXCLUDED - %s' % cfg.data.name_base(), width=35))
+                cfg.project_tab._overlayLab.setText(txt)
                 cfg.project_tab._overlayLab.show()
                 # cfg.project_tab._overlayRect.show()
 
