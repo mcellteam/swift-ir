@@ -3314,7 +3314,7 @@ class ProjectTab(QWidget):
 
     def setZoomSlider(self):
         caller = inspect.stack()[1].function
-        logger.info('')
+        logger.info(f'caller {caller}')
         if caller == 'main':
         # logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
             if self._allow_zoom_change:
