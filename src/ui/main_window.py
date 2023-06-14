@@ -1153,6 +1153,9 @@ class MainWindow(QMainWindow):
 
         cafms_before = cfg.data.cafm_list()
 
+        if end == None:
+            end = len(cfg.data)
+
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
 
@@ -1173,6 +1176,11 @@ class MainWindow(QMainWindow):
         except:
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
+
+
+        logger.info(list(range(end,len(cfg.data))))
+        # cfg.data.get_iter()
+
 
 
         cafms_after = cfg.data.cafm_list()
