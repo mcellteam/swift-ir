@@ -3,7 +3,7 @@
 #a30000 - dark candy apple red
 #161c20 - dark charcoal
 #f3f6fb - New Snow White (https://www.color-name.com/snow-white.color)
-Ω - my dirty white
+#ede9e8 - my dirty white
 #141414 - Chinese Black (darker than Duron)
 #222222 - Neuroglancer grey
 #339933 - Neuroglancer green (*** 40% lightness ***)
@@ -23,6 +23,7 @@
 #380282 - indigo
 #ebecf0 - "bright" grey
 #ffcccb - very light red
+#d0342c = pantone (Red Alert)
 #708090 - (light) slate grey
 #39ff14 - neon green
 #00BF00 - pure green

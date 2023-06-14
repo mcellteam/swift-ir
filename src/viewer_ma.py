@@ -93,6 +93,8 @@ class MAViewer(neuroglancer.Viewer):
 
         # self.restoreManAlignPts()
         self._dontDraw = 0
+
+        QApplication.processEvents()
         self.initViewer()
 
 
@@ -150,6 +152,9 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def set_zoom(self, val):
+
+
+
         caller = inspect.stack()[1].function
         logger.info(f'Setting zoom to {caller}')
         self._blockStateChanged = True
@@ -996,18 +1001,34 @@ class MAViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
-            _, tensor_y, tensor_x = cfg.tensor.shape
+            # _, tensor_y, tensor_x = cfg.tensor.shape
+            _, tensor_y, tensor_x = self.store.shape
             if self.role == 'ref':
                 widget_w = cfg.project_tab.MA_webengine_ref.geometry().width()
                 widget_h = cfg.project_tab.MA_webengine_ref.geometry().height()
+
             else:
                 widget_w = cfg.project_tab.MA_webengine_base.geometry().width()
                 widget_h = cfg.project_tab.MA_webengine_base.geometry().height()
+
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
+
+            # logger.critical(f'________{self.role}________')
+            # logger.critical(f'widget_w       = {widget_w}')
+            # logger.critical(f'widget_h       = {widget_h}')
+            # logger.critical(f'tensor_x       = {tensor_x}')
+            # logger.critical(f'tensor_y       = {tensor_y}')
+            # logger.critical(f'res_x          = {res_x}')
+            # logger.critical(f'res_y          = {res_y}')
+            # logger.critical(f'scale_h        = {scale_h}')
+            # logger.critical(f'scale_w        = {scale_w}')
+            # logger.critical(f'cfg.data.scale = {cfg.data.scale}')
+            # logger.critical(f'cs_scale       = {cs_scale}')
+
             logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20

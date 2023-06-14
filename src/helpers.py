@@ -758,7 +758,7 @@ class TimeoutException(Exception): pass
 
 
 def print_exception():
-    tstamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     exi = sys.exc_info()
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
     logger.warning(txt)
@@ -1047,6 +1047,38 @@ def caller_name(skip=2):
     del parentframe, stack
 
     return ".".join(name)
+
+
+from typing import Dict, Any
+import hashlib
+import json
+
+def dict_hash(dictionary: Dict[str, Any]) -> str:
+    """
+    MD5 hash of a dictionary.
+    source: https://www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html
+    """
+    dhash = hashlib.md5()
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
+
+
+# General-purpose solution that can process large files
+def file_hash(file_path):
+    # https://stackoverflow.com/questions/64994057/python-image-hashing
+    # https://stackoverflow.com/questions/22058048/hashing-a-file-in-python
+
+    sha256 = hashlib.sha256()
+
+    with open(file_path, "rb") as f:
+        while True:
+            data = f.read(65536) # arbitrary number to reduce RAM usage
+            if not data:
+                break
+            sha256.update(data)
+
+    return sha256.hexdigest()
 
 # def show_mp_queue_results(task_queue, dt):
 #
