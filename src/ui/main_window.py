@@ -3050,7 +3050,10 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if cfg.data.is_aligned_and_generated():
 
-                del cfg.emViewer
+                try:
+                    del cfg.emViewer
+                except:
+                    pass
 
                 logger.info('\n\nEnter Manual Alignment Mode >>>>\n')
                 self.tell('Entering manual align mode')
