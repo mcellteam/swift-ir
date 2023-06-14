@@ -6359,7 +6359,8 @@ class MainWindow(QMainWindow):
         if (poly == None) or (poly == 'None'):
             self._polyBiasCombo.setCurrentText('None')
         else:
-            self._polyBiasCombo.setCurrentText(str(poly))
+            # self._polyBiasCombo.setCurrentText(str(poly))
+            self._polyBiasCombo.setCurrentIndex(int(poly) + 1)
 
         self._bbToggle.setChecked(bool(getData(f'data,defaults,bounding-box')))
 
