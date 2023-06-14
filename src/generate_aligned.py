@@ -11,7 +11,7 @@ import numpy as np
 import neuroglancer as ng
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
-from src.helpers import get_scale_val, print_exception, reorder_tasks,renew_directory
+from src.helpers import get_scale_val, print_exception, reorder_tasks, renew_directory, file_hash
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
@@ -120,6 +120,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             print_exception()
             logger.warning('Task Queue encountered a problem')
 
+
     dm.set_image_aligned_size()
 
     if cfg.ignore_pbar:
@@ -192,6 +193,13 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             except:
                 print_exception()
                 logger.warning('Task Queue encountered a problem')
+
+            for l in list(range(start, end)):
+                dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = True
+
+            for l in list(range(end, len(dm))):
+                dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = False
+
 
     logger.info('<<<< Generate Aligned <<<<')
 

@@ -380,16 +380,17 @@ class MainWindow(QMainWindow):
         self.printFocusTimer.setSingleShot(False)
         self.printFocusTimer.setInterval(500)
         def fn():
-            # if DEV:
-            #     print(f'focus widget  : {self.focusWidget()}')
-            #     print(f'object name   : {self.focusWidget().objectName()}')
-            #     print(f'object type   : {type(self.focusWidget())}')
-            #     print(f'object id     : {id(self.focusWidget())}')
-            #     print(f'object parent : {self.focusWidget().parent()}')
+            if self._isProjectTab():
+                # if DEV:
+                #     print(f'focus widget  : {self.focusWidget()}')
+                #     print(f'object name   : {self.focusWidget().objectName()}')
+                #     print(f'object type   : {type(self.focusWidget())}')
+                #     print(f'object id     : {id(self.focusWidget())}')
+                #     print(f'object parent : {self.focusWidget().parent()}')
 
-            #CriticalMechanism
-            if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
-                self.setFocus()
+                #CriticalMechanism
+                if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
+                    self.setFocus()
         self.printFocusTimer.timeout.connect(fn)
         self.printFocusTimer.start()
 
@@ -662,14 +663,30 @@ class MainWindow(QMainWindow):
                     lst_names += f'\n  Section: {name}'
                 self.warn(f'No SNR Data For Sections: {", ".join(map(str, indexes))}')
 
+
+
+        # range(10, 0, -1)
+
+    def fix_cafm(self):
+        first_cafm_false = cfg.data.first_cafm_false()
+        if first_cafm_false:
+            self.regenerate(scale=cfg.data.scale, start=first_cafm_false, end=len(cfg.data), reallocate_zarr=False)
+
+        self.dataUpdateWidgets()
+
+
     def regenerateOne(self):
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
         self.regenerate(scale=cfg.data.scale, start=start, end=end)
 
-    def regenerate(self, scale, start=0, end=None) -> None:
+
+    def regenerate(self, scale, start=0, end=None, reallocate_zarr=True) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
         logger.info('regenerate >>>>')
+
+        STAGEIT = False
+
         if cfg.event.is_set():
             cfg.event.clear()
         if not self._isProjectTab():
@@ -685,17 +702,20 @@ class MainWindow(QMainWindow):
         cfg.CancelProcesses = False
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
         self.showZeroedPbar(set_n_processes=3)
+        if end == None:
+            end = len(cfg.data)
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
-        self.tell('Regenerating Aligned Images,  Scale %d...' % get_scale_val(scale))
+        self.tell('Regenerating %s aligned images for sections #%d to #%d...' % (cfg.data.scale_pretty(s=scale), start, end))
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=GenerateAligned(
-                    cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True))
+                    cfg.data, scale, start, end, stageit=STAGEIT, reallocate_zarr=reallocate_zarr, use_gui=True))
                 self.threadpool.start(self.worker)
             else:
-                GenerateAligned(cfg.data, scale, start, end, stageit=True, reallocate_zarr=True, use_gui=True)
+                GenerateAligned(cfg.data, scale, start, end, stageit=STAGEIT, reallocate_zarr=reallocate_zarr, use_gui=True)
         except:
             print_exception()
+
 
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -704,6 +724,7 @@ class MainWindow(QMainWindow):
                 self.threadpool.start(self.worker)
             else:
                 cfg.thumb.reduce_aligned(start=start, end=end, dest=cfg.data.dest(), scale=scale)
+
         except:
             print_exception()
         finally:
@@ -762,11 +783,11 @@ class MainWindow(QMainWindow):
             self.tell('  # No Change  (SNR =) : %s' % ' '.join(map(str, no_chg)))
             self.tell('  Total Avg. SNR       : %.3f (Prev.: %.3f)' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
             if abs(diff_avg) < .001:
-                self.tell('  Δ AVG. SNR           : 0.000 (NO CHANGE)')
+                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>0.000 (NO CHANGE)</b></span>')
             elif diff_avg < 0:
-                self.tell('  Δ AVG. SNR           : %.3f (WORSE)' % diff_avg)
+                self.tell('  Δ AVG. SNR           : <span style="color: #a30000;"><b>%.3f (WORSE)</b></span>' % diff_avg)
             else:
-                self.tell('  Δ AVG. SNR           : %.3f (BETTER)' % diff_avg)
+                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.3f (BETTER)</b></span>' % diff_avg)
 
         except:
             logger.warning('Unable To Present SNR Results')
@@ -1055,14 +1076,19 @@ class MainWindow(QMainWindow):
         )
         self._working = False
 
-        # self.updateCorrSignalsDrawer()
-        if quick_swim:
-            self.updateCorrSignalsDrawer()
-            self.updateEnabledButtons()
-            self.enableAllTabs()
-            self.updateCpanelDetails()
-        else:
-            self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
+
+        #0614-
+        # if quick_swim:
+        #     self.updateCorrSignalsDrawer()
+        #     self.updateEnabledButtons()
+        #     self.enableAllTabs()
+        #     self.updateCpanelDetails()
+        # else:
+        #     self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
+        #     cfg.project_tab.initNeuroglancer()
+
+        self.onAlignmentEnd(start=start, end=end)
+        if not quick_swim:
             cfg.project_tab.initNeuroglancer()
 
         self.tell('Section #%d Alignment Complete' % start)
@@ -1102,7 +1128,6 @@ class MainWindow(QMainWindow):
         if caller == 'main':
             set_pbar = True
 
-        cafms_before = cfg.data.cafm_list()
 
         if (not force) and (not self._isProjectTab()):
             return
@@ -1177,8 +1202,12 @@ class MainWindow(QMainWindow):
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
 
+        # for l in list(range(start,end)):
+        #     cfg.data['data']['scales'][scale]['stack'][l]['cafm_comports'] = True
+        #
+        # for l in list(range(end,len(cfg.data))):
+        #     cfg.data['data']['scales'][scale]['stack'][l]['cafm_comports'] = False
 
-        logger.info(list(range(end,len(cfg.data))))
         # cfg.data.get_iter()
 
 
@@ -1190,7 +1219,7 @@ class MainWindow(QMainWindow):
                 indexes.append(i)
         if len(indexes) > 0:
             self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
-        self.tell('<span style="color: #FFFF66;"><b>**** Process Group Complete ****</b></span>')
+        self.tell('<span style="color: #FFFF66;"><b>**** Process Group Complete ****</b></span><br>')
 
         # else:     logger.info('Affine Computation Finished')
 
@@ -1739,7 +1768,7 @@ class MainWindow(QMainWindow):
                 cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
                 cfg.pt.labMethod2.setText(cfg.data.method_pretty())
 
-            cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()}")
+            cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
             cfg.pt.tn_tra_lab.setText(f'Transforming Section\n'
                                       f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
             try:
@@ -1747,6 +1776,12 @@ class MainWindow(QMainWindow):
                                           f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
             except:
                 cfg.pt.tn_ref_lab.setText(f'Reference Section')
+
+            if not getData('state,manual_mode'):
+                if cfg.data['data']['scales'][cfg.data.scale]['stack'][cur]['cafm_comports']:
+                    cfg.pt.warning_cafm.hide()
+                else:
+                    cfg.pt.warning_cafm.show()
 
 
             img_siz = cfg.data.image_size()
@@ -2112,6 +2147,11 @@ class MainWindow(QMainWindow):
                         self.setControlPanelData()
                         self.updateCpanelDetails_i1()
                         self._showSNRcheck()
+
+                        # cfg.project_tab.adjustSize()
+                        QApplication.processEvents()
+                        # self.adjustSize()
+                        # cfg.project_tab.adjustSize()
                         cfg.project_tab.refreshTab()
 
 

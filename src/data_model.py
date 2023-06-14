@@ -730,6 +730,14 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]
 
+    def first_cafm_false(self):
+        for l in range(len(self)):
+            if not self._data['data']['scales'][cfg.data.scale]['stack'][l]['cafm_comports']:
+                return l
+        return None
+
+
+
 
     def set_defaults(self):
         logger.info(f'Setting Defaults [caller: {inspect.stack()[1].function}]')
@@ -844,12 +852,14 @@ class DataModel:
             for i in range(len(self)):
                 layer = scale['stack'][i]
 
+                layer.setdefault('cafm_comports', True)
+
                 layer.setdefault('current_method', 'grid-default')
                 layer.setdefault('data_comports', True)
                 layer.setdefault('needs_propagation', False)
+                layer.setdefault('alignment_hash', '')
 
                 layer.setdefault('alignment_history', {})
-
                 layer['alignment_history'].setdefault('grid-default', {})
                 layer['alignment_history'].setdefault('grid-custom', {})
                 layer['alignment_history'].setdefault('manual-hint', {})

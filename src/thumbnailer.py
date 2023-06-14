@@ -61,6 +61,10 @@ class Thumbnailer:
             except:
                 pass
 
+            # cfg.mw.tell('Generating hashes for aligned image thumbnails...')
+            # if end == None:
+            #     end = len(cfg.data)
+            # cfg.mw.hud.done()
 
     def reduce_signals(self, start, end, dest, scale, use_gui=True):
 

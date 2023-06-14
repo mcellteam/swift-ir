@@ -10,6 +10,9 @@ import datetime
 import traceback
 import numpy as np
 import subprocess as sp
+from typing import Dict, Any
+import hashlib
+import json
 
 __all__ = ['run_recipe']
 
@@ -333,6 +336,7 @@ class align_recipe:
                     # try: self.layer_dict['alignment']['crop_str_mir']['ingredient_%d' % i] = ing.crop_str_mir
                     # except: print_exception(self.pd)
 
+        self.layer_dict['alignment_hash'] = dict_hash(self.layer_dict['alignment_history'][self.cur_method])
 
         # cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out']
         # ['28.6787: /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif 512 512 /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif 518.514 506.982  1 0 0 1 (6.5141 -5.01831 8.22295)']
@@ -789,6 +793,18 @@ def print_exception(dest, extra='None'):
     lf = os.path.join(dest, 'logs', 'exceptions.log')
     with open(lf, 'w+') as f:
         f.write('\n' + txt)
+
+def dict_hash(dictionary: Dict[str, Any]) -> str:
+    """
+    MD5 hash of a dictionary.
+    source: https://www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html
+    """
+    dhash = hashlib.md5()
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
+
+
 
 
 if __name__ == '__main__':

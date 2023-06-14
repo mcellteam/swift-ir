@@ -357,28 +357,29 @@ class ProjectTab(QWidget):
         self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
         # self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
 
+        self.warning_cafm = WarningNotice(self, 'The cumulative affine has changed and no longer '
+                                                'comports with the generated alignment for this section.',
+                                          fixbutton=True)
+        self.warning_cafm.hide()
+        self.warning_cafm.fixbutton.clicked.connect(cfg.mw.fix_cafm)
+
+
+
         # self.lab_main_instructions = QLabel("'r' - refresh viewer. 'm' - enter manual align mode")
         self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode")
         self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px;")
         self.lab_main_instructions.setFixedHeight(16)
 
-        self.webengine_w_instructions = QWidget()
-        self.webengine_w_instructions.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.webengine_w_instructions.setAutoFillBackground(True)
-        self.webengine_w_instructions.setContentsMargins(0,0,0,0)
-        vbl = VBL(self.webengine, self.lab_main_instructions)
-        vbl.setSpacing(0)
-        self.webengine_w_instructions.setLayout(vbl)
+        self.ng_messages = VWidget(self.warning_cafm)
 
-
-        self.w_ng_display = QWidget()
-        self.w_ng_display.setObjectName('w_ng_display')
-        self.w_ng_display.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.w_ng_display.setStyleSheet('background-color: #222222;')
-        self.w_ng_display.setAutoFillBackground(True)
+        self._w_ng_display = QWidget()
+        self._w_ng_display.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self._w_ng_display.setStyleSheet('background-color: #222222;')
+        # self._w_ng_display.setAutoFillBackground(True)
         self.ng_gl = QGridLayout()
         # self.ng_gl.addWidget(self.webengine, 0, 0, 5, 5)
-        self.ng_gl.addWidget(self.webengine_w_instructions, 0, 0, 5, 5)
+        self.ng_gl.addWidget(self.webengine, 0, 0, 5, 5)
+        self.ng_gl.addWidget(self.ng_messages, 4, 0, 1, 5)
         # self._overlayRect = QWidget()
         # self._overlayRect.setObjectName('_overlayRect')
         # self._overlayRect.setStyleSheet("""background-color: rgba(0, 0, 0, 0.5);""")
@@ -468,7 +469,7 @@ class ProjectTab(QWidget):
         self.ng_gl.setColumnStretch(2, 5)
         self.ng_gl.setColumnStretch(3, 1)
         self.updateUISpacing()
-        self.w_ng_display.setLayout(self.ng_gl)
+        self._w_ng_display.setLayout(self.ng_gl)
 
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
         self.zoomSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2327,6 +2328,8 @@ class ProjectTab(QWidget):
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
         h_header.setSectionResizeMode(1, QHeaderView.Stretch)
 
+        self.w_ng_display = VWidget(self._w_ng_display, self.lab_main_instructions)
+
         ############
         # self.ngCombinedHwidget = HWidget(HWidget(self.w_ng_display, self.ms_widget),  self.MA_splitter)
         self.ngCombinedHwidget = HWidget(self.w_ng_display,  self.MA_splitter)
@@ -4124,6 +4127,42 @@ class ClickRegion(QLabel):
     #         self.setStyleSheet(f'background-color: {self.color};')
     #     else:
     #         self.setStyleSheet(f'background-color: #dadada;')
+
+
+class WarningNotice(QWidget):
+
+    def __init__(self, parent, msg, fixbutton=False, **kwargs):
+        super().__init__(parent)
+        self.msg = msg
+        self.label = QLabel(self.msg)
+
+        self.setStyleSheet("QWidget {background-color: #d0342c; color: #ede9e8; font-size: 10px; font-weight: 600;}")
+        self.setFixedHeight(16)
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        if fixbutton:
+            self.fixbutton = QPushButton('Fix All')
+            self.fixbutton.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            self.fixbutton.setStyleSheet("""
+            QPushButton{
+                background-color: #ede9e8;
+                border-style: solid;
+                border-width: 1px;
+                border-radius: 4px;
+                border-color: #f3f6fb;
+                color: #161c20;
+                font-size: 10px;
+            }
+            """)
+            self.fixbutton.setFixedSize(QSize(44,16))
+            # self.fixbutton.setFixedHeight(16)
+            self.layout.addWidget(self.fixbutton)
+
+        self.layout.addWidget(self.label)
+
+        # self.setAutoFillBackground(True)
+        self.setLayout(self.layout)
 
 
 class ClickLabel(QLabel):
