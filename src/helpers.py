@@ -756,6 +756,7 @@ def time_limit(seconds):
 
 class TimeoutException(Exception): pass
 
+
 def register_login():
 
     if is_tacc():
@@ -773,10 +774,10 @@ def register_login():
             f.write(login_txt)
 
 
-def print_exception():
+def print_exception(extra=''):
     tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     exi = sys.exc_info()
-    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
+    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}{extra}\n"
     logger.warning(txt)
 
     if cfg.data:
@@ -795,7 +796,7 @@ def print_exception():
                     f"Node        : {platform.node()}\n" \
                     f"User        : {user}\n" \
                     f"Exception   : \n" \
-                    f"{txt}\n\n"
+                    f"{txt}\n"
         location = "/work/08507/joely/ls6/log_db"
         with open(os.path.join(location, fn), 'a+') as f:
             f.write(log_to_db)

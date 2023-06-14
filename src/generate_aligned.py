@@ -49,7 +49,14 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         print_example_cafms(dm)
         logger.info('Setting Stack CAFM...')
+
+
+
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+
+
+
+
         od = os.path.join(dm.dest(), scale, 'img_aligned')
         if renew_od:
             logger.info('Renewing Directory %s...' % od)
@@ -122,6 +129,12 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
 
     dm.set_image_aligned_size()
+
+    '''----TEMP----'''
+    # for i, layer in enumerate(cfg.data.get_iter(scale)):
+    #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
+    #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
+    dm.register_cafm_hashes(s=scale, start=start, end=end)
 
     if cfg.ignore_pbar:
         cfg.nProcessDone += 1
