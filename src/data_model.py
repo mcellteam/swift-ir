@@ -1428,7 +1428,8 @@ class DataModel:
         if s == None: s = self.scale
         if end == None: end = self.zpos
         # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
-        return hash(str(self.cafm_list(s=s,end=end)))
+        # return hash(str(self.cafm_list(s=s,end=end)))
+        return hash(str(self.cafm(s=s, l=end)))
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.scale

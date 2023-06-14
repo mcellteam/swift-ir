@@ -770,7 +770,10 @@ def register_login():
                     f"User        : {user}\n\n" \
 
         location = "/work/08507/joely/ls6/log_db"
-        with open(os.path.join(location, fn), 'a+') as f:
+
+        of = os.path.join(location, fn)
+        sp.call(['chmod', '0666', of])
+        with open(of, 'a+') as f:
             f.write(login_txt)
 
 

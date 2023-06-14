@@ -439,7 +439,7 @@ class OpenProject(QWidget):
             try:
                 self.selected_file = self.user_projects.table.item(row, 1).text()
             except:
-                print_exception()
+                pass
             logger.info(f'selected:\n{self.selected_file}')
             self.setSelectionPathText(self.selected_file)
             self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
