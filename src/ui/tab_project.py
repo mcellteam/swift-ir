@@ -1213,18 +1213,14 @@ class ProjectTab(QWidget):
                     cfg.data.current_method = 'manual-hint'
                 elif self.rb_MA_strict.isChecked():
                     cfg.data.current_method = 'manual-strict'
-
                 if self.rb_reference.isChecked():
                     cfg.refViewer.drawSWIMwindow()
                 else:
                     cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
-
                 self.tn_ref.update()
                 self.tn_tra.update()
-
                 cfg.mw.updateCorrSignalsDrawer()
-
             cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
         # self.rb_MA_hint = QRadioButton('Hint')

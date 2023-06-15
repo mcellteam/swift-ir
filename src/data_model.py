@@ -2322,6 +2322,16 @@ class DataModel:
     #                     base_layer['reference'] = ref
     #         self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
 
+    #
+    # def propagate_up_from(self, s=None):
+    #     if s == None: s=self.scale
+    #         for scale_from, scale_to:
+    #
+
+
+
+
+
 
     def upgrade_data_model(self):
         # Upgrade the "Data Model"
