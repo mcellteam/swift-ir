@@ -1686,9 +1686,10 @@ class DataModel:
         '''Sets the SWIM Window for the Current Section across all scales.'''
         if pixels == None:
             self.set_auto_swim_windows_to_default(current_only=True)
-        if (pixels % 2) == 1:
-            pixels -= 1
         else:
+            if (pixels % 2) == 1:
+                pixels -= 1
+
             img_w, img_h = self.image_size(s=self.scale)
             WW_X = pixels
             WW_Y = (pixels / img_w) * img_h
@@ -1718,11 +1719,12 @@ class DataModel:
         logger.info(f"pixels arg: {pixels}")
         logger.info(f"BEFORE: {str(self.stack(s=self.scale)[self.zpos]['alignment']['swim_settings']['grid-custom-2x2-px'])}")
 
-        if (pixels % 2) == 1:
-            pixels -= 1
         if pixels == None:
             self.set_auto_swim_windows_to_default(current_only=True)
         else:
+            if (pixels % 2) == 1:
+                pixels -= 1
+
             img_w, img_h = self.image_size(s=self.scale)
             WW_X = pixels
             WW_Y = (pixels / img_w) * img_h
@@ -1799,17 +1801,20 @@ class DataModel:
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
         logger.critical(f'Setting Local SWIM Window to {pixels}...')
+
         if pixels == None:
             self.set_manual_swim_windows_to_default(current_only=True)
-        if (pixels % 2) == 1:
-            pixels -= 1
+
         else:
+            if (pixels % 2) == 1:
+                pixels -= 1
+
             s1_ww = pixels * self.scale_val()
             # for s in self.scales():
             for s in self.finer_scales():
                 man_ww = int(s1_ww / self.scale_val(s) + 0.5)
-                logger.critical(f'Setting manual SWIM window for {s} to {man_ww} ({s1_ww}/{self.scale_val(s)})...')
-                self.stack(s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+                logger.critical(f'Setting manual SWIM window for {s}, section {self.zpos} to {man_ww} ({s1_ww}/{self.scale_val(s)})...')
+                self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
         logger.info('')
