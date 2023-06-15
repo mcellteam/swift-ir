@@ -95,8 +95,9 @@ class ProjectTab(QWidget):
         self.MA_base_zoom = None
         self._allow_zoom_change = True
 
-        # h = self.MA_webengine_ref.geometry().height()
+        h = self.MA_webengine_ref.geometry().height()
         # self.MA_stageSplitter.setSizes([int(.7 * h), int(.3 * h)])
+        self.MA_stageSplitter.setSizes([400, 600]) #Todo refactor
 
         self.Q1.setAutoFillBackground(True)
         self.Q2.setAutoFillBackground(True)
