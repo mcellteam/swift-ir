@@ -40,6 +40,7 @@ class ProjectTable(QWidget):
         self.table.setShowGrid(False)
         self.row_height_slider = Slider(self)
         self.row_height_slider.setMinimum(28)
+        self.row_height_slider.setMaximum(256)
         self.initUI()
         self.table.horizontalHeader().setHighlightSections(False)
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -119,7 +120,7 @@ class ProjectTable(QWidget):
         timer.start()
         caller = inspect.stack()[1].function
         logger.info(f'')
-        cfg.main_window.tell('Updating Table Data...')
+        # cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
         # cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
         cfg.mw.showZeroedPbar(set_n_processes=False, pbar_max=len(cfg.data))
@@ -164,6 +165,10 @@ class ProjectTable(QWidget):
 
     def updateTableData(self):
         cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
+
+        if self.btn_splash_load_table.isVisible():
+            self.initTableData()
+            return
 
         cur_selection = self.table.currentIndex().row()
         cur_scroll_pos = self.table.verticalScrollBar().value()
@@ -325,6 +330,7 @@ class ProjectTable(QWidget):
         self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
         self.row_height_slider.setMaximumWidth(128)
         self.btnReloadTable = QPushButton('Reload')
+        self.btnReloadTable.setStyleSheet("font-size: 11px; font-weight: 600;")
         self.btnReloadTable.setFixedHeight(18)
         self.btnReloadTable.setFixedWidth(70)
         self.btnReloadTable.clicked.connect(self.updateTableData)
@@ -333,7 +339,9 @@ class ProjectTable(QWidget):
         self.controls.setObjectName('controls')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 2, 0, 2)
-        hbl.addWidget(QLabel('Row Height:'), alignment=Qt.AlignLeft)
+        lab = QLabel('Row Height:')
+        lab.setStyleSheet("font-size: 11px; font-weight: 600;")
+        hbl.addWidget(lab, alignment=Qt.AlignLeft)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignLeft)
         hbl.addWidget(self.btnReloadTable, alignment=Qt.AlignLeft)
         # self.controls_hlayout.addWidget(self.font_size_widget)
