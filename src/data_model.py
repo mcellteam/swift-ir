@@ -1790,9 +1790,11 @@ class DataModel:
                     self.stack(s)[i]['alignment']['swim_settings']['grid-custom-px'] = [man_ww_x, man_ww_y]
                     self.stack(s)[i]['alignment']['swim_settings']['grid-custom-2x2-px'] = [int(man_ww_x / 2), int(man_ww_y / 2)]
 
-    def manual_swim_window_px(self) -> int:
+    def manual_swim_window_px(self, s=None, l=None) -> int:
         '''Returns the SWIM Window for the Current Layer.'''
-        return int(self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'])
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return int(self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['manual_settings']['manual_swim_window_px'])
 
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
@@ -1805,9 +1807,9 @@ class DataModel:
             s1_ww = pixels * self.scale_val()
             # for s in self.scales():
             for s in self.finer_scales():
-                man_ww = s1_ww / self.scale_val(s)
-                logger.critical(f'Setting manual SWIM window for {s} to man_ww...')
-                self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+                man_ww = int(s1_ww / self.scale_val(s) + 0.5)
+                logger.critical(f'Setting manual SWIM window for {s} to {man_ww} ({s1_ww}/{self.scale_val(s)})...')
+                self.stack(s)[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
         logger.info('')
