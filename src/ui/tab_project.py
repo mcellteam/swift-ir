@@ -1011,7 +1011,7 @@ class ProjectTab(QWidget):
 
         tip = "Window width for manual alignment (px)"
 
-        def fn():
+        def fn_slider_MA_SWIM_window():
             caller = inspect.stack()[1].function
             if caller == 'main':
                 logger.info('caller: %s' % caller)
@@ -1036,15 +1036,22 @@ class ProjectTab(QWidget):
         self.slider_MA_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider_MA_SWIM_window.setMinimum(64)
         self.slider_MA_SWIM_window.setToolTip(tip)
-        self.slider_MA_SWIM_window.valueChanged.connect(fn)
+        self.slider_MA_SWIM_window.valueChanged.connect(fn_slider_MA_SWIM_window)
         self.slider_MA_SWIM_window.setFixedWidth(80)
         self.MA_SWIM_window_le = QLineEdit()
         self.MA_SWIM_window_le.setFixedSize(QSize(36, 16))
 
-        def fn():
+        def fn_MA_SWIM_window_le():
             caller = inspect.stack()[1].function
             logger.info('caller: %s' % caller)
-            cfg.data.set_manual_swim_window_px(int(self.MA_SWIM_window_le.text()))
+            # logger.info(f'manua lswim window value {int(self.MA_SWIM_window_le.text())}')
+
+            val = int(self.MA_SWIM_window_le.text())
+            if (val % 2) == 1:
+                self.slider_MA_SWIM_window.setValue(val - 1)
+                return
+            #
+            cfg.data.set_manual_swim_window_px(val)
             self.dataUpdateMA()
             if self.rb_reference.isChecked():
                 cfg.refViewer.drawSWIMwindow()
@@ -1052,9 +1059,8 @@ class ProjectTab(QWidget):
                 cfg.baseViewer.drawSWIMwindow()
             self.tn_ref.update()
             self.tn_tra.update()
-
-
-        self.MA_SWIM_window_le.returnPressed.connect(fn)
+            self.slider_MA_SWIM_window.setValue(int(self.MA_SWIM_window_le.text()))
+        self.MA_SWIM_window_le.returnPressed.connect(fn_MA_SWIM_window_le)
 
         # self.spinbox_MA_swim_window = QSpinBox()
         # def fn():

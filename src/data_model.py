@@ -1806,6 +1806,7 @@ class DataModel:
             # for s in self.scales():
             for s in self.finer_scales():
                 man_ww = s1_ww / self.scale_val(s)
+                logger.critical(f'Setting manual SWIM window for {s} to man_ww...')
                 self.stack()[self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
