@@ -839,6 +839,7 @@ def rename_layers(use_scale, al_dict):
                 pass
 
 
+
 def verify_image_file(path: str) -> str:
     '''Tries to determine the filetype of an image using the Python standard library.
     Returns a string.'''''

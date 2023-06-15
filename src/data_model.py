@@ -1849,6 +1849,22 @@ class DataModel:
                 'alignment']['manual_settings']['manual_swim_window_px'] = scale_1_ww / get_scale_val(s)
 
 
+    def propagate_manual_regions(self, s=None):
+        if s==None: s=self.scale
+
+        # scale_1_ww = ww * self.scale_val()
+        # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
+        # scales      = [get_scale_key(x) for x in scale_vals]
+        # for s in self.scales():
+
+        for scale in self.finer_scales(s=s):
+            for section in range(0,len(self)):
+                ww = self.manual_swim_window_px(s=s)
+                self._data['data']['scales'][scale]['stack'][section][
+                    'alignment']['manual_settings']['manual_swim_window_px'] = ww * (1 / get_scale_val(s))
+
+
+
     def bounding_rect(self, s=None):
         if s == None: s = self.scale
         try:
