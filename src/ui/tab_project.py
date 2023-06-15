@@ -897,8 +897,8 @@ class ProjectTab(QWidget):
             VWidget(
                 HWidget(
                     ExpandingWidget(self),
-                    self.btn_view_logs,
                     self.btn_view_targ_karg,
+                    self.btn_view_logs,
                     # self.MA_settings_defaults_button,
                     # self.btnRunSwimMA,
                     self.btnMAsettings,
