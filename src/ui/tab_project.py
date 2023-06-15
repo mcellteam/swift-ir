@@ -95,8 +95,8 @@ class ProjectTab(QWidget):
         self.MA_base_zoom = None
         self._allow_zoom_change = True
 
-        h = self.MA_webengine_ref.geometry().height()
-        self.MA_stageSplitter.setSizes([int(.7 * h), int(.3 * h)])
+        # h = self.MA_webengine_ref.geometry().height()
+        # self.MA_stageSplitter.setSizes([int(.7 * h), int(.3 * h)])
 
         self.Q1.setAutoFillBackground(True)
         self.Q2.setAutoFillBackground(True)
@@ -528,7 +528,7 @@ class ProjectTab(QWidget):
         self.MA_webengine_ref = WebEngine(ID='ref')
         self.MA_webengine_base = WebEngine(ID='base')
         self.MA_webengine_stage = WebEngine(ID='stage')
-        self.MA_webengine_stage.setMinimumHeight(64)
+        self.MA_webengine_stage.setMinimumHeight(80)
         setWebengineProperties(self.MA_webengine_ref)
         setWebengineProperties(self.MA_webengine_base)
         setWebengineProperties(self.MA_webengine_stage)
@@ -560,17 +560,17 @@ class ProjectTab(QWidget):
 
         # MA Stage Buffer Widget
 
-        self.MA_refViewerTitle = QLabel('Reference Image (Left)')
-        self.MA_refViewerTitle.setStyleSheet('font-size: 9px;font-weight: 600px;')
+        self.MA_refViewerTitle = QLabel('Reference Section')
+        self.MA_refViewerTitle.setStyleSheet('font-size: 10px;font-weight: 600px;')
         self.MA_refViewerTitle.setMaximumHeight(14)
 
-        self.MA_baseViewerTitle = QLabel('Transforming Image (Right)')
-        self.MA_baseViewerTitle.setStyleSheet('font-size: 9px; font-weight: 600px;')
+        self.MA_baseViewerTitle = QLabel('Transforming Section)')
+        self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; font-weight: 600px;')
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
         self.MA_ptsListWidget_ref.setStyleSheet('background-color: #dadada; font-size: 10px;')
-        self.MA_ptsListWidget_ref.setMaximumHeight(54)
+        # self.MA_ptsListWidget_ref.setMaximumHeight(54)
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
@@ -582,7 +582,7 @@ class ProjectTab(QWidget):
 
         self.MA_ptsListWidget_base = QListWidget()
         self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
-        self.MA_ptsListWidget_base.setMaximumHeight(54)
+        # self.MA_ptsListWidget_base.setMaximumHeight(54)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -610,8 +610,8 @@ class ProjectTab(QWidget):
         self.btn_undoRefPts.clicked.connect(fn)
 
         self.btn_clrRefPts = QPushButton('Clear')
-        self.btn_clrRefPts.setStyleSheet("""font-size: 10px;""")
-        self.btn_clrRefPts.setFixedSize(QSize(40, 14))
+        self.btn_clrRefPts.setStyleSheet("""font-size: 9px;""")
+        self.btn_clrRefPts.setFixedSize(QSize(36, 14))
         self.btn_clrRefPts.clicked.connect(self.deleteAllMpRef)
 
         self.btn_undoBasePts = QPushButton()
@@ -629,8 +629,8 @@ class ProjectTab(QWidget):
         self.btn_undoBasePts.clicked.connect(fn)
 
         self.btn_clrBasePts = QPushButton('Clear')
-        self.btn_clrBasePts.setStyleSheet("""font-size: 10px;""")
-        self.btn_clrBasePts.setFixedSize(QSize(40, 14))
+        self.btn_clrBasePts.setStyleSheet("""font-size: 9px;""")
+        self.btn_clrBasePts.setFixedSize(QSize(36, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
 
 
@@ -746,10 +746,6 @@ class ProjectTab(QWidget):
             # Todo include all of this functionality somewhere
             # cfg.data.set_auto_swim_windows_to_default()
             cfg.main_window.setControlPanelData()
-            # cfg.data['data']['defaults']['whitening-factor'] = cfg.DEFAULT_WHITENING
-            # cfg.data['data']['defaults']['initial-rotation'] = cfg.DEFAULT_INITIAL_ROTATION
-            # cfg.refViewer.drawSWIMwindow()
-            # cfg.baseViewer.drawSWIMwindow()
             cfg.mw.setZpos()
             self.dataUpdateMA()
             #     layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
@@ -771,11 +767,11 @@ class ProjectTab(QWidget):
             cfg.main_window.alignGenerateOne()
             # self.updateEnabledButtonsMA() #0613- - why?!
 
-        self.btnRealignMA = QPushButton('Align && Regenerate')
+        self.btnRealignMA = QPushButton('Align && Regenerate Section')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnRealignMA.setFixedSize(QSize(107, 18))
+        self.btnRealignMA.setFixedSize(QSize(136, 18))
         self.btnRealignMA.clicked.connect(fn)
-        self.btnRealignMA.setStyleSheet('font-size: 10px;')
+        self.btnRealignMA.setStyleSheet('font-size: 9px;')
 
         self.btnExitMA = QPushButton('Exit')
         self.btnExitMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -816,16 +812,14 @@ class ProjectTab(QWidget):
             self.spinbox_whitening.setValue(float(cfg.data.whitening()))
 
             self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
+            # cfg.mw.setZpos()
 
-            cfg.data.current_method = 'grid-default'
-            self.method_rb0.setChecked(True)
-            self.MA_stackedWidget.setCurrentIndex(0)
-
-            # cfg.refViewer.drawSWIMwindow()
-            # cfg.baseViewer.drawSWIMwindow()
-            cfg.mw.setZpos()
-            self.update()
-            # self.initNeuroglancer()
+            if cfg.data['state']['stackwidget_ng_toggle']:
+                cfg.baseViewer.drawSWIMwindow()
+            else:
+                cfg.refViewer.drawSWIMwindow()
+            self.tn_ref.update()
+            self.tn_tra.update()
 
         self.MA_settings_defaults_button = QPushButton('Use Default')
         # self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
@@ -903,7 +897,7 @@ class ProjectTab(QWidget):
                     ExpandingWidget(self),
                     self.btn_view_logs,
                     self.btn_view_targ_karg,
-                    self.MA_settings_defaults_button,
+                    # self.MA_settings_defaults_button,
                     # self.btnRunSwimMA,
                     self.btnMAsettings,
                     # self.btnClearMA,
@@ -912,7 +906,7 @@ class ProjectTab(QWidget):
                 HWidget(
                     ExpandingWidget(self),
                     self.btnRealignMA,
-                    self.btnResetAllMA,
+                    # self.btnResetAllMA,
                     self.btnExitMA,
                     ExpandingWidget(self))
             ), alignment=Qt.AlignCenter)
@@ -962,7 +956,7 @@ class ProjectTab(QWidget):
         self.MA_sbw = HWidget(gb1, gb2)
         self.MA_sbw.layout.setSpacing(0)
         self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
-        self.msg_MAinstruct.setFixedSize(300, 24)
+        self.msg_MAinstruct.setFixedSize(260, 20)
 
         self.gb_stageInfoText = QGroupBox()
         vbl = VBL()
@@ -1043,7 +1037,7 @@ class ProjectTab(QWidget):
         self.slider_MA_SWIM_window.valueChanged.connect(fn)
         self.slider_MA_SWIM_window.setFixedWidth(80)
         self.MA_SWIM_window_le = QLineEdit()
-        self.MA_SWIM_window_le.setFixedWidth(48)
+        self.MA_SWIM_window_le.setFixedSize(QSize(36, 16))
 
         def fn():
             caller = inspect.stack()[1].function
@@ -1059,7 +1053,6 @@ class ProjectTab(QWidget):
 
 
         self.MA_SWIM_window_le.returnPressed.connect(fn)
-        self.MA_SWIM_window_le.setFixedHeight(18)
 
         # self.spinbox_MA_swim_window = QSpinBox()
         # def fn():
@@ -1327,8 +1320,8 @@ class ProjectTab(QWidget):
         self.gb_MA_settings = QGroupBox()
         # self.gb_MA_settings.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings = QFormLayout()
-        self.fl_MA_settings.setVerticalSpacing(4)
-        self.fl_MA_settings.setHorizontalSpacing(6)
+        self.fl_MA_settings.setVerticalSpacing(2)
+        self.fl_MA_settings.setHorizontalSpacing(2)
         self.fl_MA_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings.setSpacing(2)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
@@ -1341,8 +1334,9 @@ class ProjectTab(QWidget):
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
         self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3)", HWidget(self.Q_widget, ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
-        # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
+        self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
+        self.gb_MA_settings.setStyleSheet("font-size: 10px;")
 
         # self.MA_settings = QWidget()
 
@@ -1362,13 +1356,14 @@ class ProjectTab(QWidget):
 
         self.method_rb0 = QRadioButton('Default Grid')
         self.method_rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.method_rb0.setStyleSheet("font-size: 9px; font-weight: 600;")
 
         tip = """Similar to the Default Grid method, but the user is able to avoid image defects 
         by adjusting the grid shape and location and adding or removing quadrants of the grid. 
         An affine transformation requires at least 3 regions (quadrants)."""
         self.method_rb1 = QRadioButton('Custom Grid')
         self.method_rb1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.method_rb1.setStyleSheet("font-size: 10px;")
+        self.method_rb1.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.method_rb1.setToolTip(tip)
 
 
@@ -1377,7 +1372,7 @@ class ProjectTab(QWidget):
         # self.method_rb2 = QRadioButton('Correspondence Points')
         self.method_rb2 = QRadioButton('Match Regions')
         self.method_rb2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.method_rb2.setStyleSheet("font-size: 10px;")
+        self.method_rb2.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.method_rb2.setToolTip(tip)
 
 
@@ -1734,6 +1729,7 @@ class ProjectTab(QWidget):
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         # self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
         self.fl_settings.addWidget(self.btn_settings_apply_everywhere)
+        self.fl_settings.addWidget(self.btnResetAllMA)
 
         self._settings_widget = QWidget()
         self._settings_widget.setStyleSheet("font-size: 9px;")
@@ -1767,7 +1763,7 @@ class ProjectTab(QWidget):
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
         self.lab_stageViewer = QLabel('Generated Alignment')
         self.lab_stageViewer.setStyleSheet("font-size: 10px; background-color: #222222; color: #ede9e8; font-weight: 600;")
-        self.lab_stageViewer.setFixedHeight(16)
+        self.lab_stageViewer.setFixedHeight(14)
         self.MA_stageSplitter.addWidget(VWidget(self.MA_webengine_stage, self.lab_stageViewer))
         self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls))
         self.MA_stageSplitter.setCollapsible(0, False)
@@ -1863,15 +1859,12 @@ class ProjectTab(QWidget):
                 self.rb_transforming.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
                 self.rb_reference.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
 
+            self.dataUpdateMA()  # 0613+ #attempt fix for 'MA_gl_overlay' not hiding after slash press followed by layer change
 
             if cfg.data['state']['stackwidget_ng_toggle']:
                 cfg.baseViewer.drawSWIMwindow()
             else:
                 cfg.refViewer.drawSWIMwindow()
-
-
-            self.dataUpdateMA() #0613+ #attempt fix for 'MA_gl_overlay' not hiding after slash press followed by layer change
-
             self.tn_ref.update()
             self.tn_tra.update()
 
@@ -3334,11 +3327,11 @@ class ProjectTab(QWidget):
             # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
             # self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
             # menu.addAction(self.deleteMpRefAction)
-            self.deleteAllMpRefAction = QAction('Delete All Ref Pts')
+            self.deleteAllMpRefAction = QAction('Clear All Reference Regions')
             self.deleteAllMpRefAction.setStatusTip('Delete all reference manual correspondence points')
             self.deleteAllMpRefAction.triggered.connect(self.deleteAllMpRef)
             menu.addAction(self.deleteAllMpRefAction)
-            self.deleteAllPtsAction0 = QAction('Delete All Pts')
+            self.deleteAllPtsAction0 = QAction('Clear All Regions')
             self.deleteAllPtsAction0.setStatusTip('Delete all manual correspondence points')
             self.deleteAllPtsAction0.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction0)
@@ -3351,11 +3344,11 @@ class ProjectTab(QWidget):
             # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
             # self.deleteMpBaseAction.triggered.connect(self.deleteMpBase)
             # menu.addAction(self.deleteMpBaseAction)
-            self.deleteAllMpBaseAction = QAction('Delete All Base Pts')
+            self.deleteAllMpBaseAction = QAction('Clear All Transforming Regions')
             self.deleteAllMpBaseAction.setStatusTip('Delete all base manual correspondence points')
             self.deleteAllMpBaseAction.triggered.connect(self.deleteAllMpBase)
             menu.addAction(self.deleteAllMpBaseAction)
-            self.deleteAllPtsAction1 = QAction('Delete All Pts')
+            self.deleteAllPtsAction1 = QAction('Clear All Regions')
             self.deleteAllPtsAction1.setStatusTip('Delete all manual correspondence points')
             self.deleteAllPtsAction1.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction1)

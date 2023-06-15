@@ -86,7 +86,7 @@ class YellowTextLabel(QLabel):
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setAlignment(Qt.AlignCenter)
         self.setStyleSheet("""color: #ffe135; background-color: rgba(0,0,0,.35); 
-            font-weight: 600; text-align: center; padding: 3px;""")
+            font-weight: 600; text-align: center; padding: 3px; font-size: 12px;""")
 
     def mousePressEvent(self, ev):
         self.clicked.emit()
