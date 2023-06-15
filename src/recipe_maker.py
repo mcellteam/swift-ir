@@ -287,7 +287,6 @@ class align_recipe:
             self.layer_dict['alignment']['mir_script'] = {}
             self.layer_dict['alignment']['mir_out'] = {}
             self.layer_dict['alignment']['mir_err'] = {}
-            self.layer_dict['alignment']['swim_ww_arg'] = {}
             # self.layer_dict['alignment']['crop_str_mir'] = {}
             for i,ing in enumerate(self.ingredients):
                 try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = {}
@@ -330,8 +329,6 @@ class align_recipe:
                     try: self.layer_dict['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
-                    except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
-                    try: self.layer_dict['alignment']['swim_ww_arg']['ingredient_%d' % i] = ing.swim_ww_arg
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     # try: self.layer_dict['alignment']['crop_str_mir']['ingredient_%d' % i] = ing.crop_str_mir
                     # except: print_exception(self.pd)

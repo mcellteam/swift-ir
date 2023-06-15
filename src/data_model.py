@@ -1800,7 +1800,7 @@ class DataModel:
 
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.critical(f'Setting Local SWIM Window to {pixels}...')
+        logger.critical(f'Setting Local SWIM Window to [{pixels}] pixels...')
 
         if pixels == None:
             self.set_manual_swim_windows_to_default(current_only=True)
@@ -1815,6 +1815,7 @@ class DataModel:
                 man_ww = int(s1_ww / self.scale_val(s) + 0.5)
                 logger.critical(f'Setting manual SWIM window for {s}, section {self.zpos} to {man_ww} ({s1_ww}/{self.scale_val(s)})...')
                 self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['manual_settings']['manual_swim_window_px'] = man_ww
+        logger.critical(f"Value: {self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['manual_settings']['manual_swim_window_px']}")
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
         logger.info('')
