@@ -978,7 +978,7 @@ class ProjectTab(QWidget):
 
         self.le_x_translate = QLineEdit()
         self.le_x_translate.returnPressed.connect(self.onTranslate_x)
-        self.le_x_translate.setFixedSize(QSize(48, 18))
+        self.le_x_translate.setFixedSize(QSize(36, 16))
         self.le_x_translate.setValidator(QIntValidator())
         # self.le_x_translate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.le_x_translate.setText('0')
@@ -989,7 +989,7 @@ class ProjectTab(QWidget):
 
         self.le_y_translate = QLineEdit()
         self.le_y_translate.returnPressed.connect(self.onTranslate_y)
-        self.le_y_translate.setFixedSize(QSize(48, 18))
+        self.le_y_translate.setFixedSize(QSize(36, 16))
         self.le_y_translate.setValidator(QIntValidator())
         # self.le_y_translate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.le_y_translate.setText('0')
@@ -1008,6 +1008,7 @@ class ProjectTab(QWidget):
             self.le_x_translate,
             self.btnTranslate
         )
+        self.translatePointsWidget.setStyleSheet("font-size: 10px;")
         self.translatePointsWidget.layout.setAlignment(Qt.AlignRight)
 
         """  MA Settings Tab  """
