@@ -769,7 +769,7 @@ class ProjectTab(QWidget):
 
         self.btnRealignMA = QPushButton('Align && Regenerate Section')
         self.btnRealignMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnRealignMA.setFixedSize(QSize(136, 18))
+        self.btnRealignMA.setFixedSize(QSize(138, 18))
         self.btnRealignMA.clicked.connect(fn)
         self.btnRealignMA.setStyleSheet('font-size: 9px;')
 
@@ -884,7 +884,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM = QPushButton('Generate\nMatch\n&Signals')
         self.btnQuickSWIM.setStyleSheet("font-size: 8px; font-weight: 600;")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.btnQuickSWIM.setFixedSize(QSize(56, 38))
+        self.btnQuickSWIM.setFixedSize(QSize(54, 38))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
         hbl = HBL()
