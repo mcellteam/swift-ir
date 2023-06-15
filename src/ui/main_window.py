@@ -516,9 +516,8 @@ class MainWindow(QMainWindow):
                     try:
                         try:
                             snr = snr_vals[count]
+                            assert snr > 0.0
                         except:
-                            snr = 0.0
-                            # logger.info(f'no SNR data for corr signal index {i}')
                             cfg.pt.msList[i].set_no_image()
                             continue
 
@@ -547,8 +546,8 @@ class MainWindow(QMainWindow):
                     try:
                         try:
                             snr = snr_vals[i]
+                            assert snr > 0.0
                         except:
-                            snr = 0.0
                             # logger.info(f'no SNR data for corr signal index {i}')
                             cfg.pt.msList[i].set_no_image()
                             # print_exception()
@@ -897,6 +896,12 @@ class MainWindow(QMainWindow):
             cfg.event.clear()
         t0 = time.time()
         dt = datetime.datetime.now()
+
+        cfg.pt.tn_ms0.set_no_image()
+        cfg.pt.tn_ms1.set_no_image()
+        cfg.pt.tn_ms2.set_no_image()
+        cfg.pt.tn_ms3.set_no_image()
+
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
         manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
