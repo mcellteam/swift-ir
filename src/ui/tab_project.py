@@ -884,7 +884,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM = QPushButton('Generate\nMatch\n&Signals')
         self.btnQuickSWIM.setStyleSheet("font-size: 8px; font-weight: 600;")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.btnQuickSWIM.setFixedSize(QSize(54, 38))
+        self.btnQuickSWIM.setFixedSize(QSize(48, 38))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
         hbl = HBL()
