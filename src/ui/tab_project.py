@@ -564,7 +564,7 @@ class ProjectTab(QWidget):
         self.MA_refViewerTitle.setStyleSheet('font-size: 10px;font-weight: 600px;')
         self.MA_refViewerTitle.setMaximumHeight(14)
 
-        self.MA_baseViewerTitle = QLabel('Transforming Section)')
+        self.MA_baseViewerTitle = QLabel('Transforming Section')
         self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; font-weight: 600px;')
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
@@ -884,7 +884,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM = QPushButton('Generate\nMatch\n&Signals')
         self.btnQuickSWIM.setStyleSheet("font-size: 8px; font-weight: 600;")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.btnQuickSWIM.setFixedSize(QSize(48, 38))
+        self.btnQuickSWIM.setFixedSize(QSize(50, 36))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
         hbl = HBL()
@@ -956,7 +956,7 @@ class ProjectTab(QWidget):
         self.MA_sbw = HWidget(gb1, gb2)
         self.MA_sbw.layout.setSpacing(0)
         self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
-        self.msg_MAinstruct.setFixedSize(260, 20)
+        self.msg_MAinstruct.setFixedSize(266, 20)
 
         self.gb_stageInfoText = QGroupBox()
         vbl = VBL()
@@ -965,8 +965,8 @@ class ProjectTab(QWidget):
         self.gb_stageInfoText.setLayout(vbl)
 
         self.btnTranslate = QPushButton('Move')
-        self.btnTranslate.setStyleSheet('font-size: 10px;')
-        self.btnTranslate.setFixedSize(QSize(40, 18))
+        self.btnTranslate.setStyleSheet("""font-size: 9px;""")
+        self.btnTranslate.setFixedSize(QSize(36, 14))
         self.btnTranslate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnTranslate.clicked.connect(self.onTranslate)
 
