@@ -2152,11 +2152,12 @@ class DataModel:
         return next_coarsest_scale_key
 
 
-    def finer_scales(self, s=None):
+    def finer_scales(self, s=None, include_self=True):
         if s == None: s = self.scale
-        return [get_scale_key(x) for x in self.scale_vals() if x <= self.scale_val(s=s)]
-
-
+        if include_self:
+            return [get_scale_key(x) for x in self.scale_vals() if x <= self.scale_val(s=s)]
+        else:
+            return [get_scale_key(x) for x in self.scale_vals() if x < self.scale_val(s=s)]
 
 
     def clear_all_skips(self):
@@ -2322,11 +2323,24 @@ class DataModel:
     #                     base_layer['reference'] = ref
     #         self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
 
+
+    # def propagate_up_from(self, scale_from=None):
+    #     if scale_from == None: scale_from=self.scale
     #
-    # def propagate_up_from(self, s=None):
-    #     if s == None: s=self.scale
-    #         for scale_from, scale_to:
+    #         it = self.get_iter(s=scale_from)
     #
+    #
+    #         for i, section in enumerate(it):
+    #
+    #             method = section['current_method']
+    #             for s in self.finer_scales(include_self=False):
+    #                 self._data['data']['scales'][s]['stack'][i]['current_method']
+    #
+    #
+    #
+    #             pass
+
+
 
 
 

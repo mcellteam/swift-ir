@@ -767,7 +767,6 @@ class MainWindow(QMainWindow):
     def present_snr_results(self, start=0, end=None):
         try:
             if cfg.data.is_aligned():
-                self.tell('The Stack is Aligned!')
                 logger.info('Alignment seems successful')
             else:
                 self.warn('Something Went Wrong')
@@ -1077,18 +1076,14 @@ class MainWindow(QMainWindow):
         self._working = False
 
 
-        #0614-
-        # if quick_swim:
-        #     self.updateCorrSignalsDrawer()
-        #     self.updateEnabledButtons()
-        #     self.enableAllTabs()
-        #     self.updateCpanelDetails()
-        # else:
-        #     self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
-        #     cfg.project_tab.initNeuroglancer()
-
-        self.onAlignmentEnd(start=start, end=end)
-        if not quick_swim:
+        0614-
+        if quick_swim:
+            self.updateCorrSignalsDrawer()
+            self.updateEnabledButtons()
+            self.enableAllTabs()
+            self.updateCpanelDetails()
+        else:
+            self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
             cfg.project_tab.initNeuroglancer()
 
         self.tell('Section #%d Alignment Complete' % start)
