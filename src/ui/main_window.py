@@ -1076,7 +1076,7 @@ class MainWindow(QMainWindow):
         self._working = False
 
 
-        0614-
+        # 0614-
         if quick_swim:
             self.updateCorrSignalsDrawer()
             self.updateEnabledButtons()
