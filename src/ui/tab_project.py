@@ -753,7 +753,7 @@ class ProjectTab(QWidget):
 
         self.btnResetAllMA = QPushButton('Set All To Default Grid')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setFixedSize(QSize(113, 18))
+        self.btnResetAllMA.setFixedSize(QSize(140, 18))
         self.btnResetAllMA.clicked.connect(fn)
         self.btnResetAllMA.setStyleSheet('font-size: 10px;')
 
@@ -822,9 +822,10 @@ class ProjectTab(QWidget):
             self.tn_ref.update()
             self.tn_tra.update()
 
-        self.MA_settings_defaults_button = QPushButton('Use Default')
+        self.MA_settings_defaults_button = QPushButton('Use Defaults')
+        self.MA_settings_defaults_button.setStyleSheet("font-size: 10px;")
         # self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
-        self.MA_settings_defaults_button.setFixedSize(QSize(80, 18))
+        self.MA_settings_defaults_button.setFixedSize(QSize(68, 16))
         self.MA_settings_defaults_button.clicked.connect(fn)
 
         def fn():
@@ -1189,7 +1190,7 @@ class ProjectTab(QWidget):
 
         self.AS_2x2_SWIM_window_le = QLineEdit()
         self.AS_2x2_SWIM_window_le.returnPressed.connect(fn)
-        self.AS_2x2_SWIM_window_le.setFixedHeight(18)
+        self.AS_2x2_SWIM_window_le.setFixedHeight(16)
 
         tip = "SWIM Signal Whitening Factor"
 
@@ -1201,8 +1202,9 @@ class ProjectTab(QWidget):
                 cfg.data.set_whitening(float(self.spinbox_whitening.value()))  # Refactor
 
         self.spinbox_whitening = QDoubleSpinBox(self)
+        self.spinbox_whitening.setReadOnly(False)
         self.spinbox_whitening.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.spinbox_whitening.setFixedWidth(80)
+        self.spinbox_whitening.setFixedSize(QSize(60,16))
         self.spinbox_whitening.setToolTip(tip)
         # self.spinbox_whitening.setFixedHeight(26)
         # self.sb_whiteningControl.setValue(cfg.DEFAULT_WHITENING)
@@ -1222,9 +1224,11 @@ class ProjectTab(QWidget):
                 logger.info(f'SWIM iterations for section #{cfg.data.zpos} is set to {val}')
 
         self.spinbox_swim_iters = QSpinBox(self)
+        self.spinbox_swim_iters.setReadOnly(False)
         self.spinbox_swim_iters.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinbox_swim_iters.setToolTip('# of SWIM iterations/refinements (default: 3)')
-        self.spinbox_swim_iters.setFixedWidth(80)
+        # self.spinbox_swim_iters.setFixedWidth(80)
+        self.spinbox_swim_iters.setFixedSize(QSize(60,18))
         self.spinbox_swim_iters.valueChanged.connect(fn)
         self.spinbox_swim_iters.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.spinbox_swim_iters.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1278,7 +1282,9 @@ class ProjectTab(QWidget):
         self.gb_MA_manual_controls.setLayout(vbl)
 
         self.AS_swim_window_widget = HWidget(self.slider_AS_SWIM_window, self.AS_SWIM_window_le)
+        self.AS_swim_window_widget.setFixedHeight(16)
         self.AS_2x2_swim_window_widget = HWidget(self.slider_AS_2x2_SWIM_window, self.AS_2x2_SWIM_window_le)
+        self.AS_2x2_swim_window_widget.setFixedHeight(16)
 
         # colors = ['#75bbfd', '#e50000', '#137e6d', '#efb435']
         clr = {'ul': '#e50000', 'ur': '#efb435', 'll': '#137e6d', 'lr': '#acc2d9'}
@@ -1302,7 +1308,7 @@ class ProjectTab(QWidget):
         self.Q3.setAutoFillBackground(True)
         self.Q4.setAutoFillBackground(True)
 
-        siz = 22
+        siz = 20
         self.Q1.setFixedSize(siz, siz)
         self.Q2.setFixedSize(siz, siz)
         self.Q3.setFixedSize(siz, siz)
@@ -1321,10 +1327,10 @@ class ProjectTab(QWidget):
         self.gb_MA_settings = QGroupBox()
         # self.gb_MA_settings.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings = QFormLayout()
-        self.fl_MA_settings.setVerticalSpacing(2)
+        self.fl_MA_settings.setVerticalSpacing(1)
         self.fl_MA_settings.setHorizontalSpacing(2)
         self.fl_MA_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
-        self.fl_MA_settings.setSpacing(2)
+        # self.fl_MA_settings.setSpacing(2)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
         # self.fl_MA_settings.addRow("Manual Window", self.MA_swim_window_widget)
         self.fl_MA_settings.addRow("SWIM Full Window", self.AS_swim_window_widget)
