@@ -173,7 +173,7 @@ class MAViewer(neuroglancer.Viewer):
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
         if DEV:
-            logger.warning(f'[{self.role}] caller: {caller_name()}')
+            logger.info(f'[{self.role}] caller: {caller_name()}')
 
         prev_index = self.index
 
@@ -201,8 +201,8 @@ class MAViewer(neuroglancer.Viewer):
             vc = s.voxel_coordinates
             vc[0] = self.index + 0.5
 
-        if DEV:
-            logger.critical(f'{self.type}:{self.role}  self.index {prev_index} -> {self.index}')
+        # if DEV:
+        #     logger.info(f'{self.type}:{self.role}  self.index {prev_index} -> {self.index}')
 
         # state = copy.deepcopy(self.state)
         # state.position[0] = self.index
