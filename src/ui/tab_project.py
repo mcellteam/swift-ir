@@ -1380,6 +1380,8 @@ class ProjectTab(QWidget):
             #     cfg.refViewer.drawSWIMwindow()
             cfg.baseViewer.drawSWIMwindow()
             cfg.refViewer.drawSWIMwindow()
+            self.tn_tra.update()
+            self.tn_ref.update()
 
             self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
 
@@ -2655,6 +2657,8 @@ class ProjectTab(QWidget):
             self.btn_view_targ_karg.setText('Hide SWIM Matches')
         else:
             self.btn_view_targ_karg.setText('View SWIM Matches')
+
+
 
     def hideSecondaryNgTools(self):
         # for i in range(0, 14):
