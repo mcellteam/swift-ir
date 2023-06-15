@@ -2461,14 +2461,15 @@ class MainWindow(QMainWindow):
                     with open(name, 'w') as f:
                         f.write(proj_json)
 
-                    node = platform.node()
-                    user = getpass.getuser()
-                    tstamp = datetime.datetime.now().strftime('%Y%m%d')
-                    fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
-                    location = "/work/08507/joely/ls6/log_db"
-                    of = os.path.join(location, fn)
-                    with open(of, 'w') as f:
-                        f.write(proj_json)
+                    if is_tacc():
+                        node = platform.node()
+                        user = getpass.getuser()
+                        tstamp = datetime.datetime.now().strftime('%Y%m%d')
+                        fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
+                        location = "/work/08507/joely/ls6/log_db"
+                        of = os.path.join(location, fn)
+                        with open(of, 'w') as f:
+                            f.write(proj_json)
 
 
                     self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
@@ -6802,6 +6803,11 @@ class MainWindow(QMainWindow):
 
         if event.key() == Qt.Key_R:
             self.refreshTab()
+
+        elif event.key() == Qt.Key_Space:
+            if self._isProjectTab():
+                cfg.pt._tabs.setCurrentIndex(0)
+
 
         elif event.key() == Qt.Key_M:
             self.enterExitManAlignMode()
