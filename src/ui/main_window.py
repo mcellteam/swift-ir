@@ -2140,6 +2140,9 @@ class MainWindow(QMainWindow):
             if not self._working:
                 if self._scales_combobox_switch:
                     if self._isProjectTab():
+
+                        cfg.pt.project_table.table.hide()
+                        cfg.pt.project_table.btn_splash_load_table.show()
                         caller = inspect.stack()[1].function
                         logger.info('caller: %s' % caller)
                         cfg.data.scale = new_scale
