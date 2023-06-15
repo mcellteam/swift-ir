@@ -1794,7 +1794,7 @@ class DataModel:
         '''Returns the SWIM Window for the Current Layer.'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return int(self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['manual_settings']['manual_swim_window_px'])
+        return int(self._data['data']['scales'][s]['stack'][l]['alignment']['manual_settings']['manual_swim_window_px'])
 
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
