@@ -273,6 +273,7 @@ class align_recipe:
         self.layer_dict['alignment']['method_results']['im_sta_fn']= self.im_sta_fn
         self.layer_dict['alignment']['method_results']['im_mov_fn']= self.im_mov_fn
         self.layer_dict['alignment']['method_results']['siz']= self.siz
+
         if self.cur_method == 'grid-custom':
             self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
 
@@ -310,6 +311,10 @@ class align_recipe:
                     try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
+
+                    try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.ww
+                    except: print_exception(self.pd, extra=f"ww issue")
+
                     try: self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
@@ -330,6 +335,7 @@ class align_recipe:
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
+
                     # try: self.layer_dict['alignment']['crop_str_mir']['ingredient_%d' % i] = ing.crop_str_mir
                     # except: print_exception(self.pd)
 
@@ -486,7 +492,7 @@ class align_ingredient:
 
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
-        if isinstance(self.ww, float):
+        if isinstance(self.ww, float) or isinstance(self.ww, int):
             self.swim_ww_arg = str(int(self.ww))
         else:
             self.swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
@@ -788,7 +794,7 @@ def print_exception(dest, extra='None'):
     print(txt)
 
     lf = os.path.join(dest, 'logs', 'exceptions.log')
-    with open(lf, 'w+') as f:
+    with open(lf, 'a+') as f:
         f.write('\n' + txt)
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
