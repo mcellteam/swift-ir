@@ -1310,6 +1310,12 @@ class DataModel:
             #     = scale_1_ww / fac
 
 
+            # if role == 'base':
+            #     if l+1 in range(0,len(self)):
+            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints']['ref'] = coords
+            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints_mir']['ref'] = mir_coords
+
+
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
         if s == None: s = self.scale
