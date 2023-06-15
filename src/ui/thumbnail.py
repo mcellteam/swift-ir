@@ -242,7 +242,7 @@ class ThumbnailFast(QLabel):
                             qp.drawRect(rect)
                     elif method == 'manual-hint':
                         pts = []
-                        ww = cfg.data.manual_swim_window_px()
+                        ww = cfg.data.manual_swim_window_px(s=s, l=l)
                         if self.name in ('reference','reference-table'):
                             if self.name == 'reference-table':
                                 pts = cfg.data.manpoints_mir('ref', s=s, l=l)

@@ -570,7 +570,7 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
-        self.MA_ptsListWidget_ref.setStyleSheet('background-color: #dadada; font-size: 10px;')
+        self.MA_ptsListWidget_ref.setStyleSheet('background-color: #f3f6fb; font-size: 10px;')
         # self.MA_ptsListWidget_ref.setMaximumHeight(54)
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -582,7 +582,8 @@ class ProjectTab(QWidget):
         self.MA_refNextColorLab.setFixedSize(14, 14)
 
         self.MA_ptsListWidget_base = QListWidget()
-        self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
+        # self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
+        self.MA_ptsListWidget_base.setStyleSheet('background-color: #f3f6fb; font-size: 10px;')
         # self.MA_ptsListWidget_base.setMaximumHeight(54)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
@@ -611,6 +612,7 @@ class ProjectTab(QWidget):
         self.btn_undoRefPts.clicked.connect(fn)
 
         self.btn_clrRefPts = QPushButton('Clear')
+        self.btn_clrRefPts.setToolTip('Clear All Selections')
         self.btn_clrRefPts.setStyleSheet("""font-size: 9px;""")
         self.btn_clrRefPts.setFixedSize(QSize(36, 14))
         self.btn_clrRefPts.clicked.connect(self.deleteAllMpRef)
@@ -630,6 +632,7 @@ class ProjectTab(QWidget):
         self.btn_undoBasePts.clicked.connect(fn)
 
         self.btn_clrBasePts = QPushButton('Clear')
+        self.btn_clrBasePts.setToolTip('Clear All Selections')
         self.btn_clrBasePts.setStyleSheet("""font-size: 9px;""")
         self.btn_clrBasePts.setFixedSize(QSize(36, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
@@ -1210,6 +1213,15 @@ class ProjectTab(QWidget):
                     cfg.data.current_method = 'manual-hint'
                 elif self.rb_MA_strict.isChecked():
                     cfg.data.current_method = 'manual-strict'
+
+                if self.rb_reference.isChecked():
+                    cfg.refViewer.drawSWIMwindow()
+                else:
+                    cfg.baseViewer.drawSWIMwindow()
+                cfg.main_window._callbk_unsavedChanges()
+
+                self.tn_ref.update()
+                self.tn_tra.update()
 
                 cfg.mw.updateCorrSignalsDrawer()
 
@@ -3303,15 +3315,15 @@ class ProjectTab(QWidget):
         if event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_ref:
             menu = QMenu()
             # self.deleteMpRefAction = QAction('Delete')
-            # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
+            # # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
             # self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
             # menu.addAction(self.deleteMpRefAction)
             self.deleteAllMpRefAction = QAction('Clear All Reference Regions')
-            self.deleteAllMpRefAction.setStatusTip('Delete all reference manual correspondence points')
+            # self.deleteAllMpRefAction.setStatusTip('Delete all reference manual correspondence points')
             self.deleteAllMpRefAction.triggered.connect(self.deleteAllMpRef)
             menu.addAction(self.deleteAllMpRefAction)
             self.deleteAllPtsAction0 = QAction('Clear All Regions')
-            self.deleteAllPtsAction0.setStatusTip('Delete all manual correspondence points')
+            # self.deleteAllPtsAction0.setStatusTip('Delete all manual correspondence points')
             self.deleteAllPtsAction0.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction0)
             if menu.exec_(event.globalPos()):
@@ -3320,15 +3332,15 @@ class ProjectTab(QWidget):
         elif event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_base:
             menu = QMenu()
             # self.deleteMpBaseAction = QAction('Delete')
-            # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
+            # # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
             # self.deleteMpBaseAction.triggered.connect(self.deleteMpBase)
             # menu.addAction(self.deleteMpBaseAction)
             self.deleteAllMpBaseAction = QAction('Clear All Transforming Regions')
-            self.deleteAllMpBaseAction.setStatusTip('Delete all base manual correspondence points')
+            # self.deleteAllMpBaseAction.setStatusTip('Delete all base manual correspondence points')
             self.deleteAllMpBaseAction.triggered.connect(self.deleteAllMpBase)
             menu.addAction(self.deleteAllMpBaseAction)
             self.deleteAllPtsAction1 = QAction('Clear All Regions')
-            self.deleteAllPtsAction1.setStatusTip('Delete all manual correspondence points')
+            # self.deleteAllPtsAction1.setStatusTip('Delete all manual correspondence points')
             self.deleteAllPtsAction1.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction1)
             if menu.exec_(event.globalPos()):
