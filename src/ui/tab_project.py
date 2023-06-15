@@ -367,7 +367,7 @@ class ProjectTab(QWidget):
 
         # self.lab_main_instructions = QLabel("'r' - refresh viewer. 'm' - enter manual align mode")
         self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode")
-        self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px;")
+        self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;")
         self.lab_main_instructions.setFixedHeight(16)
 
         self.ng_messages = VWidget(self.warning_cafm)
@@ -575,10 +575,10 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
 
-        self.MA_refNextColorTxt = QLabel('Next Color: ')
+        self.MA_refNextColorTxt = QLabel('Next Color:   ')
         self.MA_refNextColorTxt.setStyleSheet('font-size: 9px; font-weight: 600px;')
         self.MA_refNextColorLab = QLabel()
-        self.MA_refNextColorLab.setFixedSize(16, 16)
+        self.MA_refNextColorLab.setFixedSize(14, 14)
 
         self.MA_ptsListWidget_base = QListWidget()
         self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
@@ -587,18 +587,59 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_base.installEventFilter(self)
-        self.MA_baseNextColorTxt = QLabel('Next Color: ')
+        self.MA_baseNextColorTxt = QLabel('Next Color:   ')
         self.MA_baseNextColorTxt.setStyleSheet('font-size: 9px; font-weight: 600px;')
         self.MA_baseNextColorLab = QLabel()
-        self.MA_baseNextColorLab.setFixedSize(16, 16)
+        self.MA_baseNextColorLab.setFixedSize(14, 14)
 
         self.MA_ptsListWidget_ref.itemSelectionChanged.connect(self.MA_ptsListWidget_base.selectionModel().clear)
         self.MA_ptsListWidget_base.itemSelectionChanged.connect(self.MA_ptsListWidget_ref.selectionModel().clear)
 
-        self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab)
-        self.baseNextColorWidget.setFixedHeight(12)
-        self.refNextColorWidget = HWidget(self.MA_refNextColorTxt, self.MA_refNextColorLab)
-        self.refNextColorWidget.setFixedHeight(12)
+        self.btn_undoRefPts = QPushButton()
+        self.btn_undoRefPts.setFixedSize(QSize(14, 14))
+        self.btn_undoRefPts.setIconSize(QSize(13, 13))
+        self.btn_undoRefPts.setToolTip('Undo Last Selection')
+        self.btn_undoRefPts.setIcon(qta.icon('fa.undo', color='#161c20'))
+        def fn():
+            if len(cfg.refViewer.pts):
+                cfg.refViewer.pts = cfg.refViewer.pts[:-1]
+                cfg.refViewer.applyMps()
+                cfg.refViewer.drawSWIMwindow()
+                self.update_MA_list_widgets()
+                self.updateEnabledButtonsMA()
+        self.btn_undoRefPts.clicked.connect(fn)
+
+        self.btn_clrRefPts = QPushButton('Clear')
+        self.btn_clrRefPts.setStyleSheet("""font-size: 10px;""")
+        self.btn_clrRefPts.setFixedSize(QSize(40, 14))
+        self.btn_clrRefPts.clicked.connect(self.deleteAllMpRef)
+
+        self.btn_undoBasePts = QPushButton()
+        self.btn_undoBasePts.setFixedSize(QSize(14, 14))
+        self.btn_undoBasePts.setIconSize(QSize(13, 13))
+        self.btn_undoBasePts.setToolTip('Undo Last Selection')
+        self.btn_undoBasePts.setIcon(qta.icon('fa.undo', color='#161c20'))
+        def fn():
+            if len(cfg.baseViewer.pts):
+                cfg.baseViewer.pts = cfg.baseViewer.pts[:-1]
+                cfg.baseViewer.applyMps()
+                cfg.baseViewer.drawSWIMwindow()
+                self.update_MA_list_widgets()
+                self.updateEnabledButtonsMA()
+        self.btn_undoBasePts.clicked.connect(fn)
+
+        self.btn_clrBasePts = QPushButton('Clear')
+        self.btn_clrBasePts.setStyleSheet("""font-size: 10px;""")
+        self.btn_clrBasePts.setFixedSize(QSize(40, 14))
+        self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
+
+
+        self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab,
+                                           ExpandingWidget(self), self.btn_undoBasePts, self.btn_clrBasePts)
+        self.baseNextColorWidget.setFixedHeight(16)
+        self.refNextColorWidget = HWidget(self.MA_refNextColorTxt, self.MA_refNextColorLab,
+                                          ExpandingWidget(self), self.btn_undoRefPts, self.btn_clrRefPts)
+        self.refNextColorWidget.setFixedHeight(16)
 
         self.automatic_label = QLabel()
         self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
@@ -662,24 +703,21 @@ class ProjectTab(QWidget):
         self.btnMAsettings.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnMAsettings.clicked.connect(fn)
 
-        def fn():
-            logger.info('')
-            try:
-                self.deleteAllMp()
-                # cfg.data.set_method('Auto-SWIM')
-                self.update_MA_list_widgets()
-                # self.set_method_label_text()
-                # self.tgl_alignMethod.setChecked(False)
-                cfg.refViewer.undrawSWIMwindows()
-                cfg.baseViewer.undrawSWIMwindows()
-            except:
-                print_exception()
-
-        self.btnClearMA = QPushButton('Reset')
-        self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnClearMA.setFixedSize(QSize(40, 18))
-        self.btnClearMA.clicked.connect(fn)
-        self.btnClearMA.setStyleSheet('font-size: 10px;')
+        # def fn():
+        #     logger.info('')
+        #     try:
+        #         self.deleteAllMp()
+        #         self.update_MA_list_widgets()
+        #         cfg.refViewer.undrawSWIMwindows()
+        #         cfg.baseViewer.undrawSWIMwindows()
+        #     except:
+        #         print_exception()
+        #
+        # self.btnClearMA = QPushButton('Reset')
+        # self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.btnClearMA.setFixedSize(QSize(40, 18))
+        # self.btnClearMA.clicked.connect(fn)
+        # self.btnClearMA.setStyleSheet('font-size: 10px;')
 
         # self.btnResetMA.clicked.connect(self.initNeuroglancer)
 
@@ -1233,7 +1271,7 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.slider_MA_SWIM_window)
         hbl.addWidget(self.MA_SWIM_window_le)
         hbl.addWidget(QLabel('px'))
-        hbl.addWidget(self.btnClearMA)
+        # hbl.addWidget(self.btnClearMA)
         w = QWidget()
         w.setLayout(hbl)
 
@@ -1300,7 +1338,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
-        self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3 required)", HWidget(self.Q_widget, ExpandingWidget(self)))
+        self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3)", HWidget(self.Q_widget, ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
         # self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
         self.gb_MA_settings.setLayout(self.fl_MA_settings)
@@ -1726,7 +1764,10 @@ class ProjectTab(QWidget):
         # self.MA_stackedWidget_gb.setLayout(vbl)
 
         self.MA_stageSplitter = QSplitter(Qt.Orientation.Vertical)
-        self.MA_stageSplitter.addWidget(self.MA_webengine_stage)
+        self.lab_stageViewer = QLabel('Generated Alignment')
+        self.lab_stageViewer.setStyleSheet("font-size: 10px; background-color: #222222; color: #ede9e8; font-weight: 600;")
+        self.lab_stageViewer.setFixedHeight(16)
+        self.MA_stageSplitter.addWidget(VWidget(self.MA_webengine_stage, self.lab_stageViewer))
         self.MA_stageSplitter.addWidget(VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls))
         self.MA_stageSplitter.setCollapsible(0, False)
         self.MA_stageSplitter.setCollapsible(1, False)
@@ -1779,12 +1820,10 @@ class ProjectTab(QWidget):
 
         # self.lab_ma_instructions = QLabel("'/' - toggle viewers. 'r' - refresh viewer. 'm' - exit manual align mode")
         self.lab_ma_instructions = QLabel("'/' - toggle viewers. 'm' - exit manual align mode")
-        self.lab_ma_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px;")
+        self.lab_ma_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;")
         self.lab_ma_instructions.setFixedHeight(16)
 
         def fn_radiobox():
-
-
 
             newcur = (0, 1)[self.rb_transforming.isChecked()]
 
@@ -3051,20 +3090,18 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_ref.update()
 
         n = 0
-        for i, key in enumerate(cfg.refViewer.pts.keys()):
-            p = cfg.refViewer.pts[key]
+        # for i, key in enumerate(cfg.refViewer.pts.keys()):
+        for i, p in enumerate(cfg.refViewer.pts):
             _, y, x = p.point.tolist()
             item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
             # item.setBackground(QColor(self.mp_colors[n]))
-            # item.setBackground(QColor(list(cfg.refViewer.pts)[i]))
-            item.setForeground(QColor(list(cfg.refViewer.pts)[i]))
+            item.setBackground(QColor(cfg.glob_colors[i]))
+            item.setForeground(QColor('#141414'))
             font = QFont()
             font.setBold(True)
             item.setFont(font)
             self.MA_ptsListWidget_ref.addItem(item)
             n += 1
-
-
 
     def update_MA_list_base(self):
         logger.info('')
@@ -3072,13 +3109,13 @@ class ProjectTab(QWidget):
         self.MA_ptsListWidget_base.clear()
         self.MA_ptsListWidget_base.update()
         n = 0
-        for i, key in enumerate(cfg.baseViewer.pts.keys()):
-            p = cfg.baseViewer.pts[key]
+        # for i, key in enumerate(cfg.baseViewer.pts.keys()):
+        for i, p in enumerate(cfg.baseViewer.pts):
             _, x, y = p.point.tolist()
             item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
             # item.setBackground(QColor(self.mp_colors[n]))
-            # item.setBackground(QColor(list(cfg.baseViewer.pts)[i]))
-            item.setForeground(QColor(list(cfg.baseViewer.pts)[i]))
+            item.setBackground(QColor(cfg.glob_colors[i]))
+            item.setForeground(QColor('#141414'))
             font = QFont()
             font.setBold(True)
             item.setFont(font)
@@ -3087,14 +3124,14 @@ class ProjectTab(QWidget):
 
     def update_MA_list_count_labels(self):
         if len(cfg.data.manpoints()['base']) < 3:
-            self.MA_baseNextColorTxt = QLabel('Next Color: ')
+            self.MA_baseNextColorTxt = QLabel('Next Color:   ')
             self.MA_baseNextColorLab.setStyleSheet(f'''background-color: {cfg.baseViewer.getNextUnusedColor()}''')
             self.MA_baseNextColorLab.show()
         else:
             self.MA_baseNextColorTxt.setText('Complete!')
             self.MA_baseNextColorLab.hide()
         if len(cfg.data.manpoints()['ref']) < 3:
-            self.MA_refNextColorTxt = QLabel('Next Color: ')
+            self.MA_refNextColorTxt = QLabel('Next Color:   ')
             self.MA_refNextColorLab.setStyleSheet(f'''background-color: {cfg.refViewer.getNextUnusedColor()}''')
             self.MA_refNextColorLab.show()
         else:
@@ -3164,6 +3201,18 @@ class ProjectTab(QWidget):
     #                                     f'Updating base viewer state. NEW cs_scale: {cfg.refViewer.state.cross_section_scale}')
     #                                 state.cross_section_scale = cfg.refViewer.state.cross_section_scale
     #                     cfg.baseViewer.set_state(state)
+
+
+    def completeDeleteMp(self):
+        logger.info('')
+        try:
+            self.deleteAllMp()
+            self.update_MA_list_widgets()
+            cfg.refViewer.undrawSWIMwindows()
+            cfg.baseViewer.undrawSWIMwindows()
+        except:
+            print_exception()
+
 
     def deleteMpRef(self):
         # todo .currentItem().background().color().name() is no longer viable
@@ -3280,10 +3329,10 @@ class ProjectTab(QWidget):
     def eventFilter(self, source, event):
         if event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_ref:
             menu = QMenu()
-            self.deleteMpRefAction = QAction('Delete')
-            self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
-            self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
-            menu.addAction(self.deleteMpRefAction)
+            # self.deleteMpRefAction = QAction('Delete')
+            # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
+            # self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
+            # menu.addAction(self.deleteMpRefAction)
             self.deleteAllMpRefAction = QAction('Delete All Ref Pts')
             self.deleteAllMpRefAction.setStatusTip('Delete all reference manual correspondence points')
             self.deleteAllMpRefAction.triggered.connect(self.deleteAllMpRef)
@@ -3297,10 +3346,10 @@ class ProjectTab(QWidget):
             return True
         elif event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_base:
             menu = QMenu()
-            self.deleteMpBaseAction = QAction('Delete')
-            self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
-            self.deleteMpBaseAction.triggered.connect(self.deleteMpBase)
-            menu.addAction(self.deleteMpBaseAction)
+            # self.deleteMpBaseAction = QAction('Delete')
+            # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
+            # self.deleteMpBaseAction.triggered.connect(self.deleteMpBase)
+            # menu.addAction(self.deleteMpBaseAction)
             self.deleteAllMpBaseAction = QAction('Delete All Base Pts')
             self.deleteAllMpBaseAction.setStatusTip('Delete all base manual correspondence points')
             self.deleteAllMpBaseAction.triggered.connect(self.deleteAllMpBase)

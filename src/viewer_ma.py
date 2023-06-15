@@ -68,7 +68,8 @@ class MAViewer(neuroglancer.Viewer):
         # self._settingZoom = True
         self._layer = cfg.data.zpos
         self.cs_scale = None
-        self.pts = OrderedDict()
+        # self.pts = OrderedDict()
+        self.pts = []
         self.colors = cfg.glob_colors
         self._crossSectionScale = 1
         self._mpCount = 0
@@ -579,15 +580,16 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def getNextUnusedColor(self):
-        for c in self.colors:
-            if c in self.pts:
-                continue
-            else:
-                return c
+        return self.colors[len(self.pts)]
+        # for c in self.colors:
+        #     if c in self.pts:
+        #         continue
+        #     else:
+        #         return c
 
 
-    def getUsedColors(self):
-        return set(self.pts.keys())
+    # def getUsedColors(self):
+    #     return set(self.pts.keys())
 
 
     def url(self):
@@ -643,7 +645,8 @@ class MAViewer(neuroglancer.Viewer):
         props = [self.colors[len(self.pts)],
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-        self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
+        # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
+        self.pts.append(ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props))
 
         self.applyMps()
         self.signals.ptsChanged.emit()
@@ -655,12 +658,16 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def applyMps(self):
+        '''Copy local manual points into project dictionary'''
         # self._blockStateChanged = True
         logger.info(f'Storing Manual Points for {self.role}...')
         cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
         pts = []
-        for key in self.pts.keys():
-            p = self.pts[key]
+        # for key in self.pts.keys():
+        #     p = self.pts[key]
+        #     _, x, y = p.point.tolist()
+        #     pts.append((x, y))
+        for p in self.pts:
             _, x, y = p.point.tolist()
             pts.append((x, y))
         cfg.data.set_manpoints(self.role, pts)
@@ -671,11 +678,10 @@ class MAViewer(neuroglancer.Viewer):
 
     def draw_point_annotations(self):
         logger.info('Drawing point annotations...')
-
-
-        logger.info(self.pts.values())
+        # logger.info(self.pts.values())
         try:
-            anns = list(self.pts.values())
+            # anns = list(self.pts.values())
+            anns = self.pts
             if anns:
                 with self.txn() as s:
                     s.layers['ann_points'].annotations = anns
@@ -855,11 +861,11 @@ class MAViewer(neuroglancer.Viewer):
 
         else:
             logger.info('Type: Match Region...')
-            pts = list(self.pts.items())
+            # pts = list(self.pts.items())
             try:
-                assert len(pts) == len(cfg.data.manpoints()[self.role])
+                assert len(self.pts) == len(cfg.data.manpoints()[self.role])
             except:
-                logger.warning(f'len(pts) = {len(pts)}, len(cfg.data.manpoints()[self.role]) = {len(cfg.data.manpoints()[self.role])}')
+                logger.warning(f'len(self.pts) = {len(self.pts)}, len(cfg.data.manpoints()[self.role]) = {len(cfg.data.manpoints()[self.role])}')
             annotations = []
             if cfg.data.current_method == 'manual-strict':
                 ww_x = 16
@@ -868,9 +874,11 @@ class MAViewer(neuroglancer.Viewer):
                 ww_x = ww_y = cfg.data.manual_swim_window_px()
 
 
-            for i, pt in enumerate(pts):
-                coords = pt[1].point
-                color = pt[0]
+            for i, pt in enumerate(self.pts):
+                # coords = pt[1].point
+                # color = pt[0]
+                coords = pt.point
+                color = cfg.glob_colors[i]
                 annotations.extend(
                     self.makeRect(
                         prefix=str(i),
@@ -930,7 +938,8 @@ class MAViewer(neuroglancer.Viewer):
     def restoreManAlignPts(self):
         logger.info('Restoring manual alignment points for role: %s' %self.role)
         # self.pts = {}
-        self.pts = OrderedDict()
+        # self.pts = OrderedDict()
+        self.pts = []
 
         # pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
         # pts_data = cfg.data.getmpFlat(l=self.index)[self.role]
@@ -941,7 +950,8 @@ class MAViewer(neuroglancer.Viewer):
             props = [self.colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                      getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-            self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
+            # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
+            self.pts.append(ng.PointAnnotation(id=str(p), point=p, props=props))
 
         # logger.critical(f'pts:\n{self.pts}')
 
