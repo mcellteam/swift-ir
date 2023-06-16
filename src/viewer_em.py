@@ -132,6 +132,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed_any(self):
+        self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
@@ -472,18 +473,6 @@ class EMViewer(AbstractEMViewer):
             voxel_offset=[.5, ] * 3,
         )
 
-        if getData('state,ng_layout') == 'xy':
-            # logger.info('Initializing zoom for xy plane ...')
-            # w = cfg.main_window.width()
-            # w = cfg.project_tab.webengine.width()
-            # h = cfg.project_tab.webengine.height()
-            # cfg.project_tab.ngCombinedHwidget.show()
-            # cfg.project_tab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            cfg.project_tab.webengine.show()
-            cfg.project_tab.w_ng_display.show()
-            # QApplication.processEvents()
-            # w = cfg.project_tab.webengine.width()
-            # h = cfg.main_window.globTabs.height() - 22
 
         with self.txn() as s:
             s.layout.type = nglayout
@@ -590,95 +579,95 @@ class EMViewer(AbstractEMViewer):
         self.set_contrast()
         # QApplication.processEvents()
         # self.initZoom()
-
-
-
-class EMViewerStage(AbstractEMViewer):
-
-    def __init__(self, **kwags):
-        super().__init__(**kwags)
-        self.type = 'EMViewerStage'
-        # self.shared_state.add_changed_callback(self.on_state_changed_any)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        self.initViewer()
-
-
-    def initViewer(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'\n\nInitializing {self.type} [{caller}]...\n')
-
-        self.coordinate_space = self.getCoordinateSpace()
-
-        self.get_tensors()
-        sf = cfg.data.scale_val(s=cfg.data.scale)
-        path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-
-        self.index = cfg.data.zpos
-        # dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
-        # self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
-
-        tensor = get_zarr_tensor(path).result()
-        self.LV = ng.LocalVolume(
-            volume_type='image',
-            # data=self.store,
-            data=tensor[:,:,:],
-            # data=self.store[self.index:self.index+1, :, :],
-            # dimensions=self.coordinate_space,
-            # dimensions=[1,1,1],
-            # dimensions=self.getCoordinateSpacePlanar(),
-            dimensions=self.coordinate_space,
-            voxel_offset=[0, 0, 0]
-        )
-        # _, tensor_y, tensor_x = cfg.tensor.shape
-        _, tensor_y, tensor_x = tensor.shape
-
-        logger.info(f'Tensor Shape: {tensor.shape}')
-
-        sf = cfg.data.scale_val(s=cfg.data.scale)
-        self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
-        with self.txn() as s:
-            '''other settings: 
-            s.displayDimensions = ["z", "y", "x"]
-            s.perspective_orientation
-            s.concurrent_downloads = 512'''
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')])
-            if getData('state,neutral_contrast'):
-                s.crossSectionBackgroundColor = '#808080'
-            else:
-                s.crossSectionBackgroundColor = '#222222'
-            # s.show_scale_bar = True
-            s.show_scale_bar = False
-            s.show_axis_lines = False
-            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
-            s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
-            # s.showSlices=False
-            # s.position = [0, tensor_y / 2, tensor_x / 2]
-            # s.position = [0.5, tensor_y / 2, tensor_x / 2]
-            # s.voxel_coordinates = [0, tensor_y / 2, tensor_x / 2] #Prev
-            # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
-
-        with self.config_state.txn() as s:
-            s.show_ui_controls = False
-            # s.show_ui_controls = True
-            s.show_panel_borders = False
-
-        self._crossSectionScale = self.state.cross_section_scale
-        self.initial_cs_scale = self.state.cross_section_scale
-
-        self.set_brightness()
-        self.set_contrast()
-        # self.set_zmag()
-        # self.set_zmag()
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
-        w = cfg.project_tab.MA_webengine_stage.geometry().width()
-        h = cfg.project_tab.MA_webengine_stage.geometry().height()
-        self.initZoom(w=w, h=h, adjust=1.02)
-
-        # logger.info('\n\n' + self.url() + '\n')
-
-
+#
+#
+#
+# class EMViewerStage(AbstractEMViewer):
+#
+#     def __init__(self, **kwags):
+#         super().__init__(**kwags)
+#         self.type = 'EMViewerStage'
+#         # self.shared_state.add_changed_callback(self.on_state_changed_any)
+#         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+#         self.initViewer()
+#
+#
+#     def initViewer(self):
+#         caller = inspect.stack()[1].function
+#         logger.info(f'\n\nInitializing {self.type} [{caller}]...\n')
+#
+#         self.coordinate_space = self.getCoordinateSpace()
+#
+#         self.get_tensors()
+#         sf = cfg.data.scale_val(s=cfg.data.scale)
+#         path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+#
+#         self.index = cfg.data.zpos
+#         # dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
+#         # self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
+#
+#         tensor = get_zarr_tensor(path).result()
+#         self.LV = ng.LocalVolume(
+#             volume_type='image',
+#             # data=self.store,
+#             data=tensor[:,:,:],
+#             # data=self.store[self.index:self.index+1, :, :],
+#             # dimensions=self.coordinate_space,
+#             # dimensions=[1,1,1],
+#             # dimensions=self.getCoordinateSpacePlanar(),
+#             dimensions=self.coordinate_space,
+#             voxel_offset=[0, 0, 0]
+#         )
+#         # _, tensor_y, tensor_x = cfg.tensor.shape
+#         _, tensor_y, tensor_x = tensor.shape
+#
+#         logger.info(f'Tensor Shape: {tensor.shape}')
+#
+#         sf = cfg.data.scale_val(s=cfg.data.scale)
+#         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
+#         with self.txn() as s:
+#             '''other settings:
+#             s.displayDimensions = ["z", "y", "x"]
+#             s.perspective_orientation
+#             s.concurrent_downloads = 512'''
+#             s.gpu_memory_limit = -1
+#             s.system_memory_limit = -1
+#             s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')])
+#             if getData('state,neutral_contrast'):
+#                 s.crossSectionBackgroundColor = '#808080'
+#             else:
+#                 s.crossSectionBackgroundColor = '#222222'
+#             # s.show_scale_bar = True
+#             s.show_scale_bar = False
+#             s.show_axis_lines = False
+#             s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+#             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
+#             # s.showSlices=False
+#             # s.position = [0, tensor_y / 2, tensor_x / 2]
+#             # s.position = [0.5, tensor_y / 2, tensor_x / 2]
+#             # s.voxel_coordinates = [0, tensor_y / 2, tensor_x / 2] #Prev
+#             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
+#
+#         with self.config_state.txn() as s:
+#             s.show_ui_controls = False
+#             # s.show_ui_controls = True
+#             s.show_panel_borders = False
+#
+#         self._crossSectionScale = self.state.cross_section_scale
+#         self.initial_cs_scale = self.state.cross_section_scale
+#
+#         self.set_brightness()
+#         self.set_contrast()
+#         # self.set_zmag()
+#         # self.set_zmag()
+#         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+#         w = cfg.project_tab.MA_webengine_stage.geometry().width()
+#         h = cfg.project_tab.MA_webengine_stage.geometry().height()
+#         self.initZoom(w=w, h=h, adjust=1.02)
+#
+#         # logger.info('\n\n' + self.url() + '\n')
+#
+#
 
 
 
