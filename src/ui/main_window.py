@@ -1067,6 +1067,8 @@ class MainWindow(QMainWindow):
         end = cfg.data.zpos + 1
         cfg.nProcessDone = 0
         cfg.nProcessSteps = 1
+        if quick_swim:
+            cfg.ignore_pbar = True
         self.align(
             scale=cfg.data.scale,
             start=start,
@@ -1083,6 +1085,7 @@ class MainWindow(QMainWindow):
 
         # 0614-
         if quick_swim:
+            cfg.ignore_pbar = False
             self.updateCorrSignalsDrawer()
             self.updateEnabledButtons()
             self.enableAllTabs()
@@ -1168,7 +1171,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False):
+    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False, show_pbar=True):
         # Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
@@ -1186,7 +1189,7 @@ class MainWindow(QMainWindow):
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(self._bbToggle.isChecked())
-        
+
         if cfg.ignore_pbar:
             self.showZeroedPbar(set_n_processes=False)
             self.setPbarText('Computing Affine...')

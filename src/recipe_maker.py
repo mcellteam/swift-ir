@@ -180,8 +180,8 @@ class align_recipe:
             elif self.option == 'refine_affine':
                 self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.init_afm, ID='Grid2x2', last=True)])
         elif self.cur_method == 'grid-custom':
-            ww_1x1 = self.alData['swim_settings']['grid-custom-px']
-            ww_2x2 = self.alData['swim_settings']['grid-custom-2x2-px']
+            ww_1x1 = self.alData['grid_custom_px_1x1']
+            ww_2x2 = self.alData['grid_custom_px_2x2']
             x1 = ((self.siz[0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
             x2 = self.siz[0] - x1
             y1 = ((self.siz[1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
@@ -193,15 +193,13 @@ class align_recipe:
                 pa[0,i] = int(p[0])
                 pa[1,i] = int(p[1])
             psta_2x2 = pa
-            ww_1x1 = self.defaults[self.scale]['swim-window-px']
-            ww_2x2 = self.alData['swim_settings']['grid-custom-2x2-px']
             self.add_ingredients([
                 align_ingredient(mode='SWIM-Grid', ww=ww_1x1, psta=psta_1, ID='Grid1x1'),
                 align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
                 align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-b', last=True),
             ])
         else:
-            ww = self.alData['manual_settings']['manual_swim_window_px']
+            ww = self.alData['manual_swim_window_px']
             man_pmov = np.array(self.alData['manpoints_mir']['base']).transpose()
             man_psta = np.array(self.alData['manpoints_mir']['ref']).transpose()
             if self.cur_method == 'manual-hint':
@@ -534,13 +532,13 @@ class align_ingredient:
                 args.add_flag(flag='-y', arg=str(self.offy))
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
-                if self.alData['swim_settings']['karg']:
+                if self.alData['karg']:
                     k_arg_name = '%s_%s_k_%d%s' % (filename, self.recipe.cur_method, i, extension)
-                    k_arg_path = os.path.join(self.alData['swim_settings']['karg_path'], k_arg_name)
+                    k_arg_path = os.path.join(self.recipe.scale_dir, 'tmp', k_arg_name)
                     args.add_flag(flag='-k', arg=k_arg_path)
-                if self.alData['swim_settings']['targ']:
+                if self.alData['targ']:
                     t_arg_name = '%s_%s_t_%d%s' % (filename, self.recipe.cur_method, i, extension)
-                    t_arg_path = os.path.join(self.alData['swim_settings']['targ_path'], t_arg_name)
+                    t_arg_path = os.path.join(self.recipe.scale_dir, 'tmp', t_arg_name)
                     args.add_flag(flag='-t', arg=t_arg_path)
             args.append(self.alData['swim_settings']['extra_kwargs'])
             args.append(self.recipe.im_sta_fn)

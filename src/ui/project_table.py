@@ -283,6 +283,7 @@ class ProjectTable(QWidget):
                 self.table.setCellWidget(row, col, tn)
             elif col == 6:
                 try:
+                    assert snr_4x[col - 6] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms0')
                     self.table.setCellWidget(row, col, tn)
                 except:
@@ -291,6 +292,7 @@ class ProjectTable(QWidget):
                     self.table.setCellWidget(row, col, tn)
             elif col == 7:
                 try:
+                    assert snr_4x[col - 6] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms1')
                     self.table.setCellWidget(row, col, tn)
                 except:
@@ -299,6 +301,7 @@ class ProjectTable(QWidget):
                     self.table.setCellWidget(row, col, tn)
             elif col == 8:
                 try:
+                    assert snr_4x[col - 6] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms2')
                     self.table.setCellWidget(row, col, tn)
                 except:
@@ -307,6 +310,7 @@ class ProjectTable(QWidget):
                     self.table.setCellWidget(row, col, tn)
             elif col == 9:
                 try:
+                    assert snr_4x[col - 6] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms3')
                     self.table.setCellWidget(row, col, tn)
                 except:
