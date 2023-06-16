@@ -958,6 +958,7 @@ class MainWindow(QMainWindow):
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
 
+                self._autosave()
                 # self.flicker.start()
 
         except:
@@ -4044,15 +4045,15 @@ class MainWindow(QMainWindow):
 
 
     def turnBlinkOnOff(self):
+        cfg.project_tab.blinkTimer.stop()
         if self._isProjectTab():
             setData('state,blink', not getData('state,blink'))
             logger.info(f"blink toggle: {getData('state,blink')}")
             # self.tell(f"Blink : {('OFF','ON')[getData('state,blink')]}")
-            cfg.pt.blinkToggle.setChecked(getData('state,blink'))
+            cfg.project_tab.blinkToggle.setChecked(getData('state,blink'))
             if getData('state,blink'):
-                cfg.pt.blinkTimer.start()
-            else:
-                cfg.pt.blinkTimer.stop()
+                cfg.project_tab.blinkTimer.start()
+
 
 
     def initMenu(self):
@@ -4319,7 +4320,7 @@ class MainWindow(QMainWindow):
 
         self.blinkAction = QAction('Turn Blink On/Off', self)
         self.blinkAction.triggered.connect(self.turnBlinkOnOff)
-        self.blinkAction.setShortcut('Ctrl+B')
+        # self.blinkAction.setShortcut('Ctrl+B')
         ngMenu.addAction(self.blinkAction)
 
 
@@ -4917,8 +4918,8 @@ class MainWindow(QMainWindow):
                         cfg.baseViewer.drawSWIMwindow()
                         cfg.refViewer.drawSWIMwindow()
 
-                cfg.pt.tn_ref.update()
-                cfg.pt.tn_tra.update()
+                cfg.project_tab.tn_ref.update()
+                cfg.project_tab.tn_tra.update()
                 self.tell(f'SWIM Window set to: {str(val)}')
         self._swimWindowControl.selectionChanged.connect(fn)
         self._swimWindowControl.returnPressed.connect(fn)
