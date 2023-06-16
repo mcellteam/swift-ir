@@ -1487,8 +1487,8 @@ class ProjectTab(QWidget):
         self.matches_tn3.setMaximumWidth(max_siz)
 
         self.gl_targ_karg = QGridLayout()
-        # self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
-        self.gl_targ_karg.setContentsMargins(0,0,0,0)
+        self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
+        # self.gl_targ_karg.setContentsMargins(0,0,0,0)
         self.gl_targ_karg.setSpacing(4)
         self.gl_targ_karg.setAlignment(Qt.AlignCenter)
         self.gl_targ_karg.addWidget(self.matches_tn0, 0, 0)
