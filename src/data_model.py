@@ -947,8 +947,9 @@ class DataModel:
 
                 # layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
                 if 'manual_settings' in layer['alignment'].keys():
-                    layer['alignment']['manual_swim_window_px'] = layer['alignment']['manual_settings']['manual_swim_window_px']
-                    layer['alignment'].pop('manual_settings', None)
+                    if 'manual_swim_window_px' in layer['alignment']['manual_settings'].keys():
+                        layer['alignment']['manual_swim_window_px'] = layer['alignment']['manual_settings']['manual_swim_window_px']
+                        layer['alignment'].pop('manual_settings', None)
 
 
                 if 'grid-custom-px' in layer['alignment']['swim_settings'].keys():
