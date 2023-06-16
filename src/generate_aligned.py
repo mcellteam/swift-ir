@@ -47,10 +47,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         path = os.path.split(os.path.realpath(__file__))[0]
         job_script = os.path.join(path, job_script)
 
-        print_example_cafms(dm)
-        logger.info('Setting Stack CAFM...')
-
-
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
@@ -68,6 +64,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         #     save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
         # except:
         #     print_exception()
+
+        print_example_cafms(dm)
 
         if end == None:
             end = len(dm)
