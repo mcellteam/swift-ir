@@ -1469,10 +1469,10 @@ class ProjectTab(QWidget):
         self.matches_tn1.updateStylesheet()
         self.matches_tn2.updateStylesheet()
         self.matches_tn3.updateStylesheet()
-        # self.matches_tn0.setStyleSheet(f"border: 2px solid #{clr['ul']};")
-        # self.matches_tn1.setStyleSheet(f"border: 2px solid #{clr['ur']};")
-        # self.matches_tn2.setStyleSheet(f"border: 2px solid #{clr['ll']};")
-        # self.matches_tn3.setStyleSheet(f"border: 2px solid #{clr['lr']};")
+        # self.matches_tn0.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[0]};")
+        # self.matches_tn1.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[1]};")
+        # self.matches_tn2.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[2]};")
+        # self.matches_tn3.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[3]};")
         self.cutout_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
 
         max_siz = 80
