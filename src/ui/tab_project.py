@@ -372,7 +372,7 @@ class ProjectTab(QWidget):
         # self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode")
         self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode\n")
         self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;")
-        # self.lab_main_instructions.setFixedHeight(16)
+        self.lab_main_instructions.setFixedHeight(16)
 
         self.ng_messages = VWidget(self.warning_cafm)
         self.ng_messages.layout.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
