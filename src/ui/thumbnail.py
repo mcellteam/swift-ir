@@ -109,7 +109,8 @@ class ThumbnailFast(QLabel):
         # self.setPixmap(QPixmap(self.path))
         self.border_color = '#000000'
         self.showBorder = False
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._noImage = 0
 
     def mousePressEvent(self, e):
@@ -277,6 +278,9 @@ class ThumbnailFast(QLabel):
                 self.set_no_image()
                 pass
         super().paintEvent(event)
+
+    def sizeHint(self):
+        return QSize(100,100)
 
 
 @cache

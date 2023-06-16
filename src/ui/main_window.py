@@ -2124,7 +2124,8 @@ class MainWindow(QMainWindow):
 
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info('>>>> fn_scales_combobox [caller: %s] >>>>' % caller)
+        if DEV:
+            logger.info('')
         if caller in ('main', 'scale_down', 'scale_up'):
             index = self._changeScaleCombo.currentIndex()
             new_scale = cfg.data.scales()[index]
@@ -2162,7 +2163,6 @@ class MainWindow(QMainWindow):
                         cfg.project_tab.refreshTab()
 
 
-        logger.info('<<<< fn_scales_combobox [caller: %s] <<<<' % caller)
 
     def export_afms(self):
         if cfg.project_tab:
