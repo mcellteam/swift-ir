@@ -19,6 +19,7 @@ tabsById = {}
 main_window = None
 mw = None
 project_tab = None
+pt = None
 zarr_tab = None
 thumb = None
 emViewer = None

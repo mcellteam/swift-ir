@@ -207,6 +207,7 @@ class MAViewer(neuroglancer.Viewer):
         # state = copy.deepcopy(self.state)
         # state.position[0] = self.index
         # self.set_state(state)
+        self.restoreManAlignPts() #Todo study this. Temp fix.
 
         self.drawSWIMwindow()
 

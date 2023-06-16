@@ -3133,9 +3133,6 @@ class ProjectTab(QWidget):
             self.MA_refNextColorLab.hide()
 
 
-
-
-
     # def update_MA_ref_state(self):
     #     caller = inspect.stack()[1].function
     #     # curframe = inspect.currentframe()
@@ -3230,6 +3227,7 @@ class ProjectTab(QWidget):
         # cfg.baseViewer.drawSWIMwindow()
 
         self.update_MA_list_widgets()
+
         self.updateEnabledButtonsMA()
         # self.updateNeuroglancer()
 
@@ -3294,6 +3292,7 @@ class ProjectTab(QWidget):
         cfg.refViewer.undrawSWIMwindows()
         cfg.baseViewer.undrawSWIMwindows()
         self.updateEnabledButtonsMA()
+        self.update_MA_list_widgets()
 
         logger.info('<<<< deleteAllMp')
 

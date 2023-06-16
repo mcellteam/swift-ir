@@ -562,10 +562,12 @@ class CorrSignalThumbnail(QLabel):
         # self.setStyleSheet("""border: 0px solid #ffe135;""")
         self.setContentsMargins(0,0,0,0)
         self._noImage = 0
-        self.map_border_color = {'ms0': cfg.glob_colors[0],
-                                 'ms1': cfg.glob_colors[1],
-                                 'ms2': cfg.glob_colors[2],
-                                 'ms3': cfg.glob_colors[3]}
+        self.map_border_color = {
+            'ms0': cfg.glob_colors[0],
+             'ms1': cfg.glob_colors[1],
+             'ms2': cfg.glob_colors[2],
+             'ms3': cfg.glob_colors[3]
+        }
 
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
