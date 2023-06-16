@@ -1376,9 +1376,11 @@ class ProjectTab(QWidget):
                                            "form an affine.")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 2px;")
         self.MA_points_tab = VWidget(
-            VWidgetself.lab_region_selection,
+            self.lab_region_selection,
+            self.lab_region_selection2,
             self.MA_sbw,
-            self.gb_MA_manual_controls)
+            self.gb_MA_manual_controls
+        )
 
         self.rb_targ = QRadioButton('Reference')
         self.rb_targ.setChecked(True)
