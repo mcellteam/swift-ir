@@ -897,10 +897,10 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         dt = datetime.datetime.now()
 
-        cfg.pt.tn_ms0.set_no_image()
-        cfg.pt.tn_ms1.set_no_image()
-        cfg.pt.tn_ms2.set_no_image()
-        cfg.pt.tn_ms3.set_no_image()
+        cfg.project_tab.tn_ms0.set_no_image()
+        cfg.project_tab.tn_ms1.set_no_image()
+        cfg.project_tab.tn_ms2.set_no_image()
+        cfg.project_tab.tn_ms3.set_no_image()
 
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
