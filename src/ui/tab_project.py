@@ -814,8 +814,8 @@ class ProjectTab(QWidget):
             # self.slider_MA_SWIM_window.setValue(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
             # self.MA_SWIM_window_le.setText(str(cfg.DEFAULT_MANUAL_SWIM_WINDOW))
 
-            self.spinbox_whitening.setValue(float(self._data['data']['defaults']['signal-whitening']))
-            self.spinbox_swim_iters.setValue(int(self._data['data']['defaults']['swim-iterations']))
+            self.spinbox_whitening.setValue(float(cfg.data['data']['defaults']['signal-whitening']))
+            self.spinbox_swim_iters.setValue(int(cfg.data['data']['defaults']['swim-iterations']))
             setData('state,stage_viewer,show_overlay_message', True)
 
             self.updateAnnotations()
