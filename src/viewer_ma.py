@@ -125,6 +125,10 @@ class MAViewer(neuroglancer.Viewer):
         #     logger.info(f"# layers: {len(self.state.layers['SWIM'].annotations)}")
         #     logger.info(s.layers['SWIM'].annotations)
 
+    def updateUIControls(self):
+        with self.config_state.txn() as s:
+            s.show_ui_controls = getData('state,show_ng_controls')
+
 
     def n_annotations(self):
         return len(self.state.layers['ann_points'].annotations)
@@ -1014,6 +1018,7 @@ class MAViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
+            QApplication.processEvents()
             # _, tensor_y, tensor_x = cfg.tensor.shape
             _, tensor_y, tensor_x = self.store.shape
             if self.role == 'ref':

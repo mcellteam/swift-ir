@@ -760,7 +760,8 @@ class DataModel:
         self._data.setdefault('system', {})
         self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
         self._data['state']['stage_viewer'].setdefault('show_overlay_message', True)
-        self._data['state'].setdefault('manual_mode', False)
+        # self._data['state'].setdefault('manual_mode', False)
+        self._data['state'].setdefault('manual_mode', True)
         # self._data['state'].setdefault('mode', 'stack-xy')
         # self._data['state'].setdefault('previous_mode', 'stack-xy')
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE

@@ -240,7 +240,7 @@ class MainWindow(QMainWindow):
         if getData('state,manual_mode'):
             cfg.baseViewer.set_layer(cfg.data.zpos)
             cfg.refViewer.set_layer(cfg.data.get_ref_index()) #0611+
-            cfg.stageViewer.set_layer(cfg.data.zpos)
+            # cfg.stageViewer.set_layer(cfg.data.zpos) #stageViewer
         else:
             cfg.emViewer.set_layer(cfg.data.zpos)
 
@@ -390,8 +390,11 @@ class MainWindow(QMainWindow):
                 #     print(f'object parent : {self.focusWidget().parent()}')
 
                 #CriticalMechanism
-                if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
-                    self.setFocus()
+                try:
+                    if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
+                        self.setFocus()
+                except:
+                    pass
         self.printFocusTimer.timeout.connect(fn)
         self.printFocusTimer.start()
 
@@ -1754,7 +1757,7 @@ class MainWindow(QMainWindow):
 
             if cfg.data.skipped():
                 # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                txt = '\n'.join(textwrap.wrap('X EXCLUDED - %s' % cfg.data.name_base(), width=35))
+                txt = '\n'.join(textwrap.wrap('EXCLUDED: %s' % cfg.data.name_base(), width=35))
                 cfg.project_tab._overlayLab.setText(txt)
                 cfg.project_tab._overlayLab.show()
                 # cfg.project_tab._overlayRect.show()
@@ -2312,7 +2315,8 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # self.tell("Loading project '%s'..." %cfg.data.dest())
 
-        setData('state,manual_mode', False)
+        # setData('state,manual_mode', False)
+        setData('state,manual_mode', True)
         # setData('state,mode', 'comparison')
         # setData('state,ng_layout', 'xy')
 
@@ -3007,6 +3011,7 @@ class MainWindow(QMainWindow):
 
     def _callbk_skipChanged(self, state: int):  # 'state' is connected to skipped toggle
         '''Callback Function for Skip Image Toggle'''
+        #Todo refactor
         caller = inspect.stack()[1].function
         # if caller == 'main':
         if self._isProjectTab():
@@ -3022,8 +3027,14 @@ class MainWindow(QMainWindow):
                         return
                 if skip_state:
                     self.tell("Exclude: %s" % cfg.data.name_base())
+                    cfg.project_tab.tn_ref.hide()
+                    cfg.project_tab.tn_ref_lab.hide()
+                    cfg.project_tab.tn_tra_overlay.show()
                 else:
                     self.tell("Include: %s" % cfg.data.name_base())
+                    cfg.project_tab.tn_ref.show()
+                    cfg.project_tab.tn_ref_lab.show()
+                    cfg.project_tab.tn_tra_overlay.hide()
                 cfg.data.link_reference_sections()
                 # if getData('state,blink'):
                 self.dataUpdateWidgets()
@@ -3069,16 +3080,15 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if cfg.data.is_aligned_and_generated():
 
-                try:
-                    del cfg.emViewer
-                except:
-                    pass
+                # try:
+                #     del cfg.emViewer
+                # except:
+                #     pass
 
-                logger.info('\n\nEnter Manual Alignment Mode >>>>\n')
-                self.tell('Entering manual align mode')
+                self.tell('Entering manual align mode...')
 
                 # cfg.project_tab.w_section_label_header.show()
-                cfg.project_tab.w_ng_extended_toolbar.hide()
+                # cfg.project_tab.w_ng_extended_toolbar.hide()
                 cfg.pt.ma_radioboxes.show()
 
                 setData('state,previous_mode', getData('state,mode'))
@@ -3095,14 +3105,17 @@ class MainWindow(QMainWindow):
                 # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
                 cfg.pt.setRbTransforming()
 
-                # self.MAsyncTimer = QTimer()
-                # self.MAsyncTimer.setInterval(500)
-                # self.MAsyncTimer.timeout.connect(self.onMAsyncTimer)
-                # self.MAsyncTimer.start()
-                # self.uiUpdateTimer.setInterval(250)
+                cfg.project_tab._tabs.setCurrentIndex(0)
+                cfg.project_tab.sw_main_ng.setCurrentIndex(0)
 
-                cfg.project_tab.onEnterManualMode()
-                self.hud.done()
+                cfg.project_tab.initNeuroglancer()
+                cfg.baseViewer.set_layer(cfg.data.zpos)
+                cfg.refViewer.set_layer(cfg.data.get_ref_index())
+
+                cfg.project_tab.bookmark_tab = cfg.project_tab._tabs.currentIndex()
+
+                cfg.project_tab.update()
+                cfg.main_window.hud.done()
 
             else:
                 self.warn('Alignment must be generated before using Manual Point Alignment method.')
@@ -3123,7 +3136,7 @@ class MainWindow(QMainWindow):
             # self.MAsyncTimer.stop()
 
             # cfg.project_tab.w_section_label_header.hide()
-            cfg.project_tab.w_ng_extended_toolbar.show()
+            # cfg.project_tab.w_ng_extended_toolbar.show()
             cfg.pt.tn_ref.update()
             cfg.pt.tn_tra.update()
             cfg.pt.ma_radioboxes.hide()
@@ -3158,9 +3171,7 @@ class MainWindow(QMainWindow):
             cfg.project_tab.MA_ptsListWidget_ref.clear()
             cfg.project_tab.MA_ptsListWidget_base.clear()
             cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
-            cfg.project_tab.MA_splitter.hide()
-            # cfg.project_tab.w_ng_display_ext.show()
-            cfg.project_tab.w_ng_display.show()
+            cfg.project_tab.sw_main_ng.setCurrentIndex(1)
             cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
             QApplication.processEvents()  # Critical! - enables viewer to acquire appropriate zoom
 
@@ -3834,15 +3845,11 @@ class MainWindow(QMainWindow):
             # self.dataUpdateResults()
             # cfg.project_tab.updateLabelsHeader()
 
-            try:
-                if not getData('state,manual_mode'):
-                    cfg.project_tab.showSecondaryNgTools()
-                else:
-                    cfg.project_tab.hideSecondaryNgTools()
-            except:
-                print_exception()
 
             cfg.emViewer = cfg.project_tab.viewer
+            cfg.refViewer = cfg.project_tab.refViewer
+            cfg.baseViewer = cfg.project_tab.baseViewer
+
             # cfg.project_tab.initNeuroglancer()
 
             # try:
@@ -6770,9 +6777,10 @@ class MainWindow(QMainWindow):
         #         or ((event.key() == 16777249) and (event.nativeModifiers() == 264)):
         #     self.enterExitManAlignMode()
         #     return
-        if (event.key() == 77) and (event.nativeModifiers() == 1048840):
-            self.enterExitManAlignMode()
-            return
+        #Prev...
+        # if (event.key() == 77) and (event.nativeModifiers() == 1048840):
+        #     self.enterExitManAlignMode()
+        #     return
         # if (event.key() == 16777249) and (event.nativeModifiers() == 264):
         #     self.enterExitManAlignMode()
         #     return
@@ -6784,13 +6792,13 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
-        if event.key() == Qt.Key_F11:
+        elif event.key() == Qt.Key_F11:
             if self.isMaximized():
                 self.showNormal()
             else:
                 self.showMaximized()
 
-        if event.key() == Qt.Key_Slash:
+        elif event.key() == Qt.Key_Slash:
             logger.info('Qt.Key_Slash was pressed')
             if self._isProjectTab():
                 if getData('state,manual_mode'):
@@ -6806,9 +6814,9 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.pt.setRbReference()
 
-        self.keyPressed.emit(event)
+        
 
-        if event.key() == Qt.Key_R:
+        elif event.key() == Qt.Key_R:
             self.refreshTab()
 
         elif event.key() == Qt.Key_Space:
@@ -6846,6 +6854,12 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key_A:
             self.alignAll()
 
+        elif event.key() == Qt.Key_B:
+            self.turnBlinkOnOff()
+
+        elif event.key() == Qt.Key_V:
+            self.enterExitManAlignMode()
+
         elif event.key() == Qt.Key_Up:
             if self._isProjectTab():
                 self.incrementZoomIn()
@@ -6853,6 +6867,14 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key_Down:
             if self._isProjectTab():
                 self.incrementZoomOut()
+
+        elif event.key() == Qt.Key_Tab:
+            logger.info('')
+            if self._isProjectTab():
+                new_index = (cfg.project_tab._tabs.currentIndex()+1)%4
+                logger.info(f'new index: {new_index}')
+                cfg.project_tab._tabs.setCurrentIndex(new_index)
+
 
 
 
@@ -6874,16 +6896,16 @@ class MainWindow(QMainWindow):
         elif event.key() == 16777236:
             self.layer_right()
 
+        # self.keyPressed.emit(event)
 
 
 
 
-
-
-    def on_key(self, event):
-        print('event received @ MainWindow')
-        if event.key() == Qt.Key_Space:
-            logger.info('Space key was pressed')
+    #
+    # def on_key(self, event):
+    #     print('event received @ MainWindow')
+    #     if event.key() == Qt.Key_Space:
+    #         logger.info('Space key was pressed')
 
         # if event.key() == Qt.Key_M:
         #     logger.info('M key was pressed')
