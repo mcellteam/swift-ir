@@ -170,7 +170,7 @@ class ProjectTab(QWidget):
                 self.refreshTab()
             else:
                 cfg.emViewer.set_layer(cfg.data.zpos)
-                self.webengine.reload()
+                # self.webengine.reload()
             self.tn_ref.update() #Ensure
             self.tn_tra.update() #Ensure
 
@@ -301,9 +301,9 @@ class ProjectTab(QWidget):
             self.update_MA_list_widgets()
             self.dataUpdateMA()
 
-            self.MA_webengine_ref.reload()
-            self.MA_webengine_base.reload()
-            self.MA_webengine_stage.reload()
+            # self.MA_webengine_ref.reload()
+            # self.MA_webengine_base.reload()
+            # self.MA_webengine_stage.reload()
         else:
             # if caller != '_onGlobTabChange':
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
@@ -315,7 +315,7 @@ class ProjectTab(QWidget):
             cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
-            self.webengine.reload()
+            # self.webengine.reload()
 
         QApplication.processEvents()
         self.setZmag(10)
