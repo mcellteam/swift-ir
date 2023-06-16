@@ -28,6 +28,7 @@ from src.mp_queue import TaskQueue
 from src.data_model import DataModel
 from src.background_worker import BackgroundWorker
 import src.config as cfg
+from src.ui.timer import Timer
 
 
 __all__ = ['ComputeAffines']
@@ -39,6 +40,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
     caller = inspect.stack()[1].function
     scale_val = get_scale_val(scale)
     # logger.info(f'use_gui = {use_gui}')
+
+    timer = Timer()
+    timer.start()
 
     logger.info(f'>>>> ComputeAffines [{caller}] >>>>')
 
@@ -68,7 +72,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             DEV_MODE = cfg.DEV_MODE
             TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
             # dm = cfg.data
-
 
         if end == None:
             end = dm.count
@@ -111,7 +114,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         temp_file = os.path.join(dm.dest(), "temp_project_file.json")
         with open(temp_file, 'w') as f:
             f.write(dm.to_json())
-
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
 
@@ -225,7 +227,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     al_stack_old[layer_index]['skipped'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-
         # for i, layer in enumerate(cfg.data.get_iter(scale)):
         #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
         #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
@@ -253,7 +254,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             print_exception()
 
         write_run_to_file(dm)
-
 
         # if cfg.ignore_pbar:
         #     cfg.nProcessDone +=1

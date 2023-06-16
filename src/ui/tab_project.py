@@ -1442,6 +1442,7 @@ class ProjectTab(QWidget):
         self.radioboxes_targ_karg = HWidget(self.rb_targ, self.rb_karg)
 
         self.targ_karg_back_btn = QPushButton('Back')
+        self.targ_karg_back_btn.setStyleSheet("font-size: 9px;")
         self.targ_karg_back_btn.setFixedSize(QSize(40, 18))
         # def fn():
         #     self.MA_stackedWidget
@@ -1456,6 +1457,10 @@ class ProjectTab(QWidget):
         self.matches_tn1 = ThumbnailFast(self)
         self.matches_tn2 = ThumbnailFast(self)
         self.matches_tn3 = ThumbnailFast(self)
+        self.matches_tn0.setMinimumSize(QSize(32,32))
+        self.matches_tn1.setMinimumSize(QSize(32,32))
+        self.matches_tn2.setMinimumSize(QSize(32,32))
+        self.matches_tn3.setMinimumSize(QSize(32,32))
         self.matches_tn0.border_color = clr[0]
         self.matches_tn1.border_color = clr[1]
         self.matches_tn2.border_color = clr[2]
@@ -1482,8 +1487,9 @@ class ProjectTab(QWidget):
         self.matches_tn3.setMaximumWidth(max_siz)
 
         self.gl_targ_karg = QGridLayout()
-        self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
-        self.gl_targ_karg.setSpacing(2)
+        # self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
+        self.gl_targ_karg.setContentsMargins(0,0,0,0)
+        self.gl_targ_karg.setSpacing(4)
         self.gl_targ_karg.setAlignment(Qt.AlignCenter)
         self.gl_targ_karg.addWidget(self.matches_tn0, 0, 0)
         self.gl_targ_karg.addWidget(self.matches_tn1, 0, 1)
@@ -1519,18 +1525,22 @@ class ProjectTab(QWidget):
             self.te_logs.verticalScrollBar().setValue(0)
 
         self.logs_top_btn = QPushButton('Top')
+        self.logs_top_btn.setStyleSheet("font-size: 9px;")
         self.logs_top_btn.setFixedSize(QSize(40, 18))
         self.logs_top_btn.clicked.connect(top)
 
         self.logs_bottom_btn = QPushButton('Bottom')
+        self.logs_bottom_btn.setStyleSheet("font-size: 9px;")
         self.logs_bottom_btn.setFixedSize(QSize(40, 18))
         self.logs_bottom_btn.clicked.connect(bottom)
 
         self.logs_refresh_btn = QPushButton('Refresh')
+        self.logs_refresh_btn.setStyleSheet("font-size: 9px;")
         self.logs_refresh_btn.setFixedSize(QSize(40, 18))
         self.logs_refresh_btn.clicked.connect(self.refreshLogs)
 
         self.logs_back_btn = QPushButton('Back')
+        self.logs_back_btn.setStyleSheet("font-size: 9px;")
         self.logs_back_btn.setFixedSize(QSize(40, 18))
         self.logs_back_btn.clicked.connect(self.updateMethodSelectWidget)
 
@@ -1551,6 +1561,7 @@ class ProjectTab(QWidget):
             self.te_logs.setText('No Log To Show.')
 
         self.logs_delete_all_btn = QPushButton('Delete Logs')
+        self.logs_delete_all_btn.setStyleSheet("font-size: 9px;")
         self.logs_delete_all_btn.setFixedSize(QSize(80, 18))
         self.logs_delete_all_btn.clicked.connect(fn)
 
@@ -1561,9 +1572,12 @@ class ProjectTab(QWidget):
         self.lab_logs = BoldLabel('Logs:')
 
         self.rb_logs_swim_args = QRadioButton('SWIM Args')
+        self.rb_logs_swim_args.setStyleSheet("font-size: 9px;")
         self.rb_logs_swim_args.setChecked(True)
         self.rb_logs_swim_out = QRadioButton('SWIM Out')
+        self.rb_logs_swim_out.setStyleSheet("font-size: 9px;")
         self.rb_logs_mir_args = QRadioButton('MIR')
+        self.rb_logs_mir_args.setStyleSheet("font-size: 9px;")
         self.rb_logs = QButtonGroup(self)
         self.rb_logs.setExclusive(True)
         self.rb_logs.addButton(self.rb_logs_swim_args)
@@ -1573,6 +1587,7 @@ class ProjectTab(QWidget):
         # self.btns_logs = QWidget()
 
         self.sw_logs = QStackedWidget()
+        self.sw_logs.setStyleSheet("font-size: 9px;")
         self.lab_ing = QLabel('Ingredients:')
 
         self.btn_ing0 = QPushButton('1')
