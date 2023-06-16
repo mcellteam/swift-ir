@@ -554,6 +554,8 @@ class OpenProject(QWidget):
                 cfg.mw.warn("New Project Canceled.")
                 self.showMainUI()
                 return
+
+            filename.replace(' ','_')
             if not filename.endswith('.swiftir'):
                 filename += ".swiftir"
             if os.path.exists(filename):

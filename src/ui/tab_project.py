@@ -799,31 +799,27 @@ class ProjectTab(QWidget):
         self.MA_actions = HWidget(self.combo_MA_actions, btn_go)
 
         def fn():
-            cfg.main_window.hud('Defaults Manual Alignment Settings Restored for Section %d' % cfg.data.zpos)
-            cfg.data.set_whitening(cfg.DEFAULT_WHITENING)
+            cfg.main_window.hud('Defaults restored for section %d' % cfg.data.zpos)
             cfg.data.set_auto_swim_windows_to_default(current_only=True)
             cfg.data.set_manual_swim_windows_to_default(current_only=True)
-            cfg.data.set_swim_iterations_glob(val=cfg.DEFAULT_SWIM_ITERATIONS)
-            setData('state,stage_viewer,show_overlay_message', True)
+
 
             self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_1x1_custom_px()[0]))
-            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
             self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
 
-            self.slider_MA_SWIM_window.setValue(int(cfg.data.manual_swim_window_px()))
-            self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
+            self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
+            self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
 
-            self.spinbox_whitening.setValue(float(cfg.data.whitening()))
+            # No GUI control for this, yet
+            # self.slider_MA_SWIM_window.setValue(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+            # self.MA_SWIM_window_le.setText(str(cfg.DEFAULT_MANUAL_SWIM_WINDOW))
 
-            self.spinbox_swim_iters.setValue(int(cfg.data.swim_iterations()))
-            # cfg.mw.setZpos()
+            self.spinbox_whitening.setValue(float(self._data['data']['defaults']['signal-whitening']))
+            self.spinbox_swim_iters.setValue(int(self._data['data']['defaults']['swim-iterations']))
+            setData('state,stage_viewer,show_overlay_message', True)
 
-            if cfg.data['state']['stackwidget_ng_toggle']:
-                cfg.baseViewer.drawSWIMwindow()
-            else:
-                cfg.refViewer.drawSWIMwindow()
-            self.tn_ref.update()
-            self.tn_tra.update()
+            self.updateAnnotations()
+
 
         self.MA_settings_defaults_button = QPushButton('Use Defaults')
         self.MA_settings_defaults_button.setStyleSheet("font-size: 10px;")
@@ -1095,7 +1091,7 @@ class ProjectTab(QWidget):
 
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
 
-                # self.slider_AS_2x2_SWIM_window.setMaximum(int(val / 2 + 0.5))
+                # self.slider_AS_2x2_SWIM_window.setMaximum(int(val / 2 + 0.5))2
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
 
                 if self.rb_reference.isChecked():
@@ -1136,16 +1132,8 @@ class ProjectTab(QWidget):
                 cfg.data.set_swim_2x2_custom_px(val)
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
-                if self.rb_reference.isChecked():
-                    cfg.refViewer.drawSWIMwindow()
-                else:
-                    cfg.baseViewer.drawSWIMwindow()
-                # cfg.refViewer.drawSWIMwindow()
-                # cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
-
-                self.tn_ref.update()
-                self.tn_tra.update()
+                self.updateAnnotations()
 
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_2x2_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1169,7 +1157,7 @@ class ProjectTab(QWidget):
             caller = inspect.stack()[1].function
             if caller == 'main':
                 logger.info('caller: %s' % caller)
-                cfg.data.set_manual_whitening(float(self.spinbox_whitening.value()))  # Refactor
+                # cfg.data.set_manual_whitening(float(self.spinbox_whitening.value()))  # Refactor
                 cfg.data.set_whitening(float(self.spinbox_whitening.value()))  # Refactor
 
         self.spinbox_whitening = QDoubleSpinBox(self)
@@ -2246,13 +2234,6 @@ class ProjectTab(QWidget):
         # vbl.setSpacing(0)
         # self.tn_widget.setLayout(vbl)
 
-
-
-
-
-
-
-
         ########################
         self.tn_ms0 = CorrSignalThumbnail(self, name='ms0')
         self.tn_ms1 = CorrSignalThumbnail(self, name='ms1')
@@ -2673,6 +2654,15 @@ class ProjectTab(QWidget):
             self.btn_view_targ_karg.setText('View SWIM Matches')
 
 
+    def updateAnnotations(self):
+        logger.info('Updating annotations...')
+
+        if self.rb_transforming.isChecked():
+            cfg.baseViewer.drawSWIMwindow()
+        else:
+            cfg.refViewer.drawSWIMwindow()
+        self.tn_ref.update()
+        self.tn_tra.update()
 
     def hideSecondaryNgTools(self):
         # for i in range(0, 14):

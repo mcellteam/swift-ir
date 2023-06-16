@@ -54,8 +54,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
-
-
+        cfg.data.propagate_swim_1x1_custom_px(start=start, end=end)
+        cfg.data.propagate_swim_2x2_custom_px(start=start, end=end)
+        cfg.data.propagate_manual_swim_window_px(start=start, end=end)
 
         od = os.path.join(dm.dest(), scale, 'img_aligned')
         if renew_od:
