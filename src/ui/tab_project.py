@@ -783,21 +783,6 @@ class ProjectTab(QWidget):
         self.btn_view_logs.setFixedSize(QSize(28, 18))
         self.btn_view_logs.clicked.connect(fn)
 
-        self.btn_view_targ_karg = QPushButton('View Match Regions')
-
-        def btn_view_targ_karg_fn():
-            if self.MA_stackedWidget.currentIndex() == 3:
-                self.updateMethodSelectWidget(soft=False)
-                self.btn_view_targ_karg.setText('View Match Regions')
-            else:
-                self.setTargKargPixmaps()
-                self.MA_stackedWidget.setCurrentIndex(3)
-                self.btn_view_targ_karg.setText('Hide Match Regions')
-
-        self.btn_view_targ_karg.clicked.connect(btn_view_targ_karg_fn)
-        self.btn_view_targ_karg.setStyleSheet('font-size: 10px;')
-        self.btn_view_targ_karg.setFixedSize(QSize(110, 18))
-
         # sec_label = QLabel('Section:')
         # sec_label.setStyleSheet('font-size: 11px;')
         # w_change_section = HWidget(sec_label, self.btnPrevSection, self.btnNextSection)
@@ -807,7 +792,6 @@ class ProjectTab(QWidget):
         #     HWidget(
         #         ExpandingWidget(self),
         #         self.btn_view_logs,
-        #         self.btn_view_targ_karg,
         #         self.MA_settings_defaults_button,
         #         # self.btnRunSwimMA,
         #         self.btnMAsettings,
@@ -837,7 +821,6 @@ class ProjectTab(QWidget):
         #     VWidget(
         #         HWidget(
         #             ExpandingWidget(self),
-        #             self.btn_view_targ_karg,
         #             self.btn_view_logs,
         #             # self.MA_settings_defaults_button,
         #             # self.btnRunSwimMA,
@@ -853,7 +836,6 @@ class ProjectTab(QWidget):
         #     ), alignment=Qt.AlignCenter)
         hbl.addWidget(HWidget(
                     ExpandingWidget(self),
-                    self.btn_view_targ_karg,
                     self.btn_view_logs,
                     # self.MA_settings_defaults_button,
                     # self.btnRunSwimMA,
@@ -1253,7 +1235,6 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("SWIM 2x2 Window", self.AS_2x2_swim_window_widget)
         self.fl_MA_settings.addRow("Signal Whitening", self.spinbox_whitening)
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
-        # self.fl_MA_settings.addRow("Keep SWIM Cutouts", HWidget(self.cb_keep_swim_templates, self.btn_view_targ_karg))
         # self.fl_MA_settings.addRow("Keep SWIM Cutouts", self.cb_keep_swim_templates)
         self.fl_MA_settings.addRow("Select SWIM Regions\n(at least 3)", HWidget(self.Q_widget, ExpandingWidget(self)))
         # self.fl_MA_settings.addWidget(self.Q_widget)
@@ -1369,112 +1350,6 @@ class ProjectTab(QWidget):
             self.gb_MA_manual_controls
         )
 
-        self.rb_targ = QRadioButton('Reference')
-        self.rb_targ.setChecked(True)
-        self.rb_karg = QRadioButton('Transforming')
-        self.rb_bg_MA_targ_karg = QButtonGroup(self)
-        self.rb_bg_MA_targ_karg.setExclusive(True)
-        self.rb_bg_MA_targ_karg.addButton(self.rb_targ)
-        self.rb_bg_MA_targ_karg.addButton(self.rb_karg)
-
-        self.toggleTargKarg = QPushButton('Toggle')
-        self.toggleTargKarg.setStyleSheet("font-size: 9px;")
-        self.toggleTargKarg.setFixedSize(60,16)
-        def fn_toggleTargKarg():
-            if self.rb_targ.isChecked():
-                self.rb_karg.setChecked(True)
-            elif self.rb_karg.isChecked():
-                self.rb_targ.setChecked(True)
-            self.setTargKargPixmaps()
-
-        self.toggleTargKarg.clicked.connect(fn_toggleTargKarg)
-
-
-
-        def setTargKargPixmaps_fn():
-            caller = inspect.stack()[1].function
-            # if caller in ('main', 'fn_toggleTargKarg'):
-            self.setTargKargPixmaps()
-
-        self.rb_bg_MA_targ_karg.buttonClicked.connect(setTargKargPixmaps_fn)
-        self.radioboxes_targ_karg = HWidget(self.rb_targ, self.rb_karg)
-
-        self.targ_karg_back_btn = QPushButton('Back')
-        self.targ_karg_back_btn.setStyleSheet("font-size: 9px;")
-        self.targ_karg_back_btn.setFixedSize(QSize(40, 18))
-        # def fn():
-        #     self.MA_stackedWidget
-
-        # self.targ_karg_back_btn.clicked.connect(lambda: self.MA_stackedWidget.setCurrentIndex(1))
-        self.targ_karg_back_btn.clicked.connect(self.updateMethodSelectWidget)
-
-        # clr = ['#efb435', '#e50000', '#137e6d', '#75bbfd']
-        clr = cfg.glob_colors
-
-        self.matches_tn0 = ThumbnailFast(self)
-        self.matches_tn1 = ThumbnailFast(self)
-        self.matches_tn2 = ThumbnailFast(self)
-        self.matches_tn3 = ThumbnailFast(self)
-        self.matches_tn0.setMinimumSize(QSize(32,32))
-        self.matches_tn1.setMinimumSize(QSize(32,32))
-        self.matches_tn2.setMinimumSize(QSize(32,32))
-        self.matches_tn3.setMinimumSize(QSize(32,32))
-        self.matches_tn0.border_color = clr[0]
-        self.matches_tn1.border_color = clr[1]
-        self.matches_tn2.border_color = clr[2]
-        self.matches_tn3.border_color = clr[3]
-        self.matches_tn0.updateStylesheet()
-        self.matches_tn1.updateStylesheet()
-        self.matches_tn2.updateStylesheet()
-        self.matches_tn3.updateStylesheet()
-        # self.matches_tn0.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[0]};")
-        # self.matches_tn1.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[1]};")
-        # self.matches_tn2.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[2]};")
-        # self.matches_tn3.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[3]};")
-        self.cutout_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
-
-        max_siz = 80
-        self.matches_tn0.setMaximumHeight(max_siz)
-        self.matches_tn1.setMaximumHeight(max_siz)
-        self.matches_tn2.setMaximumHeight(max_siz)
-        self.matches_tn3.setMaximumHeight(max_siz)
-
-        self.matches_tn0.setMaximumWidth(max_siz)
-        self.matches_tn1.setMaximumWidth(max_siz)
-        self.matches_tn2.setMaximumWidth(max_siz)
-        self.matches_tn3.setMaximumWidth(max_siz)
-
-        self.gl_targ_karg = QGridLayout()
-        self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
-        # self.gl_targ_karg.setContentsMargins(0,0,0,0)
-        self.gl_targ_karg.setSpacing(4)
-        self.gl_targ_karg.setAlignment(Qt.AlignCenter)
-        self.gl_targ_karg.addWidget(self.matches_tn0, 0, 0)
-        self.gl_targ_karg.addWidget(self.matches_tn1, 0, 1)
-        self.gl_targ_karg.addWidget(self.matches_tn2, 1, 0)
-        self.gl_targ_karg.addWidget(self.matches_tn3, 1, 1)
-        # self.gl_targ_karg.addWidget(self.targ_karg_back_btn, 2, 0, 1, 2)
-        self.targ_karg_widget = QWidget()
-        self.targ_karg_widget.setLayout(self.gl_targ_karg)
-
-        hbl = HBL()
-        hbl.addWidget(self.targ_karg_back_btn, alignment=Qt.AlignRight)
-        hbl.addWidget(self.radioboxes_targ_karg, alignment=Qt.AlignLeft)
-        hbl.addWidget(self.toggleTargKarg, alignment=Qt.AlignLeft)
-        hbl.addWidget(ExpandingWidget(self))
-
-        w = QWidget()
-        w.setLayout(hbl)
-
-        self.swim_cutout_panel = QWidget()
-        vbl = VBL()
-        vbl.setSpacing(0)
-        vbl.setContentsMargins(2, 2, 2, 2)
-        self.lab_swim_matches = BoldLabel('Match Regions:')
-        vbl.addWidget(self.lab_swim_matches, alignment=Qt.AlignLeft | Qt.AlignTop)
-        vbl.addWidget(self.targ_karg_widget)
-        vbl.addWidget(w, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        self.swim_cutout_panel.setLayout(vbl)
 
         def bottom():
             self.te_logs.verticalScrollBar().setValue(self.te_logs.verticalScrollBar().maximum())
@@ -1694,7 +1569,7 @@ class ProjectTab(QWidget):
         # self.MA_stackedWidget.addWidget(VWidget(self.gb_MA_settings, self.Q_widget))
         self.MA_stackedWidget.addWidget(self.gb_MA_settings)
         self.MA_stackedWidget.addWidget(self.MA_points_tab)
-        self.MA_stackedWidget.addWidget(self.swim_cutout_panel)
+        self.MA_stackedWidget.addWidget(QLabel())
         # self.MA_stackedWidget.addWidget(self.logs_widget)
         self.MA_stackedWidget.addWidget(self.sw_logs)
         self.MA_stackedWidget.addWidget(self.settings_widget)
@@ -2165,6 +2040,9 @@ class ProjectTab(QWidget):
         # self.tn_ref = ThumbnailFast(self, name='reference', extra='reference')
         # self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
 
+
+
+        '''REFERENCE AND TRANSFORMING THUMBNAILS WITH PAINTED SWIM REGION ANNOTATIONS'''
         # self.tn_tra_overlay = QLabel('Excluded')
         self.tn_tra_overlay = QLabel('X')
         self.tn_tra_overlay.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2372,6 +2250,117 @@ class ProjectTab(QWidget):
         # h_header.setSectionResizeMode(0, QHeaderView.Stretch)
         # h_header.setSectionResizeMode(1, QHeaderView.Stretch)
 
+        '''TARG KARG TOOL WINDOW #targ #karg'''
+
+        self.rb_targ = QRadioButton('Reference')
+        self.rb_targ.setChecked(True)
+        self.rb_karg = QRadioButton('Transforming')
+        self.rb_bg_MA_targ_karg = QButtonGroup(self)
+        self.rb_bg_MA_targ_karg.setExclusive(True)
+        self.rb_bg_MA_targ_karg.addButton(self.rb_targ)
+        self.rb_bg_MA_targ_karg.addButton(self.rb_karg)
+
+        self.toggleTargKarg = QPushButton('Toggle')
+        self.toggleTargKarg.setStyleSheet("font-size: 9px;")
+        self.toggleTargKarg.setFixedSize(60,16)
+        def fn_toggleTargKarg():
+            if self.rb_targ.isChecked():
+                self.rb_karg.setChecked(True)
+            elif self.rb_karg.isChecked():
+                self.rb_targ.setChecked(True)
+            self.setTargKargPixmaps()
+
+        self.toggleTargKarg.clicked.connect(fn_toggleTargKarg)
+
+        def setTargKargPixmaps_fn():
+            caller = inspect.stack()[1].function
+            # if caller in ('main', 'fn_toggleTargKarg'):
+            self.setTargKargPixmaps()
+
+        self.rb_bg_MA_targ_karg.buttonClicked.connect(setTargKargPixmaps_fn)
+        self.radioboxes_targ_karg = HWidget(self.rb_targ, self.rb_karg)
+
+        self.targ_karg_back_btn = QPushButton('Back')
+        self.targ_karg_back_btn.setStyleSheet("font-size: 9px;")
+        self.targ_karg_back_btn.setFixedSize(QSize(40, 18))
+        # def fn():
+        #     self.MA_stackedWidget
+
+        # self.targ_karg_back_btn.clicked.connect(lambda: self.MA_stackedWidget.setCurrentIndex(1))
+        self.targ_karg_back_btn.clicked.connect(self.updateMethodSelectWidget)
+
+        # clr = ['#efb435', '#e50000', '#137e6d', '#75bbfd']
+        clr = cfg.glob_colors
+
+        self.matches_tn0 = ThumbnailFast(self)
+        self.matches_tn1 = ThumbnailFast(self)
+        self.matches_tn2 = ThumbnailFast(self)
+        self.matches_tn3 = ThumbnailFast(self)
+        self.matches_tn0.setMinimumSize(QSize(32,32))
+        self.matches_tn1.setMinimumSize(QSize(32,32))
+        self.matches_tn2.setMinimumSize(QSize(32,32))
+        self.matches_tn3.setMinimumSize(QSize(32,32))
+        self.matches_tn0.border_color = clr[0]
+        self.matches_tn1.border_color = clr[1]
+        self.matches_tn2.border_color = clr[2]
+        self.matches_tn3.border_color = clr[3]
+        self.matches_tn0.updateStylesheet()
+        self.matches_tn1.updateStylesheet()
+        self.matches_tn2.updateStylesheet()
+        self.matches_tn3.updateStylesheet()
+        # self.matches_tn0.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[0]};")
+        # self.matches_tn1.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[1]};")
+        # self.matches_tn2.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[2]};")
+        # self.matches_tn3.setStyleSheet(f"border: 2px solid #{cfg.glob_colors[3]};")
+        self.cutout_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
+
+        max_siz = 80
+        self.matches_tn0.setMaximumHeight(max_siz)
+        self.matches_tn1.setMaximumHeight(max_siz)
+        self.matches_tn2.setMaximumHeight(max_siz)
+        self.matches_tn3.setMaximumHeight(max_siz)
+
+        self.matches_tn0.setMaximumWidth(max_siz)
+        self.matches_tn1.setMaximumWidth(max_siz)
+        self.matches_tn2.setMaximumWidth(max_siz)
+        self.matches_tn3.setMaximumWidth(max_siz)
+
+        self.gl_targ_karg = QGridLayout()
+        self.gl_targ_karg.setContentsMargins(2, 2, 2, 2)
+        # self.gl_targ_karg.setContentsMargins(0,0,0,0)
+        self.gl_targ_karg.setSpacing(4)
+        self.gl_targ_karg.setAlignment(Qt.AlignCenter)
+        self.gl_targ_karg.addWidget(self.matches_tn0, 0, 0)
+        self.gl_targ_karg.addWidget(self.matches_tn1, 0, 1)
+        self.gl_targ_karg.addWidget(self.matches_tn2, 1, 0)
+        self.gl_targ_karg.addWidget(self.matches_tn3, 1, 1)
+        # self.gl_targ_karg.addWidget(self.targ_karg_back_btn, 2, 0, 1, 2)
+        self.targ_karg_widget = QWidget()
+        self.targ_karg_widget.setLayout(self.gl_targ_karg)
+
+        hbl = HBL()
+        hbl.addWidget(self.targ_karg_back_btn, alignment=Qt.AlignRight)
+        hbl.addWidget(self.radioboxes_targ_karg, alignment=Qt.AlignLeft)
+        hbl.addWidget(self.toggleTargKarg, alignment=Qt.AlignLeft)
+        hbl.addWidget(ExpandingWidget(self))
+
+        w = QWidget()
+        w.setLayout(hbl)
+
+        self.swim_cutout_panel = QWidget()
+        vbl = VBL()
+        vbl.setSpacing(0)
+        vbl.setContentsMargins(2, 2, 2, 2)
+        self.lab_swim_matches = BoldLabel('Match Regions:')
+        vbl.addWidget(self.lab_swim_matches, alignment=Qt.AlignLeft | Qt.AlignTop)
+        vbl.addWidget(self.targ_karg_widget)
+        vbl.addWidget(w, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.swim_cutout_panel.setLayout(vbl)
+
+
+
+
+        '''MATCH SIGNALS TOOL WINDOW #signalls'''
         self.labMatchSignals = QLabel('Match Signals')
         self.labMatchSignals.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #161c20;')
 
@@ -2686,10 +2675,6 @@ class ProjectTab(QWidget):
         if soft and (cur_index in (3, 4)):
             self.MA_stackedWidget.setCurrentIndex(cur_index)
 
-        if self.MA_stackedWidget.currentIndex() == 3:
-            self.btn_view_targ_karg.setText('Hide SWIM Matches')
-        else:
-            self.btn_view_targ_karg.setText('View SWIM Matches')
 
 
     def updateAnnotations(self):
