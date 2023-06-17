@@ -25,7 +25,7 @@ import zarr
 import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, Slot, QUrl
+from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
 from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
@@ -177,7 +177,12 @@ class MAViewer(neuroglancer.Viewer):
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
         if DEV:
-            logger.info(f'[{self.role}] caller: {caller_name()}')
+            logger.critical(f'[{self.role}] [{caller_name()}]\n'
+                            f'Setting layer:\n'
+                            f'zpos={zpos},\n'
+                            f'self.index before={self.index},\n'
+                            f'voxel coords before={self.state.voxel_coordinates}\n'
+                            f'...')
 
         prev_index = self.index
 
@@ -215,8 +220,6 @@ class MAViewer(neuroglancer.Viewer):
 
         self.drawSWIMwindow()
 
-
-
         self._blockStateChanged = False
 
         # else:
@@ -239,9 +242,10 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def initViewer(self, obey_zpos=True):
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
         self._blockStateChanged = False
-        logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller}]...')
+        if DEV:
+            logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller_name()}]...')
         # if cfg.data.skipped():
         #     return
 
@@ -284,7 +288,7 @@ class MAViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
             s.show_scale_bar = False
             s.show_axis_lines = False
-            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+            s.show_default_annotations = getData('state,show_yellow_frame')
             # s.position=[self.index, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
@@ -297,6 +301,7 @@ class MAViewer(neuroglancer.Viewer):
             # s.voxel_coordinates = [self.index, y / 2, x / 2]
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             # s.layers['ann'].annotations = list(self.pts.values())
+            # s.crossSectionScale = 2
 
         self.actions.add('add_manpoint', self.add_matchpoint)
         self.actions.add('swim', self.swim)
@@ -320,8 +325,9 @@ class MAViewer(neuroglancer.Viewer):
         # self.set_brightness()
         # self.set_contrast()
         # QApplication.processEvents()
-        self.initZoom()
         # self.drawSWIMwindow()
+
+        self.initZoom()
 
     # def blickCallback(self):
     #     logger.info('')
@@ -387,6 +393,7 @@ class MAViewer(neuroglancer.Viewer):
         self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         if self._blockStateChanged:
             return
+
         caller = inspect.stack()[1].function
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
         # logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale}, self.state.cross_section_scale = {self.state.cross_section_scale}')
@@ -408,12 +415,15 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
+        if getData('state,viewer_mode') != 'series_with_regions':
+            return
+
         if self.role == 'base':
-            if cfg.data['state']['stackwidget_ng_toggle'] != 1:
+            if cfg.data['state']['tra_ref_toggle'] != 1:
                 return
 
         elif self.role == 'ref':
-            if cfg.data['state']['stackwidget_ng_toggle'] != 0:
+            if cfg.data['state']['tra_ref_toggle'] != 0:
                 return
 
         self._blockStateChanged = True
@@ -717,7 +727,7 @@ class MAViewer(neuroglancer.Viewer):
     # @functools.cache
     def drawSWIMwindow(self):
         if DEV:
-            logger.info(f'caller: {caller_name()}')
+            logger.info(f'[{self.role}] [{caller_name()}]')
 
         if self._dontDraw:
             return
@@ -1012,28 +1022,30 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
     def initZoom(self):
+        logger.critical(f'[{self.role}] [{caller_name()}] Calling initZoom...')
         adjust = 1.12
+        logger.critical(f'[{self.role}] self.cs_scale = {self.cs_scale}')
         if self.cs_scale:
-            logger.critical(f'Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
+            logger.critical(f'[{self.role}] Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
-            QApplication.processEvents()
+            # QApplication.processEvents()
             # _, tensor_y, tensor_x = cfg.tensor.shape
             _, tensor_y, tensor_x = self.store.shape
-            if self.role == 'ref':
-                widget_w = cfg.project_tab.MA_webengine_ref.geometry().width()
-                widget_h = cfg.project_tab.MA_webengine_ref.geometry().height()
+            widget_w = cfg.mw.geometry().width()
+            widget_h = cfg.mw.geometry().height() / 2
 
-            else:
-                widget_w = cfg.project_tab.MA_webengine_base.geometry().width()
-                widget_h = cfg.project_tab.MA_webengine_base.geometry().height()
+
+            logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
 
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
+
+            logger.critical(f'Setting crossSectionScale to max of {scale_h} and {scale_w}...')
 
             # logger.critical(f'________{self.role}________')
             # logger.critical(f'widget_w       = {widget_w}')

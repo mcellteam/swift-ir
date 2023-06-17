@@ -758,14 +758,12 @@ class DataModel:
         self._data.setdefault('rendering', {})
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
-        self._data['state']['stage_viewer'].setdefault('show_yellow_frame', True)
-        self._data['state']['stage_viewer'].setdefault('show_overlay_message', True)
+        self._data['state'].pop('stage_viewer', None)
+        self._data['state'].setdefault('viewer_mode', 'series_as_stack') # series_as_stack, or series_with_regions
         # self._data['state'].setdefault('manual_mode', False)
         self._data['state'].setdefault('manual_mode', True)
         # self._data['state'].setdefault('mode', 'stack-xy')
-        # self._data['state'].setdefault('previous_mode', 'stack-xy')
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
-        self._data['state']['previous_mode'] = 'stack-xy'
         self._data['state']['has_cal_grid'] = False
         self._data['state'].setdefault('ng_layout', 'xy')
         self._data['state'].setdefault('blink', False)
@@ -800,7 +798,7 @@ class DataModel:
         # self._data['state'].setdefault('auto_update_ui', True)
         # self._data['state'].setdefault('MA_focus', None) #0 = L, 1 = R
         # self._data['state'].setdefault('focus_widget', None)
-        self._data['state']['stackwidget_ng_toggle'] = 1
+        self._data['state']['tra_ref_toggle'] = 1 #Force
         self._data['state']['tool_windows'].setdefault('python',False)
         self._data['state']['tool_windows'].setdefault('notes',False)
         self._data['state']['tool_windows'].setdefault('hud',False)
