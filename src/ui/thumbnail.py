@@ -113,6 +113,8 @@ class ThumbnailFast(QLabel):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._noImage = 0
 
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
     def mousePressEvent(self, e):
         x, y, = (
             e.x(),

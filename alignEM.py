@@ -267,10 +267,10 @@ def main():
     # configure_project_paths()
 
     app = QApplication([])
-    # app.setStyle('Fusion')
+    app.setStyle('Fusion')
     # app.setStyle('Breeze')
     # app.setStyle('Oxygen')
-    app.setStyle('Windows')
+    # app.setStyle('Windows')
     cfg.main_window = cfg.mw = MainWindow()
 
     logger.info('Showing AlignEM-SWiFT...')

@@ -83,10 +83,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._blinkState = 0
         self._blockStateChanged = False
 
-        #todo use this to prevent signal surplus from sending to MainWindow
-        self.uiTimer = QTimer()
-        self.uiTimer.setSingleShot(True)
-        self.uiTimer.setInterval(300)
+        # #todo use this to prevent signal surplus from sending to MainWindow
+        # self.uiTimer = QTimer()
+        # self.uiTimer.setSingleShot(True)
+        # self.uiTimer.setInterval(300)
 
 
     def __repr__(self):
@@ -150,6 +150,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         #     return
         if self._blockStateChanged:
             return
+
+        if getData('state,viewer_mode') != 'series_as_stack':
+            return
+
         if getData('state,blink'):
             return
         if self._settingZoom:
@@ -280,6 +284,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def set_layer(self, index=None):
         self._blockStateChanged = True
+        if DEV:
+            logger.critical(f'[{caller_name()}] Setting layer:\n'
+                            f'index arg={index}\n'
+                            f'voxel coords before={self.state.voxel_coordinates}\n'
+                            f'...')
         if index == None:
             index = cfg.data.zpos
         try:
@@ -501,17 +510,20 @@ class EMViewer(AbstractEMViewer):
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        w = cfg.project_tab.webengine.width()
-        # h = max(cfg.main_window.globTabs.height() - 20, 520)
-        h = cfg.main_window.globTabs.height() - 24
-        if getData('state,show_ng_controls'):
-            extra_space = 54
-        else:
-            extra_space = 26
+        if cfg.project_tab:
+            w = cfg.project_tab.webengine.width()
+            # h = max(cfg.main_window.globTabs.height() - 20, 520)
+            h = cfg.main_window.globTabs.height() - 24
+            if getData('state,show_ng_controls'):
+                extra_space = 54
+            else:
+                extra_space = 26
 
-        # h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space) #Prev
-        # h = cfg.main_window.globTabs.height() - 20
-        self.initZoom(w=w, h=h, adjust=1.20)
+            # h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space) #Prev
+            # h = cfg.main_window.globTabs.height() - 20
+            self.initZoom(w=w, h=h, adjust=1.20)
+        else:
+            logger.warning('cfg.project_tab DOES NOT EXIST')
 
 
 
@@ -553,7 +565,7 @@ class EMViewer(AbstractEMViewer):
             s.system_memory_limit = -1
             s.show_scale_bar = False
             s.show_axis_lines = False
-            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+            s.show_default_annotations = getData('state,show_yellow_frame')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
@@ -640,7 +652,7 @@ class EMViewer(AbstractEMViewer):
 #             # s.show_scale_bar = True
 #             s.show_scale_bar = False
 #             s.show_axis_lines = False
-#             s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+#             s.show_default_annotations = getData('state,show_yellow_frame')
 #             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
 #             # s.showSlices=False
 #             # s.position = [0, tensor_y / 2, tensor_x / 2]

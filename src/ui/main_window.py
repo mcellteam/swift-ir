@@ -183,6 +183,11 @@ class MainWindow(QMainWindow):
 
         self.setFocusPolicy(Qt.StrongFocus)
 
+        QApplication.processEvents()
+        # self.resizeThings()
+
+        # QTimer.singleShot(1000, self.resizeThings)
+
 
 
         # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
@@ -198,6 +203,24 @@ class MainWindow(QMainWindow):
                 logger.critical("widget has gained keyboard focus")
             elif event.type() == QEvent.FocusOut:
                 logger.critical("widget has lost keyboard focus")
+
+
+    def resizeThings(self):
+        logger.critical('Resizing things...')
+        if self._isProjectTab():
+            logger.critical('Resizing things, isProjectTab...')
+
+            h = cfg.pt.hsplitter_tn_ng.height()
+            # cfg.project_tab.ms_widget.setMinimumWidth(int(h / 4))
+            # cfg.project_tab.ms_widget.resize(int(h / 4), h)
+
+            ms_h = int(h/4 + 0.5)
+            tn_h = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
+
+            sizes = cfg.project_tab.hsplitter_tn_ng.sizes()
+            sizes[0] = ms_h
+            sizes[1] = tn_h
+            cfg.project_tab.hsplitter_tn_ng.setSizes(sizes)
 
 
 
@@ -270,7 +293,7 @@ class MainWindow(QMainWindow):
         # cp.setX(cp.x() - 200)
         qr.moveCenter(cp)
         self.move(qr.topLeft())
-        # self.showMaximized()
+        # self.showMaximized(
 
     def cleanupAfterCancel(self):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
@@ -1380,26 +1403,7 @@ class MainWindow(QMainWindow):
         self.startRangeInput.setEnabled(True)
         self.endRangeInput.setEnabled(True)
         
-    
-    def updateManualAlignModeButton(self):
-        if getData('state,manual_mode'):
-            tip = 'Exit Manual Align Mode'
-            self._btn_manualAlign.setText(f" Exit Manual Mode {hotkey('M')}")
-            self.alignMatchPointAction.setText(f"Exit Manual Align Mode {hotkey('M')} ")
-            self._btn_manualAlign.setLayoutDirection(Qt.LeftToRight)
-            self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-left', color='#ede9e8'))
-            self._btn_manualAlign.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
 
-        else:
-            tip = 'Enter Manual Align Mode'
-            self._btn_manualAlign.setText(f"Manual Align {hotkey('M')} ")
-            self.alignMatchPointAction.setText(f"Align Manually {hotkey('M')} ")
-            self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
-            self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-            self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-            self._btn_manualAlign.setStyleSheet("""""")
-            
     
     def updateEnabledButtons(self) -> None:
         '''This method does three things:
@@ -1445,8 +1449,6 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             # if cfg.data.is_aligned_and_generated(): #0202-
 
-            self.updateManualAlignModeButton()
-
             if cfg.data.is_aligned():
                 # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
                 # self._btn_alignAll.setText('Align All')
@@ -1455,7 +1457,6 @@ class MainWindow(QMainWindow):
                 self._btn_alignForward.setEnabled(True)
                 self._btn_alignRange.setEnabled(True)
                 self._btn_regenerate.setEnabled(True)
-                self._btn_manualAlign.setEnabled(True)
                 self.startRangeInput.setEnabled(True)
                 self.endRangeInput.setEnabled(True)
 
@@ -1465,7 +1466,6 @@ class MainWindow(QMainWindow):
                 self._btn_alignForward.setEnabled(False)
                 self._btn_alignRange.setEnabled(False)
                 self._btn_regenerate.setEnabled(False)
-                self._btn_manualAlign.setEnabled(False)
                 self.startRangeInput.setEnabled(False)
                 self.endRangeInput.setEnabled(False)
             else:
@@ -1474,7 +1474,6 @@ class MainWindow(QMainWindow):
                 self._btn_alignForward.setEnabled(False)
                 self._btn_alignRange.setEnabled(False)
                 self._btn_regenerate.setEnabled(False)
-                self._btn_manualAlign.setEnabled(False)
                 self.startRangeInput.setEnabled(False)
                 self.endRangeInput.setEnabled(False)
             if len(cfg.data.scales()) == 1:
@@ -1486,7 +1485,6 @@ class MainWindow(QMainWindow):
                     self._btn_alignForward.setEnabled(True)
                     self._btn_alignRange.setEnabled(True)
                     self._btn_regenerate.setEnabled(True)
-                    self._btn_manualAlign.setEnabled(True)
                     self.startRangeInput.setEnabled(True)
                     self.endRangeInput.setEnabled(True)
                 else:
@@ -1495,7 +1493,6 @@ class MainWindow(QMainWindow):
                     self._btn_alignForward.setEnabled(False)
                     self._btn_alignRange.setEnabled(False)
                     self._btn_regenerate.setEnabled(False)
-                    self._btn_manualAlign.setEnabled(False)
                     self.startRangeInput.setEnabled(False)
                     self.endRangeInput.setEnabled(False)
             else:
@@ -1517,7 +1514,6 @@ class MainWindow(QMainWindow):
             self._btn_alignForward.setEnabled(False)
             self._btn_alignRange.setEnabled(False)
             self._btn_regenerate.setEnabled(False)
-            self._btn_manualAlign.setEnabled(False)
             self.startRangeInput.setEnabled(False)
             self.endRangeInput.setEnabled(False)
 
@@ -2054,7 +2050,7 @@ class MainWindow(QMainWindow):
                 return
             self.setZpos(requested)
             # cfg.project_tab.updateNeuroglancer() #0214+ intentionally putting this before dataUpdateWidgets (!)
-            self.enter_man_mode()
+            self.view_raw_series_with_regions()
 
     @Slot()
     def jump_to_layer(self) -> None:
@@ -2129,7 +2125,9 @@ class MainWindow(QMainWindow):
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
         if DEV:
-            logger.info('')
+            logger.info(f'caller: {caller}')
+            logger.info(f'self._working: {self._working}')
+            logger.info(f'self._scales_combobox_switch: {self._scales_combobox_switch}')
         if caller in ('main', 'scale_down', 'scale_up'):
             index = self._changeScaleCombo.currentIndex()
             new_scale = cfg.data.scales()[index]
@@ -2141,8 +2139,10 @@ class MainWindow(QMainWindow):
                     # self.reload_scales_combobox()
                     # logger.warning('Exit manual alignment mode before changing scales')
                     # self.warn('Exit manual alignment mode before changing scales!')
-                    self.exit_man_mode()
-                    QApplication.processEvents()
+                    # self.view_series_as_stack()
+                    cfg.project_tab.rb_stackView.isChecked()
+                    # QApplication.processEvents()
+
 
 
             if not self._working:
@@ -2165,6 +2165,7 @@ class MainWindow(QMainWindow):
                         # self.adjustSize()
                         # cfg.project_tab.adjustSize()
                         cfg.project_tab.refreshTab()
+                        
 
 
 
@@ -2308,80 +2309,49 @@ class MainWindow(QMainWindow):
         logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
         self.cbMonitor.setChecked(True) #Why?
 
+
+
         self.tell("Loading Project '%s'..." % cfg.data.dest())
 
         initLogFiles(cfg.data)
         self._dontReinit = True
-        caller = inspect.stack()[1].function
-        # self.tell("Loading project '%s'..." %cfg.data.dest())
 
         # setData('state,manual_mode', False)
-        setData('state,manual_mode', True)
-        # setData('state,mode', 'comparison')
-        # setData('state,ng_layout', 'xy')
-
-        setData('state,mode', 'stack-xy')
         setData('state,ng_layout', 'xy')
 
         cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
-
-
-
-        QApplication.processEvents()
 
         self.updateDtWidget()  # <.001s
 
         # cfg.data.set_defaults()  # 0.5357 -> 0.5438, ~.0081s
 
-        t_ng = time.time()
-        # cfg.project_tab.initNeuroglancer()  # dt = 0.543 -> dt = 0.587 = 0.044 ~ 1/20 second
-        self.update()
-
-        # cfg.project_tab.updateTreeWidget()  # TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
-
-        # self.tell('Updating UI...')
-        self.dataUpdateWidgets()  # 0.5878 -> 0.5887 ~.001s
-
-        # self._changeScaleCombo.setCurrentText(cfg.data.scale)
-        # self.spinbox_fps.setValue(czfg.DEFAULT_PLAYBACK_SPEED)
-        self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
+        # cfg.project_tab.updateTreeWidget()  #TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
-
-
-        # dt = 1.1032602787017822
+        self.dataUpdateWidgets()  # 0.5878 -> 0.5887 ~.001s
+        self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         self.reload_scales_combobox()  # fast
         self.updateEnabledButtons()
         self.updateMenus()
         self._resetSlidersAndJumpInput()  # fast
         self.setControlPanelData()  # Added 2023-04-23
-
         self.enableAllTabs()  # fast
         # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
-        # self._autosave()  # 0412+
-        # self._sectionSlider.setValue(int(len(cfg.data) / 2))
         self._dontReinit = False
-
         self.cpanel.show()
         self.sa_cpanel.show()
-        cfg.project_tab.showSecondaryNgTools()
 
         self.updateCorrSignalsDrawer()
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
-        # QApplication.processEvents()
-        # self.refreshTab()
 
-
-        QApplication.processEvents()
+        # cfg.project_tab.delayInitNeuroglancer()
         cfg.project_tab.initNeuroglancer()
-        # QApplication.processEvents()
-        # cfg.project_tab.initNeuroglancer()
+
         check_project_status()
-        # self.dw_monitor.show()
-        self.hud.done()
         self.cbMonitor.setChecked(True)
-        # dt = 1.1060302257537842
+        self.resizeThings()
+        self.hud.done()
 
     def saveUserPreferences(self):
         logger.info('Saving User Preferences...')
@@ -2793,7 +2763,7 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             if getData('state,manual_mode'):
-                if cfg.data['state']['stackwidget_ng_toggle']:
+                if cfg.data['state']['tra_ref_toggle']:
                     new_cs_scale = cfg.baseViewer.zoom() * 0.9
                     logger.info(f'new_cs_scale: {new_cs_scale}')
                     cfg.baseViewer.set_zoom(new_cs_scale)
@@ -3054,18 +3024,31 @@ class MainWindow(QMainWindow):
         run_checks()
 
     def enterExitManAlignMode(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        if DEV:
+            logger.critical(f"[{caller_name()}] man mode? {getData('state,manual_mode')}")
         if cfg.data:
             if self._isProjectTab():
-                if not cfg.data.is_aligned_and_generated():
-                    logger.warning('Cannot enter manual alignment mode until the series is aligned.')
-                    self.warn('Align the series first and then use Manual Alignment.')
-                    return
-                if not getData('state,manual_mode'):
-                    self.enter_man_mode()
+                # if not cfg.data.is_aligned_and_generated():
+                #     logger.warning('Cannot enter manual alignment mode until the series is aligned.')
+                #     self.warn('Align the series first and then use Manual Alignment.')
+                #     return
+
+                if cfg.project_tab.rb_regionsView.isChecked():
+                    # cfg.project_tab.rb_stackView.setChecked(True)
+                    # self.view_series_as_stack()
+                    cfg.project_tab.rb_stackView.setChecked(True)
                 else:
-                    self.exit_man_mode()
+                    # cfg.project_tab.rb_regionsView.setChecked(True)
+                    # self.view_raw_series_with_regions()
+                    cfg.project_tab.rb_regionsView.setChecked(True)
+
+
+                # setData('state,manual_mode', not getData('state,manual_mode'))
+
+                # if getData('state,manual_mode'):
+                #     self.view_raw_series_with_regions()
+                # else:
+                #     self.view_series_as_stack()
 
                 self.setFocus()
 
@@ -3076,113 +3059,73 @@ class MainWindow(QMainWindow):
         logger.critical(f"cfg.baseViewer.index  = {cfg.baseViewer.index}")
 
 
-    def enter_man_mode(self):
+    def view_raw_series_with_regions(self):
+        '''Previously: enter_man_mode'''
+        if DEV:
+            logger.critical(f'>>>> [{caller_name()}] >>>>')
         if self._isProjectTab():
             if cfg.data.is_aligned_and_generated():
-
-                # try:
-                #     del cfg.emViewer
-                # except:
-                #     pass
-
-                self.tell('Entering manual align mode...')
-
-                # cfg.project_tab.w_section_label_header.show()
-                # cfg.project_tab.w_ng_extended_toolbar.hide()
-                cfg.pt.ma_radioboxes.show()
-
-                setData('state,previous_mode', getData('state,mode'))
-                setData('state,mode', 'manual_align')
                 setData('state,manual_mode', True)
+                setData('state,viewer_mode', 'series_with_regions')
+                setData('state,tra_ref_toggle', 1)
 
-                self.updateManualAlignModeButton()
-                self.updateCorrSignalsDrawer()
-                # cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #FFFF66;""")
-                self.stopPlaybackTimer()
-                # self.setWindowTitle(self.window_title + ' - Manual Alignment Mode')
-                # self._changeScaleCombo.setEnabled(False)
-                setData('state,stackwidget_ng_toggle', 1)
-                # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
-                cfg.pt.setRbTransforming()
+                cfg.pt.rb_reference.show()
+                cfg.pt.rb_transforming.show()
+                # cfg.pt.setRbTransforming()
+                # cfg.pt.setRbRegionsView()
+                cfg.pt.rb_regionsView.setChecked(True)
+                cfg.pt.rb_regionsView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+                cfg.pt.rb_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
-                cfg.project_tab._tabs.setCurrentIndex(0)
-                cfg.project_tab.sw_main_ng.setCurrentIndex(0)
+                with cfg.emViewer.txn() as s:
+                    # s.voxel_coordinates[1] = cfg.baseViewer.state.voxel_coordinates[1]
+                    # s.voxel_coordinates[2] = cfg.baseViewer.state.voxel_coordinates[2]
+                    s.voxel_coordinates = cfg.baseViewer.state.voxel_coordinates
+                    try:
+                        s.cross_section_scale = cfg.baseViewer.state.cross_section_scale
+                    except:
+                        print_exception()
 
-                cfg.project_tab.initNeuroglancer()
                 cfg.baseViewer.set_layer(cfg.data.zpos)
                 cfg.refViewer.set_layer(cfg.data.get_ref_index())
-
-                cfg.project_tab.bookmark_tab = cfg.project_tab._tabs.currentIndex()
-
-                cfg.project_tab.update()
-                cfg.main_window.hud.done()
+                cfg.project_tab.sw_main_ng.setCurrentIndex(0) #DoThisLast to reduce flicker (?)
 
             else:
                 self.warn('Alignment must be generated before using Manual Point Alignment method.')
 
-    def exit_man_mode(self):
+        if DEV:
+            logger.critical(f'<<<< [{caller_name()}] <<<<')
 
+    def view_series_as_stack(self):
+        '''Previously: exit_man_mode'''
+        if DEV:
+            logger.critical(f">>>> [{caller_name()}] man mode? {getData('state,manual_mode')} >>>>")
         if self._isProjectTab():
-            logger.critical('Exiting manual alignment mode...')
-            self.tell('Exiting manual align mode')
-
-            # try:
-            #     cfg.refViewer = None
-            #     cfg.baseViewer = None
-            #     cfg.stageViewer = None
-            # except:
-            #     print_exception()
-
-            # self.MAsyncTimer.stop()
-
-            # cfg.project_tab.w_section_label_header.hide()
-            # cfg.project_tab.w_ng_extended_toolbar.show()
-            cfg.pt.tn_ref.update()
-            cfg.pt.tn_tra.update()
-            cfg.pt.ma_radioboxes.hide()
-            cfg.project_tab.ngVertLab.setStyleSheet("""background-color: #222222 ; color: #ede9e8;""")
-            # self.setWindowTitle(self.window_title)
-            prev_mode = getData('state,previous_mode')
-
-            if prev_mode == 'stack-xy':
-                setData('state,mode', 'stack-xy')
-                setData('state,ng_layout', 'xy')
-
-            elif prev_mode == 'stack-4panel':
-                setData('state,mode', 'stack-4panel')
-                setData('state,ng_layout', '4panel')
-
-            else:
-                setData('state,mode', 'comparison')
-                setData('state,ng_layout', 'xy')
-
-
-            # cfg.project_tab.cpanel.show()
-
             setData('state,manual_mode', False)
-            self.updateManualAlignModeButton()
-            self.alignMatchPointAction.setText(f"Align Manually {hotkey('M')} ")
-            # self._changeScaleCombo.setEnabled(True)
-            self.dataUpdateWidgets()
-            self.updateCorrSignalsDrawer()  # Caution - Likely Redundant!
-            QApplication.restoreOverrideCursor()
-            # cfg.project_tab.onExitManualMode()
-            cfg.project_tab.showSecondaryNgTools()
-            cfg.project_tab.MA_ptsListWidget_ref.clear()
-            cfg.project_tab.MA_ptsListWidget_base.clear()
-            cfg.project_tab._tabs.setCurrentIndex(cfg.project_tab.bookmark_tab)
-            cfg.project_tab.sw_main_ng.setCurrentIndex(1)
-            cfg.project_tab.ngVertLab.setText('Neuroglancer 3DEM View')
-            QApplication.processEvents()  # Critical! - enables viewer to acquire appropriate zoom
+            setData('state,viewer_mode', 'series_as_stack')
+            # cfg.pt.setRbStackView()
+            cfg.pt.rb_stackView.setChecked(True)
+            cfg.pt.rb_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+            cfg.pt.rb_regionsView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+            cfg.pt.rb_reference.hide()
+            cfg.pt.rb_transforming.hide()
+            # QApplication.processEvents()  # Critical! - enables viewer to acquire appropriate zoom
+            # cfg.project_tab.initNeuroglancer()
 
-            # self._changeScaleCombo.setEnabled(True)
-
-            cfg.project_tab.initNeuroglancer()
+            with cfg.emViewer.txn() as s:
+                # s.voxel_coordinates[1] = cfg.baseViewer.state.voxel_coordinates[1]
+                # s.voxel_coordinates[2] = cfg.baseViewer.state.voxel_coordinates[2]
+                s.voxel_coordinates = cfg.baseViewer.state.voxel_coordinates
+                try:
+                    s.cross_section_scale = cfg.baseViewer.state.cross_section_scale
+                except:
+                    print_exception()
             cfg.emViewer.set_layer(cfg.data.zpos)
-
             check_project_status()
-            self.hud.done()
-            logger.info('\n\n<<<< Exit Manual Alignment Mode\n')
+            QApplication.restoreOverrideCursor()
+            cfg.project_tab.sw_main_ng.setCurrentIndex(1) #DoThisLast to reduce flicker (?)
+        if DEV:
+            logger.critical(f"<<<< [{caller_name()}] man mode? {getData('state,manual_mode')} <<<<")
 
     def clear_match_points(self):
         if cfg.project_tab:
@@ -3328,8 +3271,7 @@ class MainWindow(QMainWindow):
     #             logger.info(f'Requested key: {requested_key}')
     #             if getData('state,mode') == 'manual_align':
     #                 if requested_key != 'manual_align':
-    #                     self.exit_man_mode()
-    #             setData('state,previous_mode', getData('state,mode'))
+    #                     self.view_series_as_stack()
     #             setData('state,mode', requested_key)
     #             if requested_key == 'stack-4panel':
     #                 setData('state,ng_layout', '4panel')
@@ -3339,7 +3281,7 @@ class MainWindow(QMainWindow):
     #                 setData('state,ng_layout', 'xy')
     #             elif requested_key == 'manual_align':
     #                 setData('state,ng_layout', 'xy')
-    #                 self.enter_man_mode()
+    #                 self.view_raw_series_with_regions()
     #             self.dataUpdateWidgets()
     #             cfg.project_tab.comboNgLayout.setCurrentText(getData('state,ng_layout'))
     #             cfg.project_tab.initNeuroglancer()
@@ -3639,8 +3581,9 @@ class MainWindow(QMainWindow):
         self.toolbar.layout().setAlignment(Qt.AlignRight)
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
 
-    # def resizeEvent(self, e):
-    #     logger.info('')
+    def resizeEvent(self, e):
+        logger.info('')
+        self.resizeThings()
 
     def fullScreenCallback(self):
         logger.info('')
@@ -3828,7 +3771,6 @@ class MainWindow(QMainWindow):
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
 
-            self.updateManualAlignModeButton()
 
             # cfg.project_tab.refreshTab() #Todo - Refactor! may init ng twice.
 
@@ -4282,13 +4224,6 @@ class MainWindow(QMainWindow):
         self.alignOneAction = QAction('Align Current Section', self)
         self.alignOneAction.triggered.connect(self.alignGenerateOne)
         alignMenu.addAction(self.alignOneAction)
-
-        self.alignMatchPointAction = QAction(f"Align Manually {hotkey('M')}", self)
-        self.alignMatchPointAction.triggered.connect(self.enterExitManAlignMode)
-        # self.alignMatchPointAction.setShortcut('Ctrl+M')
-        # self.alignMatchPointAction.setShortcutContext(Qt.ApplicationShortcut)
-        alignMenu.addAction(self.alignMatchPointAction)
-        # self.addAction(self.alignMatchPointAction)
 
         self.skipChangeAction = QAction('Toggle Include', self)
         # self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
@@ -5126,18 +5061,20 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignOne.setEnabled(False)
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignOne.clicked.connect(self.alignOne)
+        self._btn_alignOne.clicked.connect(self.alignGenerateOne)
         self._btn_alignOne.setFixedSize(long_button_size)
+        self._btn_alignOne.setStyleSheet("font-size: 9px;")
 
 
         tip = """Align and generate current sections from the current through the end of the image stack"""
         self._btn_alignForward = QPushButton('Align Forward')
-        self._btn_alignOne.setStyleSheet("font-size: 9px;")
         self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignForward.setEnabled(False)
         self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignForward.clicked.connect(self.alignForward)
         self._btn_alignForward.setFixedSize(long_button_size)
+        self._btn_alignOne.setStyleSheet("font-size: 9px;")
+
 
         tip = """The range of sections to align for the align range button"""
         self.sectionRangeSlider = RangeSlider()
@@ -5188,19 +5125,6 @@ class MainWindow(QMainWindow):
         self._btn_alignRange.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignRange.clicked.connect(self.alignRange)
         self._btn_alignRange.setFixedSize(long_button_size)
-
-        tip = 'Enter Manual Align Mode'
-        # self._btn_manualAlign = QPushButton('Manual Align Mode →')
-        self._btn_manualAlign = QPushButton(f"Manual Align {hotkey('M')} ")
-        self._btn_manualAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_manualAlign.setIconSize(QSize(12, 12))
-        # self._btn_manualAlign.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
-        self._btn_manualAlign.setStyleSheet("""""")
-        self._btn_manualAlign.setLayoutDirection(Qt.RightToLeft)
-        self._btn_manualAlign.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-        self._btn_manualAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_manualAlign.clicked.connect(self.enterExitManAlignMode)
-        self._btn_manualAlign.setFixedSize(long_button_size)
 
         tip = """Whether to auto-generate aligned images following alignment."""
         self._toggleAutogenerate = ToggleSwitch()
@@ -5256,7 +5180,7 @@ class MainWindow(QMainWindow):
         self.fl_cpButtonsLeft.addWidget(self._btn_alignAll)
         # self.fl_cpButtonsLeft.addWidget(self._btn_alignOne)
         self.fl_cpButtonsLeft.addWidget(self._btn_alignForward)
-        self.fl_cpButtonsLeft.addWidget(HWidget(self._btn_manualAlign))
+        self.fl_cpButtonsLeft.addWidget(self._btn_alignOne)
         self.cpButtonsLeft = QWidget()
         self.cpButtonsLeft.setAutoFillBackground(True)
         self.cpButtonsLeft.setLayout(self.fl_cpButtonsLeft)
@@ -6501,7 +6425,6 @@ class MainWindow(QMainWindow):
                     s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
                     combined = s1 + ' ' + s2
                     # btn = QPushButton('Jump')
-                    # self.lowestX_btns.append(QPushButton('Align Manually →'))
                     self.lowestX_btns.append(QPushButton('Manual Align'))
                     f = QFont()
                     f.setPointSizeF(7)
@@ -6808,8 +6731,8 @@ class MainWindow(QMainWindow):
                     #     cfg.pt.rb_transforming.setChecked(True)f
                     # else:
                     #     cfg.pt.rb_reference.setChecked(True)
-                    cfg.data['state']['stackwidget_ng_toggle'] = (1, 0)[cfg.data['state']['stackwidget_ng_toggle'] == 1]
-                    if cfg.data['state']['stackwidget_ng_toggle']:
+                    cfg.data['state']['tra_ref_toggle'] = (1, 0)[cfg.data['state']['tra_ref_toggle'] == 1]
+                    if cfg.data['state']['tra_ref_toggle']:
                         cfg.pt.setRbTransforming()
                     else:
                         cfg.pt.setRbReference()
@@ -6867,6 +6790,14 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key_Down:
             if self._isProjectTab():
                 self.incrementZoomOut()
+
+        elif event.key() == Qt.Key_Shift:
+            logger.info('')
+            if self._isProjectTab():
+                if cfg.project_tab._tabs.currentIndex == 0:
+                    (cfg.project_tab.rb_regionsView.setChecked,
+                     cfg.project_tab.rb_stackView.setChecked)[
+                        cfg.project_tab.rb_regionsView.isChecked()](True)
 
         elif event.key() == Qt.Key_Tab:
             logger.info('')
