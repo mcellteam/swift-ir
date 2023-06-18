@@ -210,18 +210,26 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             logger.critical('Resizing things, isProjectTab...')
 
-            h = cfg.pt.hsplitter_tn_ng.height()
+            # h = cfg.pt.splitter_ngPlusSideControls.height()
+            h = cfg.project_tab.widget3DEM.height()
             # cfg.project_tab.ms_widget.setMinimumWidth(int(h / 4))
             # cfg.project_tab.ms_widget.resize(int(h / 4), h)
 
-            ms_h = int(h/4 + 0.5)
-            tn_h = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
+            cfg.pt.side_controls.setFixedWidth(int(.26 * self.width()))
 
-            sizes = cfg.project_tab.hsplitter_tn_ng.sizes()
-            sizes[0] = ms_h
-            sizes[1] = tn_h
-            cfg.project_tab.hsplitter_tn_ng.setSizes(sizes)
+            ms_w = int(h/4 + 0.5)
+            tn_w = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
 
+            # sizes = cfg.project_tab.splitter_ngPlusSideControls.sizes()
+            # sizes[0] = ms_w
+            # sizes[1] = tn_w
+            # cfg.project_tab.splitter_ngPlusSideControls.setSizes(sizes)
+
+
+
+            cfg.pt.ms_widget.setFixedWidth(ms_w)
+            cfg.pt.match_widget.setFixedWidth(ms_w)
+            cfg.pt.tn_widget.setFixedWidth(tn_w)
 
 
     def restore_tabs(self, settings):
@@ -258,7 +266,7 @@ class MainWindow(QMainWindow):
         cfg.data.zpos = z
 
         if not cfg.pt.rb_transforming.isChecked():
-            cfg.pt.setRbTransforming()
+            cfg.pt.rb_transforming.setChecked(True)
 
         if getData('state,manual_mode'):
             cfg.baseViewer.set_layer(cfg.data.zpos)
@@ -320,8 +328,9 @@ class MainWindow(QMainWindow):
             time.sleep(cfg.DELAY_AFTER)
 
     def refreshTab(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
+        # logger.critical(f'caller: {caller}')
+        self.tell('Refreshing...')
 
         if cfg.CancelProcesses:
             cfg.CancelProcesses = False
@@ -330,11 +339,12 @@ class MainWindow(QMainWindow):
             logger.critical('Refreshing...')
             if cfg.pt.ms_widget.isVisible():
                 self.updateCorrSignalsDrawer()
+            if cfg.pt.match_widget.isVisible():
+                cfg.pt.setTargKargPixmaps()
             if self._isProjectTab():
                 cfg.project_tab.refreshTab()
                 # for v in cfg.project_tab.get_viewers():
                 #     v.set_zmag() #0524-
-                self.hud.done()
                 self.updateEnabledButtons()  # 0301+
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
@@ -346,11 +356,11 @@ class MainWindow(QMainWindow):
             elif self._getTabType() == 'OpenProject':
                 configure_project_paths()
                 self._getTabObject().user_projects.set_data()
-
-
+            self.hud.done()
         else:
             self.warn('The application is busy')
             logger.warning('The application is busy')
+
 
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
@@ -521,13 +531,17 @@ class MainWindow(QMainWindow):
         count = 0
         # for i in range(7):
 
-        #Critical0601-
-        if not cfg.data.is_aligned_and_generated():
-            for i in range(4):
-                if not cfg.pt.msList[i]._noImage:
-                    cfg.pt.msList[i].set_no_image()
+        for i in range(4):
+            if not cfg.pt.msList[i]._noImage:
+                cfg.pt.msList[i].set_no_image()
 
-            return #0610+
+        # #Critical0601-
+        # if not cfg.data.is_aligned_and_generated():
+        #     for i in range(4):
+        #         if not cfg.pt.msList[i]._noImage:
+        #             cfg.pt.msList[i].set_no_image()
+        #
+        #     return #0610+
 
 
         # logger.critical('thumbs: %s' % str(thumbs))
@@ -573,6 +587,11 @@ class MainWindow(QMainWindow):
                         try:
                             snr = snr_vals[i]
                             assert snr > 0.0
+                            if method == 'manual-hint':
+                                n_ref = len(cfg.data.manpoints()['ref'])
+                                n_base = len(cfg.data.manpoints()['base'])
+                                assert n_ref > i
+                                assert n_base > i
                         except:
                             # logger.info(f'no SNR data for corr signal index {i}')
                             cfg.pt.msList[i].set_no_image()
@@ -966,6 +985,7 @@ class MainWindow(QMainWindow):
                 self.enableAllTabs() #0603+ #Critical
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
+                cfg.pt.setTargKargPixmaps()
                 # self.pbarLabel.setText('')
                 if cfg.project_tab._tabs.currentIndex() == 3:
                     cfg.project_tab.snr_plot.initSnrPlot()
@@ -1114,6 +1134,7 @@ class MainWindow(QMainWindow):
         if quick_swim:
             cfg.ignore_pbar = False
             self.updateCorrSignalsDrawer()
+            cfg.pt.setTargKargPixmaps()
             self.updateEnabledButtons()
             self.enableAllTabs()
             self.updateCpanelDetails()
@@ -1709,6 +1730,7 @@ class MainWindow(QMainWindow):
 
             # cfg.project_tab._overlayRect.hide()
             cfg.project_tab._overlayLab.hide()
+            cfg.project_tab.tn_tra_overlay.hide()
 
             cur = cfg.data.zpos
 
@@ -1762,11 +1784,16 @@ class MainWindow(QMainWindow):
             if cfg.pt.ms_widget.isVisible():
                 self.updateCorrSignalsDrawer()
 
+            if cfg.pt.match_widget.isVisible():
+                cfg.pt.setTargKargPixmaps()
+
 
             if cfg.pt.tn_widget.isVisible():
                 os.path.isdir(cfg.data.thumbnail_ref())
-                cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
-                cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
+                # cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
+                # cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
+                cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
+                cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
                 cfg.pt.labMethod2.setText(cfg.data.method_pretty())
 
             cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
@@ -1783,8 +1810,9 @@ class MainWindow(QMainWindow):
             self.statusBar.showMessage(cfg.data.scale_pretty() + ', ' +
                                        'x'.join(map(str, img_siz)) + ', ' +
                                        cfg.data.name_base())
-
+            cfg.pt.warning_cafm.hide()
             if getData('state,manual_mode'):
+                cfg.pt.warning_cafm.hide() #Might be best to show this only when not in manual view
                 cfg.project_tab.dataUpdateMA()
                 #     # setData('state,stackwidget_ng_toggle', 1)
                 #     # cfg.pt.rb_transforming.setChecked(getData('state,stackwidget_ng_toggle'))
@@ -1800,10 +1828,9 @@ class MainWindow(QMainWindow):
                 #     # cfg.refViewer.set_layer()
                 #     # cfg.baseViewer.set_layer()
             else:
-                if cfg.data.cafm_hash_comports():
-                    cfg.pt.warning_cafm.hide()
-                else:
-                    cfg.pt.warning_cafm.show()
+                if not cfg.data.cafm_hash_comports():
+                    if cfg.data.is_aligned_and_generated():
+                        cfg.pt.warning_cafm.show()
 
             if self.notes.isVisible():
                 self.updateNotes()
@@ -2309,14 +2336,13 @@ class MainWindow(QMainWindow):
         logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
         self.cbMonitor.setChecked(True) #Why?
 
-
-
         self.tell("Loading Project '%s'..." % cfg.data.dest())
 
         initLogFiles(cfg.data)
         self._dontReinit = True
 
-        # setData('state,manual_mode', False)
+        setData('state,manual_mode', False)
+        setData('state,viewer_mode', 'series_as_stack')
         setData('state,ng_layout', 'xy')
 
         cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
@@ -2342,15 +2368,25 @@ class MainWindow(QMainWindow):
         self.sa_cpanel.show()
 
         self.updateCorrSignalsDrawer()
+        cfg.project_tab.setTargKargPixmaps()
+        cfg.project_tab.updateMethodSelectWidget()
+        cfg.project_tab.dataUpdateMA()
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
-
+        
+        QApplication.processEvents()
         # cfg.project_tab.delayInitNeuroglancer()
-        cfg.project_tab.initNeuroglancer()
+        cfg.project_tab.initNeuroglancer(init_all=True)
+
+
 
         check_project_status()
         self.cbMonitor.setChecked(True)
         self.resizeThings()
+
+        QApplication.processEvents()
+
+        self.view_series_as_stack()
         self.hud.done()
 
     def saveUserPreferences(self):
@@ -2358,7 +2394,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
         # if self._isProjectTab():
-        #     self.settings.setValue("hsplitter_tn_ngSizes", cfg.pt.hsplitter_tn_ng.saveState())
+        #     self.settings.setValue("hsplitter_tn_ngSizes", cfg.pt.splitter_ngPlusSideControls.saveState())
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         if not os.path.exists(userpreferencespath):
             open(userpreferencespath, 'a').close()
@@ -3064,34 +3100,31 @@ class MainWindow(QMainWindow):
         if DEV:
             logger.critical(f'>>>> [{caller_name()}] >>>>')
         if self._isProjectTab():
-            if cfg.data.is_aligned_and_generated():
-                setData('state,manual_mode', True)
-                setData('state,viewer_mode', 'series_with_regions')
-                setData('state,tra_ref_toggle', 1)
+            setData('state,manual_mode', True)
+            setData('state,viewer_mode', 'series_with_regions')
+            setData('state,tra_ref_toggle', 1)
 
-                cfg.pt.rb_reference.show()
-                cfg.pt.rb_transforming.show()
-                # cfg.pt.setRbTransforming()
-                # cfg.pt.setRbRegionsView()
-                cfg.pt.rb_regionsView.setChecked(True)
-                cfg.pt.rb_regionsView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-                cfg.pt.rb_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+            # cfg.pt.rb_reference.show()
+            # cfg.pt.rb_transforming.show()
+            cfg.pt.ma_radioboxes.show()
+            # cfg.pt.setRbTransforming()
+            # cfg.pt.setRbRegionsView()
+            cfg.pt.rb_regionsView.setChecked(True)
+            cfg.pt.rb_regionsView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+            cfg.pt.rb_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
-                with cfg.emViewer.txn() as s:
-                    # s.voxel_coordinates[1] = cfg.baseViewer.state.voxel_coordinates[1]
-                    # s.voxel_coordinates[2] = cfg.baseViewer.state.voxel_coordinates[2]
-                    s.voxel_coordinates = cfg.baseViewer.state.voxel_coordinates
-                    try:
-                        s.cross_section_scale = cfg.baseViewer.state.cross_section_scale
-                    except:
-                        print_exception()
+            with cfg.emViewer.txn() as s:
+                # s.voxel_coordinates[1] = cfg.baseViewer.state.voxel_coordinates[1]
+                # s.voxel_coordinates[2] = cfg.baseViewer.state.voxel_coordinates[2]
+                s.voxel_coordinates = cfg.baseViewer.state.voxel_coordinates
+                try:
+                    s.cross_section_scale = cfg.baseViewer.state.cross_section_scale
+                except:
+                    print_exception()
 
-                cfg.baseViewer.set_layer(cfg.data.zpos)
-                cfg.refViewer.set_layer(cfg.data.get_ref_index())
-                cfg.project_tab.sw_main_ng.setCurrentIndex(0) #DoThisLast to reduce flicker (?)
-
-            else:
-                self.warn('Alignment must be generated before using Manual Point Alignment method.')
+            cfg.baseViewer.set_layer(cfg.data.zpos)
+            cfg.refViewer.set_layer(cfg.data.get_ref_index())
+            cfg.project_tab.sw_main_ng.setCurrentIndex(1) #DoThisLast to reduce flicker (?)
 
         if DEV:
             logger.critical(f'<<<< [{caller_name()}] <<<<')
@@ -3099,16 +3132,20 @@ class MainWindow(QMainWindow):
     def view_series_as_stack(self):
         '''Previously: exit_man_mode'''
         if DEV:
-            logger.critical(f">>>> [{caller_name()}] man mode? {getData('state,manual_mode')} >>>>")
+            logger.critical(f"\n\n  >>>> [{caller_name()}] man mode? {getData('state,manual_mode')}>>>>\nå")
         if self._isProjectTab():
             setData('state,manual_mode', False)
             setData('state,viewer_mode', 'series_as_stack')
             # cfg.pt.setRbStackView()
+
+            if DEV:
+                logger.critical(f"\n\n  Styling radiobuttons...\n")
             cfg.pt.rb_stackView.setChecked(True)
             cfg.pt.rb_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
             cfg.pt.rb_regionsView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-            cfg.pt.rb_reference.hide()
-            cfg.pt.rb_transforming.hide()
+            # cfg.pt.rb_reference.hide()
+            # cfg.pt.rb_transforming.hide()
+            cfg.pt.ma_radioboxes.hide()
             # QApplication.processEvents()  # Critical! - enables viewer to acquire appropriate zoom
             # cfg.project_tab.initNeuroglancer()
 
@@ -3123,7 +3160,7 @@ class MainWindow(QMainWindow):
             cfg.emViewer.set_layer(cfg.data.zpos)
             check_project_status()
             QApplication.restoreOverrideCursor()
-            cfg.project_tab.sw_main_ng.setCurrentIndex(1) #DoThisLast to reduce flicker (?)
+            cfg.project_tab.sw_main_ng.setCurrentIndex(0) #DoThisLast to reduce flicker (?)
         if DEV:
             logger.critical(f"<<<< [{caller_name()}] man mode? {getData('state,manual_mode')} <<<<")
 
@@ -3515,11 +3552,15 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 state = self.cbThumbnails.isChecked()
                 setData('state,tool_windows,signals', state)
-                new_size = (0, 200)[state]
-                cfg.pt.tn_widget.setVisible(state)
-                sizes = cfg.pt.hsplitter_tn_ng.sizes()
-                sizes[0] = new_size
-                cfg.pt.hsplitter_tn_ng.setSizes(sizes)
+                # new_size = (0, 200)[state]
+                # cfg.pt.tn_widget.setVisible(state)
+                # sizes = cfg.pt.splitter_ngPlusSideControls.sizes()
+                # sizes[0] = new_size
+                # cfg.pt.splitter_ngPlusSideControls.setSizes(sizes)
+                if state:
+                    self.cbThumbnails.show()
+                else:
+                    self.cbThumbnails.hide()
                 self.showRawThumbnailsAction.setText(('Show Match Signals', 'Hide Match Signals')[state])
                 tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
                 tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
@@ -3536,11 +3577,15 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 state = self.cbSignals.isChecked()
                 setData('state,tool_windows,signals', state)
-                new_size = (0,400)[state]
-                cfg.pt.ms_widget.setVisible(state)
-                sizes = cfg.pt.hsplitter_tn_ng.sizes()
-                sizes[2] = new_size
-                cfg.pt.hsplitter_tn_ng.setSizes(sizes)
+                # new_size = (0,400)[state]
+                # cfg.pt.ms_widget.setVisible(state)
+                # sizes = cfg.pt.splitter_ngPlusSideControls.sizes()
+                # sizes[2] = new_size
+                # cfg.pt.splitter_ngPlusSideControls.setSizes(sizes)
+                if state:
+                    self.cbSignals.show()
+                else:
+                    self.cbSignals.hide()
                 self.showMatchSignalsAction.setText(('Show Match Signals', 'Hide Match Signals')[state])
                 tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
                 tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
@@ -6733,9 +6778,10 @@ class MainWindow(QMainWindow):
                     #     cfg.pt.rb_reference.setChecked(True)
                     cfg.data['state']['tra_ref_toggle'] = (1, 0)[cfg.data['state']['tra_ref_toggle'] == 1]
                     if cfg.data['state']['tra_ref_toggle']:
-                        cfg.pt.setRbTransforming()
+                        cfg.pt.rb_transforming.setChecked(True)
                     else:
-                        cfg.pt.setRbReference()
+                        # cfg.pt.setRbReference()
+                        cfg.pt.rb_reference.setChecked(True)
 
         
 

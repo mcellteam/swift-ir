@@ -174,6 +174,7 @@ class MAViewer(neuroglancer.Viewer):
 
     # def set_layer(self, index=None):
     def set_layer(self, zpos=None):
+        #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
         if DEV:
@@ -196,6 +197,9 @@ class MAViewer(neuroglancer.Viewer):
                 self.index=zpos
             else:
                 self.index=cfg.data.zpos
+
+
+
 
         # if index == None:
         # if self.role == 'ref':
@@ -449,8 +453,8 @@ class MAViewer(neuroglancer.Viewer):
 
         request_layer = int(self.state.position[0])
 
-        # if DEV:
-        #     logger.critical(self.info())
+        if DEV:
+            logger.critical(self.info())
 
 
         # if self.role == 'ref':
