@@ -1778,6 +1778,7 @@ class MainWindow(QMainWindow):
                 txt = '\n'.join(textwrap.wrap('EXCLUDED: %s' % cfg.data.name_base(), width=35))
                 cfg.project_tab._overlayLab.setText(txt)
                 cfg.project_tab._overlayLab.show()
+                cfg.project_tab.tn_tra_overlay.show()
                 # cfg.project_tab._overlayRect.show()
 
 

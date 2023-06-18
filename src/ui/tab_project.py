@@ -817,10 +817,10 @@ class ProjectTab(QWidget):
 
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
-        self.btnQuickSWIM = QPushButton('Generate\nMatch\n&Signals')
-        self.btnQuickSWIM.setStyleSheet("font-size: 8px; font-weight: 600;")
+        self.btnQuickSWIM = QPushButton('Generate Match &Signals')
+        self.btnQuickSWIM.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.btnQuickSWIM.setFixedSize(QSize(50, 36))
+        self.btnQuickSWIM.setFixedSize(QSize(120, 18))
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
         hbl = HBL()
