@@ -283,6 +283,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self._blockStateChanged = False
 
     def set_layer(self, index=None):
+        # NotCulpableForFlickerGlitch
         self._blockStateChanged = True
         if DEV:
             logger.critical(f'[{caller_name()}] Setting layer:\n'
@@ -298,6 +299,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         except:
             print_exception()
         self._blockStateChanged = False
+
 
 
     def set_brightness(self, val=None):
@@ -510,20 +512,42 @@ class EMViewer(AbstractEMViewer):
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        if cfg.project_tab:
+        # -----------
+        # Good backup, or for initial load, okay approximation of desired viewer size
+        # w = cfg.main_window.width() / 2
+        # h = cfg.main_window.height() / 2
+        # logger.info(f'w = {w}')
+        # logger.info(f'h = {h}')
+        # -----------
+        try:
             w = cfg.project_tab.webengine.width()
-            # h = max(cfg.main_window.globTabs.height() - 20, 520)
-            h = cfg.main_window.globTabs.height() - 24
-            if getData('state,show_ng_controls'):
-                extra_space = 54
-            else:
-                extra_space = 26
+            h = cfg.project_tab.webengine.height()
+        except:
+            w = cfg.main_window.width() / 2
+            h = cfg.main_window.height() / 2
+            logger.info(f'w = {w}')
+            logger.info(f'h = {h}')
+            print_exception()
 
-            # h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space) #Prev
-            # h = cfg.main_window.globTabs.height() - 20
-            self.initZoom(w=w, h=h, adjust=1.20)
-        else:
-            logger.warning('cfg.project_tab DOES NOT EXIST')
+
+
+
+        # w = (cfg.main_window.globTabs.width()/2) - 24
+        # h = cfg.main_window.globTabs.height() - 24
+        # logger.info(f'w1 = {w}')
+
+        # h = max(cfg.main_window.globTabs.height() - 20, 520)
+
+        # if getData('state,show_ng_controls'):
+        #     extra_space = 54
+        # else:
+        #     extra_space = 26
+
+        # h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space) #Prev
+        # h = cfg.main_window.globTabs.height() - 20
+        # self.initZoom(w=w, h=h, adjust=1.20)
+        self.initZoom(w=w, h=h)
+
 
 
 

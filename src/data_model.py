@@ -799,12 +799,14 @@ class DataModel:
         # self._data['state'].setdefault('MA_focus', None) #0 = L, 1 = R
         # self._data['state'].setdefault('focus_widget', None)
         self._data['state']['tra_ref_toggle'] = 1 #Force
+        self._data['state']['targ_karg_toggle'] = 1 #Force
         self._data['state']['tool_windows'].setdefault('python',False)
         self._data['state']['tool_windows'].setdefault('notes',False)
         self._data['state']['tool_windows'].setdefault('hud',False)
         # self._data['state']['tool_windows'].setdefault('flicker',False)
         self._data['state']['tool_windows'].setdefault('signals',True)
         self._data['state']['tool_windows'].setdefault('raw_thumbnails',True)
+        self._data['state']['tool_windows'].setdefault('matches',True)
         self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)
@@ -855,12 +857,15 @@ class DataModel:
             else:
                 self._data['data']['scales'][s]['isRefinement'] = True
 
+
+
             for i in range(len(self)):
                 layer = scale['stack'][i]
 
                 layer.setdefault('cafm_comports', True)
 
                 layer.setdefault('current_method', 'grid-default')
+                layer.setdefault('selected_method', 'grid-default')
                 layer.setdefault('data_comports', True)
                 layer.setdefault('needs_propagation', False)
                 layer.setdefault('alignment_hash', '')
