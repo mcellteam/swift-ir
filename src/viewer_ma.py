@@ -453,8 +453,8 @@ class MAViewer(neuroglancer.Viewer):
 
         request_layer = int(self.state.position[0])
 
-        if DEV:
-            logger.critical(self.info())
+        # if DEV:
+        #     logger.critical(self.info())
 
 
         # if self.role == 'ref':
@@ -630,6 +630,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
+        if DEV:
+            logger.info('')
         if cfg.data.method() not in ('manual-strict', 'manual-hint'):
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
@@ -731,7 +733,7 @@ class MAViewer(neuroglancer.Viewer):
     # @functools.cache
     def drawSWIMwindow(self):
         if DEV:
-            logger.info(f'[{self.role}] [{caller_name()}]')
+            logger.critical(f'[{self.role}] [{caller_name()}] self._dontDraw={self._dontDraw}')
 
         if self._dontDraw:
             return

@@ -215,7 +215,7 @@ class MainWindow(QMainWindow):
             # cfg.project_tab.ms_widget.setMinimumWidth(int(h / 4))
             # cfg.project_tab.ms_widget.resize(int(h / 4), h)
 
-            cfg.pt.side_controls.setFixedWidth(int(.26 * self.width()))
+            cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
 
             ms_w = int(h/4 + 0.5)
             tn_w = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
@@ -1676,6 +1676,9 @@ class MainWindow(QMainWindow):
         # if cfg.emViewer:
         #     cfg.emViewer.
 
+        if DEV:
+            self.set_status(f"manual_mode: {getData('state,manual_mode')}  ")
+
         if not self._isProjectTab():
             logger.warning('No Current Project Tab!')
             return
@@ -2168,7 +2171,7 @@ class MainWindow(QMainWindow):
                     # logger.warning('Exit manual alignment mode before changing scales')
                     # self.warn('Exit manual alignment mode before changing scales!')
                     # self.view_series_as_stack()
-                    cfg.project_tab.rb_stackView.isChecked()
+                    cfg.project_tab.cl_stackView.isChecked
                     # QApplication.processEvents()
 
 
@@ -2370,8 +2373,6 @@ class MainWindow(QMainWindow):
 
         self.updateCorrSignalsDrawer()
         cfg.project_tab.setTargKargPixmaps()
-        cfg.project_tab.updateMethodSelectWidget()
-        cfg.project_tab.dataUpdateMA()
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
         
@@ -2380,6 +2381,8 @@ class MainWindow(QMainWindow):
         cfg.project_tab.initNeuroglancer(init_all=True)
 
 
+        cfg.project_tab.updateMethodSelectWidget()
+        cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
 
         check_project_status()
         self.cbMonitor.setChecked(True)
@@ -3070,14 +3073,14 @@ class MainWindow(QMainWindow):
                 #     self.warn('Align the series first and then use Manual Alignment.')
                 #     return
 
-                if cfg.project_tab.rb_regionsView.isChecked():
-                    # cfg.project_tab.rb_stackView.setChecked(True)
+                if cfg.project_tab.cl_configureRegions.isChecked:
+                    # cfg.project_tab.cl_stackView.setChecked(True)
                     # self.view_series_as_stack()
-                    cfg.project_tab.rb_stackView.setChecked(True)
+                    cfg.project_tab.cl_stackView.setChecked(True)
                 else:
-                    # cfg.project_tab.rb_regionsView.setChecked(True)
+                    # cfg.project_tab.cl_configureRegions.setChecked(True)
                     # self.view_raw_series_with_regions()
-                    cfg.project_tab.rb_regionsView.setChecked(True)
+                    cfg.project_tab.cl_configureRegions.setChecked(True)
 
 
                 # setData('state,manual_mode', not getData('state,manual_mode'))
@@ -3110,9 +3113,14 @@ class MainWindow(QMainWindow):
             cfg.pt.ma_radioboxes.show()
             # cfg.pt.setRbTransforming()
             # cfg.pt.setRbRegionsView()
-            cfg.pt.rb_regionsView.setChecked(True)
-            cfg.pt.rb_regionsView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-            cfg.pt.rb_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+            cfg.pt.cl_configureRegions.setChecked(True)
+            cfg.pt.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
+            cfg.pt.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
+
+            cfg.pt.enableMethodChange()
+            cfg.pt.MA_stackedWidget.show()
+
+            cfg.pt.gb_warnings.hide()
 
             with cfg.emViewer.txn() as s:
                 # s.voxel_coordinates[1] = cfg.baseViewer.state.voxel_coordinates[1]
@@ -3138,17 +3146,19 @@ class MainWindow(QMainWindow):
             setData('state,manual_mode', False)
             setData('state,viewer_mode', 'series_as_stack')
             # cfg.pt.setRbStackView()
-
-            if DEV:
-                logger.critical(f"\n\n  Styling radiobuttons...\n")
-            cfg.pt.rb_stackView.setChecked(True)
-            cfg.pt.rb_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-            cfg.pt.rb_regionsView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+            cfg.pt.cl_stackView.setChecked(True)
+            cfg.pt.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+            cfg.pt.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
             # cfg.pt.rb_reference.hide()
             # cfg.pt.rb_transforming.hide()
             cfg.pt.ma_radioboxes.hide()
             # QApplication.processEvents()  # Critical! - enables viewer to acquire appropriate zoom
             # cfg.project_tab.initNeuroglancer()
+
+            cfg.pt.disableMethodChange()
+
+            cfg.pt.MA_stackedWidget.hide()
+            # cfg.pt.gb_warnings.show()
 
             with cfg.emViewer.txn() as s:
                 # s.voxel_coordinates[1] = cfg.baseViewer.state.voxel_coordinates[1]
@@ -6794,8 +6804,8 @@ class MainWindow(QMainWindow):
                 cfg.pt._tabs.setCurrentIndex(0)
 
 
-        elif event.key() == Qt.Key_M:
-            self.enterExitManAlignMode()
+        # elif event.key() == Qt.Key_M:
+        #     self.enterExitManAlignMode()
         # r = 82
         # m = 77
         # k = 75
@@ -6838,20 +6848,28 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 self.incrementZoomOut()
 
-        elif event.key() == Qt.Key_Shift:
-            logger.info('')
+        # elif event.key() == Qt.Key_Shift:
+        elif event.key() == Qt.Key_M:
+            logger.info('Shift Key Pressed!')
             if self._isProjectTab():
-                if cfg.project_tab._tabs.currentIndex == 0:
-                    (cfg.project_tab.rb_regionsView.setChecked,
-                     cfg.project_tab.rb_stackView.setChecked)[
-                        cfg.project_tab.rb_regionsView.isChecked()](True)
+                if getData('state,viewer_mode') == 'series_as_stack':
+                    cfg.pt.configure_or_stack(selection='configure')
 
-        elif event.key() == Qt.Key_Tab:
-            logger.info('')
-            if self._isProjectTab():
-                new_index = (cfg.project_tab._tabs.currentIndex()+1)%4
-                logger.info(f'new index: {new_index}')
-                cfg.project_tab._tabs.setCurrentIndex(new_index)
+                elif getData('state,viewer_mode') == 'series_with_regions':
+                    cfg.pt.configure_or_stack(selection='stack')
+
+
+                # if cfg.project_tab._tabs.currentIndex == 0:
+                #     (cfg.project_tab.cl_configureRegions.setChecked,
+                #      cfg.project_tab.cl_stackView.setChecked)[
+                #         cfg.project_tab.cl_configureRegions.isChecked](True)
+
+        # elif event.key() == Qt.Key_Tab:
+        #     logger.info('')
+        #     if self._isProjectTab():
+        #         new_index = (cfg.project_tab._tabs.currentIndex()+1)%4
+        #         logger.info(f'new index: {new_index}')
+        #         cfg.project_tab._tabs.setCurrentIndex(new_index)
 
 
 
