@@ -760,8 +760,7 @@ class DataModel:
         self._data.setdefault('system', {})
         self._data['state'].pop('stage_viewer', None)
         self._data['state'].setdefault('viewer_mode', 'series_as_stack') # series_as_stack, or series_with_regions
-        # self._data['state'].setdefault('manual_mode', False)
-        self._data['state'].setdefault('manual_mode', True)
+        self._data['state'].setdefault('manual_mode', False)
         # self._data['state'].setdefault('mode', 'stack-xy')
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
         self._data['state']['has_cal_grid'] = False
@@ -1727,9 +1726,13 @@ class DataModel:
         if (pixels % 2) == 1:
             pixels -= 1
 
+
         img_w, img_h = self.image_size(s=self.scale)
         pixels_y = (pixels / img_w) * img_h
         # for s in self.scales():
+
+        logger.critical(f'setting 2x2 pixels to {pixels}, {pixels_y}')
+        logger.critical(f"{ int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
 
         if (2 * pixels) <= self.swim_1x1_custom_px()[0]:
             self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = [pixels, pixels_y]
