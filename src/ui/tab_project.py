@@ -1348,10 +1348,10 @@ class ProjectTab(QWidget):
         self.gb_method_selection.setStyleSheet('font-size: 11px;')
 
         self.lab_region_selection = QLabel("⇧ + Click - Select 3 corresponding regions\n")
-        self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 2px;")
-        self.lab_region_selection2 = QLabel("Match signals can be generated from any # of match selections."
+
+        self.lab_region_selection2 = QLabel("Match signals can be generated from any # of match selections.\n"
                                             "Three match regions form an alignment affine.")
-        self.lab_region_selection
+        self.lab_region_selection2.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 2px;")
         self.MA_points_tab = VWidget(
             self.lab_region_selection,
             self.lab_region_selection2,
