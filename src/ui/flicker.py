@@ -31,7 +31,7 @@ class Flicker(QLabel):
         self.b = None
         self.series = None
         self.cur = 0
-        self._isPlaying = 0
+        self._isPlaying = False
         self.setMinimumSize(QSize(128,128))
         # self.resize(QSize(180,180))
         self.setStyleSheet("""background-color: #ffffff;""")
