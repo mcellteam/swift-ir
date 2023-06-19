@@ -25,7 +25,7 @@ from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
     create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles, is_tacc, is_joel, hotkey, \
-    get_appdir, caller_name
+    get_appdir
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.timer import Timer
@@ -113,10 +113,10 @@ class OpenProject(QWidget):
         self.new_project_lab_gap = QLabel('      ')
         self.new_project_lab_gap.setStyleSheet('color: #f3f6fb; background-color: #222222; padding: 0px;')
         self.new_project_header = HWidget(self.new_project_lab1, self.new_project_lab_gap, self.new_project_lab2)
-        self.new_project_header.setFixedHeight(28)
         self.new_project_header.layout.setSpacing(0)
         self.new_project_header.setAutoFillBackground(True)
         self.new_project_header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.new_project_header.setFixedHeight(34)
         self.new_project_header.setStyleSheet('background-color: #222222;')
         self.new_project_header.hide()
 
@@ -133,7 +133,7 @@ class OpenProject(QWidget):
 
         # User Files Widget
         self.userFilesWidget = QWidget()
-        lab = QLabel('Open Project or,\nOpen Zarr or,\nInitialize project from folder of TIFF images')
+        lab = QLabel('Open Project or,\nOpen Zarr or,\nInitialize alignment project from folder of TIFF images')
         lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
@@ -147,8 +147,6 @@ class OpenProject(QWidget):
         self._buttonOpen = QPushButton(f"Open Project {hotkey('O')}")
         self._buttonOpen.setShortcut('Ctrl+O')
         self._buttonOpen.setStyleSheet('font-size: 10px;')
-        # self._buttonOpen.setStyleSheet('QPushButton {font-size: 10px;  border-radius: 5px; border-color: #000000; border-width: 2px; }')
-        # self._buttonOpen.setStyleSheet("""border: 1px solid #161c20; border-bottom-right-radius: 4px;""")
         self._buttonOpen.setEnabled(False)
         self._buttonOpen.clicked.connect(self.open_project_selected)
         self._buttonOpen.setFixedSize(button_size)
@@ -1194,7 +1192,7 @@ class UserProjects(QWidget):
 
     def get_data(self):
         timer = Timer()
-        logger.info(f'>>>> get_data [{caller_name()}] >>>>')
+        logger.info('>>>> get_data >>>>')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         logger.info('Loading known projects into table view...')

@@ -138,7 +138,6 @@ def getData(lookup):
 
 
 def setData(lookup, val):
-    # logger.critical(f'[{caller_name()}] lookup: {lookup}, val: {val}')
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getData(lookup[:-1])[lookup[-1]] = val

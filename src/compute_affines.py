@@ -231,7 +231,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
         #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
 
+
         # SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+
 
         # for i, layer in enumerate(cfg.data.get_iter(scale)):
         #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
@@ -240,7 +242,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #         cfg.data.cafm_current_hash(l=i)
 
         cfg.mw.updateCorrSignalsDrawer()
-        cfg.pt.setTargKargPixmaps()
 
         for l in list(range(start, len(cfg.data))):
             dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = False

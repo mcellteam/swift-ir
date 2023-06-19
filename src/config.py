@@ -7,7 +7,7 @@ import platform
 
 __all__ = ['data']
 
-VERSION = '0.5.49'
+VERSION = '0.5.48'
 
 LOG_LEVEL = 1
 
@@ -105,8 +105,7 @@ DUMMY = False
 USE_TENSORSTORE = True
 FAULT_HANDLER = False
 HEADLESS = False
-# TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 126 # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
