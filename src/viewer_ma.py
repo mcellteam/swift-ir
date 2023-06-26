@@ -936,16 +936,13 @@ class MAViewer(neuroglancer.Viewer):
     # @cache
     def makeRect(self, prefix, z_index, coords, ww_x, ww_y, color, marker_size):
         segments = []
-        x = coords[0]
-        y = coords[1]
+        x, y = coords[0], coords[1]
         hw = int(ww_x / 2) # Half-width
         hh = int(ww_y / 2) # Half-height
-
         A = (z_index + 0.5, y + hh, x - hw)
         B = (z_index + 0.5, y + hh, x + hw)
         C = (z_index + 0.5, y - hh, x + hw)
         D = (z_index + 0.5, y - hh, x - hw)
-
 
         segments.append(ng.LineAnnotation(id=prefix + '_L1', pointA=A, pointB=B, props=[color, marker_size]))
         segments.append(ng.LineAnnotation(id=prefix + '_L2', pointA=B, pointB=C, props=[color, marker_size]))
@@ -954,19 +951,12 @@ class MAViewer(neuroglancer.Viewer):
         return segments
 
 
-
-
     def restoreManAlignPts(self):
-        logger.info('Restoring manual alignment points for role: %s' %self.role)
-        # self.pts = {}
+        logger.critical(f'[{self.role}] Restoring manual alignment points...')
         # self.pts = OrderedDict()
         self.pts = []
-
-        # pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
-        # pts_data = cfg.data.getmpFlat(l=self.index)[self.role]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
         logger.info(f'getting pts data for {cfg.data.zpos}')
-
         for i, p in enumerate(pts_data):
             props = [self.colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
@@ -975,7 +965,6 @@ class MAViewer(neuroglancer.Viewer):
             self.pts.append(ng.PointAnnotation(id=str(p), point=p, props=props))
 
         # logger.critical(f'pts:\n{self.pts}')
-
         # json_str = self.state.layers.to_json()
         # logger.critical('--------------')
         # logger.critical(json_str[0]['annotations'])
@@ -1028,9 +1017,9 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
     def initZoom(self):
-        logger.critical(f'[{self.role}] [{caller_name()}] Calling initZoom...')
+        logger.info(f'[{self.role}] [{caller_name()}] Calling initZoom...')
         adjust = 1.12
-        logger.critical(f'[{self.role}] self.cs_scale = {self.cs_scale}')
+        # logger.critical(f'[{self.role}] self.cs_scale = {self.cs_scale}')
         if self.cs_scale:
             logger.critical(f'[{self.role}] Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
             with self.txn() as s:
@@ -1043,7 +1032,7 @@ class MAViewer(neuroglancer.Viewer):
             widget_h = cfg.mw.geometry().height() / 2
 
 
-            logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
+            # logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
 
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
@@ -1051,7 +1040,7 @@ class MAViewer(neuroglancer.Viewer):
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 
-            logger.critical(f'Setting crossSectionScale to max of {scale_h} and {scale_w}...')
+            # logger.critical(f'Setting crossSectionScale to max of {scale_h} and {scale_w}...')
 
             # logger.critical(f'________{self.role}________')
             # logger.critical(f'widget_w       = {widget_w}')
@@ -1065,7 +1054,7 @@ class MAViewer(neuroglancer.Viewer):
             # logger.critical(f'cfg.data.scale = {cfg.data.scale}')
             # logger.critical(f'cs_scale       = {cs_scale}')
 
-            logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
+            # logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20
                 s.crossSectionScale = cs_scale * adjust

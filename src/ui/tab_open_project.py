@@ -1194,7 +1194,7 @@ class UserProjects(QWidget):
 
     def get_data(self):
         timer = Timer()
-        logger.info(f'>>>> get_data [{caller_name()}] >>>>')
+        # logger.info(f'>>>> get_data [{caller_name()}] >>>>')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         logger.info('Loading known projects into table view...')
@@ -1264,11 +1264,11 @@ class UserProjects(QWidget):
             extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
             timer.report()
 
-            logger.info(f'<<<< {p} <<<<')
+            # logger.info(f'<<<< {p} <<<<')
 
             # logger.info('Getting project location...')
 
-        logger.info('<<<< get_data <<<<')
+        # logger.info('<<<< get_data <<<<')
         # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
         #            n_sections, img_dimensions, bytes, gigabytes, extra)
         return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,

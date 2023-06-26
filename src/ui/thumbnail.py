@@ -143,19 +143,19 @@ class ThumbnailFast(QLabel):
         self.setPixmap(QPixmap(self.path))
         self.update()
 
-    def selectPixmap(self, path:str):
-        if os.path.isdir(path):
-            self.set_no_image()
-        else:
-            self._noImage = 0
-            try:
-                self.path = path
-                self.setPixmap(QPixmap(self.path))
-            except:
-                print_exception()
-                self.set_no_image()
-            finally:
-                self.update()
+    # def selectPixmap(self, path:str):
+    #     if os.path.isdir(path):
+    #         self.set_no_image()
+    #     else:
+    #         self._noImage = 0
+    #         try:
+    #             self.path = path
+    #             self.setPixmap(QPixmap(self.path))
+    #         except:
+    #             print_exception()
+    #             self.set_no_image()
+    #         finally:
+    #             self.update()
 
     #From CorrSignalThumbnail
     def set_data(self, path):
