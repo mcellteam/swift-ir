@@ -225,8 +225,6 @@ class MainWindow(QMainWindow):
             # sizes[1] = tn_w
             # cfg.project_tab.splitter_ngPlusSideControls.setSizes(sizes)
 
-
-
             cfg.pt.ms_widget.setFixedWidth(ms_w)
             cfg.pt.match_widget.setFixedWidth(ms_w)
             cfg.pt.tn_widget.setFixedWidth(tn_w)
@@ -2166,13 +2164,13 @@ class MainWindow(QMainWindow):
             if not cfg.data.is_aligned(new_scale):
                 cfg.pt.warning_cafm.hide()
 
-                if getData('state,manual_mode'):
-                    # self.reload_scales_combobox()
-                    # logger.warning('Exit manual alignment mode before changing scales')
-                    # self.warn('Exit manual alignment mode before changing scales!')
-                    # self.view_series_as_stack()
-                    cfg.project_tab.cl_stackView.isChecked
-                    # QApplication.processEvents()
+                # if getData('state,manual_mode'):
+                #     # self.reload_scales_combobox()
+                #     # logger.warning('Exit manual alignment mode before changing scales')
+                #     # self.warn('Exit manual alignment mode before changing scales!')
+                #     # self.view_series_as_stack()
+                #     cfg.project_tab.cl_stackView.isChecked
+                #     # QApplication.processEvents()
 
 
 
@@ -2386,11 +2384,13 @@ class MainWindow(QMainWindow):
 
         check_project_status()
         self.cbMonitor.setChecked(True)
-        self.resizeThings()
+
+
+        self.view_series_as_stack()
 
         QApplication.processEvents()
 
-        self.view_series_as_stack()
+        self.resizeThings()
         self.hud.done()
 
     def saveUserPreferences(self):
@@ -3115,7 +3115,7 @@ class MainWindow(QMainWindow):
             # cfg.pt.setRbRegionsView()
             cfg.pt.cl_configureRegions.setChecked(True)
             cfg.pt.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-            cfg.pt.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
+            cfg.pt.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
             cfg.pt.enableMethodChange()
             cfg.pt.MA_stackedWidget.show()
@@ -3147,7 +3147,7 @@ class MainWindow(QMainWindow):
             setData('state,viewer_mode', 'series_as_stack')
             # cfg.pt.setRbStackView()
             cfg.pt.cl_stackView.setChecked(True)
-            cfg.pt.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+            cfg.pt.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight 600;')
             cfg.pt.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
             # cfg.pt.rb_reference.hide()
             # cfg.pt.rb_transforming.hide()
@@ -3497,7 +3497,7 @@ class MainWindow(QMainWindow):
         # self.toolbar.setIconSize(QSize(18,18))
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         # self.toolbar.setFixedHeight(32)
-        self.toolbar.setFixedHeight(20)
+        self.toolbar.setFixedHeight(22)
         self.toolbar.setObjectName('toolbar')
         # self.addToolBar(self.toolbar)
 
@@ -3629,9 +3629,6 @@ class MainWindow(QMainWindow):
         # self.cbMonitor.setFixedSize(QSize(148, 16))  # tacc
         # self.cbPython.setFixedSize(QSize(148, 16))  # tacc
         # self.cbNotes.setFixedSize(QSize(96, 16))
-
-
-
 
         self.toolbar.layout().setSpacing(4)
         self.toolbar.layout().setAlignment(Qt.AlignRight)
@@ -5362,7 +5359,6 @@ class MainWindow(QMainWindow):
                 font-size: 10px;
             }
 
-
             QGroupBox#gb_cpanel {
                 color: #161c20;
                 border: 1px solid #ede9e8;
@@ -5380,8 +5376,6 @@ class MainWindow(QMainWindow):
                 margin-left: 2px;
                 margin-right: 2px;
             }
-
-
 
             /*
             QGroupBox:disabled#gb_cpanel {
@@ -5402,20 +5396,13 @@ class MainWindow(QMainWindow):
         """
 
         self.flSettings = QFormLayout()
-        # self.flSettings.setFormAlignment(Qt.AlignCenter)
         self.flSettings.setFormAlignment(Qt.AlignVCenter)
-        # self.flSettings.setContentsMargins(6,14,2,2)
         self.flSettings.setContentsMargins(2, 2, 2, 2)
         self.flSettings.setVerticalSpacing(2)
         self.flSettings.setHorizontalSpacing(0)
-        # self.flSettings.setContentsMargins(8,10,2,2)
-        # self.flSettings.addRow('Generate TIFFs: ', self._toggleAutogenerate))
         self.flSettings.addRow('Generate TIFFs: ', HWidget(ExpandingWidget(self), self._toggleAutogenerate))
-        # self.flSettings.addRow('Bounding Box: ', self._bbToggle)
         self.flSettings.addRow('Bounding Box: ', HWidget(ExpandingWidget(self), self._bbToggle))
         self.flSettings.addRow('Corrective Bias: ', HWidget(ExpandingWidget(self), self._polyBiasCombo))
-        # self.flSettings.setAlignment(Qt.AlignBaseline)
-        # self.flSettings.setAlignment(Qt.AlignBottom)
 
         self.outputSettings = QGroupBox("Output Settings")
         self.outputSettings.setObjectName('gb_cpanel')
@@ -6387,12 +6374,12 @@ class MainWindow(QMainWindow):
         # logger.info('')
         if self.cpanelTabWidget.currentIndex() == 0:
             self.updateCpanelDetails_i1()
-        if self.cpanelTabWidget.currentIndex() == 1:
+        elif self.cpanelTabWidget.currentIndex() == 1:
             self.updateLowest8widget()
-        if self.cpanelTabWidget.currentIndex() == 2:
+        elif self.cpanelTabWidget.currentIndex() == 2:
             self.updateDtWidget()
         #Cancel- tab 2 - runtimes are updated when runtimes change
-        if self.cpanelTabWidget.currentIndex() == 3:
+        elif self.cpanelTabWidget.currentIndex() == 3:
             self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
 
     def updateCpanelDetails_i1(self):
@@ -6439,7 +6426,10 @@ class MainWindow(QMainWindow):
             self.secUseBB.setText(str(cfg.data.use_bb()))
             self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
             if cfg.data.is_aligned():
-                self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                try:
+                    self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                except:
+                    print_exception()
                 if cfg.data.zpos <= cfg.data.first_unskipped():
                     self.secSNR.setText('--')
                 else:
@@ -6461,9 +6451,9 @@ class MainWindow(QMainWindow):
             n_lowest = min(8, len(cfg.data) - 1)
             lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
             lowest_X = list(cfg.data.snr_lowest(n_lowest))
-            logger.info(f'lowest_X_i : {lowest_X_i}')
-            logger.info(f'lowest_X : {lowest_X}')
-            logger.info(f'n_lowest : {n_lowest}')
+            # logger.info(f'lowest_X_i : {lowest_X_i}')
+            # logger.info(f'lowest_X : {lowest_X}')
+            # logger.info(f'n_lowest : {n_lowest}')
 
             funcs = []
             for i in range(n_lowest):
@@ -6599,11 +6589,7 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button.setIconSize(QSize(14, 14))
         self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
-        self.pbar_cancel_button.setStyleSheet("""
-        QPushButton{
-            font-size: 9px;
-            font-weight: 600;
-        }""")
+        self.pbar_cancel_button.setStyleSheet("""font-size: 9px;""")
         self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
 
         self.pbar_widget.setLayout(self.status_bar_layout)
@@ -6634,13 +6620,6 @@ class MainWindow(QMainWindow):
                 if caller == "collect_results":
                     if "Transforms" in self.pbar.text():
                         if cfg.pt.ms_widget.isVisible():
-                            # if (x == len(cfg.data)) or (x == len(cfg.data) - 1):
-                            #     logger.critical(f"\n\nx = {x}\n")
-                            #     # self.updateCorrSignalsDrawer(z=cfg.data.zpos)
-                            #     cfg.pt.tn_ms0.set_no_image()
-                            #     cfg.pt.tn_ms1.set_no_image()
-                            #     cfg.pt.tn_ms2.set_no_image()
-                            #     cfg.pt.tn_ms3.set_no_image()
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
                     # elif "Copy-converting" in self.pbar.text():

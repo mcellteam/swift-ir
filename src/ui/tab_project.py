@@ -32,7 +32,7 @@ from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
 from src.ui.sliders import DoubleSlider
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
-from src.ui.toggle_switch import ToggleSwitch
+from src.ui.toggle_switch import ToggleSwitch, AnimatedToggle
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
 from src.ui.joystick import Joystick
@@ -68,6 +68,9 @@ class ProjectTab(QWidget):
         self.webengine.setMouseTracking(True)
         self.focusedViewer = None
         self.setAutoFillBackground(True)
+
+        self.indexConfigure = 0
+        self.indexLogs = 2
 
         '''primary tab widgets'''
         self.table_container = QWidget()
@@ -111,8 +114,7 @@ class ProjectTab(QWidget):
 
         self.blinkCur = 0
 
-        self.indexConfigure = 0
-        self.indexLogs = 1
+
 
         # cfg.main_window.resizeThings()
 
@@ -288,7 +290,6 @@ class ProjectTab(QWidget):
 
             cfg.refViewer.signals.zposChanged.connect(fn_set_transforming)
 
-
             # cfg.baseViewer.signals.zposChanged.connect(cfg.baseViewer))
 
             # cfg.mw.zposChanged.connect(cfg.refViewer.set_layer)
@@ -387,14 +388,15 @@ class ProjectTab(QWidget):
         # self.lab_main_instructions = QLabel("'r' - refresh viewer. 'm' - enter manual align mode")
         # self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode")
         self.lab_main_instructions = QLabel(f"{hotkey('R')} - refresh. 'k' - include/exclude section. 'm' - enter manual align mode\n")
-        self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 9px; margin: 2px;")
-        self.lab_main_instructions.setFixedHeight(24)
+        self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 9px; font-weight: 600; margin-left: 2px;")
+        self.lab_main_instructions.setFixedHeight(22)
+        self.lab_main_instructions.setAlignment(Qt.AlignVCenter)
 
         # self.ng_messages = VWidget(self.warning_cafm)
         # self.ng_messages.layout.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
 
         self._overlayLab = QLabel('<label>')
-        self._overlayLab.setMaximumHeight(20)
+        # self._overlayLab.setMaximumHeight(20)
         self._overlayLab.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._overlayLab.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._overlayLab.setAlignment(Qt.AlignCenter)
@@ -699,7 +701,7 @@ class ProjectTab(QWidget):
 
         def fn():
             logger.info('')
-            self.MA_stackedWidget.setCurrentIndex(5)
+            self.MA_stackedWidget.setCurrentIndex(4)
 
         self.btnMAsettings = QPushButton('Settings')
         self.btnMAsettings.setFixedSize(QSize(54, 18))
@@ -1285,10 +1287,7 @@ class ProjectTab(QWidget):
             #     cfg.baseViewer.drawSWIMwindow()
             # else:
             #     cfg.refViewer.drawSWIMwindow()
-            cfg.baseViewer.drawSWIMwindow()
-            cfg.refViewer.drawSWIMwindow()
-            self.tn_tra.update()
-            self.tn_ref.update()
+            self.updateAnnotations()
 
             # self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
 
@@ -1573,7 +1572,8 @@ class ProjectTab(QWidget):
 
 
 
-        self.cl_configureRegions = ClickLabel('Configure Alignment')
+        self.cl_configureRegions = ClickLabel(' Configure Alignment')
+        self.cl_configureRegions.setAlignment(Qt.AlignCenter)
         self.cl_configureRegions.setMinimumHeight(16)
         self.cl_configureRegions.clicked.connect(lambda: self.configure_or_stack(selection='configure'))
         self.cl_configureRegions.setMinimumWidth(140)
@@ -1584,7 +1584,8 @@ class ProjectTab(QWidget):
         # if self.cl_configureRegions.isChecked:
         #     self.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
         #     self.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-        self.cl_stackView = ClickLabel(' View')
+        self.cl_stackView = ClickLabel(' View Image Stack')
+        self.cl_stackView.setAlignment(Qt.AlignCenter)
         self.cl_stackView.setMinimumHeight(16)
         self.cl_stackView.clicked.connect(lambda: self.configure_or_stack(selection='stack'))
         self.cl_stackView.setMinimumWidth(140)
@@ -1596,10 +1597,10 @@ class ProjectTab(QWidget):
         #     self.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
         if getData('state,viewer_mode') == 'series_as_stack':
             self.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-            self.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
+            self.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
         else:
             self.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-            self.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
+            self.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
 
 
@@ -1622,16 +1623,17 @@ class ProjectTab(QWidget):
         msgMode = QLabel(" 'm' to toggle")
         msgMode.setStyleSheet("""color: #FFFF66; font-size: 9px;""")
 
-        self.alunal_radioboxes = QWidget()
-        self.alunal_radioboxes.setFixedHeight(18)
-        self.alunal_radioboxes.setStyleSheet("QWidget{background-color: #222222;}")
-        self.alunal_radioboxes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.alunal_radioboxes.setStyleSheet("background-color: #666666; color: #ede9e8;")
-        # self.alunal_radioboxes.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 1.0);""")
-        self.alunal_radioboxes.setContentsMargins(0,0,0,0)
-        hbl = HBL(self.cl_stackView, self.cl_configureRegions, msgMode)
-        self.alunal_radioboxes.setLayout(hbl)
-        # self.alunal_radioboxes.setFixedHeight(16)
+        self.viewmode_rb_widget = QWidget()
+        self.viewmode_rb_widget.setFixedHeight(16)
+        self.viewmode_rb_widget.setStyleSheet("QWidget{background-color: #222222;}")
+        self.viewmode_rb_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.viewmode_rb_widget.setStyleSheet("background-color: #666666; color: #ede9e8;")
+        # self.viewmode_rb_widget.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 1.0);""")
+        self.viewmode_rb_widget.setContentsMargins(0, 0, 0, 0)
+        # hbl = HBL(self.cl_stackView, self.cl_configureRegions, msgMode)
+        hbl = HBL(self.cl_stackView, self.cl_configureRegions)
+        self.viewmode_rb_widget.setLayout(hbl)
+        # self.viewmode_rb_widget.setFixedHeight(16)
         # self.rb_view = HWidget(self.cl_stackView, self.cl_configureRegions)
 
 
@@ -1752,7 +1754,7 @@ class ProjectTab(QWidget):
             self.sw_main_ng.setCurrentIndex(0)
 
 
-        # self.sw_and_toggles = VWidget(self.alunal_radioboxes, self.ma_radioboxes, self.sw_main_ng)
+        # self.sw_and_toggles = VWidget(self.viewmode_rb_widget, self.ma_radioboxes, self.sw_main_ng)
         # self.sw_and_toggles = VWidget(self.ma_radioboxes, self.sw_main_ng)
         # self.sw_and_toggles = VWidget(self.ma_radioboxes, self.sw_main_ng)
         # self.sw_and_toggles.setStyleSheet("background-color: #222222; font-size: 10px;")
@@ -1775,7 +1777,7 @@ class ProjectTab(QWidget):
         self._ng_widget.setLayout(self.gl_sw_main)
 
         self.ng_widget = QWidget()
-        vbl = VBL(self.alunal_radioboxes, self._ng_widget)
+        vbl = VBL(self.viewmode_rb_widget, self._ng_widget)
         vbl.setSpacing(0)
         self.ng_widget.setLayout(vbl)
 
@@ -1883,7 +1885,7 @@ class ProjectTab(QWidget):
 
 
         self.layout_ng_MA_toolbar.addWidget(self.lab_filename)
-        # self.layout_ng_MA_toolbar.addWidget(self.alunal_radioboxes)
+        # self.layout_ng_MA_toolbar.addWidget(self.viewmode_rb_widget)
         # self.layout_ng_MA_toolbar.addWidget(self.ma_radioboxes)
 
 
@@ -1895,7 +1897,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
-        self.w_ng_extended_toolbar.setFixedHeight(20)
+        self.w_ng_extended_toolbar.setFixedHeight(22)
         self.w_ng_extended_toolbar.setStyleSheet(toolbar_style)
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
 
@@ -2030,7 +2032,9 @@ class ProjectTab(QWidget):
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
         self.blinkLab.setStyleSheet("""color: #ede9e8; font-size: 10px;""")
 
-        self.blinkToggle = ToggleSwitch()
+        # self.blinkToggle = ToggleSwitch()
+        self.blinkToggle = AnimatedToggle()
+        self.blinkToggle.setFixedSize(QSize(36,14))
         # self.blinkToggle.stateChanged.connect(self.blinkChanged)
         self.blinkToggle.stateChanged.connect(cfg.mw.turnBlinkOnOff)
 
@@ -2297,14 +2301,14 @@ class ProjectTab(QWidget):
         # self.toggleMatches = QPushButton('Toggle')
         self.toggleMatches = QPushButton()
         self.toggleMatches.setIcon(qta.icon(
-            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
+            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color='#339933'))
         self.toggleMatches.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
         self.toggleMatches.setFixedSize(20, 14)
         self.toggleMatches.setIconSize(QSize(20, 20))
 
         def fn_stop_playing():
             self.matchPlayTimer.stop()
-            self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+            self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color='#339933'))
 
 
         self.toggleMatches.clicked.connect(fn_stop_playing)
@@ -2370,7 +2374,7 @@ class ProjectTab(QWidget):
         self._btn_playMatchTimer.setIconSize(QSize(11, 11))
         self._btn_playMatchTimer.setFixedSize(14, 14)
         self._btn_playMatchTimer.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
-        self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color='#339933'))
 
         def startStopMatchTimer():
             logger.info('')
@@ -2378,10 +2382,10 @@ class ProjectTab(QWidget):
                 cfg.data['state']['blink'] = not cfg.data['state']['blink']
                 if cfg.data['state']['blink']:
                     self.matchPlayTimer.start()
-                    self._btn_playMatchTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
+                    self._btn_playMatchTimer.setIcon(qta.icon('fa.pause', color='#339933'))
                 else:
                     self.matchPlayTimer.stop()
-                    self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+                    self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color='#339933'))
         self._btn_playMatchTimer.clicked.connect(startStopMatchTimer)
 
         self.matchPlayTimer = QTimer(self)
@@ -2464,8 +2468,17 @@ class ProjectTab(QWidget):
         # self.side_controls.setMaximumWidth(280)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
+        self.w_swim_settings = QWidget()
+        self.fl_swim_settings = QFormLayout()
+        # self.w_swim_settings.setLayout(self.fl_swim_settings)
+        # self.w_swim_settings.setLayout(self.fl_MA_settings)
+
+
+
         self.sideTabs.addTab(self.side_controls, 'Configure')
+        self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
+
 
         self.widget3DEM = QWidget()
         # hbl = HBL(self.match_widget, self.ms_widget, self.tn_widget, self.ng_widget_container, self.side_controls)
@@ -2535,8 +2548,6 @@ class ProjectTab(QWidget):
 
     def onSideTabChange(self):
         self.refreshLogs()
-
-
 
         if self.sideTabs.currentIndex() == self.indexLogs:
             self.refreshLogs()
@@ -2728,32 +2739,7 @@ class ProjectTab(QWidget):
         logger.info('')
         if cfg.data.current_method == 'grid-custom':
             cfg.data.grid_custom_regions = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
-        elif cfg.data.current_method == 'grid-default':
-            cfg.data.grid_default_regions = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
         self.updateAnnotations()
-
-    # def updateMethodSelectWidget(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.info(f'caller: {caller}')
-    #
-    #     cur_index = self.MA_stackedWidget.currentIndex()
-    #
-    #     if cfg.data.current_method == 'grid-default':
-    #         self.method_rb0.setChecked(True)
-    #         self.MA_stackedWidget.setCurrentIndex(0)
-    #     elif cfg.data.current_method == 'grid-custom':
-    #         self.method_rb1.setChecked(True)
-    #         self.MA_stackedWidget.setCurrentIndex(1)
-    #     elif cfg.data.current_method in ('manual-hint', 'manual-strict'):
-    #         self.method_rb2.setChecked(True)
-    #         self.MA_stackedWidget.setCurrentIndex(2)
-    #         if cfg.data.hint_or_strict == 'strict':
-    #             self.rb_MA_strict.setChecked(True)
-    #         else:
-    #             self.rb_MA_hint.setChecked(True)
-    #
-    #     if cur_index in (3,4):
-    #         self.MA_stackedWidget.setCurrentIndex(cur_index)
 
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
@@ -3018,7 +3004,7 @@ class ProjectTab(QWidget):
 
         #0526 set skipped overlay
 
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
 
         # logger.info(f'cfg.data.skipped() = {cfg.data.skipped()} , cfg.data.has_reference() = {cfg.data.has_reference()}')
         # if cfg.data.skipped():
@@ -3258,8 +3244,6 @@ class ProjectTab(QWidget):
         try:
             self.deleteAllMp()
             self.update_MA_list_widgets()
-            # cfg.refViewer.undrawSWIMwindows()
-            # cfg.baseViewer.undrawSWIMwindows()
             self.updateAnnotations()
             self.setTargKargPixmaps()
             cfg.mw.updateCorrSignalsDrawer()
@@ -3536,7 +3520,7 @@ class ProjectTab(QWidget):
             print_exception()
 
     def setZmag(self, val):
-        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val}...')
+        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val} for all viewers...')
         try:
             cfg.refViewer.set_zmag(10)
         except:
@@ -3931,10 +3915,10 @@ class ProjectTab(QWidget):
         self.brightnessSlider.setFixedWidth(128)
         self.brightnessSlider.setMouseTracking(False)
         self.brightnessSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.brightnessSlider.setMinimum(-1.0)
-        # self.brightnessSlider.setMaximum(1.0)
-        self.brightnessSlider.setMinimum(-1)
-        self.brightnessSlider.setMaximum(1)
+        self.brightnessSlider.setMinimum(-1.0)
+        self.brightnessSlider.setMaximum(1.0)
+        # self.brightnessSlider.setMinimum(-1)
+        # self.brightnessSlider.setMaximum(1)
         self.brightnessSlider.setValue(0)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         self.brightnessSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
@@ -3959,10 +3943,10 @@ class ProjectTab(QWidget):
         self.contrastSlider.setFixedWidth(128)
         self.contrastSlider.setMouseTracking(False)
         self.contrastSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.contrastSlider.setMinimum(-1.0)
-        # self.contrastSlider.setMaximum(1.0)
-        self.contrastSlider.setMinimum(-1)
-        self.contrastSlider.setMaximum(1)
+        self.contrastSlider.setMinimum(-1.0)
+        self.contrastSlider.setMaximum(1.0)
+        # self.contrastSlider.setMinimum(-1)
+        # self.contrastSlider.setMaximum(1)
         self.contrastSlider.setValue(0)
         # self.contrastSlider.setSingleStep(.02)
         # self.contrastSlider.setSingleStep(0.01)
@@ -3976,10 +3960,12 @@ class ProjectTab(QWidget):
         self.bcWidget = HWidget(self.brightnessWidget, ExpandingWidget(self), self.contrastWidget)
 
         self.shaderToolbar = QToolBar()
-        self.shaderToolbar.setFixedHeight(20)
+        self.shaderToolbar.setFixedHeight(24)
 
-        self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb;""")
-        self.shaderToolbar.addWidget(QLabel('<b>Shader:&nbsp;&nbsp;&nbsp;&nbsp;</b>'))
+        self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb; font-size: 9px;""")
+        labShader = QLabel(' Shader: ')
+        labShader.setStyleSheet("font-size: 10px; font-weight: 600;")
+        self.shaderToolbar.addWidget(labShader)
         self.shaderToolbar.addWidget(self.bcWidget)
         self.shaderToolbar.addWidget(self.shaderSideButtons)
         self.shaderToolbar.addWidget(ExpandingWidget(self))
