@@ -2397,9 +2397,6 @@ class ProjectTab(QWidget):
 
         self.match_widget = VWidget(HWidget(self.labMatches, self._btn_playMatchTimer, self.toggleMatches), self.ktarg_table)
 
-
-
-
         '''MATCH SIGNALS TOOL WINDOW #signals'''
         self.labMatchSignals = QLabel('Match Signals')
         self.labMatchSignals.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
@@ -2556,7 +2553,7 @@ class ProjectTab(QWidget):
 
         setData('state,targ_karg_toggle', 1 - getData('state,targ_karg_toggle'))
         self.toggleMatches.setIcon(qta.icon(
-            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
+            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color='#339933'))
         # (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
         self.setTargKargPixmaps()
 
