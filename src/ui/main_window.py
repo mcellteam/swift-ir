@@ -1072,7 +1072,7 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False,
             # stageit=False,
-            stageit=True,
+            stageit=False,
         )
 
         self.onAlignmentEnd(start=start, end=end)
@@ -1098,7 +1098,7 @@ class MainWindow(QMainWindow):
             renew_od=False,
             reallocate_zarr=False,
             # stageit=False,
-            stageit=True,
+            stageit=False,
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
@@ -1160,7 +1160,7 @@ class MainWindow(QMainWindow):
             end=end,
             renew_od=False,
             reallocate_zarr=False,
-            stageit=True,
+            stageit=False,
             align_one=True,
             swim_only=False
         )
@@ -1206,7 +1206,7 @@ class MainWindow(QMainWindow):
             renew_od=True,
             reallocate_zarr=True,
             # stageit=stageit,
-            stageit=True,
+            stageit=False,
             ignore_bb=ignore_bb
         )
         # if not cfg.CancelProcesses:
