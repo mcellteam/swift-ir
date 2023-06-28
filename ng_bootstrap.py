@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 
 '''
-By:  Joel Yancey
-Date:  2023-01-04
-Purpose: This script can be used to open Zarr arrays in Neuroglancer, mediated by TensorStore. It only
-needs to be pointed at a directory containing '.zarray'. Be sure to run Python (3.8+) in interactive mode by
-specifying the '-i' cli option.
+Script  : ng_bootstrap.py
+By      : Joel Yancey
+Date    : 2023-01-04
+Purpose : This script can be used to open Zarr arrays in Neuroglancer, mediated
+by TensorStore. It only needs to be pointed at a directory containing '.zarray'.
+Be sure to run Python (3.8+) in interactive mode by specifying the '-i' cli arg.
 
-Required Python Modules:  Neuroglancer, TensorStore
+Required Python Modules:
+- Python 3.8+
+- Neuroglancer
+- TensorStore
+(- selenium)
 
-# Installation:
-  pip install neuroglancer
-  pip install tensorstore
+Install Python modules:
+  pip3 install neuroglancer
+  pip3 install tensorstore
+  (pip3 install Selenium if ModuleNotFound error)
 
-# Example:
-  python3 -i ng_bootstrap.py -p ./scratch/img_src.zarr/s1 --browser chrome
+Example:
+  python3 -i ng_bootstrap.py -p img_src.zarr/s1 --browser chrome
 
 Neuroglancer:  https://github.com/google/neuroglancer
 Tensor:  https://github.com/google/tensorstore
@@ -24,7 +30,7 @@ data in the directory that is served to any web page running on a machine that
 can connect to the web server.
 
 '''
-
+import os
 import json
 import copy
 import math
@@ -36,9 +42,11 @@ import traceback
 import tensorstore as ts
 import neuroglancer as ng
 import neuroglancer.webdriver
+import neuroglancer.cli
 
 
 log = logging.getLogger(__name__)
+log.setLevel(logging.WARNING)
 
 
 class Config():
@@ -66,7 +74,7 @@ class Config():
         self.background_color = '#808080'  # 128 grey
 
         # Command line options
-        self.PATH = args.path[0]
+        self.PATH = os.path.abspath(args.path[0])
         self.VOXELSIZE = args.voxelsize
         self.BROWSER = args.browser
         self.HEADLESS = args.headless
@@ -117,9 +125,17 @@ class NgBootstrap():
 
     def initViewer(self):
         log.info(f'Initializing Neuroglancer Viewer...')
+
         ng.server.debug = self.cfg.neuroglancer_server_debug
         self.viewer = ng.Viewer()
         ng.set_server_bind_address(bind_address=self.cfg.bind, bind_port=self.cfg.port)
+
+        searchpath = os.path.join(self.cfg.PATH, '.zarray')
+        try:
+            assert os.path.exists(searchpath)
+        except:
+            log.error(f"Required metadata file .zarray not found at location {searchpath}.")
+            return
 
         with self.viewer.txn() as s:
             s.gpu_memory_limit     = self.cfg.gpu_memory_limit
@@ -128,6 +144,11 @@ class NgBootstrap():
             s.show_scale_bar       = self.cfg.show_scale_bar
             s.show_axis_lines      = self.cfg.show_axis_lines
             s.crossSectionBackgroundColor = self.cfg.background_color
+
+            log.info(f"Path          : {self.cfg.PATH}\n"
+                     f"Data Type     : {self.cfg.dtype}\n"
+                     f"Driver        : {self.cfg.driver}\n"
+                     f"bytes_limit   : {self.cfg.cache_pool_total_bytes_limit}\n")
             try:
                 self.tensor = get_zarr_tensor(
                     path=self.cfg.PATH,
@@ -139,6 +160,7 @@ class NgBootstrap():
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__)
                 log.error('Invalid Zarr. Unable To Create Tensor for Zarr Array')
+                return
 
             self.coordinate_space = ng.CoordinateSpace(
                 names=['z', 'y', 'x'],
@@ -169,8 +191,19 @@ class NgBootstrap():
         )
 
 
+        # self.get_loading_progress()
+
+    def get_loading_progress(self):
+        return self.webdriver.execute_script('''
+    const userLayer = viewer.layerManager.getLayerByName("layer").layer;
+    return userLayer.renderLayers.map(x => x.layerChunkProgressInfo)
+     ''')
+
+
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
+    neuroglancer.cli.add_server_arguments(ap)
+
     ap.add_argument(
         '-p',
         '--path',
@@ -200,6 +233,8 @@ if __name__ == '__main__':
     )
 
     args = ap.parse_args()
+    # neuroglancer.cli.handle_server_arguments(args)
+    # neuroglancer.cli.add_server_arguments(args)
     nghost = NgBootstrap(cfg=Config(args))
     nghost.initViewer()
     nghost.show_webdriver_log()
