@@ -81,9 +81,7 @@ class Thumbnail(QWidget):
         self.layout.setContentsMargins(1, 1, 1, 1)
         self.layout.addWidget(self.thumbnail, 0, 0)
         self.setLayout(self.layout)
-
         self.setWidgetResizable(True)
-
 
 
 class ThumbnailFast(QLabel):
@@ -182,25 +180,36 @@ class ThumbnailFast(QLabel):
     #     finally:
     #         self.update()
 
+    # def set_no_image(self):
+    #     # logger.critical('')
+    #     self._noImage = 1
+    #     try:
+    #         # pass
+    #         # self.pixmap().fill(QColor('#161c20'))
+    #         # self.pixmap().fill(QColor('#ffe135'))
+    #         # # self.pixmap().fill()
+    #         # pixmap = QPixmap(16, 16)
+    #         # # pixmap = QPixmap()
+    #         # pixmap.fill(QColor('#f3f6fb'))  # fill the map with black
+    #         # self.setPixmap(pixmap)
+    #
+    #
+    #         pixmap = QPixmap(32, 32)
+    #         pixmap.fill(QColor('#161c20'))  # fill the map with black
+    #         self.setPixmap(pixmap)
+    #     except:
+    #         print_exception()
+    #         logger.warning('Unable to set no image...')
+    #     finally:
+    #         self.update()
+
     def set_no_image(self):
-        # logger.critical('')
+        self.snr = None
         self._noImage = 1
         try:
-            pass
-            # self.pixmap().fill(QColor('#161c20'))
-            # self.pixmap().fill(QColor('#ffe135'))
-            # # self.pixmap().fill()
-            # pixmap = QPixmap(16, 16)
-            # # pixmap = QPixmap()
-            # pixmap.fill(QColor('#f3f6fb'))  # fill the map with black
-            # self.setPixmap(pixmap)
-
-
-            pixmap = QPixmap(16, 16)
-            pixmap.fill(QColor('#161c20'))  # fill the map with black
-            self.setPixmap(pixmap)
+            self.pixmap().fill(QColor('#141414'))
         except:
-            print_exception()
+            # print_exception()
             logger.warning('Unable to set no image...')
         finally:
             self.update()
@@ -223,10 +232,6 @@ class ThumbnailFast(QLabel):
                     qp.drawPixmap(self.r, pm)
                     return
 
-
-                img_size = cfg.data.image_size()
-                sf = self.r.getCoords()[2] / img_size[0]  # scale factor
-
                 # logger.critical(f"self.r.getCoords() = {self.r.getCoords()}")
                 # logger.critical(f"self.r.getRect() = {self.r.getRect()}")
                 # logger.critical(f"self.r.width() = {self.r.width()}")
@@ -237,8 +242,6 @@ class ThumbnailFast(QLabel):
                 p2 = QPoint(coords[2], coords[1])
                 p3 = QPoint(coords[0], coords[3])
                 p4 = QPoint(coords[2], coords[3])
-
-
 
                 if self._noImage:
                     try:
@@ -254,6 +257,21 @@ class ThumbnailFast(QLabel):
                     except:
                         print_exception()
                         return
+                    finally:
+                        #0629+
+
+                        if self.name not in ('reference', 'transforming', 'reference-table', 'transforming-table'):
+
+                            coords = self.r.getCoords()
+
+                            p1 = QPoint(coords[0], coords[1])
+                            p2 = QPoint(coords[2], coords[1])
+                            p3 = QPoint(coords[0], coords[3])
+                            p4 = QPoint(coords[2], coords[3])
+
+                            if self.name in self.map_border_color:
+                                qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
+                                qp.drawLines(p1, p2, p1, p3, p4, p2, p4, p3)
 
 
                 if self.name in self.map_border_color:
@@ -271,6 +289,10 @@ class ThumbnailFast(QLabel):
                         method = cfg.data.current_method
                         s = cfg.data.scale
                         l = cfg.data.zpos
+
+                    img_size = cfg.data.image_size()
+                    sf = self.r.getCoords()[2] / img_size[0]  # scale factor
+                    # sf = self.r.getRect()[2] / img_size[0]  # scale factor
 
                     if method == 'grid-default':
                         cp = QPoint(self.r.center())  # center point
@@ -328,6 +350,8 @@ class ThumbnailFast(QLabel):
 
 
 
+
+
                 if self.extra:
                     qp.setPen(QColor('#ede9e8'))
                     loc = QPoint(0, self.rect().height() - 4)
@@ -345,6 +369,7 @@ class ThumbnailFast(QLabel):
 
     # def sizeHint(self):
     #     return QSize(100,100)
+
 
 
 @cache
@@ -405,8 +430,200 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y):
 
 
 
+
     # def resizeEvent(self, e):
     #     self.setMaximumWidth(self.height())
+
+
+
+#
+# class CorrSignalThumbnail(QLabel):
+#     def __init__(self, parent, path='', snr='', extra=''):
+#         super().__init__(parent)
+#         self.setScaledContents(True)
+#         # self.setMinimumSize(QSize(QSize(64,64)))
+#         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
+#         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) #Original!
+#         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+#         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+#         self.path = path
+#         if self.path:
+#             self.setPixmap(QPixmap(self.path))
+#         self.snr = snr
+#         self.extra = extra
+#         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
+#         # self.setStyleSheet("""border: 3px solid #ffe135;""")
+#         self.setAlignment(Qt.AlignCenter)
+#         self.setStyleSheet("""background-color: #ffffff;""")
+#         self.setMinimumSize(QSize(90, 90))
+#         self.setAutoFillBackground(True)
+#
+#
+#
+#         # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+#         # policy.setHeightForWidth(True)
+#         # self.setSizePolicy(policy)
+#
+#     # def heightForWidth(self, width):
+#     #     return width
+#
+#     def resizeEvent(self, e):
+#         self.setMaximumWidth(self.height())
+#
+#
+#     def paintEvent(self, event):
+#         if self.pixmap():
+#             try:
+#                 # originalRatio = pm.width() / pm.height()
+#                 # currentRatio = self.width() / self.height()
+#                 # if originalRatio != currentRatio:
+#                 qp = QPainter(self)
+#
+#                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+#                 if (pm.width() == 0) or (pm.height() == 0):
+#                     self.set_no_image()
+#                     return
+#
+#                 # pm.fill()
+#                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
+#                 # rect.moveBottomLeft(self.rect().bottomLeft())
+#                 # rect.moveBottomLeft(self.rect().bottomLeft())
+#                 rect.moveCenter(self.rect().center())
+#                 qp.drawPixmap(rect, pm)
+#                 font = QFont()
+#                 # font.setFamily('Courier')
+#                 font.setBold(True)
+#                 size = max(min(int(11 * (max(pm.height(),1) / 60)), 16), 8)
+#                 font.setPointSize(size)
+#                 # logger.critical(f'font size: {size}')
+#                 qp.setFont(font)
+#                 qp.setPen(QColor('#a30000'))
+#                 # qp.setBrush(QColor('#ff0000'))
+#
+#                 if self.snr:
+#                     # loc = QPoint(0, self.rect().height() - 4)
+#                     loc = QPoint(4, self.rect().height() - 6)
+#                     if self.extra:
+#                         qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
+#                     else:
+#                         qp.drawText(loc, '%.1f' %self.snr)
+#                 return
+#             except ZeroDivisionError:
+#                 # logger.warning('Cannot divide by zero')
+#                 print_exception()
+#                 pass
+#         super().paintEvent(event)
+#
+#
+#     def set_data(self, path, snr):
+#         self.path = path
+#         self.snr = snr
+#         try:
+#             self.setPixmap(QPixmap(self.path))
+#             # self.label.setText('%.3f' % self.snr)
+#         except:
+#             print_exception()
+#             logger.warning(f'WARNING path={self.path}, label={self.snr}')
+#
+#     def set_no_image(self):
+#         self.snr = None
+#         try:
+#             self.setPixmap(QPixmap(self.no_image_path))
+#         except:
+#             print_exception()
+#             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+#
+#     # def heightForWidth(self, w):
+#     #     if self.pixmap():
+#     #         return int(w * (self.pixmap().height() / self.pixmap().width()))
+#
+
+
+#
+# class CorrSignalThumbnail(QLabel):
+#     def __init__(self, parent, path='', snr='', extra=''):
+#         super().__init__(parent)
+#         self.setScaledContents(True)
+#         self.setMinimumSize(QSize(90,90))
+#         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
+#         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+#         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+#         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+#         self.path = path
+#         if self.path:
+#             self.setPixmap(QPixmap(self.path))
+#         self.snr = snr
+#         self.extra = extra
+#         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
+#         # self.setStyleSheet("""border: 3px solid #ffe135;""")
+#
+#     def resizeEvent(self, e):
+#         self.setMaximumWidth(self.height())
+#
+#     def paintEvent(self, event):
+#         if self.pixmap():
+#             try:
+#                 # originalRatio = pm.width() / pm.height()
+#                 # currentRatio = self.width() / self.height()
+#                 # if originalRatio != currentRatio:
+#                 qp = QPainter(self)
+#
+#                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+#
+#                 # pm.fill()
+#                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
+#                 # rect.moveBottomLeft(self.rect().bottomLeft())
+#                 # rect.moveBottomLeft(self.rect().bottomLeft())
+#                 rect.moveCenter(self.rect().center())
+#                 qp.drawPixmap(rect, pm)
+#                 font = QFont()
+#                 # font.setFamily('Courier')
+#                 font.setBold(True)
+#                 size = max(min(int(11 * (max(pm.height(),1) / 60)), 16), 8)
+#                 font.setPointSize(size)
+#                 # logger.critical(f'font size: {size}')
+#                 qp.setFont(font)
+#                 qp.setPen(QColor('#a30000'))
+#                 # qp.setBrush(QColor('#ff0000'))
+#
+#                 if self.snr:
+#                     # loc = QPoint(0, self.rect().height() - 4)
+#                     loc = QPoint(4, self.rect().height() - 6)
+#                     if self.extra:
+#                         qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
+#                     else:
+#                         qp.drawText(loc, '%.1f' %self.snr)
+#                 return
+#             except ZeroDivisionError:
+#                 # logger.warning('Cannot divide by zero')
+#                 print_exception()
+#                 pass
+#         super().paintEvent(event)
+#
+#
+#     def set_data(self, path, snr):
+#         self.path = path
+#         self.snr = snr
+#         try:
+#             self.setPixmap(QPixmap(self.path))
+#             # self.label.setText('%.3f' % self.snr)
+#         except:
+#             print_exception()
+#             logger.warning(f'WARNING path={self.path}, label={self.snr}')
+#
+#     def set_no_image(self):
+#         self.snr = None
+#         try:
+#             self.setPixmap(QPixmap(self.no_image_path))
+#         except:
+#             print_exception()
+#             logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+#
+#
+#     def sizeHint(self):
+#         # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+#         # return QSize(pm.width(), pm.height())
+#         return QSize(100,100)
 
 
 class CorrSignalThumbnail(QLabel):
@@ -420,7 +637,7 @@ class CorrSignalThumbnail(QLabel):
         else:
             # pass
             pixmap = QPixmap(16, 16)
-            pixmap.fill(QColor('#161c20'))  # fill the map with black
+            pixmap.fill(QColor('#141414'))  # fill the map with black
             self.setPixmap(pixmap)
         # pixmap = QPixmap(16, 16)
         # pixmap.fill(Qt.black)  # fill the map with black
@@ -430,6 +647,7 @@ class CorrSignalThumbnail(QLabel):
         self.snr = snr
         self.extra = extra
         self.name = name
+        self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         # self.setStyleSheet("""border: 0px solid #ffe135;""")
         self.setContentsMargins(0,0,0,0)
         self._noImage = 0
@@ -457,76 +675,75 @@ class CorrSignalThumbnail(QLabel):
 
                 qp = QPainter(self)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
                 self.r = QRect(0, 0, pm.width(), pm.height())
                 self.r.moveCenter(self.rect().center())
                 qp.drawPixmap(self.r, pm)
                 # if (pm.width() == 0) or (pm.height() == 0):
 
                 coords = self.r.getCoords()
+
                 p1 = QPoint(coords[0], coords[1])
                 p2 = QPoint(coords[2], coords[1])
                 p3 = QPoint(coords[0], coords[3])
                 p4 = QPoint(coords[2], coords[3])
 
-                if self._noImage or self.extra == 'reticle':
-                    try:
-                        self.pixmap().fill(QColor('#161c20'))
-                        font = QFont()
-                        size = max(min(int(11 * (max(pm.height(), 1) / 80)), 16), 5)
-                        font.setPointSize(size)
-                        # font.setBold(True)
-                        qp.setFont(font)
-                        qp.setPen(QColor('#222222'))
-                        qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "Null")
-                        return
-                    except:
-                        print_exception()
-                        return
-
                 if self.name in self.map_border_color:
                     qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
                     qp.drawLines(p1,p2 , p1,p3,  p4,p2 , p4,p3)
 
-                cp = QPointF(self.r.center())  # center point
+                if self._noImage or self.extra == 'reticle':
+                    self.pixmap().fill(QColor('#141414'))
+                    font = QFont()
+                    size = max(min(int(11 * (max(pm.height(), 1) / 80)), 16), 5)
+                    font.setPointSize(size)
+                    # font.setBold(True)
+                    qp.setFont(font)
+                    qp.setPen(QColor('#777777'))
+                    # qp.drawText(QRectF(0, 0, pm.width(), pm.height()), Qt.AlignCenter, "No Signal")
+                    qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "No Signal")
+                else:
 
-                # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
-                qp.setPen(QPen(QColor('#339933'), 1, Qt.DashLine))
+                    cp = QPointF(self.r.center())  # center point
 
-                # x = 12
-                x = int((pm.width() / 10) + .5)
+                    # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
+                    qp.setPen(QPen(QColor('#339933'), 1, Qt.DashLine))
 
-                qp.drawLines(p1, cp + QPoint(-x, -x),
-                             p2, cp + QPoint(x, -x),
-                             p3, cp + QPoint(-x, x),
-                             p4, cp + QPoint(x, x))
+                    # x = 12
+                    x = int((pm.width() / 10) + .5)
 
-                qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
+                    qp.drawLines(p1, cp + QPoint(-x, -x),
+                                 p2, cp + QPoint(x, -x),
+                                 p3, cp + QPoint(-x, x),
+                                 p4, cp + QPoint(x, x))
 
-                d = float(sqrt(x ** 2 + x ** 2)) * 2
+                    qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
 
-                # arcRect = QRectF(cp + QPoint(int(-siz/2 + .5), int(-siz/2 + .5)), cp + QPointF(int(siz/2 + .5), int(siz/2 + .5)))
-                arcRect = QRectF(cp + QPointF(-d, -d), cp + QPointF(d, d))
-                spanAngle = 30
-                qp.drawArc(arcRect, 30*16, spanAngle*16)
-                qp.drawArc(arcRect, 30*16 + 180*16, spanAngle*16)
-                qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
-                qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
+                    d = float(sqrt(x ** 2 + x ** 2)) * 2
 
-                font = QFont()
-                size = max(min(int(11 * (max(pm.height(), 1) / 60)), 14), 5)
-                font.setPointSize(size)
-                font.setBold(True)
-                qp.setFont(font)
-                qp.setPen(QColor('#339933'))
+                    # arcRect = QRectF(cp + QPoint(int(-siz/2 + .5), int(-siz/2 + .5)), cp + QPointF(int(siz/2 + .5), int(siz/2 + .5)))
+                    arcRect = QRectF(cp + QPointF(-d, -d), cp + QPointF(d, d))
+                    spanAngle = 30
+                    qp.drawArc(arcRect, 30*16, spanAngle*16)
+                    qp.drawArc(arcRect, 30*16 + 180*16, spanAngle*16)
+                    qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
+                    qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
-                if self.snr:
-                    # loc = QPoint(0, self.rect().height() - 4)
-                    # loc = QPoint(16, self.rect().height() - 6)
-                    loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
-                    if self.extra:
-                        qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
-                    else:
-                        qp.drawText(loc, '%.1f' %self.snr)
+                    font = QFont()
+                    size = max(min(int(11 * (max(pm.height(), 1) / 60)), 14), 5)
+                    font.setPointSize(size)
+                    font.setBold(True)
+                    qp.setFont(font)
+                    qp.setPen(QColor('#339933'))
+
+                    if self.snr:
+                        # loc = QPoint(0, self.rect().height() - 4)
+                        # loc = QPoint(16, self.rect().height() - 6)
+                        loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
+                        if self.extra:
+                            qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
+                        else:
+                            qp.drawText(loc, '%.1f' %self.snr)
                 return
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
@@ -551,21 +768,12 @@ class CorrSignalThumbnail(QLabel):
             self.update()
 
     def set_no_image(self):
-        # logger.critical('')
         self.snr = None
         self._noImage = 1
         try:
-            # self.pixmap().fill(QColor('#141414'))
-            # self.pixmap().fill(QColor('#ffe135'))
-            # self.pixmap().fill(QColor('#ffe135'))
-            # # self.pixmap().fill()
-            pixmap = QPixmap(16, 16)
-            # pixmap = QPixmap()
-            # pixmap.fill(QColor('#f3f6fb'))  # fill the map with black
-            pixmap.fill(QColor('#161c20'))  # fill the map with black
-            self.setPixmap(pixmap)
+            self.pixmap().fill(QColor('#141414'))
         except:
-            print_exception()
+            # print_exception()
             logger.warning('Unable to set no image...')
         finally:
             self.update()

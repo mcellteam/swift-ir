@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
             print_exception()
             self.branch = ''
         tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        self.window_title = 'AlignEM-SWIFT | branch: %s (%s)' % (self.branch, tstamp)
+        self.window_title = 'AlignEM-SWIFT - branch: %s - %s' % (self.branch, tstamp)
         self.setWindowTitle(self.window_title)
         # self.setWindowTitle('AlignEM-SWIFT (%s)' % tstamp)
         self.setAutoFillBackground(False)
@@ -205,29 +205,19 @@ class MainWindow(QMainWindow):
                 logger.critical("widget has lost keyboard focus")
 
 
-    def resizeThings(self):
-        logger.critical('Resizing things...')
-        if self._isProjectTab():
-            logger.critical('Resizing things, isProjectTab...')
+    # def resizeThings(self):
+    #     logger.critical('Resizing things...')
 
-            # h = cfg.pt.splitter_ngPlusSideControls.height()
-            h = cfg.project_tab.widget3DEM.height()
-            # cfg.project_tab.ms_widget.setMinimumWidth(int(h / 4))
-            # cfg.project_tab.ms_widget.resize(int(h / 4), h)
-
-            cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
-
-            ms_w = int(h/4 + 0.5)
-            tn_w = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
-
-            # sizes = cfg.project_tab.splitter_ngPlusSideControls.sizes()
-            # sizes[0] = ms_w
-            # sizes[1] = tn_w
-            # cfg.project_tab.splitter_ngPlusSideControls.setSizes(sizes)
-
-            cfg.pt.ms_widget.setFixedWidth(ms_w)
-            cfg.pt.match_widget.setFixedWidth(ms_w)
-            cfg.pt.tn_widget.setFixedWidth(tn_w)
+        # if self._isProjectTab():
+        #     cfg.pt.fn_hwidgetChanged()
+        #     logger.critical('Resizing things, isProjectTab...')
+        #     h = cfg.project_tab.widget3DEM.height()
+        #     # cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
+        #     ms_w = int(h/4 + 0.5)
+        #     tn_w = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
+        #     cfg.pt.ms_widget.setFixedWidth(ms_w)
+        #     cfg.pt.match_widget.setFixedWidth(ms_w)
+        #     cfg.pt.tn_widget.setFixedWidth(tn_w)
 
 
     def restore_tabs(self, settings):
@@ -1791,12 +1781,19 @@ class MainWindow(QMainWindow):
 
 
             if cfg.pt.tn_widget.isVisible():
-                os.path.isdir(cfg.data.thumbnail_ref())
-                # cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
-                # cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
-                cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
-                cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
                 cfg.pt.labMethod2.setText(cfg.data.method_pretty())
+                try:
+                    assert os.path.exists(cfg.data.thumbnail_ref())
+                    # cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
+                    cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
+                    assert os.path.exists(cfg.data.thumbnail_tra())
+                    # cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
+                    cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
+
+                except:
+                    cfg.pt.tn_ref.set_no_image()
+                    cfg.pt.tn_tra.set_no_image()
+                    print_exception()
 
             cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
             cfg.pt.tn_tra_lab.setText(f'Transforming Section\n'
@@ -2373,9 +2370,10 @@ class MainWindow(QMainWindow):
         cfg.project_tab.setTargKargPixmaps()
         # self.updateAllCpanelDetails()
         self.updateCpanelDetails()
-        
+
         QApplication.processEvents()
-        # cfg.project_tab.delayInitNeuroglancer()
+        
+
         cfg.project_tab.initNeuroglancer(init_all=True)
 
 
@@ -2388,10 +2386,17 @@ class MainWindow(QMainWindow):
 
         self.view_series_as_stack()
 
+        # QApplication.processEvents()
+
+        cfg.project_tab.fn_hwidgetChanged()
         QApplication.processEvents()
 
-        self.resizeThings()
+        # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
+
         self.hud.done()
+
+    # def delayInitNeuroglancer(self, ms=1000):
+    #     QTimer.singleShot(ms, self.initNeuroglancer)
 
     def saveUserPreferences(self):
         logger.info('Saving User Preferences...')
@@ -3118,7 +3123,13 @@ class MainWindow(QMainWindow):
             cfg.pt.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
             cfg.pt.enableMethodChange()
-            cfg.pt.MA_stackedWidget.show()
+            # cfg.pt.MA_stackedWidget.show()
+            if cfg.data.current_method == 'grid-custom':
+                cfg.pt.MA_stackedWidget.setCurrentIndex(1)
+            elif cfg.data.current_method in ('manual-hint','manual-strict'):
+                cfg.pt.MA_stackedWidget.setCurrentIndex(2)
+            else:
+                cfg.pt.MA_stackedWidget.setCurrentIndex(0)
 
             cfg.pt.gb_warnings.hide()
 
@@ -3157,7 +3168,8 @@ class MainWindow(QMainWindow):
 
             cfg.pt.disableMethodChange()
 
-            cfg.pt.MA_stackedWidget.hide()
+            # cfg.pt.MA_stackedWidget.hide()
+            cfg.pt.MA_stackedWidget.setCurrentIndex(3)
             # cfg.pt.gb_warnings.show()
 
             with cfg.emViewer.txn() as s:
@@ -3576,6 +3588,7 @@ class MainWindow(QMainWindow):
                 tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
                 tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
                 self.cbThumbnails.setToolTip((tip1, tip2)[state])
+                cfg.pt.fn_hwidgetChanged()
 
         tip = f"Show Raw Thumbnails {hotkey('T')}"
         self.cbThumbnails = QCheckBox(f"Raw Thumbnails {hotkey('T')}")
@@ -3601,6 +3614,7 @@ class MainWindow(QMainWindow):
                 tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
                 tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
                 self.cbSignals.setToolTip((tip1, tip2)[state])
+                cfg.pt.fn_hwidgetChanged()
 
 
         tip = f"Show Match Signals {hotkey('I')}"
@@ -3636,7 +3650,11 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, e):
         logger.info('')
-        self.resizeThings()
+
+        if self._isProjectTab():
+            cfg.pt.fn_hwidgetChanged()
+
+
 
     def fullScreenCallback(self):
         logger.info('')
@@ -6622,6 +6640,7 @@ class MainWindow(QMainWindow):
                         if cfg.pt.ms_widget.isVisible():
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
+                            QApplication.processEvents()
                     # elif "Copy-converting" in self.pbar.text():
                     #     # if cfg.pt._tabs.currentIndex() == 0:
                     #     if x%10 == 10:
