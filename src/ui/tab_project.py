@@ -126,7 +126,7 @@ class ProjectTab(QWidget):
         # QTimer.singleShot(375, cfg.mw.resizeThings)
         # QTimer.singleShot(575, cfg.mw.resizeThings)
 
-        QTimer.singleShot(600, cfg.mw.resizeThings) #Prev
+        # QTimer.singleShot(600, cfg.mw.resizeThings) #Prev
 
         # self.resizeTimer = QTimer(self)
         # self.resizeTimer.setInterval(500)
@@ -335,8 +335,8 @@ class ProjectTab(QWidget):
 
 
 
-    def delayInitNeuroglancer(self):
-        QTimer.singleShot(1000, self.initNeuroglancer)
+    # def delayInitNeuroglancer(self, ms=1000):
+    #     QTimer.singleShot(ms, self.initNeuroglancer)
 
         # self.updateProjectLabels()
 
@@ -703,10 +703,6 @@ class ProjectTab(QWidget):
             logger.info('')
             self.MA_stackedWidget.setCurrentIndex(4)
 
-        self.btnMAsettings = QPushButton('Settings')
-        self.btnMAsettings.setFixedSize(QSize(54, 18))
-        self.btnMAsettings.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnMAsettings.clicked.connect(fn)
 
         # def fn():
         #     logger.info('')
@@ -817,23 +813,24 @@ class ProjectTab(QWidget):
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
         self.btnQuickSWIM = QPushButton('Generate Match &Signals')
-        self.btnQuickSWIM.setStyleSheet("font-size: 9px; font-weight: 600;")
+        self.btnQuickSWIM.setStyleSheet("font-size: 9px; font-weight: 600; color: #161c20; background-color: #9fdf9f;")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.btnQuickSWIM.setFixedSize(QSize(120, 18))
+        # self.btnQuickSWIM.setFixedSize(QSize(120, 18))
+        self.btnQuickSWIM.setFixedHeight(20)
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
         hbl = HBL()
         hbl.setSpacing(0)
         hbl.setContentsMargins(2, 2, 2, 2)
-        hbl.addWidget(self.btnQuickSWIM, alignment=Qt.AlignRight)
-        hbl.addWidget(HWidget(
-                    ExpandingWidget(self),
-                    # self.MA_settings_defaults_button,
-                    # self.btnRunSwimMA,
-                    self.btnMAsettings,
-                    # self.btnClearMA,
-                    ExpandingWidget(self)
-        ), alignment=Qt.AlignCenter)
+        hbl.addWidget(self.btnQuickSWIM)
+        # hbl.addWidget(HWidget(
+        #             ExpandingWidget(self),
+        #             # self.MA_settings_defaults_button,
+        #             # self.btnRunSwimMA,
+        #             # self.btnMAsettings,
+        #             # self.btnClearMA,
+        #             ExpandingWidget(self)
+        # ), alignment=Qt.AlignCenter)
 
         self.MA_controls = QWidget()
         self.MA_controls.setStyleSheet('font-size: 10px;')
@@ -2301,14 +2298,14 @@ class ProjectTab(QWidget):
         # self.toggleMatches = QPushButton('Toggle')
         self.toggleMatches = QPushButton()
         self.toggleMatches.setIcon(qta.icon(
-            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color='#339933'))
+            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
         self.toggleMatches.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
         self.toggleMatches.setFixedSize(20, 14)
         self.toggleMatches.setIconSize(QSize(20, 20))
 
         def fn_stop_playing():
             self.matchPlayTimer.stop()
-            self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color='#339933'))
+            self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
 
 
         self.toggleMatches.clicked.connect(fn_stop_playing)
@@ -2374,7 +2371,7 @@ class ProjectTab(QWidget):
         self._btn_playMatchTimer.setIconSize(QSize(11, 11))
         self._btn_playMatchTimer.setFixedSize(14, 14)
         self._btn_playMatchTimer.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
-        self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color='#339933'))
+        self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
 
         def startStopMatchTimer():
             logger.info('')
@@ -2382,10 +2379,10 @@ class ProjectTab(QWidget):
                 cfg.data['state']['blink'] = not cfg.data['state']['blink']
                 if cfg.data['state']['blink']:
                     self.matchPlayTimer.start()
-                    self._btn_playMatchTimer.setIcon(qta.icon('fa.pause', color='#339933'))
+                    self._btn_playMatchTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
                 else:
                     self.matchPlayTimer.stop()
-                    self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color='#339933'))
+                    self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
         self._btn_playMatchTimer.clicked.connect(startStopMatchTimer)
 
         self.matchPlayTimer = QTimer(self)
@@ -2502,16 +2499,6 @@ class ProjectTab(QWidget):
         # self.splitter_ngPlusSideControls.setCollapsible(2, False)
         # self.splitter_ngPlusSideControls.setCollapsible(3, False)
 
-
-
-        def fn_hsplitter():
-            # self.ms_widget.setMaximumWidth(cfg.pt.tn_ms0.width() + 8)
-            # sizes = self.splitter_ngPlusSideControls.sizes()
-            # sizes[0] = cfg.pt.tn_ms0.width() + 8
-            # self.splitter_ngPlusSideControls.setSizes(sizes)
-            # sizes = self.ms_widget.size()
-            cfg.mw.resizeThings()
-
         # self.splitter_ngPlusSideControls.splitterMoved.connect(fn_hsplitter)
 
         # def fn_splitterMoved():
@@ -2532,6 +2519,28 @@ class ProjectTab(QWidget):
         # self.ng_browser_container_outer.layout.setStretch(3,0)
         # self.ng_browser_container_outer.layout.setStretch(4,6)
         # self.ng_browser_container_outer.layout.setSpacing(0)
+        
+        # self.uiSplitterTimer = QTimer()
+        # self.uiSplitterTimer.setSingleShot(True)
+        # self.uiSplitterTimer.timeout.connect(self.initNeuroglancer)
+        # self.uiSplitterTimer.setInterval(1000)
+
+    def fn_hwidgetChanged(self):
+        self.tn_widget.setFixedWidth(self.tn_tra.height() + 8)
+        max_w = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height())
+        logger.info(f'max_w = {max_w}')
+        self.ms_widget.setMaximumWidth(max_w * 2 + 20)
+
+        logger.critical('Resizing things, isProjectTab...')
+        h = self.widget3DEM.height()
+        # cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
+        ms_w = int(h/4 + 0.5)
+        tn_w = int((h - self.tn_ref_lab.height() - self.tn_ref_lab.height()) / 2 + 0.5)
+        self.ms_widget.setFixedWidth(ms_w)
+        self.match_widget.setFixedWidth(ms_w)
+        self.tn_widget.setFixedWidth(tn_w)
+
+        # self.initNeuroglancer()
 
     def configure_or_stack(self, selection: str):
         if selection == 'configure':
@@ -2553,7 +2562,7 @@ class ProjectTab(QWidget):
 
         setData('state,targ_karg_toggle', 1 - getData('state,targ_karg_toggle'))
         self.toggleMatches.setIcon(qta.icon(
-            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color='#339933'))
+            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
         # (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
         self.setTargKargPixmaps()
 
