@@ -1216,8 +1216,8 @@ class UserProjects(QWidget):
                 with open(p, 'r') as f:
                     dm = DataModel(data=json.load(f), quietly=True)
             except:
-                print_exception()
-                logger.error('Table view failed to load data model: %s' % p)
+                # print_exception()
+                logger.error('Unable to locate or load data model: %s' % p)
 
             logger.info(f'  DataModel Loaded')
             # timer.report()
