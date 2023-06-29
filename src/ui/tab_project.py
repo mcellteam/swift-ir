@@ -70,8 +70,6 @@ class ProjectTab(QWidget):
         self.setAutoFillBackground(True)
 
         '''primary tab widgets'''
-        self.ng_browser_container_outer = HWidget()
-        self.ng_browser_container_outer.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.table_container = QWidget()
         self._wdg_treeview = QWidget()
         self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
@@ -173,6 +171,7 @@ class ProjectTab(QWidget):
                 # self.webengine.reload()
             self.tn_ref.update() #Ensure
             self.tn_tra.update() #Ensure
+
 
         elif index == 1:
             pass
@@ -2402,45 +2401,105 @@ class ProjectTab(QWidget):
         self.ngCombinedOutterVwidget = VWidget(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ngCombinedHwidget)
         self.ngCombinedOutterVwidget.show()
 
-        self.hsplitter_tn_ng = QSplitter(Qt.Orientation.Horizontal)
-        # self.hsplitter_tn_ng.setStyleSheet("""QLabel {background-color: #222222; } QSplitter::handle { background: #339933; width: 1px; height: 1px;} QSplitter::handle:hover { background: #339933; width: 4px; height: 4px;}""")
-        # self.hsplitter_tn_ng.setStyleSheet("""QLabel{background-color: #222222;} QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; border-width: 3px; margin: 5px; width: 5px; height: 5px;}""")
-        self.hsplitter_tn_ng.setStyleSheet("""QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; width: 4px; height: 4px;}""")
-        self.hsplitter_tn_ng.addWidget(self.tn_widget)
-        self.hsplitter_tn_ng.addWidget(HWidget(self.ngVertLab, self.ngCombinedOutterVwidget))
-        self.hsplitter_tn_ng.addWidget(self.ms_widget)
-        self.hsplitter_tn_ng.setCollapsible(0,True)
-        self.hsplitter_tn_ng.setCollapsible(1,False)
-        self.hsplitter_tn_ng.setCollapsible(2,True)
-        # self.hsplitter_tn_ng.setCollapsible(2,False)
-        self.hsplitter_tn_ng.setStretchFactor(0,0)
-        self.hsplitter_tn_ng.setStretchFactor(1,1)
-        self.hsplitter_tn_ng.setStretchFactor(2,1)
+        # self.hsplitter_tn_ng = QSplitter(Qt.Orientation.Horizontal)
+        # # self.hsplitter_tn_ng.setStyleSheet("""QLabel {background-color: #222222; } QSplitter::handle { background: #339933; width: 1px; height: 1px;} QSplitter::handle:hover { background: #339933; width: 4px; height: 4px;}""")
+        # # self.hsplitter_tn_ng.setStyleSheet("""QLabel{background-color: #222222;} QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; border-width: 3px; margin: 5px; width: 5px; height: 5px;}""")
+        # self.hsplitter_tn_ng.setStyleSheet("""QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; width: 4px; height: 4px;}""")
+        # self.hsplitter_tn_ng.addWidget(self.tn_widget)
+        # self.hsplitter_tn_ng.addWidget(HWidget(self.ngVertLab, self.ngCombinedOutterVwidget))
+        # self.hsplitter_tn_ng.addWidget(self.ms_widget)
+        # self.hsplitter_tn_ng.setCollapsible(0,True)
+        # self.hsplitter_tn_ng.setCollapsible(1,False)
+        # self.hsplitter_tn_ng.setCollapsible(2,True)
+        # # self.hsplitter_tn_ng.setCollapsible(2,False)
+        # self.hsplitter_tn_ng.setStretchFactor(0,0)
+        # self.hsplitter_tn_ng.setStretchFactor(1,1)
+        # self.hsplitter_tn_ng.setStretchFactor(2,1)
+        # self.hsplitter_tn_ng.splitterMoved.connect(self.fn_hwidgetChanged)
 
-        def fn_splitterMoved():
-            # if cfg.pt.hsplitter_tn_ng.sizes()[2] == 0:
-            # cfg.mw.cbSignals.setChecked(self.ms_widget.isVisible())
-            cfg.mw.cbThumbnails.setChecked(self.hsplitter_tn_ng.sizes()[0])
-            cfg.mw.cbSignals.setChecked(self.hsplitter_tn_ng.sizes()[2])
+        self.hwidget_tn_ng = HWidget(self.tn_widget, HWidget(self.ngVertLab, self.ngCombinedOutterVwidget), self.ms_widget)
+        self.hwidget_tn_ng.layout.setStretch(0,1)
+        self.hwidget_tn_ng.layout.setStretch(1,3)
+        self.hwidget_tn_ng.layout.setStretch(2,3)
 
-
-        self.hsplitter_tn_ng.splitterMoved.connect(fn_splitterMoved)
-
-        self.ng_browser_container_outer.addWidget(self.hsplitter_tn_ng)
+        self.ng_browser_container_outer = HWidget()
+        self.ng_browser_container_outer.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.ng_browser_container_outer.addWidget(self.hwidget_tn_ng)
+        # self.ng_browser_container_outer.addWidget(self.hsplitter_tn_ng)
         self.ng_browser_container_outer.addWidget(self.sideSliders)
-        self.ng_browser_container_outer.layout.setStretch(0,0)
-        self.ng_browser_container_outer.layout.setStretch(2,3)
-        self.ng_browser_container_outer.layout.setStretch(3,0)
-        self.ng_browser_container_outer.layout.setStretch(4,6)
+        # self.ng_browser_container_outer.layout.setStretch(0,0)
+        # self.ng_browser_container_outer.layout.setStretch(2,3)
+        # self.ng_browser_container_outer.layout.setStretch(3,0)
+        # self.ng_browser_container_outer.layout.setStretch(4,6)
         self.ng_browser_container_outer.layout.setSpacing(0)
 
-        self.update()
-
-        w = cfg.mw.width()
-        # self.hsplitter_tn_ng.setSizes([int(w*(1.3/8)), int(w*(4.7/8)), int(w*(2/8))])
-        self.hsplitter_tn_ng.setSizes([int(w*(1.1/8)), int(w*(4.9/8)), int(w*(2/8))])
+        # w = cfg.mw.width()
+        # self.hsplitter_tn_ng.setSizes([int(w*(1/8)), int(w*(5/8)), int(w*(2/8))])
 
         # self.restoreState(cfg.mw.settings.value("hsplitter_tn_ngSizes"))
+
+        self.uiSplitterTimer = QTimer()
+        self.uiSplitterTimer.setSingleShot(True)
+        # self.uiSplitterTimer.timeout.connect(self.fn_hwidgetChanged)
+        self.uiSplitterTimer.timeout.connect(self.initNeuroglancer)
+        self.uiSplitterTimer.setInterval(1000)
+
+        # self.fn_hwidgetChanged()
+
+
+    def fn_hwidgetChanged(self):
+
+        # logger.critical(f"sender: {str(self.sender())}")
+        # # if cfg.pt.hsplitter_tn_ng.sizes()[2] == 0:
+        # # cfg.mw.cbSignals.setChecked(self.ms_widget.isVisible())
+        # if self.uiSplitterTimer.isActive():
+        #     logger.critical('Delaying Splitter Update...')
+        #     return
+        # else:
+        #     self.uiSplitterTimer.start()
+        #     logger.critical('Updating Splitter on Timeout...')
+
+        # logger.info(f"---------------")
+        # # logger.info(f"self.hsplitter_tn_ng.sizes()          = {self.hsplitter_tn_ng.sizes()}")
+        # logger.info(f"self.tn_tra.width()                   = {self.tn_tra.width()}")
+        # logger.info(f"self.tn_widget.width()                = {self.tn_widget.width()}")
+        # logger.info(f"self.tn_widget.width()/height()       = {self.tn_tra.width()}/{self.tn_tra.height()}")
+        # logger.info(f"self.tn_tra.pixmap().width()/height() = {self.tn_tra.pixmap().width()}/{self.tn_tra.pixmap().height()}")
+
+        # cfg.mw.cbThumbnails.setChecked(self.hsplitter_tn_ng.sizes()[0])
+        # cfg.mw.cbSignals.setChecked(self.hsplitter_tn_ng.sizes()[2])
+
+        # self.tn_widget.setMaximumWidth(self.tn_tra.width())
+        # self.tn_widget.setMaximumWidth(self.tn_tra.pixmap().width()) #close
+        # self.tn_widget.resize(QSize(self.tn_tra.pixmap().width(), self.tn_widget.height()))
+        # self.tn_widget.resize(QSize(self.tn_tra.pixmap().width(), self.tn_widget.height()))
+
+        # self.tn_widget.setFixedWidth(self.tn_tra.height())
+
+        # sizes = self.hsplitter_tn_ng.sizes()
+        # sizes[0] = self.tn_tra.height() + 8
+        # sizes[2] = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height()) * 2 + 16
+        # self.hsplitter_tn_ng.setSizes(sizes)
+
+
+        self.tn_widget.setFixedWidth(self.tn_tra.height() + 8)
+
+        
+        
+        # self.ms_widget.setFixedWidth(max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height()) * 2 + 16)
+        # self.ms_widget.setFixedWidth(self.tn_ms0.pixmap().height()* 2 + 16)
+        # self.tn_ms0.setFixedWidth(self.tn_ms0.pixmap().width())
+
+        # self.tn_widget.setMaximumWidth(self.tn_tra.height() + 12)
+        max_w = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height())
+        logger.info(f'max_w = {max_w}')
+        self.ms_widget.setMaximumWidth(max_w * 2 + 20)
+
+        # self.resize(QSize(self.tn_tra.height() + 8, self.tn_widget.height()))
+        # self.resize(QSize(max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height()) * 2 + 16, self.ms_widget.height()))
+
+        # self.initNeuroglancer()
+
 
 
     def setRbTransforming(self):

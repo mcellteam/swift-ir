@@ -399,8 +399,6 @@ class MainWindow(QMainWindow):
         self.uiUpdateTimer.setSingleShot(True)
         # self.uiUpdateTimer.timeout.connect(lambda: self.dataUpdateWidgets(silently=True))
         self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
-        # self.uiUpdateTimer.setInterval(250)
-        # self.uiUpdateTimer.setInterval(450)
         self.uiUpdateTimer.setInterval(350)
 
         # self.uiUpdateRegularTimer = QTimer()
@@ -1095,6 +1093,8 @@ class MainWindow(QMainWindow):
             self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
             cfg.project_tab.initNeuroglancer()
 
+        cfg.project_tab.project_table.set_row_data(row=start)
+
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
@@ -1121,6 +1121,7 @@ class MainWindow(QMainWindow):
         )
         self.onAlignmentEnd(start=start, end=end)
         cfg.project_tab.initNeuroglancer()
+        cfg.project_tab.project_table.set_row_data(row=start)
         self.tell('Section #%d Alignment Complete' % start)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
@@ -1169,6 +1170,7 @@ class MainWindow(QMainWindow):
 
         self.onAlignmentEnd(start=0, end=None)
         cfg.project_tab.initNeuroglancer()
+        cfg.project_tab.project_table.initTableData()
 
 
 
@@ -1699,8 +1701,6 @@ class MainWindow(QMainWindow):
 
             #CriticalMechanism
             if 'viewer_em.WorkerSignals' in str(self.sender()):
-                timerActive = self.uiUpdateTimer.isActive()
-                # logger.critical(f"uiUpdateTimer active? {timerActive}")
                 if self.uiUpdateTimer.isActive():
                     logger.info('Delaying UI Update [viewer_em.WorkerSignals]...')
                     return
@@ -3562,15 +3562,16 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 state = self.cbThumbnails.isChecked()
                 setData('state,tool_windows,signals', state)
-                new_size = (0, 200)[state]
                 cfg.pt.tn_widget.setVisible(state)
-                sizes = cfg.pt.hsplitter_tn_ng.sizes()
-                sizes[0] = new_size
-                cfg.pt.hsplitter_tn_ng.setSizes(sizes)
+                # new_size = (0, 200)[state]
+                # sizes = cfg.pt.hsplitter_tn_ng.sizes()
+                # sizes[0] = new_size
+                # cfg.pt.hsplitter_tn_ng.setSizes(sizes)
                 self.showRawThumbnailsAction.setText(('Show Match Signals', 'Hide Match Signals')[state])
                 tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
                 tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
                 self.cbThumbnails.setToolTip((tip1, tip2)[state])
+                cfg.pt.fn_hwidgetChanged()
 
         tip = f"Show Raw Thumbnails {hotkey('T')}"
         self.cbThumbnails = QCheckBox(f"Raw Thumbnails {hotkey('T')}")
@@ -3583,15 +3584,16 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 state = self.cbSignals.isChecked()
                 setData('state,tool_windows,signals', state)
-                new_size = (0,400)[state]
                 cfg.pt.ms_widget.setVisible(state)
-                sizes = cfg.pt.hsplitter_tn_ng.sizes()
-                sizes[2] = new_size
-                cfg.pt.hsplitter_tn_ng.setSizes(sizes)
+                # new_size = (0, 400)[state]
+                # sizes = cfg.pt.hsplitter_tn_ng.sizes()
+                # sizes[2] = new_size
+                # cfg.pt.hsplitter_tn_ng.setSizes(sizes)
                 self.showMatchSignalsAction.setText(('Show Match Signals', 'Hide Match Signals')[state])
                 tip1 = '\n'.join(f"Show Match Signals {hotkey('I')}")
                 tip2 = '\n'.join(f"Hide Match Signals {hotkey('I')}")
                 self.cbSignals.setToolTip((tip1, tip2)[state])
+                cfg.pt.fn_hwidgetChanged()
 
 
         tip = f"Show Match Signals {hotkey('I')}"
@@ -3628,8 +3630,12 @@ class MainWindow(QMainWindow):
         self.toolbar.layout().setAlignment(Qt.AlignRight)
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
 
-    # def resizeEvent(self, e):
-    #     logger.info('')
+    def resizeEvent(self, e):
+        # logger.info('')
+        if self._isProjectTab():
+            # cfg.pt.fn_splitterMoved()
+
+            cfg.pt.fn_hwidgetChanged()
 
     def fullScreenCallback(self):
         logger.info('')
@@ -5212,7 +5218,7 @@ class MainWindow(QMainWindow):
         self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         # self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(70, 16))
+        self._polyBiasCombo.setFixedSize(QSize(64, 16))
         self._polyBiasCombo.setEnabled(False)
         self._polyBiasCombo.lineEdit()
 

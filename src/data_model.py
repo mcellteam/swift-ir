@@ -1053,8 +1053,12 @@ class DataModel:
     def snr(self, s=None, l=None, method=None) -> float:
         if s == None: s = self.scale
         if l == None: l = self.zpos
+        provided = True
         if method == None:
+            provided = False
             method = self.method(s=s,l=l)
+
+        # logger.critical(f'caller: {inspect.stack()[1].function}, method: {method}, provided: {provided}')
         # logger.critical('')
         # if l == 0:
         #     return 0.0
@@ -1064,6 +1068,7 @@ class DataModel:
             # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
             # components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr'] #prev
             components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            logger.info(f'components: {str(components)}, type: {type(components)}')
             '''
             13:55:45 WARNING [helpers.print_exception:731]   [20230526_13:55:45]
             Error Type : <class 'TypeError'>

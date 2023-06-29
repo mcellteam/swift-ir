@@ -48,7 +48,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
     if gui:
-        cfg.mw.tell('Copy-converting TIFFs to NGFF-Compliant Zarr...')
+        cfg.mw.tell('Copy-converting Downsampled Source Images to Zarr...')
         # cfg.mw.showZeroedPbar()
     try:
         worker = BackgroundWorker(fn=GenerateScalesZarr(dm, gui=gui))
@@ -61,7 +61,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     if make_thumbnails:
         logger.info('Generating Source Thumbnails...')
         if gui:
-            cfg.mw.tell('Generating Source Thumbnails...')
+            cfg.mw.tell('Generating Source Image Thumbnails...')
             # cfg.mw.showZeroedPbar()
         try:
             thumbnailer = Thumbnailer()
