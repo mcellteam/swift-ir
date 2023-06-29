@@ -84,7 +84,8 @@ if __name__ == '__main__':
         # n_arrays = dict(grp.info_items())['No. arrays']
         # name_ = str(n_arrays) + '__'
         # grp.create_dataset(name=out_name, shape=img.shape, chunks=chunkshape[1:2], dtype='|u1', compressor=None)
-        grp.create_dataset(name=out_name, shape=img_.shape, chunks=chunkshape, dtype='|u1', compressor=None, order='F')
+        # grp.create_dataset(name=out_name, shape=img_.shape, chunks=chunkshape, dtype='|u1', compressor=None, order='F')
+        grp.create_dataset(name=out_name, shape=img_.shape, chunks=chunkshape, dtype='|u1', compressor=None)
         # grp[out_name][:,:] = img
         grp[out_name][:,:,:] = img_
 
