@@ -479,7 +479,7 @@ class EMViewer(AbstractEMViewer):
             # h = cfg.project_tab.webengine.height()
             # cfg.project_tab.ngCombinedHwidget.show()
             # cfg.project_tab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            cfg.project_tab.webengine.show()
+al              cfg.project_tab.webengine.show()
             cfg.project_tab.w_ng_display.show()
             # QApplication.processEvents()
             # w = cfg.project_tab.webengine.width()

@@ -81,7 +81,6 @@ class Thumbnail(QWidget):
         self.layout.setContentsMargins(1, 1, 1, 1)
         self.layout.addWidget(self.thumbnail, 0, 0)
         self.setLayout(self.layout)
-
         self.setWidgetResizable(True)
 
 
@@ -178,6 +177,9 @@ class ThumbnailFast(QLabel):
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio)
 
+
+
+
                 if self._noImage:
                     # self.set_no_image()
                     self.r = rect = QRect(0, 0, pm.width(), pm.height())
@@ -188,25 +190,30 @@ class ThumbnailFast(QLabel):
                 self.r = rect = QRect(0, 0, pm.width(), pm.height())
                 # rect.moveBottomLeft(self.rect().bottomLeft())
                 qp.drawPixmap(rect, pm)
-                img_size = cfg.data.image_size()
-                sf = self.r.getCoords()[2] / img_size[0]  # scale factor
-                # sf = self.r.getRect()[2] / img_size[0]  # scale factor
+
 
                 # logger.critical(f"self.r.getCoords() = {self.r.getCoords()}")
                 # logger.critical(f"self.r.getRect() = {self.r.getRect()}")
                 # logger.critical(f"self.r.width() = {self.r.width()}")
                 # logger.critical(f"self.r.height() = {self.r.height()}")
 
-                if self.name in ('reference-table', 'transforming-table'):
-                    method = cfg.data.method(s=self.s, l=self.l)
-                    s = self.s
-                    l = self.l
-                else:
-                    method = cfg.data.current_method
-                    s = cfg.data.scale
-                    l = cfg.data.zpos
+
 
                 if self.name in ('reference', 'transforming', 'reference-table', 'transforming-table'):
+
+                    if self.name in ('reference-table', 'transforming-table'):
+                        method = cfg.data.method(s=self.s, l=self.l)
+                        s = self.s
+                        l = self.l
+                    else:
+                        method = cfg.data.current_method
+                        s = cfg.data.scale
+                        l = cfg.data.zpos
+
+                    img_size = cfg.data.image_size()
+                    sf = self.r.getCoords()[2] / img_size[0]  # scale factor
+                    # sf = self.r.getRect()[2] / img_size[0]  # scale factor
+
                     if method == 'grid-default':
                         cp = QPoint(self.r.center())  # center point
                         ww = tuple(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'])

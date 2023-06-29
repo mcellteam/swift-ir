@@ -120,14 +120,14 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         dest = dm['data']['destination_path']
 
         cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
-        pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
+        pbar_text = 'Computing Scale %d Transforms (%d Cores)...' % (scale_val, cpus)
         logger.info(f'\n\n################ Computing Alignment ################\n')
 
         if use_gui:
             task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
         else:
             task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
-        task_queue.taskPrefix = 'Computing Alignment for '
+        task_queue.taskPrefix = 'Computing SWIM Alignment for '
         # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
         # if end == None:
         #     end = len(dm)

@@ -210,14 +210,14 @@ class Thumbnailer:
                       f'start     : {start}\n'
                       f'end       : {end}\n'
                       f'pbar      : {pbar_text}\n'
-                      f'cpus      : {cpus}\n'
+                      f'cores     : {cpus}\n'
                       f'# files   : {len(filenames)}'
                       )
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
         if use_gui:
-            task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
+            task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, parent=cfg.main_window, pbar_text=pbar_text + ' (%d Cores)' %cpus)
         else:
             task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, use_gui=False)
 

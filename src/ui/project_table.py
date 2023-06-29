@@ -2,6 +2,7 @@
 
 import os
 import json
+import copy
 import time
 import inspect
 import logging
@@ -262,8 +263,11 @@ class ProjectTable(QWidget):
     def set_row_data(self, row):
         scale = cfg.data.scale
 
-        snr_4x = cfg.data.snr_components(l=row)
+        snr_4x = copy.deepcopy(cfg.data.snr_components(s=scale, l=row))
         row_data = self.get_row_data(s=scale, l=row)
+        method = cfg.data.method(s=scale, l=row)
+        if method == 'grid-custom':
+            regions = copy.deepcopy(cfg.data.get_grid_custom_regions(l=row))
         # for j, item in enumerate(row):
         for col in range(0, len(row_data)):
             if col == 0:
@@ -283,17 +287,25 @@ class ProjectTable(QWidget):
                 self.table.setCellWidget(row, col, tn)
             elif col == 6:
                 try:
-                    assert snr_4x[col - 6] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms0')
+                    if method == 'grid-custom':
+                        assert regions[0] == 1
+                    else:
+                        assert snr_4x[0] > 0.0
+
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms0')
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self)
                     tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
             elif col == 7:
+
                 try:
-                    assert snr_4x[col - 6] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms1')
+                    if method == 'grid-custom':
+                        assert regions[1] == 1
+                    else:
+                        assert snr_4x[0] > 0.0
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms1')
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self)
@@ -301,8 +313,11 @@ class ProjectTable(QWidget):
                     self.table.setCellWidget(row, col, tn)
             elif col == 8:
                 try:
-                    assert snr_4x[col - 6] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms2')
+                    if method == 'grid-custom':
+                        assert regions[2] == 1
+                    else:
+                        assert snr_4x[0] > 0.0
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms2')
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self)
@@ -310,8 +325,11 @@ class ProjectTable(QWidget):
                     self.table.setCellWidget(row, col, tn)
             elif col == 9:
                 try:
-                    assert snr_4x[col - 6] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x[col - 6], name='ms3')
+                    if method == 'grid-custom':
+                        assert regions[3] == 1
+                    else:
+                        assert snr_4x[0] > 0.0
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms3')
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self)

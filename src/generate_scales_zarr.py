@@ -50,9 +50,9 @@ def GenerateScalesZarr(dm, gui=True):
         if gui: cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
 
         # dest = cfg.data['data']['destination_path']
-        logger.info(f'\n\n################ Converting Downscales to Zarr ################\n')
+        logger.info(f'\n\n################ Converting Downsampled TIFFs to Zarr ################\n')
         task_queue = TaskQueue(n_tasks=n_tasks, dest=dm.dest(), parent=cfg.main_window, pbar_text=pbar_text, use_gui=gui)
-        task_queue.taskPrefix = 'Downscales Converted to Zarr for '
+        task_queue.taskPrefix = 'Copy-converting Downsampled Source Images to Zarr for '
 
         tasknamelist = []
         for scale in dm.scales():
