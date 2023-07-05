@@ -1297,6 +1297,9 @@ class MainWindow(QMainWindow):
         cfg.nProcessDone = 0
         cfg.nProcessSteps = 0
 
+        if is_joel():
+            self.memory()
+
     def rescale(self):
         if self._isProjectTab():
 
