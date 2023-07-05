@@ -13,6 +13,7 @@ import subprocess as sp
 from typing import Dict, Any
 import hashlib
 import json
+import psutil
 
 __all__ = ['run_recipe']
 
@@ -149,6 +150,13 @@ class align_recipe:
         s += "  mov: " + str(self.im_mov_fn) + "\n"
 
 
+    def megabytes(self):
+        return psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
+
+    def gigabytes(self):
+        return psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3
+
+
     def assemble_recipe(self):
         scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
 
@@ -271,6 +279,10 @@ class align_recipe:
         self.layer_dict['alignment']['method_results']['im_sta_fn']= self.im_sta_fn
         self.layer_dict['alignment']['method_results']['im_mov_fn']= self.im_mov_fn
         self.layer_dict['alignment']['method_results']['siz']= self.siz
+        try:    self.layer_dict['alignment']['method_results']['memory_mb'] = self.megabytes()
+        except: print_exception()
+        try:    self.layer_dict['alignment']['method_results']['memory_gb'] = self.gigabytes()
+        except: print_exception()
 
         if self.cur_method == 'grid-custom':
             self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
