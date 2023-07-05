@@ -156,7 +156,7 @@ class TaskQueue(QObject):
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
             sys.stderr.write('Starting Worker %d >>>>' % i)
-            logger.info('Starting Worker %d...' % i)
+            logger.info('Starting Worker %d >>' % i)
             try:
                 if cfg.DAEMON_THREADS:
                     p = self.ctx.Process(target=worker, daemon=True,
@@ -199,6 +199,7 @@ class TaskQueue(QObject):
         # logger.info('Ending Tasks...')
         # Add one sentinel per worker
         for i in range(self.n_workers):
+            logger.info('<< Adding END_TASKS sentinel to Worker %d' % i)
             self.work_queue.put('END_TASKS')
 
     def stop(self) -> None:
