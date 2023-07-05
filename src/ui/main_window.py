@@ -2623,6 +2623,8 @@ class MainWindow(QMainWindow):
         #     finally:
         #         time.sleep(.3)
 
+        self._autosave(silently=True)
+
         if cfg.USE_EXTRA_THREADING:
             try:
                 self.tell('Waiting For Threadpool...')
