@@ -495,6 +495,12 @@ class DataModel:
     def t_thumbs_spot(self, dt):
         self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_spot'] = dt
 
+
+    def mem(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self['data']['scales'][s]['stack'][l]['alignment']['method_results']['memory_gb']
+
     def set_thumb_scaling_factor_source(self, factor:int):
         self._data['data']['thumb_scaling_factor_source'] = factor
 
