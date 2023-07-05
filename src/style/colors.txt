@@ -32,6 +32,7 @@
 #dadada - light grey
 #FFE873 - Shandy (Python yellow)
 #FFD43B - Sunglow (Python darker yellow)
+#8f99fb - periwinkle blue from Dreamgirls
 
 https://xkcd.com/color/rgb/
 
