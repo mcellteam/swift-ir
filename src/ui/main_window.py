@@ -184,6 +184,13 @@ class MainWindow(QMainWindow):
         self.setFocusPolicy(Qt.StrongFocus)
 
 
+    def memory(self):
+        mem = psutil.Process(os.getpid()).memory_info().rss
+        MB = f'{mem / 1024 ** 2:.0f} MB'
+        GB = f'{mem / 1024 ** 3:.0f} GB'
+        s = f'Memory Usage (main): {MB}, {GB}'
+        self.tell(f'<span style="color: #FFFF66;"><b>{s}</b></span>')
+
 
         # self.zposChanged.connect(lambda: logger.critical(f'Z-index changed! New zpos is {cfg.data.zpos}'))
         # self.zposChanged.connect(self.dataUpdateWidgets)
