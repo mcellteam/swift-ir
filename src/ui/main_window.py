@@ -191,11 +191,33 @@ class MainWindow(QMainWindow):
         # self.zposChanged.connect(self.dataUpdateWidgets)
 
     def memory(self):
-        mem = psutil.Process(os.getpid()).memory_info().rss
-        MB = f'{mem / 1024 ** 2:.0f} MB'
-        GB = f'{mem / 1024 ** 3:.0f} GB'
-        s = f'Memory Usage (main): {MB}, {GB}'
-        self.tell(f'<span style="color: #FFFF66;"><b>{s}</b></span>')
+        if self._isProjectTab():
+            mem = psutil.Process(os.getpid()).memory_info().rss
+            MB = f'{mem / 1024 ** 2:.0f} MB'
+            GB = f'{mem / 1024 ** 3:.0f} GB'
+            s = f'Memory Usage (Main): {MB}, {GB}'
+            self.tell(f'<span style="color: #FFFF66;"><b>{s}</b></span>')
+
+    def mem(self):
+        if self._isProjectTab():
+            s1 = f'Memory Usage / Task (MB): '
+            s2 = f'Memory Usage / Task (GB): '
+            try:
+                if cfg.data.is_aligned():
+                    for l in cfg.data.get_iter():
+                        mb = l['alignment']['method_results']['memory_mb']
+                        gb = l['alignment']['method_results']['memory_gb']
+                        MB = f'{mb:.0f}, '
+                        GB = f'{gb:.0f}, '
+                        s1 += MB
+                        s2 += GB
+
+                    self.tell(f'<span style="color: #FFFF66;"><b>{s1}</b></span>')
+                    self.tell(f'<span style="color: #FFFF66;"><b>{s2}</b></span>')
+                else:
+                    self.tell(f'No memory data to report.')
+            except:
+                print_exception()
 
     def eventFilter(self, object, event):
         if DEV:
