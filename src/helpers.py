@@ -772,7 +772,8 @@ def register_login():
         fn = f"{node}_{user}.log"
         location = "/work/08507/joely/ls6/log_db"
         of = os.path.join(location, fn)
-        sp.call(['chmod', '0666', of])
+        os.chmod(of, 0o666)
+        # sp.call(['chmod', '0666', of])
         with open(of, 'a+') as f:
             f.write(login_txt)
 
@@ -803,6 +804,7 @@ def print_exception(extra=''):
         fn = f"{node}_{user}.log"
         location = "/work/08507/joely/ls6/log_db"
         of = os.path.join(location, fn)
+        os.chmod(of, 0o666)
         with open(of, 'a+') as f:
             f.write(log_to_db)
 
