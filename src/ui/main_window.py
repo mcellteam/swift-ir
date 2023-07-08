@@ -2377,10 +2377,10 @@ class MainWindow(QMainWindow):
         setData('state,viewer_mode', 'series_as_stack')
         setData('state,ng_layout', 'xy')
 
-
-
-        if not cfg.data.is_aligned(s=cfg.data['data']['current_scale']):
-            cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+        #Critical this might be critical for now
+        cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+        # if not cfg.data.is_aligned(s=cfg.data['data']['current_scale']):
+        #     cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
 
         self.updateDtWidget()  # <.001s
 
