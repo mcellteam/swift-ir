@@ -368,6 +368,8 @@ class DataModel:
 
     def get_ref_index(self, l=None):
         if l == None: l = self.zpos
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}, l={l}')
         if self.skipped(s=self.scale, l=l):
             return self.get_index(self._data['data']['scales'][self.scale]['stack'][l]['filename']) #Todo refactor this but not sure how
         reference = self._data['data']['scales'][self.scale]['stack'][l]['reference']
@@ -1014,7 +1016,7 @@ class DataModel:
         return [x['filename'] for x in self.get_iter()]
 
     def get_index(self, filename):
-        logger.info(f'[{inspect.stack()[1].function}]')
+        logger.info(f'[{inspect.stack()[1].function}] filename = {filename}')
         # logger.info(f'filename = {filename}')
         return self.transforming_list().index(filename)
 
