@@ -123,14 +123,19 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
         logger.info(f'\n\n################ Computing Alignment ################\n')
 
+        limit_workers = 80
+
         if use_gui:
+
             if scale_val < 6:
-                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text, limit_workers=80)
+                logger.critical(f'Limiting workers to maximum of {limit_workers}')
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text, limit_workers=limit_workers)
             else:
                 task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
         else:
             if scale_val < 6:
-                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui, limit_workers=80)
+                logger.critical(f'Limiting workers to maximum of {limit_workers}')
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui, limit_workers=limit_workers)
             else:
                 task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
         task_queue.taskPrefix = 'Computing Alignment for '
