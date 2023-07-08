@@ -15,7 +15,7 @@ from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QApplication
 import neuroglancer as ng
 import src.config as cfg
-from src.helpers import print_exception
+from src.helpers import print_exception, is_tacc
 
 import numcodecs
 
