@@ -2352,6 +2352,12 @@ class MainWindow(QMainWindow):
         setData('state,ng_layout', 'xy')
 
         # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+        if not cfg.data.is_aligned(s=cfg.data['data']['current_scale']):
+            cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+
+
+
+
 
 
 
