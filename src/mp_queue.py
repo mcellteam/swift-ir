@@ -86,8 +86,8 @@ class TaskQueue(QObject):
         self.dest = dest
         self.parent = parent
         self.use_gui = use_gui
-        if is_tacc():
-            start_method = 'spawn'
+        # if is_tacc():
+        #     start_method = 'spawn'
 
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
