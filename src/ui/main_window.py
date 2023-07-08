@@ -2351,7 +2351,7 @@ class MainWindow(QMainWindow):
         setData('state,mode', 'stack-xy')
         setData('state,ng_layout', 'xy')
 
-        cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+        # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
 
 
 
