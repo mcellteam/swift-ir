@@ -180,6 +180,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         logger.info('Reading task results and updating data model...')
 
         for tnum in range(len(task_list)):
+            logger.info(f'Reading task results for {tnum}...')
 
             if USE_FILE_IO:
                 # Get the updated datamodel previewmodel from the file written by single_alignment_job

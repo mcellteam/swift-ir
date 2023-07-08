@@ -202,24 +202,24 @@ class MainWindow(QMainWindow):
     def mem(self):
         if self._isProjectTab():
             s1 = f'Memory Usage / Task (MB): '
-            s2 = f'Memory Usage / Task (GB): '
+            # s2 = f'Memory Usage / Task (GB): '
             try:
                 if cfg.data.is_aligned():
                     for l in cfg.data.get_iter():
                         try:
                             mb = l['alignment']['method_results']['memory_mb']
-                            gb = l['alignment']['method_results']['memory_gb']
+                            # gb = l['alignment']['method_results']['memory_gb']
                             MB = f'{mb:.0f}, '
-                            GB = f'{gb:.0f}, '
+                            # GB = f'{gb:.0f}, '
                             s1 += MB
-                            s2 += GB
+                            # s2 += GB
                         except:
                             pass
 
                     self.tell(f'<span style="color: #FFFF66;"><b>{s1}</b></span>')
-                    self.tell(f'<span style="color: #FFFF66;"><b>{s2}</b></span>')
+                    # self.tell(f'<span style="color: #FFFF66;"><b>{s2}</b></span>')
                     logger.critical(s1)
-                    logger.critical(s2)
+                    # logger.critical(s2)
                 else:
                     self.tell(f'No memory data to report.')
                     logger.critical(f'No memory data to report.')
