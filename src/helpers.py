@@ -772,10 +772,13 @@ def register_login():
         fn = f"{node}_{user}.log"
         location = "/work/08507/joely/ls6/log_db"
         of = os.path.join(location, fn)
-        os.chmod(of, 0o666)
         # sp.call(['chmod', '0666', of])
         with open(of, 'a+') as f:
             f.write(login_txt)
+        try:
+            os.chmod(of, 0o666)
+        except:
+            print_exception()
 
 
 def print_exception(extra=''):
@@ -804,9 +807,13 @@ def print_exception(extra=''):
         fn = f"{node}_{user}.log"
         location = "/work/08507/joely/ls6/log_db"
         of = os.path.join(location, fn)
-        os.chmod(of, 0o666)
+
         with open(of, 'a+') as f:
             f.write(log_to_db)
+        try:
+            os.chmod(of, 0o666)
+        except:
+            print_exception()
 
 
 def get_img_filenames(path) -> list[str]:
