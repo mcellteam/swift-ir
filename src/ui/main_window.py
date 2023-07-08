@@ -2358,11 +2358,6 @@ class MainWindow(QMainWindow):
         #     cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
 
 
-
-
-
-
-
         QApplication.processEvents()
 
         self.updateDtWidget()  # <.001s
