@@ -9,7 +9,7 @@
 # TO RUN THIS SCRIPT:
 # $ source tacc_bootstrap
 
-CACHER="1"
+CACHER="0"
 DEBUG="0"
 PULL="1"
 
