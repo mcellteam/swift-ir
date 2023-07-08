@@ -787,7 +787,9 @@ def print_exception(extra=''):
         logger.critical('Memory Error!!')
         cfg.main_window.memory()
         try:
-            cfg.main_window
+            cfg.main_window.mem()
+        except:
+            print_exception()
 
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}{extra}\n"
     logger.warning(txt)
