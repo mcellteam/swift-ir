@@ -782,6 +782,13 @@ def register_login():
 def print_exception(extra=''):
     tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     exi = sys.exc_info()
+
+    if 'MemoryError' in str(exi[0]):
+        logger.critical('Memory Error!!')
+        cfg.main_window.memory()
+        try:
+            cfg.main_window
+
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}{extra}\n"
     logger.warning(txt)
 
