@@ -124,9 +124,15 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         logger.info(f'\n\n################ Computing Alignment ################\n')
 
         if use_gui:
-            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
+            if scale_val < 6:
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text, limit_workers=80)
+            else:
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
         else:
-            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
+            if scale_val < 6:
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui, limit_workers=80)
+            else:
+                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
         task_queue.taskPrefix = 'Computing Alignment for '
         # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
         # if end == None:
