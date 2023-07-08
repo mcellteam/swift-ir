@@ -197,7 +197,7 @@ class MainWindow(QMainWindow):
             GB = f'{mem / 1024 ** 3:.0f} GB'
             s = f'Main Memory Usage: {MB}, {GB}'
             self.tell(f'<span style="color: #FFFF66;"><b>{s}</b></span>')
-            logger.critical(f'<span style="color: #FFFF66;"><b>{s}</b></span>')
+            logger.critical(s)
 
     def mem(self):
         if self._isProjectTab():
@@ -218,8 +218,8 @@ class MainWindow(QMainWindow):
 
                     self.tell(f'<span style="color: #FFFF66;"><b>{s1}</b></span>')
                     self.tell(f'<span style="color: #FFFF66;"><b>{s2}</b></span>')
-                    logger.critical(f'<span style="color: #FFFF66;"><b>{s1}</b></span>')
-                    logger.critical(f'<span style="color: #FFFF66;"><b>{s2}</b></span>')
+                    logger.critical(s1)
+                    logger.critical(s2)
                 else:
                     self.tell(f'No memory data to report.')
                     logger.critical(f'No memory data to report.')
