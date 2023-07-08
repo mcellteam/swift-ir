@@ -564,7 +564,7 @@ class EMViewer(AbstractEMViewer):
             s.system_memory_limit = -1
             s.show_scale_bar = False
             s.show_axis_lines = False
-            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+            s.show_default_annotations = getData('state,show_yellow_frame')
             # s.position=[cfg.data.zpos, store.shape[1]/2, store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
@@ -651,7 +651,7 @@ class EMViewerStage(AbstractEMViewer):
             # s.show_scale_bar = True
             s.show_scale_bar = False
             s.show_axis_lines = False
-            s.show_default_annotations = getData('state,stage_viewer,show_yellow_frame')
+            s.show_default_annotations = getData('state,show_yellow_frame')
             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             # s.showSlices=False
             # s.position = [0, tensor_y / 2, tensor_x / 2]
@@ -746,7 +746,7 @@ class EMViewerSnr(AbstractEMViewer):
             else:
                 s.crossSectionBackgroundColor = '#222222'
             s.show_scale_bar = False
-            s.show_default_annotations = True
+            s.show_default_annotations = getData('state,show_yellow_frame')
             s.show_axis_lines = True
 
             self.grps = []

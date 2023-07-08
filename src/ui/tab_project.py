@@ -823,7 +823,6 @@ class ProjectTab(QWidget):
 
             self.spinbox_whitening.setValue(float(cfg.data['data']['defaults']['signal-whitening']))
             self.spinbox_swim_iters.setValue(int(cfg.data['data']['defaults']['swim-iterations']))
-            setData('state,stage_viewer,show_overlay_message', True)
 
             self.updateAnnotations()
 
