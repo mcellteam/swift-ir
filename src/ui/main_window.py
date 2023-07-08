@@ -2373,7 +2373,7 @@ class MainWindow(QMainWindow):
         setData('state,viewer_mode', 'series_as_stack')
         setData('state,ng_layout', 'xy')
 
-        cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+        # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
 
         self.updateDtWidget()  # <.001s
 
