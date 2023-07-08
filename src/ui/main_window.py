@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
             mem = psutil.Process(os.getpid()).memory_info().rss
             MB = f'{mem / 1024 ** 2:.0f} MB'
             GB = f'{mem / 1024 ** 3:.0f} GB'
-            s = f'Memory Usage (Main): {MB}, {GB}'
+            s = f'Main Memory Usage: {MB}, {GB}'
             self.tell(f'<span style="color: #FFFF66;"><b>{s}</b></span>')
 
     def mem(self):
@@ -205,12 +205,15 @@ class MainWindow(QMainWindow):
             try:
                 if cfg.data.is_aligned():
                     for l in cfg.data.get_iter():
-                        mb = l['alignment']['method_results']['memory_mb']
-                        gb = l['alignment']['method_results']['memory_gb']
-                        MB = f'{mb:.0f}, '
-                        GB = f'{gb:.0f}, '
-                        s1 += MB
-                        s2 += GB
+                        try:
+                            mb = l['alignment']['method_results']['memory_mb']
+                            gb = l['alignment']['method_results']['memory_gb']
+                            MB = f'{mb:.0f}, '
+                            GB = f'{gb:.0f}, '
+                            s1 += MB
+                            s2 += GB
+                        except:
+                            pass
 
                     self.tell(f'<span style="color: #FFFF66;"><b>{s1}</b></span>')
                     self.tell(f'<span style="color: #FFFF66;"><b>{s2}</b></span>')
