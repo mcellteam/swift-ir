@@ -371,7 +371,10 @@ class DataModel:
         if self.skipped(s=self.scale, l=l):
             return self.get_index(self._data['data']['scales'][self.scale]['stack'][l]['filename']) #Todo refactor this but not sure how
         reference = self._data['data']['scales'][self.scale]['stack'][l]['reference']
-        return self.get_index(reference)
+        if reference == '':
+            return self.get_index(self._data['data']['scales'][self.scale]['stack'][l]['filename'])
+        else:
+            return self.get_index(reference)
 
     # @cache
     def is_aligned(self, s=None):
