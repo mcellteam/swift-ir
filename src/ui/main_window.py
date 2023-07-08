@@ -855,7 +855,6 @@ class MainWindow(QMainWindow):
                     t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
 
 
-
                 t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
                 for s in cfg.data.scales():
                     t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align'] / 60))
