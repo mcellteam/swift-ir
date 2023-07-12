@@ -329,52 +329,51 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def info(self):
-        if DEV:
-            n_layers = None
-            txt = '\n\n'
-            try:    txt += f'  caller             = {caller_name()}\n'
-            except: txt += f'  caller             =\n'
-            txt +=         f'  type/role          = {self.type}/{self.role}\n'
-            txt +=         f'  current method     = {cfg.data.current_method}\n'
-            try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
-            except: txt += f'  _blockStateChanged =\n'
-            try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
-            except: txt += f'  cfg.data.zpos      =\n'
-            try:    txt += f'  index              = {self.index}\n'
-            except: txt += f'  index              =\n'
-            try:    txt += f'  request_layer      = {int(self.state.position[0])}\n'
-            except: txt += f'  request_layer      =\n'
-            try:    txt += f'  new request_layer  = {int(self.state.voxel_coordinates[0])}\n'
-            except: txt += f'  new request_layer  =\n'
-            try:    txt += f'  state.voxel_coords = {self.state.voxel_coordinates}\n'
-            except: txt += f'  state.voxel_coords =\n'
-            try:    txt += f'  state.position     = {self.state.position}\n'
-            except: txt += f'  state.position     =\n'
-            txt += '\n'
-            try:
-                n_layers = len(cfg.baseViewer.state.to_json()['layers'])
-                txt += f"  {n_layers} Layers\n"
-            except:
-                txt += f'   0 Layers\n'
-            if n_layers:
-                for i in range(n_layers):
-                    txt += f"  Layer {i}:\n"
-                    name = cfg.baseViewer.state.to_json()['layers'][i]['name']
-                    txt += f"    Name: {name}\n"
-                    type = cfg.baseViewer.state.to_json()['layers'][i]['type']
-                    txt += f"    Type: {type}\n"
-                    if type == 'annotation':
-                        n_ann = len(cfg.baseViewer.state.to_json()['layers'][i]['annotations'])
-                        txt += f"    # annotations: {n_ann}\n"
-                        ids = [cfg.baseViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
-                        txt += '    ids : '
-                        txt += ', '.join(ids)
-                        txt += '\n'
-                        try:
-                            txt += '    Example: ' + str(cfg.baseViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
-                        except:
-                            pass
-
+        n_layers = None
+        txt = '\n\n'
+        try:    txt += f'  caller             = {caller_name()}\n'
+        except: txt += f'  caller             =\n'
+        txt +=         f'  type/role          = {self.type}/{self.role}\n'
+        txt +=         f'  current method     = {cfg.data.current_method}\n'
+        try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
+        except: txt += f'  _blockStateChanged =\n'
+        try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
+        except: txt += f'  cfg.data.zpos      =\n'
+        try:    txt += f'  index              = {self.index}\n'
+        except: txt += f'  index              =\n'
+        try:    txt += f'  request_layer      = {int(self.state.position[0])}\n'
+        except: txt += f'  request_layer      =\n'
+        try:    txt += f'  new request_layer  = {int(self.state.voxel_coordinates[0])}\n'
+        except: txt += f'  new request_layer  =\n'
+        try:    txt += f'  state.voxel_coords = {self.state.voxel_coordinates}\n'
+        except: txt += f'  state.voxel_coords =\n'
+        try:    txt += f'  state.position     = {self.state.position}\n'
+        except: txt += f'  state.position     =\n'
+        txt += '\n'
+        try:
+            n_layers = len(cfg.baseViewer.state.to_json()['layers'])
+            txt += f"  {n_layers} Layers\n"
+        except:
+            txt += f'   0 Layers\n'
+        if n_layers:
+            for i in range(n_layers):
+                txt += f"  Layer {i}:\n"
+                name = cfg.baseViewer.state.to_json()['layers'][i]['name']
+                txt += f"    Name: {name}\n"
+                type = cfg.baseViewer.state.to_json()['layers'][i]['type']
+                txt += f"    Type: {type}\n"
+                if type == 'annotation':
+                    n_ann = len(cfg.baseViewer.state.to_json()['layers'][i]['annotations'])
+                    txt += f"    # annotations: {n_ann}\n"
+                    ids = [cfg.baseViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
+                    txt += '    ids : '
+                    txt += ', '.join(ids)
+                    txt += '\n'
+                    try:
+                        txt += '    Example: ' + str(cfg.baseViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
+                    except:
+                        pass
+        print(txt)
         return txt
 
     @Slot()
