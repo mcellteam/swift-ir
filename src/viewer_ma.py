@@ -66,7 +66,7 @@ class MAViewer(neuroglancer.Viewer):
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         # self._settingZoom = True
-        self._layer = cfg.data.zpos
+        # self._layer = cfg.data.zpos
         self.cs_scale = None
         # self.pts = OrderedDict()
         self.pts = []
