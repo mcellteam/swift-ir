@@ -91,14 +91,15 @@ class ThumbnailFast(QLabel):
     def __init__(self, parent, path='', extra='', name='', s=None, l=None):
         super().__init__(parent)
         self.setScaledContents(True)
+        self._noImage = 0
         self.path = path
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(QColor('#141414'))  # fill the map with black
+        self.setPixmap(pixmap)
         if self.path:
             self.setPixmap(QPixmap(self.path))
         else:
-            # pass
-            pixmap = QPixmap(16, 16)
-            pixmap.fill(QColor('#161c20'))  # fill the map with black
-            self.setPixmap(pixmap)
+            self.set_no_image()
 
         self.extra = extra
         self.name = name
@@ -107,7 +108,7 @@ class ThumbnailFast(QLabel):
 
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._noImage = 0
+
 
         self.map_border_color = {
             'match0': cfg.glob_colors[0],
@@ -204,15 +205,16 @@ class ThumbnailFast(QLabel):
     #         self.update()
 
     def set_no_image(self):
-        self.snr = None
         self._noImage = 1
-        try:
-            self.pixmap().fill(QColor('#141414'))
-        except:
-            # print_exception()
-            logger.warning('Unable to set no image...')
-        finally:
-            self.update()
+        # try:
+        #     self.pixmap().fill(QColor('#141414'))
+        # except:
+        #     # print_exception()
+        #     logger.warning('Unable to set no image...')
+        # finally:
+        #     self.update()
+        self.pixmap().fill(QColor('#141414'))
+        self.update()
 
 
     def paintEvent(self, event):
@@ -225,23 +227,16 @@ class ThumbnailFast(QLabel):
                 self.r.moveCenter(self.rect().center())
                 qp.drawPixmap(self.r, pm)
 
-                if self._noImage:
-                    # self.set_no_image()
-                    self.r = rect = QRect(0, 0, pm.width(), pm.height())
-                    self.r.moveCenter(self.rect().center())
-                    qp.drawPixmap(self.r, pm)
-                    return
-
-                # logger.critical(f"self.r.getCoords() = {self.r.getCoords()}")
-                # logger.critical(f"self.r.getRect() = {self.r.getRect()}")
-                # logger.critical(f"self.r.width() = {self.r.width()}")
-                # logger.critical(f"self.r.height() = {self.r.height()}")
-
                 coords = self.r.getCoords()
                 p1 = QPoint(coords[0], coords[1])
                 p2 = QPoint(coords[2], coords[1])
                 p3 = QPoint(coords[0], coords[3])
                 p4 = QPoint(coords[2], coords[3])
+
+
+                if self.name in self.map_border_color:
+                    qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
+                    qp.drawLines(p1, p2, p1, p3, p4, p2, p4, p3)
 
                 if self._noImage:
                     try:
@@ -251,36 +246,12 @@ class ThumbnailFast(QLabel):
                         font.setPointSize(size)
                         # font.setBold(True)
                         qp.setFont(font)
-                        qp.setPen(QColor('#ffe135'))
+                        qp.setPen(QColor('#888888'))
                         qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "Null")
-                        return
                     except:
                         print_exception()
-                        return
-                    finally:
-                        #0629+
 
-                        if self.name not in ('reference', 'transforming', 'reference-table', 'transforming-table'):
-
-                            coords = self.r.getCoords()
-
-                            p1 = QPoint(coords[0], coords[1])
-                            p2 = QPoint(coords[2], coords[1])
-                            p3 = QPoint(coords[0], coords[3])
-                            p4 = QPoint(coords[2], coords[3])
-
-                            if self.name in self.map_border_color:
-                                qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
-                                qp.drawLines(p1, p2, p1, p3, p4, p2, p4, p3)
-
-
-                if self.name in self.map_border_color:
-                    qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
-                    qp.drawLines(p1, p2, p1, p3, p4, p2, p4, p3)
-
-
-
-                if self.name in ('reference', 'transforming', 'reference-table', 'transforming-table'):
+                elif self.name in ('reference', 'transforming', 'reference-table', 'transforming-table'):
                     if self.name in ('reference-table', 'transforming-table'):
                         method = cfg.data.method(s=self.s, l=self.l)
                         s = self.s
@@ -347,9 +318,6 @@ class ThumbnailFast(QLabel):
                             y = int(pt[1])
                             r = get_rect(sf, x, y, ww)
                             qp.drawRect(r)
-
-
-
 
 
                 if self.extra:
@@ -631,18 +599,18 @@ class CorrSignalThumbnail(QLabel):
     def __init__(self, parent, path='', snr='', extra='', name=''):
         super().__init__(parent)
         self.setScaledContents(True)
+        self._noImage = 0
         self.path = path
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(QColor('#141414'))  # fill the map with black
+        self.setPixmap(pixmap)
         if self.path:
             self.setPixmap(QPixmap(self.path))
         else:
-            # pass
-            pixmap = QPixmap(16, 16)
-            pixmap.fill(QColor('#141414'))  # fill the map with black
-            self.setPixmap(pixmap)
-        # pixmap = QPixmap(16, 16)
-        # pixmap.fill(Qt.black)  # fill the map with black
-        # self.setPixmap(pixmap)
-
+            # pixmap = QPixmap(16, 16)
+            # pixmap.fill(QColor('#141414'))  # fill the map with black
+            # self.setPixmap(pixmap)
+            self.set_no_image()
 
         self.snr = snr
         self.extra = extra
@@ -650,7 +618,7 @@ class CorrSignalThumbnail(QLabel):
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         # self.setStyleSheet("""border: 0px solid #ffe135;""")
         self.setContentsMargins(0,0,0,0)
-        self._noImage = 0
+
         self.map_border_color = {
             'ms0': cfg.glob_colors[0],
              'ms1': cfg.glob_colors[1],
@@ -662,10 +630,6 @@ class CorrSignalThumbnail(QLabel):
 
 
     def paintEvent(self, event):
-        # if self._noImage:
-        #     return
-
-        # logger.info('')
 
         if self.pixmap():
             try:
@@ -699,7 +663,7 @@ class CorrSignalThumbnail(QLabel):
                     font.setPointSize(size)
                     # font.setBold(True)
                     qp.setFont(font)
-                    qp.setPen(QColor('#777777'))
+                    qp.setPen(QColor('#888888'))
                     # qp.drawText(QRectF(0, 0, pm.width(), pm.height()), Qt.AlignCenter, "No Signal")
                     qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "No Signal")
                 else:
@@ -748,7 +712,6 @@ class CorrSignalThumbnail(QLabel):
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
                 print_exception()
-                pass
         super().paintEvent(event)
 
 
@@ -770,13 +733,15 @@ class CorrSignalThumbnail(QLabel):
     def set_no_image(self):
         self.snr = None
         self._noImage = 1
-        try:
-            self.pixmap().fill(QColor('#141414'))
-        except:
-            # print_exception()
-            logger.warning('Unable to set no image...')
-        finally:
-            self.update()
+        # try:
+        #     self.pixmap().fill(QColor('#141414'))
+        # except:
+        #     # print_exception()
+        #     logger.warning('Unable to set no image...')
+        # finally:
+        #     self.update()
+        self.pixmap().fill(QColor('#141414'))
+        self.update()
 
         # try:
         #     # self.setPixmap(QPixmap(self.no_image_path))

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import json
 import shutil
 import inspect
@@ -16,7 +17,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel,
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
     QListView, QApplication, QScrollArea
 from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint
-from qtpy.QtGui import QFont, QPixmap, QPainter, QKeySequence, QColor
+from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor
 
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
@@ -61,7 +62,21 @@ class OpenProject(QWidget):
         # self.USE_CAL_GRID = False
         self.selected_file = ''
 
+        clipboard = QGuiApplication.clipboard()
+        clipboard.dataChanged.connect(self.onClipboardChanged)
+        #Note: when clipboard changes during app out-of-focus, clipboard changed signal gets emitted
+        #once focus is returned. This is the ideal behavior.
+
+    def onClipboardChanged(self):
+        print('Clipboard changed!')
+        buffer = QApplication.clipboard().text()
+        tip = '<b>Your Clipboard:<\b>\n\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
+        print('\n' + tip)
+        self._buttonBrowserPaste.setToolTip(tip)
+
+
     def initUI(self):
+
         # User Projects Widget
         self.userProjectsWidget = QWidget()
         # lab = QLabel('Saved AlignEM-SWiFT Projects:')
@@ -130,11 +145,9 @@ class OpenProject(QWidget):
         self.userProjectsWidget.setLayout(self.vbl_projects)
 
 
-
-
         # User Files Widget
         self.userFilesWidget = QWidget()
-        lab = QLabel('Open Project or,\nOpen Zarr or,\nInitialize project from folder of TIFF images')
+        lab = QLabel('Open Project or,\nOpen Zarr or,\nInitialize new project from folder of images')
         lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
@@ -146,6 +159,7 @@ class OpenProject(QWidget):
 
         # self._buttonOpen = QPushButton(f"Open Project")
         self._buttonOpen = QPushButton(f"Open Project {hotkey('O')}")
+        self._buttonOpen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._buttonOpen.setShortcut('Ctrl+O')
         self._buttonOpen.setStyleSheet('font-size: 10px;')
         # self._buttonOpen.setStyleSheet('QPushButton {font-size: 10px;  border-radius: 5px; border-color: #000000; border-width: 2px; }')
@@ -155,7 +169,11 @@ class OpenProject(QWidget):
         self._buttonOpen.setFixedSize(button_size)
         # self._buttonOpen.hide()
 
-        self._buttonProjectFromTiffFolder1 = QPushButton(f"Initialize Project\nFrom Folder of TIFFs")
+        tip = "Create a new project from an existing folder of images. " \
+              "Some users find this more convenient than selecting images."
+        self._buttonProjectFromTiffFolder1 = QPushButton(f"New Project By\nFolder Selection")
+        self._buttonProjectFromTiffFolder1.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._buttonProjectFromTiffFolder1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self._buttonProjectFromTiffFolder1.setShortcut()
         self._buttonProjectFromTiffFolder1.setStyleSheet('font-size: 8px;')
         self._buttonProjectFromTiffFolder1.setEnabled(False)
@@ -182,6 +200,7 @@ class OpenProject(QWidget):
 
         # self._buttonDelete = QPushButton(f"Delete Project")
         self._buttonDelete = QPushButton(f"Delete Project {hotkey('D')}")
+        self._buttonDelete.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._buttonDelete.setShortcut('Ctrl+D')
         self._buttonDelete.setStyleSheet('font-size: 10px;')
         self._buttonDelete.setEnabled(False)
@@ -190,17 +209,42 @@ class OpenProject(QWidget):
         # self._buttonDelete.hide()
 
         # self._buttonNew = QPushButton('New Project')
-        self._buttonNew = QPushButton(f"New Project {hotkey('N')}")
+        tip = "Create a new project by selecting which images to import."
+        self._buttonNew = QPushButton(f"New Project By\nImage Selection{hotkey('N')}")
+        self._buttonNew.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._buttonNew.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._buttonNew.setShortcut('Ctrl+N')
         self._buttonNew.clicked.connect(self.new_project)
         self._buttonNew.setFixedSize(button_size)
-        self._buttonNew.setStyleSheet('font-size: 10px;')
+        self._buttonNew.setStyleSheet('font-size: 8px;')
 
         # self._buttonNew = QPushButton('Remember')
         # self._buttonNew.setStyleSheet("font-size: 9px;")
         # self._buttonNew.clicked.connect(self.new_project)
         # self._buttonNew.setFixedSize(64, 20)
         # # self._buttonNew.setStyleSheet(w)
+
+        def paste_from_buffer():
+            buffer = QApplication.clipboard().text()
+            # path_exists = os.path.exists(buffer)
+            # if path_exists:
+            #     logger.info('Paste buffer text is a valid path.')
+            #     cfg.mw.tell('Paste buffer text is a valid path')
+            #     self.selectionReadout.setText(os.path.abspath(buffer))
+            #     self.validate_path()
+            # else:
+            #     cfg.mw.warn('Paste buffer text is not a valid path')
+            #     logger.warn('Paste buffer text is not a valid path')
+            self.selectionReadout.setText(os.path.abspath(buffer))
+            self.validate_path()
+
+        self._buttonBrowserPaste = QPushButton(f"Paste Clipboard {hotkey('D')}")
+        self._buttonBrowserPaste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._buttonBrowserPaste.setToolTip('Paste path from clipboard')
+        self._buttonBrowserPaste.clicked.connect(paste_from_buffer)
+        self._buttonBrowserPaste.setFixedSize(button_size)
+        self._buttonBrowserPaste.setStyleSheet('font-size: 9px;')
+        # self._buttonBrowserPaste.setEnabled(os.path.exists(QApplication.clipboard().text()))
 
 
         self.lab_path_exists = cfg.lab_path_exists = QLabel('Path Exists')
@@ -210,6 +254,7 @@ class OpenProject(QWidget):
         self.lab_path_exists.setObjectName('validity_label')
         self.lab_path_exists.setFixedHeight(16)
         self.lab_path_exists.setAlignment(Qt.AlignRight)
+        self.lab_path_exists.hide()
 
         self.lab_project_name = QLabel(' New Project Path: ')
         self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
@@ -309,13 +354,14 @@ class OpenProject(QWidget):
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(6, 2, 6, 2)
+        hbl.addWidget(self._buttonProjectFromTiffFolder1)
         hbl.addWidget(self._buttonNew)
         # hbl.addWidget(self.selectionReadout)
         hbl.addWidget(self.selectionReadout_w_overlay)
         # hbl.addWidget(self.validity_label)
         hbl.addWidget(self._buttonOpen)
         hbl.addWidget(self._buttonDelete)
-        hbl.addWidget(self._buttonProjectFromTiffFolder1)
+        hbl.addWidget(self._buttonBrowserPaste)
         hbl.addWidget(self.cbCalGrid)
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hbl.addSpacerItem(self.spacer_item_docs)
@@ -426,8 +472,8 @@ class OpenProject(QWidget):
             self.validity_label.show()
             self._buttonProjectFromTiffFolder1.setEnabled(False)
             self.cbCalGrid.hide()
-            # self._buttonOpen.setEnabled(False)
-            # self._buttonDelete.setEnabled(False)
+            self._buttonOpen.setEnabled(False)
+            self._buttonDelete.setEnabled(False)
             # self._buttonOpen.hide()
             # self._buttonDelete.hide()
 

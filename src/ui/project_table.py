@@ -196,7 +196,7 @@ class ProjectTable(QWidget):
 
 
     def setColumnWidths(self):
-        self.table.setColumnWidth(0, 50)  # 0 index
+        self.table.setColumnWidth(0, 64)  # 0 index
         self.table.setColumnWidth(1, 128)   # 1 Filename
         self.table.setColumnWidth(2, 60)   # 2 SNR
         self.table.setColumnWidth(3, 100)  # 3 Current
@@ -295,8 +295,8 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms0')
                     self.table.setCellWidget(row, col, tn)
                 except:
-                    tn = CorrSignalThumbnail(self)
-                    tn.set_no_image()
+                    tn = CorrSignalThumbnail(self, name='ms0')
+                    # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
             elif col == 7:
 
@@ -308,8 +308,8 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms1')
                     self.table.setCellWidget(row, col, tn)
                 except:
-                    tn = CorrSignalThumbnail(self)
-                    tn.set_no_image()
+                    tn = CorrSignalThumbnail(self, name='ms1')
+                    # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
             elif col == 8:
                 try:
@@ -320,8 +320,8 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms2')
                     self.table.setCellWidget(row, col, tn)
                 except:
-                    tn = CorrSignalThumbnail(self)
-                    tn.set_no_image()
+                    tn = CorrSignalThumbnail(self, name='ms2')
+                    # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
             elif col == 9:
                 try:
@@ -332,8 +332,8 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms3')
                     self.table.setCellWidget(row, col, tn)
                 except:
-                    tn = CorrSignalThumbnail(self)
-                    tn.set_no_image()
+                    tn = CorrSignalThumbnail(self, name='ms3')
+                    # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
