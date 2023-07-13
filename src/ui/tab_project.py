@@ -243,8 +243,6 @@ class ProjectTab(QWidget):
             cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
             cfg.stageViewer = EMViewerStage(webengine=self.MA_webengine_stage)
 
-
-
             # cfg.main_window.swimWindowChanged.connect(cfg.refViewer.drawSWIMwindow)
             # cfg.main_window.swimWindowChanged.connect(cfg.baseViewer.drawSWIMwindow)
 

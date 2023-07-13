@@ -6,6 +6,7 @@ import time
 import psutil
 import logging
 import argparse
+import getpass
 import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_img_filenames, print_exception, renew_directory, \
@@ -29,8 +30,12 @@ def GenerateScalesZarr(dm, gui=True):
         logger.info('Generating Scaled Zarr Arrays...')
         # Todo conditional handling of skips
 
+        if gui: cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
+
         dest = dm.dest()
         imgs = sorted(get_img_filenames(os.path.join(dest, 'scale_1', 'img_src')))
+        if (getpass.getuser() == 'joely'):
+            logger.critical('\n\nImages:\n\n' + '\n'.join(imgs))
         od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
         renew_directory(directory=od, gui=gui)
         for scale in dm.scales():
@@ -77,8 +82,8 @@ def GenerateScalesZarr(dm, gui=True):
                     if ID in [0, 1, 2]:
                         print('Example Arguments (ID %d):' % (ID))
                         print(task, sep='\n  ')
-
-                # print('\n'.join(task))
+                if (getpass.getuser() == 'joely'):
+                    logger.info('\n'.join(task))
                 task_queue.add_task(task)
                 # task_queue.add_task([sys.executable, script, str(ID), fn, out ])
                 # task_queue.add_task([sys.executable, script, str(ID), fn, store ])
@@ -89,7 +94,6 @@ def GenerateScalesZarr(dm, gui=True):
         # for task in task_list:
         #     logger.info('Adding Layer %s Task' % task[2])
         #     task_queue.add_task(task)
-
 
         dt = task_queue.collect_results()
         dm.t_scaling_convert_zarr = dt

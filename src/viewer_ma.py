@@ -211,8 +211,6 @@ class MAViewer(neuroglancer.Viewer):
 
         self.drawSWIMwindow()
 
-
-
         self._blockStateChanged = False
 
         # else:
