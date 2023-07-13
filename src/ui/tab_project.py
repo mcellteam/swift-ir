@@ -2179,10 +2179,6 @@ class ProjectTab(QWidget):
         # self.tn_widget.setLayout(vbl)
 
         ########################
-        self.tn_ms0 = CorrSignalThumbnail(self, name='ms0')
-        self.tn_ms1 = CorrSignalThumbnail(self, name='ms1')
-        self.tn_ms2 = CorrSignalThumbnail(self, name='ms2')
-        self.tn_ms3 = CorrSignalThumbnail(self, name='ms3')
 
         # path = os.path.join(get_appdir(), 'resources', 'x_reticle.png')
         #
@@ -2218,25 +2214,23 @@ class ProjectTab(QWidget):
         # self.tn_reticle4.layout().addWidget(self.tn_ms3,0,0)
         # self.tn_reticle4.layout().addWidget(self.reticle4,0,0)
 
+
+        ### MATCH SIGNAL TABLE ###
+        # cells are CorrSignalThumbnail objects
+
+        self.ms_table = QTableWidget()
+
+        self.tn_ms0 = CorrSignalThumbnail(self, name='ms0')
+        self.tn_ms1 = CorrSignalThumbnail(self, name='ms1')
+        self.tn_ms2 = CorrSignalThumbnail(self, name='ms2')
+        self.tn_ms3 = CorrSignalThumbnail(self, name='ms3')
+
         self.msList = [self.tn_ms0, self.tn_ms1, self.tn_ms2, self.tn_ms3]
-        # self.tn_ms0.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[0]}; border-width: 3px;""")
-        # self.tn_ms1.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[1]}; border-width: 3px;""")
-        # self.tn_ms2.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[2]}; border-width: 3px;""")
-        # self.tn_ms3.setStyleSheet(f"""background-color: #f3f6fb; border-color: {cfg.glob_colors[3]}; border-width: 3px;""")
-        # self.tn_ms0.setStyleSheet(f"""background-color: {cfg.glob_colors[0]}; border-width: 3px;""")
-        # self.tn_ms1.setStyleSheet(f"""background-color: {cfg.glob_colors[1]}; border-width: 3px;""")
-        # self.tn_ms2.setStyleSheet(f"""background-color: {cfg.glob_colors[2]}; border-width: 3px;""")
-        # self.tn_ms3.setStyleSheet(f"""background-color: {cfg.glob_colors[3]}; border-width: 3px;""")
-        # self.tn_ms0.setMinimumSize(QSize(128, 128))
-        # self.tn_ms1.setMinimumSize(QSize(128, 128))
-        # self.tn_ms2.setMinimumSize(QSize(128, 128))
-        # self.tn_ms3.setMinimumSize(QSize(128, 128))
         self.tn_ms0.set_no_image()
         self.tn_ms1.set_no_image()
         self.tn_ms2.set_no_image()
         self.tn_ms3.set_no_image()
 
-        self.ms_table = QTableWidget()
         self.ms_table.setAutoFillBackground(True)
         # self.ms_table.setMinimumWidth(64)
         # self.ms_table.setMaximumWidth(200)
@@ -2247,16 +2241,6 @@ class ProjectTab(QWidget):
         self.ms_table.verticalHeader().setHighlightSections(False)
         self.ms_table.setFocusPolicy(Qt.NoFocus)
         self.ms_table.setSelectionMode(QAbstractItemView.NoSelection)
-        # self.ms_table.setRowCount(2)
-        # self.ms_table.setColumnCount(2)
-        # self.ms_table.setCellWidget(0,0, self.tn_ms0)
-        # self.ms_table.setCellWidget(0,1, self.tn_ms1)
-        # self.ms_table.setCellWidget(1,0, self.tn_ms2)
-        # self.ms_table.setCellWidget(1,1, self.tn_ms3)
-        # self.ms_table.setItem(0, 0, QTableWidgetItem())
-        # self.ms_table.setItem(0, 1, QTableWidgetItem())
-        # self.ms_table.setItem(1, 0, QTableWidgetItem())
-        # self.ms_table.setItem(1, 1, QTableWidgetItem())
         self.ms_table.setRowCount(4)
         self.ms_table.setColumnCount(1)
         self.ms_table.setCellWidget(0,0, self.tn_ms0)
@@ -2267,10 +2251,6 @@ class ProjectTab(QWidget):
         self.ms_table.setItem(1, 0, QTableWidgetItem())
         self.ms_table.setItem(2, 0, QTableWidgetItem())
         self.ms_table.setItem(3, 0, QTableWidgetItem())
-        # self.ms_table.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
-        # self.ms_table.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
-        # self.ms_table.item(1, 0).setBackground(QColor(cfg.glob_colors[2]))
-        # self.ms_table.item(1, 1).setBackground(QColor(cfg.glob_colors[3]))
         self.ms_table.verticalHeader().setVisible(False)
         self.ms_table.horizontalHeader().setVisible(False)
         self.ms_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -2284,7 +2264,7 @@ class ProjectTab(QWidget):
         v_header.setSectionResizeMode(2, QHeaderView.Stretch)
         v_header.setSectionResizeMode(3, QHeaderView.Stretch)
 
-        '''TARG KARG TOOL WINDOW #targ #karg'''
+        ### TARG KARG TOOL WINDOW #targ #karg ###
 
         self.rb_targ = QRadioButton('Reference')
         self.rb_karg = QRadioButton('Transforming')
@@ -2311,13 +2291,14 @@ class ProjectTab(QWidget):
         self.toggleMatches.clicked.connect(fn_stop_playing)
         self.toggleMatches.clicked.connect(self.fn_toggleTargKarg)
 
+        #### MATCH WINOWS TABLE ####
+        # cell widgets are ThumbnailFast objects
 
         self.matches_tn0 = ThumbnailFast(self, name='match0')
         self.matches_tn1 = ThumbnailFast(self, name='match1')
         self.matches_tn2 = ThumbnailFast(self, name='match2')
         self.matches_tn3 = ThumbnailFast(self, name='match3')
         self.match_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
-
 
         self.ktarg_table = QTableWidget()
         self.ktarg_table.setAutoFillBackground(True)
@@ -2330,16 +2311,6 @@ class ProjectTab(QWidget):
         self.ktarg_table.verticalHeader().setHighlightSections(False)
         self.ktarg_table.setFocusPolicy(Qt.NoFocus)
         self.ktarg_table.setSelectionMode(QAbstractItemView.NoSelection)
-        # self.ktarg_table.setRowCount(2)
-        # self.ktarg_table.setColumnCount(2)
-        # self.ktarg_table.setCellWidget(0,0, self.tn_ms0)
-        # self.ktarg_table.setCellWidget(0,1, self.tn_ms1)
-        # self.ktarg_table.setCellWidget(1,0, self.tn_ms2)
-        # self.ktarg_table.setCellWidget(1,1, self.tn_ms3)
-        # self.ktarg_table.setItem(0, 0, QTableWidgetItem())
-        # self.ktarg_table.setItem(0, 1, QTableWidgetItem())
-        # self.ktarg_table.setItem(1, 0, QTableWidgetItem())
-        # self.ktarg_table.setItem(1, 1, QTableWidgetItem())
         self.ktarg_table.setRowCount(4)
         self.ktarg_table.setColumnCount(1)
         self.ktarg_table.setCellWidget(0,0, self.matches_tn0)
@@ -2350,10 +2321,6 @@ class ProjectTab(QWidget):
         self.ktarg_table.setItem(1, 0, QTableWidgetItem())
         self.ktarg_table.setItem(2, 0, QTableWidgetItem())
         self.ktarg_table.setItem(3, 0, QTableWidgetItem())
-        # self.ktarg_table.item(0, 0).setBackground(QColor(cfg.glob_colors[0]))
-        # self.ktarg_table.item(0, 1).setBackground(QColor(cfg.glob_colors[1]))
-        # self.ktarg_table.item(1, 0).setBackground(QColor(cfg.glob_colors[2]))
-        # self.ktarg_table.item(1, 1).setBackground(QColor(cfg.glob_colors[3]))
         self.ktarg_table.verticalHeader().setVisible(False)
         self.ktarg_table.horizontalHeader().setVisible(False)
         self.ktarg_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -2390,12 +2357,14 @@ class ProjectTab(QWidget):
         self.matchPlayTimer.timeout.connect(self.fn_toggleTargKarg)
 
         self.labMatches = QLabel('Matches')
+        self.labMatches.setFixedHeight(14)
         self.labMatches.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
 
         self.match_widget = VWidget(HWidget(self.labMatches, self._btn_playMatchTimer, self.toggleMatches), self.ktarg_table)
 
         '''MATCH SIGNALS TOOL WINDOW #signals'''
         self.labMatchSignals = QLabel('Match Signals')
+        self.labMatchSignals.setFixedHeight(14)
         self.labMatchSignals.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
 
         self.ms_widget = VWidget(self.labMatchSignals, self.ms_table)

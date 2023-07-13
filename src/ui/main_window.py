@@ -358,11 +358,12 @@ class MainWindow(QMainWindow):
             logger.warning('cfg.CancelProcesses was TRUE. Resetting its value.')
         if not self._working:
             logger.critical('Refreshing...')
-            if cfg.pt.ms_widget.isVisible():
-                self.updateCorrSignalsDrawer()
-            if cfg.pt.match_widget.isVisible():
-                cfg.pt.setTargKargPixmaps()
+
             if self._isProjectTab():
+                if cfg.pt.match_widget.isVisible():
+                    cfg.pt.setTargKargPixmaps()
+                if cfg.pt.ms_widget.isVisible():
+                    self.updateCorrSignalsDrawer()
                 cfg.project_tab.refreshTab()
                 # for v in cfg.project_tab.get_viewers():
                 #     v.set_zmag() #0524-
@@ -370,13 +371,14 @@ class MainWindow(QMainWindow):
                 # self.updateAllCpanelDetails()
                 self.updateCpanelDetails()
                 self.setControlPanelData()
+            elif self._isOpenProjTab():
+                configure_project_paths()
+                self._getTabObject().user_projects.set_data()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
                 self.globTabs.currentWidget().reload()
-            elif self._getTabType() == 'OpenProject':
-                configure_project_paths()
-                self._getTabObject().user_projects.set_data()
+
             self.hud.done()
         else:
             self.warn('The application is busy')
@@ -967,6 +969,11 @@ class MainWindow(QMainWindow):
         cfg.project_tab.tn_ms1.set_no_image()
         cfg.project_tab.tn_ms2.set_no_image()
         cfg.project_tab.tn_ms3.set_no_image()
+
+        cfg.project_tab.matches_tn0.set_no_image()
+        cfg.project_tab.matches_tn1.set_no_image()
+        cfg.project_tab.matches_tn2.set_no_image()
+        cfg.project_tab.matches_tn3.set_no_image()
 
         logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
@@ -5163,6 +5170,7 @@ class MainWindow(QMainWindow):
         self._btn_alignAll.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignAll.clicked.connect(self.alignAll)
         self._btn_alignAll.setFixedSize(long_button_size)
+        self._btn_alignAll.setStyleSheet("font-size: 10px;")
 
         tip = """Align and generate the current section only"""
         self._btn_alignOne = QPushButton('Align One')
@@ -5172,7 +5180,7 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignOne.clicked.connect(self.alignGenerateOne)
         self._btn_alignOne.setFixedSize(long_button_size)
-        self._btn_alignOne.setStyleSheet("font-size: 9px;")
+        self._btn_alignOne.setStyleSheet("font-size: 10px;")
 
 
         tip = """Align and generate current sections from the current through the end of the image stack"""
@@ -5182,7 +5190,7 @@ class MainWindow(QMainWindow):
         self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignForward.clicked.connect(self.alignForward)
         self._btn_alignForward.setFixedSize(long_button_size)
-        self._btn_alignOne.setStyleSheet("font-size: 9px;")
+        self._btn_alignForward.setStyleSheet("font-size: 10px;")
 
 
         tip = """The range of sections to align for the align range button"""
@@ -5234,6 +5242,7 @@ class MainWindow(QMainWindow):
         self._btn_alignRange.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignRange.clicked.connect(self.alignRange)
         self._btn_alignRange.setFixedSize(long_button_size)
+        self._btn_alignRange.setStyleSheet("font-size: 10px;")
 
         tip = """Whether to auto-generate aligned images following alignment."""
         self._toggleAutogenerate = ToggleSwitch()
@@ -5835,8 +5844,8 @@ class MainWindow(QMainWindow):
         # self.dw_monitor = QDockWidget('Head-up Display (Process Monitor)', self)
         self.dw_monitor = DockWidget('HUD', self)
         self.dw_monitor.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
-        self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetVerticalTitleBar)
+        # self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
+        self.dw_monitor.setFeatures(QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
         self.dw_monitor.setObjectName('Dock Widget HUD')
         self.dw_monitor.setStyleSheet("""
         QDockWidget {color: #ede9e8;}
@@ -6219,7 +6228,8 @@ class MainWindow(QMainWindow):
 
         self.dw_python = DockWidget('Python', self)
         self.dw_python.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dw_python.setFeatures(self.dw_python.DockWidgetClosable | self.dw_python.DockWidgetVerticalTitleBar)
+        # self.dw_python.setFeatures(self.dw_python.DockWidgetClosable | self.dw_python.DockWidgetVerticalTitleBar)
+        self.dw_python.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
         # self.dw_python.visibilityChanged.connect(lambda: self.cbPython.setToolTip(('Hide Python Console Tool Window', 'Show Python Console Tool Window')[self.dw_python.isHidden()]))
         self.dw_python.setStyleSheet("""QDockWidget::title {
             text-align: left; /* align the text to the left */
@@ -6948,8 +6958,7 @@ class DockWidget(QDockWidget):
     def __init__(self, text, parent=None):
         super().__init__(text)
         self.setObjectName(text)
-        self.setAllowedAreas(
-            Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
+        self.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
 
     def event(self, event):
