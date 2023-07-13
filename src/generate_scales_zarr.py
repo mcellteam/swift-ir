@@ -33,7 +33,7 @@ def GenerateScalesZarr(dm, gui=True):
         if gui: cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
 
         dest = dm.dest()
-        imgs = sorted(get_img_filenames(os.path.join(dest, 'scale_1', 'img_src')))
+        imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
         if (getpass.getuser() == 'joely'):
             logger.critical('\n\nImages:\n\n' + '\n'.join(imgs))
         od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
