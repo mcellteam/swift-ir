@@ -13,17 +13,17 @@ import shutil
 import qtawesome as qta
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
-    QListWidget, QListWidgetItem, QMenu, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
+    QListWidget, QListWidgetItem, QMenu, QMenuBar, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
     QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
-    QShortcut
+    QShortcut, QScrollArea, QMdiSubWindow, QMdiArea
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, Slot, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator, QKeySequence
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
-    get_appdir, caller_name, is_joel
+    get_appdir, caller_name, is_joel, make_affine_widget_HTML
 from src.viewer_em import EMViewer, EMViewerSnr
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
@@ -37,6 +37,7 @@ from src.ui.process_monitor import HeadupDisplay
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
 from src.ui.joystick import Joystick
 from src import DataModel
+from collections import OrderedDict
 
 __all__ = ['ProjectTab']
 
@@ -67,7 +68,7 @@ class ProjectTab(QWidget):
         # self.webengine.setStyleSheet('background-color: #222222;')
         self.webengine.setMouseTracking(True)
         self.focusedViewer = None
-        self.setAutoFillBackground(True)
+        # self.setAutoFillBackground(True)
 
         self.indexConfigure = 0
         self.indexLogs = 2
@@ -104,21 +105,20 @@ class ProjectTab(QWidget):
         self.Q3.setAutoFillBackground(True)
         self.Q4.setAutoFillBackground(True)
 
+        self.updateCpanelDetails()
+
         self.oldPos = None
 
         self._isMatchPlaying = 0
 
         self.blinkTimer = QTimer(self)
         self.blinkTimer.setInterval(300)
-        self.blinkTimer.timeout.connect(self.onBlinkTimer)
+        # self.blinkTimer.timeout.connect(self.onBlinkTimer)
+        # self.blinkTimer.timeout.connect(cfg.emViewer.blink)
 
         self.blinkCur = 0
 
-
-
         # cfg.main_window.resizeThings()
-
-
 
         # self.initNgStackViewer()
         # self.initNeuroglancer(init_all=True)
@@ -178,62 +178,64 @@ class ProjectTab(QWidget):
         logger.info('>>>> _onTabChange >>>>')
         # QApplication.restoreOverrideCursor()
         index = self._tabs.currentIndex()
+        cfg.data['state']['current_tab'] = index
 
         if index == 0:
-            if getData('state,viewer_mode') == 'series_with_regions':
-                self.refreshTab()
-            else:
-                cfg.emViewer.set_layer(cfg.data.zpos)
-                # self.webengine.reload()
-            self.tn_ref.update() #Ensure
-            self.tn_tra.update() #Ensure
-
+            # cfg.emViewer.set_layer(cfg.data.zpos)
+            self.initNeuroglancer()
         elif index == 1:
-            pass
+            pts_ref = cfg.refViewer.pts
+            pts_base = cfg.baseViewer.pts
+            # self.shutdownNeuroglancer()
+            self.initNeuroglancer()
+            cfg.refViewer.pts = pts_ref
+            cfg.baseViewer.pts = pts_base
+            self.fn_hwidgetChanged()
+
         elif index == 2:
+            self.project_table.table.selectRow(cfg.data.zpos)
+        elif index == 3:
+
             self.updateTreeWidget()
             # self.treeview_model.jumpToLayer()
-        elif index == 3:
+        elif index == 4:
             # self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
-            # self.initSnrViewer()
-            # pass
+
+        cfg.mw.dataUpdateWidgets()
 
         logger.info('<<<< _onTabChange <<<<')
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
         if DEV:
-            logger.critical(f'Refreshing Tab (caller: {caller_name()})...')
+            logger.critical(f'[{caller_name()}]')
 
         index = self._tabs.currentIndex()
-        man_mode = getData('state,manual_mode')
-
-        if getData('state,viewer_mode') == 'series_with_regions':
-            pts_ref = cfg.refViewer.pts
-            pts_base = cfg.baseViewer.pts
 
         if index == 0:
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
-            if getData('state,viewer_mode') == 'series_with_regions':
-                cfg.refViewer.pts = pts_ref
-                cfg.baseViewer.pts = pts_base
-            self.setTargKargPixmaps()
-            cfg.mw.updateCorrSignalsDrawer()
-        # elif index == 1:
+
+        elif index == 1:
+            pts_ref = cfg.refViewer.pts
+            pts_base = cfg.baseViewer.pts
+            self.shutdownNeuroglancer()
+            self.initNeuroglancer()
+            cfg.refViewer.pts = pts_ref
+            cfg.baseViewer.pts = pts_base
+            # self.setTargKargPixmaps()
+            # cfg.mw.updateCorrSignalsDrawer()
+        # elif index == 2:
         #     self.project_table.initTableData()
-        elif index == 2:
+        elif index == 3:
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
-        elif index == 3:
+        elif index == 4:
             # self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
-            # self.initSnrViewer()
-            # pass
 
         cfg.mw.dataUpdateWidgets() #Todo might be redundant thumbail redraws
-        logger.info('<<<< Refreshing')
 
 
     def shutdownNeuroglancer(self):
@@ -251,8 +253,8 @@ class ProjectTab(QWidget):
         # QApplication.processEvents()
         # cfg.mw.tell('Initializing Neuroglancer')
         if DEV:
-            logger.critical(f"\n\n[{caller_name()}] Initializing Neuroglancer (manual mode? {getData('state,manual_mode')})...\n")
-        if getData('state,manual_mode') or init_all:
+            logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
+        if cfg.data['state']['current_tab'] == 1 or init_all:
             self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
             self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
             self.refViewer = cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
@@ -284,11 +286,8 @@ class ProjectTab(QWidget):
             # cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.baseViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.baseViewer.signals.zposChanged.connect(lambda: cfg.mw.setZpos(on_state_change=True))
-            def fn_set_transforming():
-                if not self.rb_transforming.isChecked():
-                    self.rb_transforming.setChecked(True)
 
-            cfg.refViewer.signals.zposChanged.connect(fn_set_transforming)
+            cfg.refViewer.signals.zposChanged.connect(self.set_transforming)
 
             # cfg.baseViewer.signals.zposChanged.connect(cfg.baseViewer))
 
@@ -315,23 +314,20 @@ class ProjectTab(QWidget):
             # self.MA_webengine_ref.reload()
             # self.MA_webengine_base.reload()
 
-        if not getData('state,manual_mode') or init_all:
-            self.initNgStackViewer()
+        if cfg.data['state']['current_tab'] == 0 or init_all:
+            self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
+            cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
+            cfg.emViewer.signals.stateChanged.connect(self.viewer._set_zmag)
+            cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
+            # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
+            # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
+            # self.webengine.reload()
+            # QTimer.singleShot(1000, self.webengine.reload)
 
 
         QApplication.processEvents()
         self.setZmag(10)
         cfg.mw.hud.done()
-
-    def initNgStackViewer(self):
-        self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-        cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
-        cfg.emViewer.signals.stateChanged.connect(self.viewer._set_zmag)
-        cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
-        # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
-        # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
-        # self.webengine.reload()
-        # QTimer.singleShot(1000, self.webengine.reload)
 
 
 
@@ -369,12 +365,12 @@ class ProjectTab(QWidget):
     #         self.viewer.set_brightness()
     #         self.viewer.set_contrast()
 
-    def get_layout(self, requested=None):
-        if requested == None:
-            requested = cfg.data['ui']['ng_layout']
-        mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
-                   'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-        return mapping[requested]
+    # def get_layout(self, requested=None):
+    #     if requested == None:
+    #         requested = cfg.data['ui']['ng_layout']
+    #     mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
+    #                'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+    #     return mapping[requested]
 
     def initUI_Neuroglancer(self):
         '''NG Browser'''
@@ -382,15 +378,6 @@ class ProjectTab(QWidget):
 
         self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
         # self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-
-
-
-        # self.lab_main_instructions = QLabel("'r' - refresh viewer. 'm' - enter manual align mode")
-        # self.lab_main_instructions = QLabel("'k' - include/exclude section. 'm' - enter manual align mode")
-        self.lab_main_instructions = QLabel(f"{hotkey('R')} - refresh. 'k' - include/exclude section. 'm' - enter manual align mode\n")
-        self.lab_main_instructions.setStyleSheet("background-color: #222222; color: #ede9e8; font-size: 9px; font-weight: 600; margin-left: 2px;")
-        self.lab_main_instructions.setFixedHeight(22)
-        self.lab_main_instructions.setAlignment(Qt.AlignVCenter)
 
         # self.ng_messages = VWidget(self.warning_cafm)
         # self.ng_messages.layout.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
@@ -455,29 +442,6 @@ class ProjectTab(QWidget):
         # self.spreadW3.setAttribute(Qt.WA_TransparentForMouseEvents)
         # self.spreadW3.setFixedSize(40, 1)
 
-        # self.ng_gl.addWidget(self.joystick, 0, 0, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-        # self.ng_gl.addWidget(self.labelsWidget, 0, 2, 1, 1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # self.ng_gl.addWidget(self.spreadW3, 0, 4, 1, 1,
-        #                      alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # self.ng_gl.addWidget(self.spreadW2, 1, 3, 2, 1,
-        #                      alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # self.ng_gl.addWidget(self.spreadW, 1, 4, 1, 1,
-        #                      alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # self.ng_gl.addWidget(self.detailsDetailsWidget, 2, 0, 1, 4,
-        #                      alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # self.ng_gl.setRowStretch(0, 1)
-        # self.ng_gl.setRowStretch(1, 1)
-        # self.ng_gl.setRowStretch(2, 100)
-        # self.ng_gl.setRowStretch(3, 25)
-        # self.ng_gl.setRowStretch(4, 0)
-        # self.ng_gl.setColumnStretch(0, 24)
-        # self.ng_gl.setColumnStretch(1, 0)
-        # self.ng_gl.setColumnStretch(2, 5)
-        # self.ng_gl.setColumnStretch(3, 1)
-        # self.updateUISpacing()
-        # self._w_ng_display.setLayout(self.ng_gl)
-
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
         self.zoomSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.zoomSlider.setMouseTracking(True)
@@ -533,14 +497,16 @@ class ProjectTab(QWidget):
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
         self.MA_webengine_ref = WebEngine(ID='ref')
+        self.MA_webengine_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.MA_webengine_base = WebEngine(ID='base')
+        self.MA_webengine_base.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         setWebengineProperties(self.MA_webengine_ref)
         setWebengineProperties(self.MA_webengine_base)
         # self.MA_webengine_ref.focusInEvent.connect(self.focusedViewerChanged)
         # self.MA_webengine_base.focusInEvent.connect(self.focusedViewerChanged)
-        self.MA_webengine_ref.setMinimumWidth(100)
-        self.MA_webengine_base.setMinimumWidth(100)
+        # self.MA_webengine_ref.setMinimumWidth(100)
+        # self.MA_webengine_base.setMinimumWidth(100)
         self.MA_webengine_ref.setMouseTracking(True)
         self.MA_webengine_base.setMouseTracking(True)
         self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -571,8 +537,8 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
         self.MA_ptsListWidget_ref = QListWidget()
+        self.MA_ptsListWidget_ref.setMaximumHeight(64)
         self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        # self.MA_ptsListWidget_ref.setMaximumHeight(54)
         self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.MA_ptsListWidget_ref.installEventFilter(self)
@@ -583,9 +549,9 @@ class ProjectTab(QWidget):
         self.MA_refNextColorLab.setFixedSize(14, 14)
 
         self.MA_ptsListWidget_base = QListWidget()
+        self.MA_ptsListWidget_base.setMaximumHeight(64)
         # self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
         self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        # self.MA_ptsListWidget_base.setMaximumHeight(54)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
         self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
         self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -698,10 +664,6 @@ class ProjectTab(QWidget):
         # lab2.setStyleSheet('font-size: 8px; font-family: Tahoma, sans-serif;')
         # vw2 = VWidget(lab2, self.tgl_alignMethod)
         # vw2.layout.setSpacing(0)
-
-        def fn():
-            logger.info('')
-            self.MA_stackedWidget.setCurrentIndex(4)
 
 
         # def fn():
@@ -919,13 +881,14 @@ class ProjectTab(QWidget):
 
                 cfg.data.set_manual_swim_window_px(val)
                 self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
-                if self.rb_reference.isChecked():
+                if cfg.data['state']['tra_ref_toggle'] == 0:
                     cfg.refViewer.drawSWIMwindow()
                 else:
                     cfg.baseViewer.drawSWIMwindow()
 
-                self.tn_ref.update()
-                self.tn_tra.update()
+                if cfg.mw.dw_thumbs.isVisible():
+                    self.tn_ref.update()
+                    self.tn_tra.update()
                 cfg.main_window._callbk_unsavedChanges()
 
         # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
@@ -950,12 +913,13 @@ class ProjectTab(QWidget):
             #
             cfg.data.set_manual_swim_window_px(val)
             self.dataUpdateMA()
-            if self.rb_reference.isChecked():
+            if cfg.data['state']['tra_ref_toggle'] == 0:
                 cfg.refViewer.drawSWIMwindow()
             else:
                 cfg.baseViewer.drawSWIMwindow()
-            self.tn_ref.update()
-            self.tn_tra.update()
+            if cfg.mw.dw_thumbs.isVisible():
+                self.tn_ref.update()
+                self.tn_tra.update()
             self.slider_MA_SWIM_window.setValue(int(self.MA_SWIM_window_le.text()))
         self.MA_SWIM_window_le.returnPressed.connect(fn_MA_SWIM_window_le)
 
@@ -976,7 +940,8 @@ class ProjectTab(QWidget):
 
         tip = "Full window width for automatic alignment (px)"
 
-        def fn():
+        def fn_slider_AS_window():
+            logger.info('')
             caller = inspect.stack()[1].function
             if caller == 'main':
 
@@ -992,27 +957,29 @@ class ProjectTab(QWidget):
                 # self.slider_AS_2x2_SWIM_window.setMaximum(int(val / 2 + 0.5))2
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
 
-                if self.rb_reference.isChecked():
+                if cfg.data['state']['tra_ref_toggle'] == 0:
                     cfg.refViewer.drawSWIMwindow()
                 else:
                     cfg.baseViewer.drawSWIMwindow()
 
-                self.tn_ref.update()
-                self.tn_tra.update()
+                if cfg.mw.dw_thumbs.isVisible():
+                    self.tn_ref.update()
+                    self.tn_tra.update()
                 cfg.main_window._callbk_unsavedChanges()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider_AS_SWIM_window.setMinimum(64)
         self.slider_AS_SWIM_window.setToolTip(tip)
-        self.slider_AS_SWIM_window.valueChanged.connect(fn)
+        self.slider_AS_SWIM_window.valueChanged.connect(fn_slider_AS_window)
         self.slider_AS_SWIM_window.setMaximumWidth(100)
 
         def fn():
             cfg.data.set_swim_1x1_custom_px(int(self.AS_SWIM_window_le.text()))
             self.dataUpdateMA()
-            self.tn_ref.update()
-            self.tn_tra.update()
+            if cfg.mw.dw_thumbs.isVisible():
+                self.tn_ref.update()
+                self.tn_tra.update()
 
         self.AS_SWIM_window_le = QLineEdit()
         self.AS_SWIM_window_le.returnPressed.connect(fn)
@@ -1106,13 +1073,14 @@ class ProjectTab(QWidget):
                     cfg.data.current_method = 'manual-hint'
                 elif self.rb_MA_strict.isChecked():
                     cfg.data.current_method = 'manual-strict'
-                if self.rb_reference.isChecked():
+                if cfg.data['state']['tra_ref_toggle'] == 0:
                     cfg.refViewer.drawSWIMwindow()
                 else:
                     cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
-                self.tn_ref.update()
-                self.tn_tra.update()
+                if cfg.mw.dw_thumbs.isVisible():
+                    self.tn_ref.update()
+                    self.tn_tra.update()
                 cfg.mw.updateCorrSignalsDrawer()
                 self.setTargKargPixmaps()
             cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
@@ -1173,11 +1141,6 @@ class ProjectTab(QWidget):
         self.Q3.clicked.connect(self.updateAutoSwimRegions)
         self.Q4.clicked.connect(self.updateAutoSwimRegions)
 
-        self.Q1.setAutoFillBackground(True)
-        self.Q2.setAutoFillBackground(True)
-        self.Q3.setAutoFillBackground(True)
-        self.Q4.setAutoFillBackground(True)
-
         siz = 20
         self.Q1.setFixedSize(siz, siz)
         self.Q2.setFixedSize(siz, siz)
@@ -1217,15 +1180,313 @@ class ProjectTab(QWidget):
 
         # self.MA_settings = QWidget()
 
-        self.MA_tabs = QTabWidget()
-        self.MA_tabs.setStyleSheet("""
-        QTabBar::tab {
-            height: 16px;
-            font-size: 9px;
-            margin: 0px;
-            padding: 0px;
+
+        '''
+        DEFAULT GRID SWIM SETTINGS
+        '''
+
+        ctl_lab_style = 'color: #ede9e8; font-size: 10px;'
+        tip = """A SWIM parameter which takes values in the range of -1.00 and 0.00 (default=-0.68)."""
+        lab = QLabel("Whitening\nFactor:")
+        lab.setStyleSheet(ctl_lab_style)
+        lab.setAlignment(Qt.AlignLeft)
+        self.sb_whiteningControl = QDoubleSpinBox(self)
+        self.sb_whiteningControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.sb_whiteningControl.setFixedSize(QSize(50, 18))
+        self.sb_whiteningControl.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
+        self.sb_whiteningControl.valueChanged.connect(cfg.mw._valueChangedWhitening)
+        self.sb_whiteningControl.setDecimals(2)
+        self.sb_whiteningControl.setSingleStep(.01)
+        self.sb_whiteningControl.setMinimum(-2)
+        self.sb_whiteningControl.setMaximum(2)
+
+        tip = """The number of sequential SWIM refinements to alignment. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3)."""
+        self.sb_SWIMiterations = QSpinBox(self)
+        self.sb_SWIMiterations.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.sb_SWIMiterations.setFixedSize(QSize(50, 18))
+        self.sb_SWIMiterations.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
+
+        def fn_swim_iters():
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                setData('data,defaults,swim-iterations', self.sb_SWIMiterations.value())
+                self.updateCpanelDetails_i1()
+
+        self.sb_SWIMiterations.valueChanged.connect(fn_swim_iters)
+        self.sb_SWIMiterations.setMinimum(1)
+        self.sb_SWIMiterations.setMaximum(9)
+
+        tip = f"""The full width in pixels of an imaginary, centered grid which SWIM 
+        aligns against (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)."""
+        lab = QLabel("SWIM\nWindow:")
+        lab.setStyleSheet(ctl_lab_style)
+        lab.setAlignment(Qt.AlignLeft)
+        # self._swimWindowControl = QSpinBox(self)
+        self._swimWindowControl = QLineEdit(self)
+        self._swimWindowControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._swimWindowControl.setFixedSize(QSize(50, 18))
+        def fn():
+            logger.critical('')
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                logger.info(f'caller: {caller}')
+                try:
+                    val = int(self._swimWindowControl.text())
+                except:
+                    self._swimWindowControl.setText(str(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'][0]))
+                    return
+                logger.critical(f"val = {val}")
+                if (val % 2) == 1:
+                    new_val = val - 1
+                    self.tell(f'SWIM requires even values as input. Setting value to {new_val}')
+                    self._swimWindowControl.setText(str(new_val))
+                    return
+                logger.critical(f"val = {val}...........")
+                # cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
+                cfg.data.set_auto_swim_windows_to_default(factor=val / cfg.data.image_size()[0])
+                # self.swimWindowChanged.emit()
+
+                if cfg.data['state']['current_tab'] == 1:
+                    cfg.baseViewer.drawSWIMwindow()
+                    cfg.refViewer.drawSWIMwindow()
+            if cfg.mw.dw_thumbs.isVisible():
+                self.tn_ref.update()
+                self.tn_tra.update()
+            cfg.mw.tell(f'SWIM Window set to: {str(val)}')
+        self._swimWindowControl.selectionChanged.connect(fn)
+        self._swimWindowControl.returnPressed.connect(fn)
+        self._swimWindowControl.selectionChanged.connect(cfg.mw._callbk_unsavedChanges)
+        self._swimWindowControl.returnPressed.connect(cfg.mw._callbk_unsavedChanges)
+        self._swimWindowControl.setValidator(QIntValidator())
+        # self._swimWindowControl.setFixedSize(std_input_size)
+
+        self.fl_swimSettings = QFormLayout()
+        self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
+        self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
+        self.fl_swimSettings.setVerticalSpacing(4)
+        self.fl_swimSettings.addRow('Window Width (px):', self._swimWindowControl)
+        self.fl_swimSettings.addRow('Signal Whitening:', self.sb_whiteningControl)
+        self.fl_swimSettings.addRow('Iterations:', self.sb_SWIMiterations)
+
+        self.gb_defaultGridSwimSettings = QGroupBox("Default SWIM Settings")
+        self.gb_defaultGridSwimSettings.setObjectName('gb_cpanel')
+        self.gb_defaultGridSwimSettings.setLayout(self.fl_swimSettings)
+        self.gb_defaultGridSwimSettings.setAlignment(Qt.AlignCenter)
+
+        '''DEFAULT GRID SWIM SETTINGS END'''
+
+
+
+
+        '''
+        OUTPUT SETTINGS
+        '''
+        tip = """Whether to auto-generate aligned images following alignment."""
+        self._toggleAutogenerate = ToggleSwitch()
+        self._toggleAutogenerate.stateChanged.connect(cfg.mw._toggledAutogenerate)
+        self._toggleAutogenerate.stateChanged.connect(cfg.mw._callbk_unsavedChanges)
+        self._toggleAutogenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._toggleAutogenerate.setChecked(True)
+
+        tip = """Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may 
+        significantly increase the size of generated images."""
+        self._bbToggle = ToggleSwitch()
+        self._bbToggle.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._bbToggle.toggled.connect(cfg.mw._callbk_bnding_box)
+        self._bbToggle.toggled.connect(cfg.mw._callbk_unsavedChanges)
+        self._bbToggle.toggled.connect(self.updateCpanelDetails_i1)
+
+        tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
+        self._polyBiasCombo = QComboBox(self)
+        # self._polyBiasCombo.setStyleSheet("font-size: 10px; padding-left: 6px;")
+        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._valueChangedPolyOrder)
+        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._callbk_unsavedChanges)
+        self._polyBiasCombo.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
+        # self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
+        self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._polyBiasCombo.setFixedSize(QSize(70, 16))
+        self._polyBiasCombo.lineEdit()
+
+        self.flSettings = QFormLayout()
+        self.flSettings.setFormAlignment(Qt.AlignVCenter)
+        self.flSettings.setContentsMargins(2, 2, 2, 2)
+        self.flSettings.setVerticalSpacing(2)
+        self.flSettings.setHorizontalSpacing(0)
+        self.flSettings.addRow('Generate TIFFs: ', HWidget(ExpandingWidget(self), self._toggleAutogenerate))
+        self.flSettings.addRow('Bounding Box: ', HWidget(ExpandingWidget(self), self._bbToggle))
+        self.flSettings.addRow('Corrective Bias: ', HWidget(ExpandingWidget(self), self._polyBiasCombo))
+
+        self.gb_outputSettings = QGroupBox("Output Settings")
+        self.gb_outputSettings.setObjectName('gb_cpanel')
+        self.gb_outputSettings.setLayout(self.flSettings)
+
+        '''OUTPUT SETTINGS END'''
+
+
+        cpanel_style2 = """
+        QLabel {font-size: 10px;}
+
+        QPushButton {
+            font-size: 10px;
         }
+
+
+        QComboBox {
+            background-color: #f3f6fb;
+            color: #161c20;
+            font-size: 10px;
+            margin:0px;
+            padding:0px;
+        }
+
+        QGroupBox#gb_cpanel {
+                color: #161c20;
+                border: 1px solid #161c20;
+                font-size: 10px;
+                /*font-weight: 600;*/
+                border-radius: 2px;
+                margin: 2px;
+                padding: 2px;
+
+        }
+
+        QGroupBox:title#gb_cpanel {
+            color: #161c20;
+            /*font-weight:600;*/
+            font-size: 9px;
+            subcontrol-origin: margin;
+            subcontrol-position: top center;
+            margin-bottom: 16px;
+
+        }
+        """
+
+        self.gb_defaultGridSwimSettings.setStyleSheet(cpanel_style2)
+        self.gb_outputSettings.setStyleSheet(cpanel_style2)
+
+
+
+
+
+
+
+        self.fl_results = QFormLayout()
+        self.fl_results.setVerticalSpacing(2)
+        self.fl_results.setContentsMargins(0, 0, 0, 0)
+        self.results0 = QLabel()  # Image dimensions
+        self.results1 = QLabel()  # # of images
+        self.results2 = QLabel()  # SNR average
+        self.results3 = QWidget()
+        self.results3_fl = QFormLayout()
+        self.results3_fl.setContentsMargins(0, 0, 0, 0)
+        self.results3_fl.setVerticalSpacing(2)
+        self.results3.setLayout(self.results3_fl)
+        self.fl_results.addRow('Image Dimensions', self.results0)
+        self.fl_results.addRow('# Images', self.results1)
+        self.fl_results.addRow('SNR (average)', self.results2)
+        tab_width = 360
+        self.sa_tab1 = QScrollArea()
+        self.sa_tab1.setWidgetResizable(True)
+        self.sa_tab1.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.secDetails_w = QWidget()
+        self.secDetails_w.setStyleSheet("""
+            color: #161c20;
+            font-size: 9px;
+            font-weight: 600;
         """)
+        self.secDetails_w.setContentsMargins(0, 0, 0, 0)
+        self.secDetails_fl = QFormLayout()
+        self.secDetails_fl.setVerticalSpacing(2)
+        self.secDetails_fl.setHorizontalSpacing(4)
+        self.secDetails_fl.setContentsMargins(0, 0, 0, 0)
+        secStyle = """ font-weight: 300; background-color: #dedede; """
+        self.secName = QLabel()
+        self.secReference = QLabel()
+        self.secExcluded = QLabel()
+        self.secHasBB = QLabel()
+        self.secUseBB = QLabel()
+        self.secAlignmentMethod = QLabel()
+        self.secSrcImageSize = QLabel()
+        self.secAlignedImageSize = QLabel()
+        self.secSNR = QLabel()
+        self.secDefaults = QLabel()
+        self.secName.setStyleSheet(secStyle)
+        self.secReference.setStyleSheet(secStyle)
+        self.secExcluded.setStyleSheet(secStyle)
+        self.secHasBB.setStyleSheet(secStyle)
+        self.secUseBB.setStyleSheet(secStyle)
+        self.secAlignmentMethod.setStyleSheet(secStyle)
+        self.secSrcImageSize.setStyleSheet(secStyle)
+        self.secAlignedImageSize.setStyleSheet(secStyle)
+        self.secSNR.setStyleSheet(secStyle)
+        self.secDefaults.setStyleSheet(secStyle)
+        self.secDetails = OrderedDict({
+            'Name': self.secName,
+            'Reference': self.secReference,
+            'SNR': self.secSNR,
+            'Alignment Method': self.secAlignmentMethod,
+            'Source Image Size': self.secSrcImageSize,
+            'Aligned Image Size': self.secAlignedImageSize,
+            'Excluded Sections': self.secExcluded,
+            'Has Bounding Box': self.secHasBB,
+            'Use Bounding Box': self.secUseBB,
+            'Defaults': self.secDefaults,
+        })
+        for i in range(len(self.secDetails)):
+            self.secDetails_fl.addRow(list(self.secDetails.items())[i][0], list(self.secDetails.items())[i][1])
+        self.secDetails_w.setLayout(self.secDetails_fl)
+        self.sa_tab1.setWidget(self.secDetails_w)
+        self.sa_tab1.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab1.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab2 = QScrollArea()
+        self.sa_tab2.setWidgetResizable(True)
+        self.sa_tab2.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab2.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.runtimeWidget = QWidget()
+        self.runtimeWidget.setStyleSheet("""font-size: 9px; color: #161c20;""")
+        self.sa_tab3 = QScrollArea()
+        self.sa_tab3.setWidgetResizable(True)
+        self.sa_tab3.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab3.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab3.setWidget(self.runtimeWidget)
+        self.secAffine = QLabel()
+        self.secAffine.setStyleSheet("""QWidget{
+            color: #161c20;
+            font-weight: 600;
+            border: none;}""")
+        self.sa_tab4 = QScrollArea()
+        self.sa_tab4.setStyleSheet("""QLabel {font-weight: 300;}""")
+        self.sa_tab4.setWidgetResizable(True)
+        self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_tab4.setWidget(self.secAffine)
+        self.cpanelTabWidget = QTabWidget()
+        self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cpanelTabWidget.setFixedWidth(tab_width)
+        self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
+        self.cpanelTabWidget.setStyleSheet("""
+        QScrollArea {border: none; font-size: 8px;}
+        QTabWidget{font-size: 8px;}
+        QTabBar::tab {
+            height: 14px;
+            width: 64px;
+            padding-left: 0px;
+            padding-right: 0px;
+            font-size: 8px;
+        }
+        QTabBar::tab:selected { color: #339933; font-weight: 600; }
+        """)
+        self.cpanelTabWidget.setContentsMargins(0, 0, 0, 0)
+        self.cpanelTabWidget.setFixedHeight(80)
+        self.cpanelTabWidget.addTab(self.sa_tab1, 'Details')
+        self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
+        self.cpanelTabWidget.addTab(self.sa_tab3, 'Runtimes')
+        self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
+
+
+
 
         self.MA_use_global_defaults_lab = QLabel('Global defaults will be used.')
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
@@ -1260,15 +1521,19 @@ class ProjectTab(QWidget):
         self.method_bg.addButton(self.method_rb2)
 
         def method_bg_fn():
+            logger.info('')
             # logger.critical(f'\n\n\n\n\n BEFORE:{cfg.data.current_method} \n\n\n\n\n')
             cur_index = self.MA_stackedWidget.currentIndex()
             if self.method_rb0.isChecked():
+                logger.info('radiobox 0 is checked')
                 self.MA_stackedWidget.setCurrentIndex(0)
                 cfg.data.current_method = 'grid-default'
             elif self.method_rb1.isChecked():
+                logger.info('radiobox 1 is checked')
                 self.MA_stackedWidget.setCurrentIndex(1)
                 cfg.data.current_method = 'grid-custom'
             elif self.method_rb2.isChecked():
+                logger.info('radiobox 2 is checked')
                 self.MA_stackedWidget.setCurrentIndex(2)
                 if cfg.data.current_method == 'manual-strict':
                     self.rb_MA_strict.setChecked(True)
@@ -1389,8 +1654,6 @@ class ProjectTab(QWidget):
 
         # self.btns_logs = QWidget()
 
-        # self.sw_logs = QStackedWidget()
-        # self.sw_logs.setStyleSheet("font-size: 9px;")
         self.lab_ing = QLabel('Ingredients:')
 
         self.btn_ing0 = QPushButton('1')
@@ -1535,7 +1798,8 @@ class ProjectTab(QWidget):
 
         '''MA STACKED WIDGET'''
         self.MA_stackedWidget = QStackedWidget()
-        self.MA_stackedWidget.addWidget(self.MA_use_global_defaults_lab)
+        # self.MA_stackedWidget.addWidget(self.MA_use_global_defaults_lab)
+        self.MA_stackedWidget.addWidget(self.gb_defaultGridSwimSettings)
         # self.MA_stackedWidget.addWidget(VWidget(self.gb_MA_settings, self.Q_widget))
         self.MA_stackedWidget.addWidget(self.gb_MA_settings)
         self.MA_stackedWidget.addWidget(self.MA_points_tab)
@@ -1561,148 +1825,39 @@ class ProjectTab(QWidget):
         # self.MA_gl_overlay.hide()
 
         # 0617
-        self.sw_neuroglancer = QStackedWidget()
-        self.sw_neuroglancer.setObjectName('stackwidget-neuroglancer')
-        self.sw_neuroglancer.addWidget(self.MA_webengine_ref)
-        self.sw_neuroglancer.addWidget(self.MA_webengine_base)
-        self.sw_neuroglancer.setCurrentIndex(cfg.data['state']['tra_ref_toggle'])
+        self.sw_alignment_editor = QStackedWidget()
+        self.sw_alignment_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.sw_alignment_editor.setObjectName('stackwidget-neuroglancer')
+        self.sw_alignment_editor.addWidget(self.MA_webengine_ref)
+        self.sw_alignment_editor.addWidget(self.MA_webengine_base)
+        self.sw_alignment_editor.setCurrentIndex(cfg.data['state']['tra_ref_toggle'])
 
 
 
-        self.cl_configureRegions = ClickLabel(' Configure Alignment')
-        self.cl_configureRegions.setAlignment(Qt.AlignCenter)
-        self.cl_configureRegions.setMinimumHeight(16)
-        self.cl_configureRegions.clicked.connect(lambda: self.configure_or_stack(selection='configure'))
-        self.cl_configureRegions.setMinimumWidth(140)
-        logger.critical(f"\n\nviewer_mode: {getData('state,viewer_mode')}\n")
-        self.cl_configureRegions.setChecked(getData('state,viewer_mode') == 'series_with_regions')
-        # self.cl_configureRegions.clicked.connect(lambda: print(f"\n\n\n\nself.cl_regionsView TOGGLED! {caller_name()} {self.cl_configureRegions.isChecked}\n\n\n\n"))
-        # self.cl_configureRegions.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 1.0);""")
-        # if self.cl_configureRegions.isChecked:
-        #     self.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-        #     self.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-        self.cl_stackView = ClickLabel(' View Image Stack')
-        self.cl_stackView.setAlignment(Qt.AlignCenter)
-        self.cl_stackView.setMinimumHeight(16)
-        self.cl_stackView.clicked.connect(lambda: self.configure_or_stack(selection='stack'))
-        self.cl_stackView.setMinimumWidth(140)
-        self.cl_stackView.setChecked(getData('state,viewer_mode') == 'series_as_stack')
+        self.cl_tra = ClickLabel(' Transforming ')
+        self.cl_tra.setAlignment(Qt.AlignCenter)
+        self.cl_tra.setMinimumHeight(16)
+        self.cl_tra.setMinimumWidth(140)
+        self.cl_tra.clicked.connect(self.set_transforming)
 
-        # self.cl_stackView.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 1.0);""")
-        # if self.cl_stackView.isChecked:
-        #     self.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-        #     self.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-        if getData('state,viewer_mode') == 'series_as_stack':
-            self.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-            self.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-        else:
-            self.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-            self.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+        self.cl_ref = ClickLabel(' Reference ')
+        self.cl_ref.setAlignment(Qt.AlignCenter)
+        self.cl_ref.setMinimumHeight(16)
+        self.cl_ref.setMinimumWidth(140)
+        self.cl_ref.clicked.connect(self.set_reference)
 
+        self.cl_tra.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
+        self.cl_ref.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
+        self.wSwitchRefTra = QWidget()
+        self.wSwitchRefTra.setFixedHeight(16)
+        self.wSwitchRefTra.setStyleSheet("QWidget{background-color: #222222;}")
+        self.wSwitchRefTra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.wSwitchRefTra.setContentsMargins(0, 0, 0, 0)
+        self.wSwitchRefTra.setLayout(HBL(self.cl_tra, self.cl_ref))
 
-        # self.rbg_aligned_unaligned = QButtonGroup()
-        # self.rbg_aligned_unaligned.setExclusive(True)
-        # self.rbg_aligned_unaligned.addButton(self.cl_configureRegions)
-        # self.rbg_aligned_unaligned.addButton(self.cl_stackView)
-        # def fn_alunal():
-        #     if DEV:
-        #         logger.critical(">>>> fn_alunal >>>>")
-        #     if self.cl_configureRegions.isChecked:
-        #         cfg.mw.view_raw_series_with_regions()
-        #     elif self.cl_stackView.isChecked:
-        #         cfg.mw.view_series_as_stack()
-        #
-        # # self.rbg_aligned_unaligned.buttonToggled.connect(fn_alunal)
-        # self.cl_configureRegions.clicked.connect(fn_alunal)
-        # self.cl_stackView.clicked.connect(fn_alunal)
-
-        msgMode = QLabel(" 'm' to toggle")
-        msgMode.setStyleSheet("""color: #FFFF66; font-size: 9px;""")
-
-        self.viewmode_rb_widget = QWidget()
-        self.viewmode_rb_widget.setFixedHeight(16)
-        self.viewmode_rb_widget.setStyleSheet("QWidget{background-color: #222222;}")
-        self.viewmode_rb_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.viewmode_rb_widget.setStyleSheet("background-color: #666666; color: #ede9e8;")
-        # self.viewmode_rb_widget.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 1.0);""")
-        self.viewmode_rb_widget.setContentsMargins(0, 0, 0, 0)
-        # hbl = HBL(self.cl_stackView, self.cl_configureRegions, msgMode)
-        hbl = HBL(self.cl_stackView, self.cl_configureRegions)
-        self.viewmode_rb_widget.setLayout(hbl)
-        # self.viewmode_rb_widget.setFixedHeight(16)
-        # self.rb_view = HWidget(self.cl_stackView, self.cl_configureRegions)
-
-
-        self.bg_ref_tra = QButtonGroup(self)
-        self.bg_ref_tra.setExclusive(True)
-        self.rb_transforming = QRadioButton()
-        lab_t = ClickLabel(' Transforming Section  ')
-        lab_t.clicked.connect(lambda: self.rb_transforming.setChecked(True))
-        lab_t.setStyleSheet("""color: #ede9e8; font-size: 11px;""")
-        self.rb_lab_transforming = HWidget(self.rb_transforming, lab_t)
-        self.rb_lab_transforming.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb_transforming.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb_transforming.setChecked(getData('state,tra_ref_toggle'))
-        self.rb_reference = QRadioButton()
-        lab_r = ClickLabel(' Reference Section  ')
-        lab_r.clicked.connect(lambda: self.rb_reference.setChecked(True))
-        lab_r.setStyleSheet("""color: #ede9e8; font-size: 11px;""")
-        self.rb_lab_reference = HWidget(self.rb_reference, lab_r)
-        self.rb_lab_reference.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rb_reference.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 0.0); border-radius: 4px;""")
-        # self.rb_transforming.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 0.0);""")
-        # if self.rb_transforming.isChecked():
-        #     self.rb_transforming.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-        #     self.rb_reference.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-        # if self.rb_reference.isChecked():
-        #     self.rb_transforming.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-        #     self.rb_reference.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-        self.rb_reference.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.bg_ref_tra.addButton(self.rb_transforming)
-        self.bg_ref_tra.addButton(self.rb_reference)
-
-        #radioboxes
-        self.ma_radioboxes = QWidget()
-        # self.ma_radioboxes.setStyleSheet("""color: #161c20; font-size: 12px; background-color: rgba(0, 0, 0, 0.0); border-radius: 4px; padding: 4px;""")
-        # self.ma_radioboxes.setStyleSheet("""QLabel {color: #ede9e8; font-size: 11px; border-radius: 4px; padding: 2px; }""")
-        # self.ma_radioboxes.setStyleSheet("""font-size: 11px;""")
-        self.ma_radioboxes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.ma_radioboxes.setStyleSheet("background-color: #222222; color: #ede9e8;")
-        self.ma_radioboxes.setContentsMargins(0,0,0,0)
-
-        if self.cl_configureRegions.isChecked:
-            # self.rb_reference.show()
-            # self.rb_transforming.show()
-            self.ma_radioboxes.show()
-        if self.cl_stackView.isChecked:
-            # self.rb_reference.hide()
-            # self.rb_transforming.hide()
-            self.ma_radioboxes.hide()
-
-        # self.lab_slash = QLabel("← '\\' →")
-        # self.lab_slash.setFixedWidth(50)
-        # self.lab_slash.setStyleSheet("background-color: #dadada; color: #161c20; font-weight: 600; font-size: 14px;")
-        # hbl = HBL(self.rb_transforming, self.lab_slash, self.rb_reference)
-
-        msgSlash = QLabel(" '/' to toggle")
-        msgSlash.setStyleSheet("""color: #FFFF66; font-size: 9px;""")
-        # msgSlash.setAlignment()
-        # msgSlash.setStyleSheet("color: #ede9e8;")
-        # f = QFont()
-        # f.setItalic(True)
-        # f.setPointSize(9)
-        # msgSlash.setFont(f)
-        hbl = HBL(self.rb_lab_transforming, QLabel('  '), self.rb_lab_reference, msgSlash)
-        hbl.setAlignment(Qt.AlignHCenter)
-        # hbl.setSpacing(0)
-        self.ma_radioboxes.setLayout(hbl)
-        self.ma_radioboxes.setFixedHeight(20)
-        if getData('state,viewer_mode') != 'viewer_with_regions':
-            self.ma_radioboxes.hide()
 
         def fn_radiobox():
-
             newcur = (0, 1)[self.rb_transforming.isChecked()]
             cfg.data['state']['tra_ref_toggle'] = newcur
             active = (cfg.refViewer, cfg.baseViewer)[newcur]
@@ -1716,65 +1871,74 @@ class ProjectTab(QWidget):
                 except:
                     print_exception()
 
-            if self.rb_reference.isChecked():
+            if cfg.data['state']['tra_ref_toggle'] == 0:
                 # cfg.refViewer.set_layer(cfg.data.get_ref_index())
                 cfg.refViewer.set_layer()
 
-            # if self.rb_transforming.isChecked():
-            #     self.rb_transforming.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-            #     self.rb_reference.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-            #
-            # elif self.rb_reference.isChecked():
-            #     self.rb_transforming.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-            #     self.rb_reference.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-
             active._blockStateChanged = False
-
-            self.sw_neuroglancer.setCurrentIndex(newcur)
-
-
+            self.sw_alignment_editor.setCurrentIndex(newcur)
             self.dataUpdateMA()  # 0613+ #attempt fix for 'MA_gl_overlay' not hiding after slash press followed by layer change
             self.updateAnnotations()
 
-            # active.drawSWIMwindow()
-            # cfg.refViewer.drawSWIMwindow()
-            # cfg.baseViewer.drawSWIMwindow()
-        # self.bg_ref_tra.buttonClicked.connect(fn)
-        self.bg_ref_tra.buttonToggled.connect(fn_radiobox)
-
-        self.sw_main_ng = QStackedWidget()
-        self.sw_main_ng.addWidget(self.webengine)
-        self.sw_main_ng.addWidget(self.sw_neuroglancer)
-        if getData('state,viewer_mode') == 'viewer_with_regions':
-            self.sw_main_ng.setCurrentIndex(1)
-        else:
-            self.sw_main_ng.setCurrentIndex(0)
+        # https://codeloop.org/pyqt5-make-multi-document-interface-mdi-application/
 
 
-        # self.sw_and_toggles = VWidget(self.viewmode_rb_widget, self.ma_radioboxes, self.sw_main_ng)
-        # self.sw_and_toggles = VWidget(self.ma_radioboxes, self.sw_main_ng)
-        # self.sw_and_toggles = VWidget(self.ma_radioboxes, self.sw_main_ng)
-        # self.sw_and_toggles.setStyleSheet("background-color: #222222; font-size: 10px;")
+        # '''THIS WORKS'''
+        # self.mdi = QMdiArea()
+        # self.sub_webengine = QMdiSubWindow()
+        # self.sub_webengine.setWidget(self.webengine)
+        # self.sub_webengine.showMaximized()
+        # self.sub_webengine.setWindowFlags(Qt.FramelessWindowHint)
+        # self.mdi.addSubWindow(self.sub_webengine)
+
+
+
+        # self.mdi.setBackground(QBrush(Qt.transparent))
+        # self.w_mdi = QWidget()
+        # self.w_mdi.setLayout(self.mdi)
+        # def WindowTrig(p):
+        #     print(f"Menu Selection: {p.text()}")
+        #     if p.text() == "New":
+        #         self.sub = QMdiSubWindow()
+        #         te = QTextEdit()
+        #         te.setFixedSize(QSize(400,300))
+        #         self.sub.setWidget()
+        #         self.sub.setWindowTitle("Sub Window")
+        #         self.mdi.addSubWindow(self.sub)
+        #         self.sub.show()
+
+        # testmenu = QMenu()
+        # testmenu.addAction("New")
+        # testmenu.addAction("cascade")
+        # testmenu.addAction("Tiled")
+
+        # testmenu.triggered[QAction].connect(WindowTrig)
+        #
+        # self.testButton = QPushButton()
+        # self.testButton.setMenu(testmenu)
+        # def testFn():
+        #     print('Test Function Called...')
+        # self.testButton.clicked.connect(testFn)
+
+
 
         self.gl_sw_main = QGridLayout()
         self.gl_sw_main.setSpacing(0)
         self.gl_sw_main.setContentsMargins(0, 0, 0, 0)
-        # self.gl_sw_main.addWidget(self.sw_and_toggles, 0, 0, 3, 3)
-        self.gl_sw_main.addWidget(self.sw_main_ng, 0, 0, 3, 3)
-        self.gl_sw_main.addWidget(self.ma_radioboxes, 0, 0, 1, 3)
+        self.gl_sw_main.addWidget(self.sw_alignment_editor, 0, 0, 3, 3)
         self.gl_sw_main.addWidget(self._overlayLab, 0, 0, 3, 3)
+        # self.gl_sw_main.addWidget(self.mdi, 0, 0, 3, 3)
         # self.gl_sw_main.addWidget(self.ng_messages, 2, 0, 3, 3)
         # self.gl_sw_main.addWidget(self.msg_MAinstruct, 0, 0, 3, 3)
         # self.msg_MAinstruct.setAlignment(Qt.AlignTop)
 
-        # _overlayLab
-        # self.ng_messages
-
         self._ng_widget = QWidget()
+        self._ng_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._ng_widget.setLayout(self.gl_sw_main)
 
         self.ng_widget = QWidget()
-        vbl = VBL(self.viewmode_rb_widget, self._ng_widget)
+        self.ng_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        vbl = VBL(self.wSwitchRefTra, self._ng_widget)
         vbl.setSpacing(0)
         self.ng_widget.setLayout(vbl)
 
@@ -1880,11 +2044,7 @@ class ProjectTab(QWidget):
         self.layout_ng_MA_toolbar = QHBoxLayout()
         self.layout_ng_MA_toolbar.setContentsMargins(0, 0, 0, 0)
 
-
         self.layout_ng_MA_toolbar.addWidget(self.lab_filename)
-        # self.layout_ng_MA_toolbar.addWidget(self.viewmode_rb_widget)
-        # self.layout_ng_MA_toolbar.addWidget(self.ma_radioboxes)
-
 
         self.w_section_label_header = QWidget()
         self.w_section_label_header.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -1894,7 +2054,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
-        self.w_ng_extended_toolbar.setFixedHeight(22)
+        self.w_ng_extended_toolbar.setFixedHeight(24)
         self.w_ng_extended_toolbar.setStyleSheet(toolbar_style)
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
 
@@ -1911,9 +2071,10 @@ class ProjectTab(QWidget):
             opt = getData('state,show_ng_controls')
             opt = not opt
             setData('state,show_ng_controls', opt)
+            self.initNeuroglancer()
             # self.spreadW.setVisible(opt)
             # self.updateUISpacing()
-            if getData('state,manual_mode'):
+            if cfg.data['state']['current_tab'] == 1:
                 cfg.baseViewer.updateUIControls()
                 cfg.refViewer.updateUIControls()
             else:
@@ -2012,6 +2173,7 @@ class ProjectTab(QWidget):
                 self.contrastLE.setText('%.2f' % cfg.data.contrast)
                 self.brightnessSlider.setValue(int(cfg.data.brightness))
                 self.brightnessLE.setText('%.2f' % cfg.data.brightness)
+                self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
                 self.shaderToolbar.show()
                 self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
             self.ngcl_shader.setStyleSheet(("""background: #222222; color: #f3f6fb;
@@ -2031,9 +2193,19 @@ class ProjectTab(QWidget):
 
         # self.blinkToggle = ToggleSwitch()
         self.blinkToggle = AnimatedToggle()
-        self.blinkToggle.setFixedSize(QSize(36,14))
+        self.blinkToggle.setFixedSize(QSize(38,18))
         # self.blinkToggle.stateChanged.connect(self.blinkChanged)
-        self.blinkToggle.stateChanged.connect(cfg.mw.turnBlinkOnOff)
+        
+        def blink_main_fn():
+            self.blinkTimer.stop()
+            setData('state,blink', self.blinkToggle.isChecked())
+            logger.info(f"blink toggle: {getData('state,blink')}")
+            # self.tell(f"Blink : {('OFF','ON')[getData('state,blink')]}")
+            if getData('state,blink'):
+                self.blinkTimer.timeout.connect(cfg.emViewer.blink)
+                cfg.project_tab.blinkTimer.start()
+        
+        self.blinkToggle.stateChanged.connect(blink_main_fn)
 
         # self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
         # self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -2043,16 +2215,17 @@ class ProjectTab(QWidget):
         # self.uiUpdateToggle.setChecked(getData('state,auto_update_ui'))
 
         # def fn():
-        #     if self.cl_configureRegions.isChecked:
-        #         cfg.main_window.view_raw_series_with_regions()
+        #     if self.cl_tra.isChecked:
+        #         cfg.main_window.go_to_alignment_editor()
         #     else:
-        #         cfg.main_window.view_series_as_stack()
+        #         cfg.main_window.go_to_series_viewer()
 
 
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.blinkToggle)
+        # self.w_ng_extended_toolbar.addWidget(self.testButton)
 
         # self.w_ng_extended_toolbar.addWidget(self.uiUpdateLab)
         # self.w_ng_extended_toolbar.addWidget(self.uiUpdateToggle)
@@ -2095,13 +2268,8 @@ class ProjectTab(QWidget):
 
         self.tn_ref = ThumbnailFast(self, name='reference')
         self.tn_tra = ThumbnailFast(self, name='transforming')
-        # self.tn_ref.setMinimumSize(QSize(160,160))
-        # self.tn_ref.setMinimumSize(QSize(120,120))
         self.tn_ref.setMinimumSize(QSize(100,100))
-        # self.tn_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.tn_tra.setMinimumSize(QSize(160,160))
         self.tn_tra.setMinimumSize(QSize(100,100))
-        # self.tn_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.w_tn_tra = QWidget()
         self.gl_tn_tra = QGridLayout()
@@ -2112,24 +2280,11 @@ class ProjectTab(QWidget):
 
         self.tn_ref_lab = QLabel('Reference Section')
         self.tn_ref_lab.setFixedHeight(26)
-        # self.tn_ref_lab.setFixedHeight(18)
         self.tn_ref_lab.setStyleSheet("""font-size: 10px; color: #ede9e8; background-color: #161c20;""")
 
-        self.tn_tra_lab = QLabel('Current Section')
+        self.tn_tra_lab = QLabel('Transforming Section')
         self.tn_tra_lab.setFixedHeight(26)
         self.tn_tra_lab.setStyleSheet("""font-size: 10px; color: #ede9e8; background-color: #161c20;""")
-
-        # self.tn_vbl = VBL()
-        # self.tn_vbl.addWidget(self.tn_ref_lab)
-        # self.tn_vbl.addWidget(self.tn_ref)
-        # self.tn_vbl.addWidget(self.tn_tra_lab)
-        # self.tn_vbl.addWidget(self.tn_tra)
-        # hw = HWidget(self.labMethod1,self.labMethod2)
-        # hw.setMaximumHeight(16)
-        # self.tn_vbl.addWidget(hw)
-        # self.tn_widget = QWidget()
-        # self.tn_widget.setLayout(self.tn_vbl)
-        # self.tn_widget.setStyleSheet("""color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 10px;""")
 
         self.tn_widget = QTableWidget()
         self.tn_widget.setAutoFillBackground(True)
@@ -2164,15 +2319,6 @@ class ProjectTab(QWidget):
         v_header.setSectionResizeMode(1, QHeaderView.Stretch)
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
         # h_header.setSectionResizeMode(1, QHeaderView.Stretch)
-
-        # self.tn_widget = QWidget()
-        # self.tn_widget.setAutoFillBackground(True)
-        # self.tn_widget.setContentsMargins(0,0,0,0)
-        # hw = HWidget(self.labMethod1,self.labMethod2)
-        # hw.setStyleSheet("background-color: #222222;")
-        # hw.layout.setSpacing(0)
-        # hw.setAutoFillBackground(True)
-        # hw.setMaximumHeight(16)
 
         # vbl = VBL(self.tn_table, hw)
         # vbl.setSpacing(0)
@@ -2391,11 +2537,13 @@ class ProjectTab(QWidget):
         # self.w_before_after.setLayout(self.hbl_before_after)
 
         w = QWidget()
-        vbl = VBL(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ng_widget)
+        # vbl = VBL(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ng_widget)
+        vbl = VBL(self.w_section_label_header, self.ng_widget)
         vbl.setSpacing(0)
         vbl.setContentsMargins(0,0,0,0)
         w.setLayout(vbl)
         self.ng_widget_container = HWidget(self.ngVertLab, w, self.sideSliders)
+        self.ng_widget_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.warning_cafm = WarningNotice(self, 'The cumulative affine for this section no \n'
                                                 'longer comports with the displayed alignment.',
@@ -2424,11 +2572,27 @@ class ProjectTab(QWidget):
         self.gb_warnings.setLayout(self.vbl_wanrings)
 
         self.sideTabs = QTabWidget()
+        self.sideTabs.setStyleSheet("""
+        QTabBar::tab {
+            font-size: 9px;
+            height: 12px;
+            width: 64px;
+            min-width: 64px;
+            max-width: 64px;
+            margin-bottom: 0px;
+            padding-bottom: 0px;
+        
+        }
+        """)
+        self.sideTabs.setMaximumWidth(300) #Criticial
         self.sideTabs.currentChanged.connect(self.onSideTabChange)
 
         # self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls)
-        self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, ExpandingVWidget(self), self.MA_controls, self.gb_warnings)
-        # self.side_controls.setMaximumWidth(280)
+        self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, ExpandingVWidget(self),
+                                     self.gb_outputSettings,
+                                     self.MA_controls,
+                                     self.gb_warnings)
+        # self.side_controls.setMaximumWidth(300)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.w_swim_settings = QWidget()
@@ -2439,15 +2603,22 @@ class ProjectTab(QWidget):
 
 
         self.sideTabs.addTab(self.side_controls, 'Configure')
-        self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
+        # self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
+        self.sideTabs.addTab(self.cpanelTabWidget, 'Details')
 
 
-        self.widget3DEM = QWidget()
-        # hbl = HBL(self.match_widget, self.ms_widget, self.tn_widget, self.ng_widget_container, self.side_controls)
-        hbl = HBL(self.tn_widget, self.match_widget, self.ms_widget, self.ng_widget_container, self.sideTabs)
+        self.wEditAlignment = QWidget()
+        # hbl = HBL(self.tn_widget, self.match_widget, self.ms_widget, self.ng_widget_container, self.sideTabs)
+
+        self.wMatches = HWidget(self.match_widget, self.ms_widget)
+        self.wMatches.layout.setSpacing(0)
+
+        hbl = HBL(self.wMatches, self.ng_widget_container, self.sideTabs)
         hbl.setSpacing(0)
-        self.widget3DEM.setLayout(hbl)
+        # hbl.setStretch(3,99)
+        # hbl.setStretch(4,0)
+        self.wEditAlignment.setLayout(hbl)
 
 
         # self.splitter_ngPlusSideControls = QSplitter(Qt.Orientation.Horizontal)
@@ -2476,49 +2647,53 @@ class ProjectTab(QWidget):
         #     cfg.mw.cbThumbnails.setChecked(self.splitter_ngPlusSideControls.sizes()[0])
         #     cfg.mw.cbSignals.setChecked(self.splitter_ngPlusSideControls.sizes()[2])
         # self.splitter_ngPlusSideControls.splitterMoved.connect(fn_splitterMoved)
-
-        # self.ng_browser_container_outer = HWidget()
-        # self.ng_browser_container_outer.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.ng_browser_container_outer.addWidget(self.ms_widget)
-        # self.ng_browser_container_outer.addWidget(self.tn_widget)
-        # self.ng_browser_container_outer.addWidget(self.splitter_ngPlusSideControls)
-        # self.ng_browser_container_outer.addWidget(self.sideSliders)
-        # self.ng_browser_container_outer.layout.setStretch(0,0)
-        # self.ng_browser_container_outer.layout.setStretch(2,3)
-        # self.ng_browser_container_outer.layout.setStretch(3,0)
-        # self.ng_browser_container_outer.layout.setStretch(4,6)
-        # self.ng_browser_container_outer.layout.setSpacing(0)
         
         # self.uiSplitterTimer = QTimer()
         # self.uiSplitterTimer.setSingleShot(True)
         # self.uiSplitterTimer.timeout.connect(self.initNeuroglancer)
         # self.uiSplitterTimer.setInterval(1000)
 
+
+    def set_reference(self):
+        logger.info('')
+        cfg.data['state']['tra_ref_toggle'] = 0
+        self.cl_ref.setChecked(True)
+        self.cl_tra.setChecked(False)
+        self.cl_ref.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+        self.cl_tra.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+        cfg.refViewer.set_layer(cfg.data.get_ref_index())
+        self.sw_alignment_editor.setCurrentIndex(0)
+        self.updateAnnotations()
+
+
+    def set_transforming(self):
+        logger.info('')
+        cfg.data['state']['tra_ref_toggle'] = 1
+        self.cl_tra.setChecked(True)
+        self.cl_ref.setChecked(False)
+        self.cl_tra.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
+        self.cl_ref.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
+        cfg.baseViewer.set_layer(cfg.data.zpos)
+        self.sw_alignment_editor.setCurrentIndex(1)
+        self.updateAnnotations()
+
     def fn_hwidgetChanged(self):
-        self.tn_widget.setFixedWidth(self.tn_tra.height() + 8)
-        max_w = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height())
-        logger.info(f'max_w = {max_w}')
-        self.ms_widget.setMaximumWidth(max_w * 2 + 20)
-
-        logger.critical('Resizing things, isProjectTab...')
-        h = self.widget3DEM.height()
-        # cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
-        ms_w = int(h/4 + 0.5)
-        tn_w = int((h - self.tn_ref_lab.height() - self.tn_ref_lab.height()) / 2 + 0.5)
-        self.ms_widget.setFixedWidth(ms_w)
-        self.match_widget.setFixedWidth(ms_w)
-        self.tn_widget.setFixedWidth(tn_w)
-
-        # self.initNeuroglancer()
-
-    def configure_or_stack(self, selection: str):
-        if selection == 'configure':
-            setData('state,viewer_mode', 'series_with_regions')
-            cfg.mw.view_raw_series_with_regions()
-
-        if selection == 'stack':
-            setData('state,viewer_mode', 'series_as_stack')
-            cfg.mw.view_series_as_stack()
+        logger.critical('')
+        #
+        # # self.tn_widget.setFixedWidth(self.tn_tra.height() + 8)
+        # max_w = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height())
+        # # logger.info(f'max_w = {max_w}')
+        # self.ms_widget.setMaximumWidth(max_w * 2 + 20)
+        # logger.info('Resizing things, isProjectTab...')
+        # h = self.wEditAlignment.height()
+        # # cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
+        # ms_w = int(h/4 + 0.5)
+        # tn_w = int((h - self.tn_ref_lab.height() - self.tn_ref_lab.height()) / 2 + 0.5)
+        # self.ms_widget.setFixedWidth(ms_w)
+        # self.match_widget.setFixedWidth(ms_w)
+        # self.tn_widget.setFixedWidth(tn_w)
+        # # self.initNeuroglancer()
+        # # pass
 
 
     def onSideTabChange(self):
@@ -2539,45 +2714,23 @@ class ProjectTab(QWidget):
     def setRbStackView(self):
         if DEV:
             logger.critical(caller_name())
-        self.cl_stackView.setChecked(True)
-        self.cl_stackView.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-        self.cl_configureRegions.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
+        self.cl_ref.setChecked(True)
+        self.cl_ref.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
+        self.cl_tra.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
 
 
     def setRbRegionsView(self):
         if DEV:
             logger.critical(caller_name())
-        self.cl_configureRegions.setChecked(True)
-        self.cl_configureRegions.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
-        self.cl_stackView.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
+        self.cl_tra.setChecked(True)
+        self.cl_tra.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
+        self.cl_ref.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; font-weight: 600;')
 
 
-
-    # def setRbTransforming(self):
-    #     if DEV:
-    #         logger.critical(caller_name())
-    #     self.rb_transforming.setChecked(True)
-    #     self.rb_transforming.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-    #     self.rb_reference.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-    #
-    #
-    #
-    #
-    # def setRbReference(self):
-    #     if DEV:
-    #         logger.critical(caller_name())
-    #     self.rb_reference.setChecked(True)
-    #     self.rb_reference.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
-    #     self.rb_transforming.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
-
-
-
-
-    def onBlinkTimer(self):
-        logger.info('')
-        if getData('state,blink'):
-            if cfg.emViewer:
-                cfg.emViewer.blink()
+    # def onBlinkTimer(self):
+    #     if getData('state,blink'):
+    #         if cfg.emViewer:
+    #             cfg.emViewer.blink()
 
                 # self.blinkCur = 1 - self.blinkCur
                 # if self.blinkCur:
@@ -2604,17 +2757,6 @@ class ProjectTab(QWidget):
 
 
 
-    # def updateLabelsHeader(self):
-    #     view = getData('state,mode')
-    #     if view == 'comparison':
-    #         self.w_section_label_header.show()
-    #         if cfg.data.is_aligned_and_generated():
-    #             self.tbEndLabWidget.show()
-    #         else:
-    #             self.tbEndLabWidget.hide()
-    #     else:
-    #         self.w_section_label_header.hide()
-
     def refreshLogs(self):
         logs_path = os.path.join(cfg.data.dest(), 'logs', 'recipemaker.log')
         if os.path.exists(logs_path):
@@ -2627,6 +2769,7 @@ class ProjectTab(QWidget):
         self.te_logs.verticalScrollBar().setValue(self.te_logs.verticalScrollBar().maximum())
 
     def setTargKargPixmaps(self):
+        logger.info('')
         # caller = inspect.stack()[1].function
         # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
 
@@ -2719,7 +2862,7 @@ class ProjectTab(QWidget):
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
         cur_index = self.MA_stackedWidget.currentIndex()
-        # logger.critical(f'caller={caller}, soft={soft}, cur_index={cur_index}')
+        logger.info(f'caller={caller}, soft={soft}, cur_index={cur_index}')
         # logger.critical(f'cfg.data.current_method = {cfg.data.current_method}')
 
         if cfg.data.current_method == 'grid-default':
@@ -2739,26 +2882,18 @@ class ProjectTab(QWidget):
         if soft and (cur_index in (3, 4)):
             self.MA_stackedWidget.setCurrentIndex(cur_index)
 
-    def disableMethodChange(self):
-        self.method_rb0.setEnabled(False)
-        self.method_rb1.setEnabled(False)
-        self.method_rb2.setEnabled(False)
-
-    def enableMethodChange(self):
-        self.method_rb0.setEnabled(True)
-        self.method_rb1.setEnabled(True)
-        self.method_rb2.setEnabled(True)
 
     def updateAnnotations(self):
         if DEV:
             logger.info(f'[{caller_name()}] Updating annotations...')
 
-        if self.rb_transforming.isChecked():
+        if cfg.data['state']['tra_ref_toggle'] == 1:
             cfg.baseViewer.drawSWIMwindow()
         else:
             cfg.refViewer.drawSWIMwindow()
-        self.tn_ref.update()
-        self.tn_tra.update()
+        if cfg.mw.dw_thumbs.isVisible():
+            self.tn_ref.update()
+            self.tn_tra.update()
 
 
     def onTranslate(self):
@@ -2921,7 +3056,7 @@ class ProjectTab(QWidget):
         QApplication.restoreOverrideCursor()
         # self.msg_MAinstruct.setText("Toggle 'Mode' to select manual correspondence points")
 
-        if getData('state,manual_mode'):
+        if cfg.data['state']['current_tab'] == 1:
             # if self.tgl_alignMethod.isChecked():
             if cfg.data.method() in ('manual-hint', 'manual-strict'):
                 pixmap = QPixmap('src/resources/cursor_circle.png')
@@ -3047,14 +3182,19 @@ class ProjectTab(QWidget):
             self.updateMethodSelectWidget(soft=True)
         except:
             print_exception()
-        if self.match_widget.isVisible():
+
+
+        # if self.match_widget.isVisible():
+        if cfg.mw.dw_matches.isVisible():
             self.setTargKargPixmaps()
+            cfg.mw.updateCorrSignalsDrawer()
 
         if self.sideTabs.currentIndex() == self.indexLogs:
             self.refreshLogs()
 
-        self.tn_ref.update()
-        self.tn_tra.update()
+        if cfg.mw.dw_thumbs.isVisible():
+            self.tn_ref.update()
+            self.tn_tra.update()
 
 
         # logger.critical('<<<< dataUpdateMA <<<<')
@@ -3087,14 +3227,17 @@ class ProjectTab(QWidget):
         cfg.mw._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
 
     def update_MA_list_widgets(self):
-        if DEV:
-            logger.info(f"{caller_name()}")
-        self.setUpdatesEnabled(False)
-        self.updateEnabledButtonsMA() #0610+
-        self.update_MA_list_base()
-        self.update_MA_list_ref()
-        self.update_MA_list_count_labels()
-        self.setUpdatesEnabled(True)
+        logger.info('')
+        if self._tabs.currentIndex() == 1:
+            if cfg.data.current_method in ('manual-hint', 'manual-strict'):
+                if DEV:
+                    logger.critical(f"{caller_name()}")
+                # self.setUpdatesEnabled(False)
+                self.updateEnabledButtonsMA() #0610+
+                self.update_MA_list_base()
+                self.update_MA_list_ref()
+                self.update_MA_list_count_labels()
+                # self.setUpdatesEnabled(True)
 
     def update_MA_list_ref(self):
         logger.info('')
@@ -3117,8 +3260,7 @@ class ProjectTab(QWidget):
             n += 1
 
     def update_MA_list_base(self):
-        if DEV:
-            logger.info(f"{caller_name()}")
+        logger.info('')
         # cfg.baseViewer.pts = {}
         self.MA_ptsListWidget_base.clear()
         self.MA_ptsListWidget_base.update()
@@ -3293,7 +3435,6 @@ class ProjectTab(QWidget):
         cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
         cfg.baseViewer.pts.clear()
         self.MA_ptsListWidget_base.clear()
-
         # cfg.refViewer.applyMps()
         cfg.baseViewer.applyMps()
         # cfg.baseViewer.drawSWIMwindow()
@@ -3404,12 +3545,12 @@ class ProjectTab(QWidget):
 
     def setZoomSlider(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller {caller}')
+        logger.info(f'[{caller}]')
         if caller == 'main':
         # logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
             if self._allow_zoom_change:
                 # caller = inspect.stack()[1].function
-                if getData('state,manual_mode'):
+                if cfg.data['state']['current_tab'] == 1:
                     zoom = cfg.baseViewer.zoom()
                 else:
                     zoom = cfg.emViewer.zoom()
@@ -3427,61 +3568,28 @@ class ProjectTab(QWidget):
                 # self.zoomSlider.setValue(zoom)
                 self._allow_zoom_change = True
 
-        logger.info('set zoom slider')
-
     def onZoomSlider(self):
         caller = inspect.stack()[1].function
-        # curframe = inspect.currentframe()
-        # calframe = inspect.getouterframes(curframe, 2)
-        # calname = str(calframe[1][3])
-        # logger.critical('caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-        # logger.critical('caller: %s, self._allow_zoom_change = %r' %(caller, self._allow_zoom_change))
-
-        # if self._allow_zoom_change:
-        #     self._allow_zoom_change = False
-
         if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
-            # logger.critical('caller: %s' % caller)
-
-            if getData('state,manual_mode'):
-                val = 1 / self.zoomSlider.value()
-                # state = copy.deepcopy(cfg.refViewer.state)
-                # state.cross_section_scale = 1 / val
-                # state.cross_section_scale = val * val
-                # state.cross_section_scale = 1 / (val * val)
-                # cfg.refViewer.set_state(state)
+            val = 1 / self.zoomSlider.value()
+            if cfg.data['state']['current_tab'] == 1:
                 if abs(cfg.baseViewer.state.cross_section_scale - val) > .0001:
-                    # logger.info('Setting Neuroglancer Zoom to %g...' %val)
                     cfg.refViewer.set_zoom(val)
                     cfg.baseViewer.set_zoom(val)
-
-                # cfg.stageViewer._set_zmag()
-                # cfg.refViewer._set_zmag()
-                # cfg.baseViewer._set_zmag()
             else:
                 try:
-                    val = 1 / self.zoomSlider.value()
-                    # logger.critical('cfg.emViewer.state.cross_section_scale - val = %s' %str(diff))
-                    # state = copy.deepcopy(cfg.emViewer.state)
-                    # state.cross_section_scale = 1 / val
-                    # state.cross_section_scale = val * val
-                    # state.cross_section_scale = 1 / (val * val)
-                    # cfg.emViewer.set_state(state)
                     if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
-                        # logger.info('Setting Neuroglancer Zoom to %g...' % val)
                         cfg.emViewer.set_zoom(val)
                 except:
                     print_exception()
-            # logger.critical('val = %s' %str(val))
-            # logger.critical('1 / (val * val) = %s' %str(1 / (val * val)))
-            # self._allow_zoom_change = True
+
 
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> slider
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
-            if getData('state,manual_mode'):
+            if cfg.data['state']['current_tab'] == 1:
                 val = cfg.baseViewer.state.cross_section_scale
             else:
                 val = cfg.emViewer.state.cross_section_scale
@@ -3516,7 +3624,7 @@ class ProjectTab(QWidget):
         try:
             # for viewer in cfg.main_window.get_viewers():
             val = self.ZdisplaySlider.value()
-            if getData('state,manual_mode'):
+            if cfg.data['state']['current_tab'] == 1:
                 state = copy.deepcopy(cfg.refViewer.state)
                 state.relative_display_scales = {'z': val}
                 cfg.refViewer.set_state(state)
@@ -3555,7 +3663,9 @@ class ProjectTab(QWidget):
         '''Layer View Widget'''
         logger.info('')
         self.project_table = ProjectTable(self)
-        self.project_table.setObjectName('project_table')
+        # self.project_table.setStyleSheet("background-color: #222222; color: #f3f6fb;")
+        self.project_table.setStyleSheet("color: #f3f6fb;")
+        # self.project_table.setObjectName('project_table')
         vbl = VBL()
         vbl.addWidget(self.project_table)
         self.label_overview = VerticalLabel('Project Data Table View')
@@ -3566,31 +3676,32 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.label_overview)
         hbl.addLayout(vbl)
         self.table_container.setLayout(hbl)
-
+        self.table_container.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         # self.project_table.initTableData()
 
     def updateTreeWidget(self):
+        # cfg.mw.statusBar.showMessage('Loading data into tree view...')
         # time consuming - refactor?
-        logger.info('Updating project raw data tree...')
+        cfg.mw.tell('Loading data into tree view...')
         self.treeview_model.load(cfg.data.to_dict())
         self.treeview.setModel(self.treeview_model)
-        self.treeview.header().resizeSection(0, 380)
+        self.treeview.header().resizeSection(0, 340)
         # self.treeview.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.treeview.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.treeview.expandAll()
         self.treeview.update()
-        self.repaint()
 
     def initUI_JSON(self):
         '''JSON Project View'''
         logger.info('')
         self.treeview = QTreeView()
+        # self.treeview.setStyleSheet("color: #161c20;")
         self.treeview.setAnimated(True)
-        self.treeview.setIndentation(20)
+        self.treeview.setIndentation(14)
+        self.treeview.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.treeview.header().resizeSection(0, 380)
         # self.treeview.header().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.treeview_model = JsonModel()
-        self.treeview_model.signals.dataModelChanged.connect(self.load_data_from_treeview)
+        # self.treeview_model.signals.dataModelChanged.connect(self.load_data_from_treeview) #0716-
         self.treeview.setModel(self.treeview_model)
         self.treeview.setAlternatingRowColors(True)
 
@@ -3718,14 +3829,6 @@ class ProjectTab(QWidget):
         self.btn_tree_go.clicked.connect(goToData)
         self.btn_tree_go.setFixedSize(28, 18)
 
-        self.treeHbl = QHBoxLayout()
-        self.treeHbl.setContentsMargins(0, 0, 0, 0)
-        lab = VerticalLabel('Project Dictionary/JSON Tree View')
-        lab.setStyleSheet("""
-        background-color: #161c20;
-        color: #ede9e8;""")
-        self.treeHbl.addWidget(lab)
-
         self.jumpToTreeLab = QLabel('Jump To: ')
         self.jumpToTreeLab.setAlignment(Qt.AlignRight)
         self.jumpToTreeLab.setFixedHeight(18)
@@ -3751,12 +3854,12 @@ class ProjectTab(QWidget):
         btns.setFixedHeight(24)
         btns.setLayout(hbl)
 
-        w = QWidget()
-        vbl = VBL()
-        vbl.addWidget(self.treeview)
-        vbl.addWidget(btns)
-        w.setLayout(vbl)
-        self.treeHbl.addWidget(w)
+        self.treeHbl = HBL()
+        self.treeHbl.setSpacing(0)
+        lab = VerticalLabel('Project Dictionary/JSON Tree View')
+        lab.setStyleSheet("""background-color: #161c20; color: #ede9e8;""")
+        self.treeHbl.addWidget(lab)
+        self.treeHbl.addWidget(VWidget(self.treeview, btns))
         self._wdg_treeview.setLayout(self.treeHbl)
 
     def initUI_plot(self):
@@ -3796,15 +3899,30 @@ class ProjectTab(QWidget):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
+        # self._tabs.setTabShape(QTabWidget.Triangular)
         self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.setStyleSheet("""
         QTabBar::tab {
-            height: 12px;
-            width: 100px;
-            font-size: 9px;
+            padding-left: 3px;
+            padding-right: 3x;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            
+            
+            height: 16px;
+            width: 200px;
+            
+            
+            font-size: 12px;
             font-weight: 600;
             border: 1px solid #ede9e8;
             background-color: #dadada;
+            
+            border-bottom-width: 0px;
+            border-left-width: 0px;
+            border-top-width: 0px;
+            
+            border-top-radius: 2px;
         }
         QTabBar::tab:selected
         {
@@ -3813,31 +3931,27 @@ class ProjectTab(QWidget):
             background-color: #222222;
         }
         """)
-        self._tabs.setDocumentMode(True)
-        self._tabs.setTabsClosable(True)
+        self._tabs.setDocumentMode(True) #When this property is set the tab widget frame is not rendered.
+        self._tabs.setTabPosition(QTabWidget.South)
+        self._tabs.setTabsClosable(False)
         self._tabs.setObjectName('project_tabs')
         # self._tabs.addTab(self.splitter_ngPlusSideControls, ' 3DEM ')
-        self._tabs.addTab(self.widget3DEM, ' 3DEM ')
+        # self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
+        self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
+        self._tabs.addTab(self.wEditAlignment, 'Edit Alignment')
+        # self._tabs.addTab(self.wEditAlignment, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
         self._tabs.addTab(self._wdg_treeview, ' Raw Data ')
         self._tabs.addTab(self.snrPlotSplitter, ' SNR Plot ')
-        self._tabs.setTabToolTip(0, '3D Data Visualization')
-        self._tabs.setTabToolTip(1, 'Project Data Table View')
-        self._tabs.setTabToolTip(2, 'Project Data Tree View')
-        self._tabs.setTabToolTip(3, 'SNR Plot')
+        self._tabs.setTabToolTip(0, 'Alignment Visualizer')
+        self._tabs.setTabToolTip(1, 'Alignment Editor')
+        self._tabs.setTabToolTip(2, 'Project Data Table View')
+        self._tabs.setTabToolTip(3, 'Project Data Tree View')
+        self._tabs.setTabToolTip(4, 'SNR Plot')
 
-        self._tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
-        self._tabs.tabBar().setTabButton(1, QTabBar.RightSide, None)
-        self._tabs.tabBar().setTabButton(2, QTabBar.RightSide, None)
-        self._tabs.tabBar().setTabButton(3, QTabBar.RightSide, None)
-        self._tabs.tabBar().setTabButton(0, QTabBar.LeftSide, None)
-        self._tabs.tabBar().setTabButton(1, QTabBar.LeftSide, None)
-        self._tabs.tabBar().setTabButton(2, QTabBar.LeftSide, None)
-        self._tabs.tabBar().setTabButton(3, QTabBar.LeftSide, None)
         vbl = VBL()
         vbl.setSpacing(0)
         vbl.addWidget(self._tabs)
-        vbl.addWidget(self.lab_main_instructions)
         self.setLayout(vbl)
 
     def initShader(self):
@@ -3880,25 +3994,36 @@ class ProjectTab(QWidget):
         background: #dadada;
         }""")
         self.brightnessLE.setText('0.00')
-        self.brightnessLE.setValidator(QDoubleValidator(-1, 1, 2))
+        # self.brightnessLE.setValidator(QDoubleValidator(-1.0, 1.0, 2))
+        self.brightnessLE.setValidator(QIntValidator(-100, 100))
         self.brightnessLE.setFixedWidth(50)
         self.brightnessLE.setFixedHeight(16)
+        # def fn():
+        #     caller = inspect.stack()[1].function
+        #     logger.info('caller: %s' %caller)
+        #     self.brightnessSlider.setValue(int(self.brightnessLE.text()))
+
         self.brightnessLE.textChanged.connect(
-            lambda: self.brightnessSlider.setValue(float(self.brightnessLE.text())))
+            lambda: self.brightnessSlider.setValue(int(self.brightnessLE.text())))
         self.brightnessLE.textChanged.connect(self.fn_brightness_control)
-        self.brightnessSlider = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.brightnessSlider.setFixedWidth(128)
+        # self.brightnessSlider = DoubleSlider(Qt.Orientation.Horizontal, self)
+        self.brightnessSlider = QSlider(Qt.Orientation.Horizontal, self)
+        self.brightnessSlider.setFixedWidth(150)
         self.brightnessSlider.setMouseTracking(False)
         self.brightnessSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.brightnessSlider.setMinimum(-1.0)
-        self.brightnessSlider.setMaximum(1.0)
         # self.brightnessSlider.setMinimum(-1)
         # self.brightnessSlider.setMaximum(1)
+        # self.brightnessSlider.setMinimum(-100)
+        # self.brightnessSlider.setMaximum(100)
+        # self.brightnessSlider.setRange(-1.0, 1.0)
+        self.brightnessSlider.setRange(-100, 100)
         self.brightnessSlider.setValue(0)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         self.brightnessSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        # self.brightnessSlider.valueChanged.connect(
+        #     lambda: self.brightnessLE.setText('%.2f' % self.brightnessSlider.value()))
         self.brightnessSlider.valueChanged.connect(
-            lambda: self.brightnessLE.setText('%.2f' % self.brightnessSlider.value()))
+            lambda: self.brightnessLE.setText('%d' % self.brightnessSlider.value()))
 
         self.brightnessWidget = HWidget(QLabel('Brightness:'), self.brightnessSlider, self.brightnessLE)
 
@@ -3908,52 +4033,58 @@ class ProjectTab(QWidget):
         background: #dadada;
         }""")
         self.contrastLE.setText('0.00')
-        self.contrastLE.setValidator(QDoubleValidator(-1, 1, 2))
+        # self.contrastLE.setValidator(QDoubleValidator(-1.0, 1.0, 2))
+        self.contrastLE.setValidator(QIntValidator(-100, 100))
         self.contrastLE.setFixedWidth(50)
         self.contrastLE.setFixedHeight(16)
         self.contrastLE.textChanged.connect(
-            lambda: self.contrastSlider.setValue(float(self.contrastLE.text())))
+            lambda: self.contrastSlider.setValue(int(self.contrastLE.text())))
         self.contrastLE.textChanged.connect(self.fn_contrast_control)
-        self.contrastSlider = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.contrastSlider.setFixedWidth(128)
+        # self.contrastSlider = DoubleSlider(Qt.Orientation.Horizontal, self)
+        self.contrastSlider = QSlider(Qt.Orientation.Horizontal, self)
+        self.contrastSlider.setFixedWidth(150)
         self.contrastSlider.setMouseTracking(False)
         self.contrastSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.contrastSlider.setMinimum(-1.0)
-        self.contrastSlider.setMaximum(1.0)
+        # self.contrastSlider.setMinimum(-1.0)
+        # self.contrastSlider.setMaximum(1.0)
         # self.contrastSlider.setMinimum(-1)
         # self.contrastSlider.setMaximum(1)
+        # self.contrastSlider.setMinimum(-100)
+        # self.contrastSlider.setMaximum(100)
+        # self.contrastSlider.setRange(-1.0, 1.0)
+        self.contrastSlider.setRange(-100, 100)
         self.contrastSlider.setValue(0)
         # self.contrastSlider.setSingleStep(.02)
         # self.contrastSlider.setSingleStep(0.01)
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
         self.contrastSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        # self.contrastSlider.valueChanged.connect(
+        #     lambda: self.contrastLE.setText('%.2f' % self.contrastSlider.value()))
         self.contrastSlider.valueChanged.connect(
-            lambda: self.contrastLE.setText('%.2f' % self.contrastSlider.value()))
+            lambda: self.contrastLE.setText('%d' % self.contrastSlider.value()))
 
         self.contrastWidget = HWidget(QLabel('Contrast:'), self.contrastSlider, self.contrastLE)
 
-        self.bcWidget = HWidget(self.brightnessWidget, ExpandingWidget(self), self.contrastWidget)
+        self.bcWidget = HWidget(self.brightnessWidget, QLabel('  '), self.contrastWidget)
 
         self.shaderToolbar = QToolBar()
         self.shaderToolbar.setFixedHeight(24)
 
         self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb; font-size: 9px;""")
         labShader = QLabel(' Shader: ')
-        labShader.setStyleSheet("font-size: 10px; font-weight: 600;")
+        labShader.setStyleSheet("font-size: 12px; font-weight: 600;")
         self.shaderToolbar.addWidget(labShader)
         self.shaderToolbar.addWidget(self.bcWidget)
         self.shaderToolbar.addWidget(self.shaderSideButtons)
-        self.shaderToolbar.addWidget(ExpandingWidget(self))
+        # self.shaderToolbar.addWidget(ExpandingWidget(self))
         self.shaderToolbar.hide()
 
-        # self.shaderWidget = HWidget(self.bcWidget, self.shaderSideButtons)
-        # self.shaderWidget.hide()
 
     def fn_brightness_control(self):
         caller = inspect.stack()[1].function
         # logger.info('caller: %s' %caller)
         if caller == 'main':
-            cfg.data.brightness = self.brightnessSlider.value()
+            cfg.data.brightness = self.brightnessSlider.value() / 100
             for viewer in self.get_viewers():
                 viewer.set_brightness()
 
@@ -3961,7 +4092,7 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         # logger.info('caller: %s' % caller)
         if caller == 'main':
-            cfg.data.contrast = self.contrastSlider.value()
+            cfg.data.contrast = self.contrastSlider.value() / 100
             for viewer in self.get_viewers():
                 viewer.set_contrast()
 
@@ -3993,22 +4124,18 @@ class ProjectTab(QWidget):
 
     def get_viewers(self):
         caller = inspect.stack()[1].function
-        # logger.info(f'get_viewers [caller: {caller}] >>>>')
-        viewers = []
-        if getData('state,manual_mode'):
-            # viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.stageViewer])
-            viewers.extend([cfg.baseViewer, cfg.refViewer])
-            # viewers.extend([cfg.baseViewer, cfg.refViewer])
-            # return [cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref]
-        tab = self._tabs.currentIndex()
-        if tab == 0:
-            if not getData('state,manual_mode'):
-                viewers.extend([cfg.emViewer])
-        # elif tab == 3:
-        #     viewers.extend([cfg.snrViewer])
-
-        # logger.info(f'<<<< get_viewers')
-        return viewers
+        logger.info(f'[{caller}]')
+        # viewers = []
+        # if cfg.data['state']['current_tab'] == 1:
+        #     # viewers.extend([cfg.baseViewer, cfg.refViewer, cfg.stageViewer])
+        #     viewers.extend([cfg.baseViewer, cfg.refViewer])
+        #     # viewers.extend([cfg.baseViewer, cfg.refViewer])
+        #     # return [cfg.project_tab.MA_viewer_base, cfg.project_tab.MA_viewer_ref]
+        # tab = self._tabs.currentIndex()
+        # if cfg.data['state']['current_tab'] == 1:
+        #     viewers.extend([cfg.emViewer])
+        # return viewers
+        return [cfg.emViewer, cfg.refViewer, cfg.baseViewer]
 
     def paintEvent(self, pe):
         '''Enables widget to be style-ized'''
@@ -4020,6 +4147,175 @@ class ProjectTab(QWidget):
 
     # def sizeHint(self):
     #     return QSize(1000,1000)
+
+    def updateCpanelDetails(self):
+        '''
+        usages:
+        cpanelTabWidget tab change
+        '''
+        # logger.info('')
+
+        if self.cpanelTabWidget.currentIndex() == 0:
+            self.updateCpanelDetails_i1()
+        elif self.cpanelTabWidget.currentIndex() == 1:
+            self.updateLowest8widget()
+        elif self.cpanelTabWidget.currentIndex() == 2:
+            self.updateDtWidget()
+        # Cancel- tab 2 - runtimes are updated when runtimes change
+        elif self.cpanelTabWidget.currentIndex() == 3:
+            self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+
+    def updateCpanelDetails_i1(self):
+        """
+        _valueChangedWhitening  (1 usage found)
+            4223 self.updateCpanelDetails_i1()
+        fn_scales_combobox  (1 usage found)
+            1948 self.updateCpanelDetails_i1()
+        fn_swim_iters  (1 usage found)
+            4374 self.updateCpanelDetails_i1()
+        initControlPanel  (2 usages found)
+            4337 self._skipCheckbox.stateChanged.connect(self.updateCpanelDetails_i1)
+            5032 cfg.pt._bbToggle.stateChanged.connect(self.updateCpanelDetails_i1)
+        updateAllCpanelDetails  (1 usage found)
+            5940 self.updateCpanelDetails_i1()
+        _UpdateCpanelDetails  (1 usage found)
+            5954 self.updateCpanelDetails_i1()
+
+        """
+
+        caller = inspect.stack()[1].function
+        # logger.critical(f'caller: {caller}')
+        # logger.critical(f'caller: {caller}')
+        # if self.cpanelTabWidget.currentIndex() == 0:
+        self.secName.setText(cfg.data.filename_basename())
+        ref = cfg.data.reference_basename()
+        if ref == '':
+            ref = 'None'
+        self.secReference.setText(ref)
+
+        self.secAlignmentMethod.setText(cfg.data.method_pretty())
+        # self.secSNR.setText(cfg.data.snr_report()[5:])
+        # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
+
+        # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+        skips = cfg.data.skips_list()
+        if skips == []:
+            self.secExcluded.setText('None')
+        else:
+            self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
+        self.secHasBB.setText(str(cfg.data.has_bb()))
+        self.secUseBB.setText(str(cfg.data.use_bb()))
+        self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
+        if cfg.data.is_aligned():
+            try:
+                self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+            except:
+                print_exception()
+            if cfg.data.zpos <= cfg.data.first_unskipped():
+                self.secSNR.setText('--')
+            else:
+                try:
+                    self.secSNR.setText(
+                        '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
+                            cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
+                except:
+                    print_exception()
+        else:
+            self.secAlignedImageSize.setText('--')
+            self.secSNR.setText('--')
+        self.secDefaults.setText(cfg.data.defaults_pretty)
+
+    def updateLowest8widget(self):
+
+        if cfg.data.is_aligned():
+            n_lowest = min(8, len(cfg.data) - 1)
+            lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
+            lowest_X = list(cfg.data.snr_lowest(n_lowest))
+            # logger.info(f'lowest_X_i : {lowest_X_i}')
+            # logger.info(f'lowest_X : {lowest_X}')
+            # logger.info(f'n_lowest : {n_lowest}')
+
+            funcs = []
+            for i in range(n_lowest):
+                funcs.append(lambda: self.jump_to_manual(lowest_X_i[i]))
+
+            self.lowestX_btns = []
+            self.lowestX_txt = []
+
+            for i in range(n_lowest):
+                logger.info(f'i = {i}')
+
+                try:
+                    # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
+                    s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
+                    s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
+                    combined = s1 + ' ' + s2
+                    # btn = QPushButton('Jump')
+                    self.lowestX_btns.append(QPushButton('Manual Align'))
+                    f = QFont()
+                    f.setPointSizeF(7)
+                    self.lowestX_btns[i].setFont(f)
+                    self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
+                    self.lowestX_btns[i].setFixedSize(QSize(80, 14))
+                    self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
+                    self.lowestX_btns[i].setIconSize(QSize(10, 10))
+                    self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                    self.lowestX_btns[i].clicked.connect(funcs[i])
+                    self.lowestX_txt.append(combined)
+
+                # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
+                except:
+                    print_exception()
+                # self.results3 = QLabel('...Worst 5 SNR')
+        else:
+            label = QLabel('Not Aligned.')
+            label.setAlignment(Qt.AlignTop)
+            self.sa_tab2.setWidget(label)
+            return
+
+        self.lowX_left_fl = QFormLayout()
+        self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
+        self.lowX_left_fl.setVerticalSpacing(1)
+        if n_lowest >= 1:
+            self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
+        if n_lowest >= 2:
+            self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
+        if n_lowest >= 3:
+            self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
+        if n_lowest >= 4:
+            self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
+        # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        self.lowX_left = QWidget()
+        self.lowX_left.setContentsMargins(0, 0, 0, 0)
+        self.lowX_left.setLayout(self.lowX_left_fl)
+
+        self.lowX_right_fl = QFormLayout()
+        self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
+        self.lowX_right_fl.setVerticalSpacing(1)
+        if n_lowest >= 5:
+            self.lowX_right_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        if n_lowest >= 6:
+            self.lowX_right_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+        if n_lowest >= 7:
+            self.lowX_right_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+        if n_lowest >= 8:
+            self.lowX_right_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
+        # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
+        self.lowX_right = QWidget()
+        self.lowX_right.setContentsMargins(0, 0, 0, 0)
+        self.lowX_right.setLayout(self.lowX_right_fl)
+
+        hbl = QHBoxLayout()
+        hbl.setContentsMargins(2, 2, 2, 2)
+        hbl.addWidget(self.lowX_left)
+        hbl.addWidget(self.lowX_right)
+        w = QWidget()
+        w.setLayout(hbl)
+
+        logger.critical('Setting sa_tab2 Layout...')
+        # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
+        self.sa_tab2.setWidget(w)
+
 
 
 class ScaledPixmapLabel(QLabel):

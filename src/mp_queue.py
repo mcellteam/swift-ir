@@ -123,8 +123,8 @@ class TaskQueue(QObject):
             logger.warning('Canceling Tasks: %s' % self.pbar_text)
             return
 
-        # if cfg.DEBUG_MP:
-        if 1:
+        if cfg.DEBUG_MP:
+        # if 1:
             logger.info('Multiprocessing Module Debugging is ENABLED')
             mpl = mp.log_to_stderr()
             mpl.setLevel(logging.DEBUG)

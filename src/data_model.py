@@ -369,7 +369,7 @@ class DataModel:
     def get_ref_index(self, l=None):
         if l == None: l = self.zpos
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}, l={l}')
+        # logger.critical(f'caller: {caller}, l={l}')
         if self.skipped(s=self.scale, l=l):
             return self.get_index(self._data['data']['scales'][self.scale]['stack'][l]['filename']) #Todo refactor this but not sure how
         reference = self._data['data']['scales'][self.scale]['stack'][l]['reference']
@@ -752,7 +752,7 @@ class DataModel:
 
 
     def set_defaults(self):
-        logger.info(f'Setting Defaults [caller: {inspect.stack()[1].function}]')
+        logger.critical(f'Setting Defaults [caller: {inspect.stack()[1].function}]')
         import src.config as cfg
 
         initial_zpos = int(len(self)/2)
@@ -764,12 +764,11 @@ class DataModel:
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
         self._data['state'].pop('stage_viewer', None)
-        self._data['state'].setdefault('viewer_mode', 'series_as_stack') # series_as_stack, or series_with_regions
-        self._data['state'].setdefault('manual_mode', False)
-        # self._data['state'].setdefault('mode', 'stack-xy')
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
         self._data['state']['has_cal_grid'] = False
-        self._data['state'].setdefault('ng_layout', 'xy')
+        # self._data['state'].setdefault('ng_layout', 'xy')
+        self._data['state']['ng_layout'] = '4panel'
+        self._data['state']['current_tab'] = 0
         self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})
         # Set default to value from user preferences... Todo: all user preferences should work this way
@@ -1019,7 +1018,7 @@ class DataModel:
         return [x['filename'] for x in self.get_iter()]
 
     def get_index(self, filename):
-        logger.info(f'[{inspect.stack()[1].function}] filename = {filename}')
+        # logger.info(f'[{inspect.stack()[1].function}] filename = {filename}')
         # logger.info(f'filename = {filename}')
         return self.transforming_list().index(filename)
 
@@ -1449,7 +1448,11 @@ class DataModel:
         if end == None: end = self.zpos
         # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
         # return hash(str(self.cafm_list(s=s,end=end)))
-        return hash(str(self.cafm(s=s, l=end)))
+        try:
+            return hash(str(self.cafm(s=s, l=end)))
+        except:
+            caller = inspect.stack()[1].function
+            print_exception(extra=f'end={end}, caller: {caller}')
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.scale
@@ -1458,7 +1461,8 @@ class DataModel:
             return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm']
             # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['cumulative_afm']
         except:
-            print_exception(extra=f'Layer {l}')
+            caller = inspect.stack()[1].function
+            print_exception(extra=f'Layer {l}, caller: {caller}')
             return [[1, 0, 0], [0, 1, 0]]
 
 

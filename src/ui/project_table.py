@@ -60,16 +60,8 @@ class ProjectTable(QWidget):
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
         self.table.hide()
 
+        self.table.setStyleSheet("background-color: #808080; color: #f3f6fb;")
 
-#         self.setStyleSheet("""
-# QHeaderView{
-# background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(20, 158, 217, 255), stop:1 rgba(36, 158, 217, 255));
-#
-# border:none;
-# border-top-color:#161c20;
-# color:#ede9e8;
-# font: 75 12pt "Calibri";
-# }""")
 
 
     # def onDoubleClick(self, item=None):
@@ -93,7 +85,7 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}')
         if caller not in ('initTableData', 'updateTableData'):
-            if cfg.project_tab._tabs.currentIndex() == 1:
+            if cfg.project_tab._tabs.currentIndex() == 2:
                 row = self.table.currentIndex().row()
                 # cfg.main_window.tell('Section #%d' % row)
                 # cfg.data.zpos = row
@@ -176,6 +168,7 @@ class ProjectTable(QWidget):
         self.table.setUpdatesEnabled(False)
         try:
             self.table.clear()
+            self.table.clearContents()
             self.set_column_headers()  # Critical
             for row in range(0,len(cfg.data)):
                 cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
@@ -227,7 +220,7 @@ class ProjectTable(QWidget):
         self.table.setColumnWidth(8, h)
         self.table.setColumnWidth(9, h)
         size = max(min(int(11 * (max(h, 1) / 80)), 14), 8)
-        self.table.setStyleSheet(f'font-size: {size}px;')
+        # self.table.setStyleSheet(f'font-size: {size}px;')
 
 
     def get_row_data(self, s=None, l=None):
@@ -362,7 +355,7 @@ class ProjectTable(QWidget):
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 2, 0, 2)
         lab = QLabel('Row Height:')
-        lab.setStyleSheet("font-size: 11px; font-weight: 600;")
+        lab.setStyleSheet("font-size: 11px;")
         hbl.addWidget(lab, alignment=Qt.AlignLeft)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignLeft)
         hbl.addWidget(self.btnReloadTable, alignment=Qt.AlignLeft)
@@ -371,9 +364,10 @@ class ProjectTable(QWidget):
         self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
 
+        # self.btn_splash_load_table = QPushButton('Load Table')
         self.btn_splash_load_table = QPushButton('Load Table')
         self.btn_splash_load_table.clicked.connect(self.initTableData)
-        self.btn_splash_load_table.setStyleSheet("""font-size: 18px; font-weight: 600; color: #161c20;""")
+        self.btn_splash_load_table.setStyleSheet("""font-size: 18px; font-weight: 600; """)
 
         layout = VBL()
         layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)

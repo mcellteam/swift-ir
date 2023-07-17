@@ -8,7 +8,7 @@ import qtconsole
 # from IPython.lib import guisupport
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
-from qtpy.QtWidgets import QApplication, QSizePolicy
+from qtpy.QtWidgets import QApplication, QSizePolicy, QWidget, QVBoxLayout
 from qtpy.QtCore import Qt, QSize
 from src.helpers import is_tacc
 import src.config as cfg
@@ -105,11 +105,41 @@ class PythonConsole(RichJupyterWidget):
     #         width = int(cfg.WIDTH / 2)
     #     return QSize(width, 90)
 
+    # def sizeHint(self):
+    #     if cfg.main_window:
+    #         width = int(cfg.main_window.width() / 2)
+    #     else:
+    #         width = int(cfg.WIDTH / 2)
+    #     return QSize(width, 90)
+
+    # def sizeHint(self):
+    #     # return self.minimumSizeHint()
+    #     if cfg.main_window:
+    #         width = int(cfg.main_window.width() / 2) - 10
+    #         return QSize(width, 90)
+
+    # def minimumSizeHint(self):
+    #     width = int(cfg.main_window.width() / 2)
+    #     return QSize(width, 90)
+
+
+
+class PythonConsoleWidget(QWidget):
+
+    def __init__(self):
+        super(PythonConsoleWidget, self).__init__()
+        self.layout = QVBoxLayout()
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0,0,0,0)
+        self.pyconsole = PythonConsole()
+        self.layout.addWidget(self.pyconsole)
+        self.setLayout(self.layout)
+
     def sizeHint(self):
-        if cfg.main_window:
-            width = int(cfg.main_window.width() / 2)
-        else:
-            width = int(cfg.WIDTH / 2)
+        # return self.minimumSizeHint()
+        width = int(cfg.main_window.width() / 2) - 10
         return QSize(width, 90)
 
 

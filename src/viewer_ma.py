@@ -92,10 +92,9 @@ class MAViewer(neuroglancer.Viewer):
             scales=list(cfg.data.resolution(s=cfg.data.scale)), )
             # scales=[1,1,1] )
 
-        # self.restoreManAlignPts()
         self._dontDraw = 0
 
-        QApplication.processEvents()
+        # QApplication.processEvents()
         self.initViewer()
 
 
@@ -177,13 +176,13 @@ class MAViewer(neuroglancer.Viewer):
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
-        if DEV:
-            logger.critical(f'[{self.role}] [{caller_name()}]\n'
-                            f'Setting layer:\n'
-                            f'zpos={zpos},\n'
-                            f'self.index before={self.index},\n'
-                            f'voxel coords before={self.state.voxel_coordinates}\n'
-                            f'...')
+        # if DEV:
+        #     logger.critical(f'[{self.role}] [{caller_name()}]\n'
+        #                     f'Setting layer:\n'
+        #                     f'zpos={zpos},\n'
+        #                     f'self.index before={self.index},\n'
+        #                     f'voxel coords before={self.state.voxel_coordinates}\n'
+        #                     f'...')
 
         prev_index = self.index
 
@@ -414,12 +413,10 @@ class MAViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed(self):
-
+        # if 1:
+        #     return
 
         if self._blockStateChanged:
-            return
-
-        if getData('state,viewer_mode') != 'series_with_regions':
             return
 
         if self.role == 'base':
@@ -430,7 +427,12 @@ class MAViewer(neuroglancer.Viewer):
             if cfg.data['state']['tra_ref_toggle'] != 0:
                 return
 
+        logger.info('')
+        # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
+
         self._blockStateChanged = True
+
+        logger.info('>>>> on_state_changed >>>>')
 
         # self._blockStateChanged = True
         # if not self.cs_scale:
@@ -488,10 +490,6 @@ class MAViewer(neuroglancer.Viewer):
         # elif self.role == 'ref':
         #     if request_layer == cfg.data.get_ref_index():
         #         return
-
-
-
-
 
         self.index = request_layer
 
@@ -567,6 +565,8 @@ class MAViewer(neuroglancer.Viewer):
 
         self._blockStateChanged = False
 
+        logger.info('<<<< on_state_changed <<<<')
+
 
 
 
@@ -585,10 +585,6 @@ class MAViewer(neuroglancer.Viewer):
         return annotations
 
 
-    def addMp(self):
-
-        pass
-
 
     # def undrawAnnotations(self):
     #     try:
@@ -605,10 +601,6 @@ class MAViewer(neuroglancer.Viewer):
         #         continue
         #     else:
         #         return c
-
-
-    # def getUsedColors(self):
-    #     return set(self.pts.keys())
 
 
     def url(self):
@@ -630,16 +622,13 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
-        if DEV:
-            logger.info('')
+        logger.info('')
         if cfg.data.method() not in ('manual-strict', 'manual-hint'):
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
 
-
         # if not cfg.project_tab.isManualReady():
         #     return
-
 
         if self.role == 'ref':
             if len(cfg.data.manpoints()['ref']) >= 3:
@@ -732,18 +721,16 @@ class MAViewer(neuroglancer.Viewer):
 
     # @functools.cache
     def drawSWIMwindow(self):
-        if DEV:
-            logger.critical(f'[{self.role}] [{caller_name()}] self._dontDraw={self._dontDraw}')
 
         if self._dontDraw:
+            logger.info('_dontDraw is blocking drawSWIMwindow')
             return
 
-
         # if self.role == 'ref':
-        #     if cfg.pt.sw_neuroglancer.currentIndex() != 0:
+        #     if cfg.pt.sw_alignment_editor.currentIndex() != 0:
         #         return
         # if self.role == 'base':
-        #     if cfg.pt.sw_neuroglancer.currentIndex() != 1:
+        #     if cfg.pt.sw_alignment_editor.currentIndex() != 1:
         #         return
 
 
@@ -952,11 +939,10 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def restoreManAlignPts(self):
-        logger.critical(f'[{self.role}] Restoring manual alignment points...')
+        logger.info(f'[{self.role}] Restoring manual point/region selections...')
         # self.pts = OrderedDict()
         self.pts = []
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
-        logger.info(f'getting pts data for {cfg.data.zpos}')
         for i, p in enumerate(pts_data):
             props = [self.colors[i],
                      getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
@@ -1017,7 +1003,7 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
     def initZoom(self):
-        logger.info(f'[{self.role}] [{caller_name()}] Calling initZoom...')
+        logger.critical(f'[{self.role}] [{caller_name()}] Calling initZoom...')
         adjust = 1.12
         # logger.critical(f'[{self.role}] self.cs_scale = {self.cs_scale}')
         if self.cs_scale:
@@ -1028,8 +1014,10 @@ class MAViewer(neuroglancer.Viewer):
             # QApplication.processEvents()
             # _, tensor_y, tensor_x = cfg.tensor.shape
             _, tensor_y, tensor_x = self.store.shape
-            widget_w = cfg.mw.geometry().width()
-            widget_h = cfg.mw.geometry().height() / 2
+            # widget_w = cfg.mw.geometry().width()
+            # widget_h = cfg.mw.geometry().height() / 2
+            widget_w = cfg.project_tab.ng_widget.width()
+            widget_h = cfg.project_tab.ng_widget.height()
 
 
             # logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
