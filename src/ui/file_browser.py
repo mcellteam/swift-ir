@@ -17,7 +17,7 @@ class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.treeview = cfg.treeview = QTreeView()
-        self.treeview.setStyleSheet('border-width: 0px;')
+        self.treeview.setStyleSheet('border-width: 0px; color: #161c20;')
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
         self.treeview.setAlternatingRowColors(True)

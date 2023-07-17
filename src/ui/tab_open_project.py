@@ -67,10 +67,13 @@ class OpenProject(QWidget):
         #Note: when clipboard changes during app out-of-focus, clipboard changed signal gets emitted
         #once focus is returned. This is the ideal behavior.
 
+        # self.setStyleSheet("font-size: 10px; color: #f3f6fb;")
+        self.setStyleSheet("font-size: 10px; color: #161c20;")
+
     def onClipboardChanged(self):
         print('Clipboard changed!')
         buffer = QApplication.clipboard().text()
-        tip = '<b>Your Clipboard:<\b>\n\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
+        tip = 'Your Clipboard:\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
         print('\n' + tip)
         self._buttonBrowserPaste.setToolTip(tip)
 
@@ -80,22 +83,22 @@ class OpenProject(QWidget):
         # User Projects Widget
         self.userProjectsWidget = QWidget()
         # lab = QLabel('Saved AlignEM-SWiFT Projects:')
-        lab = QLabel('Project Management')
-        lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
+        # lab = QLabel('Project Management')
+        # lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
 
 
         self.row_height_slider = Slider(self)
         self.row_height_slider.setMinimum(16)
         self.row_height_slider.setMaximum(180)
+        self.row_height_slider.setMaximumWidth(120)
         self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
         self.row_height_slider.valueChanged.connect(
             lambda: setOpt('state,open_project_tab,row_height', self.row_height_slider.value()))
         # self.row_height_slider.setValue(self.initial_row_height)
         # self.updateRowHeight(self.initial_row_height)
 
-        self.fetchSizesCheckbox = QCheckBox('Fetch Sizes')
+        self.fetchSizesCheckbox = QCheckBox()
         self.fetchSizesCheckbox.setStyleSheet("font-size: 10px;")
-        # self.fetchSizesCheckbox.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         self.fetchSizesCheckbox.toggled.connect(
@@ -103,22 +106,21 @@ class OpenProject(QWidget):
 
         self.fetchSizesCheckbox.toggled.connect(self.user_projects.set_data)
 
-        w = QWidget()
-        w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.controls = QWidget()
         self.controls.setFixedHeight(18)
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(2, 0, 2, 0)
-        hbl.addWidget(lab, alignment=Qt.AlignmentFlag.AlignLeft)
-        hbl.addWidget(w)
-        hbl.addWidget(self.row_height_slider, alignment=Qt.AlignmentFlag.AlignRight)
-        lab_row_height = QLabel('Row Height')
-        lab_row_height.setStyleSheet("font-size: 10px;")
-        hbl.addWidget(lab_row_height)
-        hbl.addWidget(self.fetchSizesCheckbox, alignment=Qt.AlignmentFlag.AlignRight)
+        hbl = HBL()
+        # hbl.setContentsMargins(2, 0, 2, 0)
+        hbl.addWidget(QLabel('  '))
+        # hbl.addStretch(1)
+        hbl.addWidget(HWidget(QLabel(' Row Height '), self.row_height_slider), alignment=Qt.AlignLeft)
+        hbl.addWidget(QLabel('  '))
+        # hbl.addStretch(1)
+        hbl.addWidget(HWidget(QLabel(' Fetch Sizes '), self.fetchSizesCheckbox), alignment=Qt.AlignLeft)
+        hbl.addStretch(10)
+        # hbl.addWidget(ExpandingHWidget(self))
         self.controls.setLayout(hbl)
-        self.controls.setStyleSheet('font-size: 13px; font-weight: 600;')
+        self.controls.setStyleSheet('font-size: 10px;')
 
         self.new_project_lab1 = QLabel()
         self.new_project_lab1.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
@@ -139,50 +141,63 @@ class OpenProject(QWidget):
         self.vbl_projects = QVBoxLayout()
         self.vbl_projects.setSpacing(1)
         self.vbl_projects.setContentsMargins(2, 2, 2, 2)
-        self.vbl_projects.addWidget(self.controls)
         self.vbl_projects.addWidget(self.user_projects)
+        self.vbl_projects.addWidget(self.controls)
         # self.vbl_projects.addWidget(self.new_project_header)
         self.userProjectsWidget.setLayout(self.vbl_projects)
 
 
         # User Files Widget
         self.userFilesWidget = QWidget()
-        lab = QLabel('Open Project or,\nOpen Zarr or,\nInitialize new project from folder of images')
-        lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
+        lab = QLabel('Open AlignEM-SWIFT Project or...\nOpen OME-NGFF Zarr in Neuroglancer or...\nSelect folder of images for new project...')
+        lab.setStyleSheet('font-size: 12px; font-weight: 600; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(HWidget(lab))
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
-        button_size = QSize(102,22)
+        button_size = QSize(94,18)
 
-        # self._buttonOpen = QPushButton(f"Open Project")
         self._buttonOpen = QPushButton(f"Open Project {hotkey('O')}")
         self._buttonOpen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._buttonOpen.setShortcut('Ctrl+O')
-        self._buttonOpen.setStyleSheet('font-size: 10px;')
-        # self._buttonOpen.setStyleSheet('QPushButton {font-size: 10px;  border-radius: 5px; border-color: #000000; border-width: 2px; }')
-        # self._buttonOpen.setStyleSheet("""border: 1px solid #161c20; border-bottom-right-radius: 4px;""")
+        self._buttonOpen.setStyleSheet('font-size: 9px;')
         self._buttonOpen.setEnabled(False)
         self._buttonOpen.clicked.connect(self.open_project_selected)
         self._buttonOpen.setFixedSize(button_size)
-        # self._buttonOpen.hide()
+
+        self.labNewProject = QLabel(f"New AlignEM-SWiFT\n"
+                                    f"Project:")
+        self.labNewProject.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
+        self.labNewProject.setAlignment(Qt.AlignRight)
 
         tip = "Create a new project from an existing folder of images. " \
               "Some users find this more convenient than selecting images."
-        self._buttonProjectFromTiffFolder1 = QPushButton(f"New Project By\nFolder Selection")
+        self._buttonProjectFromTiffFolder1 = QPushButton(f"Select Folder {hotkey('F')}")
         self._buttonProjectFromTiffFolder1.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._buttonProjectFromTiffFolder1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._buttonProjectFromTiffFolder1.setShortcut('Ctrl+F')
         # self._buttonProjectFromTiffFolder1.setShortcut()
-        self._buttonProjectFromTiffFolder1.setStyleSheet('font-size: 8px;')
+        self._buttonProjectFromTiffFolder1.setStyleSheet('font-size: 9px;')
         self._buttonProjectFromTiffFolder1.setEnabled(False)
         self._buttonProjectFromTiffFolder1.clicked.connect(self.createProjectFromTiffFolder)
         self._buttonProjectFromTiffFolder1.setFixedSize(button_size)
 
+
+        # self._buttonNew = QPushButton('New Project')
+        tip = "Create a new project by selecting which images to import."
+        self._buttonNew = QPushButton(f"Select Images {hotkey('I')}")
+        self._buttonNew.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self._buttonNew.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._buttonNew.setShortcut('Ctrl+I')
+        self._buttonNew.clicked.connect(self.new_project)
+        self._buttonNew.setFixedSize(button_size)
+        self._buttonNew.setStyleSheet('font-size: 9px;')
+
         self._buttonCancelProjectFromTiffFolder = QPushButton(f"Cancel")
         # self._buttonProjectFromTiffFolder1.setShortcut()
-        self._buttonCancelProjectFromTiffFolder.setStyleSheet('font-size: 10px;')
+        self._buttonCancelProjectFromTiffFolder.setStyleSheet('font-size: 9px;')
         def fn():
             self.le_project_name_w.hide()
         self._buttonCancelProjectFromTiffFolder.clicked.connect(fn)
@@ -202,21 +217,13 @@ class OpenProject(QWidget):
         self._buttonDelete = QPushButton(f"Delete Project {hotkey('D')}")
         self._buttonDelete.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._buttonDelete.setShortcut('Ctrl+D')
-        self._buttonDelete.setStyleSheet('font-size: 10px;')
+        self._buttonDelete.setStyleSheet('font-size: 9px;')
         self._buttonDelete.setEnabled(False)
         self._buttonDelete.clicked.connect(self.delete_project)
         self._buttonDelete.setFixedSize(button_size)
         # self._buttonDelete.hide()
 
-        # self._buttonNew = QPushButton('New Project')
-        tip = "Create a new project by selecting which images to import."
-        self._buttonNew = QPushButton(f"New Project By\nImage Selection{hotkey('N')}")
-        self._buttonNew.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._buttonNew.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._buttonNew.setShortcut('Ctrl+N')
-        self._buttonNew.clicked.connect(self.new_project)
-        self._buttonNew.setFixedSize(button_size)
-        self._buttonNew.setStyleSheet('font-size: 8px;')
+
 
         # self._buttonNew = QPushButton('Remember')
         # self._buttonNew.setStyleSheet("font-size: 9px;")
@@ -238,11 +245,11 @@ class OpenProject(QWidget):
             self.selectionReadout.setText(os.path.abspath(buffer))
             self.validate_path()
 
-        self._buttonBrowserPaste = QPushButton(f"Paste Clipboard {hotkey('D')}")
+        self._buttonBrowserPaste = QPushButton(f"Paste {hotkey('V')}")
         self._buttonBrowserPaste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._buttonBrowserPaste.setToolTip('Paste path from clipboard')
         self._buttonBrowserPaste.clicked.connect(paste_from_buffer)
-        self._buttonBrowserPaste.setFixedSize(button_size)
+        self._buttonBrowserPaste.setFixedSize(QSize(64,18))
         self._buttonBrowserPaste.setStyleSheet('font-size: 9px;')
         # self._buttonBrowserPaste.setEnabled(os.path.exists(QApplication.clipboard().text()))
 
@@ -306,19 +313,6 @@ class OpenProject(QWidget):
 
         self._buttonProjectFromTiffFolder2.clicked.connect(self.skipToConfig)
 
-        # self.selectionReadout.setStyleSheet("""
-        # QLineEdit {
-        #     background-color: #f3f6fb;
-        #     border-width: 1px;
-        #     border-style: solid;
-        #     border-color: #141414;
-        #     /*selection-background-color: #ffcccb;*/
-        #     /*background:#daebfe;*/
-        #     font-size: 11px;
-        #     font-family: Tahoma, sans-serif;
-        # }
-        # """)
-
         self.validity_label = QLabel('Invalid')
         self.validity_label.setAlignment(Qt.AlignRight)
         self.validity_label.setObjectName('validity_label')
@@ -339,7 +333,7 @@ class OpenProject(QWidget):
         # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
 
         self.selectionReadout.setFixedHeight(22)
-        # self.selectionReadout.setMinimumWidth(700)
+        # self.selectionReadout.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.selectionReadout_w_overlay = QWidget()
         # self.selectionReadout_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -354,8 +348,9 @@ class OpenProject(QWidget):
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(6, 2, 6, 2)
-        hbl.addWidget(self._buttonProjectFromTiffFolder1)
+        hbl.addWidget(self.labNewProject)
         hbl.addWidget(self._buttonNew)
+        hbl.addWidget(self._buttonProjectFromTiffFolder1)
         # hbl.addWidget(self.selectionReadout)
         hbl.addWidget(self.selectionReadout_w_overlay)
         # hbl.addWidget(self.validity_label)
@@ -363,14 +358,13 @@ class OpenProject(QWidget):
         hbl.addWidget(self._buttonDelete)
         hbl.addWidget(self._buttonBrowserPaste)
         hbl.addWidget(self.cbCalGrid)
+        hbl.setStretch(3,5)
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hbl.addSpacerItem(self.spacer_item_docs)
 
         self._actions_widget = QWidget()
-        # self._actions_widget.setAutoFillBackground(True)
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
-        # self._actions_widget.setStyleSheet("")
 
 
         # self._actions_widget.setStyleSheet("""
@@ -407,13 +401,10 @@ class OpenProject(QWidget):
 
 
         self._splitter = QSplitter()
-        # self._splitter.setStyleSheet("""QSplitter::handle { background: #339933; }""")
-        # self._splitter.setStyleSheet("""QSplitter { background: #222222; }""")
 
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
-        # self._splitter.addWidget(self.filebrowsertacc)
-        self._splitter.setSizes([700, 300, 300])
+        self._splitter.setSizes([700, 300])
 
         self.vbl_main = VBL()
         self.vbl_main.addWidget(self._splitter)
@@ -577,9 +568,8 @@ class OpenProject(QWidget):
             logger.info('Settings sidebar URLs...')
             self.name_dialog.setSidebarUrls(urls)
 
-
             places = getSideBarPlacesProjectName()
-            logger.info(str(places))
+            # print(str(places))
 
             sidebar = self.name_dialog.findChild(QListView, "sidebar")
             delegate = StyledItemDelegate(sidebar)
@@ -741,7 +731,13 @@ class OpenProject(QWidget):
                 cfg.data = dm
                 cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
                 cfg.mw.setZpos(int(len(dm) / 2))
-                cfg.mw.onStartProject()
+                cfg.mw.setUpdatesEnabled(False)
+                try:
+                    cfg.mw.onStartProject()
+                except:
+                    print_exception()
+                finally:
+                    cfg.mw.setUpdatesEnabled(True)
                 # QApplication.processEvents()
 
         logger.info(f'Appending {filename} to .swift_cache...')
@@ -900,7 +896,13 @@ class OpenProject(QWidget):
             cfg.data.set_paths_absolute(filename=filename)
             cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
             cfg.dataById[id(cfg.project_tab)] = cfg.data
-            cfg.mw.onStartProject()
+            cfg.mw.setUpdatesEnabled(False)
+            try:
+                cfg.mw.onStartProject()
+            except:
+                print_exception()
+            finally:
+                cfg.mw.setUpdatesEnabled(True)
             cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             cfg.mw._setLastTab()
             # cfg.mw.hud.done()
@@ -947,8 +949,8 @@ class OpenProject(QWidget):
         # else:
         #     cfg.mw.hud.done()
 
-        logger.info('Deleting Project Directory %s...' % project)
-        cfg.mw.warn('Deleting Project Directory %s...' % project)
+        logger.info('Deleting Project Data: %s...' % project)
+        cfg.mw.warn('Deleting Project Data: %s...' % project)
         try:
 
             delete_recursive(dir=project)
@@ -1062,18 +1064,11 @@ class UserProjects(QWidget):
         self.table.setWordWrap(True)
         self.table.horizontalHeader().setHighlightSections(False)
         self.table.horizontalHeader().setStretchLastSection(True)
-        # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # self.table.horizontalHeader().setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
         self.table.verticalHeader().setVisible(False)
-        self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
-        # self.table.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
-        # self.table.horizontalHeader().setDefaultAlignment(Qt.AlignCenter | Qt.Alignment(Qt.TextWordWrap))
         self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
-        self.table.horizontalHeader().setTextElideMode(Qt.ElideMiddle)
-        self.table.horizontalHeader().setStyleSheet("QHeaderView {font-size: 10pt; color: #222222; font-weight: 600;}")
         def countCurrentItemChangedCalls(): self.counter2 += 1
         self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
         self.table.currentItemChanged.connect(self.parent.userSelectionChanged)
@@ -1104,6 +1099,9 @@ class UserProjects(QWidget):
         self.set_data()
         # self.updateRowHeight(self.ROW_HEIGHT)
         # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
+
+        # self.setStyleSheet("color: #161c20;")
+        # self.setStyleSheet("font-size: 10px; color: #f3f6fb;")
 
 
     def updateRowHeight(self, h):
@@ -1139,7 +1137,7 @@ class UserProjects(QWidget):
             "Location",
             "First\nSection",
             "Last\nSection",
-            "Cal\nGrid",
+            "Calibration\nGrid",
             "Created",
             "Last\nOpened",
             "#\nImgs",
@@ -1150,46 +1148,30 @@ class UserProjects(QWidget):
         ])
 
         header = self.table.horizontalHeader()
-        # header.setFrameStyle(QFrame.Box | QFrame.Plain)
-        # header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
+        header.setFrameStyle(QFrame.Box | QFrame.Plain)
+        header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
         self.table.setHorizontalHeader(header)
 
 
     def set_data(self):
-        logger.info(">>>> set_data >>>>")
+        logger.info('')
+        # logger.info(">>>> set_data >>>>")
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
-        # self.set_column_headers()
-
         font0 = QFont()
         font0.setPointSize(10)
-
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
-            logger.info(f'>>>> row #{i} >>>>')
+            # logger.info(f'>>>> row #{i} >>>>')
             self.table.insertRow(i)
-            # for j, item in enumerate(row):
             for j, item in enumerate(row):
-
-                # logger.info(f'\nj = {j} item = {item}')
                 if j == 0:
-                    # print(f'')
-                    # item = "<span style='font-size: 10px;'>" + item + "</span>"
-                    # lab = QLabel('\n'.join(textwrap.wrap(item, 20)))
-                    # # lab = QLabel("&nbsp;<span style='font-size: 11px; font-weight: 600;'>" + str(item) + "</span>")
-                    # lab.setWordWrap(True)
-                    # self.table.setCellWidget(i, j, lab)
-                    # it = QTableWidgetItem()
-                    # item.setText(str(item))
                     twi = QTableWidgetItem(str(item))
-                    # twi = QTableWidgetItem(('\n'.join(textwrap.wrap(item, width=12)).replace("_", " ")))
-                    # item.setTextAlignment(Qt.AlignJustify)
                     font = QFont()
                     font.setPointSize(9)
                     font.setBold(True)
                     twi.setFont(font)
-                    # self.table.setItem(i, j, item)
                     self.table.setItem(i, j, twi)
                 if j == 1:
                     twi = QTableWidgetItem(str(item))
@@ -1197,15 +1179,12 @@ class UserProjects(QWidget):
                     self.table.setItem(i, j, twi)
                 elif j in (2, 3, 4):
                     if item == 'No Thumbnail':
-                        # thumbnail = Thumbnail(self)
                         thumbnail = ThumbnailFast(self)
                         self.table.setCellWidget(i, j, thumbnail)
                     else:
-                        # thumbnail = Thumbnail(self, path=item)
                         thumbnail = ThumbnailFast(self, path=item)
                         self.table.setCellWidget(i, j, thumbnail)
                 elif j in (5,6):
-                    # item = QTableWidgetItem(('\n'.join(textwrap.wrap(item, width=12)).replace("_", " ")))
                     twi = QTableWidgetItem(item.replace("_", " "))
                     twi.setTextAlignment(Qt.AlignCenter)
                     twi.setFont(font0)
@@ -1215,10 +1194,6 @@ class UserProjects(QWidget):
                     twi.setFont(font0)
                     twi.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(i, j, twi)
-
-                # elif j == 10:
-                #     thumbnail = Thumbnail(self, path=item)
-                #     self.table.setCellWidget(i, j, thumbnail)
 
                 else:
                     twi = QTableWidgetItem(str(item))
@@ -1232,34 +1207,34 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(5, 70)
         self.table.setColumnWidth(6, 70)
         self.table.setColumnWidth(7, 50)
-        self.table.setColumnWidth(8, 70)
-        self.table.setColumnWidth(9, 70)
-        self.table.setColumnWidth(10, 70)
+        self.table.setColumnWidth(8, 80)
+        self.table.setColumnWidth(9, 80)
+        self.table.setColumnWidth(10, 80)
         # self.table.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
         self.table.setColumnWidth(11, 70) # <extra thumbnail>
         # self.table.setColumnWidth(10, 100)
         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
 
-        logger.info("<<<< set_data <<<<")
+        # logger.info("<<<< set_data <<<<")
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
 
 
 
     def get_data(self):
+        logger.info('')
         # timer = Timer()
-        logger.info('>>>> get_data >>>>')
+        # logger.info('>>>> get_data >>>>')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        logger.info('Loading known projects into table view...')
         self.project_paths = get_project_list()
         projects, thumbnail_first, thumbnail_last, created, modified, \
         n_sections, location, img_dimensions, bytes, gigabytes, extra = \
             [], [], [], [], [], [], [], [], [], [], []
 
-        logger.info(f'# projects: {len(self.project_paths)}')
+        logger.info(f'# saved projects: {len(self.project_paths)}')
         for p in self.project_paths:
-            logger.info(f'Getting data for {p}...')
+            logger.info(f'Getting table entry data for {p}...')
 
             try:
                 with open(p, 'r') as f:
@@ -1318,11 +1293,7 @@ class UserProjects(QWidget):
             # extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
             # timer.report()
 
-            logger.info(f'<<<< {p} <<<<')
-
-            # logger.info('Getting project location...')
-
-        logger.info('<<<< get_data <<<<')
+        # logger.info('<<<< get_data <<<<')
         # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
         #            n_sections, img_dimensions, bytes, gigabytes, extra)
         return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,
@@ -1335,9 +1306,6 @@ class UserProjects(QWidget):
         #            n_sections, img_dimensions, bytes, gigabytes, extra)
         return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,
                    n_sections, img_dimensions, bytes, gigabytes)
-
-
-
 
 
 UrlRole = Qt.UserRole + 1

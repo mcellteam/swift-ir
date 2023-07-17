@@ -76,17 +76,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self._settingZoom = False
         self.type = 'AbstractEMViewer'
-        # logger.info('viewer constructed!')
-        caller = inspect.stack()[1].function
         self._zmag_set = 0
-        # self._blinking = 0
         self._blinkState = 0
         self._blockStateChanged = False
-
-        # #todo use this to prevent signal surplus from sending to MainWindow
-        # self.uiTimer = QTimer()
-        # self.uiTimer.setSingleShot(True)
-        # self.uiTimer.setInterval(300)
 
 
     def __repr__(self):
@@ -132,7 +124,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed_any(self):
-        self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
@@ -146,29 +138,19 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
 
-        # if self._blinking:
-        #     return
         if self._blockStateChanged:
             return
-
-        if getData('state,viewer_mode') != 'series_as_stack':
-            return
-
-        if getData('state,blink'):
-            return
+        # if getData('state,blink'):
+        #     return
         if self._settingZoom:
             return
+
+        caller = inspect.stack()[1].function
 
         # logger.info(f'[caller: {caller}]')
         # if caller == '<lambda>':
         #     return
-
-        if DEV:
-            caller = logger.info(caller_name())
-
-
-        # if not getData('state,auto_update_ui'):
-        #     return
+        logger.info(f'[{caller}]')
 
         #CriticalMechanism
         if not self.cs_scale:
@@ -204,7 +186,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 self._crossSectionScale = zoom
         except:
             print_exception()
-            logger.error(f'[caller: {caller}] ERROR on_state_change')
 
 
     def url(self):
@@ -213,18 +194,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def blink(self):
         logger.info(f'self._blinkState = {self._blinkState}')
-        # self._blinking = 1
-        # if self._blinkState:
-        #     self.set_layer(self._layer)
-        # else:
-        #     self.set_layer(self._layer - cfg.data.get_ref_index_offset())
         if self._blinkState:
             self.set_layer(cfg.data.zpos)
         else:
             self.set_layer(cfg.data.zpos - cfg.data.get_ref_index_offset())
         self._blinkState = 1 - self._blinkState
-        # self._blinking = 0
-
 
 
     def invalidateAlignedLayers(self):
@@ -285,11 +259,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_layer(self, index=None):
         # NotCulpableForFlickerGlitch
         self._blockStateChanged = True
-        if DEV:
-            logger.critical(f'[{caller_name()}] Setting layer:\n'
-                            f'index arg={index}\n'
-                            f'voxel coords before={self.state.voxel_coordinates}\n'
-                            f'...')
+        # if DEV:
+        #     logger.critical(f'[{caller_name()}] Setting layer:\n'
+        #                     f'index arg={index}\n'
+        #                     f'voxel coords before={self.state.voxel_coordinates}\n'
+        #                     f'...')
         if index == None:
             index = cfg.data.zpos
         try:
@@ -456,8 +430,9 @@ class EMViewer(AbstractEMViewer):
         self.initViewer()
 
     def initViewer(self, nglayout=None):
-        caller = inspect.stack()[1].function
-        logger.info(f'\n\nInitializing Neuroglancer Viewer...\n')
+        logger.critical('')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'Initializing Neuroglancer Viewer...\n')
         self._blockStateChanged = False
 
         if not nglayout:
@@ -481,7 +456,7 @@ class EMViewer(AbstractEMViewer):
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
             # voxel_offset=[0, ] * 3,
-            voxel_offset=[.5, ] * 3,
+            # voxel_offset=[.5, ] * 3,
         )
 
 
@@ -512,50 +487,12 @@ class EMViewer(AbstractEMViewer):
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        # -----------
-        # Good backup, or for initial load, okay approximation of desired viewer size
-        # w = cfg.main_window.width() / 2
-        # h = cfg.main_window.height() / 2
-        # logger.info(f'w = {w}')
-        # logger.info(f'h = {h}')
-        # -----------
-        try:
-            w = cfg.project_tab.webengine.width()
-            h = cfg.project_tab.webengine.height()
-        except:
-            w = cfg.main_window.width() / 2
-            h = cfg.main_window.height() / 2
-            logger.info(f'w = {w}')
-            logger.info(f'h = {h}')
-            print_exception()
-
-
-
-
-        # w = (cfg.main_window.globTabs.width()/2) - 24
-        # h = cfg.main_window.globTabs.height() - 24
-        # logger.info(f'w1 = {w}')
-
-        # h = max(cfg.main_window.globTabs.height() - 20, 520)
-
-        # if getData('state,show_ng_controls'):
-        #     extra_space = 54
-        # else:
-        #     extra_space = 26
-
-        # h = max(cfg.project_tab.w_ng_display.height() - extra_space, 420 - extra_space) #Prev
-        # h = cfg.main_window.globTabs.height() - 20
-        # self.initZoom(w=w, h=h, adjust=1.20)
-        self.initZoom(w=w, h=h)
-
-
-
-
-
 
     def initViewerAligned(self, z=None):
         if z == None: z = cfg.data.zpos
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
+
+        logger.critical('')
         if cfg.data.skipped(l=z):
             return
 
@@ -803,9 +740,9 @@ class EMViewerSnr(AbstractEMViewer):
         # self.set_zmag()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
-        w = cfg.project_tab.snrPlotSplitter.sizes()[1]
-        self.initZoom(h=h, w=w, adjust=1.20)
+        # h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
+        # w = cfg.project_tab.snrPlotSplitter.sizes()[1]
+        # self.initZoom(h=h, w=w, adjust=1.20)
 
         # self.set_zmag()
 

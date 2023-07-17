@@ -98,11 +98,17 @@ class HeadupDisplay(QWidget):
         h.setFormatter(formatter)
         logger.addHandler(h)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(2,2,2,2)
+        # layout.setContentsMargins(2,2,2,2)
+        layout.setContentsMargins(0,0,0,0)
         layout.addWidget(te)
         self.start_thread()
         self.theme = None
         # self.layout().setAlignment(Qt.AlignBottom)
+        self.setStyleSheet("""
+        padding: 0px;
+        margin: 0px;
+        border-width: 0px;
+        """)
 
         self.messages = []
 
@@ -258,22 +264,11 @@ class HeadupDisplay(QWidget):
             margin: 0px 0px 0px 0px;
         """)
 
-    # def sizeHint(self):
-    #     if cfg.main_window:
-    #         width = int(cfg.main_window.width() / 2)
-    #     else:
-    #         width = int(cfg.WIDTH / 2)
-    #     return QSize(width, 90)
-
-    # def sizeHint(self):
-    #     return QSize(int(cfg.mw.width() / 2), 90)
-
+    #
     def sizeHint(self):
-        if cfg.main_window:
-            width = int(cfg.main_window.width() / 2)
-        else:
-            width = int(cfg.WIDTH / 2)
+        width = int(cfg.main_window.width() / 2) - 10
         return QSize(width, 90)
+
 
 
 
