@@ -2410,7 +2410,6 @@ class ProjectTab(QWidget):
         self.ms_table.horizontalHeader().setVisible(False)
         self.ms_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ms_table.setShowGrid(False)
-        self.ms_table.setVisible(getData('state,tool_windows,signals'))
         v_header = self.ms_table.verticalHeader()
         h_header = self.ms_table.horizontalHeader()
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -2421,19 +2420,20 @@ class ProjectTab(QWidget):
 
         ### TARG KARG TOOL WINDOW #targ #karg ###
 
-        self.rb_targ = QRadioButton('Reference')
-        self.rb_karg = QRadioButton('Transforming')
-        (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
-        bg_matches = QButtonGroup(self)
-        bg_matches.setExclusive(True)
-        bg_matches.addButton(self.rb_targ)
-        bg_matches.addButton(self.rb_karg)
-        bg_matches.buttonClicked.connect(self.setTargKargPixmaps)
+        # self.rb_targ = QRadioButton('Reference')
+        # self.rb_karg = QRadioButton('Transforming')
+        # (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
+        # bg_matches = QButtonGroup(self)
+        # bg_matches.setExclusive(True)
+        # bg_matches.addButton(self.rb_targ)
+        # bg_matches.addButton(self.rb_karg)
+        # bg_matches.buttonClicked.connect(self.setTargKargPixmaps)
 
         # self.toggleMatches = QPushButton('Toggle')
         self.toggleMatches = QPushButton()
-        self.toggleMatches.setIcon(qta.icon(
-            ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
+        # self.toggleMatches.setIcon(qta.icon(
+        #     ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
+        self.toggleMatches.setIcon(qta.icon('mdi.toggle-switch-off', color=cfg.ICON_COLOR))
         self.toggleMatches.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
         self.toggleMatches.setFixedSize(20, 14)
         self.toggleMatches.setIconSize(QSize(20, 20))
@@ -2621,6 +2621,7 @@ class ProjectTab(QWidget):
         # hbl = HBL(self.tn_widget, self.match_widget, self.ms_widget, self.ng_widget_container, self.sideTabs)
 
         self.wMatches = HWidget(self.match_widget, self.ms_widget)
+        # self.wMatches.setMinimumWidth(236)
         self.wMatches.layout.setSpacing(0)
 
         hbl = HBL(self.wMatches, self.ng_widget_container, self.sideTabs)
@@ -4167,7 +4168,7 @@ class ProjectTab(QWidget):
         elif self.cpanelTabWidget.currentIndex() == 1:
             self.updateLowest8widget()
         elif self.cpanelTabWidget.currentIndex() == 2:
-            self.updateDtWidget()
+            cfg.mw.updateDtWidget()
         # Cancel- tab 2 - runtimes are updated when runtimes change
         elif self.cpanelTabWidget.currentIndex() == 3:
             self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
@@ -4291,26 +4292,20 @@ class ProjectTab(QWidget):
             self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
         if n_lowest >= 4:
             self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
+        if n_lowest >= 5:
+            self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+        if n_lowest >= 6:
+            self.lowX_left_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+        if n_lowest >= 7:
+            self.lowX_left_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+        if n_lowest >= 8:
+            self.lowX_left_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
         # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
         self.lowX_left = QWidget()
         self.lowX_left.setContentsMargins(0, 0, 0, 0)
         self.lowX_left.setLayout(self.lowX_left_fl)
 
-        self.lowX_right_fl = QFormLayout()
-        self.lowX_right_fl.setContentsMargins(0, 0, 0, 0)
-        self.lowX_right_fl.setVerticalSpacing(1)
-        if n_lowest >= 5:
-            self.lowX_right_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
-        if n_lowest >= 6:
-            self.lowX_right_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
-        if n_lowest >= 7:
-            self.lowX_right_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
-        if n_lowest >= 8:
-            self.lowX_right_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
-        # self.lowX_right_fl.addRow(self.lowestX_txt[9], self.lowestX_btns[9])
-        self.lowX_right = QWidget()
-        self.lowX_right.setContentsMargins(0, 0, 0, 0)
-        self.lowX_right.setLayout(self.lowX_right_fl)
+
 
         hbl = QHBoxLayout()
         hbl.setContentsMargins(2, 2, 2, 2)
