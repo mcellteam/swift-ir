@@ -3499,7 +3499,7 @@ class MainWindow(QMainWindow):
             self.tbbDetachNgButton
         ]
 
-        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Report\nBug',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
