@@ -342,9 +342,10 @@ class MainWindow(QMainWindow):
 
     def cleanupAfterCancel(self):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
-        cfg.project_tab.snr_plot.initSnrPlot()
-        # cfg.project_tab.project_table.updateTableData() #0611-
-        cfg.project_tab.updateTreeWidget()
+        # cfg.project_tab.snr_plot.initSnrPlot()
+        if self.dw_snr.isVisible():
+            cfg.project_tab.dSnr_plot.initSnrPlot()
+        # cfg.project_tab.updateTreeWidget()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
 
@@ -653,11 +654,13 @@ class MainWindow(QMainWindow):
             cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
             cfg.data['state']['tool_windows']['raw_thumbnails'] = self.dw_thumbs.isVisible()
             cfg.data['state']['tool_windows']['signals'] = self.dw_matches.isVisible()
+            cfg.data['state']['tool_windows']['snr_plot'] = self.dw_snr.isVisible()
         self.tbbPython.setChecked(self.dw_python.isVisible())
         self.tbbHud.setChecked(self.dw_hud.isVisible())
         self.tbbNotes.setChecked(self.dw_notes.isVisible())
         self.tbbThumbnails.setChecked(self.dw_thumbs.isVisible())
         self.tbbMatches.setChecked(self.dw_matches.isVisible())
+        self.tbbSnr.setChecked(self.dw_snr.isVisible())
 
 
     def setdw_python(self, state):
@@ -667,8 +670,8 @@ class MainWindow(QMainWindow):
 
         self.dw_python.setVisible(state)
         self.a_python.setText(('Show Python Console', 'Hide Python Console')[state])
-        self.tbbPython.setToolTip(("Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)",
-                                  "Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)")[state])
+        self.tbbPython.setToolTip((f"Show Python Console Tool Window ({hotkey('P')})",
+                                  f"Hide Python Console Tool Window ({hotkey('P')})")[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['python'] = state
 
@@ -685,8 +688,8 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(False)
         self.dw_hud.setVisible(state)
         self.a_monitor.setText(('Show Process Monitor', 'Hide Process Monitor')[state])
-        tip1 = '\n'.join("Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)")
-        tip2 = '\n'.join("Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)")
+        tip1 = '\n'.join(f"Show Python Console Tool Window ({hotkey('H')})")
+        tip2 = '\n'.join(f"Hide Python Console Tool Window ({hotkey('H')})")
         self.tbbHud.setToolTip((tip1, tip2)[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['hud'] = state
@@ -710,8 +713,8 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(False)
         self.dw_matches.setVisible(state)
         self.dw_matches.setVisible(self.tbbMatches.isChecked())
-        tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('T')})")
-        tip2 = '\n'.join(f"Hide Matches and Signals Tool Window ({hotkey('T')})")
+        tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('M')})")
+        tip2 = '\n'.join(f"Hide Matches and Signals Tool Window ({hotkey('M')})")
         self.tbbMatches.setToolTip((tip1, tip2)[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
@@ -729,6 +732,18 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['notes'] = state
         self.updateNotes()
+        self.setUpdatesEnabled(True)
+
+    def setdw_snr(self, state):
+        logger.info(f'state={state}')
+        self.setUpdatesEnabled(False)
+        self.dw_snr.setVisible(state)
+        self.a_snr.setText(('Show SNR Plot', 'Hide SNR Plot')[state])
+        self.tbbSnr.setToolTip((f"Show SNR Plot Tool Window ({hotkey('L')})",
+                                 f"Hide SNR Plot Tool Window ({hotkey('L')})")[state])
+        if self._isProjectTab():
+            cfg.data['state']['tool_windows']['snr_plot'] = state
+            cfg.pt.dSnr_plot.initSnrPlot()
         self.setUpdatesEnabled(True)
 
     # def _callbk_showHidePython(self):
@@ -1037,6 +1052,8 @@ class MainWindow(QMainWindow):
         self._changeScaleCombo.setEnabled(False)
         check_project_status()
 
+
+
     def onAlignmentEnd(self, start, end):
         logger.critical('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
@@ -1047,10 +1064,6 @@ class MainWindow(QMainWindow):
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
                 cfg.pt.setTargKargPixmaps()
-                # self.pbarLabel.setText('')
-                if cfg.project_tab._tabs.currentIndex() == 4:
-                    cfg.project_tab.snr_plot.initSnrPlot()
-                # self.updateProjectTable()  # +
                 try:
                     self.updateMenus()
                 except:
@@ -1084,6 +1097,9 @@ class MainWindow(QMainWindow):
                         cfg.project_tab.snr_plot.initSnrPlot()
                 except:
                     print_exception()
+
+                if self.dw_snr.isVisible():
+                    cfg.project_tab.dSnr_plot.initSnrPlot()
 
             t9 = time.time()
             dt = t9 - t0
@@ -1503,13 +1519,6 @@ class MainWindow(QMainWindow):
 
             self._changeScaleCombo.setEnabled(True)
 
-            #Note this doesnt make sense, need to actually verify shown/hidden state at same time
-            # self.tbbThumbnails.setChecked(not getData('state,tool_windows,raw_thumbnails'))
-            # self.tbbMatches.setChecked(not getData('state,tool_windows,signals'))
-            # self.tbbHud.setChecked(not getData('state,tool_windows,hud'))
-            # self.tbbNotes.setChecked(getData('state,tool_windows,notes'))
-            # self.tbbPython.setChecked(getData('state,tool_windows,python'))
-
         else:
             self._skipCheckbox.setEnabled(False)
             self._btn_clear_skips.setEnabled(False)
@@ -1829,13 +1838,25 @@ class MainWindow(QMainWindow):
                     print_exception()
 
             cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
-            cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
-                                      f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
-            try:
-                cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
-                                          f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
-            except:
-                cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)')
+
+            if self.dw_thumbs.isVisible():
+                cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
+                                          f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
+                try:
+                    cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
+                                              f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
+                except:
+                    cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)')
+
+            if cfg.pt._tabs.currentIndex() == 1:
+                # cl_tra
+                cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
+                try:
+                    cfg.pt.cl_ref.setText(f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()} (Reference)')
+                except:
+                    cfg.pt.cl_ref.setText(f'Null (Reference)')
+
+
 
 
             img_siz = cfg.data.image_size()
@@ -1861,6 +1882,9 @@ class MainWindow(QMainWindow):
 
             if cfg.project_tab._tabs.currentIndex() == 4:
                 cfg.project_tab.snr_plot.updateLayerLinePos()
+
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.updateLayerLinePos()
 
             # if cfg.project_tab._tabs.currentIndex() == 3:
             #     cfg.snrViewer.set_layer(cfg.data.zpos)
@@ -3035,6 +3059,10 @@ class MainWindow(QMainWindow):
             if cfg.project_tab._tabs.currentIndex() == 4:
                 cfg.project_tab.snr_plot.initSnrPlot()
 
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.initSnrPlot()
+
+
     def skip_change_shortcut(self):
         logger.info('')
         if cfg.data:
@@ -3396,6 +3424,19 @@ class MainWindow(QMainWindow):
         self.tbbMatches.setIcon(qta.icon("mdi.image-filter-center-focus", color='#161c20'))
         self.tbbMatches.clicked.connect(fn_tb_press)
 
+
+        tip = f"Show SNR Plot {hotkey('L')}"
+        self.tbbSnr = QToolButton()
+        def fn_tb_press():
+            caller = inspect.stack()[1].function
+            logger.info(f'[{caller}]')
+            if caller == 'main':
+                self.setdw_snr(self.tbbSnr.isChecked())
+        self.tbbSnr.setCheckable(True)
+        self.tbbSnr.setToolTip(tip)
+        self.tbbSnr.setIcon(qta.icon("mdi.chart-scatter-plot", color='#161c20'))
+        self.tbbSnr.clicked.connect(fn_tb_press)
+
         self.tbbDetachNgButton = QToolButton()
         # self.tbbDetachNgButton.setCheckable(True)
         self.tbbDetachNgButton.setIcon(qta.icon("fa.external-link-square", color='#161c20'))
@@ -3450,6 +3491,7 @@ class MainWindow(QMainWindow):
             self.tbbGlossary,
             self.tbbReportBug,
             self.tbbMatches,
+            self.tbbSnr,
             self.tbbThumbnails,
             self.tbbHud,
             self.tbbNotes,
@@ -3457,7 +3499,7 @@ class MainWindow(QMainWindow):
             self.tbbDetachNgButton
         ]
 
-        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Report\nBug',' &Matches', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Report\nBug',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -3492,6 +3534,7 @@ class MainWindow(QMainWindow):
         # self.toolbar.addWidget(self.testButton)
         self.toolbar.addWidget(self.tbbThumbnails)
         self.toolbar.addWidget(self.tbbMatches)
+        self.toolbar.addWidget(self.tbbSnr)
         self.toolbar.addWidget(self.tbbHud)
         self.toolbar.addWidget(self.tbbPython)
         self.toolbar.addWidget(self.tbbNotes)
@@ -3619,6 +3662,8 @@ class MainWindow(QMainWindow):
         #     logger.critical('\n\n\n<<<<< DONT REINIT! >>>>>\n\n\n')
         #     return
 
+        self.setUpdatesEnabled(False)
+
         caller = inspect.stack()[1].function
         logger.info(f'_onGlobTabChange [{caller}]')
         # if caller not in ('onStartProject', '_setLastTab'): #0524-
@@ -3650,8 +3695,20 @@ class MainWindow(QMainWindow):
                 margin: 0px;
                 padding: 0px;
             """)
-            self.dw_thumbs.setWidget(QLabel('Null Widget'))
-            self.dw_matches.setWidget(QLabel('Null Widget'))
+            null_widget = QLabel('Null Widget')
+            null_widget.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+            null_widget.setAlignment(Qt.AlignCenter)
+            self.dw_thumbs.setWidget(null_widget)
+
+            null_widget = QLabel('Null Widget')
+            null_widget.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+            null_widget.setAlignment(Qt.AlignCenter)
+            self.dw_matches.setWidget(null_widget)
+
+            null_widget = QLabel('Null Widget')
+            null_widget.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+            null_widget.setAlignment(Qt.AlignCenter)
+            self.dw_snr.setWidget(null_widget)
 
         if tabtype == 'OpenProject':
             configure_project_paths()
@@ -3671,10 +3728,6 @@ class MainWindow(QMainWindow):
             #         """)
             # self.set_nglayout_combo_text(layout=cfg.data['state']['mode'])  # must be before initNeuroglancer
             self.dataUpdateWidgets()
-
-
-
-            # cfg.project_tab.refreshTab() #Todo - Refactor! may init ng twice.
 
             try:
                 self.setControlPanelData()
@@ -3708,8 +3761,10 @@ class MainWindow(QMainWindow):
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             # self.dw_matches.setLayout(HBL(cfg.pt.ktarg_table, cfg.pt.ms_table))
+            self.dw_snr.setWidget(cfg.pt.dSnr_plot)
 
             self.setCpanelVisibility(True)
+
 
         elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
@@ -3724,6 +3779,7 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.updateNotes()
         self.setFocus()
+        self.setUpdatesEnabled(True)
 
     def _onGlobTabClose(self, index):
         if not self._working:
@@ -4069,9 +4125,11 @@ class MainWindow(QMainWindow):
 
         self.a_matches = QAction('Show Match S&ignals', self)
         self.a_matches.triggered.connect(lambda: self.setdw_matches(not self.tbbMatches.isChecked()))
-        # self.a_matches.setShortcut('Ctrl+I')
-        # self.a_matches.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.a_matches)
+
+        self.a_snr = QAction('Show SNR P&lot', self)
+        self.a_snr.triggered.connect(lambda: self.setdw_snr(not self.tbbSnr.isChecked()))
+        viewMenu.addAction(self.a_snr)
 
 
         # self.a_notes = QAction('Show &Notes', self)
@@ -5707,6 +5765,45 @@ class MainWindow(QMainWindow):
         # self.dw_python.visibilityChanged.connect(fn)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_python)
         self.dw_python.hide()
+
+
+
+        self.dw_snr = DockWidget('SNR', self)
+        self.dw_snr.visibilityChanged.connect(self.callbackDwVisibilityChanged)
+        def fn_dw_snr_visChanged():
+            caller = inspect.stack()[1].function
+            logger.critical(f'[{caller}]')
+
+            # logger.critical(f'caller: {caller}')
+            if self. dw_snr.isVisible():
+                self.setUpdatesEnabled(False)
+                loc_py = self.dockWidgetArea(self.dw_snr)
+                if loc_py in (1,2):
+                    self.dw_snr.setFeatures(
+                        QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
+                else:
+                    self.dw_snr.setFeatures(
+                        QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
+
+                self.splitDockWidget(self.dw_hud, self.dw_snr, Qt.Vertical)
+                self.splitDockWidget(self.dw_python, self.dw_snr, Qt.Vertical)
+                self.setUpdatesEnabled(True)
+
+        self.dw_snr.dockLocationChanged.connect(fn_dw_snr_visChanged)
+        self.dw_snr.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
+        self.dw_snr.setStyleSheet("""
+                QDockWidget {color: #161c20;}
+                QDockWidget::title {
+                            background-color: #ffcccb;
+                            font-weight: 600;
+                            text-align: left;
+                            padding: 0px;
+                            margin: 0px;
+                            border-width: 0px;
+                        }""")
+
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_snr)
+        self.dw_snr.hide()
 
 
 

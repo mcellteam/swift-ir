@@ -97,6 +97,7 @@ class SnrPlot(QWidget):
         self.selected_scale = None
 
         self.checkboxes_widget = QWidget()
+        self.checkboxes_widget.setStyleSheet("background-color: #222222;")
         self.checkboxes_widget.setMaximumHeight(24)
         self.checkboxes_hlayout = QHBoxLayout()
         self.checkboxes_hlayout.setContentsMargins(0, 0, 0, 0)
@@ -216,7 +217,7 @@ class SnrPlot(QWidget):
                     self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
                     color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
                     self._snr_checkboxes[s].setStyleSheet(
-                        f'background-color: #F3F6FB;'
+                        f'background-color: #161c20;'
                         f'border-color: {color}; '
                         f'border-width: 3px; '
                         f'border-style: outset;')
