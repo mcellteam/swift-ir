@@ -981,10 +981,11 @@ class MainWindow(QMainWindow):
                 """)
                 w.setLayout(fl_l)
 
-                self.sa_tab3.setWidget(w)
+                cfg.pt.sa_tab3.setWidget(w)
 
 
             except:
+                print_exception()
                 logger.warning('detailsTiming cant update')
 
     def onAlignmentStart(self, scale):
@@ -2343,7 +2344,7 @@ class MainWindow(QMainWindow):
         # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
         self._dontReinit = False
-        self.cpanel.show()
+        self.sa_cpanel.show()
 
         self.updateCorrSignalsDrawer()
         cfg.project_tab.setTargKargPixmaps()
@@ -2667,7 +2668,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
     def url_resource(self, url, title):
         webengine = QWebEngineView()
@@ -2680,7 +2681,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
     def remote_view(self):
         self.tell('Opening Neuroglancer Remote Viewer...')
@@ -2688,7 +2689,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.globTabs.addTab(browser, 'Neuroglancer')
         self._setLastTab()
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
     def open_url(self, text: str) -> None:
         self.browser_web.setUrl(QUrl(text))
@@ -2847,7 +2848,7 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.addGlobTab(browser, 'WebGL Test')
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
     def tab_google(self):
         logger.info('Opening Google tab...')
@@ -2855,7 +2856,7 @@ class MainWindow(QMainWindow):
         browser.setObjectName('web_browser')
         browser.setUrl(QUrl('https://www.google.com'))
         self.addGlobTab(browser, 'Google')
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
 
     def tab_report_bug(self):
@@ -2863,7 +2864,7 @@ class MainWindow(QMainWindow):
         cfg.bugreport = browser = WebBrowser(self)
         browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/issues'))
         self.addGlobTab(browser, 'Issue Tracker')
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
 
     def tab_3dem_community_data(self):
@@ -2871,7 +2872,7 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl(path))
         self.addGlobTab(browser, '3DEM Community Data (TACC)')
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
 
     def tab_workbench(self):
@@ -2879,7 +2880,7 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl('https://3dem.org/workbench/'))
         self.addGlobTab(browser, '3DEM Workbench')
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
     def gpu_config(self):
         logger.info('Opening GPU Config...')
@@ -2887,7 +2888,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('chrome://gpu'))
         self.globTabs.addTab(browser, 'GPU Configuration')
         self._setLastTab()
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
 
     def chromium_debug(self):
@@ -2896,7 +2897,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('http://127.0.0.1:9000'))
         self.globTabs.addTab(browser, 'Debug Chromium')
         self._setLastTab()
-        self.cpanel.hide()
+        self.sa_cpanel.hide()
 
 
     def get_ng_state(self):
@@ -3640,7 +3641,7 @@ class MainWindow(QMainWindow):
         if tabtype == 'OpenProject':
             configure_project_paths()
             self._getTabObject().user_projects.set_data()
-            self.cpanel.hide()
+            self.sa_cpanel.hide()
             self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
@@ -3694,7 +3695,7 @@ class MainWindow(QMainWindow):
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.wMatches)
 
-            self.cpanel.show()
+            self.sa_cpanel.show()
 
         elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
@@ -4853,7 +4854,7 @@ class MainWindow(QMainWindow):
 
         """scale combobox"""
         self._changeScaleCombo = QComboBox(self)
-        self._changeScaleCombo.setFixedSize(QSize(148, 16))
+        self._changeScaleCombo.setFixedSize(QSize(132, 16))
         self._changeScaleCombo.setStyleSheet('font-size: 10px;')
         self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
@@ -4863,14 +4864,14 @@ class MainWindow(QMainWindow):
         resLab = QLabel('Level / Downsampled Image Resolution')
         resLab.setStyleSheet('font-size: 8px; font-weight: 600;')
         scaleLabel = QLabel('Scale:')
-        scaleLabel.setStyleSheet("font-size: 11px;")
+        scaleLabel.setStyleSheet("font-size: 11px; font-weight: 600;")
         hw = HWidget(scaleLabel, self._changeScaleCombo, self._scaleSetWidget)
         hw.layout.setSpacing(8)
         # self.scaleWidget = VWidget(hw, resLab)
         self.scaleWidget = VWidget(hw)
 
         secLabel = QLabel('Section:')
-        secLabel.setStyleSheet("font-size: 11px;")
+        secLabel.setStyleSheet("font-size: 11px; font-weight: 600;")
         self.sectionIndexWidget = HWidget(secLabel, self._jumpToLineedit, self._sectionChangeWidget, self._sectionSliderWidget, self.spinbox_fps, self._w_skipCheckbox)
         self.sectionIndexWidget.layout.setSpacing(8)
 
@@ -4978,7 +4979,7 @@ class MainWindow(QMainWindow):
         self.gb_ctlActions.setStyleSheet("font-size: 9px;")
 
         self.w_range = HWidget(VWidget(QLabel('Range: '), HWidget(self.rangeInputWidget, self.rangeInputWidget)), self._btn_alignRange)
-        self.w_range.setStyleSheet("font-size: 9px;")
+        # self.w_range.setStyleSheet("font-size: 9px;")
         self.w_range.layout.setSpacing(2)
         # self.w_range.layout.setContentsMargins(2,2,2,2)
         self.w_range.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -5046,11 +5047,16 @@ class MainWindow(QMainWindow):
 
 
 
+
         self.cpanel = QWidget()
         self.cpanel.setLayout(HBL(self.navControls, self.newActionsWidget))
         self.cpanel.setContentsMargins(2, 2, 2, 2)
-        self.cpanel.setFixedHeight(34)
+        # self.cpanel.setFixedHeight(34)
         self.cpanel.setAutoFillBackground(True)
+
+        self.sa_cpanel = QScrollArea()
+        self.sa_cpanel.setWidget(self.cpanel)
+        self.sa_cpanel.setFixedHeight(44)
 
         # cpanel_style2 = """
         # QLabel {font-size: 10px;}
@@ -5802,7 +5808,8 @@ class MainWindow(QMainWindow):
 
         # self.globTabsAndCpanel = VWidget(self.toolbar, self.globTabs, self.cpanel, self.pbar_widget)
         self.addToolBar(self.toolbar)
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.pbar_widget)
+        # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.pbar_widget)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.pbar_widget)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.setCentralWidget(self.globTabsAndCpanel)
