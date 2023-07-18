@@ -6050,7 +6050,7 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 if caller == "collect_results":
                     if "Transforms" in self.pbar.text():
-                        if cfg.pt.ms_widget.isVisible():
+                        if self.dw_ma:
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
                             QApplication.processEvents()
