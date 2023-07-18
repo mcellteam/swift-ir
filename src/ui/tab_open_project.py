@@ -167,9 +167,8 @@ class OpenProject(QWidget):
         self._buttonOpen.clicked.connect(self.open_project_selected)
         self._buttonOpen.setFixedSize(button_size)
 
-        self.labNewProject = QLabel(f"New AlignEM-SWiFT\n"
-                                    f"Project:")
-        self.labNewProject.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
+        self.labNewProject = QLabel(f"New\nAlignment:")
+        self.labNewProject.setStyleSheet('font-size: 9px; font-weight: 600; color: #161c20;')
         self.labNewProject.setAlignment(Qt.AlignRight)
 
         tip = "Create a new project from an existing folder of images. " \

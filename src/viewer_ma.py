@@ -393,7 +393,7 @@ class MAViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed_any(self):
 
-        self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         if self._blockStateChanged:
             return
 

@@ -230,12 +230,6 @@ class ThumbnailFast(QLabel):
                 qp.drawPixmap(self.r, pm)
 
 
-                logger.critical(f'self.r.getCoords() = {str(self.r.getCoords())}')
-                logger.critical(f'self.pixmap().rect() = {str(self.pixmap().rect())}')
-                logger.critical(f'self.pixmap().size() = {str(self.pixmap().size())}')
-                logger.critical(f'QPoint(self.r.center()) = {str(QPoint(self.r.center()))}')
-
-
                 coords = self.r.getCoords()
                 p1 = QPoint(coords[0], coords[1])
                 p2 = QPoint(coords[2], coords[1])
@@ -256,7 +250,7 @@ class ThumbnailFast(QLabel):
                         # font.setBold(True)
                         qp.setFont(font)
                         qp.setPen(QColor('#161c20'))
-                        qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "Null")
+                        qp.drawText(QRectF(p1, p4), Qt.AlignCenter, "No Image")
                     except:
                         print_exception()
 
@@ -275,11 +269,27 @@ class ThumbnailFast(QLabel):
                     sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # scale factor
 
                     if method == 'grid-default':
-                        cp = QPoint(self.r.center())  # center point
-                        ww = tuple(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'])
-                        for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y(), self.r.getCoords())):
-                            qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
-                            qp.drawRect(r)
+                        # cp = QPoint(self.r.center())  # center point
+                        # ww = tuple(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'])
+                        # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y(), self.r.getCoords())):
+                        #     qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
+                        #     qp.drawRect(r)
+
+                        ww1x1 = cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px']
+                        ww2x2 = [x / 2 for x in ww1x1]
+
+                        a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
+                        b = [img_size[0] - a[0], img_size[1] - a[1]]
+
+                        qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
+                        qp.drawRect(get_rect(sf, a[0], a[1], ww2x2[0], self.r.getCoords()))
+                        qp.setPen(QPen(QColor(cfg.glob_colors[1]), 2, Qt.DotLine))
+                        qp.drawRect(get_rect(sf, b[0], a[1], ww2x2[0], self.r.getCoords()))
+                        qp.setPen(QPen(QColor(cfg.glob_colors[2]), 2, Qt.DotLine))
+                        qp.drawRect(get_rect(sf, a[0], b[1], ww2x2[0], self.r.getCoords()))
+                        qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
+                        qp.drawRect(get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords()))
+
                     elif method == 'grid-custom':
                         regions = cfg.data.get_grid_custom_regions(s=s, l=l)
                         ww1x1 = cfg.data.swim_1x1_custom_px(s=s, l=l)
@@ -344,8 +354,8 @@ class ThumbnailFast(QLabel):
     # def sizeHint(self):
     #     return QSize(100,100)
 
-    def resizeEvent(self, e):
-        self.setMinimumWidth(self.height())
+    # def resizeEvent(self, e):
+    #     self.setMinimumWidth(self.height())
 
 
 
