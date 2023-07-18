@@ -1940,7 +1940,7 @@ class ProjectTab(QWidget):
 
         # TOOLBARS
 
-        ngFont = QFont('Calibri')
+        ngFont = QFont('Tahoma')
         ngFont.setBold(True)
         pal = QPalette()
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
@@ -2321,7 +2321,6 @@ class ProjectTab(QWidget):
         self.tn_widget.horizontalHeader().setVisible(False)
         self.tn_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tn_widget.setShowGrid(False)
-        self.tn_widget.setVisible(getData('state,tool_windows,signals'))
         v_header = self.tn_widget.verticalHeader()
         h_header = self.tn_widget.horizontalHeader()
         v_header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -2374,6 +2373,8 @@ class ProjectTab(QWidget):
         # cells are CorrSignalThumbnail objects
 
         self.ms_table = QTableWidget()
+        # self.ms_table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        # self.ms_table.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         self.tn_ms0 = CorrSignalThumbnail(self, name='ms0')
         self.tn_ms1 = CorrSignalThumbnail(self, name='ms1')
@@ -2409,7 +2410,7 @@ class ProjectTab(QWidget):
         self.ms_table.verticalHeader().setVisible(False)
         self.ms_table.horizontalHeader().setVisible(False)
         self.ms_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.ms_table.setShowGrid(False)
+        self.ms_table.setShowGrid(True)
         v_header = self.ms_table.verticalHeader()
         h_header = self.ms_table.horizontalHeader()
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -2417,6 +2418,8 @@ class ProjectTab(QWidget):
         v_header.setSectionResizeMode(1, QHeaderView.Stretch)
         v_header.setSectionResizeMode(2, QHeaderView.Stretch)
         v_header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+        # h_header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
         ### TARG KARG TOOL WINDOW #targ #karg ###
 
@@ -2456,6 +2459,8 @@ class ProjectTab(QWidget):
         self.match_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
 
         self.ktarg_table = QTableWidget()
+        # self.ktarg_table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        # self.ktarg_table.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.ktarg_table.setAutoFillBackground(True)
         # self.ktarg_table.setMinimumWidth(64)
         # self.ktarg_table.setMaximumWidth(200)
@@ -2468,18 +2473,27 @@ class ProjectTab(QWidget):
         self.ktarg_table.setSelectionMode(QAbstractItemView.NoSelection)
         self.ktarg_table.setRowCount(4)
         self.ktarg_table.setColumnCount(1)
-        self.ktarg_table.setCellWidget(0,0, self.matches_tn0)
-        self.ktarg_table.setCellWidget(1,0, self.matches_tn1)
-        self.ktarg_table.setCellWidget(2,0, self.matches_tn2)
-        self.ktarg_table.setCellWidget(3,0, self.matches_tn3)
+        # self.ktarg_table.setColumnCount(2)
+        self.ktarg_table.setCellWidget(0, 0, self.matches_tn0)
+        self.ktarg_table.setCellWidget(1, 0, self.matches_tn1)
+        self.ktarg_table.setCellWidget(2, 0, self.matches_tn2)
+        self.ktarg_table.setCellWidget(3, 0, self.matches_tn3)
+        # self.ktarg_table.setCellWidget(0, 1, self.tn_ms0)
+        # self.ktarg_table.setCellWidget(1, 1, self.tn_ms1)
+        # self.ktarg_table.setCellWidget(2, 1, self.tn_ms2)
+        # self.ktarg_table.setCellWidget(3, 1, self.tn_ms3)
         self.ktarg_table.setItem(0, 0, QTableWidgetItem())
         self.ktarg_table.setItem(1, 0, QTableWidgetItem())
         self.ktarg_table.setItem(2, 0, QTableWidgetItem())
         self.ktarg_table.setItem(3, 0, QTableWidgetItem())
+        # self.ktarg_table.setItem(0, 1, QTableWidgetItem())
+        # self.ktarg_table.setItem(1, 1, QTableWidgetItem())
+        # self.ktarg_table.setItem(2, 1, QTableWidgetItem())
+        # self.ktarg_table.setItem(3, 1, QTableWidgetItem())
         self.ktarg_table.verticalHeader().setVisible(False)
         self.ktarg_table.horizontalHeader().setVisible(False)
         self.ktarg_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.ktarg_table.setShowGrid(False)
+        self.ktarg_table.setShowGrid(True)
         self.ktarg_table.setVisible(getData('state,tool_windows,matches'))
         v_header = self.ktarg_table.verticalHeader()
         h_header = self.ktarg_table.horizontalHeader()
@@ -2488,6 +2502,8 @@ class ProjectTab(QWidget):
         v_header.setSectionResizeMode(1, QHeaderView.Stretch)
         v_header.setSectionResizeMode(2, QHeaderView.Stretch)
         v_header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+        # h_header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
         self._btn_playMatchTimer = QPushButton()
         self._btn_playMatchTimer.setIconSize(QSize(11, 11))
@@ -2515,35 +2531,14 @@ class ProjectTab(QWidget):
         self.labMatches.setFixedHeight(14)
         self.labMatches.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
 
-        self.match_widget = VWidget(HWidget(self.labMatches, self._btn_playMatchTimer, self.toggleMatches), self.ktarg_table)
-
-        '''MATCH SIGNALS TOOL WINDOW #signals'''
         self.labMatchSignals = QLabel('Match Signals')
         self.labMatchSignals.setFixedHeight(14)
         self.labMatchSignals.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
 
-        self.ms_widget = VWidget(self.labMatchSignals, self.ms_table)
+        self.mwTitle = HWidget(self.labMatches, self._btn_playMatchTimer, self.toggleMatches)
 
-        # self.w_before_after = QWidget()
-        # self.hbl_before_after = QHBoxLayout()
-        # self.hbl_before_after.setContentsMargins(0,0,0,0)
-        # self.btn_before = QPushButton('Before')
-        # # self.btn_before.setStyleSheet("""QPushButton{border: 1px solid #161c20; border-bottom-left-radius: 8px; border-top-left-radius: 8px;}""")
-        # self.btn_before.setStyleSheet("""QPushButton{border: 1px solid #161c20; border-bottom-left-radius: 8px; border-top-left-radius: 8px;}""")
-        # self.btn_before.setStyleSheet("""font-size: 10px;""")
-        # # self.btn_before.setMaximumWidth(220)
-        # # self.btn_before.setMinimumWidth(120)
-        # self.btn_before.setFixedHeight(16)
-        # self.btn_after = QPushButton('After')
-        # # self.btn_after.setStyleSheet("""QPushButton{border: 1px solid #161c20; border-bottom-right-radius: 8px; border-top-right-radius: 8px;}""")
-        # self.btn_after.setStyleSheet("""font-size: 10px;""")
-        # # self.btn_after.setMaximumWidth(220)
-        # # self.btn_after.setMinimumWidth(120)
-        # self.btn_after.setFixedHeight(16)
-        # self.hbl_before_after.addWidget(self.btn_before, alignment=Qt.AlignCenter)
-        # self.hbl_before_after.addWidget(self.btn_after, alignment=Qt.AlignCenter)
-        #
-        # self.w_before_after.setLayout(self.hbl_before_after)
+        self.match_widget = VWidget(self.mwTitle, HWidget(self.ktarg_table, self.ms_table))
+
 
         w = QWidget()
         # vbl = VBL(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ng_widget)
@@ -2564,7 +2559,6 @@ class ProjectTab(QWidget):
         # self.gb_warnings = QGroupBox('Warnings')
         self.gb_warnings = QGroupBox()
         self.gb_warnings.setStyleSheet("""
-        
         QGroupBox:title {
             color: #161c20;
             /*font-weight:600;*/
@@ -2572,9 +2566,7 @@ class ProjectTab(QWidget):
             subcontrol-origin: margin;
             subcontrol-position: top center;
             margin-bottom: 16px;
-
         }
-        
         """)
         self.vbl_wanrings = VBL()
         self.vbl_wanrings.addWidget(self.warning_cafm)
@@ -2609,8 +2601,6 @@ class ProjectTab(QWidget):
         # self.w_swim_settings.setLayout(self.fl_swim_settings)
         # self.w_swim_settings.setLayout(self.fl_MA_settings)
 
-
-
         self.sideTabs.addTab(self.side_controls, 'Configure')
         # self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
@@ -2620,11 +2610,62 @@ class ProjectTab(QWidget):
         self.wEditAlignment = QWidget()
         # hbl = HBL(self.tn_widget, self.match_widget, self.ms_widget, self.ng_widget_container, self.sideTabs)
 
-        self.wMatches = HWidget(self.match_widget, self.ms_widget)
-        # self.wMatches.setMinimumWidth(236)
-        self.wMatches.layout.setSpacing(0)
 
-        hbl = HBL(self.wMatches, self.ng_widget_container, self.sideTabs)
+        def fn():
+            # logger.info(f"ktarg_table size : {self.ktarg_table.size()}")
+            # logger.info(f"tn_ms0 size      : {self.tn_ms0.size()}")
+            # logger.info(f"matches_tn0 size : {self.matches_tn0.size()}")
+
+            # logger.info(f"self.tn_ms0.pixmap().width() : {self.tn_ms0.pixmap().width()}")
+            # logger.info(f"self.tn_ms0.pixmap().height() : {self.tn_ms0.pixmap().height()}")
+            # logger.info(f"self.tn_ms0.width() : {self.tn_ms0.width()}")
+            # logger.info(f"self.tn_ms0.height() : {self.tn_ms0.height()}")
+
+            w = self.tn_ms0.height()
+            logger.info(f'new w: {w}')
+
+            h = self.match_widget.height()
+            # logger.info(f'Resizing to: {w} x {h}')
+            # logger.info(f'w: {w}')
+
+            # self.ktarg_table.resize(QSize(w, h))
+            # self.ms_table.resize(QSize(w, h))
+            # cfg.mw.dw_matches.resize(QSize(w*2,h))
+
+            # self.ktarg_table.horizontalHeader().resizeSection(0, w)
+            # self.ms_table.horizontalHeader().resizeSection(0, w)
+
+            self.tn_ms0.resize(w,w)
+            self.tn_ms1.resize(w,w)
+            self.tn_ms2.resize(w,w)
+            self.tn_ms3.resize(w,w)
+
+            self.matches_tn0.resize(w,w)
+            self.matches_tn1.resize(w,w)
+            self.matches_tn2.resize(w,w)
+            self.matches_tn3.resize(w,w)
+
+            # self.ktarg_table.resize(w,h)
+            # self.ms_table.resize(w,h)
+
+            # self.ktarg_table.resize(w,h)
+            # self.ms_table.resize(w,h)
+
+            self.ktarg_table.resize(QSize(w, h))
+            self.ms_table.resize(QSize(w, h))
+
+
+
+
+        # self.resizeMatchesButton = QPushButton('Resize')
+        # self.resizeMatchesButton.setStyleSheet("font-size: 12px;")
+        # self.resizeMatchesButton.clicked.connect(fn)
+        # self.resizeMatchesButton.setFixedHeight(20)
+
+        # self.wMatches = VWidget(self.match_widget, self.resizeMatchesButton)
+        # self.wMatches.layout.setSpacing(0)
+
+        hbl = HBL(self.ng_widget_container, self.sideTabs)
         hbl.setSpacing(0)
         # hbl.setStretch(3,99)
         # hbl.setStretch(4,0)
@@ -2688,7 +2729,7 @@ class ProjectTab(QWidget):
         self.updateAnnotations()
 
     def fn_hwidgetChanged(self):
-        logger.critical('')
+        # logger.critical('')
         #
         # # self.tn_widget.setFixedWidth(self.tn_tra.height() + 8)
         # max_w = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height())
@@ -2704,6 +2745,7 @@ class ProjectTab(QWidget):
         # self.tn_widget.setFixedWidth(tn_w)
         # # self.initNeuroglancer()
         # # pass
+        pass
 
 
     def onSideTabChange(self):
@@ -4310,7 +4352,7 @@ class ProjectTab(QWidget):
         hbl = QHBoxLayout()
         hbl.setContentsMargins(2, 2, 2, 2)
         hbl.addWidget(self.lowX_left)
-        hbl.addWidget(self.lowX_right)
+        # hbl.addWidget(self.lowX_right)
         w = QWidget()
         w.setLayout(hbl)
 

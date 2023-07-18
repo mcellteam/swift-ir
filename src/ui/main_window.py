@@ -180,12 +180,13 @@ class MainWindow(QMainWindow):
         #     self.restoreState(self.settings.value("windowState"))
 
         # font = QFont("Tahoma")
-        font = QFont("Calibri")
+        # font = QFont("Calibri")
+        font = QFont("Tahoma")
         QApplication.setFont(font)
 
-        self.setFocusPolicy(Qt.StrongFocus)
+        # self.setFocusPolicy(Qt.StrongFocus)
 
-        QApplication.processEvents()
+        # QApplication.processEvents()
         # self.resizeThings()
 
         # QTimer.singleShot(1000, self.resizeThings)
@@ -193,6 +194,10 @@ class MainWindow(QMainWindow):
         # self.zposChanged.connect(self.dataUpdateWidgets)
 
         # self.setWindowFlags(Qt.FramelessWindowHint)
+
+        self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
+        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
+        self.setDockNestingEnabled(True)
 
 
 
@@ -641,15 +646,15 @@ class MainWindow(QMainWindow):
 
     def callbackDwVisibilityChanged(self):
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}] [{caller_name()}] {self.dw_python.isVisible()} {self.dw_monitor.isVisible()} {self.dw_notes.isVisible()}')
+        logger.info(f'[{caller}] [{caller_name()}] {self.dw_python.isVisible()} {self.dw_hud.isVisible()} {self.dw_notes.isVisible()}')
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
-            cfg.data['state']['tool_windows']['hud'] = self.dw_monitor.isVisible()
+            cfg.data['state']['tool_windows']['hud'] = self.dw_hud.isVisible()
             cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
             cfg.data['state']['tool_windows']['raw_thumbnails'] = self.dw_thumbs.isVisible()
             cfg.data['state']['tool_windows']['signals'] = self.dw_matches.isVisible()
         self.tbbPython.setChecked(self.dw_python.isVisible())
-        self.tbbHud.setChecked(self.dw_monitor.isVisible())
+        self.tbbHud.setChecked(self.dw_hud.isVisible())
         self.tbbNotes.setChecked(self.dw_notes.isVisible())
         self.tbbThumbnails.setChecked(self.dw_thumbs.isVisible())
         self.tbbMatches.setChecked(self.dw_matches.isVisible())
@@ -668,17 +673,17 @@ class MainWindow(QMainWindow):
             cfg.data['state']['tool_windows']['python'] = state
 
         # if self.dw_python.isVisible():
-        #     if self.dw_monitor.isVisible():
-        #         # self.splitDockWidget(self.dw_monitor,self.dw_python,Qt.Horizontal)
+        #     if self.dw_hud.isVisible():
+        #         # self.splitDockWidget(self.dw_hud,self.dw_python,Qt.Horizontal)
         #         w = int(self.width() / 2)
-        #         self.resizeDocks((self.dw_monitor, self.dw_python), (w, w), Qt.Horizontal)
+        #         self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
 
         self.setUpdatesEnabled(True)
 
 
     def setdw_hud(self, state):
         self.setUpdatesEnabled(False)
-        self.dw_monitor.setVisible(state)
+        self.dw_hud.setVisible(state)
         self.a_monitor.setText(('Show Process Monitor', 'Hide Process Monitor')[state])
         tip1 = '\n'.join("Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)")
         tip2 = '\n'.join("Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "M)")
@@ -689,6 +694,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_thumbs(self, state):
+        logger.critical('')
         self.setUpdatesEnabled(False)
         self.dw_thumbs.setVisible(state)
         self.dw_thumbs.setVisible(self.tbbThumbnails.isChecked())
@@ -738,11 +744,11 @@ class MainWindow(QMainWindow):
     #     self.updateNotes()
 
     # def _callbk_showHideHud(self):
-    #     # self.dw_monitor.setHidden(not self.dw_monitor.isHidden())
-    #     self.dw_monitor.setVisible(self.tbbHud.isChecked())
+    #     # self.dw_hud.setHidden(not self.dw_hud.isHidden())
+    #     self.dw_hud.setVisible(self.tbbHud.isChecked())
     #     tip1 = '\n'.join(textwrap.wrap('Hide Head-up Display (Process Monitor) Tool Window', width=35))
     #     tip2 = '\n'.join(textwrap.wrap('Show Head-up Display (Process Monitor) Tool Window', width=35))
-    #     self.tbbHud.setToolTip((tip1, tip2)[self.dw_monitor.isHidden()])
+    #     self.tbbHud.setToolTip((tip1, tip2)[self.dw_hud.isHidden()])
 
     def _showSNRcheck(self, s=None):
         logger.info('')
@@ -889,9 +895,7 @@ class MainWindow(QMainWindow):
 
     def updateDtWidget(self):
         logger.info('')
-        # if self._isProjectTab():
-        if cfg.data:
-            s = cfg.data.scale
+        if self._isProjectTab():
             try:
                 # a = """<span style='color: #ffe135;'>"""
                 # b = """</span>"""
@@ -910,7 +914,7 @@ class MainWindow(QMainWindow):
                 t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
                 t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
                 t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
-                
+
                 t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
                 t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
                 t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
@@ -982,7 +986,6 @@ class MainWindow(QMainWindow):
                 w.setLayout(fl_l)
 
                 cfg.pt.sa_tab3.setWidget(w)
-
 
             except:
                 print_exception()
@@ -1805,14 +1808,12 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.tn_ref.show()
 
 
-            if cfg.pt.ms_widget.isVisible():
+            if self.dw_matches.isVisible():
                 self.updateCorrSignalsDrawer()
-
-            if cfg.pt.match_widget.isVisible():
                 cfg.pt.setTargKargPixmaps()
 
 
-            if cfg.pt.tn_widget.isVisible():
+            if self.dw_thumbs.isVisible():
                 cfg.pt.labMethod2.setText(cfg.data.method_pretty())
                 try:
                     assert os.path.exists(cfg.data.thumbnail_ref())
@@ -2344,7 +2345,7 @@ class MainWindow(QMainWindow):
         # cfg.data.zpos = int(len(cfg.data)/2)
         self.updateNotes()
         self._dontReinit = False
-        self.sa_cpanel.show()
+        self.setCpanelVisibility(True)
 
         self.updateCorrSignalsDrawer()
         cfg.project_tab.setTargKargPixmaps()
@@ -2363,7 +2364,7 @@ class MainWindow(QMainWindow):
 
         check_project_status()
 
-        self.a_monitor.trigger()
+        # self.a_monitor.trigger()
 
         # QApplication.processEvents()
 
@@ -2668,7 +2669,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
     def url_resource(self, url, title):
         webengine = QWebEngineView()
@@ -2681,7 +2682,7 @@ class MainWindow(QMainWindow):
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.globTabs.addTab(webengine, title)
         self._setLastTab()
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
     def remote_view(self):
         self.tell('Opening Neuroglancer Remote Viewer...')
@@ -2689,7 +2690,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.globTabs.addTab(browser, 'Neuroglancer')
         self._setLastTab()
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
     def open_url(self, text: str) -> None:
         self.browser_web.setUrl(QUrl(text))
@@ -2848,7 +2849,7 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.addGlobTab(browser, 'WebGL Test')
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
     def tab_google(self):
         logger.info('Opening Google tab...')
@@ -2856,7 +2857,7 @@ class MainWindow(QMainWindow):
         browser.setObjectName('web_browser')
         browser.setUrl(QUrl('https://www.google.com'))
         self.addGlobTab(browser, 'Google')
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
 
     def tab_report_bug(self):
@@ -2864,7 +2865,7 @@ class MainWindow(QMainWindow):
         cfg.bugreport = browser = WebBrowser(self)
         browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/issues'))
         self.addGlobTab(browser, 'Issue Tracker')
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
 
     def tab_3dem_community_data(self):
@@ -2872,7 +2873,7 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl(path))
         self.addGlobTab(browser, '3DEM Community Data (TACC)')
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
 
     def tab_workbench(self):
@@ -2880,7 +2881,7 @@ class MainWindow(QMainWindow):
         browser = WebBrowser(self)
         browser.setUrl(QUrl('https://3dem.org/workbench/'))
         self.addGlobTab(browser, '3DEM Workbench')
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
     def gpu_config(self):
         logger.info('Opening GPU Config...')
@@ -2888,7 +2889,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('chrome://gpu'))
         self.globTabs.addTab(browser, 'GPU Configuration')
         self._setLastTab()
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
 
     def chromium_debug(self):
@@ -2897,7 +2898,7 @@ class MainWindow(QMainWindow):
         browser.setUrl(QUrl('http://127.0.0.1:9000'))
         self.globTabs.addTab(browser, 'Debug Chromium')
         self._setLastTab()
-        self.sa_cpanel.hide()
+        self.setCpanelVisibility(False)
 
 
     def get_ng_state(self):
@@ -3475,6 +3476,7 @@ class MainWindow(QMainWindow):
 
         self.tbbMenu = QToolButton()
         self.tbbMenu.setMenu(self.menu)
+        self.tbbMenu.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tbbMenu.setPopupMode(QToolButton.InstantPopup)
         # self.tbbMenu.setToolTip(f"Menu")
         # self.tbbMenu.clicked.connect(fn_glossary)
@@ -3638,11 +3640,22 @@ class MainWindow(QMainWindow):
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
 
+        if tabtype != 'ProjectTab':
+            self.setCpanelVisibility(False)
+            self.statusBar.clearMessage()
+            self.statusBar.setStyleSheet("""
+                font-size: 10px;
+                color: #161c20;
+                background-color: #ede9e8;
+                margin: 0px;
+                padding: 0px;
+            """)
+            self.dw_thumbs.setWidget(QLabel('Null Widget'))
+            self.dw_matches.setWidget(QLabel('Null Widget'))
+
         if tabtype == 'OpenProject':
             configure_project_paths()
             self._getTabObject().user_projects.set_data()
-            self.sa_cpanel.hide()
-            self.statusBar.clearMessage()
 
         elif tabtype == 'ProjectTab':
 
@@ -3693,9 +3706,10 @@ class MainWindow(QMainWindow):
             #     self._changeScaleCombo.setEnabled(False)
 
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
-            self.dw_matches.setWidget(cfg.pt.wMatches)
+            self.dw_matches.setWidget(cfg.pt.match_widget)
+            # self.dw_matches.setLayout(HBL(cfg.pt.ktarg_table, cfg.pt.ms_table))
 
-            self.sa_cpanel.show()
+            self.setCpanelVisibility(True)
 
         elif tabtype == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
@@ -5046,17 +5060,20 @@ class MainWindow(QMainWindow):
         # self.gb_outputSettings.setLayout(self.flSettings)
 
 
+        # self.cpanel = QWidget()
+        # self.cpanel.setLayout(HBL(self.navControls, self.newActionsWidget))
+        # self.cpanel.setContentsMargins(2, 2, 2, 2)
+        # # self.cpanel.setFixedHeight(34)
+        # # self.cpanel.setAutoFillBackground(True)
+        #
+        # self.sa_cpanel = QScrollArea()
+        # self.sa_cpanel.setWidget(self.cpanel)
+        # self.sa_cpanel.setFixedHeight(44)
 
-
-        self.cpanel = QWidget()
-        self.cpanel.setLayout(HBL(self.navControls, self.newActionsWidget))
-        self.cpanel.setContentsMargins(2, 2, 2, 2)
-        # self.cpanel.setFixedHeight(34)
-        self.cpanel.setAutoFillBackground(True)
-
-        self.sa_cpanel = QScrollArea()
-        self.sa_cpanel.setWidget(self.cpanel)
-        self.sa_cpanel.setFixedHeight(44)
+        self.toolbar_cpanel = QToolBar()
+        self.toolbar_cpanel.addWidget(self.navControls)
+        self.toolbar_cpanel.addWidget(self.newActionsWidget)
+        self.toolbar_cpanel.hide()
 
         # cpanel_style2 = """
         # QLabel {font-size: 10px;}
@@ -5115,7 +5132,7 @@ class MainWindow(QMainWindow):
 
         self.dw_thumbs = DockWidget('Ref./Tra. Thumbnails', self)
         self.dw_thumbs.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        # self.dw_thumbs.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
+        # self.dw_thumbs.setFeatures(self.dw_hud.DockWidgetClosable | self.dw_hud.DockWidgetVerticalTitleBar)
         self.dw_thumbs.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         # self.dw_thumbs.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         self.dw_thumbs.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
@@ -5134,11 +5151,9 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dw_thumbs)
         self.dw_thumbs.hide()
 
-
         self.dw_matches = DockWidget('Matches & Match Signals', self)
-
         self.dw_matches.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        # self.dw_thumbs.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
+        # self.dw_thumbs.setFeatures(self.dw_hud.DockWidgetClosable | self.dw_hud.DockWidgetVerticalTitleBar)
         self.dw_matches.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         # self.dw_thumbs.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         self.dw_matches.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
@@ -5160,7 +5175,7 @@ class MainWindow(QMainWindow):
 
         def fn_vert_dock_locations_changed():
             logger.info('')
-            if self.dw_monitor.isVisible():
+            if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
                 w = 180
                 self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
@@ -5171,40 +5186,40 @@ class MainWindow(QMainWindow):
 
 
 
-        self.dw_monitor = DockWidget('HUD', self)
+        self.dw_hud = DockWidget('HUD', self)
         def fn_dw_monitor_visChanged():
             logger.info('')
-            if self.dw_monitor.isVisible():
+            if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
-                loc_hud = self.dockWidgetArea(self.dw_monitor)
+                loc_hud = self.dockWidgetArea(self.dw_hud)
                 logger.info(f'dw_monitor location: {loc_hud}')
                 if loc_hud in (1,2):
-                    self.dw_monitor.setFeatures(
+                    self.dw_hud.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
                 else:
-                    self.dw_monitor.setFeatures(
+                    self.dw_hud.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
 
                 loc_py = self.dockWidgetArea(self.dw_python)
                 if loc_hud == loc_py:
                     if loc_hud in (4, 8):
-                        # self.splitDockWidget(self.dw_monitor, self.dw_python, Qt.Horizontal)
+                        # self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Horizontal)
                         w = int(self.width() / 2)
-                        self.resizeDocks((self.dw_monitor, self.dw_python), (w, w), Qt.Horizontal)
-                        # self.resizeDocks((self.dw_monitor, self.dw_python),
-                        #                  (self.dw_monitor.sizeHint().height(), self.dw_monitor.sizeHint().height()), Qt.Vertical)
+                        self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
+                        # self.resizeDocks((self.dw_hud, self.dw_python),
+                        #                  (self.dw_hud.sizeHint().height(), self.dw_hud.sizeHint().height()), Qt.Vertical)
                     elif loc_hud in (1, 2):
-                        # self.splitDockWidget(self.dw_monitor, self.dw_python, Qt.Vertical)
+                        # self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Vertical)
                         h = int(self.height() / 2)
-                        self.resizeDocks((self.dw_monitor, self.dw_python), (h, h), Qt.Vertical)
+                        self.resizeDocks((self.dw_hud, self.dw_python), (h, h), Qt.Vertical)
                 self.setUpdatesEnabled(True)
 
-        self.dw_monitor.dockLocationChanged.connect(fn_dw_monitor_visChanged)
-        self.dw_monitor.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        # self.dw_monitor.setFeatures(self.dw_monitor.DockWidgetClosable | self.dw_monitor.DockWidgetVerticalTitleBar)
-        self.dw_monitor.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
-        self.dw_monitor.setObjectName('Dock Widget HUD')
-        self.dw_monitor.setStyleSheet("""
+        self.dw_hud.dockLocationChanged.connect(fn_dw_monitor_visChanged)
+        self.dw_hud.visibilityChanged.connect(self.callbackDwVisibilityChanged)
+        # self.dw_hud.setFeatures(self.dw_hud.DockWidgetClosable | self.dw_hud.DockWidgetVerticalTitleBar)
+        self.dw_hud.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
+        self.dw_hud.setObjectName('Dock Widget HUD')
+        self.dw_hud.setStyleSheet("""
         QDockWidget {color: #ede9e8;}
         QDockWidget::title {
                     background-color: #161c20;
@@ -5214,9 +5229,9 @@ class MainWindow(QMainWindow):
                     margin: 0px;
                     border-width: 0px;
                 }""")
-        self.dw_monitor.setWidget(self.hud)
-        self.dw_monitor.hide()
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_monitor)
+        self.dw_hud.setWidget(self.hud)
+        self.dw_hud.hide()
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_hud)
 
 
 
@@ -5650,19 +5665,19 @@ class MainWindow(QMainWindow):
                     self.dw_python.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
 
-                loc_hud = self.dockWidgetArea(self.dw_monitor)
+                loc_hud = self.dockWidgetArea(self.dw_hud)
                 logger.critical(f"loc_py = {loc_py}, loc_hud = {loc_hud}")
                 if loc_py == loc_hud:
                     if loc_py in (4, 8):
-                        self.splitDockWidget(self.dw_monitor, self.dw_python, Qt.Horizontal)
+                        self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Horizontal)
                         w = int(self.width() / 2)
                         logger.critical(f"w = {w}")
-                        self.resizeDocks((self.dw_monitor, self.dw_python), (w, w), Qt.Horizontal)
-                        # self.resizeDocks((self.dw_monitor, self.dw_python), (self.dw_python.sizeHint().height(), self.dw_python.sizeHint().height()), Qt.Vertical)
+                        self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
+                        # self.resizeDocks((self.dw_hud, self.dw_python), (self.dw_python.sizeHint().height(), self.dw_python.sizeHint().height()), Qt.Vertical)
                     elif loc_py in (1, 2):
-                        self.splitDockWidget(self.dw_monitor, self.dw_python, Qt.Vertical)
+                        self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Vertical)
                         h = int(self.height() / 2)
-                        self.resizeDocks((self.dw_monitor, self.dw_python), (h, h), Qt.Vertical)
+                        self.resizeDocks((self.dw_hud, self.dw_python), (h, h), Qt.Vertical)
                 self.setUpdatesEnabled(True)
 
         self.dw_python.dockLocationChanged.connect(fn_dw_python_visChanged)
@@ -5809,13 +5824,21 @@ class MainWindow(QMainWindow):
         # self.globTabsAndCpanel = VWidget(self.toolbar, self.globTabs, self.cpanel, self.pbar_widget)
         self.addToolBar(self.toolbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.pbar_widget)
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.pbar_widget)
+        # self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.pbar_widget)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.pbar_widget)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.setCentralWidget(self.globTabsAndCpanel)
 
         # self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
         self.setDockOptions(QMainWindow.AnimatedDocks)
+
+
+    def setCpanelVisibility(self, b):
+        # self.sa_cpanel.setVisible(b)
+        self.toolbar_cpanel.setVisible(b)
+        # pass
+
 
 
 
@@ -5863,21 +5886,21 @@ class MainWindow(QMainWindow):
         # self.statusBar = self.statusBar()
         self.statusBar = QStatusBar()
         self.statusBar.setFixedHeight(16)
-        # self.statusBar.setStyleSheet("""
-        #     font-size: 10px;
-        #     color: #161c20;
-        #     background-color: #ede9e8;
-        #     margin: 0px;
-        #     padding: 0px;
-        # """)
         self.statusBar.setStyleSheet("""
-                font-size: 10px;
-                font-weight: 600;
-                background-color: #161c20;
-                color: #f3f6fb;
-                margin: 0px;
-                padding: 0px;
-                """)
+            font-size: 10px;
+            color: #161c20;
+            background-color: #ede9e8;
+            margin: 0px;
+            padding: 0px;
+        """)
+        # self.statusBar.setStyleSheet("""
+        #         font-size: 10px;
+        #         font-weight: 600;
+        #         background-color: #161c20;
+        #         color: #f3f6fb;
+        #         margin: 0px;
+        #         padding: 0px;
+        #         """)
         self.setStatusBar(self.statusBar)
 
     def initPbar(self):
@@ -6035,19 +6058,19 @@ class MainWindow(QMainWindow):
             if dock.windowTitle() == 'Notes':
                 return self.children()[i]
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._old_pos = event.pos()
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._old_pos = None
-
-    def mouseMoveEvent(self, event):
-        if not self._old_pos:
-            return
-        delta = event.pos() - self._old_pos
-        self.move(self.pos() + delta)
+    # def mousePressEvent(self, event):
+    #     if event.button() == Qt.LeftButton:
+    #         self._old_pos = event.pos()
+    #
+    # def mouseReleaseEvent(self, event):
+    #     if event.button() == Qt.LeftButton:
+    #         self._old_pos = None
+    #
+    # def mouseMoveEvent(self, event):
+    #     if not self._old_pos:
+    #         return
+    #     delta = event.pos() - self._old_pos
+    #     self.move(self.pos() + delta)
 
 
     def keyPressEvent(self, event):

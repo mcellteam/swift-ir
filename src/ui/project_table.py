@@ -370,7 +370,7 @@ class ProjectTable(QWidget):
         self.btn_splash_load_table.setIcon(qta.icon("fa.download", color='#f3f6fb'))
         self.btn_splash_load_table.clicked.connect(self.initTableData)
         self.btn_splash_load_table.setStyleSheet("""font-size: 18px; font-weight: 600; color: #f3f6fb;""")
-        self.btn_splash_load_table.setFixedSize(160,100)
+        self.btn_splash_load_table.setFixedSize(160,80)
 
         layout = VBL()
         layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)
