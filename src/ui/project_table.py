@@ -16,6 +16,7 @@ from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
 from src.ui.timer import Timer
 from src.helpers import print_exception
+import qtawesome as qta
 
 import src.config as cfg
 
@@ -60,7 +61,7 @@ class ProjectTable(QWidget):
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
         self.table.hide()
 
-        self.table.setStyleSheet("background-color: #808080; color: #f3f6fb;")
+        # self.table.setStyleSheet("background-color: #808080; color: #f3f6fb;")
 
 
 
@@ -365,9 +366,11 @@ class ProjectTable(QWidget):
         self.controls.setLayout(hbl)
 
         # self.btn_splash_load_table = QPushButton('Load Table')
-        self.btn_splash_load_table = QPushButton('Load Table')
+        self.btn_splash_load_table = QPushButton(' Load Table')
+        self.btn_splash_load_table.setIcon(qta.icon("fa.download", color='#f3f6fb'))
         self.btn_splash_load_table.clicked.connect(self.initTableData)
-        self.btn_splash_load_table.setStyleSheet("""font-size: 18px; font-weight: 600; """)
+        self.btn_splash_load_table.setStyleSheet("""font-size: 18px; font-weight: 600; color: #f3f6fb;""")
+        self.btn_splash_load_table.setFixedSize(160,100)
 
         layout = VBL()
         layout.addWidget(self.btn_splash_load_table, alignment=Qt.AlignCenter)

@@ -138,6 +138,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
 
+        if getData('state,blink'):
+            return
+
         if self._blockStateChanged:
             return
         # if getData('state,blink'):
@@ -193,12 +196,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def blink(self):
-        logger.info(f'self._blinkState = {self._blinkState}')
+        logger.info(f'self._blinkState = {self._blinkState}, self._blockStateChanged={self._blockStateChanged}')
+        self._blinkState = 1 - self._blinkState
         if self._blinkState:
             self.set_layer(cfg.data.zpos)
         else:
             self.set_layer(cfg.data.zpos - cfg.data.get_ref_index_offset())
-        self._blinkState = 1 - self._blinkState
 
 
     def invalidateAlignedLayers(self):
@@ -297,7 +300,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def _set_zmag(self):
-        self._blockStateChanged = True
+        # self._blockStateChanged = True
         if self._zmag_set < 8:
             self._zmag_set += 1
             try:
@@ -305,13 +308,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     s.relativeDisplayScales = {"z": 10}
             except:
                 print_exception()
-        self._blockStateChanged = False
+        # self._blockStateChanged = False
 
     def set_zmag(self, val=10):
         # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        self._blockStateChanged = True
+        # self._blockStateChanged = True
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': val}
@@ -321,7 +324,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print_exception()
         else:
             logger.info('Successfully set Z-mag!')
-        self._blockStateChanged = False
+        # self._blockStateChanged = False
 
 
     def updateScaleBar(self):

@@ -16,7 +16,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QListWidget, QListWidgetItem, QMenu, QMenuBar, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
     QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
-    QShortcut, QScrollArea, QMdiSubWindow, QMdiArea
+    QShortcut, QScrollArea, QMdiSubWindow, QMdiArea, QToolButton
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, Slot, QEvent, QThread, QTimer, QEventLoop, QPoint
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator, QKeySequence
@@ -1385,7 +1385,6 @@ class ProjectTab(QWidget):
         self.fl_results.addRow('Image Dimensions', self.results0)
         self.fl_results.addRow('# Images', self.results1)
         self.fl_results.addRow('SNR (average)', self.results2)
-        tab_width = 360
         self.sa_tab1 = QScrollArea()
         self.sa_tab1.setWidgetResizable(True)
         self.sa_tab1.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -1445,47 +1444,44 @@ class ProjectTab(QWidget):
         self.sa_tab2.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab2.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.runtimeWidget = QWidget()
-        self.runtimeWidget.setStyleSheet("""font-size: 9px; color: #161c20;""")
+        # self.runtimeWidget.setStyleSheet("""font-size: 9px; color: #161c20;""")
         self.sa_tab3 = QScrollArea()
         self.sa_tab3.setWidgetResizable(True)
         self.sa_tab3.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab3.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab3.setWidget(self.runtimeWidget)
         self.secAffine = QLabel()
-        self.secAffine.setStyleSheet("""QWidget{
-            color: #161c20;
-            font-weight: 600;
-            border: none;}""")
+        # self.secAffine.setStyleSheet("""QWidget{
+        #     color: #161c20;
+        #     font-weight: 600;
+        #     border: none;}""")
         self.sa_tab4 = QScrollArea()
-        self.sa_tab4.setStyleSheet("""QLabel {font-weight: 300;}""")
+        # self.sa_tab4.setStyleSheet("""QLabel {font-weight: 300;}""")
         self.sa_tab4.setWidgetResizable(True)
         self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab4.setWidget(self.secAffine)
         self.cpanelTabWidget = QTabWidget()
         self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cpanelTabWidget.setFixedWidth(tab_width)
         self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
-        self.cpanelTabWidget.setStyleSheet("""
-        QScrollArea {border: none; font-size: 8px;}
-        QTabWidget{font-size: 8px;}
-        QTabBar::tab {
-            height: 14px;
-            width: 64px;
-            padding-left: 0px;
-            padding-right: 0px;
-            font-size: 8px;
-        }
-        QTabBar::tab:selected { color: #339933; font-weight: 600; }
-        """)
+        # self.cpanelTabWidget.setStyleSheet("""
+        # QScrollArea {border: none; font-size: 8px;}
+        # QTabWidget{font-size: 8px;}
+        # QTabBar::tab {
+        #     height: 14px;
+        #     width: 64px;
+        #     padding-left: 0px;
+        #     padding-right: 0px;
+        #     font-size: 8px;
+        # }
+        # QTabBar::tab:selected { color: #339933; font-weight: 600; }
+        # """)
         self.cpanelTabWidget.setContentsMargins(0, 0, 0, 0)
-        self.cpanelTabWidget.setFixedHeight(80)
+        # self.cpanelTabWidget.setFixedHeight(80)
         self.cpanelTabWidget.addTab(self.sa_tab1, 'Details')
         self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
         self.cpanelTabWidget.addTab(self.sa_tab3, 'Runtimes')
         self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
-
-
 
 
         self.MA_use_global_defaults_lab = QLabel('Global defaults will be used.')
@@ -2034,8 +2030,7 @@ class ProjectTab(QWidget):
         QToolButton:hover {
             border: 1px solid #339933;
             color: #f3f6fb;
-
-        } 
+        }
         """
 
         self.lab_filename = QLabel('Filename')
@@ -2053,7 +2048,7 @@ class ProjectTab(QWidget):
 
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
+        # self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
         self.w_ng_extended_toolbar.setFixedHeight(24)
         self.w_ng_extended_toolbar.setStyleSheet(toolbar_style)
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
@@ -2189,23 +2184,37 @@ class ProjectTab(QWidget):
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
 
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
-        self.blinkLab.setStyleSheet("""color: #ede9e8; font-size: 10px;""")
+        self.blinkLab.setStyleSheet("""color: #ede9e8; font-size: 10px; font-weight: 600;""")
 
         # self.blinkToggle = ToggleSwitch()
-        self.blinkToggle = AnimatedToggle()
-        self.blinkToggle.setFixedSize(QSize(38,18))
+
+        self.tbbBlinkToggle = QPushButton()
+        self.tbbBlinkToggle.setIconSize(QSize(24,24))
+        # self.tbbBlinkToggle.setFixedSize(QSize(28,28))
+        self.tbbBlinkToggle.setStyleSheet("font-size: 9px; border: none; background: none; margin: 0px; padding: 0px;")
+        self.tbbBlinkToggle.setCheckable(True)
+        # self.blinkToggle = AnimatedToggle()
         # self.blinkToggle.stateChanged.connect(self.blinkChanged)
+
+        self.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
         
         def blink_main_fn():
-            self.blinkTimer.stop()
-            setData('state,blink', self.blinkToggle.isChecked())
+            setData('state,blink', self.tbbBlinkToggle.isChecked())
             logger.info(f"blink toggle: {getData('state,blink')}")
-            # self.tell(f"Blink : {('OFF','ON')[getData('state,blink')]}")
+            cfg.mw.tell(f"Blink : {('OFF','ON')[getData('state,blink')]}")
+            self.tbbBlinkToggle.setIcon(qta.icon(
+                ('mdi.toggle-switch-off-outline', 'mdi.toggle-switch')[getData('state,blink')],
+                color='#f3f6fb'))
             if getData('state,blink'):
                 self.blinkTimer.timeout.connect(cfg.emViewer.blink)
                 cfg.project_tab.blinkTimer.start()
-        
-        self.blinkToggle.stateChanged.connect(blink_main_fn)
+            else:
+                self.blinkTimer.stop()
+                cfg.emViewer._blinkState = 0
+
+        self.tbbBlinkToggle.clicked.connect(blink_main_fn)
+
+        # self.tbbBlinkToggle.setDefaultAction(blink_main_fn)
 
         # self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
         # self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -2224,7 +2233,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
-        self.w_ng_extended_toolbar.addWidget(self.blinkToggle)
+        self.w_ng_extended_toolbar.addWidget(self.tbbBlinkToggle)
         # self.w_ng_extended_toolbar.addWidget(self.testButton)
 
         # self.w_ng_extended_toolbar.addWidget(self.uiUpdateLab)
@@ -2643,9 +2652,9 @@ class ProjectTab(QWidget):
 
         # def fn_splitterMoved():
         #     # if cfg.pt.splitter_ngPlusSideControls.sizes()[2] == 0:
-        #     # cfg.mw.cbSignals.setChecked(self.ms_widget.isVisible())
-        #     cfg.mw.cbThumbnails.setChecked(self.splitter_ngPlusSideControls.sizes()[0])
-        #     cfg.mw.cbSignals.setChecked(self.splitter_ngPlusSideControls.sizes()[2])
+        #     # cfg.mw.tbbMatches.setChecked(self.ms_widget.isVisible())
+        #     cfg.mw.tbbThumbnails.setChecked(self.splitter_ngPlusSideControls.sizes()[0])
+        #     cfg.mw.tbbMatches.setChecked(self.splitter_ngPlusSideControls.sizes()[2])
         # self.splitter_ngPlusSideControls.splitterMoved.connect(fn_splitterMoved)
         
         # self.uiSplitterTimer = QTimer()
@@ -3899,8 +3908,6 @@ class ProjectTab(QWidget):
         '''Tab Widget'''
         logger.info('')
         self._tabs = QTabWidget()
-        # self._tabs.setTabShape(QTabWidget.Triangular)
-        self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.setStyleSheet("""
         QTabBar::tab {
             padding-left: 3px;
@@ -3908,12 +3915,9 @@ class ProjectTab(QWidget):
             padding-top: 1px;
             padding-bottom: 1px;
             
+            height: 16px;            
             
-            height: 16px;
-            width: 200px;
-            
-            
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             border: 1px solid #ede9e8;
             background-color: #dadada;
@@ -3921,8 +3925,7 @@ class ProjectTab(QWidget):
             border-bottom-width: 0px;
             border-left-width: 0px;
             border-top-width: 0px;
-            
-            border-top-radius: 2px;
+            border-top-radius: 0px;
         }
         QTabBar::tab:selected
         {
@@ -3933,6 +3936,10 @@ class ProjectTab(QWidget):
         """)
         self._tabs.setDocumentMode(True) #When this property is set the tab widget frame is not rendered.
         self._tabs.setTabPosition(QTabWidget.South)
+        # self._tabs.setTabShape(QTabWidget.Triangular)
+        self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._tabs.tabBar().setExpanding(True)
+        self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.setTabsClosable(False)
         self._tabs.setObjectName('project_tabs')
         # self._tabs.addTab(self.splitter_ngPlusSideControls, ' 3DEM ')
