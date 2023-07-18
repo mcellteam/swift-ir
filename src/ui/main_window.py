@@ -3330,12 +3330,12 @@ class MainWindow(QMainWindow):
         self.tbb3demdata.clicked.connect(self.tab_3dem_community_data)
         self.tbb3demdata.setIcon(qta.icon("fa.database", color='#161c20'))
 
-        self.workbenchButton = QPushButton('3DEM Workbench')
-        self.workbenchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.workbenchButton.setFont(f)
-        self.workbenchButton.setFixedHeight(18)
-        self.workbenchButton.setIconSize(QSize(16, 16))
-        self.workbenchButton.clicked.connect(self.tab_workbench)
+        # self.workbenchButton = QPushButton('3DEM Workbench')
+        # self.workbenchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.workbenchButton.setFont(f)
+        # self.workbenchButton.setFixedHeight(18)
+        # self.workbenchButton.setIconSize(QSize(16, 16))
+        # self.workbenchButton.clicked.connect(self.tab_workbench)
 
         # self.navWidget = HWidget(QLabel(' '), self.refreshButton, self.faqButton, self.gettingStartedButton, self.glossaryButton, self.bugreportButton, ExpandingWidget(self))
         # self.navWidget.setFixedHeight(18)
@@ -3505,11 +3505,11 @@ class MainWindow(QMainWindow):
             self.tbbDetachNgButton
         ]
 
-        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            b.setFixedSize(QSize(84,28))
+            b.setFixedSize(QSize(80,28))
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.setStyleSheet("""
             font-size: 10px; 
@@ -3530,6 +3530,10 @@ class MainWindow(QMainWindow):
         # self.tbbMenu.clicked.connect(fn_glossary)
         self.tbbMenu.setIcon(qta.icon("mdi.menu", color='#161c20'))
 
+        self.newLabel = QLabel(' ← New! ')
+        self.newLabel.setFixedHeight(18)
+        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 11px; border-radius: 4px;")
+
         self.toolbar.addWidget(self.tbbMenu)
         self.toolbar.addWidget(self.tbbRefresh)
         self.toolbar.addWidget(self.tbbGettingStarted)
@@ -3537,6 +3541,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
+        self.toolbar.addWidget(self.newLabel)
         self.toolbar.addWidget(ExpandingWidget(self))
         # self.toolbar.addWidget(self.testButton)
         self.toolbar.addWidget(self.tbbThumbnails)
@@ -6057,7 +6062,7 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 if caller == "collect_results":
                     if "Transforms" in self.pbar.text():
-                        if self.dw_ma:
+                        if self.dw_matches:
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
                             QApplication.processEvents()
