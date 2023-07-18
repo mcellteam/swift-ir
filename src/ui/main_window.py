@@ -3325,6 +3325,11 @@ class MainWindow(QMainWindow):
         self.tbbReportBug.clicked.connect(self.tab_report_bug)
         self.tbbReportBug.setIcon(qta.icon("fa.bug", color='#161c20'))
 
+        self.tbb3demdata = QToolButton()
+        self.tbb3demdata.setStyleSheet("Access 3DEM Workbench Data")
+        self.tbb3demdata.clicked.connect(self.tab_3dem_community_data)
+        self.tbb3demdata.setIcon(qta.icon("fa.database", color='#161c20'))
+
         self.workbenchButton = QPushButton('3DEM Workbench')
         self.workbenchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.workbenchButton.setFont(f)
@@ -3490,6 +3495,7 @@ class MainWindow(QMainWindow):
             self.tbbFAQ,
             self.tbbGlossary,
             self.tbbReportBug,
+            self.tbb3demdata,
             self.tbbMatches,
             self.tbbSnr,
             self.tbbThumbnails,
@@ -3530,6 +3536,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbFAQ)
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
+        self.toolbar.addWidget(self.tbb3demdata)
         self.toolbar.addWidget(ExpandingWidget(self))
         # self.toolbar.addWidget(self.testButton)
         self.toolbar.addWidget(self.tbbThumbnails)
