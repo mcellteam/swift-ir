@@ -810,6 +810,7 @@ class DataModel:
         self._data['state']['tool_windows'].setdefault('signals',True)
         self._data['state']['tool_windows'].setdefault('raw_thumbnails',True)
         self._data['state']['tool_windows'].setdefault('matches',True)
+        self._data['state']['tool_windows'].setdefault('snr_plot',False)
         self._data['data'].setdefault('shader', cfg.SHADER)
         self._data['data'].setdefault('cname', cfg.CNAME)
         self._data['data'].setdefault('clevel', cfg.CLEVEL)

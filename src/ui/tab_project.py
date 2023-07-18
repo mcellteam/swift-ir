@@ -76,7 +76,6 @@ class ProjectTab(QWidget):
         '''primary tab widgets'''
         self.table_container = QWidget()
         self._wdg_treeview = QWidget()
-        self.snrPlotSplitter = QSplitter(Qt.Orientation.Horizontal)
 
         self.initShader()
         # self.initUI_Neuroglancer()
@@ -234,6 +233,9 @@ class ProjectTab(QWidget):
         elif index == 4:
             # self.snr_plot.data = copy.deepcopy(cfg.data)
             self.snr_plot.initSnrPlot()
+
+        if cfg.mw.dw_snr.isVisible():
+            self.dSnr_plot.initSnrPlot()
 
         cfg.mw.dataUpdateWidgets() #Todo might be redundant thumbail redraws
 
@@ -1842,7 +1844,7 @@ class ProjectTab(QWidget):
         self.cl_ref.setMinimumWidth(140)
         self.cl_ref.clicked.connect(self.set_reference)
 
-        self.cl_tra.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; font-weight: 600;')
+        self.cl_tra.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px;')
         self.cl_ref.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px;')
 
         self.wSwitchRefTra = QWidget()
@@ -1850,7 +1852,16 @@ class ProjectTab(QWidget):
         self.wSwitchRefTra.setStyleSheet("QWidget{background-color: #222222;}")
         self.wSwitchRefTra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.wSwitchRefTra.setContentsMargins(0, 0, 0, 0)
-        self.wSwitchRefTra.setLayout(HBL(self.cl_tra, self.cl_ref))
+        self.labAlignTo = QLabel(' Aligns To → ')
+        self.labAlignTo.setAlignment(Qt.AlignCenter)
+        # self.labAlignTo.setFixedWidth(100)
+        self.labAlignTo.setStyleSheet('background-color: #ede9e8; color: #161c20; font-size: 11px; font-weight: 600;')
+        hbl = HBL(self.cl_tra, self.labAlignTo, self.cl_ref)
+        hbl.setSpacing(0)
+        hbl.setStretch(0,1)
+        hbl.setStretch(1,0)
+        hbl.setStretch(2,1)
+        self.wSwitchRefTra.setLayout(hbl)
 
 
         def fn_radiobox():
@@ -3917,35 +3928,27 @@ class ProjectTab(QWidget):
     def initUI_plot(self):
         '''SNR Plot Widget'''
         logger.info('')
-        font = QFont()
-        font.setBold(True)
+
         self.snr_plot = SnrPlot()
-        # self.lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
-        self.lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
-        self.lab_yaxis.setMaximumWidth(20)
-        hbl = HBL()
-        hbl.addWidget(self.lab_yaxis)
-        hbl.addWidget(self.snr_plot)
-        self._plot_Xaxis = QLabel('Serial Section #')
-        self._plot_Xaxis.setMaximumHeight(20)
-        # self._plot_Xaxis.setStyleSheet('color: #ede9e8; font-size: 14px;')
-        self._plot_Xaxis.setStyleSheet('color: #ede9e8; font-size: 14px;')
-        self._plot_Xaxis.setContentsMargins(0, 0, 0, 8)
-        self._plot_Xaxis.setFont(font)
-        vbl = VBL()
-        vbl.addLayout(hbl)
-        vbl.addWidget(self._plot_Xaxis, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.snr_plt_wid = QWidget()
-        self.snr_plt_wid.setLayout(vbl)
-        self.snr_plt_wid.setStyleSheet('background-color: #222222; font-weight: 550;')
-        self._thumbnail_src = QLabel()
-        self._thumbnail_aligned = QLabel()
-        # self.snrWebengine = WebEngine(ID='snr')
-        # setWebengineProperties(self.snrWebengine)
-        # self.snrWebengine.setMinimumWidth(200)
-        self.snrPlotSplitter.setStyleSheet('background-color: #222222;')
-        self.snrPlotSplitter.addWidget(self.snr_plt_wid)
-        # self.snrPlotSplitter.addWidget(self.snrWebengine)
+        lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
+        lab_Xaxis = QLabel('Serial Section #')
+        self.w_snr_plot = VWidget(HWidget(lab_yaxis, self.snr_plot), lab_Xaxis)
+        self.w_snr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 14px; color: #ede9e8;')
+
+        self.dSnr_plot = SnrPlot()
+        # lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
+        lab_Xaxis = QLabel('Serial Section #')
+        lab_Xaxis.setAlignment(Qt.AlignCenter)
+        # self.w_dSnr_plot = VWidget(HWidget(lab_yaxis, self.dSnr_plot), lab_Xaxis)
+        # self.w_dSnr_plot = VWidget(self.dSnr_plot, lab_Xaxis)
+        # self.w_dSnr_plot = self.dSnr_plot
+        # self.w_dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 14px; color: #ede9e8;')
+        self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
+
+        # cfg.mw.dw_snr.setWidget(self.w_dSnr_plot)
+        cfg.mw.dw_snr.setWidget(self.dSnr_plot)
+
+
 
     def initTabs(self):
         '''Tab Widget'''
@@ -3992,7 +3995,7 @@ class ProjectTab(QWidget):
         # self._tabs.addTab(self.wEditAlignment, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
         self._tabs.addTab(self._wdg_treeview, ' Raw Data ')
-        self._tabs.addTab(self.snrPlotSplitter, ' SNR Plot ')
+        self._tabs.addTab(self.w_snr_plot, ' SNR Plot ')
         self._tabs.setTabToolTip(0, 'Alignment Visualizer')
         self._tabs.setTabToolTip(1, 'Alignment Editor')
         self._tabs.setTabToolTip(2, 'Project Data Table View')
