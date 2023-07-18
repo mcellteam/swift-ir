@@ -48,7 +48,7 @@ class SnrPlot(QWidget):
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
         self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.92, anchor=(1, 1), color='#f3f6fb')
-        f = QFont('Calibri')
+        f = QFont('Tahoma')
         f.setBold(True)
         f.setPointSize(12)
         self._snr_label.setFont(f)
