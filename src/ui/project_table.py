@@ -95,8 +95,8 @@ class ProjectTable(QWidget):
         if selection:
             r_min = min(selection)
             r_max = max(selection)
-            cfg.main_window.sectionRangeSlider.setStart(r_min)
-            cfg.main_window.sectionRangeSlider.setEnd(r_max)
+            # cfg.main_window.sectionRangeSlider.setStart(r_min)
+            # cfg.main_window.sectionRangeSlider.setEnd(r_max)
 
 
     def set_column_headers(self):
