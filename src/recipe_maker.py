@@ -657,14 +657,15 @@ def convert_rotation(degrees):
     return np.sin(deg2rad*degrees)
 
 def print_exception(dest, extra='None'):
-    tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-    exi = sys.exc_info()
-    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}\nAdditional Details: {extra}"
-    print(txt)
+    # tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
+    # exi = sys.exc_info()
+    # txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}\nAdditional Details: {extra}"
+    # print(txt)
 
-    lf = os.path.join(dest, 'logs', 'exceptions.log')
-    with open(lf, 'a+') as f:
-        f.write('\n' + txt)
+    # lf = os.path.join(dest, 'logs', 'exceptions.log')
+    # with open(lf, 'a+') as f:
+    #     f.write('\n' + txt)
+    pass
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
     """
