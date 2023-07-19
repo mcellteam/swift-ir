@@ -205,9 +205,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
         ctx = mp.get_context('forkserver')
+        all_results = []
         with ctx.Pool(processes=cpus) as pool:
 
-            all_results = pool.map(run_recipe, tasks)
+            # all_results = pool.map(run_recipe, tasks)
+            for result in pool.map(run_recipe, tasks):
+                all_results.append(result)
+                print(result)
 
             print("For the moment, the pool remains available for more work")
 
