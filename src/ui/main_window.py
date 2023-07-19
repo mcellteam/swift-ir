@@ -6190,9 +6190,9 @@ class MainWindow(QMainWindow):
             self.sw_pbar.show()
         else:
             self.sw_pbar.setCurrentIndex(0)
-            # self.sw_pbar.hide()
-        QApplication.processEvents()
+            self.sw_pbar.hide()
         self.setUpdatesEnabled(True)
+        QApplication.processEvents()
 
 
 
