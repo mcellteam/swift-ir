@@ -201,6 +201,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         # cfg.mw.showZeroedPbar(pbar_max=len(substack))
+        cfg.mw.setPbarUnavailable(True)
 
         dt = t0 - time.time()
         tasks = []
@@ -219,6 +220,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
+
+        cfg.mw.setPbarUnavailable(False)
 
 
 

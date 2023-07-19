@@ -151,7 +151,7 @@ class TaskQueue(QObject):
                 if self.pbar_text:
                     self.parent.setPbarText(text=self.pbar_text)
                     # self.parent.statusBar.showMessage(self.pbar_text)
-                self.parent.pbar_widget.show()
+                self.parent.sw_pbar.show()
                 self.parent.update()
             except:
                 logger.error('An exception was raised while setting up progress bar')
