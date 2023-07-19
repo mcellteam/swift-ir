@@ -15,6 +15,8 @@ import hashlib
 import json
 import psutil
 
+import src.config as cfg
+
 __all__ = ['run_recipe']
 
 MAlogger      = logging.getLogger('MAlogger')
@@ -110,6 +112,7 @@ def run_recipe(data, dev_mode=False):
             recipe.assemble_recipe()
             recipe.execute_recipe()
 
+    print(f"Task completed: {meta['index']}")
     return data
 
 

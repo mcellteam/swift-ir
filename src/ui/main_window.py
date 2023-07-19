@@ -6167,7 +6167,6 @@ class MainWindow(QMainWindow):
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
                             self.setTargKargPixmaps(z=x - 1)
-                            QApplication.processEvents()
                     # elif "Copy-converting" in self.pbar.text():
                     #     # if cfg.pt._tabs.currentIndex() == 0:
                     #     if x%10 == 10:
@@ -6177,8 +6176,8 @@ class MainWindow(QMainWindow):
 
         except:
             print_exception()
-
-        QApplication.processEvents()
+        finally:
+            QApplication.processEvents()
 
     def setPbarText(self, text: str):
         # logger.critical('')
