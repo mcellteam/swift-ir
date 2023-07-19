@@ -2022,7 +2022,7 @@ class MainWindow(QMainWindow):
                         '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
                         cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
 
-            if cfg.pt.cpanelTabWidget.currentIndex() == 3:
+            if cfg.pt._tabs.currentIndex() == 1:
                 cfg.pt.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
 
             if cfg.project_tab.detailsSNR.isVisible():
