@@ -1244,6 +1244,7 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar(set_n_processes=4)
         else:
             self.showZeroedPbar(set_n_processes=2)
+        self.hidePbar()
         cfg.nProcessDone = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
@@ -1270,6 +1271,7 @@ class MainWindow(QMainWindow):
             self.showZeroedPbar(set_n_processes=4)
         else:
             self.showZeroedPbar(set_n_processes=2)
+        self.hidePbar()
         cfg.nProcessDone = 0
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
@@ -1379,6 +1381,7 @@ class MainWindow(QMainWindow):
             else:
                 # cfg.nProcessSteps = 3
                 self.showZeroedPbar(set_n_processes=2)
+            self.hidePbar()
 
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
@@ -1424,6 +1427,7 @@ class MainWindow(QMainWindow):
         if cfg.ignore_pbar:
             self.showZeroedPbar(set_n_processes=False)
             self.setPbarText('Computing Affine...')
+            self.hidePbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
@@ -6138,7 +6142,7 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
-        # self.pbar.setFixedHeight(14)
+        self.pbar.setFixedHeight(14)
         # self.pbar.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.pbar.setStyleSheet("font-size: 9px;")
         self.pbar.setTextVisible(True)
@@ -6148,7 +6152,7 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedWidth(400)
         # self.sw_pbar = QWidget(self)
         self.sw_pbar = QStackedWidget(self)
-        self.sw_pbar.setFixedHeight(16)
+        self.sw_pbar.setMaximumHeight(16)
         self.sw_pbar.setAutoFillBackground(True)
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42, 16)
@@ -6165,6 +6169,7 @@ class MainWindow(QMainWindow):
         self.widgetPbar.layout.setSpacing(4)
 
         self.w_pbarUnavailable = QLabel('GUI Progress Bar Temporarily Unavailable. See Progress in Terminal.')
+        self.w_pbarUnavailable.setFixedHeight(14)
         self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
         self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
 
