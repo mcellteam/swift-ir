@@ -198,6 +198,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # dt = task_queue.collect_results()
         # all_results = task_queue.task_dict
 
+
+        cfg.mw.showZeroedPbar(pbar_max=len(substack))
+
         dt = t0 - time.time()
         tasks = []
         for sec in substack:
@@ -209,11 +212,36 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
         ctx = mp.get_context('forkserver')
         all_results = []
+
         with ctx.Pool(processes=cpus) as pool:
             # all_results = pool.map(run_recipe, tasks)
             for result in pool.map(run_recipe, tasks):
                 all_results.append(result)
-                print(result)
+            # all_results = pool.apply_async(run_recipe, tasks, callback=update_pbar).get()
+
+            # all_results = pool.apply_async(run_recipe, tasks, callback=update_pbar)
+            # all_results = [pool.apply_async(run_recipe, task, callback=update_pbar) for task in tasks]
+
+            # pool.apply_async(run_recipe, tasks, callback=update_pbar)
+
+            # pool.apply_async(run_recipe, tasks, callback=update_pbar).get()
+
+            # print(f"Task complete: {result}")
+
+            # for result in pool.apply_async(run_recipe, task, callback=update_pbar):
+
+            # results = [pool.apply_async(run_recipe, task, callback=update_pbar) for task in tasks]
+            # close the pool
+            # pool.close()
+            # wait for all issued tasks to complete
+            # pool.join()
+
+
+        output = [p.get() for p in results]
+
+        logger.critical(f"output = {output}")
+        logger.critical(f"type(all_results) = {type(all_results)}")
+        logger.critical(f"all_results.get() = {all_results.get()}")
         logger.critical("\n\n\nENDING MULTIPROCESSING POOL. RESULTS....\n\n\n")
         logger.critical(str(all_results))
         logger.critical("\n\n\n----------END----------\n\n\n")
@@ -395,7 +423,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         return dm
 
-
+def update_pbar():
+    logger.info('')
+    cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
 
 

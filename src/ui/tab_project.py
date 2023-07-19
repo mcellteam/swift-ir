@@ -3980,7 +3980,6 @@ class ProjectTab(QWidget):
         # self._tabs.setTabShape(QTabWidget.Triangular)
         self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.tabBar().setExpanding(True)
-        self._tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._tabs.setTabsClosable(False)
         self._tabs.setObjectName('project_tabs')
         # self._tabs.addTab(self.splitter_ngPlusSideControls, ' 3DEM ')

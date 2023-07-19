@@ -52,7 +52,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         path = os.path.split(os.path.realpath(__file__))[0]
         job_script = os.path.join(path, job_script)
 
-
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
         cfg.data.propagate_swim_1x1_custom_px(start=start, end=end)
@@ -220,12 +219,16 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
             cfg.mw.set_status('Generating Zarr. No progress bar currently available (awaiting multiprocessing pool...)')
 
+            cfg.mw.showZeroedPbar(pbar_max=n_tasks)
+
             t0 = time.time()
             logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (CONVERT ZARR)...\n\n\n")
             ctx = mp.get_context('forkserver')
+
             with ctx.Pool(processes=cpus) as pool:
                 # all_results = pool.map(run_recipe, tasks)
                 pool.map(convert_zarr, tasks)
+                # pool.apply_async(convert_zarr, tasks, callback=update_pbar)
             logger.critical("\n\n\n----------END----------\n\n\n")
 
             cfg.mw.set_status('')
@@ -242,6 +245,10 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
 
     logger.info('<<<< Generate Aligned <<<<')
+
+def update_pbar():
+    logger.info('')
+    cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
 
 def convert_zarr(task):
