@@ -223,8 +223,12 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
             # cfg.mw.showZeroedPbar(pbar_max=n_tasks)
 
+            logger.critical("SHUTTING DOWN NEUROGLANCER...")
+            cfg.mw.shutdownNeuroglancer()
+
             t0 = time.time()
             logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
+
             ctx = mp.get_context('forkserver')
             pbar = tqdm.tqdm(total=len(tasks))
 
@@ -234,7 +238,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             with ctx.Pool(processes=cpus) as pool:
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
                 pool.close()
-                all_results = [p.get() for p in results]
+                # all_results = [p.get() for p in results]
 
             # with ctx.Pool(processes=cpus) as pool:
             #     pool.map(convert_zarr, tasks)
