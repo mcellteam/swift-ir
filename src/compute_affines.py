@@ -19,6 +19,7 @@ from pathlib import Path
 from multiprocessing import Pool
 import multiprocessing as mp
 import numpy as np
+import tqdm
 
 sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
 sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
@@ -199,7 +200,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # all_results = task_queue.task_dict
 
 
-        cfg.mw.showZeroedPbar(pbar_max=len(substack))
+        # cfg.mw.showZeroedPbar(pbar_max=len(substack))
 
         dt = t0 - time.time()
         tasks = []
@@ -211,12 +212,33 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         cfg.mw.set_status('Computing affines. No progress bar available (awaiting multiprocessing pool...)')
         logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
         ctx = mp.get_context('forkserver')
-        all_results = []
-
+        pbar = tqdm.tqdm(total=len(tasks))
+        def update_tqdm(*a):
+            pbar.update()
         with ctx.Pool(processes=cpus) as pool:
-            # all_results = pool.map(run_recipe, tasks)
-            for result in pool.map(run_recipe, tasks):
-                all_results.append(result)
+            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
+            pool.close()
+            all_results = [p.get() for p in results]
+
+
+
+        # with ctx.Pool(processes=cpus) as pool:
+        #     # results = [pool.apply_async(run_recipe, task) for task in tasks]
+        #     # all_results = [p.get() for p in results]
+        #
+        #     results = [pool.apply_async(func=run_recipe, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+        #         func=run_recipe, args=(argument,), callback=update_pbar) for argument in tasks]
+        #     pool.close()
+        #     # result_list_tqdm = []
+        #     # for job in tqdm(jobs):
+        #     #     result_list_tqdm.append(job.get())
+        #
+        # all_results = [p.get() for p in results]
+
+        # with ctx.Pool(processes=cpus) as pool:
+        #     # all_results = pool.map(run_recipe, tasks)
+        #     for result in pool.map(run_recipe, tasks):
+        #         all_results.append(result)
             # all_results = pool.apply_async(run_recipe, tasks, callback=update_pbar).get()
 
             # all_results = pool.apply_async(run_recipe, tasks, callback=update_pbar)
@@ -423,8 +445,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         return dm
 
-def update_pbar():
-    logger.info('')
+def update_pbar(value):
+    # logger.info(f"value: {value}")
     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
 

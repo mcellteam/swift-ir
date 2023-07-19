@@ -803,6 +803,11 @@ class MainWindow(QMainWindow):
         self.tbbThumbnails.setToolTip((tip1, tip2)[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
+
+        if self.dw_thumbs.isVisible():
+            h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+            cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
         cfg.mw.dataUpdateWidgets()
         self.setUpdatesEnabled(True)
 
@@ -815,6 +820,11 @@ class MainWindow(QMainWindow):
         self.tbbMatches.setToolTip((tip1, tip2)[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
+
+        if self.dw_matches.isVisible():
+            h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+            self.dw_matches.setMaximumWidth(int(h /2 + .5))
+            cfg.pt.match_widget.resize(int(h / 2 + .5), h)
         cfg.mw.dataUpdateWidgets()
         self.setUpdatesEnabled(True)
 
@@ -3661,6 +3671,17 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.pt.fn_hwidgetChanged()
 
+            if self.dw_matches.isVisible():
+                h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h / 2 + .5))
+                cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+
+            if self.dw_thumbs.isVisible():
+                h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+                cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+
+
 
     def changeEvent(self, event):
         # Allows catching of window maximized/unmaximized events
@@ -3677,6 +3698,16 @@ class MainWindow(QMainWindow):
                 if cfg.pt._tabs.currentIndex() in (0, 1):
                     # QApplication.processEvents()
                     cfg.project_tab.initNeuroglancer()
+
+            if self.dw_matches.isVisible():
+                h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h / 2 + .5))
+                cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+
+            if self.dw_thumbs.isVisible():
+                h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+                cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
     def _disableGlobTabs(self):
         indexes = list(range(0, self.globTabs.count()))
@@ -3783,7 +3814,6 @@ class MainWindow(QMainWindow):
 
         cfg.project_tab = None
         cfg.zarr_tab = None
-        self.globTabs.show()  # nec?
         self.enableAllTabs()  # Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
         self._changeScaleCombo.clear()
@@ -5066,7 +5096,7 @@ class MainWindow(QMainWindow):
         # self.navControls.setLayout(HBL(self.scaleWidget, self.sectionIndexWidget))
 
         tip = """Align and generate all sections for the current scale"""
-        self._btn_alignAll = QPushButton(f"Align All\n{hotkey('A')}")
+        self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self._btn_alignAll.setStyleSheet("QPushButton{font-size: 10pt; font-weight: 600;}")
         self._btn_alignAll.setEnabled(False)
@@ -5138,7 +5168,7 @@ class MainWindow(QMainWindow):
         # self.endRangeInput.textChanged.connect(lambda val: self.sectionRangeSlider.setEnd(int(val)))
 
         tip = """Compute alignment and generate new images for range of sections"""
-        self._btn_alignRange = QPushButton('Align\nRange')
+        self._btn_alignRange = QPushButton('Align Range')
         self._btn_alignRange.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._btn_alignRange.setEnabled(False)
         self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5164,7 +5194,7 @@ class MainWindow(QMainWindow):
         # self.w_range.setStyleSheet("font-size: 9px;")
         self.w_range.layout.setSpacing(2)
         # self.w_range.layout.setContentsMargins(2,2,2,2)
-        self.w_range.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.w_range.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.w_range.layout.setAlignment(Qt.AlignHCenter)
 
         # hbl_alignmentFunctions = HBL(self._btn_alignAll,
@@ -5183,7 +5213,7 @@ class MainWindow(QMainWindow):
                                         self._btn_regenerate
                                         )
         self.newActionsWidget.layout.setSpacing(4)
-        self.newActionsWidget.setStyleSheet("font-size: 11px; font-weight: 600;")
+        self.newActionsWidget.setStyleSheet("font-size: 10px; font-weight: 600;")
 
 
         # tip = """Whether to auto-generate aligned images following alignment."""
@@ -5239,6 +5269,7 @@ class MainWindow(QMainWindow):
         # self.sa_cpanel.setFixedHeight(44)
 
         self.toolbar_cpanel = QToolBar()
+        self.toolbar_cpanel.setFixedHeight(38)
         self.toolbar_cpanel.addWidget(self.navControls)
         self.toolbar_cpanel.addWidget(self.newActionsWidget)
         self.toolbar_cpanel.hide()
@@ -5710,20 +5741,20 @@ class MainWindow(QMainWindow):
         # self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
         QTabBar::close-button {
-        
+
             image: url(src/resources/close-tab-light.png);
             subcontrol-origin: padding;
             subcontrol-position: right;
             padding: 6px;
         }
         QTabBar::close-button:!selected {
-        
+
             image: url(src/resources/close-tab-dark.png);
             subcontrol-origin: padding;
             subcontrol-position: right;
             padding: 6px;
         }
-        
+
         QTabBar::tab {
             background-color: qlineargradient(x1:0, y1:0, x2:.5, y2:1, stop:0 #141414, stop:1 #222222);
             color: #f3f6fb;
@@ -5739,7 +5770,7 @@ class MainWindow(QMainWindow):
             font-weight: 600;
         }
         QTabBar::tab:!selected
-        {   
+        {
             color: #161c20;
             font-weight: 600;
         }
@@ -5788,14 +5819,9 @@ class MainWindow(QMainWindow):
         #         }
         #         """)
 
-        # self.globTabs.setTabShape(QTabWidget.TabShape.Triangular)
-
-        # self.globTabs.setTabBarAutoHide(True)
         self.globTabs.tabBar().setElideMode(Qt.ElideMiddle)
         self.globTabs.setElideMode(Qt.ElideMiddle)
         self.globTabs.setMovable(True)
-        self.globTabs.hide()
-
         self.globTabs.setDocumentMode(True)
         self.globTabs.setTabsClosable(True)
         self.globTabs.setObjectName('globTabs')
@@ -5895,8 +5921,8 @@ class MainWindow(QMainWindow):
                     self.dw_snr.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
 
-                self.splitDockWidget(self.dw_hud, self.dw_snr, Qt.Vertical)
-                self.splitDockWidget(self.dw_python, self.dw_snr, Qt.Vertical)
+                # self.splitDockWidget(self.dw_hud, self.dw_snr, Qt.Vertical)
+                # self.splitDockWidget(self.dw_python, self.dw_snr, Qt.Vertical)
                 self.setUpdatesEnabled(True)
 
         self.dw_snr.dockLocationChanged.connect(fn_dw_snr_visChanged)

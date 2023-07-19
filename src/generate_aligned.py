@@ -13,6 +13,7 @@ import zarr
 import numcodecs
 numcodecs.blosc.use_threads = False
 from libtiff import TIFF
+import tqdm
 
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
@@ -219,17 +220,24 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
             cfg.mw.set_status('Generating Zarr. No progress bar currently available (awaiting multiprocessing pool...)')
 
-            cfg.mw.showZeroedPbar(pbar_max=n_tasks)
+            # cfg.mw.showZeroedPbar(pbar_max=n_tasks)
 
             t0 = time.time()
-            logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (CONVERT ZARR)...\n\n\n")
+            logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
             ctx = mp.get_context('forkserver')
+            pbar = tqdm.tqdm(total=len(tasks))
+
+            def update_tqdm(*a):
+                pbar.update()
 
             with ctx.Pool(processes=cpus) as pool:
-                # all_results = pool.map(run_recipe, tasks)
-                pool.map(convert_zarr, tasks)
-                # pool.apply_async(convert_zarr, tasks, callback=update_pbar)
-            logger.critical("\n\n\n----------END----------\n\n\n")
+                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
+                pool.close()
+                all_results = [p.get() for p in results]
+
+            # with ctx.Pool(processes=cpus) as pool:
+            #     pool.map(convert_zarr, tasks)
+            logger.critical("----------END----------")
 
             cfg.mw.set_status('')
 
@@ -246,9 +254,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
     logger.info('<<<< Generate Aligned <<<<')
 
-def update_pbar():
-    logger.info('')
-    cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
+# def update_pbar():
+#     logger.info('')
+#     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
 
 def convert_zarr(task):
