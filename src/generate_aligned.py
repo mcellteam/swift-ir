@@ -237,6 +237,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 pool.close()
                 [p.get() for p in results]
 
+                pool.join()
+
             # with ctx.Pool(processes=cpus) as pool:
             #     pool.map(convert_zarr, tasks)
             logger.critical("----------END----------")
