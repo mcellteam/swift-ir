@@ -29,6 +29,8 @@ from src.data_model import DataModel
 from src.background_worker import BackgroundWorker
 import src.config as cfg
 from src.ui.timer import Timer
+from multiprocessing import Pool
+from src.recipe_maker import run_recipe
 
 
 __all__ = ['ComputeAffines']
@@ -111,9 +113,34 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         logger.info('# Sections (total)         : %d' % len(dm))
         logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
         logger.info('# Skipped Layers           : %d' % n_skips)
-        temp_file = os.path.join(dm.dest(), "temp_project_file.json")
-        with open(temp_file, 'w') as f:
-            f.write(dm.to_json())
+
+
+        for sec in substack:
+            zpos = dm().index(sec)
+
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta'] = {}
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['index'] = zpos
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['scale_val'] = scale_val
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['scale_key'] = scale
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['destination_path'] = dm['data']['destination_path']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['defaults'] = dm['data']['defaults']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['image_src_size'] = dm['data']['scales'][scale]['image_src_size']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['skipped'] = dm['data']['scales'][scale]['stack'][zpos]['skipped']
+
+            if dm['data']['scales'][scale]['isRefinement']:
+                scale_prev = dm.scales()[dm.scales().index(scale) + 1]
+                prev_scale_val = int(scale_prev[len('scale_'):])
+                upscale = (float(prev_scale_val) / float(scale_val))
+                init_afm = np.array(copy.deepcopy(dm['data']['scales'][scale_prev]['stack'][zpos]['alignment']['method_results']['affine_matrix']))
+                # prev_method = scale_prev_dict[zpos]['current_method']
+                # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
+                init_afm[0][2] *= upscale
+                init_afm[1][2] *= upscale
+                dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['init_afm'] = init_afm.tolist()
+            else:
+                dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
 
@@ -123,121 +150,140 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
         logger.info(f'\n\n################ Computing Alignment ################\n')
 
-        limit_workers = 80
-
-        if use_gui:
-
-            if scale_val < 6:
-                logger.critical(f'Limiting workers to maximum of {limit_workers}')
-                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text, limit_workers=limit_workers)
-            else:
-                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
-        else:
-            if scale_val < 6:
-                logger.critical(f'Limiting workers to maximum of {limit_workers}')
-                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui, limit_workers=limit_workers)
-            else:
-                task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
-        task_queue.taskPrefix = 'Computing Alignment for '
+        # limit_workers = 80
+        # if use_gui:
+        #
+        #     if scale_val < 6:
+        #         logger.critical(f'Limiting workers to maximum of {limit_workers}')
+        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text, limit_workers=limit_workers)
+        #     else:
+        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
+        # else:
+        #     if scale_val < 6:
+        #         logger.critical(f'Limiting workers to maximum of {limit_workers}')
+        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui, limit_workers=limit_workers)
+        #     else:
+        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
+        # task_queue.taskPrefix = 'Computing Alignment for '
         # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
         # if end == None:
         #     end = len(dm)
-        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
 
-        # START TASK QUEUE
-        task_queue.start(cpus)
-        align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
 
-        # ADD ALIGNMENT TASKS TO QUEUE
+        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
+        # # START TASK QUEUE
+        # task_queue.start(cpus)
+        # # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
+        # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
+        # # ADD ALIGNMENT TASKS TO QUEUE
+        # for sec in substack:
+        #     zpos = dm_().index(sec)
+        #
+        #     if not sec['skipped']:
+        #         task_args = [sys.executable,
+        #                      align_job,             # Python program to run (single_alignment_job)
+        #                      json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
+        #                      ]
+        #         task_queue.add_task(task_args)
+        #         if use_gui:
+        #             if cfg.PRINT_EXAMPLE_ARGS:
+        #                 if zpos in range(start, start + 3):
+        #                     print("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
+        #
+        # # task_queue.work_q.join()
+        # # cfg.mw.hud.post('Computing Alignment Using SWIM...')
+        # dt = task_queue.collect_results()
+        # all_results = task_queue.task_dict
+
+        logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL...\n\n\n")
+        dt = time.time()
+        tasks = []
         for sec in substack:
             zpos = dm_().index(sec)
-            # zpos = dm().index(sec)
-
             if not sec['skipped']:
-                task_args = [sys.executable,
-                             align_job,             # Python program to run (single_alignment_job)
-                             temp_file,             # Temp project file name
-                             str(scale_val),        # Scale to use or 0
-                             str(zpos),             # Section index to run recipe alignment
-                             str(USE_FILE_IO),      # Use File IO instead of Pipe
-                             str(DEV_MODE),         # Use development mode
-                             ]
-                task_queue.add_task(task_args)
-                if use_gui:
-                    if cfg.PRINT_EXAMPLE_ARGS:
-                        if zpos in range(start, start + 3):
-                            print("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
+                tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
-        # task_queue.work_q.join()
-        # cfg.mw.hud.post('Computing Alignment Using SWIM...')
-        dt = task_queue.collect_results()
+        with Pool(processes=cpus) as pool:
+
+            all_results = pool.map(run_recipe, tasks)
+
+            print("For the moment, the pool remains available for more work")
+
+        # exiting the 'with'-block has stopped the pool
+        print("Now the pool is closed and no longer available")
+
+        logger.critical("\n\n\nENDING MULTIPROCESSING POOL. RESULTS....\n\n\n")
+
+        logger.critical(str(all_results))
+
+        logger.critical("\n\n\n----------END----------\n\n\n")
+
+
+
+
+
+
+
+
+
+
         dm.t_align = dt
-
         t0 = time.time()
         if use_gui:
             if cfg.CancelProcesses:
                 return
 
-        # Sort the tasks by layers rather than by process IDs
-        task_dict = {}
-        index_arg = 3
-        for k in task_queue.task_dict.keys():
-            t = task_queue.task_dict[k]
-            task_dict[int(t['args'][index_arg])] = t
 
-        task_list = [task_dict[k] for k in sorted(task_dict.keys())]
+        # Sort the tasks by layers rather than by process IDs
+        # task_dict = {}
+        # index_arg = 3
+        # for k in task_queue.task_dict.keys():
+        #     t = task_queue.task_dict[k]
+        #     logger.critical(f"\nt = {t}\n\n")
+        #     task_dict[int(t['args'][index_arg])] = t
+        # task_list = [task_dict[k] for k in sorted(task_dict.keys())]
         # updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
         logger.info('Reading task results and updating data model...')
 
-        for tnum in range(len(task_list)):
-            logger.info(f'Reading task results for {tnum}...')
+        al_stack_old = dm['data']['scales'][scale]['stack']
 
-            if USE_FILE_IO:
-                # Get the updated datamodel previewmodel from the file written by single_alignment_job
-                output_dir = os.path.join(os.path.split(temp_file)[0], scale)
-                output_file = "single_alignment_out_" + str(tnum) + ".json"
-                with open(os.path.join(output_dir, output_file), 'r') as f:
-                    dm_text = f.read()
+        # for tnum in range(len(task_list)):
+        # for tnum in range(len(all_results)):
+        for r in all_results:
+            # logger.info(f'Reading task results for {tnum}...')
+            # Get the updated datamodel previewmodel from stdout for the task
+            # parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
+            # dm_text = None
+            # for p in parts:
+            #     ps = p.strip()
+            #     if ps.startswith('{') and ps.endswith('}'):
+            #         dm_text = p
+            # if dm_text != None:
+            # results_dict = json.loads(dm_text)
+            # layer_index = results_dict['result']['alignment']['meta']['index']
+            # al_stack_old[layer_index] = results_dict['result']
 
-            else:
-                # Get the updated datamodel previewmodel from stdout for the task
-                parts = task_list[tnum]['stdout'].split('---JSON-DELIMITER---')
-                dm_text = None
-                for p in parts:
-                    ps = p.strip()
-                    if ps.startswith('{') and ps.endswith('}'):
-                        dm_text = p
+            layer_index = r['alignment']['meta']['index']
+            al_stack_old[r['alignment']['meta']['index']] = r
 
-            if dm_text != None:
-                # This gets run normally...
-
-                results_dict = json.loads(dm_text)
-                fdm_new = results_dict['data_model']
-
-                # Get the same s from both the old and new datamodel models
-                # al_stack_old = updated_model['data']['scales'][scale]['stack']
-                al_stack_old = dm['data']['scales'][scale]['stack']
-                al_stack_new = fdm_new['data']['scales'][scale]['stack']
-                layer_index = int(task_list[tnum]['args'][index_arg]) # may differ from tnum!
-                al_stack_old[layer_index] = al_stack_new[layer_index]
-                if task_list[tnum]['statusBar'] == 'task_error':
-                    ref_fn = al_stack_old[layer_index]['reference']
-                    base_fn = al_stack_old[layer_index]['filename']
-                    if use_gui:
-                        cfg.mw.hud.post('Alignment Task Error at: ' +
-                                                 str(task_list[tnum]['cmd']) + " " +
-                                                 str(task_list[tnum]['args']))
-                        cfg.mw.hud.post('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
-                        cfg.mw.hud.post(f'  ref img: %s\nbase img: %s' % (ref_fn,base_fn))
-                    else:
-                        logger.warning(('Alignment Task Error at: ' +
-                                                 str(task_list[tnum]['cmd']) + " " +
-                                                 str(task_list[tnum]['args'])))
-                        logger.warning('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
-                        logger.warning(f'  ref img: %s\nbase img: %s' % (ref_fn, base_fn))
-                    al_stack_old[layer_index]['skipped'] = True
-                need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
+            # if all_results[tnum]['statusBar'] == 'task_error':
+            #     ref_fn = al_stack_old[layer_index]['reference']
+            #     base_fn = al_stack_old[layer_index]['filename']
+            #     if use_gui:
+            #         cfg.mw.hud.post('Alignment Task Error at: ' +
+            #                                  str(all_results[tnum]['cmd']) + " " +
+            #                                  str(all_results[tnum]['args']))
+            #         cfg.mw.hud.post('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
+            #         cfg.mw.hud.post(f'  ref img: %s\nbase img: %s' % (ref_fn,base_fn))
+            #     else:
+            #         logger.warning(('Alignment Task Error at: ' +
+            #                                  str(all_results[tnum]['cmd']) + " " +
+            #                                  str(all_results[tnum]['args'])))
+            #         logger.warning('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
+            #         logger.warning(f'  ref img: %s\nbase img: %s' % (ref_fn, base_fn))
+            #     al_stack_old[layer_index]['skipped'] = True
+            # need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
         # for i, layer in enumerate(cfg.data.get_iter(scale)):
         #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
@@ -251,20 +297,16 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cafm_hash'] = \
         #         cfg.data.cafm_current_hash(l=i)
 
-        cfg.mw.updateCorrSignalsDrawer()
-        cfg.pt.setTargKargPixmaps()
+        if cfg.mw._isProjectTab():
+            cfg.mw.updateCorrSignalsDrawer()
+            cfg.mw.setTargKargPixmaps()
 
         for l in list(range(start, len(cfg.data))):
             dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = False
 
         save2file(dm=dm,name=dm.dest())
 
-        try:
-            os.remove(temp_file)
-        except:
-            print_exception()
-
-        write_run_to_file(dm)
+        # write_run_to_file(dm) #0718-
 
         # if cfg.ignore_pbar:
         #     cfg.nProcessDone +=1
@@ -313,9 +355,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         if not swim_only:
             if use_gui:
-                if not cfg.mw._toggleAutogenerate.isChecked():
-                    logger.info('Toggle auto-generate is OFF. Returning...')
-                    return
+                if cfg.mw._isProjectTab():
+                    if not cfg.pt._toggleAutogenerate.isChecked():
+                        logger.info('Toggle auto-generate is OFF. Returning...')
+                        return
                 if cfg.ignore_pbar:
                     cfg.nProcessDone += 1
                     cfg.mw.updatePbar()

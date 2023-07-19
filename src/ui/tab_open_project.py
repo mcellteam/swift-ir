@@ -681,13 +681,16 @@ class OpenProject(QWidget):
                 dialog.close()
                 return 1
 
-            cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
+            # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
             ID = id(cfg.project_tab)
             logger.critical(f'New Tab ID: {ID}')
             cfg.dataById[id(cfg.project_tab)] = dm
 
             # self.showMainUI()
             dm.set_defaults()
+
+            cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
+
             initLogFiles(dm)
             # cfg.mw._disableGlobTabs()
 
@@ -718,6 +721,7 @@ class OpenProject(QWidget):
                     cfg.ignore_pbar = False
                     cfg.mw.showZeroedPbar(set_n_processes=7)
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
+                    # cfg.mw.setdw_matches(True)
                     cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
                 else:
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
@@ -737,14 +741,19 @@ class OpenProject(QWidget):
                     print_exception()
                 finally:
                     cfg.mw.setUpdatesEnabled(True)
-                # QApplication.processEvents()
 
-        logger.info(f'Appending {filename} to .swift_cache...')
+        QApplication.processEvents()
+
+        logger.critical(f'Appending {filename} to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
         cfg.mw._autosave()
         self.user_projects.set_data()
+
+        QApplication.processEvents()
+
+        logger.critical('<<<< new_project <<<<')
 
 
 

@@ -1811,7 +1811,7 @@ class DataModel:
 
     def propagate_manual_swim_window_px(self, start, end) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.critical('Propagatingmanjual swim regions...')
+        logger.critical('Propagating manual swim regions...')
         for l in range(start, end):
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_swim_window_px']
             for s in self.finer_scales():
@@ -1905,7 +1905,7 @@ class DataModel:
 
     def image_size_aligned(self, s=None) -> tuple:
         if s == None: s = self.scale
-        logger.debug('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return tuple(self._data['data']['scales'][s]['image_aligned_size'])
         except:

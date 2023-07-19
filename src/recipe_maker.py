@@ -19,75 +19,85 @@ __all__ = ['run_recipe']
 
 MAlogger      = logging.getLogger('MAlogger')
 SWIMlogger    = logging.getLogger('SWIMlogger')
-MIRlogger     = logging.getLogger('MIRlogger')
+# MIRlogger     = logging.getLogger('MIRlogger')
 RMlogger      = logging.getLogger('recipemaker')
-scratchlogger = logging.getLogger('scratch')
+# scratchlogger = logging.getLogger('scratch')
 
 
-def run_recipe(project, scale_val, zpos=0, dev_mode=False):
+def run_recipe(data, dev_mode=False):
     '''Assemble and execute an alignment recipe
     :param project: project data dictionary expressed as JSON-formatted string.
     :param scale_val: scale to run the alignment recipe on.
     :param zpos: z-index of current section within the stack.
     '''
-    pd = project['data']['destination_path']
-    scale_key = 'scale_' + str(scale_val)
+    meta = data['alignment']['meta']
+    pd = meta['destination_path']
+    scale_key = meta['scale_key']
+    # scale_val = meta['scale_val']
+    # zpos = meta['index']
+    isRefinement = meta['isRefinement']
+    defaults = meta['defaults']
+    initial_rotation = float(defaults['initial-rotation'])
+    img_size = meta['image_src_size']
+    skipped = meta['skipped']
+    init_afm = np.array(meta['init_afm'])
     od = os.path.join(pd, scale_key, 'img_aligned')
 
     MAlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'manual_align.log')))
     SWIMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'swim.log')))
-    MIRlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'mir.log')))
     RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
-    scratchpath = os.path.join(pd, 'logs', 'scratch.log')
-    try:
-        os.remove(scratchpath)
-    except OSError:
-        pass
-    fh = logging.FileHandler(scratchpath)
-    fh.setLevel(logging.DEBUG)
-    scratchlogger.addHandler(fh)
+    # MIRlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'mir.log')))
 
-    s_tbd = project['data']['scales'][scale_key]['stack']
-    img_size = project['data']['scales'][scale_key]['image_src_size']
+    # scratchpath = os.path.join(pd, 'logs', 'scratch.log')
+    # try: os.remove(scratchpath)
+    # except OSError: pass
+    # fh = logging.FileHandler(scratchpath)
+    # fh.setLevel(logging.DEBUG)
+    # scratchlogger.addHandler(fh)
+
+    # s_tbd = project['data']['scales'][scale_key]['stack']
+    # img_size = project['data']['scales'][scale_key]['image_src_size']
+
     # option = s_tbd[zpos]['alignment']['method_data']['alignment_option']
-    if project['data']['scales'][scale_key]['isRefinement']:
-        option = 'refine_affine'
-    else:
-        option = 'init_affine'
+    # if project['data']['scales'][scale_key]['isRefinement']:
+    #     option = 'refine_affine'
+    # else:
+    #     option = 'init_affine'
     # option = s_tbd[zpos]['alignment']['method_data']['alignment_option'] #Refactor
-    init_afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+    # init_afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
-    if option in ('refine_affine', 'apply_affine'):
-        scales = natural_sort(list(project['data']['scales'].keys()))
-        scale_prev = scales[scales.index(scale_key) + 1]
-        prev_scale_val = int(scale_prev[len('scale_'):])
-        upscale = (float(prev_scale_val) / float(scale_val))
-        scale_prev_dict = project['data']['scales'][scale_prev]['stack']
-        # prev_afm = np.array(scale_prev_dict[zpos]['alignment']['method_results']['affine_matrix']).copy()
-        prev_method = scale_prev_dict[zpos]['current_method']
-        prev_afm = np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']).copy()
-        prev_afm[0][2] *= upscale
-        prev_afm[1][2] *= upscale
-        init_afm = prev_afm
-
-    s_tbd[zpos]['alignment']['method_results'].setdefault('affine_matrix', init_afm.tolist())
-    s_tbd[zpos]['alignment']['method_results'].setdefault('snr', [])
-    s_tbd[zpos]['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
-
-    initial_rotation = float(project['data']['defaults']['initial-rotation'])
-    isRefinement = project['data']['scales'][scale_key]['isRefinement']
+    # if option in ('refine_affine', 'apply_affine'):
+    #     scales = natural_sort(list(project['data']['scales'].keys()))
+    #     scale_prev = scales[scales.index(scale_key) + 1]
+    #     prev_scale_val = int(scale_prev[len('scale_'):])
+    #     upscale = (float(prev_scale_val) / float(scale_val))
+    #     scale_prev_dict = project['data']['scales'][scale_prev]['stack']
+    #     prev_afm = np.array(scale_prev_dict[zpos]['alignment']['method_results']['affine_matrix']).deepcopy()
+    #     # prev_method = scale_prev_dict[zpos]['current_method']
+    #     # prev_afm = np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']).deepcopy()
+    #     prev_afm[0][2] *= upscale
+    #     prev_afm[1][2] *= upscale
+    #     init_afm = prev_afm
 
 
-    if not s_tbd[zpos]['skipped']:
-        if os.path.basename(s_tbd[zpos]['reference']) != '':
+    data['alignment']['method_results'].setdefault('affine_matrix', init_afm.tolist())
+    data['alignment']['method_results'].setdefault('snr', [])
+    data['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
+
+    # initial_rotation = float(defaults['initial-rotation'])
+    # isRefinement = project['data']['scales'][scale_key]['isRefinement']
+
+
+    if not skipped:
+        if os.path.basename(data['reference']) != '':
             recipe = align_recipe(
                 pd=pd,
                 od=od,
                 init_afm=init_afm,
                 img_size=img_size,
-                layer_dict=s_tbd[zpos],
+                layer_dict=data,
                 scale=scale_key,
-                defaults=project['data']['defaults'],
+                defaults=defaults,
                 initial_rotation=initial_rotation,
                 isRefinement=isRefinement,
                 dev_mode=dev_mode
@@ -95,13 +105,13 @@ def run_recipe(project, scale_val, zpos=0, dev_mode=False):
             recipe.assemble_recipe()
             recipe.execute_recipe()
 
-    return (project, True)
+    return data
 
 
 class align_recipe:
 
-    global scratchlogger
-    global MIRlogger
+    # global scratchlogger
+    # global MIRlogger
     global SWIMlogger
     global RMlogger
     global MAlogger
@@ -158,7 +168,7 @@ class align_recipe:
 
 
     def assemble_recipe(self):
-        scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
+        # scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))  # Point Array for one point
@@ -218,11 +228,9 @@ class align_recipe:
             elif self.cur_method == 'manual-strict':
                 self.add_ingredients([align_ingredient(mode='MIR', ww=ww, psta=man_psta, pmov=man_pmov, last=True)])
 
-        scratchlogger.critical(f'\n\n# ingredients = {len(self.ingredients)}\n')
 
 
     def execute_recipe(self):
-        scratchlogger.critical('execute_recipe >>>>')
 
         # Initialize afm to afm of first ingredient in recipe
         # if self.ingredients[0].afm is not None:
@@ -351,32 +359,9 @@ class align_recipe:
 
         self.layer_dict['alignment_hash'] = dict_hash(self.layer_dict['alignment_history'][self.cur_method])
 
-        # cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out']
-        # ['28.6787: /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif 512 512 /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif 518.514 506.982  1 0 0 1 (6.5141 -5.01831 8.22295)']
-        # ['28.6787: /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif 512 512 /Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif 518.514 506.982  1 0 0 1 (6.5141 -5.01831 8.22295)']
-        # a = cfg.data.stack()[5]['alignment']['method_results']['ingredient_0']['swim_out'][0]
-        # a.replace('(', ' ').replace(')', ' ').strip().split()
-        # ['28.6787:',
-        #  '/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.105.tif',
-        #  '512',
-        #  '512',
-        #  '/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/img_src/R34CA1-BS12.106.tif',
-        #5  '518.514',
-        #6  '506.982',
-        #  '1',
-        #8  '0',
-        #9  '0',
-        #  '1',
-        #  '6.5141',
-        #  '-5.01831',
-        #  '8.22295']
-        #
-
         # self.layer_dict['alignment']['method_results']['auto_ww'] = self.auto_ww
         # self.layer_dict['alignment']['method_results']['pts_base'] = self.man_pmov.tolist()
         # self.layer_dict['alignment']['method_results']['pts_ref'] = self.man_psta.tolist()
-
-
 
         # self.layer_dict['alignment']['method_data']['bias_x_per_image'] = 0
         # self.layer_dict['alignment']['method_data']['bias_y_per_image'] = 0
@@ -406,7 +391,6 @@ class align_recipe:
         #         try:    self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
         #         except: print_exception(self.pd)
 
-        scratchlogger.critical('<<<<  execute_recipe')
         return afm
 
 
@@ -489,8 +473,6 @@ class align_ingredient:
 
 
     def run_swim(self):
-        scratchlogger.critical(f'run_swim [{self.ID}] >>>>')
-
 
         # cx = int(self.recipe.siz[0] / 2.0)
         # cy = int(self.recipe.siz[1] / 2.0)
@@ -515,12 +497,10 @@ class align_ingredient:
         ms_names = []
 
         for i in range(len(self.psta[0])):
-            scratchlogger.critical(f'Constructing {self.recipe.cur_method} [i={i}]...')
 
             if self.recipe.cur_method == 'grid-custom':
                 if self.ID != 'Grid1x1':
                     if not self.recipe.grid_custom_regions[i]:
-                        scratchlogger.critical(f'Continuing (!) [i={i}]...')
                         continue
 
             # correlation signals argument (output path)
@@ -572,9 +552,6 @@ class align_ingredient:
             args.append(self.alData['swim_settings']['extra_args'])
             multi_arg_str.append(args())
 
-
-        scratchlogger.critical('Running command >>>>')
-
         self.multi_arg_str = multi_arg_str()
 
         SWIMlogger.critical(f'Multi-SWIM Argument String:\n{multi_arg_str()}')
@@ -588,7 +565,6 @@ class align_ingredient:
         self.swim_output = o['out'].strip().split('\n')
         self.swim_err_lines = o['err'].strip().split('\n')
 
-        scratchlogger.critical('Cropping Match Signals...')
         keep = .30
         px_keep = 128
         if self.recipe.cur_method in ('grid-default', 'grid-custom'):
@@ -610,26 +586,14 @@ class align_ingredient:
             x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
 
         for name in ms_names:
-            self.crop_str_mir = f"""B {w} {h} 1\nZ\nF {name}\n0 0 {x1} {y1}\n{w} 0 {x2} {y1}\n{w} {h} {x2} {y2}\n0 {h} {x1} {y2}\nT\n0 1 2\n2 3 0\nW {name}"""
-
-            # self.crop_str_mir = f"B {w} {h} 1\n"\
-            #                     f"Z\n"\
-            #                     f"F {name}\n"\
-            #                     f"0 0 {x1} {y1}\n"\
-            #                     f"{w} 0 {x2} {y1}\n"\
-            #                     f"{w} {h} {x2} {y2}\n"\
-            #                     f"0 {h} {x1} {y2}\n"\
-            #                     f"T\n"\
-            #                     f"0 1 2\n"\
-            #                     f"2 3 0\n"\
-            #                     f"W {name}"
+            self.crop_str_mir = f"""B {w} {h} 1\nZ\nF {name}\n0 0 {x1} {y1}\n{w} 0 {x2} {y1}\n
+            {w} {h} {x2} {y2}\n0 {h} {x1} {y2}\nT\n0 1 2\n2 3 0\nW {name}"""
 
             o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=self.crop_str_mir,
                         extra=f'MIR the Match Signals to crop ({self.ID})', )
 
         if self.mode == 'SWIM-Manual':
             MAlogger.critical(f'\nSWIM OUT:\n{self.swim_output}\nSWIM ERR:\n{self.swim_err_lines}')
-        scratchlogger.critical(f'<<<< run_swim [{self.ID}]')
 
         return self.swim_output
 
@@ -662,7 +626,7 @@ class align_ingredient:
             for i,l in enumerate(swim_output):
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
                 self.mir_toks[i] = str(toks)
-                MIRlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
+                # MIRlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
                 # if len(swim_output) == 1:
                 #     dx = float(toks[8])
                 #     dy = float(toks[9])
@@ -677,9 +641,9 @@ class align_ingredient:
             self.mir_out_lines = o['out'].strip().split('\n')
             self.mir_err_lines = o['err'].strip().split('\n')
 
-            MIRlogger.critical(f'***MIR script***\n{str(self.mir_script)}\n'
-                               f'MIR std out:\n{str(self.mir_out_lines)}\n'
-                               f'MIR std err:\n{str(self.mir_err_lines)}')
+            # MIRlogger.critical(f'***MIR script***\n{str(self.mir_script)}\n'
+            #                    f'MIR std out:\n{str(self.mir_out_lines)}\n'
+            #                    f'MIR std err:\n{str(self.mir_err_lines)}')
 
             aim = np.eye(2, 3, dtype=np.float32)
 
@@ -822,6 +786,15 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 if __name__ == '__main__':
     RMlogger.info("Running " + __file__ + ".__main__()")
+
+    f_self = sys.argv[0]
+    data = json.loads(sys.argv[1])
+    result = run_recipe(data=data)
+    print("---JSON-DELIMITER---")
+    print(json.JSONEncoder(indent=1, separators=(",", ": "), sort_keys=True).encode(result))
+    print("---JSON-DELIMITER---")
+    sys.stdout.close()
+    sys.stderr.close()
 
 
 '''
