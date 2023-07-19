@@ -190,7 +190,7 @@ class ProjectTab(QWidget):
             # self.initNeuroglancer()
             # cfg.refViewer.pts = pts_ref
             # cfg.baseViewer.pts = pts_base
-            pass
+            self.initNeuroglancer()
 
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
@@ -1324,53 +1324,49 @@ class ProjectTab(QWidget):
         self.gb_outputSettings.setObjectName('gb_cpanel')
         self.gb_outputSettings.setLayout(self.flSettings)
 
-        '''OUTPUT SETTINGS END'''
-
-
-        cpanel_style2 = """
-        QLabel {font-size: 10px;}
-
-        QPushButton {
-            font-size: 10px;
-        }
-
-
-        QComboBox {
-            background-color: #f3f6fb;
-            color: #161c20;
-            font-size: 10px;
-            margin:0px;
-            padding:0px;
-        }
-
-        QGroupBox#gb_cpanel {
-                color: #161c20;
-                border: 1px solid #161c20;
-                font-size: 10px;
-                /*font-weight: 600;*/
-                border-radius: 2px;
-                margin: 2px;
-                padding: 2px;
-
-        }
-
-        QGroupBox:title#gb_cpanel {
-            color: #161c20;
-            /*font-weight:600;*/
-            font-size: 9px;
-            subcontrol-origin: margin;
-            subcontrol-position: top center;
-            margin-bottom: 16px;
-
-        }
-        """
-
-        self.gb_defaultGridSwimSettings.setStyleSheet(cpanel_style2)
-        self.gb_outputSettings.setStyleSheet(cpanel_style2)
-
-
-
-
+        # '''OUTPUT SETTINGS END'''
+        #
+        #
+        # cpanel_style2 = """
+        # QLabel {font-size: 10px;}
+        #
+        # QPushButton {
+        #     font-size: 10px;
+        # }
+        #
+        #
+        # QComboBox {
+        #     background-color: #f3f6fb;
+        #     color: #161c20;
+        #     font-size: 10px;
+        #     margin:0px;
+        #     padding:0px;
+        # }
+        #
+        # QGroupBox#gb_cpanel {
+        #         color: #161c20;
+        #         border: 1px solid #161c20;
+        #         font-size: 10px;
+        #         /*font-weight: 600;*/
+        #         border-radius: 2px;
+        #         margin: 2px;
+        #         padding: 2px;
+        #
+        # }
+        #
+        # QGroupBox:title#gb_cpanel {
+        #     color: #161c20;
+        #     /*font-weight:600;*/
+        #     font-size: 9px;
+        #     subcontrol-origin: margin;
+        #     subcontrol-position: top center;
+        #     margin-bottom: 16px;
+        #
+        # }
+        # """
+        #
+        # self.gb_defaultGridSwimSettings.setStyleSheet(cpanel_style2)
+        # self.gb_outputSettings.setStyleSheet(cpanel_style2)
 
 
 
@@ -1458,12 +1454,12 @@ class ProjectTab(QWidget):
         #     color: #161c20;
         #     font-weight: 600;
         #     border: none;}""")
-        self.sa_tab4 = QScrollArea()
-        # self.sa_tab4.setStyleSheet("""QLabel {font-weight: 300;}""")
-        self.sa_tab4.setWidgetResizable(True)
-        self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.sa_tab4.setWidget(self.secAffine)
+        # self.sa_tab4 = QScrollArea()
+        # # self.sa_tab4.setStyleSheet("""QLabel {font-weight: 300;}""")
+        # self.sa_tab4.setWidgetResizable(True)
+        # self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # self.sa_tab4.setWidget(self.secAffine)
 
         self.cpanelTabWidget = QTabWidget()
         self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1484,7 +1480,7 @@ class ProjectTab(QWidget):
         self.cpanelTabWidget.addTab(self.sa_tab1, 'Details')
         self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
         self.cpanelTabWidget.addTab(self.sa_tab3, 'Runtimes')
-        self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
+        # self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
         self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
 
 
@@ -1741,19 +1737,19 @@ class ProjectTab(QWidget):
         self.sb_clobber_pixels.setMinimum(1)
         self.sb_clobber_pixels.setMaximum(16)
 
-        self.cb_keep_swim_templates = QCheckBox()
-
-        def fn():
-            caller = inspect.stack()[1].function
-            if caller == 'main':
-                if self.cb_keep_swim_templates.isChecked():
-                    cfg.data.targ = True
-                    cfg.data.karg = True
-                else:
-                    cfg.data.targ = False
-                    cfg.data.karg = False
-
-        self.cb_keep_swim_templates.toggled.connect(fn)
+        # self.cb_keep_swim_templates = QCheckBox()
+        #
+        # def fn():
+        #     caller = inspect.stack()[1].function
+        #     if caller == 'main':
+        #         if self.cb_keep_swim_templates.isChecked():
+        #             cfg.data.targ = True
+        #             cfg.data.karg = True
+        #         else:
+        #             cfg.data.targ = False
+        #             cfg.data.karg = False
+        #
+        # self.cb_keep_swim_templates.toggled.connect(fn)
 
         self.btn_settings_apply_everywhere = QPushButton('Apply Clobber to All')
 
@@ -1767,18 +1763,13 @@ class ProjectTab(QWidget):
         self.btn_settings_apply_everywhere.setFixedSize(QSize(140, 18))
 
 
-        self.settings_back_btn = QPushButton('Back')
-        self.settings_back_btn.setFixedSize(QSize(40, 18))
-        self.settings_back_btn.clicked.connect(self.updateMethodSelectWidget)
-
-
         self.fl_settings = QFormLayout()
         self.fl_settings.setVerticalSpacing(4)
         self.fl_settings.setHorizontalSpacing(6)
         self.fl_settings.setFormAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_settings.setSpacing(2)
         self.fl_settings.setContentsMargins(0, 0, 0, 0)
-        self.fl_settings.addRow('Save Match Regions', self.cb_keep_swim_templates)
+        # self.fl_settings.addRow('Save Match Regions', self.cb_keep_swim_templates)
         self.fl_settings.addRow('Clobber Fixed Pattern', self.cb_clobber)
         self.fl_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         # self.fl_settings.addWidget(self.btn_settings_apply_cur_sec)
@@ -1789,12 +1780,11 @@ class ProjectTab(QWidget):
         self._settings_widget.setStyleSheet("font-size: 9px;")
         self._settings_widget.setLayout(self.fl_settings)
 
-        self.settings_widget = QWidget()
-        self.settings_widget.setContentsMargins(0,0,0,0)
+        self.gbGlobSettings = QGroupBox('Global settings')
+        self.gbGlobSettings.setContentsMargins(0, 0, 0, 0)
         vbl = VBL()
         vbl.addWidget(self._settings_widget)
-        vbl.addWidget(self.settings_back_btn, alignment=Qt.AlignLeft)
-        self.settings_widget.setLayout(vbl)
+        self.gbGlobSettings.setLayout(vbl)
 
         '''MA STACKED WIDGET'''
         self.MA_stackedWidget = QStackedWidget()
@@ -1806,7 +1796,7 @@ class ProjectTab(QWidget):
         self.MA_stackedWidget.addWidget(QLabel())
         # self.MA_stackedWidget.addWidget(self.logs_widget)
         # self.MA_stackedWidget.addWidget(self.sw_logs)
-        self.MA_stackedWidget.addWidget(self.settings_widget)
+        # self.MA_stackedWidget.addWidget(self.gbGlobSettings)
 
         # self.MA_stackedWidget_gb = QGroupBox()
         # vbl = QVBoxLayout()
@@ -2607,9 +2597,17 @@ class ProjectTab(QWidget):
         """)
         self.sideTabs.setMaximumWidth(300) #Criticial
         self.sideTabs.currentChanged.connect(self.onSideTabChange)
+        self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
+        # self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
+        self.sideTabs.addTab(self.logs_widget, 'Logs')
+        self.sideTabs.addTab(self.cpanelTabWidget, 'Details')
 
         # self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls)
-        self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, ExpandingVWidget(self),
+        self.side_controls = VWidget(self.gb_method_selection,
+                                     self.sideTabs,
+                                     ExpandingVWidget(self),
+                                     self.secAffine,
+                                     self.gbGlobSettings,
                                      self.gb_outputSettings,
                                      self.MA_controls,
                                      self.gb_warnings)
@@ -2621,13 +2619,10 @@ class ProjectTab(QWidget):
         # self.w_swim_settings.setLayout(self.fl_swim_settings)
         # self.w_swim_settings.setLayout(self.fl_MA_settings)
 
-        self.sideTabs.addTab(self.side_controls, 'Configure')
-        # self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
-        self.sideTabs.addTab(self.logs_widget, 'Logs')
-        self.sideTabs.addTab(self.cpanelTabWidget, 'Details')
 
 
-        self.wEditAlignment = QWidget()
+
+        # self.wEditAlignment = QWidget()
         # hbl = HBL(self.tn_widget, self.match_widget, self.ms_widget, self.ng_widget_container, self.sideTabs)
 
 
@@ -2685,11 +2680,14 @@ class ProjectTab(QWidget):
         # self.wMatches = VWidget(self.match_widget, self.resizeMatchesButton)
         # self.wMatches.layout.setSpacing(0)
 
-        hbl = HBL(self.ng_widget_container, self.sideTabs)
-        hbl.setSpacing(0)
+        self.splitterEditAlignment = QSplitter(Qt.Orientation.Horizontal)
+        self.splitterEditAlignment.addWidget(self.ng_widget_container)
+        self.splitterEditAlignment.addWidget(self.side_controls)
+        # hbl = HBL(self.ng_widget_container, self.side_controls)
+        # hbl.setSpacing(0)
         # hbl.setStretch(3,99)
         # hbl.setStretch(4,0)
-        self.wEditAlignment.setLayout(hbl)
+        # self.wEditAlignment.setLayout(hbl)
 
 
         # self.splitter_ngPlusSideControls = QSplitter(Qt.Orientation.Horizontal)
@@ -3245,7 +3243,7 @@ class ProjectTab(QWidget):
         self.cb_clobber.setChecked(cfg.data.clobber())
         self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
 
-        self.cb_keep_swim_templates.setChecked((cfg.data.targ == True) or (cfg.data.karg == True))
+        # self.cb_keep_swim_templates.setChecked((cfg.data.targ == True) or (cfg.data.karg == True))
         try:
             self.updateMethodSelectWidget(soft=True)
         except:
@@ -3990,7 +3988,7 @@ class ProjectTab(QWidget):
         # self._tabs.addTab(self.splitter_ngPlusSideControls, ' 3DEM ')
         # self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
         self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
-        self._tabs.addTab(self.wEditAlignment, 'Edit Alignment')
+        self._tabs.addTab(self.splitterEditAlignment, 'Edit Alignment')
         # self._tabs.addTab(self.wEditAlignment, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
         self._tabs.addTab(self._wdg_treeview, ' Raw Data ')

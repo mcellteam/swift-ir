@@ -57,13 +57,7 @@ https://github.com/nexpy/nexpy/issues/398
 
 """
 import os
-import json
-import platform
-import threading
-import cProfile
-import pstats
 import qtpy
-import subprocess
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ["BLOSC_NOLOCK"] = "1"
