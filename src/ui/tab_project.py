@@ -120,7 +120,7 @@ class ProjectTab(QWidget):
         # cfg.main_window.resizeThings()
 
         # self.initNgStackViewer()
-        # self.initNeuroglancer(init_all=True)
+        self.initNeuroglancer(init_all=True)
 
         # QTimer.singleShot(375, cfg.mw.resizeThings)
         # QTimer.singleShot(575, cfg.mw.resizeThings)
@@ -223,7 +223,7 @@ class ProjectTab(QWidget):
             self.initNeuroglancer()
             cfg.refViewer.pts = pts_ref
             cfg.baseViewer.pts = pts_base
-            # self.setTargKargPixmaps()
+            # cfg.mw.setTargKargPixmaps()
             # cfg.mw.updateCorrSignalsDrawer()
         # elif index == 2:
         #     self.project_table.initTableData()
@@ -1084,7 +1084,7 @@ class ProjectTab(QWidget):
                     self.tn_ref.update()
                     self.tn_tra.update()
                 cfg.mw.updateCorrSignalsDrawer()
-                self.setTargKargPixmaps()
+                cfg.mw.setTargKargPixmaps()
             cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
         # self.rb_MA_hint = QRadioButton('Hint')
@@ -1463,9 +1463,9 @@ class ProjectTab(QWidget):
         self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab4.setWidget(self.secAffine)
+
         self.cpanelTabWidget = QTabWidget()
         self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
         # self.cpanelTabWidget.setStyleSheet("""
         # QScrollArea {border: none; font-size: 8px;}
         # QTabWidget{font-size: 8px;}
@@ -1484,6 +1484,7 @@ class ProjectTab(QWidget):
         self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
         self.cpanelTabWidget.addTab(self.sa_tab3, 'Runtimes')
         self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
+        self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
 
 
         self.MA_use_global_defaults_lab = QLabel('Global defaults will be used.')
@@ -1538,7 +1539,7 @@ class ProjectTab(QWidget):
                 else:
                     cfg.data.current_method = 'manual-hint'
                     self.rb_MA_hint.setChecked(True)
-            self.setTargKargPixmaps()
+            cfg.mw.setTargKargPixmaps()
             # elif cur_index == 4:
             #     self.MA_stackedWidget.setCurrentIndex(4)
             cfg.mw.updateCorrSignalsDrawer()
@@ -2441,7 +2442,7 @@ class ProjectTab(QWidget):
         # bg_matches.setExclusive(True)
         # bg_matches.addButton(self.rb_targ)
         # bg_matches.addButton(self.rb_karg)
-        # bg_matches.buttonClicked.connect(self.setTargKargPixmaps)
+        # bg_matches.buttonClicked.connect(cfg.mw.setTargKargPixmaps)
 
         # self.toggleMatches = QPushButton('Toggle')
         self.toggleMatches = QPushButton()
@@ -2771,7 +2772,7 @@ class ProjectTab(QWidget):
         self.toggleMatches.setIcon(qta.icon(
             ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
         # (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
-        self.setTargKargPixmaps()
+        cfg.mw.setTargKargPixmaps()
 
 
     def setRbStackView(self):
@@ -2831,90 +2832,86 @@ class ProjectTab(QWidget):
         self.te_logs.setText(text)
         self.te_logs.verticalScrollBar().setValue(self.te_logs.verticalScrollBar().maximum())
 
-    def setTargKargPixmaps(self):
-        logger.info('')
-        # caller = inspect.stack()[1].function
-        # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
-
-        basename = cfg.data.filename_basename()
-        filename, extension = os.path.splitext(basename)
-
-        for i in range(4):
-            self.match_thumbnails[i].set_no_image()
-
-        # for i in range(4):
-        #     if not self.match_thumbnails[i]._noImage:
-        #         self.match_thumbnails[i].set_no_image()
-
-        if getData('state,targ_karg_toggle'):
-            tkarg = 'k'
-        else:
-            tkarg = 't'
-        files = []
-        for i in range(0, 4):
-            name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
-            files.append(os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', name))
-
-        method = cfg.data.current_method
-
-        # self.match_thumbnails[0].setPixmap(QPixmap())
-        # self.match_thumbnails[1].setPixmap(QPixmap())
-        # self.match_thumbnails[2].setPixmap(QPixmap())
-        # self.match_thumbnails[3].setPixmap(QPixmap())
-        # logger.info(f'Files:\n{files}')
-
-        if method in ('grid-custom', 'grid-default'):
-            # for i in range(n_cutouts):
-            for i in range(0, 4):
-                use = True
-                if method == 'grid-custom':
-                    use = cfg.data.grid_custom_regions[i]
-                elif method == 'grid-default':
-                    use = cfg.data.grid_default_regions[i]
-
-                # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
-                if use and os.path.exists(path):
-                    self.match_thumbnails[i].path = path
-                    try:
-                        # self.match_thumbnails[i].showPixmap()
-                        self.match_thumbnails[i].set_data(path)
-                    except:
-                        self.match_thumbnails[i].set_no_image()
-                else:
-                    self.match_thumbnails[i].set_no_image()
-
-        if cfg.data.current_method == 'manual-hint':
-            n_ref = len(cfg.data.manpoints()['ref'])
-            n_base = len(cfg.data.manpoints()['base'])
-            for i in range(0, 4):
-                path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
-                # if DEV:
-                #     logger.info(f'path: {path}')
-                #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
-
-                try:
-                    # if DEV:
-                    #     logger.info(f'path: {path}')
-                    assert os.path.exists(path)
-                    #Todo add handler... generate a warning or something...
-                    assert n_ref > i
-                    assert n_base > i
-                except:
-                    # print_exception(extra=f"path = {path}")
-                    # logger.critical('Handling Exception...')
-                    self.match_thumbnails[i].set_no_image()
-
-                    continue
-                try:
-                    self.match_thumbnails[i].path = path
-                    # self.match_thumbnails[i].showPixmap()
-                    self.match_thumbnails[i].set_data(path)
-                except:
-                    self.match_thumbnails[i].set_no_image()
-                    print_exception()
-
-        # logger.info('<<<< setTargKargPixmaps')
+    # def setTargKargPixmaps(self):
+    #     logger.info('')
+    #     # caller = inspect.stack()[1].function
+    #     # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
+    #
+    #     basename = cfg.data.filename_basename()
+    #     filename, extension = os.path.splitext(basename)
+    #
+    #     for i in range(4):
+    #         self.match_thumbnails[i].set_no_image()
+    #
+    #     # for i in range(4):
+    #     #     if not self.match_thumbnails[i]._noImage:
+    #     #         self.match_thumbnails[i].set_no_image()
+    #
+    #     if getData('state,targ_karg_toggle'):
+    #         tkarg = 'k'
+    #     else:
+    #         tkarg = 't'
+    #     files = []
+    #     for i in range(0, 4):
+    #         name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
+    #         files.append(os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', name))
+    #
+    #     method = cfg.data.current_method
+    #
+    #     # logger.info(f'Files:\n{files}')
+    #
+    #     if method in ('grid-custom', 'grid-default'):
+    #         # for i in range(n_cutouts):
+    #         for i in range(0, 4):
+    #             use = True
+    #             if method == 'grid-custom':
+    #                 use = cfg.data.grid_custom_regions[i]
+    #             elif method == 'grid-default':
+    #                 use = cfg.data.grid_default_regions[i]
+    #
+    #             # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
+    #             path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
+    #             if use and os.path.exists(path):
+    #                 self.match_thumbnails[i].path = path
+    #                 try:
+    #                     # self.match_thumbnails[i].showPixmap()
+    #                     self.match_thumbnails[i].set_data(path)
+    #                 except:
+    #                     self.match_thumbnails[i].set_no_image()
+    #             else:
+    #                 self.match_thumbnails[i].set_no_image()
+    #
+    #     if cfg.data.current_method == 'manual-hint':
+    #         n_ref = len(cfg.data.manpoints()['ref'])
+    #         n_base = len(cfg.data.manpoints()['base'])
+    #         for i in range(0, 4):
+    #             path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
+    #             # if DEV:
+    #             #     logger.info(f'path: {path}')
+    #             #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
+    #
+    #             try:
+    #                 # if DEV:
+    #                 #     logger.info(f'path: {path}')
+    #                 assert os.path.exists(path)
+    #                 #Todo add handler... generate a warning or something...
+    #                 assert n_ref > i
+    #                 assert n_base > i
+    #             except:
+    #                 # print_exception(extra=f"path = {path}")
+    #                 # logger.critical('Handling Exception...')
+    #                 self.match_thumbnails[i].set_no_image()
+    #
+    #                 continue
+    #             try:
+    #                 self.match_thumbnails[i].path = path
+    #                 # self.match_thumbnails[i].showPixmap()
+    #                 self.match_thumbnails[i].set_data(path)
+    #             except:
+    #                 self.match_thumbnails[i].set_no_image()
+    #                 print_exception()
+    #
+    #     # logger.info('<<<< setTargKargPixmaps')
 
     def updateAutoSwimRegions(self):
         logger.info('')
@@ -3249,7 +3246,7 @@ class ProjectTab(QWidget):
 
         # if self.match_widget.isVisible():
         if cfg.mw.dw_matches.isVisible():
-            self.setTargKargPixmaps()
+            cfg.mw.setTargKargPixmaps()
             cfg.mw.updateCorrSignalsDrawer()
 
         if self.sideTabs.currentIndex() == self.indexLogs:
@@ -3425,7 +3422,7 @@ class ProjectTab(QWidget):
             self.deleteAllMp()
             self.update_MA_list_widgets()
             self.updateAnnotations()
-            self.setTargKargPixmaps()
+            cfg.mw.setTargKargPixmaps()
             cfg.mw.updateCorrSignalsDrawer()
         except:
             print_exception()
@@ -3452,7 +3449,7 @@ class ProjectTab(QWidget):
         self.updateAnnotations()
         self.updateEnabledButtonsMA()
         self.update_MA_list_widgets()
-        self.setTargKargPixmaps()
+        cfg.mw.setTargKargPixmaps()
         cfg.mw.updateCorrSignalsDrawer()
 
     def deleteMpBase(self):
@@ -3475,7 +3472,7 @@ class ProjectTab(QWidget):
         self.updateAnnotations()
         self.updateEnabledButtonsMA()
         self.update_MA_list_widgets()
-        self.setTargKargPixmaps()
+        cfg.mw.setTargKargPixmaps()
         cfg.mw.updateCorrSignalsDrawer()
 
     def deleteAllMpRef(self):
@@ -3490,7 +3487,7 @@ class ProjectTab(QWidget):
         self.updateAnnotations()
         self.updateEnabledButtonsMA()
         self.update_MA_list_widgets()
-        self.setTargKargPixmaps()
+        cfg.mw.setTargKargPixmaps()
         cfg.mw.updateCorrSignalsDrawer()
 
     def deleteAllMpBase(self):
@@ -3504,7 +3501,7 @@ class ProjectTab(QWidget):
         self.updateAnnotations()
         self.updateEnabledButtonsMA()
         self.update_MA_list_widgets()
-        self.setTargKargPixmaps()
+        cfg.mw.setTargKargPixmaps()
         cfg.mw.updateCorrSignalsDrawer()
 
     def deleteAllMp(self):
@@ -3523,7 +3520,7 @@ class ProjectTab(QWidget):
         self.updateAnnotations()
         self.updateEnabledButtonsMA()
         self.update_MA_list_widgets()
-        self.setTargKargPixmaps()
+        cfg.mw.setTargKargPixmaps()
         cfg.mw.updateCorrSignalsDrawer()
 
         logger.info('<<<< deleteAllMp')
@@ -4206,6 +4203,8 @@ class ProjectTab(QWidget):
         usages:
         cpanelTabWidget tab change
         '''
+        caller = inspect.stack()[1].function
+        logger.info(f'[{caller}]')
         # logger.info('')
 
         if self.cpanelTabWidget.currentIndex() == 0:
@@ -4237,7 +4236,7 @@ class ProjectTab(QWidget):
         """
 
         caller = inspect.stack()[1].function
-        # logger.critical(f'caller: {caller}')
+        logger.critical(f'caller: {caller}')
         # logger.critical(f'caller: {caller}')
         # if self.cpanelTabWidget.currentIndex() == 0:
         self.secName.setText(cfg.data.filename_basename())

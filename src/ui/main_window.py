@@ -291,44 +291,49 @@ class MainWindow(QMainWindow):
     @Slot(name='my-zpos-signal-name')
     def setZpos(self, z=None, on_state_change=False):
 
-        if z == None:
-            z = cfg.data.zpos
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        # if cfg.data.zpos != z:
-        cfg.data.zpos = z
+        if self._isProjectTab():
 
-        if not cfg.data['state']['tra_ref_toggle']:
-            cfg.pt.set_transforming()
+            if z == None:
+                z = cfg.data.zpos
+            caller = inspect.stack()[1].function
+            logger.info(f'caller: {caller}')
+            # if cfg.data.zpos != z:
+            cfg.data.zpos = z
 
-        # if cfg.data['state']['current_tab'] == 1:
-        #     cfg.baseViewer.set_layer(cfg.data.zpos)
-        #     cfg.refViewer.set_layer(cfg.data.get_ref_index()) #0611+
-        #     # cfg.stageViewer.set_layer(cfg.data.zpos) #stageViewer
-        # else:
-        #     cfg.emViewer.set_layer(cfg.data.zpos)
+            if not cfg.data['state']['tra_ref_toggle']:
+                cfg.pt.set_transforming()
 
-        cfg.baseViewer.set_layer(cfg.data.zpos)
-        cfg.refViewer.set_layer(cfg.data.get_ref_index())  # 0611+
-        cfg.emViewer.set_layer(cfg.data.zpos)
+            # if cfg.data['state']['current_tab'] == 1:
+            #     cfg.baseViewer.set_layer(cfg.data.zpos)
+            #     cfg.refViewer.set_layer(cfg.data.get_ref_index()) #0611+
+            #     # cfg.stageViewer.set_layer(cfg.data.zpos) #stageViewer
+            # else:
+            #     cfg.emViewer.set_layer(cfg.data.zpos)
 
-        # if on_state_change:
-        #     if getData('state,manual_mode'):
-        #         if not cfg.pt.rb_transforming.isChecked():
-        #             cfg.pt.setRbTransforming()
-        #         cfg.baseViewer.set_layer(cfg.data.zpos)
-        #         cfg.stageViewer.set_layer(cfg.data.zpos)
-        # else:
-        #     if getData('state,manual_mode'):
-        #         cfg.baseViewer.set_layer(cfg.data.zpos)
-        #         cfg.stageViewer.set_layer(cfg.data.zpos)
-        #     else:
-        #         cfg.emViewer.set_layer(cfg.data.zpos)
+            if cfg.pt._tabs.currentIndex() == 0:
+                cfg.emViewer.set_layer(cfg.data.zpos)
+            elif cfg.pt._tabs.currentIndex() == 1:
+                cfg.baseViewer.set_layer(cfg.data.zpos)
+                cfg.refViewer.set_layer(cfg.data.get_ref_index())  # 0611+
 
-        self.dataUpdateWidgets()
-        self.zposChanged.emit()
-        # else:
-        #     logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
+
+            # if on_state_change:
+            #     if getData('state,manual_mode'):
+            #         if not cfg.pt.rb_transforming.isChecked():
+            #             cfg.pt.setRbTransforming()
+            #         cfg.baseViewer.set_layer(cfg.data.zpos)
+            #         cfg.stageViewer.set_layer(cfg.data.zpos)
+            # else:
+            #     if getData('state,manual_mode'):
+            #         cfg.baseViewer.set_layer(cfg.data.zpos)
+            #         cfg.stageViewer.set_layer(cfg.data.zpos)
+            #     else:
+            #         cfg.emViewer.set_layer(cfg.data.zpos)
+
+            self.dataUpdateWidgets()
+            self.zposChanged.emit()
+            # else:
+            #     logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
 
 
     def initSizeAndPos(self, width, height):
@@ -543,107 +548,199 @@ class MainWindow(QMainWindow):
             logger.critical(f'cfg.data == cfg.dataById[{id(cfg.pt)}]? {cfg.data == cfg.dataById[id(cfg.pt)]}')
 
     def updateCorrSignalsDrawer(self, z=None):
-        if z == None: z = cfg.data.zpos
 
-        # caller = inspect.stack()[1].function
-        if not self._isProjectTab():
-            return
+        if self.dw_matches.isVisible():
 
-        logger.info('')
+            if z == None: z = cfg.data.zpos
 
-        # if not cfg.data.is_aligned():
-        #     cfg.pt.ms_widget.hide()
-        #     return
-        # else:
-        #     cfg.pt.ms_widget.show()
+            # caller = inspect.stack()[1].function
+            if not self._isProjectTab():
+                return
 
-        thumbs = cfg.data.get_signals_filenames(l=z)
-        n = len(thumbs)
-        snr_vals = cfg.data.snr_components(l=z)
-        # logger.info(f'snr_vals = {snr_vals}')
-        colors = cfg.glob_colors
-        count = 0
-        # for i in range(7):
+            logger.info('')
 
-        for i in range(4):
-            if not cfg.pt.msList[i]._noImage:
-                cfg.pt.msList[i].set_no_image()
+            # if not cfg.data.is_aligned():
+            #     cfg.pt.ms_widget.hide()
+            #     return
+            # else:
+            #     cfg.pt.ms_widget.show()
 
-        # #Critical0601-
-        # if not cfg.data.is_aligned_and_generated():
-        #     for i in range(4):
-        #         if not cfg.pt.msList[i]._noImage:
-        #             cfg.pt.msList[i].set_no_image()
-        #
-        #     return #0610+
+            thumbs = cfg.data.get_signals_filenames(l=z)
+            n = len(thumbs)
+            snr_vals = cfg.data.snr_components(l=z)
+            # logger.info(f'snr_vals = {snr_vals}')
+            colors = cfg.glob_colors
+            count = 0
+            # for i in range(7):
 
-
-        # logger.critical('thumbs: %s' % str(thumbs))
-        # logger.critical('snr_vals: %s' % str(snr_vals))
-        method = cfg.data.get_current_method(l=z)
-        if method == 'grid-custom':
-            regions = cfg.data.grid_custom_regions
-            names = cfg.data.get_grid_custom_filenames(l=z)
-            # logger.info('names: %s' % str(names))
-            for i in range(4):
-                if regions[i]:
-                    try:
-                        try:
-                            snr = snr_vals[count]
-                            assert snr > 0.0
-                        except:
-                            cfg.pt.msList[i].set_no_image()
-                            continue
-
-                        cfg.pt.msList[i].set_data(path=names[i], snr=snr)
-                        # cfg.pt.msList[i].update()
-
-                        count += 1
-                    except:
-                        print_exception()
-                        logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
-                else:
-                    cfg.pt.msList[i].set_no_image()
-                    # cfg.pt.msList[i].update()
-
-        # elif cfg.data.current_method == 'manual-hint':
-        #     cfg.data.snr_components()
-        elif method == 'manual-strict':
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
-                    # cfg.pt.msList[i].update()
-        else:
-            for i in range(4):
-                if i < n:
-                    # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
-                    try:
+
+            # #Critical0601-
+            # if not cfg.data.is_aligned_and_generated():
+            #     for i in range(4):
+            #         if not cfg.pt.msList[i]._noImage:
+            #             cfg.pt.msList[i].set_no_image()
+            #
+            #     return #0610+
+
+
+            # logger.critical('thumbs: %s' % str(thumbs))
+            # logger.critical('snr_vals: %s' % str(snr_vals))
+            method = cfg.data.get_current_method(l=z)
+            if method == 'grid-custom':
+                regions = cfg.data.grid_custom_regions
+                names = cfg.data.get_grid_custom_filenames(l=z)
+                # logger.info('names: %s' % str(names))
+                for i in range(4):
+                    if regions[i]:
                         try:
-                            snr = snr_vals[i]
-                            assert snr > 0.0
-                            if method == 'manual-hint':
-                                n_ref = len(cfg.data.manpoints()['ref'])
-                                n_base = len(cfg.data.manpoints()['base'])
-                                assert n_ref > i
-                                assert n_base > i
+                            try:
+                                snr = snr_vals[count]
+                                assert snr > 0.0
+                            except:
+                                cfg.pt.msList[i].set_no_image()
+                                continue
+
+                            cfg.pt.msList[i].set_data(path=names[i], snr=snr)
+                            # cfg.pt.msList[i].update()
+
+                            count += 1
                         except:
-                            # logger.info(f'no SNR data for corr signal index {i}')
-                            cfg.pt.msList[i].set_no_image()
-                            # print_exception()
-                            continue
-
-                        cfg.pt.msList[i].set_data(path=thumbs[i], snr=snr)
-                    except:
-                        print_exception()
+                            print_exception()
+                            logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
+                    else:
                         cfg.pt.msList[i].set_no_image()
-                        logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
-                    # finally:
-                    #     cfg.pt.msList[i].update()
-                else:
-                    cfg.pt.msList[i].set_no_image()
-                    # cfg.pt.msList[i].update()
+                        # cfg.pt.msList[i].update()
 
-        # logger.info('<<<< updateCorrSignalsDrawer <<<<')
+            # elif cfg.data.current_method == 'manual-hint':
+            #     cfg.data.snr_components()
+            elif method == 'manual-strict':
+                for i in range(4):
+                    if not cfg.pt.msList[i]._noImage:
+                        cfg.pt.msList[i].set_no_image()
+                        # cfg.pt.msList[i].update()
+            else:
+                for i in range(4):
+                    if i < n:
+                        # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
+                        try:
+                            try:
+                                snr = snr_vals[i]
+                                assert snr > 0.0
+                                if method == 'manual-hint':
+                                    n_ref = len(cfg.data.manpoints()['ref'])
+                                    n_base = len(cfg.data.manpoints()['base'])
+                                    assert n_ref > i
+                                    assert n_base > i
+                            except:
+                                # logger.info(f'no SNR data for corr signal index {i}')
+                                cfg.pt.msList[i].set_no_image()
+                                # print_exception()
+                                continue
+
+                            cfg.pt.msList[i].set_data(path=thumbs[i], snr=snr)
+                        except:
+                            print_exception()
+                            cfg.pt.msList[i].set_no_image()
+                            logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
+                        # finally:
+                        #     cfg.pt.msList[i].update()
+                    else:
+                        cfg.pt.msList[i].set_no_image()
+                        # cfg.pt.msList[i].update()
+
+            # logger.info('<<<< updateCorrSignalsDrawer <<<<')
+
+
+    def setTargKargPixmaps(self, z=None):
+
+        if self.dw_matches.isVisible():
+            if z == None:
+                z = cfg.data.zpos
+
+            logger.info('')
+            # caller = inspect.stack()[1].function
+            # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
+
+            # basename = cfg.data.filename_basename()
+            # filename, extension = os.path.splitext(basename)
+            basename = cfg.data.filename_basename(l=z)
+            filename, extension = os.path.splitext(basename)
+
+            for i in range(4):
+                cfg.pt.match_thumbnails[i].set_no_image()
+
+            # for i in range(4):
+            #     if not cfg.pt.match_thumbnails[i]._noImage:
+            #         cfg.pt.match_thumbnails[i].set_no_image()
+
+            if getData('state,targ_karg_toggle'):
+                tkarg = 'k'
+            else:
+                tkarg = 't'
+            files = []
+            for i in range(0, 4):
+                name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
+                files.append(os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', name))
+
+            method = cfg.data.current_method
+
+            # logger.info(f'Files:\n{files}')
+
+            if method in ('grid-custom', 'grid-default'):
+                # for i in range(n_cutouts):
+                for i in range(0, 4):
+                    use = True
+                    if method == 'grid-custom':
+                        use = cfg.data.grid_custom_regions[i]
+                    elif method == 'grid-default':
+                        use = cfg.data.grid_default_regions[i]
+
+                    # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
+                    if use and os.path.exists(path):
+                        cfg.pt.match_thumbnails[i].path = path
+                        try:
+                            # cfg.pt.match_thumbnails[i].showPixmap()
+                            cfg.pt.match_thumbnails[i].set_data(path)
+                        except:
+                            cfg.pt.match_thumbnails[i].set_no_image()
+                    else:
+                        cfg.pt.match_thumbnails[i].set_no_image()
+
+            if cfg.data.current_method == 'manual-hint':
+                n_ref = len(cfg.data.manpoints()['ref'])
+                n_base = len(cfg.data.manpoints()['base'])
+                for i in range(0, 4):
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
+                    # if DEV:
+                    #     logger.info(f'path: {path}')
+                    #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
+
+                    try:
+                        # if DEV:
+                        #     logger.info(f'path: {path}')
+                        assert os.path.exists(path)
+                        #Todo add handler... generate a warning or something...
+                        assert n_ref > i
+                        assert n_base > i
+                    except:
+                        # print_exception(extra=f"path = {path}")
+                        # logger.critical('Handling Exception...')
+                        cfg.pt.match_thumbnails[i].set_no_image()
+
+                        continue
+                    try:
+                        cfg.pt.match_thumbnails[i].path = path
+                        # cfg.pt.match_thumbnails[i].showPixmap()
+                        cfg.pt.match_thumbnails[i].set_data(path)
+                    except:
+                        cfg.pt.match_thumbnails[i].set_no_image()
+                        print_exception()
+
+            # logger.info('<<<< setTargKargPixmaps')
 
     def callbackDwVisibilityChanged(self):
         caller = inspect.stack()[1].function
@@ -1063,7 +1160,7 @@ class MainWindow(QMainWindow):
                 self.enableAllTabs() #0603+ #Critical
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
-                cfg.pt.setTargKargPixmaps()
+                self.setTargKargPixmaps()
                 try:
                     self.updateMenus()
                 except:
@@ -1209,7 +1306,7 @@ class MainWindow(QMainWindow):
         if quick_swim:
             cfg.ignore_pbar = False
             self.updateCorrSignalsDrawer()
-            cfg.pt.setTargKargPixmaps()
+            self.setTargKargPixmaps()
             self.updateEnabledButtons()
             self.enableAllTabs()
             cfg.pt.updateCpanelDetails()
@@ -1249,7 +1346,7 @@ class MainWindow(QMainWindow):
         cfg.ignore_pbar = False
 
 
-    def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
+    def alignAll(self, set_pbar=True, force=False, ignore_bb=False, use_gui=True):
         caller = inspect.stack()[1].function
         if caller == 'main':
             set_pbar = True
@@ -1284,7 +1381,8 @@ class MainWindow(QMainWindow):
             reallocate_zarr=True,
             # stageit=stageit,
             stageit=False,
-            ignore_bb=ignore_bb
+            ignore_bb=ignore_bb,
+            use_gui=use_gui
         )
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
@@ -1294,7 +1392,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False, show_pbar=True):
+    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False, show_pbar=True, use_gui=True):
         # Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
@@ -1320,10 +1418,10 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od,
-                                      reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data))
+                                      reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data))
                 self.threadpool.start(self.worker)
             else:
-                ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=True, dm=cfg.data)
+                ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data)
         except:
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
@@ -1819,7 +1917,7 @@ class MainWindow(QMainWindow):
 
             if self.dw_matches.isVisible():
                 self.updateCorrSignalsDrawer()
-                cfg.pt.setTargKargPixmaps()
+                self.setTargKargPixmaps()
 
 
             if self.dw_thumbs.isVisible():
@@ -2372,7 +2470,7 @@ class MainWindow(QMainWindow):
         self.setCpanelVisibility(True)
 
         self.updateCorrSignalsDrawer()
-        cfg.project_tab.setTargKargPixmaps()
+        self.setTargKargPixmaps()
         # self.updateAllCpanelDetails()
 
         QApplication.processEvents()
@@ -2380,7 +2478,7 @@ class MainWindow(QMainWindow):
         logger.critical('initializing ng ...')
         
 
-        cfg.project_tab.initNeuroglancer(init_all=True)
+        # cfg.project_tab.initNeuroglancer(init_all=True)
 
 
         cfg.project_tab.updateMethodSelectWidget()
@@ -6065,6 +6163,7 @@ class MainWindow(QMainWindow):
                         if self.dw_matches:
                             # else:
                             self.updateCorrSignalsDrawer(z=x - 1)
+                            self.setTargKargPixmaps(z=x - 1)
                             QApplication.processEvents()
                     # elif "Copy-converting" in self.pbar.text():
                     #     # if cfg.pt._tabs.currentIndex() == 0:

@@ -176,13 +176,13 @@ class MAViewer(neuroglancer.Viewer):
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
-        # if DEV:
-        #     logger.critical(f'[{self.role}] [{caller_name()}]\n'
-        #                     f'Setting layer:\n'
-        #                     f'zpos={zpos},\n'
-        #                     f'self.index before={self.index},\n'
-        #                     f'voxel coords before={self.state.voxel_coordinates}\n'
-        #                     f'...')
+        if DEV:
+            logger.critical(f'[{self.role}] [{caller_name()}]\n'
+                            f'Setting layer:\n'
+                            f'zpos={zpos},\n'
+                            f'self.index before={self.index},\n'
+                            f'voxel coords before={self.state.voxel_coordinates}\n'
+                            f'...')
 
         prev_index = self.index
 
@@ -1016,8 +1016,11 @@ class MAViewer(neuroglancer.Viewer):
             _, tensor_y, tensor_x = self.store.shape
             # widget_w = cfg.mw.geometry().width()
             # widget_h = cfg.mw.geometry().height() / 2
-            widget_w = cfg.project_tab.ng_widget.width()
-            widget_h = cfg.project_tab.ng_widget.height()
+            if cfg.project_tab:
+                widget_w = cfg.project_tab.ng_widget.width()
+                widget_h = cfg.project_tab.ng_widget.height()
+            else:
+                widget_w = widget_h = cfg.mw.globTabs.height() - 30
 
 
             # logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
