@@ -112,7 +112,7 @@ def run_recipe(data, dev_mode=False):
             recipe.assemble_recipe()
             recipe.execute_recipe()
 
-    print(f"Task completed: {meta['index']}")
+    # print(f"Task completed: {meta['index']}")
     return data
 
 

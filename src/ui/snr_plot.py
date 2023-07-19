@@ -50,7 +50,8 @@ class SnrPlot(QWidget):
         self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.92, anchor=(1, 1), color='#f3f6fb')
         f = QFont('Tahoma')
         f.setBold(True)
-        f.setPointSize(12)
+        # f.setPointSize(12)
+        f.setPointSize(10)
         self._snr_label.setFont(f)
         self.plot.addItem(self._curLayerLine)
         self._mp_lines = []
@@ -128,7 +129,8 @@ class SnrPlot(QWidget):
             lab = 'SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
             # logger.info(f'lab = {lab}')
             self._snr_label.setText(lab)
-            styles = {'color': '#ede9e8', 'font-size': '14px', 'font-weight': 'bold'}
+            # styles = {'color': '#ede9e8', 'font-size': '14px', 'font-weight': 'bold'}
+            styles = {'color': '#ede9e8', 'font-size': '12px', 'font-weight': 'bold'}
             self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         else:
             logger.warning(f'Cant update layer line caller={caller}')
@@ -230,7 +232,7 @@ class SnrPlot(QWidget):
 
             self.updateLayerLinePos()
             # styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
-            styles = {'color': '#ede9e8', 'font-size': '14px', 'font-weight': 'bold'}
+            styles = {'color': '#ede9e8', 'font-size': '12px', 'font-weight': 'bold'}
             self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         except:
             print_exception()
@@ -315,7 +317,7 @@ class SnrPlot(QWidget):
             brush=brush,
             hoverable=True,
             # hoverSymbol='s',
-            hoverSize=14,
+            hoverSize=15,
             # hoverPen=pg.mkPen('r', width=2),
             hoverBrush=pg.mkBrush('#ffffff'),
             # pxMode=False # points transform with zoom

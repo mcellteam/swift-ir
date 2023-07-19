@@ -2304,11 +2304,11 @@ class ProjectTab(QWidget):
 
         self.tn_ref_lab = QLabel('Reference Section')
         self.tn_ref_lab.setFixedHeight(26)
-        self.tn_ref_lab.setStyleSheet("""font-size: 10px; color: #ede9e8; background-color: #161c20;""")
+        self.tn_ref_lab.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20;""")
 
         self.tn_tra_lab = QLabel('Transforming Section')
         self.tn_tra_lab.setFixedHeight(26)
-        self.tn_tra_lab.setStyleSheet("""font-size: 10px; color: #ede9e8; background-color: #161c20;""")
+        self.tn_tra_lab.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20;""")
 
         self.tn_widget = QTableWidget()
         self.tn_widget.setAutoFillBackground(True)
@@ -2452,7 +2452,7 @@ class ProjectTab(QWidget):
         # self.toggleMatches.setIcon(qta.icon(
         #     ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
         self.toggleMatches.setIcon(qta.icon('mdi.toggle-switch-off', color=cfg.ICON_COLOR))
-        self.toggleMatches.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
+        # self.toggleMatches.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
         self.toggleMatches.setFixedSize(20, 14)
         self.toggleMatches.setIconSize(QSize(20, 20))
 
@@ -2523,7 +2523,7 @@ class ProjectTab(QWidget):
         self._btn_playMatchTimer = QPushButton()
         self._btn_playMatchTimer.setIconSize(QSize(11, 11))
         self._btn_playMatchTimer.setFixedSize(14, 14)
-        self._btn_playMatchTimer.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
+        # self._btn_playMatchTimer.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
         self._btn_playMatchTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
 
         def startStopMatchTimer():
@@ -2542,15 +2542,20 @@ class ProjectTab(QWidget):
         self.matchPlayTimer.setInterval(500)
         self.matchPlayTimer.timeout.connect(self.fn_toggleTargKarg)
 
-        self.labMatches = QLabel('Matches')
+        self.labMatches = QLabel('Auto-toggle:')
+        self.labMatches.setAlignment(Qt.AlignRight)
         self.labMatches.setFixedHeight(14)
-        self.labMatches.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
+        self.labMatches.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #222222;')
 
-        self.labMatchSignals = QLabel('Match Signals')
-        self.labMatchSignals.setFixedHeight(14)
-        self.labMatchSignals.setStyleSheet('font-size: 10px; color: #ede9e8; background-color: #222222;')
+        self.labMatchesTog = QLabel('Toggle:')
+        self.labMatchesTog.setAlignment(Qt.AlignRight)
+        self.labMatchesTog.setFixedHeight(14)
+        self.labMatchesTog.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #222222;')
 
-        self.mwTitle = HWidget(self.labMatches, self._btn_playMatchTimer, self.toggleMatches)
+        self.mwTitle = HWidget(self.labMatches, self._btn_playMatchTimer, self.labMatchesTog, self.toggleMatches)
+        self.mwTitle.layout.setAlignment(Qt.AlignRight)
+        self.mwTitle.layout.setSpacing(4)
+        self.mwTitle.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #222222;')
 
         self.match_widget = VWidget(self.mwTitle, HWidget(self.ktarg_table, self.ms_table))
 
