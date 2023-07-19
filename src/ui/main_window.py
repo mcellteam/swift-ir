@@ -6148,11 +6148,8 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedWidth(400)
         # self.sw_pbar = QWidget(self)
         self.sw_pbar = QStackedWidget(self)
-        self.sw_pbar.setFixedHeight(14)
+        self.sw_pbar.setFixedHeight(16)
         self.sw_pbar.setAutoFillBackground(True)
-        self.status_bar_layout = QHBoxLayout()
-        self.status_bar_layout.setContentsMargins(4, 0, 4, 0)
-        self.status_bar_layout.setSpacing(4)
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42, 16)
         self.pbar_cancel_button.setIconSize(QSize(14, 14))
@@ -6164,6 +6161,8 @@ class MainWindow(QMainWindow):
         self.pbarLabel.setStyleSheet("""font-size: 9px;font-weight: 600;""")
 
         self.widgetPbar = HWidget(self.pbarLabel, self.pbar, self.pbar_cancel_button)
+        self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)
+        self.widgetPbar.layout.setSpacing(4)
 
         self.w_pbarUnavailable = QLabel('GUI Progress Bar Temporarily Unavailable. See Progress in Terminal.')
         self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
