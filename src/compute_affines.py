@@ -237,11 +237,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             # pool.join()
 
 
-        output = [p.get() for p in results]
+        # output = [p.get() for p in results]
 
-        logger.critical(f"output = {output}")
-        logger.critical(f"type(all_results) = {type(all_results)}")
-        logger.critical(f"all_results.get() = {all_results.get()}")
+        # logger.critical(f"output = {output}")
+        # logger.critical(f"type(all_results) = {type(all_results)}")
+        # logger.critical(f"all_results.get() = {all_results.get()}")
         logger.critical("\n\n\nENDING MULTIPROCESSING POOL. RESULTS....\n\n\n")
         logger.critical(str(all_results))
         logger.critical("\n\n\n----------END----------\n\n\n")
