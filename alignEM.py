@@ -151,6 +151,8 @@ def main():
     # # os.chdir(os.path.dirname(__file__))
     # logger.critical('new cwd: %s' % os.getcwd())
 
+    QCoreApplication.setApplicationName("ALIGNEM-SWIFT")
+
 
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
