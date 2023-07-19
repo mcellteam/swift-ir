@@ -1413,6 +1413,9 @@ class MainWindow(QMainWindow):
         logger.info(f'Aligning start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
         self.tell(f'Alignment start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
 
+        logger.critical("SHUTTING DOWN NEUROGLANCER...")
+        self.shutdownNeuroglancer()
+
         # cafms_before = cfg.data.cafm_list()
 
         if end == None:
