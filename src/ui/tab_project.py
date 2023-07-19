@@ -2092,6 +2092,7 @@ class ProjectTab(QWidget):
             else:
                 self.ngcl_uiControls.setStyleSheet("""background: #222222; color: #f3f6fb;
                     border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
+            QApplication.processEvents()
         self.ngcl_uiControls = NgClickLabel(self)
         self.ngcl_uiControls.setText('NG Controls')
         self.ngcl_uiControls.clicked.connect(fn)
@@ -2188,6 +2189,7 @@ class ProjectTab(QWidget):
                                           """background: #339933; color: #f3f6fb; 
                   border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                                          [self.ngcl_shader.isClicked])
+            QApplication.processEvents()
 
         self.ngcl_shader = NgClickLabel(self)
         self.ngcl_shader.setText('Shader')

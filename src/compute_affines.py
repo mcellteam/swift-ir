@@ -16,6 +16,8 @@ import psutil
 import logging
 from datetime import datetime
 from pathlib import Path
+from multiprocessing import Pool
+import multiprocessing as mp
 import numpy as np
 
 sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
@@ -29,7 +31,6 @@ from src.data_model import DataModel
 from src.background_worker import BackgroundWorker
 import src.config as cfg
 from src.ui.timer import Timer
-from multiprocessing import Pool
 from src.recipe_maker import run_recipe
 
 
@@ -203,7 +204,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             if not sec['skipped']:
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
-        with Pool(processes=cpus) as pool:
+        ctx = mp.get_context('forkserver')
+        with ctx.Pool(processes=cpus) as pool:
 
             all_results = pool.map(run_recipe, tasks)
 
