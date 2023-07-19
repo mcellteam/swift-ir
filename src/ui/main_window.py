@@ -986,7 +986,7 @@ class MainWindow(QMainWindow):
     #     self._working = False
     #     self.enableAllButtons()
     #     self.updateEnabledButtons()
-    #     self.pbar_widget.hide()
+    #     self.sw_pbar.hide()
 
     def present_snr_results(self, start=0, end=None):
         try:
@@ -5907,12 +5907,12 @@ class MainWindow(QMainWindow):
         self.dw_snr = DockWidget('SNR', self)
         self.dw_snr.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         def fn_dw_snr_visChanged():
+            self.setUpdatesEnabled(False)
             caller = inspect.stack()[1].function
             logger.critical(f'[{caller}]')
 
             # logger.critical(f'caller: {caller}')
             if self. dw_snr.isVisible():
-                self.setUpdatesEnabled(False)
                 loc_py = self.dockWidgetArea(self.dw_snr)
                 if loc_py in (1,2):
                     self.dw_snr.setFeatures(
@@ -5923,7 +5923,7 @@ class MainWindow(QMainWindow):
 
                 # self.splitDockWidget(self.dw_hud, self.dw_snr, Qt.Vertical)
                 # self.splitDockWidget(self.dw_python, self.dw_snr, Qt.Vertical)
-                self.setUpdatesEnabled(True)
+            self.setUpdatesEnabled(True)
 
         self.dw_snr.dockLocationChanged.connect(fn_dw_snr_visChanged)
         self.dw_snr.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
@@ -6048,17 +6048,17 @@ class MainWindow(QMainWindow):
 
 
         self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pbar_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.sw_pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         # self.addToolBar(self.toolbar)
 
 
 
-        # self.globTabsAndCpanel = VWidget(self.toolbar, self.globTabs, self.cpanel, self.pbar_widget)
+        # self.globTabsAndCpanel = VWidget(self.toolbar, self.globTabs, self.cpanel, self.sw_pbar)
         self.addToolBar(self.toolbar)
-        # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.pbar_widget)
-        # self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.pbar_widget)
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.pbar_widget)
+        # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.sw_pbar)
+        # self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.sw_pbar)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.sw_pbar)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.setCentralWidget(self.globTabsAndCpanel)
@@ -6138,7 +6138,7 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
-        self.pbar.setFixedHeight(14)
+        # self.pbar.setFixedHeight(14)
         # self.pbar.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.pbar.setStyleSheet("font-size: 9px;")
         self.pbar.setTextVisible(True)
@@ -6146,8 +6146,10 @@ class MainWindow(QMainWindow):
         # font.setBold(True)
         # self.pbar.setFont(font)
         # self.pbar.setFixedWidth(400)
-        self.pbar_widget = QWidget(self)
-        self.pbar_widget.setAutoFillBackground(True)
+        # self.sw_pbar = QWidget(self)
+        self.sw_pbar = QStackedWidget(self)
+        self.sw_pbar.setFixedHeight(14)
+        self.sw_pbar.setAutoFillBackground(True)
         self.status_bar_layout = QHBoxLayout()
         self.status_bar_layout.setContentsMargins(4, 0, 4, 0)
         self.status_bar_layout.setSpacing(4)
@@ -6158,16 +6160,20 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""font-size: 9px;""")
         self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
-
-        self.pbar_widget.setLayout(self.status_bar_layout)
         self.pbarLabel = QLabel('Task... ')
-        self.pbarLabel.setStyleSheet("""
-        font-size: 9px;
-        font-weight: 600;""")
-        self.status_bar_layout.addWidget(self.pbarLabel, alignment=Qt.AlignmentFlag.AlignRight)
-        self.status_bar_layout.addWidget(self.pbar)
-        self.status_bar_layout.addWidget(self.pbar_cancel_button)
-        # self.statusBar.addPermanentWidget(self.pbar_widget)
+        self.pbarLabel.setStyleSheet("""font-size: 9px;font-weight: 600;""")
+
+        self.widgetPbar = HWidget(self.pbarLabel, self.pbar, self.pbar_cancel_button)
+
+        self.w_pbarUnavailable = QLabel('GUI Progress Bar Temporarily Unavailable. See Progress in Terminal.')
+        self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
+        self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
+
+        self.sw_pbar.addWidget(self.widgetPbar)
+        self.sw_pbar.addWidget(self.w_pbarUnavailable)
+        self.sw_pbar.setCurrentIndex(0)
+
+        # self.statusBar.addPermanentWidget(self.sw_pbar)
         self.hidePbar()
 
     def forceStopMultiprocessing(self):
@@ -6176,6 +6182,20 @@ class MainWindow(QMainWindow):
 
     def setPbarMax(self, x):
         self.pbar.setMaximum(x)
+
+    def setPbarUnavailable(self, b):
+        self.setUpdatesEnabled(False)
+        logger.info('')
+        if b:
+            self.sw_pbar.setCurrentIndex(1)
+            self.sw_pbar.show()
+        else:
+            self.sw_pbar.setCurrentIndex(0)
+            # self.sw_pbar.hide()
+        QApplication.processEvents()
+        self.setUpdatesEnabled(True)
+
+
 
     def updatePbar(self, x=None):
         caller = inspect.stack()[1].function
@@ -6238,12 +6258,13 @@ class MainWindow(QMainWindow):
             self.pbar.setMaximum(pbar_max)
         self.pbar.setValue(0)
         self.setPbarText('Preparing Tasks...')
-        self.pbar_widget.show()
+        self.sw_pbar.show()
         QApplication.processEvents()
 
     def hidePbar(self):
         # logger.info('')
-        self.pbar_widget.hide()
+        self.sw_pbar.hide()
+        self.sw_pbar.setCurrentIndex(0)
         self.statusBar.clearMessage()  # Shoehorn
         QApplication.processEvents()
 

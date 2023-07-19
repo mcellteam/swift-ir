@@ -219,6 +219,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 tasks.append(task)
 
             cfg.mw.set_status('Generating Zarr. No progress bar currently available (awaiting multiprocessing pool...)')
+            cfg.mw.setPbarUnavailable(True)
 
             # cfg.mw.showZeroedPbar(pbar_max=n_tasks)
 
@@ -238,6 +239,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             # with ctx.Pool(processes=cpus) as pool:
             #     pool.map(convert_zarr, tasks)
             logger.critical("----------END----------")
+
+            cfg.mw.setPbarUnavailable(False)
 
             cfg.mw.set_status('')
 
