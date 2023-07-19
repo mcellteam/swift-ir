@@ -72,10 +72,6 @@ if __name__ == '__main__':
         dir_staged_img = os.path.join(dir_staged, str(ID))
         path = os.path.join(dir_staged_img, out_name)
         grp = zarr.open(dir_staged_img)
-        # arrays = dict(grp.info_items())['Arrays']
-        # groups = dict(grp.info_items())['Groups']
-
-        #Temporary!
 
         if os.path.exists(path):
             try:    shutil.rmtree(path, ignore_errors=True)

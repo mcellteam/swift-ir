@@ -151,6 +151,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
         logger.info(f'\n\n################ Computing Alignment ################\n')
 
+        t0 = time.time()
+
         # limit_workers = 80
         # if use_gui:
         #
@@ -196,45 +198,31 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # dt = task_queue.collect_results()
         # all_results = task_queue.task_dict
 
-        logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL...\n\n\n")
-        dt = time.time()
+        dt = t0 - time.time()
         tasks = []
         for sec in substack:
             zpos = dm_().index(sec)
             if not sec['skipped']:
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
+        cfg.mw.set_status('Computing affines. No progress bar available (awaiting multiprocessing pool...)')
+        logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
         ctx = mp.get_context('forkserver')
         all_results = []
         with ctx.Pool(processes=cpus) as pool:
-
             # all_results = pool.map(run_recipe, tasks)
             for result in pool.map(run_recipe, tasks):
                 all_results.append(result)
                 print(result)
-
-            print("For the moment, the pool remains available for more work")
-
-        # exiting the 'with'-block has stopped the pool
-        print("Now the pool is closed and no longer available")
-
         logger.critical("\n\n\nENDING MULTIPROCESSING POOL. RESULTS....\n\n\n")
-
         logger.critical(str(all_results))
-
         logger.critical("\n\n\n----------END----------\n\n\n")
-
-
-
-
-
-
-
-
+        cfg.mw.set_status('')
 
 
         dm.t_align = dt
-        t0 = time.time()
+
+
         if use_gui:
             if cfg.CancelProcesses:
                 return
