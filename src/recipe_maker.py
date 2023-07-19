@@ -43,9 +43,14 @@ def run_recipe(data, dev_mode=False):
     init_afm = np.array(meta['init_afm'])
     od = os.path.join(pd, scale_key, 'img_aligned')
 
-    MAlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'manual_align.log')))
-    SWIMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'swim.log')))
-    RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
+    # MAlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'manual_align.log')))
+    # SWIMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'swim.log')))
+    # RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
+    MAlogger.disabled = True
+    SWIMlogger.disabled = True
+    RMlogger.disabled = True
+
+
     # MIRlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'mir.log')))
 
     # scratchpath = os.path.join(pd, 'logs', 'scratch.log')
