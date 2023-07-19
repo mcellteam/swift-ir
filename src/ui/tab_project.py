@@ -3966,11 +3966,6 @@ class ProjectTab(QWidget):
             font-weight: 600;
             border: 1px solid #ede9e8;
             background-color: #dadada;
-            
-            border-bottom-width: 0px;
-            border-left-width: 0px;
-            border-top-width: 0px;
-            border-top-radius: 0px;
         }
         QTabBar::tab:selected
         {
