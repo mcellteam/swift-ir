@@ -223,9 +223,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
             # cfg.mw.showZeroedPbar(pbar_max=n_tasks)
 
-            logger.critical("SHUTTING DOWN NEUROGLANCER...")
-            cfg.mw.shutdownNeuroglancer()
-
             t0 = time.time()
             logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
 
