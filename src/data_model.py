@@ -976,14 +976,14 @@ class DataModel:
                 layer['alignment'].setdefault('manpoints_mir', {})
                 layer['alignment']['manpoints_mir'].setdefault('ref', [])
                 layer['alignment']['manpoints_mir'].setdefault('base', [])
-                # if s == self.coarsest_scale_key():
-                #     layer['alignment'].setdefault('targ', True)
-                #     layer['alignment'].setdefault('karg', True)
-                # else:
-                #     layer['alignment'].setdefault('targ', False)
-                #     layer['alignment'].setdefault('karg', False)
-                layer['alignment'].setdefault('targ', True)
-                layer['alignment'].setdefault('karg', True)
+                if s == self.coarsest_scale_key():
+                    layer['alignment'].setdefault('targ', True)
+                    layer['alignment'].setdefault('karg', True)
+                else:
+                    layer['alignment'].setdefault('targ', False)
+                    layer['alignment'].setdefault('karg', False)
+                # layer['alignment'].setdefault('targ', True)
+                # layer['alignment'].setdefault('karg', True)
         try:
             self.set_auto_swim_windows_to_default(s_list=self.scales())
             self.set_manual_swim_windows_to_default(s_list=self.scales())

@@ -238,7 +238,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             with ctx.Pool(processes=cpus) as pool:
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
                 pool.close()
-                # all_results = [p.get() for p in results]
+                [p.get() for p in results]
 
             # with ctx.Pool(processes=cpus) as pool:
             #     pool.map(convert_zarr, tasks)
