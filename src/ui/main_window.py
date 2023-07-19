@@ -5727,10 +5727,7 @@ class MainWindow(QMainWindow):
         QTabBar::tab {
             background-color: qlineargradient(x1:0, y1:0, x2:.5, y2:1, stop:0 #141414, stop:1 #222222);
             color: #f3f6fb;
-            /*
             min-width: 120px;
-            max-width: 260px;
-            */
             height: 18px;
             padding-left:0px;
             padding-right:0px;
