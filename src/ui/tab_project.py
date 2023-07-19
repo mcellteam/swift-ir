@@ -181,15 +181,16 @@ class ProjectTab(QWidget):
 
         if index == 0:
             # cfg.emViewer.set_layer(cfg.data.zpos)
-            self.initNeuroglancer()
+            # self.initNeuroglancer()
+            pass
         elif index == 1:
-            pts_ref = cfg.refViewer.pts
-            pts_base = cfg.baseViewer.pts
-            # self.shutdownNeuroglancer()
-            self.initNeuroglancer()
-            cfg.refViewer.pts = pts_ref
-            cfg.baseViewer.pts = pts_base
-            self.fn_hwidgetChanged()
+            # pts_ref = cfg.refViewer.pts
+            # pts_base = cfg.baseViewer.pts
+            # # self.shutdownNeuroglancer()
+            # self.initNeuroglancer()
+            # cfg.refViewer.pts = pts_ref
+            # cfg.baseViewer.pts = pts_base
+            pass
 
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
