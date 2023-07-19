@@ -21,7 +21,6 @@ __all__ = ['run_recipe']
 
 MAlogger      = logging.getLogger('MAlogger')
 SWIMlogger    = logging.getLogger('SWIMlogger')
-# MIRlogger     = logging.getLogger('MIRlogger')
 RMlogger      = logging.getLogger('recipemaker')
 # scratchlogger = logging.getLogger('scratch')
 
@@ -35,8 +34,6 @@ def run_recipe(data, dev_mode=False):
     meta = data['alignment']['meta']
     pd = meta['destination_path']
     scale_key = meta['scale_key']
-    # scale_val = meta['scale_val']
-    # zpos = meta['index']
     isRefinement = meta['isRefinement']
     defaults = meta['defaults']
     initial_rotation = float(defaults['initial-rotation'])
@@ -51,10 +48,6 @@ def run_recipe(data, dev_mode=False):
     MAlogger.disabled = True
     SWIMlogger.disabled = True
     RMlogger.disabled = True
-
-
-    # MIRlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'mir.log')))
-
     # scratchpath = os.path.join(pd, 'logs', 'scratch.log')
     # try: os.remove(scratchpath)
     # except OSError: pass
@@ -62,38 +55,9 @@ def run_recipe(data, dev_mode=False):
     # fh.setLevel(logging.DEBUG)
     # scratchlogger.addHandler(fh)
 
-    # s_tbd = project['data']['scales'][scale_key]['stack']
-    # img_size = project['data']['scales'][scale_key]['image_src_size']
-
-    # option = s_tbd[zpos]['alignment']['method_data']['alignment_option']
-    # if project['data']['scales'][scale_key]['isRefinement']:
-    #     option = 'refine_affine'
-    # else:
-    #     option = 'init_affine'
-    # option = s_tbd[zpos]['alignment']['method_data']['alignment_option'] #Refactor
-    # init_afm = np.array([[1., 0., 0.], [0., 1., 0.]])
-
-    # if option in ('refine_affine', 'apply_affine'):
-    #     scales = natural_sort(list(project['data']['scales'].keys()))
-    #     scale_prev = scales[scales.index(scale_key) + 1]
-    #     prev_scale_val = int(scale_prev[len('scale_'):])
-    #     upscale = (float(prev_scale_val) / float(scale_val))
-    #     scale_prev_dict = project['data']['scales'][scale_prev]['stack']
-    #     prev_afm = np.array(scale_prev_dict[zpos]['alignment']['method_results']['affine_matrix']).deepcopy()
-    #     # prev_method = scale_prev_dict[zpos]['current_method']
-    #     # prev_afm = np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']).deepcopy()
-    #     prev_afm[0][2] *= upscale
-    #     prev_afm[1][2] *= upscale
-    #     init_afm = prev_afm
-
-
     data['alignment']['method_results'].setdefault('affine_matrix', init_afm.tolist())
     data['alignment']['method_results'].setdefault('snr', [])
     data['alignment']['method_results'].setdefault('snr_report', 'SNR: --')
-
-    # initial_rotation = float(defaults['initial-rotation'])
-    # isRefinement = project['data']['scales'][scale_key]['isRefinement']
-
 
     if not skipped:
         if os.path.basename(data['reference']) != '':
@@ -119,7 +83,6 @@ def run_recipe(data, dev_mode=False):
 class align_recipe:
 
     # global scratchlogger
-    # global MIRlogger
     global SWIMlogger
     global RMlogger
     global MAlogger
@@ -141,12 +104,10 @@ class align_recipe:
             self.option = 'refine_affine'
         else:
             self.option = 'init_affine'
-        # self.option = self.alData['method_data']['alignment_option']
         if self.cur_method == 'grid-default':
             self.wht = self.defaults['signal-whitening']
             self.iters = self.defaults['swim-iterations']
         else:
-            # self.wht = self.alData['method_data']['whitening_factor']
             self.wht = self.alData['swim_settings']['signal-whitening']
             self.iters = self.alData['swim_settings']['iterations']
         self.grid_custom_regions  = self.alData['swim_settings']['grid-custom-regions']
@@ -237,13 +198,8 @@ class align_recipe:
                 self.add_ingredients([align_ingredient(mode='MIR', ww=ww, psta=man_psta, pmov=man_pmov, last=True)])
 
 
-
     def execute_recipe(self):
 
-        # Initialize afm to afm of first ingredient in recipe
-        # if self.ingredients[0].afm is not None:
-        # if self.ingredients[0].afm:
-        #     self.afm = self.ingredients[0].afm
         self.afm = self.init_afm
 
         if (self.im_sta_fn == self.im_mov_fn) or (self.im_sta_fn == ''):
@@ -270,10 +226,8 @@ class align_recipe:
                     snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
                 afm = self.init_afm
 
-
         time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        # Retrieve alignment results
         try:
             snr_list = snr.tolist()
         except:
@@ -326,10 +280,6 @@ class align_recipe:
                 try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
                 except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                 if self.cur_method in ('grid-default', 'grid-custom'):
-                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cx'] = str(ing.cx)
-                    # except: print_exception(self.pd)
-                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['cy'] = str(ing.cy)
-                    # except: print_exception(self.pd)
                     try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
@@ -351,53 +301,13 @@ class align_recipe:
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
-                    # try: self.layer_dict['alignment']['dx']['ingredient_%d' % i] = ing.dx
-                    # except: print_exception(self.pd)
-                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i] = ing.dy
-                    # except: print_exception(self.pd)
-                    # try: self.layer_dict['alignment']['method_results']['ingredient_%d' % i]['swim_drift'] = ing.swim_drift
-                    # except: print_exception(self.pd)
                     try: self.layer_dict['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.layer_dict['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
                     except: print_exception(self.pd, extra=f"ingedient {i}, ID: {ing.ID}")
 
-                    # try: self.layer_dict['alignment']['crop_str_mir']['ingredient_%d' % i] = ing.crop_str_mir
-                    # except: print_exception(self.pd)
 
         self.layer_dict['alignment_hash'] = dict_hash(self.layer_dict['alignment_history'][self.cur_method])
-
-        # self.layer_dict['alignment']['method_results']['auto_ww'] = self.auto_ww
-        # self.layer_dict['alignment']['method_results']['pts_base'] = self.man_pmov.tolist()
-        # self.layer_dict['alignment']['method_results']['pts_ref'] = self.man_psta.tolist()
-
-        # self.layer_dict['alignment']['method_data']['bias_x_per_image'] = 0
-        # self.layer_dict['alignment']['method_data']['bias_y_per_image'] = 0
-        # self.layer_dict['alignment']['method_data']['bias_rot_per_image'] = 0
-        # self.layer_dict['alignment']['method_data']['bias_scale_x_per_image'] = 1
-        # self.layer_dict['alignment']['method_data']['bias_scale_y_per_image'] = 1
-        # self.layer_dict['alignment']['method_data']['bias_skew_x_per_image'] = 0
-
-        # self.layer_dict['alignment']['mir_toks'] = self.ingredients[-1].mir_toks
-        # self.layer_dict['alignment']['mir_args'] = self.ingredients[-1].mir_script
-        # self.layer_dict['alignment'].setdefault('swim_args', {})
-        # self.layer_dict['alignment'].setdefault('swim_out', {})
-        # self.layer_dict['alignment'].setdefault('swim_err', {})
-
-        # self.layer_dict['alignment']['ingredient0_dx'] = self.ingredients[0].dx
-        # self.layer_dict['alignment']['ingredient0_dy'] = self.ingredients[0].dy
-
-        # self.layer_dict['alignment']['swim_args'] = {}
-        # self.layer_dict['alignment']['swim_out'] = {}
-        # self.layer_dict['alignment']['swim_err'] = {}
-        # if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
-        #     for i,ing in enumerate(self.ingredients):
-        #         try:    self.layer_dict['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
-        #         except: print_exception(self.pd)
-        #         try:    self.layer_dict['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
-        #         except: print_exception(self.pd)
-        #         try:    self.layer_dict['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
-        #         except: print_exception(self.pd)
 
         return afm
 
@@ -578,18 +488,12 @@ class align_ingredient:
         if self.recipe.cur_method in ('grid-default', 'grid-custom'):
             w = str(int(self.ww[0] / 2.0))
             h = str(int(self.ww[1] / 2.0))
-            # x1 = str(int(self.ww[0] * ((1.0 - keep) / 2.0)))  # short
-            # x2 = str(int(self.ww[0] * (.50 + (keep / 2.0))))  # long
-            # y1 = str(int(self.ww[1] * ((1.0 - keep) / 2.0)))  # short
-            # y2 = str(int(self.ww[1] * (.50 + (keep / 2.0))))  # long
             x1 = str(int((self.ww[0] - px_keep) / 2.0))
             y1 = str(int((self.ww[1] - px_keep) / 2.0))
             x2 = str(int((.50 * self.ww[0]) + (px_keep / 2.0)))
             y2 = str(int((.50 * self.ww[1]) + (px_keep / 2.0)))
         else:
             w = h = str(int(self.ww))
-            # x1 = y1 = str(int(self.ww * ((1.0 - keep) / 2.0)))
-            # x2 = y2 = str(int(self.ww * (.50 + (keep / 2.0))))
             x1 = y1 = str(int((self.ww - px_keep) / 2.0))
             x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
 
@@ -634,13 +538,6 @@ class align_ingredient:
             for i,l in enumerate(swim_output):
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
                 self.mir_toks[i] = str(toks)
-                # MIRlogger.critical('MIR toks:\n %s' %self.mir_toks[i])
-                # if len(swim_output) == 1:
-                #     dx = float(toks[8])
-                #     dy = float(toks[9])
-                #     self.dx = float(toks[8])
-                #     self.dy = float(toks[9])
-                # else:
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 self.mir_script += ' '.join(mir_toks) + '\n'
                 snr_list.append(float(toks[0][0:-1]))
@@ -649,18 +546,8 @@ class align_ingredient:
             self.mir_out_lines = o['out'].strip().split('\n')
             self.mir_err_lines = o['err'].strip().split('\n')
 
-            # MIRlogger.critical(f'***MIR script***\n{str(self.mir_script)}\n'
-            #                    f'MIR std out:\n{str(self.mir_out_lines)}\n'
-            #                    f'MIR std err:\n{str(self.mir_err_lines)}')
-
             aim = np.eye(2, 3, dtype=np.float32)
 
-            # if len(swim_output) == 1:
-            #     # 1x1 offset can be plugged directly into the affine's translation components
-            #     aim = copy.deepcopy(self.afm)
-            #     aim[0, 2] += self.dx
-            #     aim[1, 2] += self.dy
-            # else:
             for line in self.mir_out_lines:
                 toks = line.strip().split()
                 if (toks[0] == 'AI'):
@@ -790,8 +677,6 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
     return dhash.hexdigest()
 
 
-
-
 if __name__ == '__main__':
     RMlogger.info("Running " + __file__ + ".__main__()")
 
@@ -803,11 +688,3 @@ if __name__ == '__main__':
     print("---JSON-DELIMITER---")
     sys.stdout.close()
     sys.stderr.close()
-
-
-'''
-Notes:
-  - mir has a -v flag for more output
-  - wsf = 0.80 (Most common good value for wsf) = 0.75  (Also a good value for most projects)
-
-'''
