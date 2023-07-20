@@ -1,6 +1,15 @@
 #!/bin/bash
 
-DEBUG="1"
+DEBUG="0"
+
+for i in "$@"; do
+  case $i in
+    -d|--debug)
+      DEBUG="1"
+      shift # past argument with no value
+      ;;
+  esac
+done
 
 echo "Loading intel/19.1.1 module..."
 ml intel/19.1.1

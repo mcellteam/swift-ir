@@ -14,7 +14,6 @@ DEBUG="0"
 PULL="1"
 
 echo "Parsing cli arguments..."
-
 for i in "$@"; do
   case $i in
     -c|--cacher)
