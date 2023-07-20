@@ -576,7 +576,7 @@ class OpenProject(QWidget):
             sidebar.setItemDelegate(delegate)
             # urls = self.name_dialog.sidebarUrls()
             # logger.info(f'urls: {urls}')
-            cfg.mw.set_status('Awaiting User Input...')
+            cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
             if self.name_dialog.exec() == QFileDialog.Accepted:
                 logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
                 filename = self.name_dialog.selectedFiles()[0]
@@ -592,6 +592,7 @@ class OpenProject(QWidget):
                 cfg.mw.warn("New Project Canceled.")
                 self.showMainUI()
                 return
+            cfg.mw.set_status('')
 
             filename.replace(' ','_')
             if not filename.endswith('.swiftir'):
@@ -673,7 +674,7 @@ class OpenProject(QWidget):
             result = dialog.exec()
             self.showMainUI()
             # logger.info(f'result = {result}, type = {type(result)}')
-
+            cfg.mw.set_status('')
             if result:
                 logger.info('Save File Path: %s' % path)
             else:
@@ -733,7 +734,6 @@ class OpenProject(QWidget):
                 cfg.mw._autosave(silently=True)
                 cfg.data = dm
                 cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
-                cfg.mw.setZpos(int(len(dm) / 2))
                 cfg.mw.setUpdatesEnabled(False)
                 try:
                     cfg.mw.onStartProject()
@@ -741,6 +741,7 @@ class OpenProject(QWidget):
                     print_exception()
                 finally:
                     cfg.mw.setUpdatesEnabled(True)
+
 
         QApplication.processEvents()
 
@@ -750,8 +751,9 @@ class OpenProject(QWidget):
             f.write(filename + '\n')
         cfg.mw._autosave()
         self.user_projects.set_data()
-
         QApplication.processEvents()
+        cfg.mw._is_initialized = 1
+        cfg.pt.initNeuroglancer()
 
         logger.critical('<<<< new_project <<<<')
 
@@ -807,8 +809,6 @@ class OpenProject(QWidget):
         sidebar.setItemDelegate(delegate)
 
 
-        cfg.mw.set_status('Awaiting User Input...')
-        logger.info('Awaiting user input...')
         if dialog.exec_() == QDialog.Accepted:
             filenames = dialog.selectedFiles()
         else:
@@ -874,6 +874,7 @@ class OpenProject(QWidget):
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+        cfg.mw._is_initialized = 0
         path = self.selectionReadout.text()
         if validate_zarr_selection(path):
             self.open_zarr_selected()
