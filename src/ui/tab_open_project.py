@@ -473,13 +473,12 @@ class OpenProject(QWidget):
         # if caller == 'initTableData':
         #     return
         row = self.user_projects.table.currentIndex().row()
-        logger.info(f'row: {str(row)}')
         try:
             try:
                 self.selected_file = self.user_projects.table.item(row, 1).text()
             except:
                 pass
-            logger.info(f'selected:\n{self.selected_file}')
+            logger.info(f'row: {str(row)}, selected:\n{self.selected_file}')
             self.setSelectionPathText(self.selected_file)
             self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
             self.cbCalGrid.setVisible(validate_tiff_folder(self.selected_file))
@@ -520,6 +519,7 @@ class OpenProject(QWidget):
     def new_project(self, mendenhall=False, skip_to_config=False):
         logger.info('\n\nStarting A New Project...\n')
         cfg.mw.tell('Starting A New Project...')
+        cfg.mw._is_initialized = 0
 
         if not skip_to_config:
             self.hideMainUI()
@@ -914,6 +914,7 @@ class OpenProject(QWidget):
             cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             cfg.mw._setLastTab()
             # cfg.mw.hud.done()
+            cfg.mw._is_initialized = 1
         else:
             cfg.mw.warn("Invalid Path")
 

@@ -207,7 +207,7 @@ class TaskQueue(QObject):
         # logger.info('Ending Tasks...')
         # Add one sentinel per worker
         for i in range(self.n_workers):
-            logger.info('<< Adding END_TASKS sentinel to Worker %d' % i)
+            # logger.info('<< Adding END_TASKS sentinel to Worker %d' % i)
             self.work_queue.put('END_TASKS')
 
     def stop(self) -> None:

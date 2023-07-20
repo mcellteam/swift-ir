@@ -252,10 +252,14 @@ class ProjectTab(QWidget):
             time.sleep(cfg.DELAY_AFTER)
 
     def initNeuroglancer(self, init_all=False):
-        cfg.mw.set_status('Initializing Neuroglancer...')
+        if cfg.mw._is_initialized == 0:
+            logger.warning("\n\nCANNOT INITIALIZE NEUROGLANCER AT THIS TIME\n\n")
+            return
+
         # logger.info('')
         # QApplication.processEvents()
         # cfg.mw.tell('Initializing Neuroglancer')
+        cfg.mw.set_status('Initializing Neuroglancer...')
         if DEV:
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
         if cfg.data['state']['current_tab'] == 1 or init_all:
