@@ -188,6 +188,7 @@ class ProjectTab(QWidget):
             # cfg.refViewer.pts = pts_ref
             # cfg.baseViewer.pts = pts_base
             self.initNeuroglancer()
+            self.updateLowest8widget()
             self.updateDetailsPanel()
             self.updateDtWidget()
 
