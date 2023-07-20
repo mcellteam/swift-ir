@@ -262,7 +262,7 @@ def main():
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
     initialize_user_preferences()
-    # configure_project_paths()
+    configure_project_paths()
 
     # app = QApplication([])
     app = QApplication(sys.argv)

@@ -235,14 +235,14 @@ class HeadupDisplay(QWidget):
         self.theme = 'dark'
 
         self.textedit.setStyleSheet("""
-            background-color:  #222222;
+            background-color:  #161c20;
             color: #f3f6fb;
-            border-style: inset;
-            border-color: #d3dae3; /* light off-white */
+            /*border-style: inset;*/
+            /*border-color: #d3dae3;  light off-white */
             border-width: 0px;
             border-radius: 2px;
             font-size: 9px;
-            font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
+            font-family: 'Ubuntu Mono', 'Andale Mono', monospace;
             margin: 0px 0px 0px 0px;
         """)
 
@@ -268,9 +268,6 @@ class HeadupDisplay(QWidget):
     def sizeHint(self):
         width = int(cfg.main_window.width() / 2) - 10
         return QSize(width, 90)
-
-
-
 
 
 

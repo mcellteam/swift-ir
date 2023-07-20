@@ -71,7 +71,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             print_exception()
             logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
             if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
-
     if gui:
         cfg.mw.hidePbar()
         # if cfg.mw._isProjectTab():

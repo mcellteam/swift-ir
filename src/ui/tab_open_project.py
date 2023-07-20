@@ -724,6 +724,7 @@ class OpenProject(QWidget):
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
                     # cfg.mw.setdw_matches(True)
                     cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
+
                 else:
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
             except:
@@ -751,9 +752,14 @@ class OpenProject(QWidget):
             f.write(filename + '\n')
         cfg.mw._autosave()
         self.user_projects.set_data()
-        QApplication.processEvents()
         cfg.mw._is_initialized = 1
+
+        QApplication.processEvents()
         cfg.pt.initNeuroglancer()
+        if cfg.data.is_aligned():
+            cfg.mw.setdw_hud(True)
+            cfg.mw.setdw_thumbs(True)
+            cfg.mw.setdw_matches(True)
 
         logger.critical('<<<< new_project <<<<')
 
@@ -913,7 +919,14 @@ class OpenProject(QWidget):
             cfg.mw._setLastTab()
             # cfg.mw.hud.done()
             cfg.mw._is_initialized = 1
+
+            QApplication.processEvents()
             cfg.pt.initNeuroglancer()
+            if cfg.data.is_aligned():
+                cfg.mw.setdw_hud(True)
+                cfg.mw.setdw_thumbs(True)
+                cfg.mw.setdw_matches(True)
+
         else:
             cfg.mw.warn("Invalid Path")
 
