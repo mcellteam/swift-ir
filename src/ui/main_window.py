@@ -4876,13 +4876,12 @@ class MainWindow(QMainWindow):
             if cfg.data:
                 if cfg.project_tab:
                     if self._sectionSlider.value() < len(cfg.data) - 1:
-                        self._sectionSlider.setValue(self._sectionSlider.value() + 1)
+                        self.setZpos(cfg.data.zpos + 1)
                     else:
-                        self._sectionSlider.setValue(0)
+                        self.setZpos(0)
                         self.automaticPlayTimer.stop()
                         self._isPlayingBack = 0
                         self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
-                        # self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
 
         self.automaticPlayTimer.timeout.connect(onTimer)
         self._sectionSliderWidget = QWidget()
