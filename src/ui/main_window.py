@@ -6433,6 +6433,11 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.pt.set_transforming()
 
+        elif event.key() == Qt.Key_Shift:
+            if self._isProjectTab():
+                cur = cfg.pt._tabs.current_index()
+                cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+
         # elif event.key() == Qt.Key_Shift:
         # elif event.key() == Qt.Key_M:
         #     # logger.info('Shift Key Pressed!')
