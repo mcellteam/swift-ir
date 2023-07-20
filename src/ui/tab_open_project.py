@@ -916,6 +916,7 @@ class OpenProject(QWidget):
             cfg.mw._setLastTab()
             # cfg.mw.hud.done()
             cfg.mw._is_initialized = 1
+            cfg.pt.initNeuroglancer()
         else:
             cfg.mw.warn("Invalid Path")
 
