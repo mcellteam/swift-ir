@@ -189,11 +189,15 @@ def tiffs2MultiTiff(directory:str, out:str):
 def remove_zarr(path) -> None:
     if os.path.isdir(path):
         logger.info('Removing Extant Zarr Located at %s' % path)
+        # try:
+        #     with time_limit(20):
+        #         shutil.rmtree(path, ignore_errors=True)
+        # except TimeoutError as e:
+        #     logger.warning("Timed out!")
         try:
-            with time_limit(20):
-                shutil.rmtree(path, ignore_errors=True)
-        except TimeoutError as e:
-            logger.warning("Timed out!")
+            shutil.rmtree(path, ignore_errors=True)
+        except:
+            print_exception()
         logger.info('Done Removing Zarr')
 
 
