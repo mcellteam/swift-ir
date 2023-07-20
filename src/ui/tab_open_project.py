@@ -475,7 +475,7 @@ class OpenProject(QWidget):
         row = self.user_projects.table.currentIndex().row()
         try:
             try:
-                self.selected_file = self.user_projects.table.item(row, 1).text()
+                self.selected_file = self.user_projects.table.item(row, 0).text()
             except:
                 pass
             logger.info(f'row: {str(row)}, selected:\n{self.selected_file}')
@@ -844,14 +844,14 @@ class OpenProject(QWidget):
         self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
         self.cbCalGrid.setVisible(validate_tiff_folder(path))
 
-        # if validate_project_selection(path) | validate_zarr_selection(path):
-        #     self.validity_label.hide()
-        #     self._buttonOpen.setEnabled(True)
-        #     self._buttonDelete.setEnabled(True)
-        # else:
-        #     self.validity_label.show()
-        #     self._buttonOpen.setEnabled(False)
-        #     self._buttonDelete.setEnabled(False)
+        if validate_project_selection(path) | validate_zarr_selection(path):
+            self.validity_label.hide()
+            self._buttonOpen.setEnabled(True)
+            self._buttonDelete.setEnabled(True)
+        else:
+            self.validity_label.show()
+            self._buttonOpen.setEnabled(False)
+            self._buttonDelete.setEnabled(False)
 
 
     def open_zarr_selected(self):
@@ -1167,7 +1167,7 @@ class UserProjects(QWidget):
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
         font0 = QFont()
-        font0.setPointSize(9)
+        font0.setPointSize(10)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
