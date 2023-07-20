@@ -757,6 +757,7 @@ class OpenProject(QWidget):
         QApplication.processEvents()
         cfg.pt.initNeuroglancer()
         if cfg.data.is_aligned():
+            cfg.pt.updateLowest8widget()
             cfg.mw.setdw_hud(True)
             cfg.mw.setdw_thumbs(True)
             cfg.mw.setdw_matches(True)
@@ -923,6 +924,7 @@ class OpenProject(QWidget):
             QApplication.processEvents()
             cfg.pt.initNeuroglancer()
             if cfg.data.is_aligned():
+                cfg.pt.updateLowest8widget()
                 cfg.mw.setdw_hud(True)
                 cfg.mw.setdw_thumbs(True)
                 cfg.mw.setdw_matches(True)

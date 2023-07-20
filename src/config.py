@@ -47,7 +47,7 @@ is_mendenhall = False
 # WIDTH, HEIGHT = 1380, 900
 # WIDTH, HEIGHT = 1180, 720
 # WIDTH, HEIGHT = 1320, 740
-WIDTH, HEIGHT = 1200, 900
+WIDTH, HEIGHT = 1500, 720
 
 '''Default Alignment Params'''
 
