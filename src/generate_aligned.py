@@ -23,6 +23,7 @@ from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
 from src.background_worker import BackgroundWorker
+from src.job_apply_affine import run_mir
 
 
 __all__ = ['GenerateAligned']
@@ -98,42 +99,44 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         logger.info(f'\n\n################ Generating Aligned Images ################\n')
 
-        if use_gui:
-            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
-        else:
-            task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=False)
-        task_queue.taskPrefix = 'Generating TIFF for '
-        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm()[start:end]]
-
-        task_queue.start(cpus)
-        for ID, layer in enumerate(iter(dm()[start:end])):
+        tasks = []
+        for layer in iter(dm()[start:end]):
             base_name = layer['filename']
             _ , fn = os.path.split(base_name)
-            al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
-            # layer['images']['aligned'] = {}
-            # layer['images']['aligned']['filename'] = al_name
+            al_name = os.path.join(dest, scale, 'img_aligned', fn)
             cafm = layer['alignment']['method_results']['cumulative_afm']
-            args = [sys.executable, job_script, '-gray', '-rect',
-                    str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
-                    str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
-            task_queue.add_task(args)
-            if cfg.PRINT_EXAMPLE_ARGS:
-                if ID in [0,1,2]:
-                    print('Example Arguments (ID: %d):\n%s' % (ID, '  '.join(map(str,args))))
-                # if ID is 7:
+            # ID = layer['alignment']['meta']['index']
+            # args = [sys.executable, job_script, '-gray', '-rect',
+            #         str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
+            #         str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
+            tasks.append([base_name, al_name, rect, cafm, 128])
 
-        # args_list = reorder_tasks(task_list=args_list, z_stride=Z_STRIDE)
-        # for task in args_list:
-        #     task_queue.add_task(task)
-        try:
-            dt = task_queue.collect_results()
-            dm.t_generate = dt
-        except:
-            print_exception()
-            logger.warning('Task Queue encountered a problem')
+        t0 = time.time()
+
+        cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
+        cfg.mw.setPbarUnavailable(True)
+        logger.critical("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
+        pbar = tqdm.tqdm(total=len(tasks))
+        t0 = time.time()
+
+        def update_tqdm(*a):
+            pbar.update()
+
+        ctx = mp.get_context('forkserver')
+        # with ctx.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=run_mir, args=(task,), callback=update_tqdm) for task in tasks]
+            pool.close()
+            print([p.get() for p in results])
+            pool.join()
+        logger.critical("----------END----------")
+        cfg.mw.setPbarUnavailable(False)
+        cfg.mw.set_status('')
 
 
-    dm.set_image_aligned_size()
+        dm.t_generate = time.time() - t0
+
+        dm.set_image_aligned_size()
 
     '''----TEMP----'''
     # for i, layer in enumerate(cfg.data.get_iter(scale)):
@@ -219,13 +222,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 task = [i, al_name, zarr_group]
                 tasks.append(task)
 
-            cfg.mw.set_status('Generating Zarr. No progress bar currently available (awaiting multiprocessing pool...)')
+            cfg.mw.set_status('Generating Zarr. No progress bar available. Awaiting multiprocessing pool...')
             cfg.mw.setPbarUnavailable(True)
-
-            # cfg.mw.showZeroedPbar(pbar_max=n_tasks)
-
             logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
-            ctx = mp.get_context('forkserver')
             pbar = tqdm.tqdm(total=len(tasks))
             t0 = time.time()
             def update_tqdm(*a):
@@ -236,21 +235,12 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 pool.close()
                 [p.get() for p in results]
                 pool.join()
-
-            # with ctx.Pool(processes=cpus) as pool:
-            #     pool.map(convert_zarr, tasks)
             logger.critical("----------END----------")
             cfg.mw.setPbarUnavailable(False)
             cfg.mw.set_status('')
             dt = time.time() - t0
             dm.t_convert_zarr = dt
 
-
-            for l in list(range(start, end)):
-                dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = True
-
-            for l in list(range(end, len(dm))):
-                dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = False
 
 
     logger.info('<<<< Generate Aligned <<<<')

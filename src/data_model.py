@@ -866,8 +866,6 @@ class DataModel:
             for i in range(len(self)):
                 layer = scale['stack'][i]
 
-                layer.setdefault('cafm_comports', True)
-
                 layer.setdefault('current_method', 'grid-default')
                 layer.setdefault('selected_method', 'grid-default')
                 layer.setdefault('data_comports', True)

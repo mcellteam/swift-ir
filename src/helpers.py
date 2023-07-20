@@ -68,7 +68,6 @@ def run_checks():
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
-    logger.info("\n================== Run Command ==================")
     cmd_arg_list = [cmd]
     if arg_list != None:
         cmd_arg_list = [a for a in arg_list]
@@ -608,6 +607,7 @@ def track(func):
 
 
 def renew_directory(directory: str, gui=True) -> None:
+    logger.info(f'Renewing directory: {directory}...')
     '''Remove and re-create a directory, if it exists.'''
     if os.path.exists(directory):
         d = os.path.basename(directory)
