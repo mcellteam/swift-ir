@@ -427,12 +427,12 @@ class MAViewer(neuroglancer.Viewer):
             if cfg.data['state']['tra_ref_toggle'] != 0:
                 return
 
-        logger.info('')
+        # logger.info('')
         # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
 
         self._blockStateChanged = True
 
-        logger.info('>>>> on_state_changed >>>>')
+        # logger.info('>>>> on_state_changed >>>>')
 
         # self._blockStateChanged = True
         # if not self.cs_scale:
