@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DEBUG="1"
+
 echo "Loading intel/19.1.1 module..."
 ml intel/19.1.1
 echo "Loading swr/21.2.5 module..."
@@ -20,3 +22,12 @@ git checkout remotes/origin/fb30_joel
 git pull
 git log -1
 python3 $WORK/swift-ir/alignEM.py
+
+if [ "$DEBUG" = "1" ] ; then
+  echo "Loading valgrind module for debugging..."
+  echo "Setting PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc..."
+  module load valgrind
+  PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind --leak-check=full --show-leak-kinds=all -s python3 $WORK/swift-ir/alignEM.py
+else
+  python3 $WORK/swift-ir/alignEM.py
+fi
