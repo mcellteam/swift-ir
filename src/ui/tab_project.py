@@ -335,7 +335,7 @@ class ProjectTab(QWidget):
 
         cfg.mw.set_status('')
         cfg.mw.hud.done()
-        # self.setZmag(10)
+        self.setZmag(10)
         QApplication.processEvents()
 
 
@@ -3686,10 +3686,10 @@ class ProjectTab(QWidget):
             cfg.baseViewer.set_zmag(10)
         except:
             print_exception()
-        try:
-            cfg.emViewer.set_zmag(10)
-        except:
-            print_exception()
+        # try:
+        #     cfg.emViewer.set_zmag(10)
+        # except:
+        #     print_exception()
 
     def onSliderZmag(self):
 

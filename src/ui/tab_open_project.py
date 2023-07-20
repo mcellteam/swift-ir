@@ -1209,17 +1209,17 @@ class UserProjects(QWidget):
                     twi = QTableWidgetItem(str(item))
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
-        self.table.setColumnWidth(0, 70)
-        self.table.setColumnWidth(1, 100)
+        self.table.setColumnWidth(0, 90)
+        self.table.setColumnWidth(1, 120)
         self.table.setColumnWidth(2, self.ROW_HEIGHT) # <first thumbnail>
         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
         self.table.setColumnWidth(4, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(5, 70)
-        self.table.setColumnWidth(6, 70)
+        self.table.setColumnWidth(5, 80)
+        self.table.setColumnWidth(6, 80)
         self.table.setColumnWidth(7, 50)
-        self.table.setColumnWidth(8, 80)
-        self.table.setColumnWidth(9, 80)
-        self.table.setColumnWidth(10, 80)
+        self.table.setColumnWidth(8, 70)
+        self.table.setColumnWidth(9, 70)
+        self.table.setColumnWidth(10, 70)
         # self.table.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
         self.table.setColumnWidth(11, 70) # <extra thumbnail>
         # self.table.setColumnWidth(10, 100)
