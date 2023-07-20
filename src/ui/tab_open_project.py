@@ -1202,8 +1202,8 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
         self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(4, 82)
-        self.table.setColumnWidth(5, 82)
+        self.table.setColumnWidth(4, 88)
+        self.table.setColumnWidth(5, 88)
         self.table.setColumnWidth(6, 40)
         self.table.setColumnWidth(7, 70)
         self.table.setColumnWidth(8, 70)
