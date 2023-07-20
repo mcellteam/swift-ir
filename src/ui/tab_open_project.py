@@ -844,7 +844,7 @@ class OpenProject(QWidget):
         self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
         self.cbCalGrid.setVisible(validate_tiff_folder(path))
 
-        if validate_project_selection(path) or validate_zarr_selection(path) or validate_tiff_folder(path):
+        if validate_project_selection(path) | validate_zarr_selection(path) | validate_tiff_folder(path):
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
             self._buttonDelete.setEnabled(True)
@@ -1118,9 +1118,9 @@ class UserProjects(QWidget):
     def updateRowHeight(self, h):
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, h)
+        self.table.setColumnWidth(1, h)
         self.table.setColumnWidth(2, h)
         self.table.setColumnWidth(3, h)
-        self.table.setColumnWidth(4, h)
         # self.table.setColumnWidth(10, h)
 
 
@@ -1170,7 +1170,7 @@ class UserProjects(QWidget):
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
         font0 = QFont()
-        font0.setPointSize(10)
+        font0.setPointSize(9)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
