@@ -212,7 +212,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
         cfg.mw.set_status('Computing affines. No progress bar available. Awaiting multiprocessing pool...')
-        logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
+        logger.info("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
         ctx = mp.get_context('forkserver')
         pbar = tqdm.tqdm(total=len(tasks))
         def update_tqdm(*a):

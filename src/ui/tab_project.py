@@ -591,7 +591,6 @@ class ProjectTab(QWidget):
         self.btn_clrBasePts.setFixedSize(QSize(36, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
 
-
         self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab,
                                            ExpandingWidget(self), self.btn_undoBasePts, self.btn_clrBasePts)
         self.baseNextColorWidget.setFixedHeight(16)
@@ -601,77 +600,11 @@ class ProjectTab(QWidget):
 
         self.automatic_label = QLabel()
         self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
-        # font = QFont()
-        # font.setFamily("Tahoma")
-        # self.automatic_label.setFont(font)
-
-        # def fn():
-        #     caller = inspect.stack()[1].function
-        #     logger.info('caller: %s' % caller)
-        #     if caller == 'main':
-        #         if self.tgl_alignMethod.isChecked():
-        #             self.update_MA_list_widgets()
-        #         else:
-        #             cfg.data.set_method('Auto-SWIM') #Critical always set project dict back to Auto-align
-        #             self.set_method_label_text()
-        #         # cfg.project_tab.MA_viewer_ref.undrawSWIMwindow()
-        #         # cfg.project_tab.MA_viewer_base.undrawSWIMwindow()
-        #         if getOpt('neuroglancer,SHOW_SWIM_WINDOW'):
-        #             cfg.project_tab.MA_viewer_ref.drawSWIMwindow()
-        #             cfg.project_tab.MA_viewer_base.drawSWIMwindow()
-        #         self.updateCursor()
-        # self.tgl_alignMethod = AnimatedToggle(
-        #     checked_color='#FFB000',
-        #     pulse_checked_color='#44FFB000')
-        # self.tgl_alignMethod.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.tgl_alignMethod.toggled.connect(fn)
-        # self.tgl_alignMethod.toggled.connect(cfg.main_window._callbk_unsavedChanges)
-        # self.tgl_alignMethod.setFixedSize(44,26)
-
-        # mainToggle = AnimatedToggle()
-        # secondaryToggle = AnimatedToggle(
-        #     checked_color="#FFB000",
-        #     pulse_checked_color="#44FFB000"
-        # )
-        # mainToggle.setFixedSize(mainToggle.sizeHint())
-        # secondaryToggle.setFixedSize(mainToggle.sizeHint())
-        # window.setLayout(QVBoxLayout())
-        # window.layout().addWidget(QLabel("Main Toggle"))
-        # window.layout().addWidget(mainToggle)
-        # window.layout().addWidget(QLabel("Secondary Toggle"))
-        # window.layout().addWidget(secondaryToggle)
-        # mainToggle.stateChanged.connect(secondaryToggle.setChecked)
 
         lab = QLabel('Saved Method:')
         lab.setStyleSheet('font-size: 8px;')
         vw = VWidget(lab, self.automatic_label)
         vw.layout.setSpacing(0)
-
-        # lab2 = QLabel('Mode:')
-        # lab2.setStyleSheet('font-size: 8px; font-family: Tahoma, sans-serif;')
-        # vw2 = VWidget(lab2, self.tgl_alignMethod)
-        # vw2.layout.setSpacing(0)
-
-
-        # def fn():
-        #     logger.info('')
-        #     try:
-        #         self.deleteAllMp()
-        #         self.update_MA_list_widgets()
-        #         cfg.refViewer.undrawSWIMwindows()
-        #         cfg.baseViewer.undrawSWIMwindows()
-        #     except:
-        #         print_exception()
-        #
-        # self.btnClearMA = QPushButton('Reset')
-        # self.btnClearMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.btnClearMA.setFixedSize(QSize(40, 18))
-        # self.btnClearMA.clicked.connect(fn)
-        # self.btnClearMA.setStyleSheet('font-size: 10px;')
-
-        # self.btnResetMA.clicked.connect(self.initNeuroglancer)
-
-        # your logic here
 
         def fn():
             cfg.data.set_all_methods_automatic()
@@ -704,7 +637,6 @@ class ProjectTab(QWidget):
             cfg.main_window.hud('Defaults restored for section %d' % cfg.data.zpos)
             cfg.data.set_auto_swim_windows_to_default(current_only=True)
             cfg.data.set_manual_swim_windows_to_default(current_only=True)
-
 
             self.slider_AS_SWIM_window.setValue(int(cfg.data.swim_1x1_custom_px()[0]))
             self.AS_SWIM_window_le.setText(str(cfg.data.swim_1x1_custom_px()[0]))
@@ -772,14 +704,6 @@ class ProjectTab(QWidget):
         hbl.setSpacing(0)
         hbl.setContentsMargins(2, 2, 2, 2)
         hbl.addWidget(self.btnQuickSWIM)
-        # hbl.addWidget(HWidget(
-        #             ExpandingWidget(self),
-        #             # self.MA_settings_defaults_button,
-        #             # self.btnRunSwimMA,
-        #             # self.btnMAsettings,
-        #             # self.btnClearMA,
-        #             ExpandingWidget(self)
-        # ), alignment=Qt.AlignCenter)
 
         self.MA_controls = QWidget()
         self.MA_controls.setStyleSheet('font-size: 10px;')
@@ -1104,6 +1028,7 @@ class ProjectTab(QWidget):
         vbl.addWidget(HWidget(BoldLabel('Move Selection:'), ExpandingWidget(self), self.translatePointsWidget))
         vbl.addWidget(w)
         self.gb_MA_manual_controls = QGroupBox()
+        self.gb_MA_manual_controls.setObjectName('gb_cpanel')
         self.gb_MA_manual_controls.setLayout(vbl)
 
         self.AS_swim_window_widget = HWidget(self.slider_AS_SWIM_window, self.AS_SWIM_window_le)
@@ -1145,6 +1070,7 @@ class ProjectTab(QWidget):
         self.Q_widget.setLayout(self.gl_Q)
 
         self.gb_MA_settings = QGroupBox('These settings apply to the current section only.')
+        self.gb_MA_settings.setObjectName('gb_cpanel')
         # self.gb_MA_settings.setStyleSheet("font-size: 10px; color: #a30000;")
         # self.gb_MA_settings.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.fl_MA_settings = QFormLayout()
@@ -1265,8 +1191,6 @@ class ProjectTab(QWidget):
         '''DEFAULT GRID SWIM SETTINGS END'''
 
 
-
-
         '''
         OUTPUT SETTINGS
         '''
@@ -1311,8 +1235,6 @@ class ProjectTab(QWidget):
         self.gb_outputSettings.setLayout(self.flSettings)
 
         # '''OUTPUT SETTINGS END'''
-        #
-        #
         # cpanel_style2 = """
         # QLabel {font-size: 10px;}
         #
@@ -1435,17 +1357,10 @@ class ProjectTab(QWidget):
         self.sa_tab3.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab3.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_tab3.setWidget(self.runtimeWidget)
+
         self.secAffine = QLabel()
-        # self.secAffine.setStyleSheet("""QWidget{
-        #     color: #161c20;
-        #     font-weight: 600;
-        #     border: none;}""")
-        # self.sa_tab4 = QScrollArea()
-        # # self.sa_tab4.setStyleSheet("""QLabel {font-weight: 300;}""")
-        # self.sa_tab4.setWidgetResizable(True)
-        # self.sa_tab4.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # self.sa_tab4.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # self.sa_tab4.setWidget(self.secAffine)
+        self.gb_affine = QGroupBox("Affine")
+        self.gb_affine.setLayout(VBL(self.secAffine))
 
         self.cpanelTabWidget = QTabWidget()
         self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1531,17 +1446,10 @@ class ProjectTab(QWidget):
         self.radioboxes_method = HWidget(self.method_rb0, self.method_rb1, self.method_rb2)
         self.radioboxes_method.setMaximumHeight(20)
 
-        self.method_lab = QLabel('Alignment Method:')
-        self.method_lab.setMaximumHeight(20)
-        self.method_lab.setStyleSheet('font-size: 11px; font-weight: 600;')
-        self.gb_method_selection = QGroupBox()
+        self.gb_method_selection = QGroupBox("Alignment Method")
+        self.gb_method_selection.setObjectName('gb_cpanel')
         self.gb_method_selection.setMaximumHeight(42)
-        vbl = VBL()
-        vbl.addWidget(self.method_lab, alignment=Qt.AlignTop)
-        vbl.addWidget(self.radioboxes_method, alignment=Qt.AlignTop)
-        # vbl.setSpacing(0)
-        # vbl.addWidget(self.stageDetails)
-        self.gb_method_selection.setLayout(vbl)
+        self.gb_method_selection.setLayout(VBL(self.radioboxes_method))
         self.gb_method_selection.setStyleSheet('font-size: 11px;')
 
         self.lab_region_selection = QLabel("⇧ + Click - Select 3 corresponding regions\n")
@@ -1750,15 +1658,11 @@ class ProjectTab(QWidget):
         self.fl_settings.addWidget(self.btn_settings_apply_everywhere)
         self.fl_settings.addWidget(self.btnResetAllMA)
 
-        self._settings_widget = QWidget()
-        self._settings_widget.setStyleSheet("font-size: 9px;")
-        self._settings_widget.setLayout(self.fl_settings)
 
-        self.gbGlobSettings = QGroupBox('Global settings')
-        self.gbGlobSettings.setContentsMargins(0, 0, 0, 0)
-        vbl = VBL()
-        vbl.addWidget(self._settings_widget)
-        self.gbGlobSettings.setLayout(vbl)
+        self.gb_globSettings = QGroupBox("Global Settings")
+        self.gb_globSettings.setObjectName('gb_cpanel')
+        self.gb_globSettings.setContentsMargins(0, 0, 0, 0)
+        self.gb_globSettings.setLayout(self.fl_settings)
 
         '''MA STACKED WIDGET'''
         self.MA_stackedWidget = QStackedWidget()
@@ -1768,25 +1672,6 @@ class ProjectTab(QWidget):
         self.MA_stackedWidget.addWidget(self.gb_MA_settings)
         self.MA_stackedWidget.addWidget(self.MA_points_tab)
         self.MA_stackedWidget.addWidget(QLabel())
-        # self.MA_stackedWidget.addWidget(self.logs_widget)
-        # self.MA_stackedWidget.addWidget(self.sw_logs)
-        # self.MA_stackedWidget.addWidget(self.gbGlobSettings)
-
-        # self.MA_stackedWidget_gb = QGroupBox()
-        # vbl = QVBoxLayout()
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.setSpacing(0)
-        # vbl.addWidget(self.MA_stackedWidget)
-        # self.MA_stackedWidget_gb.setLayout(vbl)
-
-        # # self.MA_gl_overlay = QWidget()
-        # self.MA_gl_overlay = QLabel()
-        # self.MA_gl_overlay.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.MA_gl_overlay.setAlignment(Qt.AlignCenter)
-        # self.MA_gl_overlay.setStyleSheet("""color: #FF0000; font-size: 16px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5);""")
-        # # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.MA_gl_overlay.hide()
 
         logger.info("Setting up ng stack widget...")
 
@@ -2552,7 +2437,8 @@ class ProjectTab(QWidget):
 
 
         # self.gb_warnings = QGroupBox('Warnings')
-        self.gb_warnings = QGroupBox()
+        self.gb_warnings = QGroupBox("Warnings")
+        self.gb_warnings.setObjectName('gb_cpanel')
         self.gb_warnings.setStyleSheet("""
         QGroupBox:title {
             color: #161c20;
@@ -2582,29 +2468,28 @@ class ProjectTab(QWidget):
         
         }
         """)
-        self.sideTabs.setMaximumWidth(300) #Criticial
         self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
-        # self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
         self.sideTabs.addTab(self.cpanelTabWidget, 'Details')
         self.sideTabs.currentChanged.connect(self.onSideTabChange)
 
         logger.info("Setting up side controls...")
 
-        self.gb_lowest8 = QGroupBox()
+        self.gb_lowest8 = QGroupBox("Lowest 8 SNR")
+        self.gb_lowest8.setObjectName('gb_cpanel')
         self.gb_lowest8.setLayout(VBL(self.sa_tab2))
 
         # self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls)
         self.side_controls = VWidget(self.gb_method_selection,
                                      self.sideTabs,
                                      ExpandingVWidget(self),
-                                     self.secAffine,
+                                     self.gb_affine,
                                      self.gb_lowest8,
-                                     self.gbGlobSettings,
+                                     self.gb_globSettings,
                                      self.gb_outputSettings,
                                      self.MA_controls,
                                      self.gb_warnings)
-        # self.side_controls.setMaximumWidth(300)
+        self.side_controls.setMaximumWidth(340)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
 
@@ -3752,6 +3637,7 @@ class ProjectTab(QWidget):
         self.combo_data_tree.addItems(items)
 
         self.btn_tree_go = QPushButton('Go')
+        self.btn_tree_go.setStyleSheet('font-size: 10px;')
         self.btn_tree_go.clicked.connect(goToData)
         self.btn_tree_go.setFixedSize(28, 18)
 
@@ -3779,6 +3665,7 @@ class ProjectTab(QWidget):
         btns.setContentsMargins(2, 2, 2, 2)
         btns.setFixedHeight(24)
         btns.setLayout(hbl)
+        btns.setStyleSheet("font-size: 10px;")
 
         self.treeHbl = HBL()
         self.treeHbl.setSpacing(0)
@@ -4188,19 +4075,17 @@ class ProjectTab(QWidget):
             self.lowX_left = QWidget()
             self.lowX_left.setContentsMargins(0, 0, 0, 0)
             self.lowX_left.setLayout(self.lowX_left_fl)
-
-
-
             hbl = QHBoxLayout()
             hbl.setContentsMargins(2, 2, 2, 2)
             hbl.addWidget(self.lowX_left)
-            # hbl.addWidget(self.lowX_right)
-            w = QWidget()
-            w.setLayout(hbl)
-
-            logger.critical('Setting sa_tab2 Layout...')
-            # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
-            self.sa_tab2.setWidget(w)
+            # # hbl.addWidget(self.lowX_right)
+            # w = QWidget()
+            # w.setLayout(hbl)
+            #
+            # logger.critical('Setting sa_tab2 Layout...')
+            # # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
+            # self.sa_tab2.setWidget(w)
+            self.gb_lowest8.setLayout(hbl)
 
 
 

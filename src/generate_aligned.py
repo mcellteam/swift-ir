@@ -115,7 +115,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
         cfg.mw.setPbarUnavailable(True)
-        logger.critical("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
+        logger.info("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
         pbar = tqdm.tqdm(total=len(tasks))
         t0 = time.time()
 
@@ -225,7 +225,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
             cfg.mw.set_status('Generating Zarr. No progress bar available. Awaiting multiprocessing pool...')
             cfg.mw.setPbarUnavailable(True)
-            logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
+            logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
             pbar = tqdm.tqdm(total=len(tasks))
             t0 = time.time()
             def update_tqdm(*a):

@@ -227,8 +227,6 @@ class Thumbnailer:
         task_queue.taskNameList = basefilenames
         task_queue.start(cpus)
 
-        logger.critical(f'scale factor: {scale_factor}')
-
         logger.info('Removing up to %d files...' %len(filenames))
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
