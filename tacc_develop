@@ -13,6 +13,7 @@ conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
 
 echo "Checking out development_ng branch..."
+cd $WORK/swift-ir
 git fetch
 git checkout remotes/origin/fb30_joel
 git pull
