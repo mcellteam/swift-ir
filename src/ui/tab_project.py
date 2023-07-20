@@ -71,7 +71,6 @@ class ProjectTab(QWidget):
         # self.setAutoFillBackground(True)
 
         self.indexConfigure = 0
-        self.indexLogs = 2
 
         '''primary tab widgets'''
         self.table_container = QWidget()
@@ -423,6 +422,8 @@ class ProjectTab(QWidget):
         self.detailsSNR.setStyleSheet(style)
         self.detailsSNR.hide()
 
+        logger.info("Setting up zoom slider...")
+
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
         self.zoomSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.zoomSlider.setMouseTracking(True)
@@ -507,6 +508,9 @@ class ProjectTab(QWidget):
         # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
         # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
         # NO CHANGE----------------------
+
+        logger.info("Setting up custom swim settings...")
+
 
         # MA Stage Buffer Widget
 
@@ -1162,6 +1166,8 @@ class ProjectTab(QWidget):
 
         # self.MA_settings = QWidget()
 
+        logger.info("Setting up default swim settings...")
+
 
         '''
         DEFAULT GRID SWIM SETTINGS
@@ -1240,6 +1246,7 @@ class ProjectTab(QWidget):
         self._swimWindowControl.returnPressed.connect(cfg.mw._callbk_unsavedChanges)
 
         # self._swimWindowControl.setFixedSize(std_input_size)
+
 
         self.fl_swimSettings = QFormLayout()
         self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
@@ -1346,7 +1353,7 @@ class ProjectTab(QWidget):
         # self.gb_defaultGridSwimSettings.setStyleSheet(cpanel_style2)
         # self.gb_outputSettings.setStyleSheet(cpanel_style2)
 
-
+        logger.info("Setting up scroll areas...")
 
         self.fl_results = QFormLayout()
         self.fl_results.setVerticalSpacing(2)
@@ -1441,30 +1448,18 @@ class ProjectTab(QWidget):
 
         self.cpanelTabWidget = QTabWidget()
         self.cpanelTabWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.cpanelTabWidget.setStyleSheet("""
-        # QScrollArea {border: none; font-size: 8px;}
-        # QTabWidget{font-size: 8px;}
-        # QTabBar::tab {
-        #     height: 14px;
-        #     width: 64px;
-        #     padding-left: 0px;
-        #     padding-right: 0px;
-        #     font-size: 8px;
-        # }
-        # QTabBar::tab:selected { color: #339933; font-weight: 600; }
-        # """)
         self.cpanelTabWidget.setContentsMargins(0, 0, 0, 0)
-        # self.cpanelTabWidget.setFixedHeight(80)
         self.cpanelTabWidget.addTab(self.sa_tab1, 'Details')
-        self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
+        # self.cpanelTabWidget.addTab(self.sa_tab2, 'Lowest 8 SNR')
         self.cpanelTabWidget.addTab(self.sa_tab3, 'Runtimes')
-        # self.cpanelTabWidget.addTab(self.sa_tab4, 'Affine')
         self.cpanelTabWidget.currentChanged.connect(self.updateCpanelDetails)
 
 
         self.MA_use_global_defaults_lab = QLabel('Global defaults will be used.')
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
+
+        logger.info("Setting up method radiobuttons...")
 
         self.method_rb0 = QRadioButton('Default Grid')
         self.method_rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1792,6 +1787,8 @@ class ProjectTab(QWidget):
         # # self.MA_gl_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         # self.MA_gl_overlay.hide()
 
+        logger.info("Setting up ng stack widget...")
+
         # 0617
         self.sw_alignment_editor = QStackedWidget()
         self.sw_alignment_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -1799,8 +1796,6 @@ class ProjectTab(QWidget):
         self.sw_alignment_editor.addWidget(self.MA_webengine_ref)
         self.sw_alignment_editor.addWidget(self.MA_webengine_base)
         self.sw_alignment_editor.setCurrentIndex(cfg.data['state']['tra_ref_toggle'])
-
-
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setAlignment(Qt.AlignCenter)
@@ -1897,6 +1892,7 @@ class ProjectTab(QWidget):
         #     print('Test Function Called...')
         # self.testButton.clicked.connect(testFn)
 
+        logger.info("Setting up ng widget...")
 
 
         self.gl_sw_main = QGridLayout()
@@ -2026,6 +2022,8 @@ class ProjectTab(QWidget):
         self.w_section_label_header.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
         self.w_section_label_header.setFixedHeight(16)
         self.w_section_label_header.setLayout(self.layout_ng_MA_toolbar)
+
+        logger.info("Setting NG extended toolbar...")
 
         self.w_ng_extended_toolbar = QToolBar()
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -2247,7 +2245,7 @@ class ProjectTab(QWidget):
         # self.tn_ref = ThumbnailFast(self, name='reference', extra='reference')
         # self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
 
-
+        logger.info("Setting up reference/transforming thumbnails...")
 
         '''REFERENCE AND TRANSFORMING THUMBNAILS WITH PAINTED SWIM REGION ANNOTATIONS'''
         # self.tn_tra_overlay = QLabel('Excluded')
@@ -2355,6 +2353,8 @@ class ProjectTab(QWidget):
         ### MATCH SIGNAL TABLE ###
         # cells are CorrSignalThumbnail objects
 
+        logger.info("Setting up match signal thumbnails...")
+
         self.ms_table = QTableWidget()
         # self.ms_table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         # self.ms_table.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -2435,6 +2435,8 @@ class ProjectTab(QWidget):
         #### MATCH WINOWS TABLE ####
         # cell widgets are ThumbnailFast objects
 
+        logger.info("Setting up match thumbnails...")
+
         self.matches_tn0 = ThumbnailFast(self, name='match0')
         self.matches_tn1 = ThumbnailFast(self, name='match1')
         self.matches_tn2 = ThumbnailFast(self, name='match2')
@@ -2488,6 +2490,8 @@ class ProjectTab(QWidget):
 
         # h_header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
+        logger.info("Setting up playback widget...")
+
         self._btn_playMatchTimer = QPushButton()
         self._btn_playMatchTimer.setIconSize(QSize(11, 11))
         self._btn_playMatchTimer.setFixedSize(14, 14)
@@ -2527,6 +2531,8 @@ class ProjectTab(QWidget):
 
         self.match_widget = VWidget(self.mwTitle, HWidget(self.ktarg_table, self.ms_table))
 
+        logger.info("Setting up warnings...")
+
 
         w = QWidget()
         # vbl = VBL(self.w_ng_extended_toolbar, self.w_section_label_header, self.shaderToolbar, self.ng_widget)
@@ -2560,6 +2566,8 @@ class ProjectTab(QWidget):
         self.vbl_wanrings.addWidget(self.warning_cafm)
         self.gb_warnings.setLayout(self.vbl_wanrings)
 
+        logger.info("Setting up side tabs...")
+
         self.sideTabs = QTabWidget()
         self.sideTabs.setStyleSheet("""
         QTabBar::tab {
@@ -2574,17 +2582,23 @@ class ProjectTab(QWidget):
         }
         """)
         self.sideTabs.setMaximumWidth(300) #Criticial
-        self.sideTabs.currentChanged.connect(self.onSideTabChange)
         self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
         # self.sideTabs.addTab(self.gb_MA_settings, 'SWIM Settings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
         self.sideTabs.addTab(self.cpanelTabWidget, 'Details')
+        self.sideTabs.currentChanged.connect(self.onSideTabChange)
+
+        logger.info("Setting up side controls...")
+
+        self.gb_lowest8 = QGroupBox()
+        self.gb_lowest8.setLayout(VBL(self.sa_tab2))
 
         # self.side_controls = VWidget(self.gb_method_selection, self.MA_stackedWidget, self.MA_controls)
         self.side_controls = VWidget(self.gb_method_selection,
                                      self.sideTabs,
                                      ExpandingVWidget(self),
                                      self.secAffine,
+                                     self.gb_lowest8,
                                      self.gbGlobSettings,
                                      self.gb_outputSettings,
                                      self.MA_controls,
@@ -2592,68 +2606,9 @@ class ProjectTab(QWidget):
         # self.side_controls.setMaximumWidth(300)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.w_swim_settings = QWidget()
-        self.fl_swim_settings = QFormLayout()
-        # self.w_swim_settings.setLayout(self.fl_swim_settings)
-        # self.w_swim_settings.setLayout(self.fl_MA_settings)
 
 
-
-
-        # self.wEditAlignment = QWidget()
-        # hbl = HBL(self.tn_widget, self.match_widget, self.ms_widget, self.ng_widget_container, self.sideTabs)
-
-
-        def fn():
-            # logger.info(f"ktarg_table size : {self.ktarg_table.size()}")
-            # logger.info(f"tn_ms0 size      : {self.tn_ms0.size()}")
-            # logger.info(f"matches_tn0 size : {self.matches_tn0.size()}")
-
-            # logger.info(f"self.tn_ms0.pixmap().width() : {self.tn_ms0.pixmap().width()}")
-            # logger.info(f"self.tn_ms0.pixmap().height() : {self.tn_ms0.pixmap().height()}")
-            # logger.info(f"self.tn_ms0.width() : {self.tn_ms0.width()}")
-            # logger.info(f"self.tn_ms0.height() : {self.tn_ms0.height()}")
-
-            w = self.tn_ms0.height()
-            logger.info(f'new w: {w}')
-
-            h = self.match_widget.height()
-            # logger.info(f'Resizing to: {w} x {h}')
-            # logger.info(f'w: {w}')
-
-            # self.ktarg_table.resize(QSize(w, h))
-            # self.ms_table.resize(QSize(w, h))
-            # cfg.mw.dw_matches.resize(QSize(w*2,h))
-
-            # self.ktarg_table.horizontalHeader().resizeSection(0, w)
-            # self.ms_table.horizontalHeader().resizeSection(0, w)
-
-            self.tn_ms0.resize(w,w)
-            self.tn_ms1.resize(w,w)
-            self.tn_ms2.resize(w,w)
-            self.tn_ms3.resize(w,w)
-
-            self.matches_tn0.resize(w,w)
-            self.matches_tn1.resize(w,w)
-            self.matches_tn2.resize(w,w)
-            self.matches_tn3.resize(w,w)
-
-            # self.ktarg_table.resize(w,h)
-            # self.ms_table.resize(w,h)
-
-            # self.ktarg_table.resize(w,h)
-            # self.ms_table.resize(w,h)
-
-            self.ktarg_table.resize(QSize(w, h))
-            self.ms_table.resize(QSize(w, h))
-
-
-
-
-        # self.resizeMatchesButton = QPushButton('Resize')
-        # self.resizeMatchesButton.setStyleSheet("font-size: 12px;")
-        # self.resizeMatchesButton.clicked.connect(fn)
-        # self.resizeMatchesButton.setFixedHeight(20)
+        logger.info("Setting up splitter...")
 
         # self.wMatches = VWidget(self.match_widget, self.resizeMatchesButton)
         # self.wMatches.layout.setSpacing(0)
@@ -2700,6 +2655,8 @@ class ProjectTab(QWidget):
         # self.uiSplitterTimer.timeout.connect(self.initNeuroglancer)
         # self.uiSplitterTimer.setInterval(1000)
 
+        logger.info("<<<<")
+
 
     def set_reference(self):
         logger.info('')
@@ -2745,13 +2702,13 @@ class ProjectTab(QWidget):
 
 
     def onSideTabChange(self):
-        self.refreshLogs()
-
-        if self.sideTabs.currentIndex() == self.indexLogs:
+        logger.info()
+        if self.te_logs.isVisible():
             self.refreshLogs()
 
-    def fn_toggleTargKarg(self):
 
+    def fn_toggleTargKarg(self):
+        logger.info('')
         setData('state,targ_karg_toggle', 1 - getData('state,targ_karg_toggle'))
         self.toggleMatches.setIcon(qta.icon(
             ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
@@ -2806,6 +2763,7 @@ class ProjectTab(QWidget):
 
 
     def refreshLogs(self):
+        logger.info('')
         logs_path = os.path.join(cfg.data.dest(), 'logs', 'recipemaker.log')
         if os.path.exists(logs_path):
             with open(logs_path, 'r') as f:
@@ -2815,87 +2773,6 @@ class ProjectTab(QWidget):
             text = 'No Log To Show.'
         self.te_logs.setText(text)
         self.te_logs.verticalScrollBar().setValue(self.te_logs.verticalScrollBar().maximum())
-
-    # def setTargKargPixmaps(self):
-    #     logger.info('')
-    #     # caller = inspect.stack()[1].function
-    #     # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
-    #
-    #     basename = cfg.data.filename_basename()
-    #     filename, extension = os.path.splitext(basename)
-    #
-    #     for i in range(4):
-    #         self.match_thumbnails[i].set_no_image()
-    #
-    #     # for i in range(4):
-    #     #     if not self.match_thumbnails[i]._noImage:
-    #     #         self.match_thumbnails[i].set_no_image()
-    #
-    #     if getData('state,targ_karg_toggle'):
-    #         tkarg = 'k'
-    #     else:
-    #         tkarg = 't'
-    #     files = []
-    #     for i in range(0, 4):
-    #         name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
-    #         files.append(os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', name))
-    #
-    #     method = cfg.data.current_method
-    #
-    #     # logger.info(f'Files:\n{files}')
-    #
-    #     if method in ('grid-custom', 'grid-default'):
-    #         # for i in range(n_cutouts):
-    #         for i in range(0, 4):
-    #             use = True
-    #             if method == 'grid-custom':
-    #                 use = cfg.data.grid_custom_regions[i]
-    #             elif method == 'grid-default':
-    #                 use = cfg.data.grid_default_regions[i]
-    #
-    #             # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-    #             path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
-    #             if use and os.path.exists(path):
-    #                 self.match_thumbnails[i].path = path
-    #                 try:
-    #                     # self.match_thumbnails[i].showPixmap()
-    #                     self.match_thumbnails[i].set_data(path)
-    #                 except:
-    #                     self.match_thumbnails[i].set_no_image()
-    #             else:
-    #                 self.match_thumbnails[i].set_no_image()
-    #
-    #     if cfg.data.current_method == 'manual-hint':
-    #         n_ref = len(cfg.data.manpoints()['ref'])
-    #         n_base = len(cfg.data.manpoints()['base'])
-    #         for i in range(0, 4):
-    #             path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
-    #             # if DEV:
-    #             #     logger.info(f'path: {path}')
-    #             #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
-    #
-    #             try:
-    #                 # if DEV:
-    #                 #     logger.info(f'path: {path}')
-    #                 assert os.path.exists(path)
-    #                 #Todo add handler... generate a warning or something...
-    #                 assert n_ref > i
-    #                 assert n_base > i
-    #             except:
-    #                 # print_exception(extra=f"path = {path}")
-    #                 # logger.critical('Handling Exception...')
-    #                 self.match_thumbnails[i].set_no_image()
-    #
-    #                 continue
-    #             try:
-    #                 self.match_thumbnails[i].path = path
-    #                 # self.match_thumbnails[i].showPixmap()
-    #                 self.match_thumbnails[i].set_data(path)
-    #             except:
-    #                 self.match_thumbnails[i].set_no_image()
-    #                 print_exception()
-    #
-    #     # logger.info('<<<< setTargKargPixmaps')
 
     def updateAutoSwimRegions(self):
         logger.info('')
@@ -3233,7 +3110,7 @@ class ProjectTab(QWidget):
             cfg.mw.setTargKargPixmaps()
             cfg.mw.updateCorrSignalsDrawer()
 
-        if self.sideTabs.currentIndex() == self.indexLogs:
+        if self.te_logs.isVisible():
             self.refreshLogs()
 
         if cfg.mw.dw_thumbs.isVisible():
@@ -4185,19 +4062,15 @@ class ProjectTab(QWidget):
         usages:
         cpanelTabWidget tab change
         '''
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
-        # logger.info('')
-
-        if self.cpanelTabWidget.currentIndex() == 0:
-            self.updateCpanelDetails_i1()
-        elif self.cpanelTabWidget.currentIndex() == 1:
-            self.updateLowest8widget()
-        elif self.cpanelTabWidget.currentIndex() == 2:
-            cfg.mw.updateDtWidget()
-        # Cancel- tab 2 - runtimes are updated when runtimes change
-        elif self.cpanelTabWidget.currentIndex() == 3:
-            self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+        if cfg.mw.globTabs.currentIndex() == 1:
+            if self.cpanelTabWidget.isVisible():
+                caller = inspect.stack()[1].function
+                logger.info(f'[{caller}]')
+                if self.cpanelTabWidget.currentIndex() == 0:
+                    self.updateCpanelDetails_i1()
+                elif self.cpanelTabWidget.currentIndex() == 1:
+                    cfg.mw.updateDtWidget()
+                # Cancel- tab 2 - runtimes are updated when runtimes change
 
     def updateCpanelDetails_i1(self):
         """
@@ -4216,133 +4089,132 @@ class ProjectTab(QWidget):
             5954 self.updateCpanelDetails_i1()
 
         """
+        if cfg.main_window.globTabs.currentIndex() == 1:
+            if self.secDetails_w.isVisible():
+                caller = inspect.stack()[1].function
+                logger.critical(f'caller: {caller}')
+                self.secName.setText(cfg.data.filename_basename())
+                ref = cfg.data.reference_basename()
+                if ref == '':
+                    ref = 'None'
+                self.secReference.setText(ref)
 
-        caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
-        # logger.critical(f'caller: {caller}')
-        # if self.cpanelTabWidget.currentIndex() == 0:
-        self.secName.setText(cfg.data.filename_basename())
-        ref = cfg.data.reference_basename()
-        if ref == '':
-            ref = 'None'
-        self.secReference.setText(ref)
+                self.secAlignmentMethod.setText(cfg.data.method_pretty())
+                # self.secSNR.setText(cfg.data.snr_report()[5:])
+                # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
 
-        self.secAlignmentMethod.setText(cfg.data.method_pretty())
-        # self.secSNR.setText(cfg.data.snr_report()[5:])
-        # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
-
-        # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
-        skips = cfg.data.skips_list()
-        if skips == []:
-            self.secExcluded.setText('None')
-        else:
-            self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
-        self.secHasBB.setText(str(cfg.data.has_bb()))
-        self.secUseBB.setText(str(cfg.data.use_bb()))
-        self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
-        if cfg.data.is_aligned():
-            try:
-                self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
-            except:
-                print_exception()
-            if cfg.data.zpos <= cfg.data.first_unskipped():
-                self.secSNR.setText('--')
-            else:
-                try:
-                    self.secSNR.setText(
-                        '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
-                            cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
-                except:
-                    print_exception()
-        else:
-            self.secAlignedImageSize.setText('--')
-            self.secSNR.setText('--')
-        self.secDefaults.setText(cfg.data.defaults_pretty)
+                # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+                skips = cfg.data.skips_list()
+                if skips == []:
+                    self.secExcluded.setText('None')
+                else:
+                    self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
+                self.secHasBB.setText(str(cfg.data.has_bb()))
+                self.secUseBB.setText(str(cfg.data.use_bb()))
+                self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
+                if cfg.data.is_aligned():
+                    try:
+                        self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                    except:
+                        print_exception()
+                    if cfg.data.zpos <= cfg.data.first_unskipped():
+                        self.secSNR.setText('--')
+                    else:
+                        try:
+                            self.secSNR.setText(
+                                '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
+                                    cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
+                        except:
+                            print_exception()
+                else:
+                    self.secAlignedImageSize.setText('--')
+                    self.secSNR.setText('--')
+                self.secDefaults.setText(cfg.data.defaults_pretty)
 
     def updateLowest8widget(self):
+        if self.gb_lowest8.isVisible():
+            if cfg.data.is_aligned():
+                n_lowest = min(8, len(cfg.data) - 1)
+                lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
+                lowest_X = list(cfg.data.snr_lowest(n_lowest))
+                # logger.info(f'lowest_X_i : {lowest_X_i}')
+                # logger.info(f'lowest_X : {lowest_X}')
+                # logger.info(f'n_lowest : {n_lowest}')
 
-        if cfg.data.is_aligned():
-            n_lowest = min(8, len(cfg.data) - 1)
-            lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
-            lowest_X = list(cfg.data.snr_lowest(n_lowest))
-            # logger.info(f'lowest_X_i : {lowest_X_i}')
-            # logger.info(f'lowest_X : {lowest_X}')
-            # logger.info(f'n_lowest : {n_lowest}')
+                funcs = []
+                for i in range(n_lowest):
+                    funcs.append(lambda: self.jump_to_manual(lowest_X_i[i]))
 
-            funcs = []
-            for i in range(n_lowest):
-                funcs.append(lambda: self.jump_to_manual(lowest_X_i[i]))
+                self.lowestX_btns = []
+                self.lowestX_txt = []
 
-            self.lowestX_btns = []
-            self.lowestX_txt = []
+                for i in range(n_lowest):
+                    logger.info(f'i = {i}')
 
-            for i in range(n_lowest):
-                logger.info(f'i = {i}')
+                    try:
+                        # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
+                        s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
+                        s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
+                        combined = s1 + ' ' + s2
+                        # btn = QPushButton('Jump')
+                        self.lowestX_btns.append(QPushButton('Manual Align'))
+                        f = QFont()
+                        f.setPointSizeF(7)
+                        self.lowestX_btns[i].setFont(f)
+                        self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
+                        self.lowestX_btns[i].setFixedSize(QSize(80, 14))
+                        self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
+                        self.lowestX_btns[i].setIconSize(QSize(10, 10))
+                        self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                        self.lowestX_btns[i].clicked.connect(funcs[i])
+                        self.lowestX_txt.append(combined)
 
-                try:
-                    # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
-                    s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
-                    s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
-                    combined = s1 + ' ' + s2
-                    # btn = QPushButton('Jump')
-                    self.lowestX_btns.append(QPushButton('Manual Align'))
-                    f = QFont()
-                    f.setPointSizeF(7)
-                    self.lowestX_btns[i].setFont(f)
-                    self.lowestX_btns[i].setLayoutDirection(Qt.RightToLeft)
-                    self.lowestX_btns[i].setFixedSize(QSize(80, 14))
-                    self.lowestX_btns[i].setStyleSheet("font-size: 9px;")
-                    self.lowestX_btns[i].setIconSize(QSize(10, 10))
-                    self.lowestX_btns[i].setIcon(qta.icon('fa.arrow-right', color='#161c20'))
-                    self.lowestX_btns[i].clicked.connect(funcs[i])
-                    self.lowestX_txt.append(combined)
+                    # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
+                    except:
+                        print_exception()
+                    # self.results3 = QLabel('...Worst 5 SNR')
+            else:
+                label = QLabel('Not Aligned.')
+                label.setAlignment(Qt.AlignTop)
+                self.sa_tab2.setWidget(label)
+                return
 
-                # try:    self.results3.setText("\n".join(["z-index %d: %.2f" % (x[0], x[1]) for x in list(cfg.data.snr_lowest(5))]))
-                except:
-                    print_exception()
-                # self.results3 = QLabel('...Worst 5 SNR')
-        else:
-            label = QLabel('Not Aligned.')
-            label.setAlignment(Qt.AlignTop)
-            self.sa_tab2.setWidget(label)
-            return
-
-        self.lowX_left_fl = QFormLayout()
-        self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
-        self.lowX_left_fl.setVerticalSpacing(1)
-        if n_lowest >= 1:
-            self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
-        if n_lowest >= 2:
-            self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
-        if n_lowest >= 3:
-            self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
-        if n_lowest >= 4:
-            self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
-        if n_lowest >= 5:
-            self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
-        if n_lowest >= 6:
-            self.lowX_left_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
-        if n_lowest >= 7:
-            self.lowX_left_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
-        if n_lowest >= 8:
-            self.lowX_left_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
-        # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
-        self.lowX_left = QWidget()
-        self.lowX_left.setContentsMargins(0, 0, 0, 0)
-        self.lowX_left.setLayout(self.lowX_left_fl)
+            self.lowX_left_fl = QFormLayout()
+            self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
+            self.lowX_left_fl.setVerticalSpacing(1)
+            if n_lowest >= 1:
+                self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
+            if n_lowest >= 2:
+                self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
+            if n_lowest >= 3:
+                self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
+            if n_lowest >= 4:
+                self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
+            if n_lowest >= 5:
+                self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+            if n_lowest >= 6:
+                self.lowX_left_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+            if n_lowest >= 7:
+                self.lowX_left_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+            if n_lowest >= 8:
+                self.lowX_left_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
+            # self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+            self.lowX_left = QWidget()
+            self.lowX_left.setContentsMargins(0, 0, 0, 0)
+            self.lowX_left.setLayout(self.lowX_left_fl)
 
 
 
-        hbl = QHBoxLayout()
-        hbl.setContentsMargins(2, 2, 2, 2)
-        hbl.addWidget(self.lowX_left)
-        # hbl.addWidget(self.lowX_right)
-        w = QWidget()
-        w.setLayout(hbl)
+            hbl = QHBoxLayout()
+            hbl.setContentsMargins(2, 2, 2, 2)
+            hbl.addWidget(self.lowX_left)
+            # hbl.addWidget(self.lowX_right)
+            w = QWidget()
+            w.setLayout(hbl)
 
-        logger.critical('Setting sa_tab2 Layout...')
-        # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
-        self.sa_tab2.setWidget(w)
+            logger.critical('Setting sa_tab2 Layout...')
+            # self.sa_tab2.setLayout(HBL(self.lowX_left, self.lowX_right))
+            self.sa_tab2.setWidget(w)
 
 
 
