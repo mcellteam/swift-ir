@@ -3043,6 +3043,11 @@ class MainWindow(QMainWindow):
                     # cfg.project_tab.project_table.initTableData()
                 cfg.pt.project_table.set_row_data(row=layer)
 
+                #Todo Fix this. This is just a kluge to make the table reflect correct data for now.
+                for x in range(0,5):
+                    if layer + x in range(0,len(cfg.data)):
+                        cfg.pt.project_table.set_row_data(row=layer + x)
+
             if cfg.project_tab._tabs.currentIndex() == 4:
                 cfg.project_tab.snr_plot.initSnrPlot()
 

@@ -37,7 +37,7 @@ class ProjectTable(QWidget):
         self.table = QTableWidget()
         self.table.verticalHeader().hide()
         self.table.setWordWrap(True)
-        self.table.setSortingEnabled(True)
+        self.table.setSortingEnabled(False)
         self.table.setShowGrid(True)
         self.row_height_slider = Slider(self)
         self.row_height_slider.setMinimum(28)
@@ -189,7 +189,7 @@ class ProjectTable(QWidget):
 
     def updateTableTitle(self):
         siz = cfg.data.image_size()
-        self.scaleLabel.setText(f"Scale {cfg.data.scale} | {siz[0]}x{siz[1]}px")
+        self.scaleLabel.setText(f"{cfg.data.scale_pretty()} | {siz[0]}x{siz[1]}px")
 
     def updateTableData(self):
         logger.critical('')
@@ -340,7 +340,13 @@ class ProjectTable(QWidget):
                 lab2 = QLabel("Reference:")
                 lab2.setStyleSheet("font-size: 9px; ")
 
-                lab3 = QLabel(cfg.data.reference_basename(l=row))
+
+                lab3_str = cfg.data.reference_basename(l=row)
+                ref_offset = cfg.data.get_ref_index_offset(l=row)
+                if ref_offset > 1:
+                    lab3_str += f' <span style="color: #d0342c;"><b>[{-ref_offset}]</b></span>'
+
+                lab3 = QLabel(lab3_str)
                 lab3.setStyleSheet("font-size: 10px; font-weight: 600;")
 
 
@@ -361,12 +367,18 @@ class ProjectTable(QWidget):
                 self.table.setCellWidget(row, col, vw)
             elif col == 3:
                 tn = ThumbnailFast(self, path=row_data[3], name='reference-table', s=scale, l=row)
+                if cfg.data.skipped(l=row):
+                    tn.set_no_image()
                 self.table.setCellWidget(row, col, tn)
             elif col == 4:
                 tn = ThumbnailFast(self, path=row_data[4], name='transforming-table', s=scale, l=row)
+                if cfg.data.skipped(l=row):
+                    tn.set_no_image()
                 self.table.setCellWidget(row, col, tn)
             elif col == 5:
                 tn = ThumbnailFast(self, path=row_data[5])
+                if cfg.data.skipped(l=row):
+                    tn.set_no_image()
                 self.table.setCellWidget(row, col, tn)
             elif col == 6:
                 try:
@@ -376,6 +388,8 @@ class ProjectTable(QWidget):
                         assert snr_4x[0] > 0.0
 
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms0')
+                    if cfg.data.skipped(l=row):
+                        tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self, name='ms0')
@@ -389,6 +403,8 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms1')
+                    if cfg.data.skipped(l=row):
+                        tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self, name='ms1')
@@ -401,6 +417,8 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms2')
+                    if cfg.data.skipped(l=row):
+                        tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self, name='ms2')
@@ -413,14 +431,17 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms3')
+                    if cfg.data.skipped(l=row):
+                        tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
                 except:
                     tn = CorrSignalThumbnail(self, name='ms3')
                     # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
 
-            elif col == 9:
-                self.table.setItem(row, col, QTableWidgetItem(str(not row_data[col])))
+            elif col == 11:
+                b = not bool(row_data[col])
+                self.table.setItem(row, col, QTableWidgetItem(str(b)))
 
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
