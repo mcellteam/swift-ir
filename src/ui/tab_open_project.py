@@ -113,7 +113,7 @@ class OpenProject(QWidget):
         # hbl.setContentsMargins(2, 0, 2, 0)
         hbl.addWidget(QLabel('  '))
         # hbl.addStretch(1)
-        hbl.addWidget(HWidget(QLabel(' Row Height '), self.row_height_slider), alignment=Qt.AlignLeft)
+        hbl.addWidget(HWidget(QLabel(' Table Size '), self.row_height_slider), alignment=Qt.AlignLeft)
         hbl.addWidget(QLabel('  '))
         # hbl.addStretch(1)
         hbl.addWidget(HWidget(QLabel(' Fetch Sizes '), self.fetchSizesCheckbox), alignment=Qt.AlignLeft)

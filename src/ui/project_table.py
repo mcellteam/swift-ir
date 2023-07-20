@@ -61,7 +61,7 @@ class ProjectTable(QWidget):
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
         self.table.hide()
 
-        self.table.setStyleSheet("font-size: 9px;")
+        self.table.setStyleSheet("font-size: 10px;")
 
 
 
@@ -349,16 +349,19 @@ class ProjectTable(QWidget):
         self.row_height_slider.valueChanged.connect(self.updateTableDimensions)
         self.row_height_slider.setMaximumWidth(128)
         self.btnReloadTable = QPushButton('Reload')
-        self.btnReloadTable.setStyleSheet("font-size: 10px; font-weight: 600;")
+        # self.btnReloadTable.setStyleSheet("font-size: 10px; font-weight: 600;")
         self.btnReloadTable.setFixedHeight(18)
         self.btnReloadTable.setFixedWidth(70)
         self.btnReloadTable.clicked.connect(self.updateTableData)
+
+
+        # self.loadedLabel = QLabel()
 
         self.controls = QWidget()
         self.controls.setObjectName('controls')
         hbl = QHBoxLayout()
         hbl.setContentsMargins(0, 2, 0, 2)
-        lab = QLabel('Row Height:')
+        lab = QLabel('Table Size:')
         lab.setStyleSheet("font-size: 10px;")
         hbl.addWidget(lab, alignment=Qt.AlignLeft)
         hbl.addWidget(self.row_height_slider, alignment=Qt.AlignLeft)
