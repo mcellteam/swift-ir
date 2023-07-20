@@ -20,7 +20,7 @@ import src.config as cfg
 
 __all__ = ['run_recipe']
 
-ENABLE_LOGGING = 1
+ENABLE_LOGGING = 0
 
 MAlogger      = logging.getLogger('MAlogger')
 SWIMlogger    = logging.getLogger('SWIMlogger')
