@@ -1204,13 +1204,12 @@ class UserProjects(QWidget):
                         self.table.setCellWidget(i, j, thumbnail)
                 elif j in (4,5):
                     twi = QTableWidgetItem(item.replace("_", " "))
-                    twi.setTextAlignment(Qt.AlignCenter)
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
-                elif j == 6:
+                elif j in (6,7):
                     twi = QTableWidgetItem(str(item))
                     twi.setFont(font0)
-                    twi.setTextAlignment(Qt.AlignCenter)
+                    # twi.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(i, j, twi)
                 else:
                     twi = QTableWidgetItem(str(item))
