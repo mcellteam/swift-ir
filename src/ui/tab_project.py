@@ -3678,18 +3678,22 @@ class ProjectTab(QWidget):
 
     def setZmag(self, val):
         logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val} for all viewers...')
-        try:
-            cfg.refViewer.set_zmag(10)
-        except:
-            print_exception()
-        try:
-            cfg.baseViewer.set_zmag(10)
-        except:
-            print_exception()
-        # try:
-        #     cfg.emViewer.set_zmag(10)
-        # except:
-        #     print_exception()
+        if cfg.mw._isProjectTab():
+            try:
+                if cfg.refViewer:
+                    cfg.refViewer.set_zmag(10)
+            except:
+                print_exception()
+            try:
+                if cfg.baseViewer:
+                    cfg.baseViewer.set_zmag(10)
+            except:
+                print_exception()
+            try:
+                if cfg.emViewer:
+                    cfg.emViewer.set_zmag(10)
+            except:
+                print_exception()
 
     def onSliderZmag(self):
 

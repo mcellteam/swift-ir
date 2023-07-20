@@ -825,9 +825,10 @@ class MainWindow(QMainWindow):
             cfg.data['state']['tool_windows']['signals'] = state
 
         if self.dw_matches.isVisible():
-            h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
-            self.dw_matches.setMaximumWidth(int(h /2 + .5))
-            cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+            if cfg.data.is_aligned():
+                h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h /2 + .5))
+                cfg.pt.match_widget.resize(int(h / 2 + .5), h)
         cfg.mw.dataUpdateWidgets()
         self.setUpdatesEnabled(True)
 
@@ -2463,7 +2464,7 @@ class MainWindow(QMainWindow):
         self._dontReinit = True
 
         #Critical this might be critical for now
-        cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
+        # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key() #0720-
         # if not cfg.data.is_aligned(s=cfg.data['data']['current_scale']):
         #     cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
 
@@ -3679,9 +3680,10 @@ class MainWindow(QMainWindow):
             cfg.pt.fn_hwidgetChanged()
 
             if self.dw_matches.isVisible():
-                h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h / 2 + .5))
-                cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+                if cfg.data.is_aligned():
+                    h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+                    self.dw_matches.setMaximumWidth(int(h / 2 + .5))
+                    cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
             if self.dw_thumbs.isVisible():
                 h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
@@ -3707,9 +3709,10 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.initNeuroglancer()
 
             if self.dw_matches.isVisible():
-                h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h / 2 + .5))
-                cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+                if cfg.data.is_aligned():
+                    h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+                    self.dw_matches.setMaximumWidth(int(h / 2 + .5))
+                    cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
             if self.dw_thumbs.isVisible():
                 h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
