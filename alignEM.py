@@ -57,6 +57,7 @@ https://github.com/nexpy/nexpy/issues/398
 
 """
 import os
+os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 import qtpy
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
