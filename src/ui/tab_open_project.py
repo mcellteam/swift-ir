@@ -1144,7 +1144,6 @@ class UserProjects(QWidget):
 
     def set_headers(self):
         self.table.setHorizontalHeaderLabels([
-            "Name",
             "Location",
             "First\nSection",
             "Last\nSection",
