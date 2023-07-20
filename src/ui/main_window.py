@@ -1173,10 +1173,10 @@ class MainWindow(QMainWindow):
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
                 self.setTargKargPixmaps()
-                try:
-                    self.updateMenus()
-                except:
-                    print_exception()
+                # try:
+                #     self.updateMenus()
+                # except:
+                #     print_exception()
                 self.present_snr_results(start=start, end=end)
 
                 self.updateDtWidget()
@@ -1746,7 +1746,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_status(self, msg: str) -> None:
         self.statusBar.showMessage(msg)
-        QApplication.processEvents()
+        # QApplication.processEvents()
         # pass
 
     def minimal_stylesheet(self):
@@ -2480,7 +2480,7 @@ class MainWindow(QMainWindow):
         self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         self.reload_scales_combobox()  # fast
         self.updateEnabledButtons()
-        self.updateMenus()
+        # self.updateMenus()
         self._resetSlidersAndJumpInput()  # fast
         self.setControlPanelData()  # Added 2023-04-23
         self.enableAllTabs()  # fast
@@ -3892,10 +3892,10 @@ class MainWindow(QMainWindow):
             # self.dataUpdateResults()
             # cfg.project_tab.updateLabelsHeader()
 
-
-            cfg.emViewer = cfg.project_tab.viewer
-            cfg.refViewer = cfg.project_tab.refViewer
-            cfg.baseViewer = cfg.project_tab.baseViewer
+            if self._is_initialized:
+                cfg.emViewer = cfg.project_tab.viewer
+                cfg.refViewer = cfg.project_tab.refViewer
+                cfg.baseViewer = cfg.project_tab.baseViewer
 
             # cfg.project_tab.initNeuroglancer()
 
@@ -3923,7 +3923,7 @@ class MainWindow(QMainWindow):
             # self.set_nglayout_combo_text(layout='4panel')
             cfg.zarr_tab.viewer.bootstrap()
 
-        self.updateMenus()
+        # self.updateMenus()
         self._resetSlidersAndJumpInput()  # future changes to image importing will require refactor
         self.reload_scales_combobox()
         self.updateEnabledButtons()
@@ -3999,49 +3999,49 @@ class MainWindow(QMainWindow):
                f'All Threads      : \n{threads}'
         self.menuTextActiveThreads.setText(text)
 
-    def updateMenus(self):
-        '''NOTE: This should always be run AFTER initializing Neuroglancer!'''
-        caller = inspect.stack()[1].function
-        logger.info('')
-        self.tensorMenu.clear()
-        if self._isProjectTab() or self._isZarrTab():
-            # logger.info('Clearing menus...')
-
-            def addTensorMenuInfo(label, body):
-                menu = self.tensorMenu.addMenu(label)
-                textedit = QTextEdit(self)
-                textedit.setFixedSize(QSize(600, 600))
-                textedit.setReadOnly(True)
-                textedit.setText(body)
-                action = QWidgetAction(self)
-                action.setDefaultWidget(textedit)
-                menu.addAction(action)
-
-            if self._isProjectTab():
-                try:
-                    addTensorMenuInfo(label='Tensor Metadata', body=json.dumps(cfg.tensor.spec().to_json(), indent=2))
-                except:
-                    print_exception()
-                # if cfg.unal_tensor:
-                #     # logger.info('Adding Raw Series tensor to menu...')
-                #     txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
-                #     addTensorMenuInfo(label='Raw Series', body=txt)
-                # if cfg.data.is_aligned():
-                #     if cfg.al_tensor:
-                #         # logger.info('Adding Aligned Series tensor to menu...')
-                #         txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
-                #         addTensorMenuInfo(label='Aligned Series', body=txt)
-            if self._isZarrTab():
-                try:
-                    addTensorMenuInfo(label='Zarr Series', body=json.dumps(cfg.tensor.spec().to_json(), indent=2))
-                except:
-                    print_exception()
-            try:
-                self.updateNgMenuStateWidgets()
-            except:
-                print_exception()
-        else:
-            self.clearNgStateMenus()
+    # def updateMenus(self):
+    #     '''NOTE: This should always be run AFTER initializing Neuroglancer!'''
+    #     caller = inspect.stack()[1].function
+    #     logger.info('')
+    #     self.tensorMenu.clear()
+    #     if self._isProjectTab() or self._isZarrTab():
+    #         # logger.info('Clearing menus...')
+    #
+    #         def addTensorMenuInfo(label, body):
+    #             menu = self.tensorMenu.addMenu(label)
+    #             textedit = QTextEdit(self)
+    #             textedit.setFixedSize(QSize(600, 600))
+    #             textedit.setReadOnly(True)
+    #             textedit.setText(body)
+    #             action = QWidgetAction(self)
+    #             action.setDefaultWidget(textedit)
+    #             menu.addAction(action)
+    #
+    #         if self._isProjectTab():
+    #             try:
+    #                 addTensorMenuInfo(label='Tensor Metadata', body=json.dumps(cfg.tensor.spec().to_json(), indent=2))
+    #             except:
+    #                 print_exception()
+    #             # if cfg.unal_tensor:
+    #             #     # logger.info('Adding Raw Series tensor to menu...')
+    #             #     txt = json.dumps(cfg.unal_tensor.spec().to_json(), indent=2)
+    #             #     addTensorMenuInfo(label='Raw Series', body=txt)
+    #             # if cfg.data.is_aligned():
+    #             #     if cfg.al_tensor:
+    #             #         # logger.info('Adding Aligned Series tensor to menu...')
+    #             #         txt = json.dumps(cfg.al_tensor.spec().to_json(), indent=2)
+    #             #         addTensorMenuInfo(label='Aligned Series', body=txt)
+    #         if self._isZarrTab():
+    #             try:
+    #                 addTensorMenuInfo(label='Zarr Series', body=json.dumps(cfg.tensor.spec().to_json(), indent=2))
+    #             except:
+    #                 print_exception()
+    #         try:
+    #             self.updateNgMenuStateWidgets()
+    #         except:
+    #             print_exception()
+    #     else:
+    #         self.clearNgStateMenus()
 
     def clearTensorMenu(self):
         self.tensorMenu.clear()
