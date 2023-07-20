@@ -2280,7 +2280,6 @@ class MainWindow(QMainWindow):
         logger.info(f'[{caller}]')
         if self._isProjectTab():
             # logger.info('Reloading Scale Combobox (caller: %s)' % caller)
-            self._changeScaleCombo.show()
             self._scales_combobox_switch = 0
             self._changeScaleCombo.clear()
 
@@ -2294,35 +2293,32 @@ class MainWindow(QMainWindow):
             self._changeScaleCombo.addItems(pretty_scales())
             self._changeScaleCombo.setCurrentIndex(cfg.data.scales().index(cfg.data.scale))
             self._scales_combobox_switch = 1
-        else:
-            self._changeScaleCombo.hide()
-        # logger.info(f'<<<< reload_scales_combobox [{caller}]')
 
     def fn_scales_combobox(self) -> None:
-        if self._scales_combobox_switch == 0:
-            return
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
-        if caller in ('main', 'scale_down', 'scale_up'):
-            new_scale = cfg.data.scales()[self._changeScaleCombo.currentIndex()]
-
-            if not cfg.data.is_aligned(new_scale):
-                cfg.pt.warning_cafm.hide()
-
-            if not self._working:
+        if self._scales_combobox_switch == 0:
+            logger.warning(f"[{caller}] scale change blocked by _scales_combobox_switch switch")
+            return
+        if not self._working:
+            if caller in ('main', 'scale_down', 'scale_up'):
                 if self._isProjectTab():
+                    logger.info(f'[{caller}]')
+                    requested_scale = cfg.data.scales()[self._changeScaleCombo.currentIndex()]
+                    cfg.pt.warning_cafm.hide()
                     cfg.pt.project_table.table.hide()
                     cfg.pt.project_table.btn_splash_load_table.show()
-                    cfg.data.scale = new_scale
+                    cfg.data.scale = requested_scale
                     self.updateEnabledButtons()
                     self.dataUpdateWidgets()
                     self.setControlPanelData()
-                    cfg.pt.updateCpanelDetails_i1()
+                    if self.globTabs.currentIndex() == 1:
+                        if cfg.pt.cpanelTabWidget.isVisible():
+                            if self.cpanelTabWidget.currentIndex() == 0:
+                                cfg.pt.updateCpanelDetails_i1()
                     self._showSNRcheck()
-                    QApplication.processEvents()
                     cfg.project_tab.refreshTab()
-                        
-
+            else:
+                logger.warning(f"[{caller}] caller disallowed")
 
 
     def export_afms(self):
@@ -6087,7 +6083,7 @@ class MainWindow(QMainWindow):
 
 
     def setControlPanelData(self):
-        logger.info('Setting control panel data')
+        logger.info('')
         if self._isProjectTab():
             cfg.pt._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
             cfg.pt._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
