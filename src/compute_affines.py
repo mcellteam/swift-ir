@@ -17,6 +17,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
 import multiprocessing as mp
 import numpy as np
 import tqdm
@@ -216,7 +217,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         pbar = tqdm.tqdm(total=len(tasks))
         def update_tqdm(*a):
             pbar.update()
-        with ctx.Pool(processes=cpus) as pool:
+        # with ctx.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]

@@ -9,6 +9,7 @@ import logging
 import zarr
 import numpy as np
 import multiprocessing as mp
+from multiprocessing.pool import ThreadPool
 import zarr
 import numcodecs
 numcodecs.blosc.use_threads = False
@@ -229,7 +230,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             t0 = time.time()
             def update_tqdm(*a):
                 pbar.update()
-            with ctx.Pool(processes=cpus) as pool:
+            # with ctx.Pool(processes=cpus) as pool:
+            with ThreadPool(processes=cpus) as pool:
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
                 pool.close()
                 [p.get() for p in results]
