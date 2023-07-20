@@ -86,7 +86,8 @@ CLEVEL = 5
 # TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 120 # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 50 # 128 hardware cores/node on Lonestar6
-QTWEBENGINE_RASTER_THREADS = 1024
+# QTWEBENGINE_RASTER_THREADS = 1024
+QTWEBENGINE_RASTER_THREADS = 4096
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 256
 # if 'Joels-' in platform.node():

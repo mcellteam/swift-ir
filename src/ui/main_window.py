@@ -2003,10 +2003,6 @@ class MainWindow(QMainWindow):
             if self.dw_snr.isVisible():
                 cfg.project_tab.dSnr_plot.updateLayerLinePos()
 
-            # if cfg.project_tab._tabs.currentIndex() == 3:
-            #     cfg.snrViewer.set_layer(cfg.data.zpos)
-
-            # timer.report() #6
 
             br = '&nbsp;'
             a = """<span style='color: #ffe135;'>"""
