@@ -512,7 +512,8 @@ class align_ingredient:
 
     def ingest_swim_output(self, swim_output):
 
-        if swim_output == '':
+        if swim_output == ['']:
+            print(f"[{self.alData['meta']['index']}] SWIM output is an empty string! - Returning...")
             self.snr = np.zeros(len(self.psta[0]))
             self.snr_report = snr_report(self.snr)
             return self.afm
