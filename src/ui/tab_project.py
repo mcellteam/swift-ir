@@ -1234,48 +1234,6 @@ class ProjectTab(QWidget):
         self.gb_outputSettings.setObjectName('gb_cpanel')
         self.gb_outputSettings.setLayout(self.flSettings)
 
-        # '''OUTPUT SETTINGS END'''
-        # cpanel_style2 = """
-        # QLabel {font-size: 10px;}
-        #
-        # QPushButton {
-        #     font-size: 10px;
-        # }
-        #
-        #
-        # QComboBox {
-        #     background-color: #f3f6fb;
-        #     color: #161c20;
-        #     font-size: 10px;
-        #     margin:0px;
-        #     padding:0px;
-        # }
-        #
-        # QGroupBox#gb_cpanel {
-        #         color: #161c20;
-        #         border: 1px solid #161c20;
-        #         font-size: 10px;
-        #         /*font-weight: 600;*/
-        #         border-radius: 2px;
-        #         margin: 2px;
-        #         padding: 2px;
-        #
-        # }
-        #
-        # QGroupBox:title#gb_cpanel {
-        #     color: #161c20;
-        #     /*font-weight:600;*/
-        #     font-size: 9px;
-        #     subcontrol-origin: margin;
-        #     subcontrol-position: top center;
-        #     margin-bottom: 16px;
-        #
-        # }
-        # """
-        #
-        # self.gb_defaultGridSwimSettings.setStyleSheet(cpanel_style2)
-        # self.gb_outputSettings.setStyleSheet(cpanel_style2)
-
         logger.info("Setting up scroll areas...")
 
         self.fl_results = QFormLayout()
@@ -1508,8 +1466,6 @@ class ProjectTab(QWidget):
         self.logs_delete_all_btn.setStyleSheet("font-size: 9px;")
         self.logs_delete_all_btn.setFixedSize(QSize(64, 18))
         self.logs_delete_all_btn.clicked.connect(fn)
-
-
 
         self.te_logs = QTextEdit()
         self.te_logs.setReadOnly(True)
@@ -1749,8 +1705,6 @@ class ProjectTab(QWidget):
         # self.sub_webengine.setWindowFlags(Qt.FramelessWindowHint)
         # self.mdi.addSubWindow(self.sub_webengine)
 
-
-
         # self.mdi.setBackground(QBrush(Qt.transparent))
         # self.w_mdi = QWidget()
         # self.w_mdi.setLayout(self.mdi)
@@ -1818,19 +1772,6 @@ class ProjectTab(QWidget):
         # self.comboNgLayout.activated.connect(cfg.main_window.fn_ng_layout_combobox)
         self.comboNgLayout.activated.connect(self.onNgLayoutCombobox)
         self.comboNgLayout.setCurrentText(getData('state,ng_layout'))
-
-        # self.aligned_label = QLabel(' Aligned ')
-        # self.aligned_label.setObjectName('green_toolbar_label')
-        # self.aligned_label.setFixedHeight(16)
-        # self.aligned_label.hide()
-        # self.unaligned_label = QLabel(' Not Aligned ')
-        # self.unaligned_label.setObjectName('red_toolbar_label')
-        # self.unaligned_label.setFixedHeight(16)
-        # self.unaligned_label.hide()
-        # self.generated_label = QLabel(' Generated ')
-        # self.generated_label.setObjectName('green_toolbar_label')
-        # self.generated_label.setFixedHeight(16)
-        # self.generated_label.hide()
 
         self.ngcl_background = NgClickLabel(self)
         self.ngcl_background.setText('Background')
@@ -2053,15 +1994,10 @@ class ProjectTab(QWidget):
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
         self.blinkLab.setStyleSheet("""color: #ede9e8; font-size: 10px; font-weight: 600;""")
 
-        # self.blinkToggle = ToggleSwitch()
-
         self.tbbBlinkToggle = QPushButton()
         self.tbbBlinkToggle.setIconSize(QSize(24,24))
-        # self.tbbBlinkToggle.setFixedSize(QSize(28,28))
         self.tbbBlinkToggle.setStyleSheet("font-size: 9px; border: none; background: none; margin: 0px; padding: 0px;")
         self.tbbBlinkToggle.setCheckable(True)
-        # self.blinkToggle = AnimatedToggle()
-        # self.blinkToggle.stateChanged.connect(self.blinkChanged)
 
         self.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
         
@@ -2081,32 +2017,11 @@ class ProjectTab(QWidget):
 
         self.tbbBlinkToggle.clicked.connect(blink_main_fn)
 
-        # self.tbbBlinkToggle.setDefaultAction(blink_main_fn)
-
-        # self.uiUpdateLab = QLabel(f"  Auto-update UI: ")
-        # self.uiUpdateLab.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
-        #
-        # self.uiUpdateToggle = ToggleSwitch()
-        # self.uiUpdateToggle.stateChanged.connect(self.uiUpdateToggleChanged)
-        # self.uiUpdateToggle.setChecked(getData('state,auto_update_ui'))
-
-        # def fn():
-        #     if self.cl_tra.isChecked:
-        #         cfg.main_window.go_to_alignment_editor()
-        #     else:
-        #         cfg.main_window.go_to_series_viewer()
-
-
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.tbbBlinkToggle)
-        # self.w_ng_extended_toolbar.addWidget(self.testButton)
-
-        # self.w_ng_extended_toolbar.addWidget(self.uiUpdateLab)
-        # self.w_ng_extended_toolbar.addWidget(self.uiUpdateToggle)
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        # self.w_ng_extended_toolbar.addWidget(self.labShowHide)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_bounds)
@@ -2118,18 +2033,6 @@ class ProjectTab(QWidget):
         self.sideSliders.setFixedWidth(16)
         self.sideSliders.layout.setSpacing(0)
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-
-
-        self.labMethod1 = QLabel('Alignment Method:  ')
-        self.labMethod1.setFixedHeight(18)
-        self.labMethod1.setStyleSheet("""font-size: 9px; color: #ede9e8; background-color: #222222;""")
-
-        self.labMethod2 = QLabel()
-        self.labMethod2.setFixedHeight(18)
-        self.labMethod2.setStyleSheet("""font-size: 10px; color: #FFFF66; background-color: #222222;""")
-
-        # self.tn_ref = ThumbnailFast(self, name='reference', extra='reference')
-        # self.tn_tra = ThumbnailFast(self, name='transforming', extra='transforming')
 
         logger.info("Setting up reference/transforming thumbnails...")
 
@@ -2292,21 +2195,8 @@ class ProjectTab(QWidget):
 
         ### TARG KARG TOOL WINDOW #targ #karg ###
 
-        # self.rb_targ = QRadioButton('Reference')
-        # self.rb_karg = QRadioButton('Transforming')
-        # (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
-        # bg_matches = QButtonGroup(self)
-        # bg_matches.setExclusive(True)
-        # bg_matches.addButton(self.rb_targ)
-        # bg_matches.addButton(self.rb_karg)
-        # bg_matches.buttonClicked.connect(cfg.mw.setTargKargPixmaps)
-
-        # self.toggleMatches = QPushButton('Toggle')
         self.toggleMatches = QPushButton()
-        # self.toggleMatches.setIcon(qta.icon(
-        #     ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')], color=cfg.ICON_COLOR))
         self.toggleMatches.setIcon(qta.icon('mdi.toggle-switch-off', color=cfg.ICON_COLOR))
-        # self.toggleMatches.setStyleSheet("font-size: 9px; border: none; background-color: #222222; margin: 0px; padding: 0px;")
         self.toggleMatches.setFixedSize(20, 14)
         self.toggleMatches.setIconSize(QSize(20, 20))
 
@@ -2439,16 +2329,6 @@ class ProjectTab(QWidget):
         # self.gb_warnings = QGroupBox('Warnings')
         self.gb_warnings = QGroupBox("Warnings")
         self.gb_warnings.setObjectName('gb_cpanel')
-        self.gb_warnings.setStyleSheet("""
-        QGroupBox:title {
-            color: #161c20;
-            /*font-weight:600;*/
-            font-size: 9px;
-            subcontrol-origin: margin;
-            subcontrol-position: top center;
-            margin-bottom: 16px;
-        }
-        """)
         self.vbl_wanrings = VBL()
         self.vbl_wanrings.addWidget(self.warning_cafm)
         self.gb_warnings.setLayout(self.vbl_wanrings)
@@ -2456,18 +2336,6 @@ class ProjectTab(QWidget):
         logger.info("Setting up side tabs...")
 
         self.sideTabs = QTabWidget()
-        self.sideTabs.setStyleSheet("""
-        QTabBar::tab {
-            font-size: 9px;
-            height: 12px;
-            width: 64px;
-            min-width: 64px;
-            max-width: 64px;
-            margin-bottom: 0px;
-            padding-bottom: 0px;
-        
-        }
-        """)
         self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
         self.sideTabs.addTab(self.cpanelTabWidget, 'Details')
@@ -2491,55 +2359,43 @@ class ProjectTab(QWidget):
                                      self.gb_warnings)
         self.side_controls.setMaximumWidth(340)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.side_controls.setStyleSheet("""
+        QWidget{
+            font-size: 10px;
+        }
+        QTabBar::tab {
+            font-size: 9px;
+            height: 12px;
+            width: 64px;
+            min-width: 64px;
+            max-width: 64px;
+            margin-bottom: 0px;
+            padding-bottom: 0px;
+        }
+        QGroupBox {
+            color: #161c20;
+            border: 1px solid #161c20;
+            font-size: 10px;
+            /*font-weight: 600;*/
+            border-radius: 2px;
+            margin: 2px;
+            padding: 2px;
+        }
+        QGroupBox:title {
+            color: #161c20;
+            /*font-weight:600;*/
+            font-size: 9px;
+            subcontrol-origin: margin;
+            subcontrol-position: top center;
+            margin-bottom: 16px;
+        }
+        """)
 
-
-
-        logger.info("Setting up splitter...")
-
-        # self.wMatches = VWidget(self.match_widget, self.resizeMatchesButton)
-        # self.wMatches.layout.setSpacing(0)
 
         self.splitterEditAlignment = QSplitter(Qt.Orientation.Horizontal)
         self.splitterEditAlignment.addWidget(self.ng_widget_container)
         self.splitterEditAlignment.addWidget(self.side_controls)
-        # hbl = HBL(self.ng_widget_container, self.side_controls)
-        # hbl.setSpacing(0)
-        # hbl.setStretch(3,99)
-        # hbl.setStretch(4,0)
-        # self.wEditAlignment.setLayout(hbl)
 
-
-        # self.splitter_ngPlusSideControls = QSplitter(Qt.Orientation.Horizontal)
-        # self.splitter_ngPlusSideControls.setLineWidth(0)
-        # self.splitter_ngPlusSideControls.setEnabled(False)
-        # self.splitter_ngPlusSideControls.setStyleSheet("""QSplitter::handle { background-color: #222222; width: 2px; height: 2px;} QSplitter::handle:hover { background-color: #339933; width: 4px; height: 4px;}""")
-        # self.splitter_ngPlusSideControls.setHandleWidth(0)
-        # # self.splitter_ngPlusSideControls.addWidget(self.ms_widget)
-        # # self.splitter_ngPlusSideControls.addWidget(self.tn_widget)
-        # # self.splitter_ngPlusSideControls.addWidget(VWidget(self.labMatchSignals, self.ms_widget))
-        # self.splitter_ngPlusSideControls.addWidget(self.ms_widget)
-        # self.splitter_ngPlusSideControls.addWidget(self.tn_widget)
-        # self.splitter_ngPlusSideControls.addWidget(self.ng_widget_container)
-        # self.splitter_ngPlusSideControls.addWidget(self.side_controls)
-        # # self.splitter_ngPlusSideControls.addWidget(self.ms_widget)
-        # self.splitter_ngPlusSideControls.setCollapsible(0, True)
-        # self.splitter_ngPlusSideControls.setCollapsible(1, True)
-        # self.splitter_ngPlusSideControls.setCollapsible(2, False)
-        # self.splitter_ngPlusSideControls.setCollapsible(3, False)
-
-        # self.splitter_ngPlusSideControls.splitterMoved.connect(fn_hsplitter)
-
-        # def fn_splitterMoved():
-        #     # if cfg.pt.splitter_ngPlusSideControls.sizes()[2] == 0:
-        #     # cfg.mw.tbbMatches.setChecked(self.ms_widget.isVisible())
-        #     cfg.mw.tbbThumbnails.setChecked(self.splitter_ngPlusSideControls.sizes()[0])
-        #     cfg.mw.tbbMatches.setChecked(self.splitter_ngPlusSideControls.sizes()[2])
-        # self.splitter_ngPlusSideControls.splitterMoved.connect(fn_splitterMoved)
-        
-        # self.uiSplitterTimer = QTimer()
-        # self.uiSplitterTimer.setSingleShot(True)
-        # self.uiSplitterTimer.timeout.connect(self.initNeuroglancer)
-        # self.uiSplitterTimer.setInterval(1000)
 
         logger.info("<<<<")
 
