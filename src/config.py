@@ -65,7 +65,8 @@ DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.9000) #new default
 DEFAULT_CLOBBER_PX            = 3
 DEFAULT_SWIM_ITERATIONS       = 3 # in pixels
 
-DEFAULT_WHITENING             = float(-0.6800)
+# DEFAULT_WHITENING             = float(-0.6800)
+DEFAULT_WHITENING             = float(-0.6500)
 DEFAULT_CORRECTIVE_POLYNOMIAL = None
 
 '''Default Image Resolution (Voxel Dimensions)'''
