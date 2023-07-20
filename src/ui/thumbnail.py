@@ -107,9 +107,11 @@ class ThumbnailFast(QLabel):
 
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        policy.setHeightForWidth(True)
-        self.setSizePolicy(policy)
+
+
+        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # policy.setHeightForWidth(True)
+        # self.setSizePolicy(policy)
 
 
         self.map_border_color = {
@@ -120,6 +122,8 @@ class ThumbnailFast(QLabel):
         }
 
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def mousePressEvent(self, e):
         x, y, = (
@@ -670,6 +674,8 @@ class CorrSignalThumbnail(QLabel):
         }
 
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
     def paintEvent(self, event):

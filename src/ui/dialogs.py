@@ -144,7 +144,7 @@ class QFileDialogPreview(QFileDialog):
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
         # self.mpPreview.setFixedSize(360, 360)
-        self.mpPreview.setMinimumSize(256, 256)
+        self.mpPreview.setMinimumSize(128, 128)
         self.mpPreview.setAlignment(Qt.AlignCenter)
         self.mpPreview.setObjectName("labelPreview")
         self.imageDimensionsLabel = QLabel('')
@@ -656,7 +656,7 @@ class ConfigProjectDialog(QDialog):
         scales_str = ' '.join(scales_lst)
         self.scales_label = QLabel("Scale Factors:")
         self.scales_input = QLineEdit(self)
-        self.scales_input.setFixedWidth(130)
+        self.scales_input.setFixedWidth(124)
         self.scales_input.setText(scales_str)
         self.scales_input.setAlignment(Qt.AlignCenter)
         tip = "Scale factors, space-delimited.\n(example) To generate 4x 2x and 1x/full scales, cur_method: 4 2 1"

@@ -266,6 +266,7 @@ class OpenProject(QWidget):
         self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
         self.lab_project_name.setFixedHeight(18)
         self.le_project_name = QLineEdit()
+        self.le_project_name.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.le_project_name = cfg.le_project_name = QLineEdit()
         self.le_project_name.setReadOnly(False)
         def fn():
@@ -276,7 +277,7 @@ class OpenProject(QWidget):
         self.le_project_name.textChanged.connect(fn)
         # self.le_project_name.textEdited.connect(fn)
         self.le_project_name.setFixedHeight(20)
-        self.le_project_name.setMinimumWidth(400)
+        self.le_project_name.setMinimumWidth(40)
 
         self.le_project_name_w_overlay = QWidget()
         ew = ExpandingWidget(self)
@@ -756,11 +757,11 @@ class OpenProject(QWidget):
 
         QApplication.processEvents()
         cfg.pt.initNeuroglancer()
-        if cfg.data.is_aligned():
-            cfg.pt.updateLowest8widget()
-            cfg.mw.setdw_hud(True)
-            cfg.mw.setdw_thumbs(True)
-            cfg.mw.setdw_matches(True)
+        # if cfg.data.is_aligned():
+        #     cfg.pt.updateLowest8widget()
+        #     cfg.mw.setdw_hud(True)
+        #     cfg.mw.setdw_thumbs(True)
+        #     cfg.mw.setdw_matches(True)
 
         logger.critical('<<<< new_project <<<<')
 
@@ -923,11 +924,11 @@ class OpenProject(QWidget):
 
             QApplication.processEvents()
             cfg.pt.initNeuroglancer()
-            if cfg.data.is_aligned():
-                cfg.pt.updateLowest8widget()
-                cfg.mw.setdw_hud(True)
-                cfg.mw.setdw_thumbs(True)
-                cfg.mw.setdw_matches(True)
+            # if cfg.data.is_aligned():
+            #     cfg.pt.updateLowest8widget()
+            #     cfg.mw.setdw_hud(True)
+            #     cfg.mw.setdw_thumbs(True)
+            #     cfg.mw.setdw_matches(True)
 
         else:
             cfg.mw.warn("Invalid Path")
@@ -1091,7 +1092,8 @@ class UserProjects(QWidget):
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
         self.table.verticalHeader().setVisible(False)
-        self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
+        # self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
+        self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         def countCurrentItemChangedCalls(): self.counter2 += 1
         self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
         self.table.currentItemChanged.connect(self.parent.userSelectionChanged)
@@ -1182,6 +1184,7 @@ class UserProjects(QWidget):
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
         font0 = QFont()
+        font0.setBold(True)
         font0.setPointSize(10)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
