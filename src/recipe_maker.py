@@ -509,12 +509,14 @@ class align_ingredient:
         for name in ms_names:
             self.crop_str_mir = f"""B {w} {h} 1\nZ\nF {name}\n0 0 {x1} {y1}\n{w} 0 {x2} {y1}\n
             {w} {h} {x2} {y2}\n0 {h} {x1} {y2}\nT\n0 1 2\n2 3 0\nW {name}"""
-
-            o = run_command(self.recipe.mir_c,
-                            arg_list=[],
-                            cmd_input=self.crop_str_mir,
-                            extra=f'MIR the Match Signals to crop ({self.ID})',
-                            scale=self.alData['meta']['scale_val'])
+            try:
+                o = run_command(self.recipe.mir_c,
+                                arg_list=[],
+                                cmd_input=self.crop_str_mir,
+                                extra=f'MIR the Match Signals to crop ({self.ID})',
+                                scale=self.alData['meta']['scale_val'])
+            except:
+                print_exception()
 
         if self.mode == 'SWIM-Manual':
             MAlogger.critical(f'\nSWIM OUT:\n{self.swim_output}\nSWIM ERR:\n{self.swim_err_lines}')
@@ -686,11 +688,9 @@ def print_exception(dest=None, extra='None'):
     exi = sys.exc_info()
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}\nAdditional Details: {extra}"
     print(txt)
-
-    # lf = os.path.join(dest, 'logs', 'exceptions.log')
-    # with open(lf, 'a+') as f:
-    #     f.write('\n' + txt)
-    # pass
+    lf = os.path.join(dest, 'logs', 'exceptions.log')
+    with open(lf, 'a+') as f:
+        f.write('\n' + txt)
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
     """
