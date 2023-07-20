@@ -1720,11 +1720,11 @@ class MainWindow(QMainWindow):
     @Slot(name='dataUpdateWidgets-slot-name')
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        logger.info('')
+        # logger.info('')
 
         # caller = inspect.stack()[1].function
-        if DEV:
-            logger.info(f'{caller_name()}')
+        # if DEV:
+        #     logger.info(f'{caller_name()}')
         # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
         # if getData('state,blink'):
         #     return
@@ -3763,9 +3763,12 @@ class MainWindow(QMainWindow):
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
             cfg.pt.initNeuroglancer(init_all=True)
             # if self._is_initialized:
-            cfg.emViewer = cfg.project_tab.viewer
-            cfg.refViewer = cfg.project_tab.refViewer
-            cfg.baseViewer = cfg.project_tab.baseViewer
+            try:
+                cfg.emViewer = cfg.project_tab.viewer
+                cfg.refViewer = cfg.project_tab.refViewer
+                cfg.baseViewer = cfg.project_tab.baseViewer
+            except:
+                pass
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)

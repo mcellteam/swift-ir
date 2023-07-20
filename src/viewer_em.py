@@ -153,7 +153,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info(f'[caller: {caller}]')
         # if caller == '<lambda>':
         #     return
-        logger.info(f'[{caller}]')
+        # logger.info(f'[{caller}]')
 
         #CriticalMechanism
         if not self.cs_scale:
