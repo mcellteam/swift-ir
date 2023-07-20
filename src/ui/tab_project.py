@@ -1200,28 +1200,26 @@ class ProjectTab(QWidget):
         self.sb_whiteningControl = QDoubleSpinBox(self)
         self.sb_whiteningControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.sb_whiteningControl.setFixedSize(QSize(50, 18))
-        self.sb_whiteningControl.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
-        self.sb_whiteningControl.valueChanged.connect(cfg.mw._valueChangedWhitening)
         self.sb_whiteningControl.setDecimals(2)
         self.sb_whiteningControl.setSingleStep(.01)
         self.sb_whiteningControl.setMinimum(-2)
         self.sb_whiteningControl.setMaximum(2)
+        self.sb_whiteningControl.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
+        self.sb_whiteningControl.valueChanged.connect(cfg.mw._valueChangedWhitening)
 
         tip = """The number of sequential SWIM refinements to alignment. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3)."""
         self.sb_SWIMiterations = QSpinBox(self)
         self.sb_SWIMiterations.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.sb_SWIMiterations.setFixedSize(QSize(50, 18))
-        self.sb_SWIMiterations.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
-
         def fn_swim_iters():
             caller = inspect.stack()[1].function
             if caller == 'main':
                 setData('data,defaults,swim-iterations', self.sb_SWIMiterations.value())
                 self.updateCpanelDetails_i1()
-
-        self.sb_SWIMiterations.valueChanged.connect(fn_swim_iters)
         self.sb_SWIMiterations.setMinimum(1)
         self.sb_SWIMiterations.setMaximum(9)
+        self.sb_SWIMiterations.valueChanged.connect(fn_swim_iters)
+        self.sb_SWIMiterations.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
 
         tip = f"""The full width in pixels of an imaginary, centered grid which SWIM 
         aligns against (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)."""
@@ -1232,6 +1230,7 @@ class ProjectTab(QWidget):
         self._swimWindowControl = QLineEdit(self)
         self._swimWindowControl.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._swimWindowControl.setFixedSize(QSize(50, 18))
+        self._swimWindowControl.setValidator(QIntValidator())
         def fn():
             logger.critical('')
             caller = inspect.stack()[1].function
@@ -1264,7 +1263,7 @@ class ProjectTab(QWidget):
         self._swimWindowControl.returnPressed.connect(fn)
         self._swimWindowControl.selectionChanged.connect(cfg.mw._callbk_unsavedChanges)
         self._swimWindowControl.returnPressed.connect(cfg.mw._callbk_unsavedChanges)
-        self._swimWindowControl.setValidator(QIntValidator())
+
         # self._swimWindowControl.setFixedSize(std_input_size)
 
         self.fl_swimSettings = QFormLayout()
@@ -1306,11 +1305,11 @@ class ProjectTab(QWidget):
         tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
         self._polyBiasCombo = QComboBox(self)
         # self._polyBiasCombo.setStyleSheet("font-size: 10px; padding-left: 6px;")
-        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._valueChangedPolyOrder)
-        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._callbk_unsavedChanges)
         self._polyBiasCombo.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         # self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
+        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._valueChangedPolyOrder)
+        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._callbk_unsavedChanges)
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._polyBiasCombo.setFixedSize(QSize(70, 16))
         self._polyBiasCombo.lineEdit()
