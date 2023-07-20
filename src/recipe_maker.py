@@ -7,6 +7,7 @@ import copy
 import logging
 import platform
 import datetime
+import time
 import traceback
 import numpy as np
 import subprocess as sp
@@ -479,6 +480,7 @@ class align_ingredient:
             arg_list=[self.swim_ww_arg],
             cmd_input=multi_arg_str(),
             extra=f'Automatic SWIM Alignment ({self.ID})',
+            scale=self.alData['meta']['scale_val']
         )
 
         self.swim_output = o['out'].strip().split('\n')
@@ -502,8 +504,11 @@ class align_ingredient:
             self.crop_str_mir = f"""B {w} {h} 1\nZ\nF {name}\n0 0 {x1} {y1}\n{w} 0 {x2} {y1}\n
             {w} {h} {x2} {y2}\n0 {h} {x1} {y2}\nT\n0 1 2\n2 3 0\nW {name}"""
 
-            o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=self.crop_str_mir,
-                        extra=f'MIR the Match Signals to crop ({self.ID})', )
+            o = run_command(self.recipe.mir_c,
+                            arg_list=[],
+                            cmd_input=self.crop_str_mir,
+                            extra=f'MIR the Match Signals to crop ({self.ID})',
+                            scale=self.alData['meta']['scale_val'])
 
         if self.mode == 'SWIM-Manual':
             MAlogger.critical(f'\nSWIM OUT:\n{self.swim_output}\nSWIM ERR:\n{self.swim_err_lines}')
@@ -549,7 +554,12 @@ class align_ingredient:
                 self.mir_script += ' '.join(mir_toks) + '\n'
                 snr_list.append(float(toks[0][0:-1]))
             self.mir_script += 'R\n'
-            o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=self.mir_script, extra=f'MIR the SWIM offsets to get affine ({self.ID})', )
+            o = run_command(self.recipe.mir_c,
+                            arg_list=[],
+                            cmd_input=self.mir_script,
+                            extra=f'MIR the SWIM offsets to get affine ({self.ID})',
+                            scale=self.alData['meta']['scale_val']
+                            )
             self.mir_out_lines = o['out'].strip().split('\n')
             self.mir_err_lines = o['err'].strip().split('\n')
 
@@ -583,6 +593,7 @@ class align_ingredient:
             arg_list=[],
             cmd_input=mir_script_mp,
             extra='MIR to get affine using manual correspondence points',
+            scale=self.alData['meta']['scale_val']
         )
         mir_mp_out_lines = o['out'].strip().split('\n')
         mir_mp_err_lines = o['err'].strip().split('\n')
@@ -610,7 +621,7 @@ class align_ingredient:
         return self.afm
 
 
-def run_command(cmd, arg_list=None, cmd_input=None, extra=''):
+def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
     cmd_arg_list = [cmd]
     if arg_list != None:
         cmd_arg_list = [a for a in arg_list]
@@ -619,7 +630,8 @@ def run_command(cmd, arg_list=None, cmd_input=None, extra=''):
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    RMlogger.critical(f"\n========== Run Command ==========\n"
+    RMlogger.critical(f"\n========== Run Command [{time.time()}] ==========\n"
+                      f"Scale           : {scale}\n"
                       f"Description     : {extra}\n"
                       f"Running command :\n{(nl.join(cmd_arg_list), 'None')[cmd_arg_list == '']}\n"
                       f"Passing data    :\n{(cmd_input, 'None')[cmd_input == '']}\n\n"
