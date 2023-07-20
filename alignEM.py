@@ -248,6 +248,7 @@ def main():
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0 --num-raster-threads=128'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 
     if qtpy.QT5:
         logger.info('Setting Qt.AA_EnableHighDpiScaling')

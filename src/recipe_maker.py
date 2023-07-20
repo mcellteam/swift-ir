@@ -505,6 +505,7 @@ class align_ingredient:
             x1 = y1 = str(int((self.ww - px_keep) / 2.0))
             x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
 
+
         for name in ms_names:
             self.crop_str_mir = f"""B {w} {h} 1\nZ\nF {name}\n0 0 {x1} {y1}\n{w} 0 {x2} {y1}\n
             {w} {h} {x2} {y2}\n0 {h} {x1} {y2}\nT\n0 1 2\n2 3 0\nW {name}"""
