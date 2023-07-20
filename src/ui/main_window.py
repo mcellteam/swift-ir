@@ -2250,25 +2250,25 @@ class MainWindow(QMainWindow):
                 # self.dataUpdateWidgets() #0601+
 
     def jump_to_slider(self):
-        caller = inspect.stack()[1].function
-
-        #0601 this seems to work as intended with no time lag
-        if caller in ('dataUpdateWidgets'):
-            return
-        logger.info('')
-        # if caller in ('main', 'onTimer','jump'):
-        requested = self._sectionSlider.value()
         if self._isProjectTab():
-            logger.info('Jumping To Section #%d' % requested)
-            self.setZpos(requested)
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                #0601 this seems to work as intended with no time lag
+                # if caller in ('dataUpdateWidgets'):
+                #     return
+                logger.info('')
+                # if caller in ('main', 'onTimer','jump'):
+                requested = self._sectionSlider.value()
+                if self._isProjectTab():
+                    logger.info('Jumping To Section #%d' % requested)
+                    self.setZpos(requested)
+                try:
+                    self._jumpToLineedit.setText(str(requested))
+                except:
+                    logger.warning('Current Section Widget Failed to Update')
+                    print_exception()
 
-        try:
-            self._jumpToLineedit.setText(str(requested))
-        except:
-            logger.warning('Current Section Widget Failed to Update')
-            print_exception()
-
-        # logger.critical('<<<< jump_to_slider <<<<')
+                # logger.critical('<<<< jump_to_slider <<<<')
 
     @Slot()
     def reload_scales_combobox(self) -> None:
@@ -2278,15 +2278,14 @@ class MainWindow(QMainWindow):
             # logger.info('Reloading Scale Combobox (caller: %s)' % caller)
             self._scales_combobox_switch = 0
             self._changeScaleCombo.clear()
-
-            def pretty_scales():
-                lst = []
-                for s in cfg.data.scales():
-                    siz = cfg.data.image_size(s=s)
-                    lst.append('%d / %d x %dpx' % (cfg.data.scale_val(s=s), siz[0], siz[1]))
-                return lst
-
-            self._changeScaleCombo.addItems(pretty_scales())
+            # def pretty_scales():
+                # lst = []
+                # for s in cfg.data.scales():
+                #     # siz = cfg.data.image_size(s=s)
+                #     lst.append('%d / %d x %dpx' % (cfg.data.scale_val(s=s), *cfg.data.image_size(s=s)))
+                # return lst
+            lst = ['%d / %d x %dpx' % (cfg.data.scale_val(s=s), *cfg.data.image_size(s=s)) for s in cfg.data.scales()]
+            self._changeScaleCombo.addItems(lst)
             self._changeScaleCombo.setCurrentIndex(cfg.data.scales().index(cfg.data.scale))
             self._scales_combobox_switch = 1
 
@@ -5001,13 +5000,6 @@ class MainWindow(QMainWindow):
         self._jumpToLineedit.setFixedSize(QSize(32, 16))
         self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
         # self._jumpToLineedit.returnPressed.connect(lambda: self.jump_to(int(self._jumpToLineedit.text())))
-
-        # hbl = QHBoxLayout()
-        # hbl.setContentsMargins(4, 0, 4, 0)
-        # hbl.addWidget(HWidget(QLabel('Section:'), self._jumpToLineedit))
-        # self._jumpToSectionWidget = QWidget()
-        # self._jumpToSectionWidget.setLayout(hbl)
-        # self.toolbar.addWidget(self._sectionSlider)
 
         self._btn_automaticPlayTimer = QPushButton()
         # self._btn_automaticPlayTimer.setIconSize(QSize(11, 11))
