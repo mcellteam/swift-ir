@@ -127,6 +127,7 @@ class ProjectTable(QWidget):
         try:
             for row in range(0, len(cfg.data)):
                 if cfg.CancelProcesses:
+                    logger.warning("Canceling table load!")
                     return
                 cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
                 cnt += 1
