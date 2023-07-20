@@ -26,7 +26,7 @@ except Exception as e:
 logger = logging.getLogger(__name__)
 
 def run_command(cmd, arg_list=None, cmd_input=None):
-    logger.info("\n================== Run Command ==================")
+    # logger.info("\n================== Run Command ==================")
     cmd_arg_list = [cmd]
     if arg_list != None:
         cmd_arg_list = [a for a in arg_list]
@@ -34,7 +34,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
+    # logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
 
@@ -84,9 +84,9 @@ def run_mir(task):
 
     bb_x, bb_y = rect[2], rect[3]
     # afm = np.array(cafm)
-    logger.info(f"cafm: {str(cafm)}")
+    # logger.info(f"cafm: {str(cafm)}")
     afm = np.array([cafm[0][0], cafm[0][1], cafm[0][2], cafm[1][0], cafm[1][1], cafm[1][2]], dtype='float64').reshape((-1, 3))
-    logger.info(f'afm: {str(afm.tolist())}')
+    # logger.info(f'afm: {str(afm.tolist())}')
     p1 = applyAffine(afm, (0,0))  # Transform Origin To Output Space
     p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
     offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
@@ -96,7 +96,6 @@ def run_mir(task):
     b = cafm[1][0]
     d = cafm[1][1]
     f = cafm[1][2] + offset_y
-
 
     mir_script = \
         'B %d %d 1\n' \
