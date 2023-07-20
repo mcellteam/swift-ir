@@ -83,6 +83,9 @@ CNAME = 'None'
 CLEVEL = 5
 
 '''Other Defaults'''
+# TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 120 # 128 hardware cores/node on Lonestar6
+# TACC_MAX_CPUS = 50 # 128 hardware cores/node on Lonestar6
 KEEP_ORIGINAL_SPOTS = False
 PROFILING_TIMER_SPEED = 5000
 PROFILING_TIMER_AUTOSTART = False
@@ -108,9 +111,6 @@ DUMMY = False
 USE_TENSORSTORE = True
 FAULT_HANDLER = False
 HEADLESS = False
-# TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 80 # 128 hardware cores/node on Lonestar6
-# TACC_MAX_CPUS = 50 # 128 hardware cores/node on Lonestar6
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
 NO_SPLASH = True
