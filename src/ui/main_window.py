@@ -1744,6 +1744,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_status(self, msg: str) -> None:
         self.statusBar.showMessage(msg)
+        QApplication.processEvents()
         # pass
 
     def minimal_stylesheet(self):
