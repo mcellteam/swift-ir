@@ -233,21 +233,21 @@ def main():
     if cfg.PROFILING_MODE:
         sys.setprofile(tracefunc)
 
-    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
     # ***************
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
     # ***************
 
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=0'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=0'
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     if qtpy.QT5:
         logger.info('Setting Qt.AA_EnableHighDpiScaling')
@@ -263,7 +263,8 @@ def main():
     initialize_user_preferences()
     # configure_project_paths()
 
-    app = QApplication([])
+    # app = QApplication([])
+    app = QApplication(sys.argv)
     app.setStyle('Fusion')
     # app.setStyle('Breeze')
     # app.setStyle('Oxygen')

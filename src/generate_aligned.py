@@ -223,30 +223,23 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
             # cfg.mw.showZeroedPbar(pbar_max=n_tasks)
 
-            t0 = time.time()
             logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
-
             ctx = mp.get_context('forkserver')
             pbar = tqdm.tqdm(total=len(tasks))
-
+            t0 = time.time()
             def update_tqdm(*a):
                 pbar.update()
-
             with ctx.Pool(processes=cpus) as pool:
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
                 pool.close()
                 [p.get() for p in results]
-
                 pool.join()
 
             # with ctx.Pool(processes=cpus) as pool:
             #     pool.map(convert_zarr, tasks)
             logger.critical("----------END----------")
-
             cfg.mw.setPbarUnavailable(False)
-
             cfg.mw.set_status('')
-
             dt = time.time() - t0
             dm.t_convert_zarr = dt
 
