@@ -109,6 +109,8 @@ echo "Unsetting QT_API..."
 unset QT_API
 echo "Setting QT API environment flag QT_API=pyqt5..."
 export QT_API=pyqt5
+echo "Setting LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT to 1000000000..."
+export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 
 #echo "Setting Environment Variables in Conda API..."
 #NOTE SOME OF THESE ARE ALREADY SET IN THE ENVIRONMENT
