@@ -388,12 +388,6 @@ class ProjectTab(QWidget):
         '''NG Browser'''
         logger.info('')
 
-        self.webengine.loadFinished.connect(lambda: print('QWebengineView Load Finished!'))
-        # self.webengine.loadFinished.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-
-        # self.ng_messages = VWidget(self.warning_cafm)
-        # self.ng_messages.layout.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
-
         self._overlayLab = QLabel('<label>')
         # self._overlayLab.setMaximumHeight(20)
         self._overlayLab.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -428,31 +422,6 @@ class ProjectTab(QWidget):
         self.detailsSNR.setWordWrap(True)
         self.detailsSNR.setStyleSheet(style)
         self.detailsSNR.hide()
-
-        # self.detailsDetailsWidget = QWidget()
-        # self.detailsDetailsWidget.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.detailsDetailsWidget.setWindowFlags(Qt.FramelessWindowHint)
-        # self.detailsDetailsWidget.show()
-        # hbl = HBL()
-        # # hbl.addWidget(self.detailsAFM, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # hbl.addWidget(self.detailsSNR, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
-        # self.detailsDetailsWidget.setLayout(hbl)
-
-        # self.spreadW = QWidget()
-        # self.spreadW.setWindowFlags(Qt.FramelessWindowHint)
-        # self.spreadW.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.spreadW.setFixedSize(1, 12)
-        # self.spreadW.setVisible(getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        #
-        # self.spreadW2 = QWidget()
-        # self.spreadW2.setWindowFlags(Qt.FramelessWindowHint)
-        # self.spreadW2.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.spreadW2.setFixedSize(96, 1)
-        #
-        # self.spreadW3 = QWidget()
-        # self.spreadW3.setWindowFlags(Qt.FramelessWindowHint)
-        # self.spreadW3.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.spreadW3.setFixedSize(40, 1)
 
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
         self.zoomSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -508,6 +477,7 @@ class ProjectTab(QWidget):
         vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
+        logger.info('Setting up webengines...')
         self.MA_webengine_ref = WebEngine(ID='ref')
         self.MA_webengine_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.MA_webengine_base = WebEngine(ID='base')
