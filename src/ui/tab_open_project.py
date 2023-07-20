@@ -844,17 +844,14 @@ class OpenProject(QWidget):
         self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
         self.cbCalGrid.setVisible(validate_tiff_folder(path))
 
-        if validate_project_selection(path) | validate_zarr_selection(path) | validate_tiff_folder(path):
-            self.validity_label.hide()
-            self._buttonOpen.setEnabled(True)
-            self._buttonDelete.setEnabled(True)
-        else:
-            self.validity_label.show()
-            self._buttonOpen.setEnabled(False)
-            self._buttonDelete.setEnabled(False)
-
-        if validate_tiff_folder(path):
-            pass
+        # if validate_project_selection(path) | validate_zarr_selection(path):
+        #     self.validity_label.hide()
+        #     self._buttonOpen.setEnabled(True)
+        #     self._buttonDelete.setEnabled(True)
+        # else:
+        #     self.validity_label.show()
+        #     self._buttonOpen.setEnabled(False)
+        #     self._buttonDelete.setEnabled(False)
 
 
     def open_zarr_selected(self):
