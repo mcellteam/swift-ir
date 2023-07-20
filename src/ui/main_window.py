@@ -3646,7 +3646,7 @@ class MainWindow(QMainWindow):
         self.tbbMenu.setIcon(qta.icon("mdi.menu", color='#161c20'))
 
         self.newLabel = QLabel(' ← New! ')
-        self.newLabel.setFixedHeight(18)
+        self.newLabel.setFixedHeight(16)
         self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 10px; border-radius: 4px;")
 
         self.toolbar.addWidget(self.tbbMenu)
