@@ -34,6 +34,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+    logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
 
@@ -70,6 +71,42 @@ def is_mac() -> bool:
     system = platform.system()
     if system == 'Darwin':  return True
     else:                   return False
+
+def run_mir(task):
+    in_fn = task[0]
+    out_fn = task[1]
+    rect = task[2]
+    cafm = task[3]
+    border = task[4]
+
+    # Todo get exact median greyscale value for each image in list, for now just use 128
+    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
+
+    bb_x, bb_y = rect[2], rect[3]
+    # afm = np.array(cafm)
+    logger.info(f"cafm: {str(cafm)}")
+    afm = np.array([cafm[0][0], cafm[0][1], cafm[0][2], cafm[1][0], cafm[1][1], cafm[1][2]], dtype='float64').reshape((-1, 3))
+    logger.info(f'afm: {str(afm.tolist())}')
+    p1 = applyAffine(afm, (0,0))  # Transform Origin To Output Space
+    p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
+    offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+    a = cafm[0][0]
+    c = cafm[0][1]
+    e = cafm[0][2] + offset_x
+    b = cafm[1][0]
+    d = cafm[1][1]
+    f = cafm[1][2] + offset_y
+
+
+    mir_script = \
+        'B %d %d 1\n' \
+        'Z %g\n' \
+        'F %s\n' \
+        'A %g %g %g %g %g %g\n' \
+        'RW %s\n' \
+        'E' % (bb_x, bb_y, border, in_fn, a, c, e, b, d, f, out_fn)
+    o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+
 
 
 if (__name__ == '__main__'):
@@ -108,28 +145,8 @@ if (__name__ == '__main__'):
     offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
     a = afm_list[0];  c = afm_list[1];  e = afm_list[2] + offset_x
     b = afm_list[3];  d = afm_list[4];  f = afm_list[5] + offset_y
-    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
-    # Todo get exact median greyscale value for each image in list, for now just use 128
-    mir_script = \
-        'B %d %d 1\n' \
-        'Z %g\n' \
-        'F %s\n' \
-        'A %g %g %g %g %g %g\n' \
-        'RW %s\n' \
-        'E' % (bb_x, bb_y, 128, in_fn, a, c, e, b, d, f, out_fn)
-    o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
-    # path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
-    # with open(path, 'a+') as f:
-    #     f.write('\n---------------------------\n' + mir_script + '\n')
 
-    # Python Implementation
-    # image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)
-    sys.stdout.write(o['out'])
-    sys.stderr.write(o['err'])
-    sys.stdout.close()
-    sys.stderr.close()
-    if o['rc']:
-        exit(1)
+    run_mir(bb_x, bb_y, in_fn, out_fn, a, c, e, b, d, f, border=128)
 
 
 '''

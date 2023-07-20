@@ -6,11 +6,18 @@ import time
 import psutil
 import logging
 import argparse
+from multiprocessing.pool import ThreadPool
 import src.config as cfg
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_img_filenames, print_exception, renew_directory, \
     reorder_tasks
 from src.funcs_zarr import preallocate_zarr
+import tqdm
+import numcodecs
+import numpy as np
+import zarr
+numcodecs.blosc.use_threads = False
+from libtiff import TIFF
 
 __all__ = ['GenerateScalesZarr']
 
@@ -30,7 +37,7 @@ def GenerateScalesZarr(dm, gui=True):
         # Todo conditional handling of skips
 
         dest = dm.dest()
-        imgs = sorted(get_img_filenames(os.path.join(dest, 'scale_1', 'img_src')))
+        imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
         od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
         renew_directory(directory=od, gui=gui)
         for scale in dm.scales():
@@ -47,53 +54,51 @@ def GenerateScalesZarr(dm, gui=True):
                              gui=gui)
         n_tasks = len(dm) * dm.n_scales()
 
+        cfg.mw.set_status('Copy-converting scales to Zarr. No progress bar available. Awaiting multiprocessing pool...')
+        cfg.mw.setPbarUnavailable(True)
+
         if gui: cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
 
         # dest = cfg.data['data']['destination_path']
         logger.info(f'\n\n################ Converting Downscales to Zarr ################\n')
-        task_queue = TaskQueue(n_tasks=n_tasks, dest=dm.dest(), parent=cfg.main_window, pbar_text=pbar_text, use_gui=gui)
-        task_queue.taskPrefix = 'Downscales Converted to Zarr for '
 
-        tasknamelist = []
-        for scale in dm.scales():
-            for ID, img in enumerate(imgs):
-                tasknamelist.append('%s, %s' % (os.path.basename(img), scale))
-        task_queue.taskNameList = tasknamelist
-        task_queue.start(cpus)
-        script = 'src/job_convert_zarr.py'
-
-        # store = zarr.open(out, synchronizer=synchronizer)
-        # task_list = []
-        chunkshape = dm.chunkshape
-        logger.info(f'chunk shape: {chunkshape}')
+        tasks = []
         for scale in dm.scales():
             for ID, img in enumerate(imgs):
                 out = os.path.join(od, 's%d' % get_scale_val(scale))
                 fn = os.path.join(dest, scale, 'img_src', img)
-                # task_list.append([sys.executable, script, str(ID), fn, out ])
-                dest = dm.dest()
-                task = [sys.executable, script, str(ID), fn, out, str(chunkshape), str(0), dest]
-                if cfg.PRINT_EXAMPLE_ARGS:
-                    if ID in [0, 1, 2]:
-                        print('Example Arguments (ID %d):' % (ID))
-                        print(task, sep='\n  ')
+                tasks.append([ID, fn, out])
 
-                # print('\n'.join(task))
-                task_queue.add_task(task)
-                # task_queue.add_task([sys.executable, script, str(ID), fn, out ])
-                # task_queue.add_task([sys.executable, script, str(ID), fn, store ])
-        # n_scales = len(datamodel.scales())
-        # chunkshape = datamodel.chunkshape()
-        # z_stride = n_scales * chunkshape[0]
-        # task_list = reorder_tasks(task_list, z_stride=z_stride)
-        # for task in task_list:
-        #     logger.info('Adding Layer %s Task' % task[2])
-        #     task_queue.add_task(task)
+        cfg.mw.set_status('Generating Zarr. No progress bar available. Awaiting multiprocessing pool...')
+        cfg.mw.setPbarUnavailable(True)
+        logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
+        pbar = tqdm.tqdm(total=len(tasks))
+        t0 = time.time()
 
+        def update_tqdm(*a):
+            pbar.update()
 
-        dt = task_queue.collect_results()
-        dm.t_scaling_convert_zarr = dt
+        # with ctx.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
+            pool.close()
+            [p.get() for p in results]
+            pool.join()
+        logger.critical("----------END----------")
+        cfg.mw.set_status('')
+        dm.t_scaling_convert_zarr = time.time() - t0
         logger.info('<<<< Generate Zarr Scales End <<<<')
+        cfg.mw.setPbarUnavailable(False)
+
+def convert_zarr(task):
+    ID = task[0]
+    fn = task[1]
+    out = task[2]
+    store = zarr.open(out, write_empty_chunks=False)
+    tif = TIFF.open(fn)
+    img = tif.read_image()[:, ::-1]  # np.array
+    store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
 
 
 if __name__ == '__main__':

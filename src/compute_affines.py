@@ -211,7 +211,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             if not sec['skipped']:
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
-        cfg.mw.set_status('Computing affines. No progress bar available (awaiting multiprocessing pool...)')
+        cfg.mw.set_status('Computing affines. No progress bar available. Awaiting multiprocessing pool...')
         logger.critical("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
         ctx = mp.get_context('forkserver')
         pbar = tqdm.tqdm(total=len(tasks))
@@ -226,45 +226,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             pool.join()
 
         cfg.mw.setPbarUnavailable(False)
-
-
-
-        # with ctx.Pool(processes=cpus) as pool:
-        #     # results = [pool.apply_async(run_recipe, task) for task in tasks]
-        #     # all_results = [p.get() for p in results]
-        #
-        #     results = [pool.apply_async(func=run_recipe, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
-        #         func=run_recipe, args=(argument,), callback=update_pbar) for argument in tasks]
-        #     pool.close()
-        #     # result_list_tqdm = []
-        #     # for job in tqdm(jobs):
-        #     #     result_list_tqdm.append(job.get())
-        #
-        # all_results = [p.get() for p in results]
-
-        # with ctx.Pool(processes=cpus) as pool:
-        #     # all_results = pool.map(run_recipe, tasks)
-        #     for result in pool.map(run_recipe, tasks):
-        #         all_results.append(result)
-            # all_results = pool.apply_async(run_recipe, tasks, callback=update_pbar).get()
-
-            # all_results = pool.apply_async(run_recipe, tasks, callback=update_pbar)
-            # all_results = [pool.apply_async(run_recipe, task, callback=update_pbar) for task in tasks]
-
-            # pool.apply_async(run_recipe, tasks, callback=update_pbar)
-
-            # pool.apply_async(run_recipe, tasks, callback=update_pbar).get()
-
-            # print(f"Task complete: {result}")
-
-            # for result in pool.apply_async(run_recipe, task, callback=update_pbar):
-
-            # results = [pool.apply_async(run_recipe, task, callback=update_pbar) for task in tasks]
-            # close the pool
-            # pool.close()
-            # wait for all issued tasks to complete
-            # pool.join()
-
 
         # output = [p.get() for p in results]
 
@@ -352,8 +313,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             cfg.mw.updateCorrSignalsDrawer()
             cfg.mw.setTargKargPixmaps()
 
-        for l in list(range(start, len(cfg.data))):
-            dm['data']['scales'][scale]['stack'][l]['cafm_comports'] = False
 
         save2file(dm=dm,name=dm.dest())
 

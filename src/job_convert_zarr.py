@@ -10,11 +10,11 @@ Joel Yancey 2022-08-15
 
 import os
 import sys
-import zarr
 import logging
 import shutil
 import numcodecs
 import numpy as np
+import zarr
 numcodecs.blosc.use_threads = False
 from libtiff import TIFF
 

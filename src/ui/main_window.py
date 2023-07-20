@@ -1445,11 +1445,7 @@ class MainWindow(QMainWindow):
             print_exception();
             self.err('An Exception Was Raised During Alignment.')
 
-        # for l in list(range(start,end)):
-        #     cfg.data['data']['scales'][scale]['stack'][l]['cafm_comports'] = True
-        #
-        # for l in list(range(end,len(cfg.data))):
-        #     cfg.data['data']['scales'][scale]['stack'][l]['cafm_comports'] = False
+
 
         # cfg.data.get_iter()
 
@@ -6174,7 +6170,7 @@ class MainWindow(QMainWindow):
         self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)
         self.widgetPbar.layout.setSpacing(4)
 
-        self.w_pbarUnavailable = QLabel('GUI Progress Bar Temporarily Unavailable. See Progress in Terminal.')
+        self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal.')
         self.w_pbarUnavailable.setFixedHeight(14)
         self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
         self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
