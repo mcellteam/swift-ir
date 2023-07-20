@@ -165,14 +165,15 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                              dtype='|u1',
                              overwrite=True)
 
-        dir = os.path.join(dm.dest(), scale)
-        stage_path = os.path.join(dir, 'zarr_staged')
-        store = zarr.DirectoryStore(stage_path)  # Does not create directory
-        root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
-        for i in range(len(dm)):
-            if not os.path.exists(os.path.join(stage_path, str(i))):
-                logger.info('creating group: %s' %str(i))
-                root.create_group(str(i))
+        # Create "staged" Zarr hierarchy and its groups
+        # dir = os.path.join(dm.dest(), scale)
+        # stage_path = os.path.join(dir, 'zarr_staged')
+        # store = zarr.DirectoryStore(stage_path)  # Does not create directory
+        # root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
+        # for i in range(len(dm)):
+        #     if not os.path.exists(os.path.join(stage_path, str(i))):
+        #         logger.info('creating group: %s' %str(i))
+        #         root.create_group(str(i))
 
 
         if cfg.CancelProcesses:
