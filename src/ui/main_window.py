@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
         self.initImageAllocations()
         self.initPrivateMembers()
-        self.initThreadpool(timeout=250)
+        # self.initThreadpool(timeout=250)
         self.initOpenGlContext()
         # self.initPythonConsole()
         self.initStatusBar()
