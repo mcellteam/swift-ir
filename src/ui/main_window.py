@@ -5327,8 +5327,8 @@ class MainWindow(QMainWindow):
         std_button_size = QSize(96, 20)
         normal_button_size = QSize(64, 24)
 
-        with open('src/style/controls.qss', 'r') as f:
-            lower_controls_style = f.read()
+        # with open('src/style/controls.qss', 'r') as f:
+        #     lower_controls_style = f.read()
 
         '''Headup Display'''
         # self.hud = HeadupDisplay(self.app)
@@ -5654,7 +5654,7 @@ class MainWindow(QMainWindow):
         tip = 'Show/Hide Contrast and Brightness Shaders'
         self._btn_show_hide_shader = QPushButton(' Shader')
         self._btn_show_hide_shader.setFixedHeight(18)
-        self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
+        # self._btn_show_hide_shader.setStyleSheet(lower_controls_style)
         self._btn_show_hide_shader.setToolTip(tip)
         # self._btn_show_hide_shader.clicked.connect(self._callbk_showHideShader)
         # self._btn_show_hide_shader.setIcon(qta.icon('mdi.format-paint', color='#f3f6fb'))
