@@ -252,6 +252,7 @@ class ProjectTab(QWidget):
             time.sleep(cfg.DELAY_AFTER)
 
     def initNeuroglancer(self, init_all=False):
+        cfg.mw.set_status('Initializing Neuroglancer...')
         # logger.info('')
         # QApplication.processEvents()
         # cfg.mw.tell('Initializing Neuroglancer')
@@ -327,10 +328,13 @@ class ProjectTab(QWidget):
             # self.webengine.reload()
             # QTimer.singleShot(1000, self.webengine.reload)
 
-
-        QApplication.processEvents()
-        self.setZmag(10)
+        cfg.mw.set_status('')
         cfg.mw.hud.done()
+        # self.setZmag(10)
+        QApplication.processEvents()
+
+
+
 
 
 
