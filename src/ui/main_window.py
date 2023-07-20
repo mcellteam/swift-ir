@@ -493,6 +493,8 @@ class MainWindow(QMainWindow):
 
         self._dontReinit = False
 
+        self._is_initialized = 0
+
         self._old_pos = None
 
     def initStyle(self):
