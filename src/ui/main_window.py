@@ -2873,15 +2873,6 @@ class MainWindow(QMainWindow):
     #     else:
     #         logger.info('Neuroglancer Is Not Running')
 
-    # def startStopProfiler(self):
-    #     logger.info('')
-    #     if self._isProfiling:
-    #         self.profilingTimer.stop()
-    #     else:
-    #         self.profilingTimer.setInterval(cfg.PROFILING_TIMER_SPEED)
-    #         self.profilingTimer.start()
-    #     self._isProfiling = not self._isProfiling
-
     def startStopTimer(self):
         logger.info('')
         if self._isProjectTab():
