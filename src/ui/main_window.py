@@ -1850,6 +1850,7 @@ class MainWindow(QMainWindow):
         # timer.report() #0
 
         if self._isProjectTab():
+            cfg.CancelProcesses = False #0720+ probably a necessary precaution until something better
 
 
             # if 'viewer_em' in str(self.sender()):

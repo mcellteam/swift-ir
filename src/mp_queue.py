@@ -297,7 +297,7 @@ class TaskQueue(QObject):
                     # logger.info(task_str)
                     if self.use_gui:
                         if cfg.event.is_set():
-                            logger.critical('Terminating Running Processes...')
+                            logger.info('Terminating Running Processes...')
                             cfg.main_window.tell('Terminating Running Processes...')
                             cfg.CancelProcesses = True
                             for w in self.workers:

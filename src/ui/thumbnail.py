@@ -44,7 +44,6 @@ class SnrThumbnail(QWidget):
             self.set_data(path=self.path, snr=self.snr)
 
     def set_data(self, path, snr):
-        logger.critical()
         self.path = path
         self.snr = snr
         self.thumbnail.snr = snr
@@ -429,9 +428,9 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y, coords):
     p4 = QPoint(rx1, ry2)
 
 
-    logger.critical(f"rx1={rx1}, ry1={ry1}, rx2={rx2}, ry2={ry2}")
-    logger.critical(f"a={a}, cp={cp}")
-    logger.critical(f"p1={p1}, p2={p2}, p3={p3}, p4={p4}")
+    # logger.critical(f"rx1={rx1}, ry1={ry1}, rx2={rx2}, ry2={ry2}")
+    # logger.critical(f"a={a}, cp={cp}")
+    # logger.critical(f"p1={p1}, p2={p2}, p3={p3}, p4={p4}")
 
     # yield QRect(p1, cp)
     # yield QRect(p2, cp)

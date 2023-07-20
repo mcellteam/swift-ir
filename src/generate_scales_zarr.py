@@ -71,7 +71,7 @@ def GenerateScalesZarr(dm, gui=True):
 
         cfg.mw.set_status('Generating Zarr. No progress bar available. Awaiting multiprocessing pool...')
         cfg.mw.setPbarUnavailable(True)
-        logger.critical("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
+        logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
         pbar = tqdm.tqdm(total=len(tasks))
         t0 = time.time()
 

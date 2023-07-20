@@ -126,6 +126,8 @@ class ProjectTable(QWidget):
         cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=cfg.data.count)
         try:
             for row in range(0, len(cfg.data)):
+                if cfg.CancelProcesses:
+                    return
                 cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
                 cnt += 1
                 cfg.main_window.updatePbar(cnt)
