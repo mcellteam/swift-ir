@@ -225,8 +225,8 @@ class ProjectTab(QWidget):
             cfg.baseViewer.pts = pts_base
             # cfg.mw.setTargKargPixmaps()
             # cfg.mw.updateCorrSignalsDrawer()
-        # elif index == 2:
-        #     self.project_table.initTableData()
+        elif index == 2:
+            self.project_table.initTableData()
         elif index == 3:
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
@@ -238,6 +238,7 @@ class ProjectTab(QWidget):
             self.dSnr_plot.initSnrPlot()
 
         cfg.mw.dataUpdateWidgets() #Todo might be redundant thumbail redraws
+        QApplication.processEvents()
 
 
     def shutdownNeuroglancer(self):
@@ -4073,22 +4074,7 @@ class ProjectTab(QWidget):
                 # Cancel- tab 2 - runtimes are updated when runtimes change
 
     def updateCpanelDetails_i1(self):
-        """
-        _valueChangedWhitening  (1 usage found)
-            4223 self.updateCpanelDetails_i1()
-        fn_scales_combobox  (1 usage found)
-            1948 self.updateCpanelDetails_i1()
-        fn_swim_iters  (1 usage found)
-            4374 self.updateCpanelDetails_i1()
-        initControlPanel  (2 usages found)
-            4337 self._skipCheckbox.stateChanged.connect(self.updateCpanelDetails_i1)
-            5032 cfg.pt._bbToggle.stateChanged.connect(self.updateCpanelDetails_i1)
-        updateAllCpanelDetails  (1 usage found)
-            5940 self.updateCpanelDetails_i1()
-        _UpdateCpanelDetails  (1 usage found)
-            5954 self.updateCpanelDetails_i1()
 
-        """
         if cfg.main_window.globTabs.currentIndex() == 1:
             if self.secDetails_w.isVisible():
                 caller = inspect.stack()[1].function
