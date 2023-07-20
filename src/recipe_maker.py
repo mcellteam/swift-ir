@@ -24,9 +24,6 @@ SWIMlogger    = logging.getLogger('SWIMlogger')
 RMlogger      = logging.getLogger('recipemaker')
 # scratchlogger = logging.getLogger('scratch')
 
-ENABLE_LOGGING = 1
-
-
 def run_recipe(data, dev_mode=False):
     '''Assemble and execute an alignment recipe
     :param project: project data dictionary expressed as JSON-formatted string.
@@ -48,7 +45,7 @@ def run_recipe(data, dev_mode=False):
     SWIMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'swim.log')))
     RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
 
-    if not ENABLE_LOGGING:
+    if cfg.DEBUG_MP:
         MAlogger.disabled = True
         SWIMlogger.disabled = True
         RMlogger.disabled = True
