@@ -250,9 +250,9 @@ class align_recipe:
         self.layer_dict['alignment']['method_results']['im_mov_fn']= self.im_mov_fn
         self.layer_dict['alignment']['method_results']['siz']= self.siz
         try:    self.layer_dict['alignment']['method_results']['memory_mb'] = self.megabytes()
-        except: print_exception()
+        except: print_exception(self.pd)
         try:    self.layer_dict['alignment']['method_results']['memory_gb'] = self.gigabytes()
-        except: print_exception()
+        except: print_exception(self.pdz)
 
         if self.cur_method == 'grid-custom':
             self.layer_dict['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
@@ -538,7 +538,12 @@ class align_ingredient:
             for i,l in enumerate(swim_output):
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
                 self.mir_toks[i] = str(toks)
-                mir_toks = [toks[k] for k in [2, 3, 5, 6]]
+                try:
+                    mir_toks = [toks[k] for k in [2, 3, 5, 6]]
+                except:
+                    print_exception(extra=f"Section #{self.alData['meta']['index']}\n"
+                                          f"mir toks are: {str(toks)}\n"
+                                          f"swim_output: {swim_output}")
                 self.mir_script += ' '.join(mir_toks) + '\n'
                 snr_list.append(float(toks[0][0:-1]))
             self.mir_script += 'R\n'
@@ -656,7 +661,7 @@ def convert_rotation(degrees):
     deg2rad = 2*np.pi/360.
     return np.sin(deg2rad*degrees)
 
-def print_exception(dest, extra='None'):
+def print_exception(dest=None, extra='None'):
     tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}\nAdditional Details: {extra}"
