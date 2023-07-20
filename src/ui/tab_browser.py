@@ -105,14 +105,15 @@ class WebBrowser(QWidget):
         button3demCommunity.setStatusTip('Vist the 3DEM Community Workbench')
         button3demCommunity.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button3demCommunity.clicked.connect(browser_3dem_community)
-        button3demCommunity.setFixedSize(QSize(110, 18))
+        button3demCommunity.setFixedHeight(18)
 
         buttonDocumentation = QPushButton('AlignEM-SWiFT Docs')
         buttonDocumentation.setStyleSheet('font-size: 9px;')
         buttonDocumentation.setStatusTip('View AlignEM-SWiFT Documentation')
         buttonDocumentation.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonDocumentation.clicked.connect(browser_documentation)
-        buttonDocumentation.setFixedSize(QSize(110, 18))
+        # buttonDocumentation.setFixedSize(QSize(110, 18))
+        buttonDocumentation.setFixedHeight(18)
 
         # buttonWolframAlpha = QPushButton('WolframAlpha')
         # buttonWolframAlpha.setStyleSheet('font-size: 9px;')
@@ -125,8 +126,8 @@ class WebBrowser(QWidget):
         self.urlBar.setFixedHeight(20)
         self.urlBar.setStyleSheet("font-size: 10px; color: #161c20;")
         # self.urlBar.setMinimumWidth(400)
-        # self.urlBar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.urlBar.setMinimumWidth(600)
+        self.urlBar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.urlBar.setMinimumWidth(600)
         self.urlBar.returnPressed.connect(self.navigateToUrl)
 
         self.httpsicon = QLabel()  # Yes, really!

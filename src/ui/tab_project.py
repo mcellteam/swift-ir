@@ -439,21 +439,6 @@ class ProjectTab(QWidget):
         self.zoomSlider.valueChanged.connect(self.onZoomSlider)
         self.zoomSlider.setValue(4.0)
 
-        # self.crossSectionOrientationSlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        # # self.zoomSlider.setMaximum(8.0)
-        # # self.zoomSlider.setMaximum(100)
-        # self.crossSectionOrientationSlider.setMaximum(5.0)
-        # self.crossSectionOrientationSlider.setMinimum(-5.0)
-        # self.crossSectionOrientationSlider.valueChanged.connect(self.onSliderCrossSectionOrientation)
-
-        # self.crossSectionOrientationSliderAndLabel = QWidget()
-        # self.crossSectionOrientationSliderAndLabel.setFixedWidth(24)
-        # vbl = QVBoxLayout()
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.addWidget(self.crossSectionOrientationSlider)
-        # vbl.addWidget(VerticalLabel('Rotation:'))
-        # self.crossSectionOrientationSliderAndLabel.setLayout(vbl)
-
         self.zoomSliderAndLabel = VWidget()
         self.zoomSliderAndLabel.layout.setSpacing(0)
         self.zoomSliderAndLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1605,16 +1590,18 @@ class ProjectTab(QWidget):
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cl_tra.setMinimumWidth(120)
-        self.cl_tra.setAlignment(Qt.AlignCenter)
+        self.cl_tra.setMinimumWidth(64)
+        # self.cl_tra.setAlignment(Qt.AlignCenter)
+        self.cl_tra.setAlignment(Qt.AlignLeft)
         self.cl_tra.setFixedHeight(16)
         # self.cl_tra.setMinimumWidth(140)
         self.cl_tra.clicked.connect(self.set_transforming)
 
         self.cl_ref = ClickLabel(' Reference ')
         self.cl_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cl_ref.setMinimumWidth(120)
-        self.cl_ref.setAlignment(Qt.AlignCenter)
+        self.cl_ref.setMinimumWidth(64)
+        # self.cl_ref.setAlignment(Qt.AlignCenter)
+        self.cl_ref.setAlignment(Qt.AlignRight)
         self.cl_ref.setFixedHeight(16)
         # self.cl_ref.setMinimumWidth(140)
         self.cl_ref.clicked.connect(self.set_reference)
@@ -2029,8 +2016,8 @@ class ProjectTab(QWidget):
 
         self.tn_ref = ThumbnailFast(self, name='reference')
         self.tn_tra = ThumbnailFast(self, name='transforming')
-        self.tn_ref.setMinimumSize(QSize(100,100))
-        self.tn_tra.setMinimumSize(QSize(100,100))
+        self.tn_ref.setMinimumSize(QSize(64,64))
+        self.tn_tra.setMinimumSize(QSize(64,64))
 
         self.w_tn_tra = QWidget()
         self.gl_tn_tra = QGridLayout()
@@ -2048,9 +2035,11 @@ class ProjectTab(QWidget):
         self.tn_tra_lab.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20;""")
 
         self.tn_widget = QTableWidget()
+        self.tn_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tn_widget.setAutoFillBackground(True)
         # self.tn_widget.setMinimumWidth(160)
-        self.tn_widget.setMinimumWidth(128)
+        # self.tn_widget.setMinimumWidth(128)
+        self.tn_widget.setMinimumWidth(64)
         self.tn_widget.setContentsMargins(0,0,0,0)
         # self.tn_widget.setStyleSheet(
         #     """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
@@ -2121,6 +2110,7 @@ class ProjectTab(QWidget):
         # self.tn_reticle4.layout().addWidget(self.reticle4,0,0)
 
         self.ms_table = QTableWidget()
+        self.ms_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.tn_ms0 = CorrSignalThumbnail(self, name='ms0')
         self.tn_ms1 = CorrSignalThumbnail(self, name='ms1')
@@ -2181,6 +2171,7 @@ class ProjectTab(QWidget):
         self.match_thumbnails = [self.matches_tn0, self.matches_tn1, self.matches_tn2, self.matches_tn3]
 
         self.ktarg_table = QTableWidget()
+        self.ktarg_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.ktarg_table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         # self.ktarg_table.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.ktarg_table.setAutoFillBackground(True)
@@ -2263,7 +2254,11 @@ class ProjectTab(QWidget):
         self.mwTitle.layout.setSpacing(4)
         self.mwTitle.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #222222;')
 
-        self.match_widget = VWidget(self.mwTitle, HWidget(self.ktarg_table, self.ms_table))
+
+        hw = HWidget(self.ktarg_table, self.ms_table)
+        hw.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.match_widget = VWidget(self.mwTitle, hw)
+        self.match_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Warnings
 
@@ -2292,6 +2287,7 @@ class ProjectTab(QWidget):
         self.gb_warnings.setLayout(self.vbl_wanrings)
 
         self.gb_method_selection = QGroupBox("Alignment Method")
+        self.gb_method_selection.setAlignment(Qt.AlignBottom)
         self.gb_method_selection.setContentsMargins(0,0,0,0)
         self.gb_method_selection.setObjectName('gb_cpanel')
         self.gb_method_selection.setFixedHeight(36)

@@ -382,6 +382,7 @@ class MainWindow(QMainWindow):
         if not self._working:
             self.tell('Refreshing...')
             logger.critical('Refreshing...')
+            self.dataUpdateWidgets()
             if self._isProjectTab():
                 cfg.project_tab.refreshTab()
                 self.updateEnabledButtons()  # 0301+
@@ -795,7 +796,6 @@ class MainWindow(QMainWindow):
 
     def setdw_thumbs(self, state):
         logger.critical('')
-        self.setUpdatesEnabled(False)
         self.dw_thumbs.setVisible(state)
         self.dw_thumbs.setVisible(self.tbbThumbnails.isChecked())
         tip1 = '\n'.join(f"Show Raw Thumbnails Tool Window ({hotkey('T')})")
@@ -804,15 +804,17 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
-        if self.dw_thumbs.isVisible():
-            h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+
+        if state:
+            QApplication.processEvents()
+            cfg.mw.dataUpdateWidgets()
+            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
             self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-            cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
-        cfg.mw.dataUpdateWidgets()
-        self.setUpdatesEnabled(True)
+            # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+
+
 
     def setdw_matches(self, state):
-        self.setUpdatesEnabled(False)
         self.dw_matches.setVisible(state)
         self.dw_matches.setVisible(self.tbbMatches.isChecked())
         tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('M')})")
@@ -821,13 +823,19 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
-        if self.dw_matches.isVisible():
+        if state:
+            # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
+            self.setUpdatesEnabled(True)
+            QApplication.processEvents()
+            self.updateCorrSignalsDrawer()
+            self.setTargKargPixmaps()
+
             if cfg.data.is_aligned():
-                h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
                 self.dw_matches.setMaximumWidth(int(h /2 + .5))
-                cfg.pt.match_widget.resize(int(h / 2 + .5), h)
-        cfg.mw.dataUpdateWidgets()
-        self.setUpdatesEnabled(True)
+                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+
+
 
 
     def setdw_notes(self, state):
@@ -2203,7 +2211,7 @@ class MainWindow(QMainWindow):
                     logger.info(f'[{caller}]')
                     requested_scale = cfg.data.scales()[self._changeScaleCombo.currentIndex()]
                     cfg.pt.warning_cafm.hide()
-                    cfg.pt.project_table.table.hide()
+                    cfg.pt.project_table.wTable.hide()
                     cfg.pt.project_table.btn_splash_load_table.show()
                     cfg.data.scale = requested_scale
                     self.updateEnabledButtons()
@@ -3539,23 +3547,47 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, e):
         logger.info('')
-        if self._isProjectTab():
-            cfg.pt.fn_hwidgetChanged()
 
-            if self.dw_matches.isVisible():
-                if cfg.data.is_aligned():
-                    h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
-                    self.dw_matches.setMaximumWidth(int(h / 2 + .5))
-                    cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+        # self.dw_matches.setMaximumWidth(999)
+        # self.dw_thumbs.setMaximumWidth(999)
+        # if self._isProjectTab():
+        #
+        #     if self.dw_matches.isVisible():
+        #         if cfg.data.is_aligned():
+        #             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+        #             # self.dw_matches.setMaximumWidth(int(h / 2 + .5))
+        #             cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+        #
+        #     if self.dw_thumbs.isVisible():
+        #         h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+        #         # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+        #         cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
-            if self.dw_thumbs.isVisible():
-                h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-                cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+        if self.dw_thumbs.isVisible():
+            QApplication.processEvents()
+            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+            # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+
+        if self.dw_matches.isVisible():
+            self.setUpdatesEnabled(True)
+            QApplication.processEvents()
+
+            if cfg.data.is_aligned():
+                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h /2 + .5))
+                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+
+
 
 
 
     def changeEvent(self, event):
+
+        # self.dw_matches.setMaximumWidth(999)
+        # self.dw_thumbs.setMaximumWidth(999)
+
+
         # Allows catching of window maximized/unmaximized events
         if event.type() == QEvent.WindowStateChange:
             if event.oldState() and Qt.WindowMinimized:
@@ -3571,16 +3603,20 @@ class MainWindow(QMainWindow):
                     # QApplication.processEvents()
                     cfg.project_tab.initNeuroglancer()
 
-            if self.dw_matches.isVisible():
-                if cfg.data.is_aligned():
-                    h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
-                    self.dw_matches.setMaximumWidth(int(h / 2 + .5))
-                    cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+            # if self.dw_matches.isVisible():
+            #     if cfg.data.is_aligned():
+            #         h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
+            #         # self.dw_matches.setMaximumWidth(int(h / 2 + .5))
+            #         cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+            #
+            # if self.dw_thumbs.isVisible():
+            #     h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+            #     # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+            #     cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
-            if self.dw_thumbs.isVisible():
-                h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-                cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+            # cfg.pt.match_widget.adjustSize()
+            # cfg.pt.tn_widget.adjustSize()
+
 
     def _disableGlobTabs(self):
         indexes = list(range(0, self.globTabs.count()))
@@ -3725,10 +3761,11 @@ class MainWindow(QMainWindow):
         elif self._getTabType() == 'ProjectTab':
             cfg.data = self.globTabs.currentWidget().datamodel
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
-            if self._is_initialized:
-                cfg.emViewer = cfg.project_tab.viewer
-                cfg.refViewer = cfg.project_tab.refViewer
-                cfg.baseViewer = cfg.project_tab.baseViewer
+            cfg.pt.initNeuroglancer(init_all=True)
+            # if self._is_initialized:
+            cfg.emViewer = cfg.project_tab.viewer
+            cfg.refViewer = cfg.project_tab.refViewer
+            cfg.baseViewer = cfg.project_tab.baseViewer
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)
@@ -4977,7 +5014,7 @@ class MainWindow(QMainWindow):
         self.hud = HeadupDisplay(self.app)
         self.hud.set_theme_dark()
 
-        self.dw_thumbs = DockWidget('Ref./Tra. Thumbnails', self)
+        self.dw_thumbs = DockWidget('Tra./Ref. Thumbnails', self)
         self.dw_thumbs.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         # self.dw_thumbs.setFeatures(self.dw_hud.DockWidgetClosable | self.dw_hud.DockWidgetVerticalTitleBar)
         self.dw_thumbs.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
@@ -5139,35 +5176,12 @@ class MainWindow(QMainWindow):
         vbl.addWidget(lab, alignment=baseline)
         self._processMonitorWidget.setLayout(vbl)
 
-        '''
-                    self.layer_details.setText(f"{name}{skip}"
-                                                 f"{bb_dims}"
-                                                 f"{snr}"
-                                                 f"{completed}"
-                                                 f"<b>Skipped Layers:</b> [{skips}]<br>"
-                                                 f"<b>Match Point Layers:</b> [{matchpoints}]"
-        '''
-
-        self._layer_details = (
-            QLabel('Name :'),
-            QLabel('Bounds :'),
-            QLabel('SNR :'),
-            QLabel('Progress :'),
-            QLabel('Excluded Layer :'),
-            QLabel('Matchpoints :'),
-        )
-        self._tool_textInfo_NEW = WidgetArea(parent=self, title='Details', labels=self._layer_details)
-
         lab = QLabel('Details')
-        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #141414;')
-        self.layer_details = QTextEdit()
-        self.layer_details.setObjectName('layer_details')
-        self.layer_details.setReadOnly(True)
+        lab.setStyleSheet('font-size: 10px; font-weight: 500; color: #1418414;')
         self._tool_textInfo = QWidget()
         vbl = VBL()
         vbl.setSpacing(1)
         # vbl.addWidget(lab, alignment=baseline)
-        # vbl.addWidget(self.layer_details)
         self._tool_textInfo.setLayout(vbl)
 
         self._tool_hstry = QWidget()
@@ -5211,7 +5225,7 @@ class MainWindow(QMainWindow):
         self.splashmovie = QMovie('src/resources/alignem_animation.gif')
         self.splashlabel = QLabel()
         self.splashlabel.setMovie(self.splashmovie)
-        self.splashlabel.setMinimumSize(QSize(100, 100))
+        self.splashlabel.setMinimumSize(QSize(64, 64))
         gl = QGridLayout()
         gl.addWidget(self.splashlabel, 1, 1, 1, 1)
         self.splash_widget.setLayout(gl)
@@ -5241,7 +5255,7 @@ class MainWindow(QMainWindow):
                 self.notes.update()
 
         self.notes = QTextEdit()
-        self.notes.setMinimumWidth(80)
+        self.notes.setMinimumWidth(64)
         self.notes.setObjectName('Notes')
         self.notes.setStyleSheet("""
             background-color: #ede9e8;
@@ -5759,11 +5773,9 @@ class MainWindow(QMainWindow):
     def initWidgetSpacing(self):
         logger.info('')
         self.hud.setContentsMargins(0, 0, 0, 0)
-        self.layer_details.setContentsMargins(0, 0, 0, 0)
-        self._tool_hstry.setMinimumWidth(248)
+        self._tool_hstry.setMinimumWidth(128)
         # cfg.project_tab._transformationWidget.setFixedWidth(248)
         # cfg.project_tab._transformationWidget.setFixedSize(248,100)
-        self.layer_details.setMinimumWidth(248)
 
     def initStatusBar(self):
         logger.info('')
