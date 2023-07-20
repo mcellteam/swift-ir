@@ -150,7 +150,7 @@ class OpenProject(QWidget):
         # User Files Widget
         self.userFilesWidget = QWidget()
         lab = QLabel('Open AlignEM-SWIFT Project or...\nOpen OME-NGFF Zarr in Neuroglancer or...\nSelect folder of images for new project...')
-        lab.setStyleSheet('font-size: 12px; font-weight: 600; color: #161c20;')
+        lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(HWidget(lab))
