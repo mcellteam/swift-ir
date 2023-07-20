@@ -11,6 +11,7 @@ ml fftw3/3.3.10
 echo "Activating Preconfigured Conda Environment..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
+export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 
 echo "Checking out development_ng branch..."
 cd $WORK/swift-ir
