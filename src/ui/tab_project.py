@@ -78,11 +78,11 @@ class ProjectTab(QWidget):
         self._wdg_treeview = QWidget()
 
         self.initShader()
-        # self.initUI_Neuroglancer()
+        self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
         self.initUI_plot()
-        self.initUI_Neuroglancer()
+        # self.initUI_Neuroglancer()
         self.initTabs()
         self._tabs.currentChanged.connect(self._onTabChange)
         self.manAlignBufferRef = []
