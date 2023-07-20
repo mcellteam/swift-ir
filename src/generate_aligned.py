@@ -127,7 +127,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_mir, args=(task,), callback=update_tqdm) for task in tasks]
             pool.close()
-            print([p.get() for p in results])
+            [p.get() for p in results]
             pool.join()
         logger.critical("----------END----------")
         cfg.mw.setPbarUnavailable(False)

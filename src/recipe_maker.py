@@ -24,6 +24,8 @@ SWIMlogger    = logging.getLogger('SWIMlogger')
 RMlogger      = logging.getLogger('recipemaker')
 # scratchlogger = logging.getLogger('scratch')
 
+ENABLE_LOGGING = 1
+
 
 def run_recipe(data, dev_mode=False):
     '''Assemble and execute an alignment recipe
@@ -45,9 +47,11 @@ def run_recipe(data, dev_mode=False):
     MAlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'manual_align.log')))
     SWIMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'swim.log')))
     RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
-    MAlogger.disabled = True
-    SWIMlogger.disabled = True
-    RMlogger.disabled = True
+
+    if not ENABLE_LOGGING:
+        MAlogger.disabled = True
+        SWIMlogger.disabled = True
+        RMlogger.disabled = True
     # scratchpath = os.path.join(pd, 'logs', 'scratch.log')
     # try: os.remove(scratchpath)
     # except OSError: pass

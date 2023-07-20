@@ -602,6 +602,7 @@ class MainWindow(QMainWindow):
                                 snr = snr_vals[count]
                                 assert snr > 0.0
                             except:
+                                print_exception()
                                 cfg.pt.msList[i].set_no_image()
                                 continue
 
@@ -639,7 +640,7 @@ class MainWindow(QMainWindow):
                             except:
                                 # logger.info(f'no SNR data for corr signal index {i}')
                                 cfg.pt.msList[i].set_no_image()
-                                # print_exception()
+                                print_exception()
                                 continue
 
                             cfg.pt.msList[i].set_data(path=thumbs[i], snr=snr)
@@ -3646,7 +3647,7 @@ class MainWindow(QMainWindow):
 
         self.newLabel = QLabel(' ← New! ')
         self.newLabel.setFixedHeight(18)
-        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 11px; border-radius: 4px;")
+        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 10px; border-radius: 4px;")
 
         self.toolbar.addWidget(self.tbbMenu)
         self.toolbar.addWidget(self.tbbRefresh)
