@@ -16,3 +16,5 @@ echo "Checking out development_ng branch..."
 git fetch
 git checkout remotes/origin/fb30_joel
 git pull
+git log -1
+python3 $WORK/swift-ir/alignem
