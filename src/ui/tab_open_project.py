@@ -1181,45 +1181,39 @@ class UserProjects(QWidget):
                     twi = QTableWidgetItem(str(item))
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
-                if j == 1:
-                    twi = QTableWidgetItem(str(item))
-                    twi.setFont(font0)
-                    self.table.setItem(i, j, twi)
-                elif j in (2, 3, 4):
+                elif j in (1,2,3):
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
                         self.table.setCellWidget(i, j, thumbnail)
                     else:
                         thumbnail = ThumbnailFast(self, path=item)
                         self.table.setCellWidget(i, j, thumbnail)
-                elif j in (5,6):
+                elif j in (4,5):
                     twi = QTableWidgetItem(item.replace("_", " "))
                     twi.setTextAlignment(Qt.AlignCenter)
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
-                elif j == 7:
+                elif j == 6:
                     twi = QTableWidgetItem(str(item))
                     twi.setFont(font0)
                     twi.setTextAlignment(Qt.AlignCenter)
                     self.table.setItem(i, j, twi)
-
                 else:
                     twi = QTableWidgetItem(str(item))
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
-        self.table.setColumnWidth(0, 90)
-        self.table.setColumnWidth(1, 150)
-        self.table.setColumnWidth(2, self.ROW_HEIGHT) # <first thumbnail>
+        self.table.setColumnWidth(0, 160)
+        self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
+        self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(4, self.ROW_HEIGHT) # <last thumbnail>
+        self.table.setColumnWidth(4, 90)
         self.table.setColumnWidth(5, 90)
-        self.table.setColumnWidth(6, 90)
-        self.table.setColumnWidth(7, 50)
+        self.table.setColumnWidth(6, 50)
+        self.table.setColumnWidth(7, 70)
         self.table.setColumnWidth(8, 70)
         self.table.setColumnWidth(9, 70)
-        self.table.setColumnWidth(10, 70)
         # self.table.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
-        self.table.setColumnWidth(11, 70) # <extra thumbnail>
+        self.table.setColumnWidth(10, 70) # <extra thumbnail>
         # self.table.setColumnWidth(10, 100)
         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
 
@@ -1304,16 +1298,11 @@ class UserProjects(QWidget):
         # logger.info('<<<< get_data <<<<')
         # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
         #            n_sections, img_dimensions, bytes, gigabytes, extra)
-        return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,
+        return zip(location, thumbnail_first, thumbnail_last, extra, created, modified,
                    n_sections, img_dimensions, bytes, gigabytes)
 
             # logger.info('Getting project location...')
 
-        # logger.info('<<<< get_data <<<<')
-        # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
-        #            n_sections, img_dimensions, bytes, gigabytes, extra)
-        return zip(projects, location, thumbnail_first, thumbnail_last, extra, created, modified,
-                   n_sections, img_dimensions, bytes, gigabytes)
 
 
 UrlRole = Qt.UserRole + 1
