@@ -20,6 +20,8 @@ import src.config as cfg
 
 __all__ = ['run_recipe']
 
+ENABLE_LOGGING = 1
+
 MAlogger      = logging.getLogger('MAlogger')
 SWIMlogger    = logging.getLogger('SWIMlogger')
 RMlogger      = logging.getLogger('recipemaker')
@@ -46,7 +48,7 @@ def run_recipe(data, dev_mode=False):
     SWIMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'swim.log')))
     RMlogger.addHandler(logging.FileHandler(os.path.join(pd, 'logs', 'recipemaker.log')))
 
-    if cfg.DEBUG_MP:
+    if not ENABLE_LOGGING:
         MAlogger.disabled = True
         SWIMlogger.disabled = True
         RMlogger.disabled = True
@@ -485,6 +487,9 @@ class align_ingredient:
 
         self.swim_output = o['out'].strip().split('\n')
         self.swim_err_lines = o['err'].strip().split('\n')
+
+        SWIMlogger.critical(f"\nSWIM Out:\n{str(self.swim_output)}\n\n")
+        SWIMlogger.critical(f"\nSWIM Err:\n{str(self.swim_err_lines)}\n\n")
 
         keep = .30
         px_keep = 128
