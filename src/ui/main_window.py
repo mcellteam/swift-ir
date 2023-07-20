@@ -1941,7 +1941,6 @@ class MainWindow(QMainWindow):
 
 
             if self.dw_thumbs.isVisible():
-                cfg.pt.labMethod2.setText(cfg.data.method_pretty())
                 try:
                     assert os.path.exists(cfg.data.thumbnail_ref())
                     # cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
