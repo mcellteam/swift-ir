@@ -8,7 +8,7 @@ import logging
 import argparse
 from multiprocessing.pool import ThreadPool
 import src.config as cfg
-from src.mp_queue import TaskQueue
+# from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_img_filenames, print_exception, renew_directory, \
     reorder_tasks
 from src.funcs_zarr import preallocate_zarr

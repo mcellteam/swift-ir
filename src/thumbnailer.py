@@ -15,7 +15,6 @@ import multiprocessing as mp
 import subprocess as sp
 
 import src.config as cfg
-from src.mp_queue import TaskQueue
 from src.funcs_image import ImageSize
 from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths
 
@@ -230,7 +229,6 @@ class Thumbnailer:
             except:
                 print_exception()
 
-
         logger.info('Making thumbnailer tasks...')
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
@@ -239,8 +237,14 @@ class Thumbnailer:
         logger.info('Beginning thumbnailer ThreadPool...')
         t0 = time.time()
         ctx = mp.get_context('forkserver')
-        with ctx.Pool(processes=cpus) as pool:
-            pool.map(run, tasks)
+        # with ctx.Pool(processes=cpus) as pool:
+        #     pool.map(run, tasks)
+        #     pool.close()
+        #     pool.join()
+        pool = ctx.Pool(processes=cpus)
+        pool.map(run, tasks)
+        pool.close()
+        pool.join()
         logger.info('<<<< Thumbnail Generation Complete <<<<')
         dt = time.time() - t0
         return dt

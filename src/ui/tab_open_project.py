@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import time
 import shutil
 import inspect
 import logging
@@ -22,6 +23,7 @@ from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, 
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
 from src.funcs_image import ImageSize
+from src.thumbnailer import Thumbnailer
 from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
@@ -728,6 +730,24 @@ class OpenProject(QWidget):
 
                 else:
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
+
+                time.sleep(1)
+                make_thumbnails = True
+                if make_thumbnails:
+                    logger.info('Generating Source Thumbnails...')
+                    # if gui:
+                    #     cfg.mw.tell('Generating Source Image Thumbnails...')
+                    #     # cfg.mw.showZeroedPbar()
+                    # try:
+                    #     thumbnailer = Thumbnailer()
+                    #     worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))
+                    #     threadpool.start(worker)
+                    # except:
+                    #     print_exception()
+                    #     logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
+                    #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
+                    thumbnailer = Thumbnailer()
+                    thumbnailer.reduce_main(dest=dm.dest())
             except:
                 print_exception()
             finally:

@@ -15,6 +15,10 @@ from .utils import *
 __all__.extend(utils.__all__)
 __all__.append('utils')
 
+from . import thumbnailer
+from .thumbnailer import *
+__all__.extend(thumbnailer.__all__)
+
 from . import config
 from .config import *
 __all__.extend(config.__all__)
@@ -48,10 +52,6 @@ __all__.append('funcs_zarr')
 from . import mp_queue
 from .mp_queue import *
 __all__.extend(mp_queue.__all__)
-
-from . import thumbnailer
-from .thumbnailer import *
-__all__.extend(thumbnailer.__all__)
 
 from . import save_bias_analysis
 from .save_bias_analysis import *

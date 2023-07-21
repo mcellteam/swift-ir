@@ -49,16 +49,15 @@ from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHB
 
 import src.config as cfg
 import src.shaders
+from src.thumbnailer import Thumbnailer
 from src.background_worker import BackgroundWorker
 from src.compute_affines import ComputeAffines
 from src.config import ICON_COLOR
 from src.data_model import DataModel
 from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import GenerateAligned
-from src.generate_scales import GenerateScales
-from src.thumbnailer import Thumbnailer
+# from src.generate_scales import GenerateScales
 from src.generate_scales_zarr import GenerateScalesZarr
-from src.autoscale import autoscale
 from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
@@ -78,6 +77,7 @@ from src.ui.tab_open_project import OpenProject
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast, SnrThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
 from src.ui.timer import Timer
+from src.autoscale import autoscale
 # from src.ui.flicker import Flicker
 
 # from src.ui.components import AutoResizingTextEdit
@@ -1288,16 +1288,16 @@ class MainWindow(QMainWindow):
             return
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
         logger.critical(f'alignAll caller={caller}, set_pbar={set_pbar} >>>>')
-        if set_pbar:
-            logger.critical('set_pbar >>>>')
-            cfg.ignore_pbar = False
-            if cfg.pt._toggleAutogenerate.isChecked():
-                # cfg.nProcessSteps = 5
-                self.showZeroedPbar(set_n_processes=4)
-            else:
-                # cfg.nProcessSteps = 3
-                self.showZeroedPbar(set_n_processes=2)
-            self.hidePbar()
+        # if set_pbar:
+        #     logger.critical('set_pbar >>>>')
+        #     cfg.ignore_pbar = False
+        #     if cfg.pt._toggleAutogenerate.isChecked():
+        #         # cfg.nProcessSteps = 5
+        #         self.showZeroedPbar(set_n_processes=4)
+        #     else:
+        #         # cfg.nProcessSteps = 3
+        #         self.showZeroedPbar(set_n_processes=2)
+        #     self.hidePbar()
 
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
@@ -1343,10 +1343,10 @@ class MainWindow(QMainWindow):
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
 
-        if cfg.ignore_pbar:
-            self.showZeroedPbar(set_n_processes=False)
-            self.setPbarText('Computing Affine...')
-            self.hidePbar()
+        # if cfg.ignore_pbar:
+        #     self.showZeroedPbar(set_n_processes=False)
+        #     self.setPbarText('Computing Affine...')
+        #     self.hidePbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
@@ -1470,8 +1470,8 @@ class MainWindow(QMainWindow):
                     finally:
                         self.onStartProject()
 
-    def generate_multiscale_zarr(self):
-        pass
+    # def generate_multiscale_zarr(self):
+    #     pass
 
     def export(self):
         if self._working == True:
@@ -2210,7 +2210,7 @@ class MainWindow(QMainWindow):
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
         if self._scales_combobox_switch == 0:
-            logger.warning(f"[{caller}] scale change blocked by _scales_combobox_switch switch")
+            # logger.warning(f"[{caller}] scale change blocked by _scales_combobox_switch switch")
             return
         if not self._working:
             if caller in ('main', 'scale_down', 'scale_up'):
