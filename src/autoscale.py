@@ -10,6 +10,9 @@ import traceback
 from datetime import datetime
 from os import listdir
 from os.path import isfile, join
+import multiprocessing as mp
+import subprocess as sp
+from multiprocessing.pool import ThreadPool
 import tqdm
 
 # from thumbnailer import Thumbnailer
@@ -21,8 +24,7 @@ import src.config as cfg
 # from generate_scales import GenerateScales
 # from qtpy.QtCore import QThreadPool
 
-import multiprocessing as mp
-import subprocess as sp
+
 from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
     get_bindir
 
@@ -55,7 +57,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    time.sleep(2)
+    time.sleep(1)
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
@@ -77,7 +79,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Thumbnails')
     GenerateScalesZarr(dm, gui=gui)
 
-    time.sleep(2)
+    time.sleep(1)
 
     # if make_thumbnails:
     #     logger.info('Generating Source Thumbnails...')
@@ -180,15 +182,20 @@ def GenerateScales(dm, gui=True):
 
         logger.info('Beginning downsampling ThreadPool...')
         t0 = time.time()
-        ctx = mp.get_context('forkserver')
+
+        with ThreadPool(processes=cpus) as pool:
+            pool.map(run, tasks)
+            pool.close()
+            pool.join()
+        # ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
         #     pool.map(run, tasks)
         #     pool.close()
         #     pool.join()
-        pool = ctx.Pool(processes=cpus)
-        pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-        pool.close()
-        pool.join()
+        # pool = ctx.Pool(processes=cpus)
+        # pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
+        # pool.close()
+        # pool.join()
         dt = time.time() - t0
 
 

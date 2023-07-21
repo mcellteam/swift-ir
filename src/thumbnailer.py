@@ -12,6 +12,7 @@ import datetime
 from math import floor, ceil
 from glob import glob
 import multiprocessing as mp
+from multiprocessing.pool import ThreadPool
 import subprocess as sp
 import tqdm
 import src.config as cfg
@@ -236,15 +237,19 @@ class Thumbnailer:
 
         logger.info('Beginning thumbnailer ThreadPool...')
         t0 = time.time()
-        ctx = mp.get_context('forkserver')
+        with ThreadPool(processes=cpus) as pool:
+            pool.map(run, tasks)
+            pool.close()
+            pool.join()
+        # ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
         #     pool.map(run, tasks)
         #     pool.close()
         #     pool.join()
-        pool = ctx.Pool(processes=cpus)
-        pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-        pool.close()
-        pool.join()
+        # pool = ctx.Pool(processes=cpus)
+        # pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
+        # pool.close()
+        # pool.join()
         logger.info('<<<< Thumbnail Generation Complete <<<<')
         dt = time.time() - t0
         return dt
