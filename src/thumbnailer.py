@@ -16,7 +16,7 @@ from multiprocessing.pool import ThreadPool
 import subprocess as sp
 import tqdm
 import src.config as cfg
-from src.funcs_image import ImageSize
+# from src.funcs_image import ImageSize
 from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths
 
 __all__ = ['Thumbnailer']
@@ -238,7 +238,7 @@ class Thumbnailer:
         logger.info('Beginning thumbnailer ThreadPool...')
         t0 = time.time()
         with ThreadPool(processes=cpus) as pool:
-            pool.map(run, tasks)
+            tqdm.tqdm(tasks, total=len(tasks))
             pool.close()
             pool.join()
         # ctx = mp.get_context('forkserver')

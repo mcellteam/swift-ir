@@ -57,9 +57,9 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    logger.info("\n\nFinished generating downsampled source images. Waiting 2 seconds...\n\n")
+    logger.info("\n\nFinished generating downsampled source images. Waiting 1 seconds...\n\n")
 
-    time.sleep(2)
+    time.sleep(1)
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
@@ -94,9 +94,9 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScalesZarr(dm, gui=gui)
 
-    logger.info("\n\nFinished generating Zarrs of downsampled images. Waiting 2 seconds...\n\n")
+    logger.info("\n\nFinished generating Zarrs of downsampled images. Waiting 1 seconds...\n\n")
 
-    time.sleep(2)
+    time.sleep(1)
 
 
 
@@ -203,7 +203,7 @@ def GenerateScales(dm, gui=True):
         t0 = time.time()
 
         with ThreadPool(processes=cpus) as pool:
-            pool.map(run, tasks)
+            tqdm.tqdm(tasks, total=len(tasks))
             pool.close()
             pool.join()
         # ctx = mp.get_context('forkserver')
