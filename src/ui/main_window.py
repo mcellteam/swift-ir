@@ -1786,7 +1786,7 @@ class MainWindow(QMainWindow):
                 timerActive = self.uiUpdateTimer.isActive()
                 # logger.critical(f"uiUpdateTimer active? {timerActive}")
                 if self.uiUpdateTimer.isActive():
-                    logger.info('Delaying UI Update [viewer_em.WorkerSignals]...')
+                    # logger.info('Delaying UI Update [viewer_em.WorkerSignals]...')
                     return
                 else:
                     self.uiUpdateTimer.start()

@@ -49,7 +49,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
-        logger.info(f'\n\n################ Computing Affines ################\n')
+        logger.info(f'\n\nPreparing Alignment Tasks...\n')
         logger.info(f'path: {path}')
 
         # if path:
@@ -148,7 +148,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
         logger.info(f'\n\n################ Computing Alignment ################\n')
 
-        t0 = time.time()
+
 
         # limit_workers = 80
         # if use_gui:
@@ -198,7 +198,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # cfg.mw.showZeroedPbar(pbar_max=len(substack))
 
-        dt = t0 - time.time()
+
         tasks = []
         for sec in substack:
             zpos = dm_().index(sec)
@@ -206,37 +206,23 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
         cfg.mw.set_status('Computing affines. No progress bar available. Awaiting multiprocessing pool...')
-        logger.info("\n\n\nRUNNING MULTIPROCESSING POOL (COMPUTE AFFINES)...\n\n\n")
         ctx = mp.get_context('forkserver')
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Computing Affines")
         def update_tqdm(*a):
             pbar.update()
         # with ctx.Pool(processes=cpus) as pool:
+        t0 = time.time()
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
-
             pool.join()
+        dm.t_align = t0 - time.time()
 
-        # output = [p.get() for p in results]
-
-        # logger.critical(f"output = {output}")
-        # logger.critical(f"type(all_results) = {type(all_results)}")
-        # logger.critical(f"all_results.get() = {all_results.get()}")
-        logger.critical("\n\n\nENDING MULTIPROCESSING POOL. RESULTS....\n\n\n")
-        logger.critical(str(all_results))
-        logger.critical("\n\n\n----------END----------\n\n\n")
-        cfg.mw.set_status('')
-
-
-        dm.t_align = dt
-
-
-        if use_gui:
-            if cfg.CancelProcesses:
-                return
+        if cfg.CancelProcesses:
+            logger.warning('Canceling Processes!')
+            return
 
 
         # Sort the tasks by layers rather than by process IDs
@@ -308,53 +294,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         save2file(dm=dm,name=dm.dest())
-
-        # write_run_to_file(dm) #0718-
-
-        # if cfg.ignore_pbar:
-        #     cfg.nProcessDone +=1
-        #     cfg.mw.updatePbar()
-        #     cfg.mw.setPbarText('Scaling Correlation Signal Thumbnails...')
-        # try:
-        #     # if cfg.USE_EXTRA_THREADING and use_gui:
-        #     #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
-        #     #     cfg.mw.threadpool.start(cfg.mw.worker)
-        #     # else:
-        #     cfg.thumb.reduce_signals(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
-        # except:
-        #     print_exception()
-        #     cfg.mw.warn('There Was a Problem Generating Corr Spot Thumbnails')
-
-
-
-        # logger.info('Collating Correlation Signal Images...')
-        # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_collate_spots.py')
-        # task_queue = TaskQueue(n_tasks=len(substack),
-        #                        parent=cfg.mw,
-        #                        pbar_text='Collating Scale %s Correlation Signal Images...' % (scale_val))
-        # task_queue.start(cpus)
-        #
-        # for i, layer in enumerate(substack):
-        #     if layer['skipped']:
-        #         continue
-        #     fn = os.path.basename(layer['images']['base']['filename'])
-        #     out = os.path.join(signals_raw_dir, 'collated_' + fn)
-        #     # out = os.path.join(dm.dest(), 'collated_' + fn)
-        #     task_args = [sys.executable,
-        #                  job_script,            # Python program to run (single_alignment_job)
-        #                  fn,
-        #                  out
-        #                  ]
-        #     task_queue.add_task(task_args)
-        #     if cfg.PRINT_EXAMPLE_ARGS:
-        #         if i in range(0,3):
-        #             logger.info("Layer #%d (example):\n%s" % (i, "\n".join(task_args)))
-        #
-        # try:
-        #     dt = task_queue.collect_results()
-        # except:
-        #     print_exception()
-        #     logger.warning('Task Queue encountered a problem')
 
         if not swim_only:
             if use_gui:
