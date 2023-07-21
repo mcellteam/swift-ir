@@ -331,7 +331,6 @@ class MainWindow(QMainWindow):
             #         cfg.stageViewer.set_layer(cfg.data.zpos)
             #     else:
             #         cfg.emViewer.set_layer(cfg.data.zpos)
-
             self.dataUpdateWidgets()
             self.zposChanged.emit()
             # else:
@@ -1907,8 +1906,9 @@ class MainWindow(QMainWindow):
             if self.notes.isVisible():
                 self.updateNotes()
 
-            if cfg.project_tab._tabs.currentIndex() == 2:
-                cfg.project_tab.project_table.table.selectRow(cur)
+            #Todo come back to how to make this work without it getting stuck in a loop
+            # if cfg.project_tab._tabs.currentIndex() == 2:
+            #     cfg.project_tab.project_table.table.selectRow(cur)
 
             if cfg.project_tab._tabs.currentIndex() == 3:
                 cfg.project_tab.treeview_model.jumpToLayer()

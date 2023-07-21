@@ -258,7 +258,7 @@ class ProjectTable(QWidget):
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
-        self.table.setColumnWidth(1, h)
+        self.table.setColumnWidth(1, h*2)
         self.table.setColumnWidth(2, h)
         self.table.setColumnWidth(3, h)
         self.table.setColumnWidth(4, h)
@@ -280,7 +280,6 @@ class ProjectTable(QWidget):
     def jump_to_view(self, requested) -> None:
         cfg.mw.setZpos(requested)
         cfg.pt._tabs.setCurrentIndex(0)
-
 
     def request_refresh(self, requested) -> None:
         self.set_row_data(row=requested)
@@ -355,7 +354,6 @@ class ProjectTable(QWidget):
             elif col == 1:
                 lab1 = QLabel(cfg.data.filename_basename(l=row))
                 lab1.setStyleSheet("font-weight: 600; font-size: 12px; background: transparent;")
-
                 if cfg.data.skipped(l=row):
                     lab2 = QLabel('* Exclude')
                     lab2.setStyleSheet("font-size: 12px; color: #d0342c; padding:2px; background: transparent;")
@@ -367,18 +365,16 @@ class ProjectTable(QWidget):
                     lab3_str = cfg.data.reference_basename(l=row)
                     ref_offset = cfg.data.get_ref_index_offset(l=row)
                     if ref_offset > 1:
-                        lab3_str += f' <span style="color: #d0342c;"><b>[{-ref_offset}]</b></span>'
+                        lab3_str += f' <span style="color: #d0342c;"><b>[{-ref_offset + 1}]</b></span>'
                     lab3 = QLabel(lab3_str)
                     lab3.setStyleSheet("font-size: 10px; font-weight: 600; background: transparent;")
                     vw = VWidget(lab1,lab2,lab3)
                     vw.setStyleSheet("background: transparent;")
                     vw.layout.setAlignment(Qt.AlignVCenter)
-
                 self.table.setCellWidget(row, col, vw)
             elif col == 2:
                 lab1 = QLabel('%.3g' % float(row_data[2]))
                 lab1.setStyleSheet("font-weight: 600; font-size: 14px;")
-
                 m = self.m[method]
                 lab2 = QLabel(m)
                 if m == 'Default Grid':
@@ -391,7 +387,6 @@ class ProjectTable(QWidget):
                 vw = VWidget(lab1,lab2)
                 vw.layout.setAlignment(Qt.AlignCenter)
                 vw.setStyleSheet("background:transparent;")
-
                 self.table.setCellWidget(row, col, vw)
             elif col == 3:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))

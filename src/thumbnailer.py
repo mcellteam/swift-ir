@@ -3,6 +3,7 @@
 '''Generates thumbnails for use with an AlignEM-SWiFT project.'''
 
 import os
+import time
 import shutil
 import psutil
 import inspect
@@ -10,6 +11,8 @@ import logging
 import datetime
 from math import floor, ceil
 from glob import glob
+import multiprocessing as mp
+import subprocess as sp
 
 import src.config as cfg
 from src.mp_queue import TaskQueue
@@ -216,31 +219,37 @@ class Thumbnailer:
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
         # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
 
-        if use_gui:
-            task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, parent=cfg.main_window, pbar_text=pbar_text + ' (%d CPUs)' %cpus)
-        else:
-            task_queue = TaskQueue(n_tasks=len(filenames), dest=dest, use_gui=False)
-
-
-        task_queue.taskPrefix = 'Generating Thumbnail for '
-        basefilenames = [os.path.basename(x) for x in filenames]
-        task_queue.taskNameList = basefilenames
-        task_queue.start(cpus)
 
         logger.info('Removing up to %d files...' %len(filenames))
+        tasks = []
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
-            if os.path.exists(ofn):
-                os.remove(ofn)
+            try:
+                if os.path.exists(ofn):
+                    os.remove(ofn)
+            except:
+                print_exception()
 
-            task = (self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn)
-            task_queue.add_task(task)
-            if cfg.PRINT_EXAMPLE_ARGS and (i in (0, 1, 2)):
-                print('\nTQ Params:\n  %s\n  %s\n  %s\n  %s' % task)
 
-        dt = task_queue.collect_results()
+        logger.info('Making thumbnailer tasks...')
+        for i, fn in enumerate(filenames):
+            ofn = os.path.join(od, os.path.basename(fn))
+            tasks.append([self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn])
 
+        logger.info('Beginning thumbnailer ThreadPool...')
+        t0 = time.time()
+        ctx = mp.get_context('forkserver')
+        with ctx.Pool(processes=cpus) as pool:
+            pool.map(run, tasks)
         logger.info('<<<< Thumbnail Generation Complete <<<<')
+        dt = time.time() - t0
         return dt
 
 
+def run(task):
+    """Call run(), catch exceptions."""
+    try:
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+    except Exception as e:
+        print("error: %s run(*%r)" % (e, task))
